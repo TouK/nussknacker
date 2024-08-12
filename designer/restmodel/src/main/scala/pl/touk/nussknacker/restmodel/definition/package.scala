@@ -21,12 +21,13 @@ package object definition {
 
   // This class contains various views on definitions, used in a different FE contexts
   @JsonCodec(encodeOnly = true) final case class UIDefinitions(
-      componentGroups: List[UIComponentGroup],
-      components: Map[ComponentId, UIComponentDefinition],
-      classes: List[TypingResult],
-      scenarioPropertiesConfig: Map[String, UiScenarioPropertiesConfig],
-      edgesForNodes: List[UINodeEdges],
-      customActions: List[UICustomAction]
+                                                                // This is dedicated view for the components toolbox panel
+                                                                componentGroups: List[UIComponentGroup],
+                                                                components: Map[ComponentId, UIComponentDefinition],
+                                                                classes: List[TypingResult],
+                                                                scenarioPropertiesConfig: UiScenarioPropertiesConfig,
+                                                                edgesForNodes: List[UINodeEdges],
+                                                                customActions: List[UICustomAction]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIValueParameter(
@@ -118,19 +119,18 @@ package object definition {
       components: List[UIComponentNodeTemplate]
   )
 
-  @JsonCodec sealed trait UiScenarioPropertiesConfig
+  @JsonCodec final case class UiScenarioPropertiesConfig(additionalFieldsConfig: Map[String, UiScenarioAdditionalFieldConfig], docsUrlIconConfig: Option[ScenarioPropertiesDocsUrlIconConfig])
 
-  @JsonCodec final case class UiScenarioPropertiesAdditionalInfoConfig(docsUrl: Option[String])
-      extends UiScenarioPropertiesConfig
-
-  @JsonCodec final case class UiScenarioPropertiesParameterConfig(
+  @JsonCodec final case class UiScenarioAdditionalFieldConfig(
       // This attribute is deprecated on BE and FE as it's not used anywhere.
       // Right now it's only kept because an external project uses it but it will be removed in the future.
       defaultValue: Option[String],
       editor: ParameterEditor,
       label: Option[String],
       hintText: Option[String]
-  ) extends UiScenarioPropertiesConfig
+  )
+
+  @JsonCodec final case class ScenarioPropertiesDocsUrlIconConfig(docsUrl: String, imagePath: String)
 
   object UIParameter {
     implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] =

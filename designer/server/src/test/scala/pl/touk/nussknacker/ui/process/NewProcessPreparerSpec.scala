@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
@@ -28,7 +28,7 @@ class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
     val preparer = new NewProcessPreparer(
       ProcessTestData.streamingTypeSpecificInitialData,
       Map(
-        TestAdditionalUIConfigProvider.scenarioPropertyName -> ScenarioPropertyConfig.empty.copy(
+        TestAdditionalUIConfigProvider.scenarioPropertyName -> ScenarioPropertiesParameterConfig.empty.copy(
           defaultValue = Some("defaultToBeOverridden")
         )
       ),

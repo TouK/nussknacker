@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.validation
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, UnknownProperty}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
@@ -17,19 +17,19 @@ import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValida
 import scala.util.Try
 
 class ScenarioPropertiesValidator(
-    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer
+                                   scenarioPropertiesConfig: Map[String, ScenarioPropertiesParameterConfig],
+                                   scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer
 ) {
 
   import cats.implicits._
 
   implicit val nodeId: NodeId = NodeId("properties")
 
-  type PropertyConfig = Map[String, ScenarioPropertyConfig]
+  type PropertyConfig = Map[String, ScenarioPropertiesParameterConfig]
 
   def validate(scenarioProperties: List[(String, String)]): ValidationResult = {
     val finalizedScenarioPropertiesConfig =
-      scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioPropertiesConfig)
+      scenarioPropertiesConfigFinalizer.finalizeScenarioPropertiesParameters(scenarioPropertiesConfig)
 
     val validated = (
       getConfiguredValidationsResults(finalizedScenarioPropertiesConfig, scenarioProperties),
@@ -125,7 +125,7 @@ private final case class MissingRequiredPropertyValidator(actualPropertyNames: L
 
 }
 
-private final case class UnknownPropertyValidator(config: Map[String, ScenarioPropertyConfig]) {
+private final case class UnknownPropertyValidator(config: Map[String, ScenarioPropertiesParameterConfig]) {
 
   def isValid(propertyName: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
     if (config.contains(propertyName)) {

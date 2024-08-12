@@ -69,7 +69,7 @@ object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None, None, None, None)
 }
 
-@JsonCodec case class ScenarioPropertyConfig(
+@JsonCodec case class ScenarioPropertiesParameterConfig(
     defaultValue: Option[String],
     editor: Option[SimpleParameterEditor],
     validators: Option[List[ParameterValidator]],
@@ -77,18 +77,18 @@ object ParameterConfig {
     hintText: Option[String]
 )
 
-object ScenarioPropertyConfig {
-  val empty: ScenarioPropertyConfig = ScenarioPropertyConfig(None, None, None, None, None)
+object ScenarioPropertiesParameterConfig {
+  val empty: ScenarioPropertiesParameterConfig = ScenarioPropertiesParameterConfig(None, None, None, None, None)
 
-  implicit val semigroup: Semigroup[ScenarioPropertyConfig] = {
+  implicit val semigroup: Semigroup[ScenarioPropertiesParameterConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
       case (None, None)    => None
       case (None, Some(x)) => Some(x)
       case (Some(x), _)    => Some(x)
     }
 
-    Semigroup.instance[ScenarioPropertyConfig] { (x, y) =>
-      ScenarioPropertyConfig(
+    Semigroup.instance[ScenarioPropertiesParameterConfig] { (x, y) =>
+      ScenarioPropertiesParameterConfig(
         x.defaultValue |+| y.defaultValue,
         x.editor |+| y.editor,
         x.validators |+| y.validators,

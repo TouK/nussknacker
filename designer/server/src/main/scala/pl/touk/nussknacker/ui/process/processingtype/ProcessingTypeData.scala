@@ -2,9 +2,10 @@ package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
@@ -97,11 +98,12 @@ object ProcessingTypeData {
         deploymentConfig,
         scenarioStateCacheTTL
       )
-    val scenarioProperties =
+    val scenarioProperties = ScenarioPropertiesConfig(
       deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelData.modelConfig
-        .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
+        .getOrElse[Map[ProcessingType, ScenarioPropertiesParameterConfig]]("scenarioPropertiesParameterConfig", Map.empty)
+
     val fragmentProperties = modelData.modelConfig
-      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
+      .getOrElse[Map[ProcessingType, ScenarioPropertiesParameterConfig]]("fragmentPropertiesConfig", Map.empty)
 
     DeploymentData(
       validDeploymentManager,

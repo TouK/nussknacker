@@ -2,7 +2,7 @@ package pl.touk.nussknacker.lite.manager
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{
   LiteralIntegerValidator,
   MinimalNumberValidator,
@@ -26,7 +26,7 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
   protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String
 
-  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] = forMode(config)(
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] = forMode(config)(
     LitePropertiesConfig.streamProperties,
     LitePropertiesConfig.requestResponseProperties
   )
@@ -45,8 +45,8 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
 object LitePropertiesConfig {
 
-  private val parallelismConfig: (String, ScenarioPropertyConfig) = LiteStreamMetaData.parallelismName ->
-    ScenarioPropertyConfig(
+  private val parallelismConfig: (String, ScenarioPropertiesParameterConfig) = LiteStreamMetaData.parallelismName ->
+    ScenarioPropertiesParameterConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
@@ -54,8 +54,8 @@ object LitePropertiesConfig {
       hintText = None
     )
 
-  private val slugConfig: (String, ScenarioPropertyConfig) = RequestResponseMetaData.slugName ->
-    ScenarioPropertyConfig(
+  private val slugConfig: (String, ScenarioPropertiesParameterConfig) = RequestResponseMetaData.slugName ->
+    ScenarioPropertiesParameterConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = None,
@@ -63,9 +63,9 @@ object LitePropertiesConfig {
       hintText = None
     )
 
-  val streamProperties: Map[String, ScenarioPropertyConfig] = Map(parallelismConfig)
+  val streamProperties: Map[String, ScenarioPropertiesParameterConfig] = Map(parallelismConfig)
 
-  val requestResponseProperties: Map[String, ScenarioPropertyConfig] =
+  val requestResponseProperties: Map[String, ScenarioPropertiesParameterConfig] =
     RequestResponseOpenApiSettings.scenarioPropertiesConfig ++ Map(slugConfig)
 
 }

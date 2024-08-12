@@ -9,8 +9,9 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioPropertyConfig}
+import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioAdditionalFieldConfig}
 import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
@@ -24,8 +25,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class DefinitionsService(
     modelData: ModelData,
     staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
-    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    scenarioPropertiesConfig: ScenarioPropertiesConfig,
+    fragmentPropertiesConfig: Map[String, ScenarioPropertiesParameterConfig],
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
@@ -54,7 +55,7 @@ class DefinitionsService(
       }
 
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
-        .finalizeScenarioProperties(scenarioPropertiesConfig)
+        .finalizePropertiesConfig(scenarioPropertiesConfig)
 
       prepareUIDefinitions(
         withStaticDefinition,
@@ -67,15 +68,18 @@ class DefinitionsService(
   private def prepareUIDefinitions(
       components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
-      finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
+      finalizedScenarioPropertiesConfig: ScenarioPropertiesConfig
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
-      scenarioPropertiesConfig = (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig
-                                  else finalizedScenarioPropertiesConfig)
-        .mapValuesNow(createUIScenarioPropertyConfig),
+      scenarioPropertiesConfig =
+        UiScenarioPropertiesConfig(
+        additionalFieldsConfig = (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig else finalizedScenarioPropertiesConfig.parameterConfig)
+          .mapValuesNow(createUIScenarioAdditionalFieldConfig),
+          docsUrlIconConfig = finalizedScenarioPropertiesConfig.docsIconConfig.map(config => ScenarioPropertiesDocsUrlIconConfig(config.docsUrl, config.docsIconPath))
+        ),
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )
@@ -130,9 +134,9 @@ object DefinitionsService {
     )
   }
 
-  def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertiesParameterConfig = {
+  def createUIScenarioAdditionalFieldConfig(config: ScenarioPropertiesParameterConfig): UiScenarioAdditionalFieldConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
-    UiScenarioPropertiesParameterConfig(config.defaultValue, editor, config.label, config.hintText)
+    UiScenarioAdditionalFieldConfig(config.defaultValue, editor, config.label, config.hintText)
   }
 
 }

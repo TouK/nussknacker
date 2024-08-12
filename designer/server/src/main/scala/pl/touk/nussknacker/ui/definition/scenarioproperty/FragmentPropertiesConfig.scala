@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import pl.touk.nussknacker.engine.api.FragmentSpecificData
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -26,8 +26,8 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsCom
 
 object FragmentPropertiesConfig {
 
-  val docsUrlConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.docsUrlName ->
-    ScenarioPropertyConfig(
+  val docsUrlConfig: (String, ScenarioPropertiesParameterConfig) = FragmentSpecificData.docsUrlName ->
+    ScenarioPropertiesParameterConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       // TODO: some validator
@@ -36,8 +36,8 @@ object FragmentPropertiesConfig {
       hintText = None
     )
 
-  val componentGroupNameConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.componentGroupName ->
-    ScenarioPropertyConfig(
+  val componentGroupNameConfig: (String, ScenarioPropertiesParameterConfig) = FragmentSpecificData.componentGroupName ->
+    ScenarioPropertiesParameterConfig(
       defaultValue = None,
       editor = Some(
         FixedValuesParameterEditor(
@@ -74,6 +74,6 @@ object FragmentPropertiesConfig {
     )
 
   // TODO: We should probably allow to add some properties definition using configuration like in the scenario case
-  val properties: Map[String, ScenarioPropertyConfig] = Map(docsUrlConfig, componentGroupNameConfig, iconConfig)
+  val properties: Map[String, ScenarioPropertiesParameterConfig] = Map(docsUrlConfig, componentGroupNameConfig, iconConfig)
 
 }

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.MetaDataInitializer.MetadataType
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
@@ -25,7 +25,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def metaDataInitializer(config: Config): MetaDataInitializer
 
-  def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] = Map.empty
+  def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] = Map.empty
 
   def additionalValidators(config: Config): List[CustomProcessValidator] = Nil
 
