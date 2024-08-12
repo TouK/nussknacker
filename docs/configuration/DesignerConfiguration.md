@@ -789,7 +789,7 @@ scenarioTypes {
 
 Scenario type configuration consists of parts:
 - `deploymentConfig` - [scenario deployment configuration](./ScenarioDeploymentConfiguration.md)
-- `modelConfig` - [model configuration](./model/ModelConfiguration.md)
+- `modelConfig` - [model configuration](./model/ModelConfiguration.mdx)
 - `category` - category handled by given scenario type
 
 In Nussknacker distribution there are preconfigured scenario types:
