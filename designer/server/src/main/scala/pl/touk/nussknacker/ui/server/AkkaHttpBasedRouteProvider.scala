@@ -76,7 +76,12 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
-import pl.touk.nussknacker.ui.statistics.{FingerprintService, StatisticUrlConfig, UsageStatisticsReportsSettingsService}
+import pl.touk.nussknacker.ui.statistics.{
+  FingerprintService,
+  PublicEncryptionKey,
+  StatisticUrlConfig,
+  UsageStatisticsReportsSettingsService
+}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -490,11 +495,17 @@ class AkkaHttpBasedRouteProvider(
         designerClock
       )
 
+      val statisticUrlConfig = if (usageStatisticsReportsConfig.encryptionEnabled) {
+        StatisticUrlConfig()
+      } else {
+        StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(None))
+      }
+
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authManager,
         usageStatisticsReportsSettingsService,
         feStatisticsRepository,
-        StatisticUrlConfig()
+        statisticUrlConfig
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings

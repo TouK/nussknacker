@@ -1,61 +1,38 @@
-//package pl.touk.nussknacker.ui.statistics
-//
-//import org.scalatest.EitherValues
-//import org.scalatest.funsuite.AnyFunSuite
-//import org.scalatest.matchers.should.Matchers
-//import org.scalatest.prop.TableDrivenPropertyChecks
-//import pl.touk.nussknacker.test.PatientScalaFutures
-//import pl.touk.nussknacker.ui.statistics.Encryption.EncryptionTypes.{AES, EncryptionType, RSA}
-//import pl.touk.nussknacker.ui.statistics.Encryption.{createSymmetricKey, encode, setupPublicKey}
-//
-//import java.nio.charset.StandardCharsets
-//import java.security.{Key, KeyFactory}
-//import java.security.spec.{EncodedKeySpec, PKCS8EncodedKeySpec}
-//import java.util.Base64
-//import javax.crypto.Cipher
-//
-//class EncryptionSpec
-//    extends AnyFunSuite
-//    with Matchers
-//    with EitherValues
-//    with PatientScalaFutures
-//    with TableDrivenPropertyChecks {
-//
-//  test("Message before encryption and decryption should be the same") {
-//    val message          = "random message with bigger and bigger length"
-//    val secretKeyForTest = createSymmetricKey
-//
-//    val encryptedMessageAES = Encryption.encode(message, AES, secretKeyForTest)
-//
-//    val publicKey           = setupPublicKey(publicKeyForTest)
-//    val encryptedMessageRSA = Encryption.encode(message, RSA, publicKey) todo czemu 2x szyfrujemy wiadomość najpierw AES, a potem RSA?
-//
-//    val decryptedAES = decode(encryptedMessageAES, AES, secretKeyForTest)
-//
-//    val privateKey   = setupPrivateKey(privateKeyForTest)
-//    val decryptedRSA = decode(encryptedMessageRSA, RSA, privateKey)
-//
-//    decryptedAES shouldBe message
-//    decryptedRSA shouldBe message todo ????
-//
-//    val secretKeyAsString = Base64.getEncoder.encodeToString(secretKeyForTest.getEncoded)
-//    val encodedSecretKey  = encode(secretKeyAsString, RSA, publicKey)
-//    val decodedSecretKey  = decode(encodedSecretKey, RSA, privateKey)
-//
-//    decodedSecretKey shouldBe secretKeyAsString
-//  }
-// todo: A czy nie powinniśmy sprawdzać takiego flow:
-// 1. podanie klucza publicznego
-// 2. wygenerowanie klucza symetrycznego
-// 3. zaszyfrowanie wiadomości kluczem symetrycznym
-// 4. zaszyfrowanie klucza symetrycznego kluczem publicznym
-// 5. A w test odszyfrowanie zaszyfrowanych danych i sprawdzenie czy wiadomość się zgadza
-//
-//  test("Creating symmetric keys creates new one every time") {
-//    val key1 = createSymmetricKey
-//    val key2 = createSymmetricKey
-//
-//    key1 == key2 shouldBe false
-//  }
-//
-//}
+package pl.touk.nussknacker.ui.statistics
+
+import org.scalatest.EitherValues
+import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.utils.StatisticEncryptionSupport.{decode, publicKeyForTest}
+
+class EncryptionSpec
+    extends AnyFreeSpecLike
+    with Matchers
+    with EitherValues
+    with PatientScalaFutures
+    with TableDrivenPropertyChecks {
+
+  "Encryption should be able to encrypt and decrypt" in {
+    val queryParams =
+      "a_n=0&a_t=0&a_v=0&c_n=0&ca=0&co_t=1&co_v=2&d_u=0&fr_m=0&fr_v=0&n_m=0&n_ma=0&n_mi=0&n_v=0&s_a=0&s_dm_c=0&s_dm_e=0&s_dm_f=0&s_dm_l=0&s_f=0&s_pm_b=0&s_pm_rr=0&s_pm_s=0&s_s=0&source=sources&u_ma=0&u_mi=0&u_v=3&v_m=0&v_ma=0&v_mi=0&v_v=0&version=1.17.0-SNAPSHOT"
+    val publicKey = PublicEncryptionKey(Some(publicKeyForTest))
+
+    Encryption
+      .encrypt(publicKey, queryParams)
+      .map(encryptResult =>
+        decode(encryptResult.encryptedSymmetricKey, encryptResult.encryptedValue) shouldBe queryParams
+      )
+  }
+
+  "Should not encrypt if wrong public key" in {
+    val message   = "some message not to encrypt"
+    val publicKey = PublicEncryptionKey(Some("abc"))
+
+    val result = Encryption.encrypt(publicKey, message)
+
+    result.isFailure shouldBe true
+  }
+
+}
