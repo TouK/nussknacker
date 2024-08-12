@@ -2,8 +2,10 @@ package pl.touk.nussknacker.sql.service
 
 import org.scalatest.BeforeAndAfterEach
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.utils.BasePostgresqlQueryEnricherTest
+
+import java.time.{Instant, LocalDate, LocalTime}
 
 class DatabaseQueryEnricherPostgresqlTest
     extends BasePostgresqlQueryEnricherTest
@@ -15,7 +17,11 @@ class DatabaseQueryEnricherPostgresqlTest
 
   override val preparePostgresqlDDLs: List[String] = List(
     "CREATE TABLE people (id INT, name VARCHAR(40));",
-    "INSERT INTO people (id, name) VALUES (1, 'John')"
+    "INSERT INTO people (id, name) VALUES (1, 'John');",
+    "CREATE TABLE types_test(t_time TIME, t_timestamp TIMESTAMP, t_timestamptz TIMESTAMPTZ, t_date DATE, " +
+      "t_array INT[], t_boolean BOOLEAN, t_text TEXT);",
+    "INSERT INTO types_test(t_time, t_timestamp, t_timestamptz, t_date, t_array, t_boolean, t_text) VALUES (" +
+      "'08:00:00', '2024-08-12 08:00:00', '2024-08-12 08:00:00+01:00', '2024-08-12', '{1,2,3,4,5}', true, 'long text');"
   )
 
   override protected def afterEach(): Unit = {
@@ -65,6 +71,32 @@ class DatabaseQueryEnricherPostgresqlTest
     val queryResultSet = conn.prepareStatement("SELECT * FROM people WHERE id = 1").executeQuery()
     queryResultSet.next()
     queryResultSet.getObject("name") shouldBe "Don"
+  }
+
+  test("DatabaseQueryEnricherPostgresqlTest#type conversions") {
+    import scala.jdk.CollectionConverters._
+    val result = queryWithEnricher(
+      "select * from types_test",
+      Map(),
+      conn,
+      service,
+      "List[Record{t_array: List[Unknown], t_boolean: Boolean, t_date: LocalDate, t_text: String, t_time: LocalTime, " +
+        "t_timestamp: Instant, t_timestamptz: Instant}]"
+    )
+
+    result shouldBe List(
+      TypedMap(
+        Map(
+          "t_boolean"     -> true,
+          "t_timestamp"   -> Instant.parse("2024-08-12T06:00:00Z"),
+          "t_date"        -> LocalDate.parse("2024-08-12"),
+          "t_array"       -> List(1, 2, 3, 4, 5).asJava,
+          "t_text"        -> "long text",
+          "t_time"        -> LocalTime.parse("08:00"),
+          "t_timestamptz" -> Instant.parse("2024-08-12T07:00:00Z")
+        )
+      )
+    )
   }
 
 }

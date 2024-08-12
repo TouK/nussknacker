@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.db.schema
 
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import java.sql.ResultSetMetaData
 
@@ -9,15 +9,25 @@ object ColumnDefinition {
   def apply(columnNo: Int, resultMeta: ResultSetMetaData): ColumnDefinition =
     ColumnDefinition(
       name = resultMeta.getColumnName(columnNo),
-      typing = Typed(Class.forName(resultMeta.getColumnClassName(columnNo)))
+      convertedToSupportTypeTypingResult = ConvertedToSupportTypeTypingResult(resultMeta.getColumnClassName(columnNo))
     )
 
-  def apply(typing: (String, TypingResult)): ColumnDefinition =
+  def apply(typing: (String, String)): ColumnDefinition =
     ColumnDefinition(
       name = typing._1,
-      typing = typing._2
+      convertedToSupportTypeTypingResult = ConvertedToSupportTypeTypingResult(typing._2)
     )
 
 }
 
-final case class ColumnDefinition(name: String, typing: TypingResult)
+final case class ColumnDefinition(
+    name: String,
+    convertedToSupportTypeTypingResult: ConvertedToSupportTypeTypingResult
+) {
+  val typing: TypingResult = convertedToSupportTypeTypingResult.typing
+
+  def mapValue(value: Any): Any = Option(value)
+    .map(convertedToSupportTypeTypingResult.typeRemappingFunction)
+    .getOrElse(value)
+
+}
