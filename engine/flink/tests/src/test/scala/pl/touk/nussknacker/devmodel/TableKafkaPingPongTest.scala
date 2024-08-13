@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
@@ -117,7 +116,6 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     s"""
        |{
        |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
-       |  enableFlinkBatchExecutionMode: false
        |}
        |""".stripMargin
 

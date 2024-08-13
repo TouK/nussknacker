@@ -162,13 +162,13 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
     val mapAggregator =
       new MapAggregator(namedAggregators.mapValuesNow(_._1).asJava.asInstanceOf[JMap[String, Aggregator]])
-    val input = TypedObjectTypingResult(namedAggregators.mapValuesNow(_._2), objType = Typed.typedClass[JMap[_, _]])
+    val input = Typed.record(namedAggregators.mapValuesNow(_._2), objType = Typed.typedClass[JMap[_, _]])
     val el    = namedAggregators.mapValuesNow(_._3).asJava
-    val stored = TypedObjectTypingResult(
+    val stored = Typed.record(
       namedAggregators.mapValuesNow(_._4),
       objType = Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown))
     )
-    val output = TypedObjectTypingResult(
+    val output = Typed.record(
       namedAggregators.mapValuesNow(_._5),
       objType = Typed.genericTypeClass(classOf[JMap[_, _]], List(Typed[String], Unknown))
     )

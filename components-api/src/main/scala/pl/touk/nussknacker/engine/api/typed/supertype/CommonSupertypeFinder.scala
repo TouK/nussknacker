@@ -7,6 +7,9 @@ import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder.{
   looseFinder
 }
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.util.Implicits.RichIterable
+
+import scala.collection.immutable.ListMap
 
 /**
   * This class finding common supertype of two types. It basically based on fact that TypingResults are
@@ -74,7 +77,7 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
             // We don't return None in case when fields are empty, because we can't be sure the intention of the user
             // e.g. someone can pass json object with missing field declared as optional in schema
             // and want to compare it with literal record that doesn't have this field
-            TypedObjectTypingResult(fields, commonSupertype)
+            Typed.record(fields, commonSupertype)
           }
           .orElse(fallback)
       case (l: TypedObjectTypingResult, r) => singleCommonSupertype(l.objType, r)
@@ -99,9 +102,9 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
     }
   }
 
-  private def prepareFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult): Map[String, TypingResult] =
+  private def prepareFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult): Iterable[(String, TypingResult)] =
     (l.fields.toList ++ r.fields.toList)
-      .groupBy(_._1)
+      .orderedGroupBy(_._1)
       .map { case (key, value) => key -> value.map(_._2) }
       .flatMap {
         case (fieldName, singleType :: Nil) =>

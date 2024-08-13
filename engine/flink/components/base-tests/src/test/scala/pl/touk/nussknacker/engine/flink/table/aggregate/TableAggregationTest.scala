@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.TestRecord
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
@@ -30,6 +31,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(additionalComponents)
     .build()
 
@@ -56,9 +58,10 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
       )
 
     val result = runner.runWithoutData(scenario)
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
   }
 
+  // TODO: make this test check output value
   test("should be able to group by simple types") {
     val aggregatingBranches =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions ::: tableApiSupportedTimeLiteralExpressions).zipWithIndex
@@ -118,8 +121,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
     val result = runner.runWithData(
       scenario,
       List(decimal),
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      Boundedness.BOUNDED
     )
 
     val decimalWithAlignedScale = java.math.BigDecimal.valueOf(0.123456789).setScale(18)
@@ -148,8 +150,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         TestRecord("A", 1),
         TestRecord("B", 2),
       ),
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      Boundedness.BOUNDED
     )
 
     result.validValue.successes.toSet shouldBe Set(

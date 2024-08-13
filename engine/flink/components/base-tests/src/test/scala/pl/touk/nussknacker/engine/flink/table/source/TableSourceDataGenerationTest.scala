@@ -21,7 +21,6 @@ class TableSourceDataGenerationTest
   private val tableSource = new TableSource(
     tableDefinition = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue.loneElement,
     sqlStatements = statements,
-    enableFlinkBatchExecutionMode = true,
     testDataGenerationMode = TestDataGenerationMode.Random
   )
 

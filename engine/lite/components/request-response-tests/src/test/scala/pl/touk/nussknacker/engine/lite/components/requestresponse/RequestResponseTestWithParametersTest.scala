@@ -119,11 +119,11 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam(
         SinkRawValueParamName.value,
         Typed(
-          TypedObjectTypingResult(
+          Typed.record(
             Map("result" -> Typed[String]),
             Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed[String]))
           ),
-          TypedObjectTypingResult(
+          Typed.record(
             Map("errorCode" -> Typed[Long]),
             Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed[Long]))
           )

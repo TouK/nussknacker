@@ -31,14 +31,29 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `EmptySource`'s `TypeInformation` implicit parameter was removed
   * [#6545](https://github.com/TouK/nussknacker/pull/6545) `FlinkSink.prepareTestValue` was replaced by `prepareTestValueFunction` -
     a non-parameter method returning a function. Thanks to that, `FlinkSink` is not serialized during test data preparation.
-* [#6436](https://github.com/TouK/nussknacker/pull/6436) Changes to `TypingResult` of SpEL expressions that are maps or lists:
+* `TypingResult` API changes
+  * [#6436](https://github.com/TouK/nussknacker/pull/6436) Changes to `TypingResult` of SpEL expressions that are maps or lists:
     * `TypedObjectTypingResult.valueOpt` now returns a `java.util.Map` instead of `scala.collection.immutable.Map`
-        * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
+      * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
     * SpEL list expression are now typed as `TypedObjectWithValue`, with the `underlying` `TypedClass` equal to the `TypedClass` before this change, and with `value` equal to a `java.util.List` of the elements' values.
-        * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
+      * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
+  * [#6566](https://github.com/TouK/nussknacker/pull/6566) `TypedObjectTypingResult.fields` are backed by `ListMap` for correct `RowTypeInfo`'s fields order purpose.
+    If [#5457](https://github.com/TouK/nussknacker/pull/5457) migrations were applied, it should be a transparent change
+    * Removed deprecated  `TypedObjectTypingResult.apply` methods - should be used `Typed.record` factory method
+    * `Typed.record` factory method takes `Iterable` instead of `Map`
+  * [#6570](https://github.com/TouK/nussknacker/pull/6570) `TypingResult.canBeSubclassOf` generic parameter checking related changes. 
+    Generic parameters of `Typed[java.util.Map[X, Y]]`, `Typed[java.util.List[X]]`, `Typed[Array[X]]` were checked as they were either covariant or contravariant.
+    Now they are checked more strictly - depending on collection characteristic.
+    * `Key` parameters of `Typed[java.util.Map[Key, Value]]` is treated as invariant
+    * `Value` parameters of `Typed[java.util.Map[Key, Value]]` is treated as covariant
+    * `Element` parameters of `Typed[java.util.List[Element]]` is treated as covariant
+    * `Element` parameters of `Typed[Array[Element]]` is treated as covariant
 * [#6503](https://github.com/TouK/nussknacker/pull/6503) `FlinkTestScenarioRunner` cleanups
   * `runWithDataAndTimestampAssigner` method was removed. Instead, `timestampAssigner` was added as an optional parameter into `runWithData`
   * new `runWithDataWithType` was added allowing to test using other types than classes e.g. records
+* [#6567](https://github.com/TouK/nussknacker/pull/6567) Removed ability to set Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode) 
+  in sources: `TableSource`, `CollectionSource` and in `FlinkTestScenarioRunner.runWithData` method. Now you can
+  configure it under `modelConfig.executionMode` or for test purposes through `FlinkTestScenarioRunnerBuilder.withExecutionMode` method.
 
 ### REST API changes
 
@@ -47,6 +62,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6213](https://github.com/TouK/nussknacker/pull/6213) Improvement: Load resource config only in test context
   * `WithConfig` from `test-utils` modules behaviour changes: now it only parses given config, 
     without resolving reference configs, system env variables etc.
+
+## In version 1.16.3
+
+### Code API changes
+* [#6527](https://github.com/TouK/nussknacker/pull/6527) Changes to `TypingResult` of SpEL expressions that are maps or lists:
+    * `TypedObjectTypingResult.valueOpt` now returns a `java.util.Map` instead of `scala.collection.immutable.Map`
+        * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
+    * SpEL list expression are now typed as `TypedObjectWithValue`, with the `underlying` `TypedClass` equal to the `TypedClass` before this change, and with `value` equal to a `java.util.List` of the elements' values.
+        * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
 
 ## In version 1.16.0
 

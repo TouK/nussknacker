@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
-import com.typesafe.config.Config
-import org.apache.flink.api.common.RuntimeExecutionMode
+import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.flink.api.connector.source.Boundedness
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -18,6 +17,7 @@ import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.Output
 import pl.touk.nussknacker.engine.flink.util.test.testComponents._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.ExecutionMode
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -35,8 +35,7 @@ private object testComponents {
       data: List[T],
       inputType: TypingResult,
       timestampAssigner: Option[TimestampWatermarkHandler[T]],
-      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-      flinkExecutionMode: Option[RuntimeExecutionMode] = None
+      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
   ): ComponentDefinition = ComponentDefinition(
     TestScenarioRunner.testDataSource,
     SourceFactory.noParamUnboundedStreamFactory(
@@ -44,8 +43,7 @@ private object testComponents {
         list = data,
         timestampAssigner = timestampAssigner,
         returnType = inputType,
-        boundedness = boundedness,
-        flinkRuntimeMode = flinkExecutionMode
+        boundedness = boundedness
       ),
       inputType
     )
@@ -83,12 +81,11 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       data: List[I],
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-      flinkExecutionMode: Option[RuntimeExecutionMode] = None,
       timestampAssigner: Option[TimestampWatermarkHandler[I]] = None
   ): RunnerListResult[R] = {
     runWithTestSourceComponent(
       scenario,
-      testDataSourceComponent(data, Typed.typedClass[I], timestampAssigner, boundedness, flinkExecutionMode)
+      testDataSourceComponent(data, Typed.typedClass[I], timestampAssigner, boundedness)
     )
   }
 
@@ -97,12 +94,11 @@ class FlinkTestScenarioRunner(
       data: List[I],
       inputType: TypingResult,
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-      flinkExecutionMode: Option[RuntimeExecutionMode] = None,
       timestampAssigner: Option[TimestampWatermarkHandler[I]] = None
   ): RunnerListResult[R] = {
     runWithTestSourceComponent(
       scenario,
-      testDataSourceComponent(data, inputType, timestampAssigner, boundedness, flinkExecutionMode)
+      testDataSourceComponent(data, inputType, timestampAssigner, boundedness)
     )
   }
 
@@ -260,6 +256,9 @@ case class FlinkTestScenarioRunnerBuilder(
 
   override def inTestRuntimeMode: FlinkTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
+
+  def withExecutionMode(mode: ExecutionMode): FlinkTestScenarioRunnerBuilder =
+    copy(config = config.withValue("executionMode", ConfigValueFactory.fromAnyRef(mode.toString)))
 
   override def build() =
     new FlinkTestScenarioRunner(

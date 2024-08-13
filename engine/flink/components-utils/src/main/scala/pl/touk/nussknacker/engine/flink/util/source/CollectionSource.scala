@@ -21,8 +21,7 @@ case class CollectionSource[T](
     list: List[T],
     override val timestampAssigner: Option[TimestampWatermarkHandler[T]],
     override val returnType: TypingResult,
-    boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-    flinkRuntimeMode: Option[RuntimeExecutionMode] = None
+    boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
 ) extends StandardFlinkSource[T]
     with ReturningType {
 
@@ -31,8 +30,6 @@ case class CollectionSource[T](
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[T] = {
-    // TODO: remove setting runtime mode here after setting it on deployment level
-    flinkRuntimeMode.foreach(env.setRuntimeMode)
     val typeInformation = flinkNodeContext.typeInformationDetection.forType[T](returnType)
     boundedness match {
       case Boundedness.BOUNDED =>

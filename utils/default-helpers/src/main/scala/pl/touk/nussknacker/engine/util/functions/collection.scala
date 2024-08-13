@@ -298,9 +298,9 @@ object CollectionUtils {
               if commonFieldHasTheSameType(x, y) =>
             listType
               .copy(params =
-                TypedObjectTypingResult(
-                  Map.empty ++ x.view.map { case (key, value) => key -> value.withoutValue } ++ y.view.map {
-                    case (key, value) => key -> value.withoutValue
+                Typed.record(
+                  x.view.map { case (key, value) => key -> value.withoutValue } ++ y.view.map { case (key, value) =>
+                    key -> value.withoutValue
                   },
                   Typed.typedClass[java.util.HashMap[_, _]],
                   infoX ++ infoY
@@ -329,7 +329,7 @@ object CollectionUtils {
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
       case TypedObjectTypingResult(x, _, infoX) :: TypedObjectTypingResult(y, _, infoY) :: Nil =>
-        TypedObjectTypingResult(x ++ y, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY).validNel
+        Typed.record(x ++ y, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY).validNel
       case (typedClass: TypedClass) :: _      => typedClass.validNel
       case _ :: (typedClass: TypedClass) :: _ => typedClass.validNel
       case _                                  => unknownMapType.validNel

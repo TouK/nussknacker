@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.TypingType.{TypingType, decoder}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
 
 //TODO: refactor way of encoding to easier handle decoding.
@@ -46,7 +47,7 @@ object TypeEncoders {
     case TypedObjectTypingResult(fields, objType, additionalInfo) =>
       val objTypeEncoded = encodeTypedClass(objType)
       val fieldsEncoded =
-        "fields" -> fromFields(fields.mapValuesNow(typ => fromJsonObject(encodeTypingResult(typ))).toList)
+        "fields" -> fromFields(fields.mapValuesNow(typ => fromJsonObject(encodeTypingResult(typ))))
       val standardFields = objTypeEncoded.+:(fieldsEncoded)
       if (additionalInfo.isEmpty) {
         standardFields
@@ -135,12 +136,12 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)
-    fields     <- obj.downField("fields").as[Map[String, TypingResult]]
+    fields     <- obj.downField("fields").as[ListMap[String, TypingResult]]
     additional <- obj
       .downField("additionalInfo")
       .as[Option[Map[String, AdditionalDataValue]]]
       .map(_.getOrElse(Map.empty))
-  } yield TypedObjectTypingResult(fields, valueClass, additional)
+  } yield Typed.record(fields, valueClass, additional)
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {
     val dict = obj.downField("dict")

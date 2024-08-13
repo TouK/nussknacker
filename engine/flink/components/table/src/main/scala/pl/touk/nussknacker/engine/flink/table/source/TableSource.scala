@@ -37,7 +37,6 @@ import scala.jdk.CollectionConverters._
 class TableSource(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
-    enableFlinkBatchExecutionMode: Boolean,
     testDataGenerationMode: TestDataGenerationMode
 ) extends StandardFlinkSource[Row]
     with TestWithParametersSupport[Row]
@@ -48,10 +47,6 @@ class TableSource(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Row] = {
-    // TODO: move this to flink-executor - ideally should set be near level of ExecutionConfigPreparer
-    if (enableFlinkBatchExecutionMode) {
-      env.setRuntimeMode(RuntimeExecutionMode.BATCH)
-    }
     val tableEnv = StreamTableEnvironment.create(env)
 
     executeSqlDDL(sqlStatements, tableEnv)
@@ -66,8 +61,6 @@ class TableSource(
           .from(filteringInternalViewName)
       }
       .getOrElse(selectQuery)
-      // We have to keep elements in the same order as in TypingInfo generated based on TypingResults, see TypingResultAwareTypeInformationDetection
-      .select(tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe.getFieldNames.asScala.toList.sorted.map($): _*)
 
     tableEnv.toDataStream(finalQuery)
   }

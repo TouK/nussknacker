@@ -91,7 +91,7 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val variables = forType(
-      TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
+      Typed.record(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
     )
       .asInstanceOf[TypeInformation[Map[String, Any]]]
     val parentCtx = validationContext.parent.map(forContext)
@@ -119,7 +119,8 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
       case a: TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
         TypedMapTypeInformation(a.fields.mapValuesNow(forType))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[Row] =>
-        val (fieldNames, typeInfos) = a.fields.toList.sortBy(_._1).unzip
+        val (fieldNames, typeInfos) = a.fields.unzip
+        // Warning: RowTypeInfo is fields order sensitive
         new RowTypeInfo(typeInfos.map(forType).toArray[TypeInformation[_]], fieldNames.toArray)
       // TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
