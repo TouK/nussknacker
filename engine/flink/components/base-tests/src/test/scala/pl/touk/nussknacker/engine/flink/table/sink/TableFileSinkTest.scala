@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -27,19 +28,27 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val pingPongInputTableName    = "ping-pong-input"
-  private val pingPongOutputTableName   = "ping-pong-output"
-  private val expressionOutputTableName = "expression-output"
-  private val oneColumnOutputTableName  = "one-column-output"
+  private val pingPongInputTableName      = "ping-pong-input"
+  private val virtualColumnInputTableName = "virtual-column-input"
+
+  private val pingPongOutputTableName       = "ping-pong-output"
+  private val rowFieldAccessOutputTableName = "row-field-access-output"
+  private val expressionOutputTableName     = "expression-output"
+  private val oneColumnOutputTableName      = "one-column-output"
+  private val virtualColumnOutputTableName  = "virtual-column-output"
 
   private lazy val pingPongInputDirectory =
     new File("engine/flink/components/base-tests/src/test/resources/tables/primitives").toPath.toAbsolutePath
   private lazy val pingPongOutputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$pingPongOutputTableName")
+  private lazy val rowFieldAccessOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$pingPongOutputTableName")
   private lazy val expressionOutputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$expressionOutputTableName")
   private lazy val oneColumnOutputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$oneColumnOutputTableName")
+  private lazy val virtualColumnOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$virtualColumnOutputTableName")
 
   private lazy val tablesDefinition =
     s"""
@@ -69,6 +78,12 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       |      'format' = 'json'
       |) LIKE `$pingPongInputTableName`;
       |
+      |CREATE TABLE `$rowFieldAccessOutputTableName` WITH (
+      |      'connector' = 'filesystem',
+      |      'path' = 'file:///$rowFieldAccessOutputDirectory',
+      |      'format' = 'json'
+      |) LIKE `$pingPongInputTableName`;
+      |
       |CREATE TABLE `$expressionOutputTableName` WITH (
       |      'connector' = 'filesystem',
       |      'path' = 'file:///$expressionOutputDirectory',
@@ -80,6 +95,25 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       |) WITH (
       |      'connector' = 'filesystem',
       |      'path' = 'file:///$oneColumnOutputDirectory',
+      |      'format' = 'csv'
+      |);
+      |
+      |CREATE TABLE `$virtualColumnInputTableName` (
+      |      `quantity` INT,
+      |      `price` DOUBLE,
+      |      `cost` AS quantity * price
+      |) WITH (
+      |    'connector' = 'datagen',
+      |    'number-of-rows' = '1'
+      |);
+      |
+      |CREATE TABLE `$virtualColumnOutputTableName` (
+      |      `quantity` INT,
+      |      `price` DOUBLE,
+      |      `cost` DOUBLE
+      |) WITH (
+      |      'connector' = 'filesystem',
+      |      'path' = 'file:///$virtualColumnOutputDirectory',
       |      'format' = 'csv'
       |);
       |""".stripMargin
@@ -94,7 +128,6 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
   private lazy val tableComponentsConfig: Config = ConfigFactory.parseString(s"""
        |{
        |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
-       |  enableFlinkBatchExecutionMode: true
        |}
        |""".stripMargin)
 
@@ -105,6 +138,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
 
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(singleRecordBatchTable :: tableComponents)
     .build()
 
@@ -112,6 +146,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     FileUtils.deleteQuietly(pingPongOutputDirectory.toFile)
     FileUtils.deleteQuietly(expressionOutputDirectory.toFile)
     FileUtils.deleteQuietly(oneColumnOutputDirectory.toFile)
+    FileUtils.deleteQuietly(virtualColumnOutputDirectory.toFile)
     super.afterAll()
   }
 
@@ -119,12 +154,62 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
-      .emptySink("end", "table", "Table" -> s"'$pingPongOutputTableName'".spel, "Value" -> "#input".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$pingPongOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
+      )
 
     val result = runner.runWithoutData(scenario)
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(pingPongOutputDirectory)
+    val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(pingPongInputDirectory)
+
+    outputFileContent shouldBe inputFileContent
+  }
+
+  test("should be able to access virtual columns in input table") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'$virtualColumnInputTableName'".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$virtualColumnOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
+      )
+
+    val result = runner.runWithoutData(scenario)
+    result shouldBe Symbol("valid")
+
+    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(virtualColumnOutputDirectory)
+
+    val quantityStr :: priceStr :: costStr :: Nil = outputFileContent.loneElement.split(",").toList
+    val expectedCost                              = quantityStr.toInt * priceStr.toDouble
+    costStr.toDouble shouldEqual expectedCost
+  }
+
+  test("should allow to access fields of Row produced by source") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
+      .buildSimpleVariable("variable", "someVar", "#input.string.length".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$rowFieldAccessOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
+      )
+
+    val result = runner.runWithoutData(scenario)
+    result shouldBe Symbol("valid")
+
+    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(rowFieldAccessOutputDirectory)
     val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(pingPongInputDirectory)
 
     outputFileContent shouldBe inputFileContent
@@ -166,12 +251,18 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .emptySink("end", "table", "Table" -> s"'$expressionOutputTableName'".spel, "Value" -> primitiveTypesExpression)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$expressionOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> primitiveTypesExpression
+      )
 
     val result = runner.runWithoutData(
       scenario = scenario
     )
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
 
     getLinesOfSingleFileInDirectoryEventually(
       expressionOutputDirectory
@@ -189,7 +280,13 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .emptySink("end", "table", "Table" -> s"'$oneColumnOutputTableName'".spel, "Value" -> valueExpression)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$oneColumnOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> valueExpression
+      )
 
     val result = runner.runWithoutData(
       scenario = scenario

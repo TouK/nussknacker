@@ -82,7 +82,7 @@ object validationHelpers {
         .definedBy { context =>
           val newType = Typed.record((1 to numberOfFields).map { i =>
             s"field$i" -> Typed[String]
-          }.toMap)
+          })
           context.withVariable(variableName, newType, paramName = None)
         }
         .implementedBy(null)
@@ -104,7 +104,7 @@ object validationHelpers {
         .definedBy { contexts =>
           val newType = Typed.record(contexts.toSeq.map { case (branchId, _) =>
             branchId -> valueByBranchId(branchId).returnType
-          }.toMap)
+          })
           Valid(ValidationContext(Map(variableName -> newType)))
         }
         .implementedBy(null)
@@ -486,7 +486,7 @@ object validationHelpers {
     )(
         implicit nodeId: NodeId
     ): this.FinalResults = {
-      val result = Typed.record(rest.map { case (k, v) => k.value -> v.returnType }.toMap)
+      val result = Typed.record(rest.map { case (k, v) => k.value -> v.returnType })
       prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }
 

@@ -27,34 +27,66 @@ class BatchDataGenerationSpec
 
   private val designerServiceUrl = "http://localhost:8080"
 
+  private val liveDataGenScenarioName   = "SumTransactions-LiveData"
+  private val randomDataGenScenarioName = "SumTransactions-RandomData"
+
   override def beforeAll(): Unit = {
-    createBatchScenario(simpleBatchTableScenario.name.value)
+    createEmptyBatchScenario(liveDataGenScenarioName, "Default")
+    createEmptyBatchScenario(randomDataGenScenarioName, "BatchTestOnRandomData")
     super.beforeAll()
   }
 
-  "Generate file endpoint should generate records with randomized values for scenario with table source" in {
-    given()
-      .when()
-      .request()
-      .basicAuthAdmin()
-      .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
-      .post(
-        s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/10"
-      )
-      .Then()
-      .statusCode(200)
-      .body(
-        matchAllNdJsonWithRegexValues(s"""
-             |{
-             |   "sourceId": "sourceId",
-             |   "record": {
-             |      "datetime": "${regexes.localDateRegex}",
-             |      "client_id": "[a-z\\\\d]{100}",
-             |      "amount": "${regexes.decimalRegex}"
-             |   }
-             |}
-             |""".stripMargin)
-      )
+  "Generate file endpoint for scenario with table source should generate" - {
+    "randomized records when configured with random mode" in {
+      given()
+        .when()
+        .request()
+        .basicAuthAdmin()
+        .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
+        .post(
+          s"$designerServiceUrl/api/testInfo/$randomDataGenScenarioName/generate/10"
+        )
+        .Then()
+        .statusCode(200)
+        .body(
+          matchAllNdJsonWithRegexValues(s"""
+               |{
+               |   "sourceId": "sourceId",
+               |   "record": {
+               |      "datetime": "${regexes.localDateRegex}",
+               |      "client_id": "[a-z\\\\d]{100}",
+               |      "amount": "${regexes.decimalRegex}",
+               |      "file.name": "[a-z\\\\d]{100}"
+               |   }
+               |}
+               |""".stripMargin)
+        )
+    }
+    "live records from data source with default configuration" in {
+      given()
+        .when()
+        .request()
+        .basicAuthAdmin()
+        .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
+        .post(
+          s"$designerServiceUrl/api/testInfo/$liveDataGenScenarioName/generate/1"
+        )
+        .Then()
+        .statusCode(200)
+        .body(
+          equalsJson(s"""
+               |{
+               |   "sourceId": "sourceId",
+               |   "record": {
+               |      "datetime": "2024-01-01 10:00:00",
+               |      "client_id": "client1",
+               |      "amount": 100.1,
+               |      "file.name": "transactions.ndjson"
+               |   }
+               |}
+               |""".stripMargin)
+        )
+    }
   }
 
   "Test on generated data endpoint should return results and counts for scenario with table source" in {
@@ -64,60 +96,64 @@ class BatchDataGenerationSpec
       .basicAuthAdmin()
       .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
       .post(
-        s"$designerServiceUrl/api/processManagement/generateAndTest/${simpleBatchTableScenario.name.value}/1"
+        s"$designerServiceUrl/api/processManagement/generateAndTest/$liveDataGenScenarioName/1"
       )
       .Then()
       .statusCode(200)
-      .body(
-        matchJsonWithRegexValues(s"""{
-             |  "results": {
-             |    "nodeResults": {
-             |      "sourceId": [
-             |        {
-             |          "id": "SumTransactions-sourceId-0-0",
-             |          "variables": {
-             |            "input": {
-             |              "pretty": {
-             |                 "datetime": "${regexes.localDateTimeRegex}",
-             |                 "client_id": "[a-z\\\\d]{100}",
-             |                 "amount": "${regexes.decimalRegex}"
-             |              }
-             |            }
-             |          }
-             |        }
-             |      ],
-             |      "end": [
-             |        {
-             |          "id": "SumTransactions-sourceId-0-0",
-             |          "variables": {
-             |            "input": {
-             |              "pretty": {
-             |                 "datetime": "${regexes.localDateTimeRegex}",
-             |                 "client_id": "[a-z\\\\d]{100}",
-             |                 "amount": "${regexes.decimalRegex}"
-             |              }
-             |            }
-             |          }
-             |        }
-             |      ]
-             |    },
-             |    "invocationResults": {},
-             |    "externalInvocationResults": {},
-             |    "exceptions": []
-             |  },
-             |  "counts": {
-             |      "sourceId": {
-             |        "all": 1,
-             |        "errors": 0,
-             |        "fragmentCounts": {}
-             |      },
-             |      "end": {
-             |        "all": 1,
-             |        "errors": 0,
-             |        "fragmentCounts": {}
-             |      }
-             |  }
-             |}""".stripMargin)
+      .equalsJsonBody(
+        s"""{
+           |  "results": {
+           |    "nodeResults": {
+           |      "sourceId": [
+           |        {
+           |          "id": "SumTransactions-LiveData-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-01-01T10:00:00",
+           |                "client_id": "client1",
+           |                "amount": 100.1,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ],
+           |      "end": [
+           |        {
+           |          "id": "SumTransactions-LiveData-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-01-01T10:00:00",
+           |                "client_id": "client1",
+           |                "amount": 100.1,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ]
+           |    },
+           |    "invocationResults": {},
+           |    "externalInvocationResults": {},
+           |    "exceptions": []
+           |  },
+           |  "counts": {
+           |      "sourceId": {
+           |        "all": 1,
+           |        "errors": 0,
+           |        "fragmentCounts": {}
+           |      },
+           |      "end": {
+           |        "all": 1,
+           |        "errors": 0,
+           |        "fragmentCounts": {}
+           |      }
+           |  }
+           |}""".stripMargin
       )
   }
 
@@ -133,68 +169,72 @@ class BatchDataGenerationSpec
       )
       .multiPart(
         "testData",
-        """{"sourceId":"sourceId","record":{"datetime":"2024-07-19 08:56:08.485","client_id":"aClientId","amount":123123.12}}""",
+        """{"sourceId":"sourceId","record":{"datetime":"2024-07-19 08:56:08.485","client_id":"aClientId","amount":123123.12,"file.name":"foo.ndjson"}}""",
         "text/ plain"
       )
       .post(
-        s"$designerServiceUrl/api/processManagement/test/${simpleBatchTableScenario.name.value}"
+        s"$designerServiceUrl/api/processManagement/test/$liveDataGenScenarioName"
       )
       .Then()
       .statusCode(200)
-      .body(
-        matchJsonWithRegexValues(s"""{
-             |  "results": {
-             |    "nodeResults": {
-             |      "sourceId": [
-             |        {
-             |          "id": "SumTransactions-sourceId-0-0",
-             |          "variables": {
-             |            "input": {
-             |              "pretty": {
-             |                 "datetime": "2024-07-19T08:56:08.485",
-             |                 "client_id": "aClientId",
-             |                 "amount": "123123.12"
-             |              }
-             |            }
-             |          }
-             |        }
-             |      ],
-             |      "end": [
-             |        {
-             |          "id": "SumTransactions-sourceId-0-0",
-             |          "variables": {
-             |            "input": {
-             |              "pretty": {
-             |                 "datetime": "2024-07-19T08:56:08.485",
-             |                 "client_id": "aClientId",
-             |                 "amount": "123123.12"
-             |              }
-             |            }
-             |          }
-             |        }
-             |      ]
-             |    },
-             |    "invocationResults": {},
-             |    "externalInvocationResults": {},
-             |    "exceptions": []
-             |  },
-             |  "counts": {
-             |      "sourceId": {
-             |        "all": 1,
-             |        "errors": 0,
-             |        "fragmentCounts": {}
-             |      },
-             |      "end": {
-             |        "all": 1,
-             |        "errors": 0,
-             |        "fragmentCounts": {}
-             |      }
-             |  }
-             |}""".stripMargin)
+      .equalsJsonBody(
+        s"""{
+           |  "results": {
+           |    "nodeResults": {
+           |      "sourceId": [
+           |        {
+           |          "id": "SumTransactions-LiveData-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                 "datetime": "2024-07-19T08:56:08.485",
+           |                 "client_id": "aClientId",
+           |                 "amount": 123123.12,
+           |                 "amountDoubled": 246246.24,
+           |                 "file.name": "foo.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ],
+           |      "end": [
+           |        {
+           |          "id": "SumTransactions-LiveData-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                 "datetime": "2024-07-19T08:56:08.485",
+           |                 "client_id": "aClientId",
+           |                 "amount": 123123.12,
+           |                 "amountDoubled": 246246.24,
+           |                 "file.name": "foo.ndjson"
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ]
+           |    },
+           |    "invocationResults": {},
+           |    "externalInvocationResults": {},
+           |    "exceptions": []
+           |  },
+           |  "counts": {
+           |      "sourceId": {
+           |        "all": 1,
+           |        "errors": 0,
+           |        "fragmentCounts": {}
+           |      },
+           |      "end": {
+           |        "all": 1,
+           |        "errors": 0,
+           |        "fragmentCounts": {}
+           |      }
+           |  }
+           |}""".stripMargin
       )
   }
 
-  private def createBatchScenario(scenarioName: String): Unit = {
+  private def createEmptyBatchScenario(scenarioName: String, category: String): Unit = {
     given()
       .when()
       .request()
@@ -202,7 +242,7 @@ class BatchDataGenerationSpec
       .jsonBody(s"""
                    |{
                    |    "name" : "$scenarioName",
-                   |    "category" : "Default",
+                   |    "category" : "$category",
                    |    "isFragment" : false,
                    |    "processingMode" : "Bounded-Stream"
                    |}

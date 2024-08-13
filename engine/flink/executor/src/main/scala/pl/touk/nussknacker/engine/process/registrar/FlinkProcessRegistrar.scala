@@ -292,11 +292,12 @@ class FlinkProcessRegistrar(
       // TODO: maybe this logic should be moved to compiler instead?
       val withSinkAdded = resultCollector match {
         case testResultCollector: TestServiceInvocationCollector =>
-          val typ            = part.node.data.ref.typ
-          val collectingSink = testResultCollector.createSinkInvocationCollector(part.id, typ)
+          val typ                 = part.node.data.ref.typ
+          val collectingSink      = testResultCollector.createSinkInvocationCollector(part.id, typ)
+          val prepareTestValueFun = sink.prepareTestValueFunction
           withValuePrepared
             .map(
-              (ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue),
+              (ds: ValueWithContext[sink.Value]) => ds.map(prepareTestValueFun),
               customNodeContext.valueWithContextInfo.forUnknown
             )
             // FIXME: ...

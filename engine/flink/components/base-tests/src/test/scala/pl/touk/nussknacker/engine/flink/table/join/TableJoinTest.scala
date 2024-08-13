@@ -3,22 +3,24 @@ package pl.touk.nussknacker.engine.flink.table.join
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.connector.source.Boundedness
-import org.scalatest.{Inside, LoneElement}
+import org.apache.flink.types.Row
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Inside, LoneElement}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct
+import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-
-import scala.beans.BeanProperty
 
 class TableJoinTest
     extends AnyFunSuite
@@ -38,6 +40,7 @@ class TableJoinTest
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(additionalComponents)
     .build()
 
@@ -58,7 +61,7 @@ class TableJoinTest
   private val orderReferringToDelayedProduct = OrderOrProduct.createOrder(30, delayedProduct.id)
 
   test("should inner join stream") {
-    val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
+    val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
       prepareJoiningScenario(JoinType.INNER),
       List(
         someProduct,
@@ -68,8 +71,8 @@ class TableJoinTest
         orderReferringToDelayedProduct,
         delayedProduct
       ),
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      OrderOrProduct.`type`,
+      Boundedness.BOUNDED
     )
 
     enrichedOrders.validValue.errors shouldBe empty
@@ -92,7 +95,7 @@ class TableJoinTest
   }
 
   test("should outer join stream") {
-    val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
+    val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
       prepareJoiningScenario(JoinType.OUTER),
       List(
         someProduct,
@@ -102,8 +105,8 @@ class TableJoinTest
         orderReferringToDelayedProduct,
         delayedProduct
       ),
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      OrderOrProduct.`type`,
+      Boundedness.BOUNDED
     )
 
     enrichedOrders.validValue.errors shouldBe empty
@@ -133,7 +136,7 @@ class TableJoinTest
   }
 
   test("should allow to use different types that can be compared in key expressions") {
-    val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
+    val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
       prepareJoiningScenario(
         JoinType.INNER,
         orderKeyExpression = "#input.productId".spel,
@@ -143,8 +146,8 @@ class TableJoinTest
         someProduct,
         orderReferringToExistingProduct
       ),
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      OrderOrProduct.`type`,
+      Boundedness.BOUNDED
     )
 
     enrichedOrders.validValue.errors shouldBe empty
@@ -160,15 +163,15 @@ class TableJoinTest
   }
 
   test("shouldn't allow to use types that can't be compared in key expressions") {
-    val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
+    val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
       prepareJoiningScenario(
         JoinType.INNER,
         orderKeyExpression = "#input.productId".spel,
         productKeyExpression = "#input.id.toString".spel
       ),
       List(orderReferringToNonExistingProduct),
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      OrderOrProduct.`type`,
+      Boundedness.BOUNDED
     )
 
     enrichedOrders.invalidValue.toList should matchPattern {
@@ -231,29 +234,45 @@ class TableJoinTest
 
 object TableJoinTest {
 
-  // TODO: split into separate classes and pass two streams to separate source nodes
-  // productId is dedicated only for order events
-  // name is dedicated only for order events
-  // It have to by POJO in order by acceptable by table api operators
-  class OrderOrProduct(
-      @BeanProperty var `type`: String,
-      @BeanProperty var id: Int,
-      @BeanProperty var name: String,
-      @BeanProperty var productId: Int
-  ) {
-
-    def this() = this(null, -1, null, -1)
-
-  }
+  type OrderOrProduct = Row
 
   object OrderOrProduct {
 
-    def createOrder(id: Int, productId: Int): OrderOrProduct = {
-      new OrderOrProduct("order", id, null, productId)
+    val `type`: TypingResult = Typed.record(
+      Map(
+        // TODO: split into separate types and pass two streams to separate source nodes
+        // productId is dedicated only for order events
+        // name is dedicated only for product events
+        "type"      -> Typed[String],
+        "id"        -> Typed[Int],
+        "name"      -> Typed[String],
+        "productId" -> Typed[Int],
+      ),
+      Typed.typedClass[Row]
+    )
+
+    def createOrder(id: Int, productId: Int): Row = {
+      val order = Row.withNames()
+      order.setField("type", "order")
+      order.setField("id", id)
+      order.setField("productId", productId)
+      order
     }
 
-    def createProduct(id: Int, name: String): OrderOrProduct = {
-      new OrderOrProduct("product", id, name, -1)
+    def createProduct(id: Int, name: String): Row = {
+      val product = Row.withNames()
+      product.setField("type", "product")
+      product.setField("id", id)
+      product.setField("name", name)
+      product
+    }
+
+    implicit class RowExtension(row: Row) {
+
+      def id: Int = row.getFieldAs[Int]("id")
+
+      def name: String = row.getFieldAs[String]("name")
+
     }
 
   }

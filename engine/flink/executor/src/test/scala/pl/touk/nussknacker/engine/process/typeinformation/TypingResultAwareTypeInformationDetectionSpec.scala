@@ -43,7 +43,7 @@ class TypingResultAwareTypeInformationDetectionSpec
 
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")
-    val typingResult = TypedObjectTypingResult(
+    val typingResult = Typed.record(
       Map(
         "intF"         -> Typed[Int],
         "strF"         -> Typed[String],
@@ -73,7 +73,7 @@ class TypingResultAwareTypeInformationDetectionSpec
   test("map serialization fallbacks to Kryo when available") {
 
     val map          = Map("obj" -> SomeTestClass("name"))
-    val typingResult = TypedObjectTypingResult(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
+    val typingResult = Typed.record(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
     val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
 
@@ -100,7 +100,7 @@ class TypingResultAwareTypeInformationDetectionSpec
       Map(
         "one"            -> Typed[Int],
         "two"            -> Typed[String],
-        "three"          -> TypedObjectTypingResult(Map("key" -> Typed[String]), Typed.typedClass[Map[String, Any]]),
+        "three"          -> Typed.record(Map("key" -> Typed[String]), Typed.typedClass[Map[String, Any]]),
         "arrayOfStrings" -> Typed.fromDetailedType[Array[String]],
         "arrayOfInts"    -> Typed.fromDetailedType[Array[Int]],
       )
@@ -145,13 +145,13 @@ class TypingResultAwareTypeInformationDetectionSpec
 
   test("Test serialization compatibility") {
     val typingResult =
-      TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[String]), Typed.typedClass[Map[String, Any]])
-    val compatibleTypingResult = TypedObjectTypingResult(
+      Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[String]), Typed.typedClass[Map[String, Any]])
+    val compatibleTypingResult = Typed.record(
       Map("intF" -> Typed[Int], "strF" -> Typed[String], "longF" -> Typed[Long]),
       Typed.typedClass[Map[String, Any]]
     )
     val incompatibleTypingResult =
-      TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
+      Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
 
     val oldSerializer = informationDetection.forType(typingResult).createSerializer(executionConfigWithoutKryo)
 
@@ -169,7 +169,7 @@ class TypingResultAwareTypeInformationDetectionSpec
   test("serialization compatibility with reconfigured serializer") {
 
     val map          = Map("obj" -> SomeTestClass("name"))
-    val typingResult = TypedObjectTypingResult(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
+    val typingResult = Typed.record(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
     val oldSerializer =
       informationDetection.forType[Map[String, Any]](typingResult).createSerializer(executionConfigWithKryo)
@@ -190,12 +190,12 @@ class TypingResultAwareTypeInformationDetectionSpec
 
   test("serialization compatibility with custom flag config") {
     val typingResult =
-      TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[String]), Typed.typedClass[CustomTypedObject])
-    val addField = TypedObjectTypingResult(
+      Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[String]), Typed.typedClass[CustomTypedObject])
+    val addField = Typed.record(
       Map("intF" -> Typed[Int], "strF" -> Typed[String], "longF" -> Typed[Long]),
       Typed.typedClass[CustomTypedObject]
     )
-    val removeField = TypedObjectTypingResult(Map("intF" -> Typed[Int]), Typed.typedClass[CustomTypedObject])
+    val removeField = Typed.record(Map("intF" -> Typed[Int]), Typed.typedClass[CustomTypedObject])
 
     serializeRoundTrip(
       CustomTypedObject(Map[String, AnyRef]("intF" -> (5: java.lang.Integer), "strF" -> "").asJava),

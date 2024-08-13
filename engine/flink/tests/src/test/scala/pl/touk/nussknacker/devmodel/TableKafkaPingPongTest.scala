@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
@@ -117,7 +116,6 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     s"""
        |{
        |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
-       |  enableFlinkBatchExecutionMode: false
        |}
        |""".stripMargin
 
@@ -184,8 +182,9 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .emptySink(
         "end",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest2'".spel,
-        TableSinkFactory.valueParameterName.value      -> "#input".spel
+        "Table"      -> s"'$sqlOutputTableNameTest2'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
       )
 
     run(process) {
@@ -215,8 +214,9 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .emptySink(
         "end",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest3'".spel,
-        TableSinkFactory.valueParameterName.value      -> "{someInt: 2, someString: 'BBB'}".spel
+        "Table"      -> s"'$sqlOutputTableNameTest3'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "{someInt: 2, someString: 'BBB'}".spel
       )
 
     run(process) {

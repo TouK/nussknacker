@@ -37,6 +37,7 @@ class WithRunNowPeriodicCustomActionsProviderFactory extends PeriodicCustomActio
         .getOrElse(CustomActionResult(s"Failed to schedule $processName to run as instant batch"))
     }
 
+    // TODO: Why we don't allow running not scheduled scenario? Maybe we can try to schedule it?
     private def instantSchedule(processName: ProcessName): OptionT[Future, Unit] = for {
       // schedule for immediate run
       processDeployment <- OptionT(
@@ -64,7 +65,7 @@ case object InstantBatchCustomAction {
     CustomActionDefinition(
       actionName = name,
       allowedStateStatusNames = List("SCHEDULED"),
-      icon = Some(new URI("/assets/customActions/batch-instant.svg")),
+      icon = Some(new URI("/assets/custom-actions/batch-instant.svg")),
       parameters = Nil
     )
   }

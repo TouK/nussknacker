@@ -10,7 +10,7 @@ import { StyledRangesWrapper } from "./CountsStyled";
 
 interface RangesProps {
     label: string;
-    onChange: (value: [Moment, Moment]) => void;
+    onChange: (value: [Moment, Moment], refresh?: number | null) => void;
 }
 
 export function CountsRanges({ label, onChange }: RangesProps): JSX.Element {

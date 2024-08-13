@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, NodeDependencyValue}
@@ -22,9 +21,7 @@ object DynamicParametersSource extends SourceFactory with DynamicParametersMixin
     val paramsTyping = params.nameToValueMap.filterNot(_._1 == choiceParamName).map { case (paramName, value) =>
       paramName.value -> value
     }
-    new CollectionSource[Any](List(TypedMap(paramsTyping)), None, Unknown)(
-      TypeInformation.of(classOf[Any])
-    )
+    new CollectionSource[Any](List(TypedMap(paramsTyping)), None, Unknown)
   }
 
   override protected def result(
@@ -33,7 +30,7 @@ object DynamicParametersSource extends SourceFactory with DynamicParametersMixin
   )(implicit nodeId: NodeId): FinalResults = {
     val paramsTyping = otherParams.map { case (paramName, definedParam) =>
       paramName.value -> definedParam.returnType
-    }.toMap
+    }
     FinalResults.forValidation(validationContext)(
       _.withVariable("input", Typed.record(paramsTyping), paramName = None)
     )

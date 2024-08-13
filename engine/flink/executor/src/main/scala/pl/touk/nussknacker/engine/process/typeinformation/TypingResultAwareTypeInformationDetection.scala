@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
+import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, RowTypeInfo}
+import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -19,8 +20,6 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
 }
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-
-import scala.reflect.ClassTag
 
 object TypingResultAwareTypeInformationDetection {
 
@@ -49,6 +48,10 @@ object TypingResultAwareTypeInformationDetection {
 
   To use it for serialization between operators use TypeInformationDetection service loading.
   To use it for state serialization one can use it directly in operators/process functions (compatibility is *NOT* guaranteed ATM).
+
+  We should try to produce types supported in TypeInfoDataTypeConverter. Otherwise, we will get problems like:
+  Column types of query result and sink for '...' do not match.
+  when we use non handled type of variable in table api component.
  */
 class TypingResultAwareTypeInformationDetection(customisation: TypingResultAwareTypeInformationCustomisation)
     extends TypeInformationDetection {
@@ -88,7 +91,7 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val variables = forType(
-      TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
+      Typed.record(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
     )
       .asInstanceOf[TypeInformation[Map[String, Any]]]
     val parentCtx = validationContext.parent.map(forContext)
@@ -115,6 +118,10 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
         TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
         TypedMapTypeInformation(a.fields.mapValuesNow(forType))
+      case a: TypedObjectTypingResult if a.objType.klass == classOf[Row] =>
+        val (fieldNames, typeInfos) = a.fields.unzip
+        // Warning: RowTypeInfo is fields order sensitive
+        new RowTypeInfo(typeInfos.map(forType).toArray[TypeInformation[_]], fieldNames.toArray)
       // TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
@@ -124,8 +131,10 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
       case a: SingleTypingResult if a.objType.params.isEmpty =>
         TypeInformation.of(a.objType.klass)
       // TODO: how can we handle union - at least of some types?
+      case TypedObjectWithValue(tc: TypedClass, _) =>
+        forType(tc)
       case _ =>
-        fallback[Any]
+        TypeInformation.of(classOf[Any])
     }).asInstanceOf[TypeInformation[T]]
   }
 
@@ -142,11 +151,5 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
 
   private lazy val additionalTypeInfoDeterminer: PartialFunction[TypingResult, TypeInformation[_]] =
     customisation.customise(this)
-
-  private def fallback[T: ClassTag]: TypeInformation[T] = fallback(
-    implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
-  )
-
-  private def fallback[T](kl: Class[T]): TypeInformation[T] = TypeInformation.of(kl)
 
 }

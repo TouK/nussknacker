@@ -484,7 +484,7 @@ lazy val distribution: Project = sbt
       List(
         (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
         (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
-        (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar"
+        (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar",
       )
     },
     componentArtifacts                       := {
@@ -508,8 +508,8 @@ lazy val distribution: Project = sbt
     },
     devArtifacts                             := {
       modelArtifacts.value ++ List(
-        (flinkDevModel / assembly).value -> "model/devModel.jar",
-        (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar",
+        (flinkDevModel / assembly).value                  -> "model/devModel.jar",
+        (flinkPeriodicDeploymentManager / assembly).value -> "managers/nussknacker-flink-periodic-manager.jar",
       )
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
@@ -637,6 +637,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
 lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic"))
   .settings(commonSettings)
   .settings(assemblyNoScala("nussknacker-flink-periodic-manager.jar"): _*)
+  .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
@@ -711,18 +712,6 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
     extensionsApi,
     flinkComponentsUtils % Provided
   )
-
-lazy val devPeriodicDM = (project in flink("management/dev-periodic-dm"))
-  .settings(commonSettings)
-  .settings(assemblyNoScala("devPeriodicDm.jar"): _*)
-  .settings(
-    name := "nussknacker-dev-periodic-dm",
-    libraryDependencies ++= {
-      Seq(
-      )
-    }
-  )
-  .dependsOn(flinkPeriodicDeploymentManager, deploymentManagerApi % Provided)
 
 lazy val flinkTests = (project in flink("tests"))
   .settings(commonSettings)
@@ -1826,6 +1815,7 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     commonUtils          % Provided,
     componentsUtils      % Provided,
     flinkComponentsUtils % Provided,
+    jsonUtils            % Provided,
   )
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
@@ -2011,7 +2001,7 @@ lazy val designer = (project in file("designer/server"))
     liteEmbeddedDeploymentManager     % Provided,
     liteK8sDeploymentManager          % Provided,
     developmentTestsDeploymentManager % Provided,
-    devPeriodicDM                     % Provided,
+    flinkPeriodicDeploymentManager    % Provided,
     schemedKafkaComponentsUtils       % Provided,
   )
 
@@ -2105,7 +2095,6 @@ lazy val modules = List[ProjectReference](
   flinkDevModel,
   flinkDevModelJava,
   flinkTableApiComponents,
-  devPeriodicDM,
   defaultModel,
   openapiComponents,
   scenarioCompiler,

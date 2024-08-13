@@ -14,8 +14,7 @@ object TypingUtils {
   }
 
   def typeMapDefinition(definition: Map[String, _]): TypingResult = {
-    // we force use of Map and not some implicit variants (MapLike) to avoid serialization problems...
-    Typed.record(Map(definition.mapValuesNow(typedMapDefinitionFromParameters).toList: _*))
+    Typed.record(definition.mapValuesNow(typedMapDefinitionFromParameters))
   }
 
   private def typedMapDefinitionFromParameters(definition: Any): TypingResult = definition match {

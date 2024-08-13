@@ -795,6 +795,34 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List.empty) shouldBe "8"
   }
 
+  test("assure names in fragment don't influence outside var names") {
+
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("source", "transaction-source")
+      .fragmentOneOut("sub", "fragment1", "outputDefinitionName", "fragmentOut", "param" -> "#input.accountId".spel)
+      .buildSimpleVariable("result-sink", resultVariable, "'result'".spel)
+      .emptySink("end-sink", "dummySink")
+
+    val fragment = CanonicalProcess(
+      MetaData("fragment1", FragmentSpecificData()),
+      List(
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
+        FlatNode(Variable("myVar", "fragmentOut", "'fragmentOut'".spel)),
+        FlatNode(FragmentOutputDefinition("out1", "outputDefinitionName", List(Field("paramX", "'paramX'".spel))))
+      ),
+      List.empty
+    )
+
+    val resolved = FragmentResolver(List(fragment)).resolve(process)
+
+    resolved shouldBe Symbol("valid")
+
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
+  }
+
   test("recognize exception thrown from service as direct exception") {
 
     val process = ScenarioBuilder
