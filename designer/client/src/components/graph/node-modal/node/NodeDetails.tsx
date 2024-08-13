@@ -1,5 +1,6 @@
 import { css } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { Edit } from "@mui/icons-material";
+import { DefaultComponents, WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,6 +19,7 @@ import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
+import { DescriptionOnlyContent } from "../DescriptionOnlyContent";
 import { applyIdFromFakeName } from "../IdField";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
@@ -60,37 +62,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     const { t } = useTranslation();
 
-    const applyButtonData: WindowButtonProps | null = useMemo(
-        () =>
-            !readOnly
-                ? {
-                      title: t("dialog.button.apply", "apply"),
-                      action: performNodeEdit,
-                      disabled: !editedNode.id?.length,
-                  }
-                : null,
-        [editedNode.id?.length, performNodeEdit, readOnly, t],
-    );
-
-    const openFragmentButtonData: WindowButtonProps | null = useMemo(
-        () =>
-            NodeUtils.nodeIsFragment(editedNode)
-                ? {
-                      title: t("dialog.button.fragment.edit", "edit fragment"),
-                      action: () => {
-                          window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)));
-                      },
-                      classname: "tertiary-button",
-                  }
-                : null,
-        [editedNode, t],
-    );
-
-    const cancelButtonData = useMemo(
-        () => ({ title: t("dialog.button.cancel", "cancel"), action: props.close, classname: LoadingButtonTypes.secondaryButton }),
-        [props, t],
-    );
-
     useKey("Escape", (e) => {
         e.preventDefault();
         if (!isInputTarget(e.composedPath().shift())) {
@@ -98,17 +69,95 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
         }
     });
 
+    const descriptionOnly = props.data.kind === WindowKind.viewDescription;
+    const [previewMode, setPreviewMode] = useState(true);
+    const touched = useMemo(() => node !== editedNode, [editedNode, node]);
+
+    const applyButtonData = useMemo<WindowButtonProps | null>(() => {
+        if (readOnly || (descriptionOnly && previewMode && !touched)) return null;
+        return {
+            title: t("dialog.button.apply", "apply"),
+            action: performNodeEdit,
+            disabled: !editedNode.id?.length,
+        };
+    }, [descriptionOnly, editedNode.id?.length, performNodeEdit, previewMode, readOnly, t, touched]);
+
+    const openFragmentButtonData = useMemo<WindowButtonProps | null>(() => {
+        if (!NodeUtils.nodeIsFragment(editedNode) || descriptionOnly) return null;
+        return {
+            title: t("dialog.button.fragment.edit", "edit fragment"),
+            action: () => {
+                window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)));
+            },
+            classname: "tertiary-button",
+        };
+    }, [descriptionOnly, editedNode, t]);
+
+    const cancelButtonData = useMemo<WindowButtonProps | null>(() => {
+        if (descriptionOnly && previewMode && !touched) return null;
+        return {
+            title: t("dialog.button.cancel", "cancel"),
+            action: descriptionOnly
+                ? () => {
+                      setEditedNode(node);
+                      setPreviewMode(true);
+                  }
+                : props.close,
+            classname: LoadingButtonTypes.secondaryButton,
+        };
+    }, [descriptionOnly, node, previewMode, props.close, t, touched]);
+
+    const previewButtonData = useMemo<WindowButtonProps | null>(() => {
+        if (!descriptionOnly || !touched) return null;
+        return {
+            title: previewMode ? "edit" : "preview",
+            action: () => setPreviewMode((v) => !v),
+            className: LoadingButtonTypes.tertiaryButton,
+        };
+    }, [descriptionOnly, previewMode, touched]);
+
     const buttons: WindowButtonProps[] = useMemo(
-        () => [openFragmentButtonData, cancelButtonData, applyButtonData].filter(Boolean),
-        [applyButtonData, cancelButtonData, openFragmentButtonData],
+        () => [openFragmentButtonData, previewButtonData, cancelButtonData, applyButtonData].filter(Boolean),
+        [applyButtonData, cancelButtonData, openFragmentButtonData, previewButtonData],
     );
 
     useEffect(() => {
-        mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
-        return () => {
-            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-        };
-    }, [node.id]);
+        if (!descriptionOnly) {
+            mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
+            return () => {
+                mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+            };
+        }
+    }, [descriptionOnly, node.id]);
+
+    const componentsOverride = useMemo<Partial<typeof DefaultComponents>>(() => {
+        if (!descriptionOnly) return {};
+
+        const HeaderTitle = () => <div />;
+
+        if (touched || !previewMode) {
+            return { HeaderTitle };
+        }
+
+        const Header = (props) => <DefaultComponents.Header {...props} className={css({ fontSize: ".75em" })} />;
+        const HeaderButtonZoom = (props) => (
+            <>
+                <DefaultComponents.HeaderButton action={() => setPreviewMode(false)} name="edit">
+                    <Edit
+                        sx={{
+                            fontSize: "inherit",
+                            width: "unset",
+                            height: "unset",
+                            padding: ".25em",
+                        }}
+                    />
+                </DefaultComponents.HeaderButton>
+                <DefaultComponents.HeaderButtonZoom {...props} />
+            </>
+        );
+
+        return { Header, HeaderTitle, HeaderButtonZoom };
+    }, [touched, descriptionOnly, previewMode]);
 
     //no process? no nodes? no window contents! no errors for whole tree!
     if (!scenarioFromGlobalStore?.scenarioGraph.nodes) {
@@ -125,9 +174,14 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
             classnames={{
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
+            components={componentsOverride}
         >
             <ErrorBoundary>
-                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+                {descriptionOnly ? (
+                    <DescriptionOnlyContent node={editedNode} onChange={!readOnly && onChange} preview={previewMode} />
+                ) : (
+                    <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+                )}
             </ErrorBoundary>
         </WindowContent>
     );

@@ -4,7 +4,7 @@ import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { LoadingButton } from "./LoadingButton";
 import ErrorBoundary from "../components/common/ErrorBoundary";
 import { useTheme } from "@mui/material";
-import { StyledHeader } from "../components/graph/node-modal/node/StyledHeader";
+import { StyledContent, StyledHeader } from "../components/graph/node-modal/node/StyledHeader";
 import { IconModalHeader } from "../components/graph/node-modal/nodeDetails/NodeDetailsModalHeader";
 
 type WindowContentProps = DefaultContentProps &
@@ -29,6 +29,7 @@ export function WindowContent({ children, icon, subheader, ...props }: WindowCon
     const components = useMemo<DefaultContentProps["components"]>(
         () => ({
             Header: StyledHeader,
+            Content: StyledContent,
             HeaderTitle: (headerProps) => <IconModalHeader {...headerProps} startIcon={icon} subheader={subheader} />,
             FooterButton: LoadingButton,
             ...props.components,

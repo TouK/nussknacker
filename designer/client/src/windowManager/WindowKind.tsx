@@ -16,4 +16,5 @@ export enum WindowKind {
     genericAction,
     survey,
     scenarioDetails,
+    viewDescription,
 }

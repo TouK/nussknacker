@@ -1,8 +1,8 @@
 import { styled } from "@mui/material";
+import { getLuminance } from "@mui/system/colorManipulator";
 import { DefaultComponents as Window } from "@touk/window-manager";
 
 import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
-import { getLuminance } from "@mui/system/colorManipulator";
 
 export const StyledHeader = styled(Window.Header)(({ isMaximized, isStatic, theme }) => {
     const draggable = !isMaximized && !isStatic;
@@ -14,6 +14,15 @@ export const StyledHeader = styled(Window.Header)(({ isMaximized, isStatic, them
         cursor: draggable ? "grab" : "inherit",
         ":active": {
             cursor: draggable ? "grabbing" : "inherit",
+        },
+    };
+});
+
+export const StyledContent = styled(Window.Content)(({ theme }) => {
+    return {
+        "body :has(>&)": {
+            scrollPadding: theme.spacing(3.5),
+            scrollPaddingTop: theme.spacing(6),
         },
     };
 });
