@@ -6,11 +6,13 @@ import java.io.BufferedReader
 import java.sql.Clob
 import java.time.{Instant, LocalDate, LocalTime}
 import java.{sql, util}
+import scala.annotation.tailrec
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Using
 
-final case class ConvertedToSupportTypeTypingResult(typing: TypingResult, typeRemappingFunction: Any => Any)
+final case class ConvertedToSupportedTypeTypingResult(typing: TypingResult, typeRemappingFunction: Any => Any)
 
-object ConvertedToSupportTypeTypingResult {
+object ConvertedToSupportedTypeTypingResult {
 
   private lazy val sqlTypingMap = Map(
     classOf[sql.Array].getName     -> Typed.typedClass(classOf[util.List[Any]]),
@@ -20,8 +22,8 @@ object ConvertedToSupportTypeTypingResult {
     classOf[sql.Clob].getName      -> Typed.typedClass(classOf[String]),
   )
 
-  def apply(className: String): ConvertedToSupportTypeTypingResult =
-    ConvertedToSupportTypeTypingResult(
+  def apply(className: String): ConvertedToSupportedTypeTypingResult =
+    ConvertedToSupportedTypeTypingResult(
       typing = sqlTypingMap.getOrElse(className, Typed.typedClass(Class.forName(className))),
       typeRemappingFunction = typeRemappingFunction
     )
@@ -45,12 +47,17 @@ object ConvertedToSupportTypeTypingResult {
   }
 
   private def readClob(v: Clob): String = {
-    Using.resource(new BufferedReader(v.getCharacterStream)) { br =>
-      LazyList
-        .continually(br.readLine())
-        .takeWhile(_ != null)
-        .mkString("\n")
-    }
+    Using.resource(new BufferedReader(v.getCharacterStream))(br => readFromStream(br))
   }
 
+  @tailrec private def readFromStream(br: BufferedReader,
+                                      acc: ArrayBuffer[String] = new ArrayBuffer[String]()): String = {
+    val string = br.readLine()
+    if (string == null) {
+      acc.mkString(System.lineSeparator)
+    } else {
+      acc.append(string)
+      readFromStream(br, acc)
+    }
+  }
 }

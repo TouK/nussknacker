@@ -54,6 +54,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6567](https://github.com/TouK/nussknacker/pull/6567) Removed ability to set Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode) 
   in sources: `TableSource`, `CollectionSource` and in `FlinkTestScenarioRunner.runWithData` method. Now you can
   configure it under `modelConfig.executionMode` or for test purposes through `FlinkTestScenarioRunnerBuilder.withExecutionMode` method.
+* [#6586](https://github.com/TouK/nussknacker/pull/6586) For now on, the SQL enricher automatically converts types as shown below:
+    * java.sql.Array -> java.util.List
+    * java.sql.Time -> java.time.LocalTime
+    * java.sql.Date -> java.time.LocalDate
+    * java.sql.Timestamp -> java.time.Instant
+    * java.sql.Clob -> java.lang.String
 
 ### REST API changes
 

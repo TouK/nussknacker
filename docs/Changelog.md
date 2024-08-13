@@ -49,6 +49,12 @@
 * [#6567](https://github.com/TouK/nussknacker/pull/6567) Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode)
   can now be set for Flink-based scenario types under `modelConfig.executionMode`.
 * [#6570](https://github.com/TouK/nussknacker/pull/6570) Generic parameters of collection types are better typed now: e.g. `List[Integer]` can be passed to `List[Number]` but not the other way
+* [#6586](https://github.com/TouK/nussknacker/pull/6586) For now on, the SQL enricher automatically converts types as shown below:
+  * java.sql.Array -> java.util.List
+  * java.sql.Time -> java.time.LocalTime 
+  * java.sql.Date -> java.time.LocalDate
+  * java.sql.Timestamp -> java.time.Instant
+  * java.sql.Clob -> java.lang.String
 
 1.16.3 (8 August 2024)
 -------------------------

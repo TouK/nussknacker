@@ -9,20 +9,20 @@ object ColumnDefinition {
   def apply(columnNo: Int, resultMeta: ResultSetMetaData): ColumnDefinition =
     ColumnDefinition(
       name = resultMeta.getColumnName(columnNo),
-      convertedToSupportTypeTypingResult = ConvertedToSupportTypeTypingResult(resultMeta.getColumnClassName(columnNo))
+      convertedToSupportTypeTypingResult = ConvertedToSupportedTypeTypingResult(resultMeta.getColumnClassName(columnNo))
     )
 
   def apply(typing: (String, String)): ColumnDefinition =
     ColumnDefinition(
       name = typing._1,
-      convertedToSupportTypeTypingResult = ConvertedToSupportTypeTypingResult(typing._2)
+      convertedToSupportTypeTypingResult = ConvertedToSupportedTypeTypingResult(typing._2)
     )
 
 }
 
 final case class ColumnDefinition(
     name: String,
-    convertedToSupportTypeTypingResult: ConvertedToSupportTypeTypingResult
+    convertedToSupportTypeTypingResult: ConvertedToSupportedTypeTypingResult
 ) {
   val typing: TypingResult = convertedToSupportTypeTypingResult.typing
 
