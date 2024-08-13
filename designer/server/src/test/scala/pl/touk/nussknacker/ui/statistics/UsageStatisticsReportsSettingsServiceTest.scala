@@ -96,7 +96,7 @@ class UsageStatisticsReportsSettingsServiceTest
 
   //    TODO: switch once logstash is ready
   //  private val cfg = StatisticUrlConfig()
-  private val cfg = StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(None))
+  private val cfg = StatisticUrlConfig(maybePublicEncryptionKey = None)
 
   test("should determine query params with version and source") {
     val urls = new UsageStatisticsReportsSettingsService(

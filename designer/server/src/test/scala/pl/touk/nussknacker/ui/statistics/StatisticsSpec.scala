@@ -2,12 +2,12 @@ package pl.touk.nussknacker.ui.statistics
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.test.utils.{QueryParamsHelper, StatisticEncryptionSupport}
+import pl.touk.nussknacker.test.utils.StatisticEncryptionSupport
 
 import java.net.URL
 
 class StatisticsSpec extends AnyFunSuite with Matchers {
-  private val cfg = StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(None))
+  private val cfg = StatisticUrlConfig(maybePublicEncryptionKey = None)
 
   test("should split parameters into 2 URLS") {
     val twoThousandCharsParam = (1 to 2000).map(_ => "x").mkString
@@ -56,8 +56,9 @@ class StatisticsSpec extends AnyFunSuite with Matchers {
   test("should return encrypted URL if not set otherwise") {
 //    TODO: switch once logstash is ready
 //    val cfg = StatisticUrlConfig()
-    val cfg =
-      StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(Some(StatisticEncryptionSupport.publicKeyForTest)))
+    val cfg = StatisticUrlConfig(
+      maybePublicEncryptionKey = Some(PublicEncryptionKey(StatisticEncryptionSupport.publicKeyForTest))
+    )
     val sut = new Statistics.NonEmpty(
       new Fingerprint("t"),
       new RequestId("req_id"),
@@ -72,20 +73,21 @@ class StatisticsSpec extends AnyFunSuite with Matchers {
       } shouldBe Some(Map("f" -> "a+b", "v" -> "1.6.5-a%26b%3Dc", "fingerprint" -> "t", "req_id" -> "req_id"))
   }
 
-  test("should return query params if public key is wrong") {
-    val cfg = StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(Some("abc")))
-    val sut = new Statistics.NonEmpty(
-      new Fingerprint("t"),
-      new RequestId("req_id"),
-      Map("f" -> "a b", "v" -> "1.6.5-a&b=c")
-    )
-    sut
-      .prepareURLs(cfg)
-      .getOrElse(List.empty)
-      .headOption
-      .map { url =>
-        QueryParamsHelper.extractFromURLString(url.toString)
-      } shouldBe Some(Map("f" -> "a+b", "v" -> "1.6.5-a%26b%3Dc", "fingerprint" -> "t", "req_id" -> "req_id"))
-  }
+  // jak klucz jest niepoprawny to powinniśmy się wywalić, bo w docelowym rozwiązaniu nie przewidujemy, że w ogóle będziemy wysyłać niezaszyfrowanych parametrów
+//  test("should return query params if public key is wrong") {
+//    val cfg = StatisticUrlConfig(maybePublicEncryptionKey = PublicEncryptionKey(Some("abc")))
+//    val sut = new Statistics.NonEmpty(
+//      new Fingerprint("t"),
+//      new RequestId("req_id"),
+//      Map("f" -> "a b", "v" -> "1.6.5-a&b=c")
+//    )
+//    sut
+//      .prepareURLs(cfg)
+//      .getOrElse(List.empty)
+//      .headOption
+//      .map { url =>
+//        QueryParamsHelper.extractFromURLString(url.toString)
+//      } shouldBe Some(Map("f" -> "a+b", "v" -> "1.6.5-a%26b%3Dc", "fingerprint" -> "t", "req_id" -> "req_id"))
+//  }
 
 }
