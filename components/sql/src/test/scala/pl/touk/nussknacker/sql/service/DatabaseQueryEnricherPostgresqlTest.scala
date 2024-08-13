@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.utils.BasePostgresqlQueryEnricherTest
 
-import java.time.{Instant, LocalDate, LocalTime}
+import java.time.{Instant, LocalDate, LocalTime, ZonedDateTime}
 
 class DatabaseQueryEnricherPostgresqlTest
     extends BasePostgresqlQueryEnricherTest
@@ -88,12 +88,12 @@ class DatabaseQueryEnricherPostgresqlTest
       TypedMap(
         Map(
           "t_boolean"     -> true,
-          "t_timestamp"   -> Instant.parse("2024-08-12T08:00:00Z"),
+          "t_timestamp"   -> ZonedDateTime.parse("2024-08-12T10:00:00+02:00").toInstant,
           "t_date"        -> LocalDate.parse("2024-08-12"),
           "t_array"       -> List(1, 2, 3, 4, 5).asJava,
           "t_text"        -> "long text",
           "t_time"        -> LocalTime.parse("08:00"),
-          "t_timestamptz" -> Instant.parse("2024-08-12T08:00:00Z")
+          "t_timestamptz" -> ZonedDateTime.parse("2024-08-12T10:00:00+02:00").toInstant
         )
       )
     )
