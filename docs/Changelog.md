@@ -66,6 +66,7 @@
 * [#6656](https://github.com/TouK/nussknacker/pull/6656)
   * Remove not working MODEL_CLASS_PATH environment variable
   * Add default DB connection name
+* [#6614](https://github.com/TouK/nussknacker/pull/6614) Added automatic array to collection conversion in SpEL.
 
 1.16.3 (8 August 2024)
 -------------------------

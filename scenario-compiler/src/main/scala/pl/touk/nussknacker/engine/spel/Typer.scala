@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -130,7 +131,14 @@ private[spel] class Typer(
       current: TypingContext
   ): NodeTypingResult = {
 
-    def toNodeResult(typ: TypingResult) = current.toResult(TypedNode(node, TypingResultWithContext(typ)))
+    // We are converting arrays to lists everywhere
+    def toNodeResult(typ: TypingResult) = {
+      val nodeType = typ match {
+        case tc: TypedClass if tc.objType.klass.isArray => Typed.genericTypeClass[java.util.List[_]](tc.params)
+        case _                                          => typ
+      }
+      current.toResult(TypedNode(node, TypingResultWithContext(nodeType)))
+    }
 
     def validNodeResult(typ: TypingResult) = valid(toNodeResult(typ))
 
@@ -518,8 +526,8 @@ private[spel] class Typer(
       parentType match {
         case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
           tc.withoutValue
-        case tc: SingleTypingResult if tc.objType.klass.isArray =>
-          tc.withoutValue
+        case tc: TypedClass if tc.objType.klass.isArray =>
+          Typed.genericTypeClass[java.util.List[_]](tc.params)
         case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
           Typed.record(Map.empty)
         case _ =>

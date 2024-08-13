@@ -72,7 +72,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
 
   private val ctx = Context("abc").withVariables(
-    Map("obj" -> testValue, "strVal" -> "", "mapValue" -> Map("foo" -> "bar").asJava)
+    Map("obj" -> testValue, "strVal" -> "", "mapValue" -> Map("foo" -> "bar").asJava, "arr" -> Array("a", "b"))
   )
 
   private val ctxWithGlobal: Context = ctx
@@ -1250,6 +1250,21 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
       illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
     )
+  }
+
+  test("should convert array to list via projection") {
+    parse[util.List[String]]("#arr.![#this]", ctx).validExpression
+      .evaluateSync[util.List[String]](ctx) shouldBe List("a", "b").asJava
+  }
+
+  test("should convert array to list via selection") {
+    parse[util.List[String]]("#arr.?[#this == 'a']", ctx).validExpression
+      .evaluateSync[util.List[String]](ctx) shouldBe List("a").asJava
+  }
+
+  test("should convert array to list") {
+    parse[util.List[String]]("#arr", ctx).validExpression
+      .evaluateSync[util.List[String]](ctx) shouldBe List("a", "b").asJava
   }
 
 }
