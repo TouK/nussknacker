@@ -8,14 +8,10 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.newdeployment
-import pl.touk.nussknacker.engine.{
-  BaseModelData,
-  DeploymentManagerDependencies,
-  DeploymentManagerProvider,
-  MetaDataInitializer
-}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, DeploymentManagerProvider, MetaDataInitializer}
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -88,8 +84,8 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
 
-  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] =
-    FlinkStreamingPropertiesConfig.properties
+  override def scenarioPropertiesConfig(config: Config): ScenarioPropertiesConfig =
+    ScenarioPropertiesConfig.fromParameterMap(FlinkStreamingPropertiesConfig.properties)
 
 }
 
