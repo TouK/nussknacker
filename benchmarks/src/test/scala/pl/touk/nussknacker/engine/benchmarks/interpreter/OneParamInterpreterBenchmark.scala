@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ServiceExecutionContext
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import java.util.concurrent.TimeUnit
@@ -25,8 +25,8 @@ class OneParamInterpreterBenchmark {
   private val process: CanonicalProcess = ScenarioBuilder
     .streaming("t1")
     .source("source", "source")
-    .buildSimpleVariable("v1", "v1", "{a:'', b: 2}")
-    .enricher("e1", "out", "service", "p1" -> "''")
+    .buildSimpleVariable("v1", "v1", "{a:'', b: 2}".spel)
+    .enricher("e1", "out", "service", "p1" -> "''".spel)
     // Uncomment to assess impact of costly variables
     // .buildSimpleVariable("v2", "v2", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
     // .buildSimpleVariable("v3", "v3", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")

@@ -19,11 +19,13 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -44,7 +46,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   import LiteKafkaComponentProvider._
   import SpecialSpELElement._
   import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
@@ -397,8 +399,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       val dummyInputObject = obj()
       val cfg              = config(dummyInputObject, schemaMapAny, sinkSchema)
       val jsonScenario     = createEditorModeScenario(cfg, sinkFields)
-      runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
-      runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+      runner.registerJsonSchema(cfg.sourceTopic.toUnspecialized, cfg.sourceSchema)
+      runner.registerJsonSchema(cfg.sinkTopic.toUnspecialized, cfg.sinkSchema)
 
       val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
       val results = runner
@@ -446,8 +448,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       val dummyInputObject = obj()
       val cfg              = config(dummyInputObject, schemaMapAny, outputSchema)
       val jsonScenario     = createEditorModeScenario(cfg, Map(ObjectFieldName -> fieldExpression))
-      runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
-      runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+      runner.registerJsonSchema(cfg.sourceTopic.toUnspecialized, cfg.sourceSchema)
+      runner.registerJsonSchema(cfg.sinkTopic.toUnspecialized, cfg.sinkSchema)
       val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
 
       val validatedResults = runner.runWithStringData(jsonScenario, List(input))
@@ -544,7 +546,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       fieldsExpressions: Map[String, String]
   ): CanonicalProcess = {
     val sinkParams = (Map(
-      topicParamName.value         -> s"'${config.sinkTopic}'",
+      topicParamName.value         -> s"'${config.sinkTopic.name}'",
       schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
       sinkKeyParamName.value       -> "",
       sinkRawEditorParamName.value -> "false",
@@ -555,8 +557,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        topicParamName.value         -> s"'${config.sourceTopic}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
   }
@@ -642,8 +644,8 @@ class LiteKafkaUniversalJsonFunctionalTest
 
   private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, String]] = {
     val jsonScenario: CanonicalProcess = createScenario(config)
-    runner.registerJsonSchema(config.sourceTopic, config.sourceSchema)
-    runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
+    runner.registerJsonSchema(config.sourceTopic.toUnspecialized, config.sourceSchema)
+    runner.registerJsonSchema(config.sinkTopic.toUnspecialized, config.sinkSchema)
 
     val input  = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
     val result = runner.runWithStringData(jsonScenario, List(input))
@@ -656,18 +658,18 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        topicParamName.value         -> s"'${config.sourceTopic}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        topicParamName.value              -> s"'${config.sinkTopic}'",
-        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value            -> "",
-        sinkValueParamName.value          -> s"${config.sinkDefinition}",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> s"'${config.validationModeName}'"
+        topicParamName.value              -> s"'${config.sinkTopic.name}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> s"${config.sinkDefinition}".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> s"'${config.validationModeName}'".spel
       )
 
   case class ScenarioConfig(
@@ -679,8 +681,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       validationMode: Option[ValidationMode]
   ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
-    lazy val sourceTopic                = s"$topic-input"
-    lazy val sinkTopic                  = s"$topic-output"
+    lazy val sourceTopic                = TopicName.ForSource(s"$topic-input")
+    lazy val sinkTopic                  = TopicName.ForSink(s"$topic-output")
   }
 
   private def conf(

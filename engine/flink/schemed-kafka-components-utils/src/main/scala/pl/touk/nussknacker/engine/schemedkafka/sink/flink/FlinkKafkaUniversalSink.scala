@@ -7,6 +7,7 @@ import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 class FlinkKafkaUniversalSink(
-    preparedTopic: PreparedKafkaTopic,
+    preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
     key: LazyParameter[AnyRef],
     value: LazyParameter[AnyRef],
     kafkaConfig: KafkaConfig,

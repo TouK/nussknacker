@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -17,7 +16,6 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -30,7 +28,7 @@ class UnionTransformersTestModeSpec
     with LazyLogging
     with VeryPatientScalaFutures {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val scenarioName      = "sample-union"
   private val sourceId          = "start-foo"
@@ -49,10 +47,10 @@ class UnionTransformersTestModeSpec
           "union-memo",
           Some("outVar"),
           List(
-            leftBranchId  -> List("key" -> "#input", "value" -> "#input"),
-            rightBranchId -> List("key" -> "#input", "value" -> "#input")
+            leftBranchId  -> List("key" -> "#input".spel, "value" -> "#input".spel),
+            rightBranchId -> List("key" -> "#input".spel, "value" -> "#input".spel)
           ),
-          "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
+          "stateTimeout" -> "T(java.time.Duration).parse('PT1M')".spel
         )
     )
   }
@@ -65,8 +63,8 @@ class UnionTransformersTestModeSpec
           "union",
           Some("outVar"),
           List(
-            leftBranchId  -> List("Output expression" -> "#input"),
-            rightBranchId -> List("Output expression" -> "#input")
+            leftBranchId  -> List("Output expression" -> "#input".spel),
+            rightBranchId -> List("Output expression" -> "#input".spel)
           )
         )
     )
@@ -81,10 +79,10 @@ class UnionTransformersTestModeSpec
           .split(
             "split",
             GraphBuilder
-              .buildSimpleVariable(leftBranchId, leftBranchId, "'a'")
+              .buildSimpleVariable(leftBranchId, leftBranchId, "'a'".spel)
               .branchEnd(leftBranchId, unionNodeId),
             GraphBuilder
-              .buildSimpleVariable(rightBranchId, rightBranchId, "'b'")
+              .buildSimpleVariable(rightBranchId, rightBranchId, "'b'".spel)
               .branchEnd(rightBranchId, unionNodeId)
           ),
         unionPart
@@ -113,9 +111,7 @@ class UnionTransformersTestModeSpec
     val sourceComponent = ComponentDefinition(
       "start",
       SourceFactory.noParamUnboundedStreamFactory[String](
-        CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])(
-          TypeInformation.of(classOf[String])
-        )
+        CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])
       )
     )
     LocalModelData(

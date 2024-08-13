@@ -13,8 +13,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
@@ -42,7 +44,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
   import ValidationMode._
   import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, workers = 5)
@@ -1167,8 +1169,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
 
   private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, Any]] = {
     val avroScenario   = createScenario(config)
-    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic, config.sourceSchema)
-    runner.registerAvroSchema(config.sinkTopic, config.sinkSchema)
+    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic.toUnspecialized, config.sourceSchema)
+    runner.registerAvroSchema(config.sinkTopic.toUnspecialized, config.sinkSchema)
 
     val input = KafkaAvroConsumerRecord(config.sourceTopic, config.inputData, sourceSchemaId)
     runner.runWithAvroData(avroScenario, List(input))
@@ -1180,22 +1182,22 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        topicParamName.value         -> s"'${config.sourceTopic}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        topicParamName.value              -> s"'${config.sinkTopic}'",
-        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value            -> "",
-        sinkValueParamName.value          -> s"${config.sinkDefinition}",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> s"'${config.validationModeName}'"
+        topicParamName.value              -> s"'${config.sinkTopic.name}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> s"${config.sinkDefinition}".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> s"'${config.validationModeName}'".spel
       )
 
   case class ScenarioConfig(
-      topic: String,
+      topicPrefix: String,
       inputData: Any,
       sourceSchema: Schema,
       sinkSchema: Schema,
@@ -1203,8 +1205,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       validationMode: Option[ValidationMode]
   ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
-    lazy val sourceTopic                = s"$topic-input"
-    lazy val sinkTopic                  = s"$topic-output"
+    lazy val sourceTopic                = TopicName.ForSource(s"$topicPrefix-input")
+    lazy val sinkTopic                  = TopicName.ForSink(s"$topicPrefix-output")
   }
 
   // RecordValid -> valid success record with base field

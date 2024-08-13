@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Overwritte
 import pl.touk.nussknacker.engine.api.context.ValidationContext.empty
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 
@@ -32,6 +33,11 @@ case class ValidationContext(
     variables.get(name)
 
   def contains(name: String): Boolean = variables.contains(name)
+
+  def withVariableUnsafe(name: String, value: TypingResult): ValidationContext =
+    withVariable(name, value, None)(NodeId("dumbNodeId")).valueOr(err =>
+      throw new IllegalStateException(s"ValidationContext with duplicated variable [$KeyVariableName]")
+    )
 
   def withVariable(name: String, value: TypingResult, paramName: Option[ParameterName])(
       implicit nodeId: NodeId

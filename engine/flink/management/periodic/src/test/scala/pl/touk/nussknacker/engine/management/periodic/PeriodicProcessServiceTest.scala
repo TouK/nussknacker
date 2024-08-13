@@ -47,7 +47,6 @@ class PeriodicProcessServiceTest
     with TableDrivenPropertyChecks {
 
   import org.scalatest.LoneElement._
-  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
   import scala.concurrent.ExecutionContext.Implicits.global
 

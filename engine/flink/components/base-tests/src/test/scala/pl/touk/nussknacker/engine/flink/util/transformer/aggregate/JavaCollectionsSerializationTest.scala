@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 
@@ -33,7 +32,12 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       .streaming(processId)
       .parallelism(1)
       .source("start", "start")
-      .customNodeNoOutput("delay", "delay", "key" -> "#input.id", "delay" -> "T(java.time.Duration).parse('PT30M')")
+      .customNodeNoOutput(
+        "delay",
+        "delay",
+        "key"   -> "#input.id".spel,
+        "delay" -> "T(java.time.Duration).parse('PT30M')".spel
+      )
       .emptySink("end", "dead-end")
 
   // In Scala 2.13 all java collections class wrappers were rewritten from case class to regular class. Now kryo does not
@@ -61,7 +65,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
 
   def modelData(collectingListener: ResultsCollectingListener[Any], list: List[Record] = List()): LocalModelData = {
     val sourceComponent = SourceFactory.noParamUnboundedStreamFactory[Record](
-      CollectionSource[Record](list, None, Typed.fromDetailedType[List[Record]])(TypeInformation.of(classOf[Record]))
+      CollectionSource[Record](list, None, Typed.fromDetailedType[List[Record]])
     )
     LocalModelData(
       ConfigFactory

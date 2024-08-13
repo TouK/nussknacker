@@ -100,11 +100,14 @@ object ProcessingTypeData {
     val scenarioProperties =
       deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelData.modelConfig
         .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
+    val fragmentProperties = modelData.modelConfig
+      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     DeploymentData(
       validDeploymentManager,
       metaDataInitializer,
       scenarioProperties,
+      fragmentProperties,
       deploymentManagerProvider.additionalValidators(deploymentConfig),
       DeploymentManagerType(deploymentManagerProvider.name),
       engineSetupName

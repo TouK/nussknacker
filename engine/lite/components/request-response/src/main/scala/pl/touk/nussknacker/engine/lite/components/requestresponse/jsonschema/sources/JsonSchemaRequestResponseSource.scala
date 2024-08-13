@@ -63,9 +63,8 @@ class JsonSchemaRequestResponseSource(
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema).typingResult
   }
 
-  override def testRecordParser: TestRecordParser[Any] = (testRecord: TestRecord) => {
-    validateAndReturnTypedMap(testRecord.json.noSpaces)
-  }
+  override def testRecordParser: TestRecordParser[Any] = (testRecords: List[TestRecord]) =>
+    testRecords.map { testRecord => validateAndReturnTypedMap(testRecord.json.noSpaces) }
 
   override def responseEncoder: Option[ResponseEncoder[Any]] = Option(
     new SchemaResponseEncoder(outputSchema, validationMode)

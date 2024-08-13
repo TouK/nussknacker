@@ -26,7 +26,7 @@ class TypingResultSpec
 
   private val intersectionSuperTypeFinder = CommonSupertypeFinder.Intersection
 
-  private def typeMap(args: (String, TypingResult)*) = Typed.record(args.toMap)
+  private def typeMap(args: (String, TypingResult)*) = Typed.record(args)
 
   private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 
@@ -94,11 +94,45 @@ class TypingResultSpec
   }
 
   test("determine if can be subclass for class") {
-    Typed.fromDetailedType[Set[BigDecimal]].canBeSubclassOf(Typed.fromDetailedType[Set[Number]]) shouldBe true
-    Typed.fromDetailedType[Set[Number]].canBeSubclassOf(Typed.fromDetailedType[Set[BigDecimal]]) shouldBe true
+    Typed
+      .fromDetailedType[java.util.List[BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe true
+    Typed
+      .fromDetailedType[java.util.List[BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.List[Number]]) shouldBe true
+    Typed
+      .fromDetailedType[java.util.List[Number]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe false
 
-    Typed.fromDetailedType[Set[BigDecimal]].canBeSubclassOf(Typed.fromDetailedType[Set[String]]) shouldBe false
-    Typed.fromDetailedType[Set[String]].canBeSubclassOf(Typed.fromDetailedType[Set[BigDecimal]]) shouldBe false
+    Typed
+      .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
+    Typed
+      .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, Number]]) shouldBe true
+    Typed
+      .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[Number, Number]]) shouldBe false
+    Typed
+      .fromDetailedType[java.util.Map[Number, Number]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+    Typed
+      .fromDetailedType[java.util.Map[Number, BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+    Typed
+      .fromDetailedType[java.util.Map[BigDecimal, Number]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+    Typed
+      .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[_, BigDecimal]]) shouldBe true
+    Typed
+      .fromDetailedType[java.util.Map[_, BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
+
+    // For arrays it might be tricky
+    Typed.fromDetailedType[Array[BigDecimal]].canBeSubclassOf(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe true
+    Typed.fromDetailedType[Array[BigDecimal]].canBeSubclassOf(Typed.fromDetailedType[Array[Number]]) shouldBe true
+    Typed.fromDetailedType[Array[Number]].canBeSubclassOf(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe false
   }
 
   test("determine if numbers can be converted") {

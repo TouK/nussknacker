@@ -43,7 +43,7 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
 object ProcessTestData {
 
   import KafkaFactory._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   val existingSourceFactory      = "barSource"
   val otherExistingSourceFactory = "fooSource"
@@ -100,7 +100,7 @@ object ProcessTestData {
       .withCustom(
         existingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
       )
       .withService(
         dictParameterEditorServiceId,
@@ -110,22 +110,22 @@ object ProcessTestData {
       .withCustom(
         otherExistingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
       )
       .withCustom(
         otherExistingStreamTransformer2,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
       )
       .withCustom(
         optionalEndingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = true),
       )
       .withCustom(
         union,
         Some(Unknown),
-        CustomComponentSpecificData(manyInputs = true, canBeEnding = true),
+        CustomComponentSpecificData(canHaveManyInputs = true, canBeEnding = true),
       )
       .build
 
@@ -181,19 +181,19 @@ object ProcessTestData {
   val sampleScenario: CanonicalProcess = {
     def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
       GraphBuilder
-        .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'")
+        .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'".spel)
         .emptySink(
           "end" + idSuffix,
           "kafka-string",
-          TopicParamName.value     -> "'end.topic'",
-          SinkValueParamName.value -> "#output"
+          TopicParamName.value     -> "'end.topic'".spel,
+          SinkValueParamName.value -> "#output".spel
         )
     }
     ScenarioBuilder
       .streaming(ProcessTestData.sampleProcessName.value)
       .parallelism(1)
       .source("startProcess", "csv-source")
-      .filter("input", "#input != null")
+      .filter("input", "#input != null".spel)
       .to(endWithMessage("suffix", "message"))
   }
 
@@ -254,7 +254,7 @@ object ProcessTestData {
     ScenarioBuilder
       .streaming("fooProcess")
       .source("source", existingSourceFactory)
-      .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
+      .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "".spel)
       .emptySink("sink", existingSinkFactory)
   }
 
@@ -262,14 +262,14 @@ object ProcessTestData {
     ScenarioBuilder
       .streaming("fooProcess")
       .source("source", existingSourceFactory)
-      .enricher("custom", "out1", notBlankExistingServiceId, "expression" -> "''")
+      .enricher("custom", "out1", notBlankExistingServiceId, "expression" -> "''".spel)
       .emptySink("sink", existingSinkFactory)
 
   val invalidProcessWithWrongFixedExpressionValue: CanonicalProcess = {
     ScenarioBuilder
       .streaming("fooProcess")
       .source("source", existingSourceFactory)
-      .enricher("custom", "out1", otherExistingServiceId4, "expression" -> "wrong fixed value")
+      .enricher("custom", "out1", otherExistingServiceId4, "expression" -> "wrong fixed value".spel)
       .emptySink("sink", existingSinkFactory)
   }
 

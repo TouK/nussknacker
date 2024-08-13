@@ -59,7 +59,6 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
   }
 
   sealed case class EmptyCustomStreamTransformer(
-      override val canHaveManyInputs: Boolean,
       override val canBeEnding: Boolean
   ) extends CustomStreamTransformer {
     @MethodToInvoke(returnType = classOf[Void]) def invoke(): Unit = {}
@@ -96,8 +95,8 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
   override def customStreamTransformers(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    CustomStreamName         -> all(EmptyCustomStreamTransformer(true, false), Some(CustomStreamName)),
-    OptionalCustomStreamName -> marketing(EmptyCustomStreamTransformer(false, true)),
+    CustomStreamName         -> all(EmptyCustomStreamTransformer(false), Some(CustomStreamName)),
+    OptionalCustomStreamName -> marketing(EmptyCustomStreamTransformer(true)),
   )
 
 }
@@ -131,8 +130,8 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
   override def customStreamTransformers(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    CustomStreamName         -> fraud(EmptyCustomStreamTransformer(true, false)),
-    OptionalCustomStreamName -> fraud(EmptyCustomStreamTransformer(false, true)),
+    CustomStreamName         -> fraud(EmptyCustomStreamTransformer(false)),
+    OptionalCustomStreamName -> fraud(EmptyCustomStreamTransformer(true)),
   )
 
 }

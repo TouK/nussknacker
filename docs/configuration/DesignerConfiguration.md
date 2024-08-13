@@ -366,6 +366,7 @@ authentication: {
   authorizeUri: ${?OAUTH2_AUTHORIZE_URI}
   clientSecret: ${?OAUTH2_CLIENT_SECRET}
   clientId: ${?OAUTH2_CLIENT_ID}
+  issuer: ${?OAUTH2_ISSUER}
   profileUri: ${?OAUTH2_PROFILE_URI}
   profileFormat: ${?OAUTH2_PROFILE_FORMAT}
   accessTokenUri: ${?OAUTH2_ACCESS_TOKEN_URI}
@@ -389,6 +390,7 @@ authentication: {
     scope: ${?OAUTH2_SCOPE}
     audience: ${?OAUTH2_AUDIENCE}
   }
+  rolesClaims: ${?OAUTH2_ROLES_CLAIMS}
   usernameClaim: ${?OAUTH2_USERNAME_CLAIM}
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}
@@ -743,19 +745,20 @@ You can configure `secondaryEnvironment` to allow for
 
 ## Other configuration options
 
-| Parameter name                   | Importance | Type     | Default value | Description                                                                                                                                                                                                                 |
-|----------------------------------|------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| attachments.maxSizeInBytes       | Medium     | long     | 10485760      | Limits max size of scenario attachment, by default to 10mb                                                                                                                                                                  |
-| analytics.engine                 | Low        | Matomo   |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                                                                                                                                                  |
-| analytics.url                    | Low        | string   |               | URL of Matomo server                                                                                                                                                                                                        |
-| analytics.siteId                 | Low        | string   |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                                                                                                                                                        |
-| intervalTimeSettings.processes   | Low        | int      | 20000         | How often frontend reloads scenario list                                                                                                                                                                                    |
-| intervalTimeSettings.healthCheck | Low        | int      | 30000         | How often frontend reloads checks scenarios states                                                                                                                                                                          |
-| developmentMode                  | Medium     | boolean  | false         | For development mode we disable some security features like CORS. **Don't** use in production                                                                                                                               |
-| enableConfigEndpoint             | Medium     | boolean  | false         | Expose config over http (GET /api/app/config/) - requires admin permission. Please mind, that config often contains password or other confidential data - this feature is meant to be used only on 'non-prod' envrionments. |
-| redirectAfterArchive             | Low        | boolean  | true          | Redirect to scenarios list after archive operation.                                                                                                                                                                         |
-| scenarioStateTimeout             | Low        | duration | 5 seconds     | Timeout for fetching scenario state operation                                                                                                                                                                               |
-| usageStatisticsReports.enabled   | Low        | boolean  | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
+| Parameter name                             | Importance | Type     | Default value | Description                                                                                                                                                                                                                 |
+|--------------------------------------------|------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| attachments.maxSizeInBytes                 | Medium     | long     | 10485760      | Limits max size of scenario attachment, by default to 10mb                                                                                                                                                                  |
+| analytics.engine                           | Low        | Matomo   |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                                                                                                                                                  |
+| analytics.url                              | Low        | string   |               | URL of Matomo server                                                                                                                                                                                                        |
+| analytics.siteId                           | Low        | string   |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                                                                                                                                                        |
+| intervalTimeSettings.processes             | Low        | int      | 20000         | How often frontend reloads scenario list                                                                                                                                                                                    |
+| intervalTimeSettings.healthCheck           | Low        | int      | 30000         | How often frontend reloads checks scenarios states                                                                                                                                                                          |
+| developmentMode                            | Medium     | boolean  | false         | For development mode we disable some security features like CORS. **Don't** use in production                                                                                                                               |
+| enableConfigEndpoint                       | Medium     | boolean  | false         | Expose config over http (GET /api/app/config/) - requires admin permission. Please mind, that config often contains password or other confidential data - this feature is meant to be used only on 'non-prod' envrionments. |
+| redirectAfterArchive                       | Low        | boolean  | true          | Redirect to scenarios list after archive operation.                                                                                                                                                                         |
+| scenarioStateTimeout                       | Low        | duration | 5 seconds     | Timeout for fetching scenario state operation                                                                                                                                                                               |
+| usageStatisticsReports.enabled             | Low        | boolean  | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
+| usageStatisticsReports.errorReportsEnabled | Low        | boolean  | true          | When enabled browser will send anonymous errors reports to `stats.nussknacker.io`                                                                                                                                           |
 
 ## Scenario type, categories
 

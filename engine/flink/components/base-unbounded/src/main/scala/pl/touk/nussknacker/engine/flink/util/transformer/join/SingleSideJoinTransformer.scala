@@ -41,8 +41,6 @@ class SingleSideJoinTransformer(
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer._
 
-  override def canHaveManyInputs: Boolean = true
-
   override type State = Nothing
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)

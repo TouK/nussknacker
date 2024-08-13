@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaReg
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.FailingContextClassloader
@@ -34,8 +34,8 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
     .source(
       "source",
       "kafka",
-      KafkaUniversalComponentTransformer.topicParamName.value         -> "'not_exist'",
-      KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      KafkaUniversalComponentTransformer.topicParamName.value -> "'not_exist'".spel,
+      KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
     .emptySink("dead", "dead_end")
 

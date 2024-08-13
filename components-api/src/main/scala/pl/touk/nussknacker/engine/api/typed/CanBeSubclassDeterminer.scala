@@ -16,6 +16,10 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   */
 trait CanBeSubclassDeterminer {
 
+  private val javaMapClass       = classOf[java.util.Map[_, _]]
+  private val javaListClass      = classOf[java.util.List[_]]
+  private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
+
   /**
     * This method checks if `givenType` can by subclass of `superclassCandidate`
     * It will return true if `givenType` is equals to `superclassCandidate` or `givenType` "extends" `superclassCandidate`
@@ -45,6 +49,12 @@ trait CanBeSubclassDeterminer {
       givenType: SingleTypingResult,
       superclassCandidate: SingleTypingResult
   ): ValidatedNel[String, Unit] = {
+    val objTypeRestriction = {
+      superclassCandidate match {
+        case _: TypedObjectTypingResult if !checkObjTypeForRecord => ().validNel
+        case _ => classCanBeSubclassOf(givenType, superclassCandidate.objType)
+      }
+    }
     val typedObjectRestrictions = (_: Unit) =>
       superclassCandidate match {
         case superclass: TypedObjectTypingResult =>
@@ -114,31 +124,17 @@ trait CanBeSubclassDeterminer {
         case _ => ().validNel
       }
     }
-    classCanBeSubclassOf(givenType, superclassCandidate.objType) andThen
+    objTypeRestriction andThen
       (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
   }
+
+  protected def checkObjTypeForRecord: Boolean = true
 
   protected def classCanBeSubclassOf(
       givenType: SingleTypingResult,
       superclassCandidate: TypedClass
   ): ValidatedNel[String, Unit] = {
-
-    def canBeSubOrSuperclass(t1: TypingResult, t2: TypingResult) =
-      condNel(
-        canBeSubclassOf(t1, t2).isValid || canBeSubclassOf(t2, t1).isValid,
-        (),
-        f"None of ${t1.display} and ${t2.display} is a subclass of another"
-      )
-
     val givenClass = givenType.objType
-    val hasSameTypeParams = (_: Unit) =>
-      // we are lax here - the generic type may be co- or contra-variant - and we don't want to
-      // throw validation errors in this case. It's better to accept to much than too little
-      condNel(
-        superclassCandidate.params.zip(givenClass.params).forall(t => canBeSubOrSuperclass(t._1, t._2).isValid),
-        (),
-        s"Wrong type parameters"
-      )
 
     val equalClassesOrCanAssign =
       condNel(
@@ -148,8 +144,46 @@ trait CanBeSubclassDeterminer {
       ) orElse
         isAssignable(givenClass.klass, superclassCandidate.klass)
 
-    val canBeSubclass = equalClassesOrCanAssign andThen hasSameTypeParams
+    val canBeSubclass = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, superclassCandidate))
     canBeSubclass orElse canBeConvertedTo(givenType, superclassCandidate)
+  }
+
+  private def typeParametersMatches(givenClass: TypedClass, superclassCandidate: TypedClass) = {
+    def canBeSubOrSuperclass(givenClassParam: TypingResult, superclassParam: TypingResult) =
+      condNel(
+        canBeSubclassOf(givenClassParam, superclassParam).isValid ||
+          canBeSubclassOf(superclassParam, givenClassParam).isValid,
+        (),
+        f"None of ${givenClassParam.display} and ${superclassParam.display} is a subclass of another"
+      )
+
+    (givenClass, superclassCandidate) match {
+      case (TypedClass(_, givenElementParam :: Nil), TypedClass(superclass, superclassParam :: Nil))
+          // Array are invariant but we have built-in conversion between array types - this check should be moved outside this class when we move away canBeConvertedTo as well
+          if javaListClass.isAssignableFrom(superclass) || arrayOfAnyRefClass.isAssignableFrom(superclass) =>
+        canBeSubclassOf(givenElementParam, superclassParam)
+      case (
+            TypedClass(_, givenKeyParam :: givenValueParam :: Nil),
+            TypedClass(superclass, superclassKeyParam :: superclassValueParam :: Nil)
+          ) if javaMapClass.isAssignableFrom(superclass) =>
+        // Map's key generic param is invariant. We can't just check givenKeyParam == superclassKeyParam because of Unknown type which is a kind of wildcard
+        condNel(
+          canBeSubclassOf(givenKeyParam, superclassKeyParam).isValid &&
+            canBeSubclassOf(superclassKeyParam, givenKeyParam).isValid,
+          (),
+          s"Key types of Maps ${givenKeyParam.display} and ${superclassKeyParam.display} are not equals"
+        ) andThen (_ => canBeSubclassOf(givenValueParam, superclassValueParam))
+      case _ =>
+        // for unknown types we are lax - the generic type may be co- contra- or in-variant - and we don't want to
+        // return validation errors in this case. It's better to accept to much than too little
+        condNel(
+          superclassCandidate.params.zip(givenClass.params).forall { case (superclassParam, givenClassParam) =>
+            canBeSubOrSuperclass(givenClassParam, superclassParam).isValid
+          },
+          (),
+          s"Wrong type parameters"
+        )
+    }
   }
 
   private def canBeSubclassOf(

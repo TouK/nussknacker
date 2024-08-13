@@ -38,13 +38,13 @@ Note that internally Nussknacker converts the JSON object into a SpEL record.
 The specialized `record-variable` component can be used to declare a record variable (JSON object)
 
 
-![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_mapmariable0.png "record-variable form")
+![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_recordVariable0.png "record-variable form")
 
 
 The same outcome can be achieved using a plain `Variable` component. Just make sure to write a valid SpEL expression.
 
 
-![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_mapmariable1.png "record-variable declaration using a plan Variable component")
+![alt_text](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_recordVariable1.png "record-variable declaration using a plan Variable component")
 
 &nbsp;
 ## Filter

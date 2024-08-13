@@ -6,6 +6,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.data.OptionT
 import cats.instances.all._
+import com.typesafe.config.{Config, ConfigValueFactory}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
 import org.scalatest._
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -31,6 +33,7 @@ import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.T
 }
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
@@ -45,11 +48,9 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, UpdateProcessComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
+import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.RouteInterceptor
-import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
-import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 
 import scala.concurrent.Future
 
@@ -85,6 +86,12 @@ class ProcessesResourcesSpec
   private val archivedProcessName      = ProcessName("archived")
   private val fragmentName             = ProcessName("fragment")
   private val archivedFragmentName     = ProcessName("archived-fragment")
+
+  override def designerConfig: Config = super.designerConfig
+    .withValue(
+      "scenarioTypes.streaming1.modelConfig.kafka.topicsExistenceValidationConfig.enabled",
+      ConfigValueFactory.fromAnyRef("false")
+    )
 
   test("should return list of process with state") {
     createDeployedExampleScenario(processName, category = Category1)
@@ -556,8 +563,8 @@ class ProcessesResourcesSpec
   test("save correct process json with ok status") {
     val validProcess = ScenarioBuilder
       .streaming("valid")
-      .source("startProcess", "real-kafka", "Topic" -> s"'sometopic'")
-      .emptySink("end", "kafka-string", "Topic" -> s"'output'", "Value" -> "#input")
+      .source("startProcess", "real-kafka", "Topic" -> s"'sometopic'".spel)
+      .emptySink("end", "kafka-string", "Topic" -> s"'output'".spel, "Value" -> "#input".spel)
     saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
       val fetchedScenario = fetchScenario(validProcess.name)
@@ -1342,12 +1349,6 @@ class ProcessesResourcesSpec
     Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUser() ~> applicationRoute ~> check {
       callback(status)
     }
-
-//    Post(
-//      s"/api/processes/$processName/${category.stringify}?isFragment=$isFragment"
-//    ) ~> withAllPermUser() ~> applicationRoute ~> check {
-//      callback(status)
-//    }
   }
 
   private def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(

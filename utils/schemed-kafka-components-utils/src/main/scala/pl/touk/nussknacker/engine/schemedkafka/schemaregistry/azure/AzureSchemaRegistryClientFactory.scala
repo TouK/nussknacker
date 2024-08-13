@@ -11,25 +11,9 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.commons.io.IOUtils
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, SchemaRegistryClientKafkaConfig}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy.FullSchemaNameDecomposed
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.{
-  AzureConfigurationFactory,
-  AzureHttpPipelineFactory,
-  AzureTokenCredentialFactory,
-  EnhancedSchemasImpl,
-  SchemaRegistryJsonSerializer
-}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  SchemaId,
-  SchemaRegistryClientFactoryWithRegistration,
-  SchemaRegistryClientWithRegistration,
-  SchemaRegistryError,
-  SchemaRegistryUnknownError,
-  SchemaTopicError,
-  SchemaVersionError,
-  SchemaWithMetadata
-}
+import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import reactor.core.publisher.Mono
 
 import java.nio.charset.StandardCharsets
@@ -74,7 +58,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   override protected def getByTopicAndVersion(
-      topicName: String,
+      topicName: UnspecializedTopicName,
       version: Int,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
@@ -95,7 +79,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   override protected def getLatestFreshSchema(
-      topicName: String,
+      topicName: UnspecializedTopicName,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
     getOneMatchingSchemaName(topicName, isKey).andThen { fullSchemaName =>
@@ -120,20 +104,31 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     SchemaWithMetadata(new AvroSchema(IOUtils.toString(response.getValue, StandardCharsets.UTF_8)), schemaId)
   }
 
-  override def getAllTopics: Validated[SchemaRegistryError, List[String]] = {
-    val kafkaConfig = KafkaConfig(Some(config.kafkaProperties), None)
-    val topics = KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
-      admin.listTopics().names().get().asScala.toList
-    }
+  override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
+    val topics        = fetchTopics(KafkaConfig(Some(config.kafkaProperties), None))
     val matchStrategy = SchemaNameTopicMatchStrategy(topics)
     getAllFullSchemaNames.map(matchStrategy.getAllMatchingTopics(_, isKey = false))
   }
 
-  override def getAllVersions(topicName: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] = {
+  override def getAllVersions(
+      topicName: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, List[Integer]] = {
     getOneMatchingSchemaName(topicName, isKey).andThen(getVersions)
   }
 
-  private def getOneMatchingSchemaName(topicName: String, isKey: Boolean): Validated[SchemaRegistryError, String] = {
+  private def fetchTopics(kafkaConfig: KafkaConfig) = {
+    KafkaUtils
+      .usingAdminClient(kafkaConfig) { admin =>
+        admin.listTopics().names().get().asScala.toList
+      }
+      .map(UnspecializedTopicName.apply)
+  }
+
+  private def getOneMatchingSchemaName(
+      topicName: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, String] = {
     getAllFullSchemaNames.andThen { fullSchemaNames =>
       val matchingFullSchemaNames = SchemaNameTopicMatchStrategy.getMatchingSchemas(topicName, fullSchemaNames, isKey)
       matchingFullSchemaNames match {
@@ -159,7 +154,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
       .map(_.getValue.getSchemas().asScala.toList)
   }
 
-  override def registerSchema(topicName: String, isKey: Boolean, schema: ParsedSchema): SchemaId = {
+  override def registerSchema(topicName: UnspecializedTopicName, isKey: Boolean, schema: ParsedSchema): SchemaId = {
     val schemaNameBasedOnTopic = SchemaNameTopicMatchStrategy.schemaNameFromTopicName(topicName, isKey)
     val avroSchema             = checkAvroSchema(schema).rawSchema()
     if (avroSchema.getType == Schema.Type.RECORD) {

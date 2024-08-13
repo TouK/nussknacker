@@ -133,6 +133,13 @@ paths:
           type:
           - string
           - 'null'
+      - name: skipUsages
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
       responses:
         '200':
           description: ''
@@ -162,7 +169,8 @@ paths:
                     allowedProcessingModes:
                     - Request-Response
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter skipUsages'
           content:
             text/plain:
               schema:
@@ -3367,6 +3375,20 @@ components:
           type: string
         label:
           type: string
+    FixedExpressionValueWithIcon:
+      title: FixedExpressionValueWithIcon
+      type: object
+      required:
+      - expression
+      - label
+      - icon
+      properties:
+        expression:
+          type: string
+        label:
+          type: string
+        icon:
+          type: string
     FixedValuesParameterEditor:
       title: FixedValuesParameterEditor
       type: object
@@ -3375,6 +3397,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValue'
+    FixedValuesWithIconParameterEditor:
+      title: FixedValuesWithIconParameterEditor
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValueWithIcon'
     FragmentClazzRef:
       title: FragmentClazzRef
       type: object
@@ -4183,6 +4213,7 @@ components:
       - $ref: '#/components/schemas/DualParameterEditor'
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/RawParameterEditor'
@@ -4435,6 +4466,7 @@ components:
       - $ref: '#/components/schemas/DictParameterEditor'
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'

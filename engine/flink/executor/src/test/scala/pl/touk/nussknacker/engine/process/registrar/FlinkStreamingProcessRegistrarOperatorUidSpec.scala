@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 
 class FlinkStreamingProcessRegistrarOperatorUidSpec extends FlinkStreamGraphSpec {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   test("should set uid for source and sink") {
     val sourceId = "sourceId"
@@ -25,7 +25,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FlinkStreamGraphSpec
       .streaming("test")
       .useAsyncInterpretation(true)
       .source("sourceId", "input")
-      .processor("processorId", "logService", "all" -> "123")
+      .processor("processorId", "logService", "all" -> "123".spel)
       .emptySink("sinkId", "monitor")
 
     val graph      = streamGraph(process)
@@ -41,7 +41,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FlinkStreamGraphSpec
     val process = ScenarioBuilder
       .streaming("test")
       .source("sourceId", "input")
-      .customNode(customNodeId, "out", "stateCustom", "stringVal" -> "'123'", "groupBy" -> "'123'")
+      .customNode(customNodeId, "out", "stateCustom", "stringVal" -> "'123'".spel, "groupBy" -> "'123'".spel)
       .emptySink("sinkId", "monitor")
 
     val graph             = streamGraph(process)

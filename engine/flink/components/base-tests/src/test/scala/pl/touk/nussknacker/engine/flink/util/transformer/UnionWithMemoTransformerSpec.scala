@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -28,15 +27,13 @@ import scala.jdk.CollectionConverters._
 class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
   import UnionWithMemoTransformerSpec._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val UnionNodeId = "joined-node-id"
 
   private val EndNodeId = "end-node-id"
 
   private val OutVariableName = "outVar"
-
-  private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
 
   test("union with memo") {
     val BranchFooId = "foo"
@@ -58,15 +55,15 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             Some(OutVariableName),
             List(
               BranchFooId -> List(
-                "key"   -> "#input.key",
-                "value" -> "#input.value"
+                "key"   -> "#input.key".spel,
+                "value" -> "#input.value".spel
               ),
               BranchBarId -> List(
-                "key"   -> "#input.key",
-                "value" -> "#input.value"
+                "key"   -> "#input.key".spel,
+                "value" -> "#input.value".spel
               )
             ),
-            "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
+            "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
           .emptySink(EndNodeId, "dead-end")
       )
@@ -120,15 +117,15 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             Some(OutVariableName),
             List(
               BranchFooId -> List(
-                "key"   -> "#input.key",
-                "value" -> "#input.value"
+                "key"   -> "#input.key".spel,
+                "value" -> "#input.value".spel
               ),
               BranchBarId -> List(
-                "key"   -> "#input.key",
-                "value" -> "#input.value"
+                "key"   -> "#input.key".spel,
+                "value" -> "#input.value".spel
               )
             ),
-            "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
+            "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
           .emptySink(EndNodeId, "dead-end")
       )
@@ -172,15 +169,15 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             Some(OutVariableName),
             List(
               BranchFooId -> List(
-                "key"   -> "#input.key",
-                "value" -> "#input.value"
+                "key"   -> "#input.key".spel,
+                "value" -> "#input.value".spel
               ),
               BranchBarId -> List(
-                "key"   -> "#input.key",
-                "value" -> "#input.value"
+                "key"   -> "#input.key".spel,
+                "value" -> "#input.value".spel
               )
             ),
-            "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
+            "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel
           )
           .emptySink(EndNodeId, "dead-end")
       )

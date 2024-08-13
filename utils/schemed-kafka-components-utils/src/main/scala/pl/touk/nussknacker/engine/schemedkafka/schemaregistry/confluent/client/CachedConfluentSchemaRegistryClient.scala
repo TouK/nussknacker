@@ -2,15 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.SchemaProvider
-import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
-import io.confluent.kafka.schemaregistry.client.{
-  CachedSchemaRegistryClient => CCachedSchemaRegistryClient,
-  SchemaRegistryClient => CSchemaRegistryClient
-}
-import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryError, SchemaWithMetadata}
 
@@ -23,14 +16,17 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     extends ConfluentSchemaRegistryClient
     with LazyLogging {
 
-  override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+  override def getLatestFreshSchema(
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       latestSchemaRequest(subject)
     }
 
   override def getByTopicAndVersion(
-      topic: String,
+      topic: UnspecializedTopicName,
       version: Int,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] =
@@ -43,14 +39,17 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       }
     }
 
-  override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
+  override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
     handleClientError {
       caches.topicsCache.getOrCreate {
-        client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject)
+        client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject).map(UnspecializedTopicName.apply)
       }
     }
 
-  override def getAllVersions(topic: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] =
+  override def getAllVersions(
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, List[Integer]] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       caches.versionsCache.getOrCreate(subject) {

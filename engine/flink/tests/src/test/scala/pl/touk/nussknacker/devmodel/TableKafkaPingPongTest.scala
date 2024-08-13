@@ -10,19 +10,17 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.spel
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 
 class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val testNameTopicPart: String    = "table-ping-pong"
   private val topicNaming1: String         = s"$testNameTopicPart.test1"
@@ -47,7 +45,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest1',
+       |  'topic' = '${inputTopicNameTest1.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -60,7 +58,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest2',
+       |  'topic' = '${inputTopicNameTest2.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -73,7 +71,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$outputTopicNameTest2',
+       |  'topic' = '${outputTopicNameTest2.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -86,7 +84,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest3',
+       |  'topic' = '${inputTopicNameTest3.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -99,7 +97,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$outputTopicNameTest3',
+       |  'topic' = '${outputTopicNameTest3.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -118,7 +116,6 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     s"""
        |{
        |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
-       |  enableFlinkBatchExecutionMode: false
        |}
        |""".stripMargin
 
@@ -141,23 +138,23 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         "start",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest1'"
+        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest1'".spel
       )
-      .filter("filterId", "#input.someInt != 1")
+      .filter("filterId", "#input.someInt != 1".spel)
       .emptySink(
         "output",
         "kafka",
-        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
-        KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topics.output}'",
-        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true",
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value   -> "".spel,
+        KafkaUniversalComponentTransformer.sinkValueParamName.value -> "#input".spel,
+        KafkaUniversalComponentTransformer.topicParamName.value     -> s"'${topics.output.name}'".spel,
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true".spel,
       )
 
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -179,20 +176,21 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         sourceId,
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest2'"
+        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest2'".spel
       )
-      .filter("filterId", "#input.someInt != 1")
+      .filter("filterId", "#input.someInt != 1".spel)
       .emptySink(
         "end",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest2'",
-        TableSinkFactory.valueParameterName.value      -> "#input"
+        "Table"      -> s"'$sqlOutputTableNameTest2'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
       )
 
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -211,19 +209,20 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         "start",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest3'"
+        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest3'".spel
       )
       .emptySink(
         "end",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest3'",
-        TableSinkFactory.valueParameterName.value      -> "{someInt: 2, someString: 'BBB'}"
+        "Table"      -> s"'$sqlOutputTableNameTest3'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "{someInt: 2, someString: 'BBB'}".spel
       )
 
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -236,13 +235,15 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
 
 object TestData {
 
-  val simpleTypesSchema: JsonSchema = new JsonSchema("""{
-                                                       |  "type": "object",
-                                                       |  "properties": {
-                                                       |    "someInt" : { "type": "integer" },
-                                                       |    "someString" : { "type": "string" }
-                                                       |  }
-                                                       |}
-                                                       |""".stripMargin)
+  val simpleTypesSchema: JsonSchema = new JsonSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "someInt" : { "type": "integer" },
+      |    "someString" : { "type": "string" }
+      |  }
+      |}
+      |""".stripMargin
+  )
 
 }

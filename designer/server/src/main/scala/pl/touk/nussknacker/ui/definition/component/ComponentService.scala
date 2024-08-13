@@ -26,7 +26,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
-  def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]]
+  def getComponentsList(skipUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]]
 
   def getComponentUsages(designerWideComponentId: DesignerWideComponentId)(
       implicit user: LoggedUser
@@ -70,19 +70,31 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
+  override def getComponentsList(skipUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     for {
       components <- processingTypeDataProvider.all.toList.flatTraverse { case (processingType, processingTypeData) =>
         extractComponentsFromProcessingType(processingTypeData, processingType)
       }
       // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
       mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
-      userAccessibleComponentUsages <- getUserAccessibleComponentUsages
-      enrichedWithUsagesComponents = mergedComponents.map(c =>
-        c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
-      )
-      sortedComponents = enrichedWithUsagesComponents.sortBy(ComponentListElement.sortMethod)
-    } yield sortedComponents
+      optionallyEnrichedComponents <- enrichUsagesIfNeeded(mergedComponents, skipUsages)
+    } yield optionallyEnrichedComponents.sortBy(ComponentListElement.sortMethod)
+  }
+
+  private def enrichUsagesIfNeeded(
+      components: List[ComponentListElement],
+      skipUsages: Boolean
+  )(implicit loggedUser: LoggedUser): Future[List[ComponentListElement]] = {
+    if (skipUsages) {
+      Future.successful(components)
+    } else {
+      for {
+        userAccessibleComponentUsages <- getUserAccessibleComponentUsages
+        enrichedWithUsagesComponents = components.map(c =>
+          c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
+        )
+      } yield enrichedWithUsagesComponents
+    }
   }
 
   override def getComponentUsages(

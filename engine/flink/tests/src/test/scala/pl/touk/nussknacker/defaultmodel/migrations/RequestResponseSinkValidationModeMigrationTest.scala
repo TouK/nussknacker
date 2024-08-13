@@ -12,7 +12,7 @@ import scala.reflect.ClassTag
 
 class RequestResponseSinkValidationModeMigrationTest extends AnyFunSuite {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   test("should migrate union node 'value' parameter name to Output expression") {
     val process = ScenarioBuilder
@@ -21,7 +21,9 @@ class RequestResponseSinkValidationModeMigrationTest extends AnyFunSuite {
       .emptySink("sink", "response")
 
     val results = RequestResponseSinkValidationModeMigration.migrateProcess(process, "none")
-    getFirst[Sink](results).parameters shouldBe List(NodeParameter(ParameterName("Value validation mode"), "'lax'"))
+    getFirst[Sink](results).parameters shouldBe List(
+      NodeParameter(ParameterName("Value validation mode"), "'lax'".spel)
+    )
   }
 
   private def getFirst[T: ClassTag](scenario: CanonicalProcess): T = scenario.collectAllNodes.collectFirst {

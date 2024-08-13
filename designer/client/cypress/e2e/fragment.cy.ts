@@ -320,7 +320,7 @@ describe("Fragment", () => {
 
         const docsUrl = "https://nussknacker.io/";
 
-        cy.get("[data-testid=window]").should("be.visible").find("input").eq(1).click().type(docsUrl);
+        cy.get("[data-testid=window]").should("be.visible").find("input").eq(2).click().type(docsUrl);
 
         cy.contains(/^apply/i)
             .should("be.enabled")
@@ -384,6 +384,11 @@ describe("Fragment", () => {
         cy.get<string>("@fragmentName").then((name) => cy.visitProcess(name));
         cy.contains("sinks").should("exist").scrollIntoView();
         cy.getNode("output").as("output");
+
+        // There is a race condition
+        // and it can be a situation that dead-end node is dropped before the scenario is visible.
+        // To be sure that element is visible, let's click on it first
+        cy.get("@output").click();
         cy.contains("dead-end")
             .first()
             .should("be.visible")

@@ -28,7 +28,7 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(1),
       null,
       givenValue
@@ -41,7 +41,7 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(2),
       null,
       givenValue
@@ -54,7 +54,7 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(1),
       "",
       givenValue
@@ -67,7 +67,7 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(2),
       "",
       givenValue

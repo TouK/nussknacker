@@ -31,6 +31,7 @@ export const SwitchButton = styled(Button)(({ disabled, theme }) => ({
 function getTypeIcon(type: EditorType) {
     switch (type) {
         case EditorType.FIXED_VALUES_PARAMETER_EDITOR:
+        case EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR:
             return ListIcon;
         case EditorType.DURATION_EDITOR:
         case EditorType.CRON_EDITOR:

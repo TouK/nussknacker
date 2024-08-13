@@ -5,23 +5,21 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 import java.util.Date
 
 class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
-  import spel.Implicits._
-
   test("be able to use maps and lists after custom nodes") {
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("map", "map", "{:}")
-      .buildSimpleVariable("list", "list", "{}")
-      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "''")
-      .buildSimpleVariable("mapToString", "mapToString", "#map.toString()")
-      .buildSimpleVariable("listToString", "listToString", "#list.toString()")
+      .buildSimpleVariable("map", "map", "{:}".spel)
+      .buildSimpleVariable("list", "list", "{}".spel)
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "''".spel)
+      .buildSimpleVariable("mapToString", "mapToString", "#map.toString()".spel)
+      .buildSimpleVariable("listToString", "listToString", "#list.toString()".spel)
       .emptySink("out", "monitor")
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
@@ -35,13 +33,13 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("map", "map", "{:}")
-      .buildSimpleVariable("list", "list", "{}")
-      .buildSimpleVariable("str", "strVar", "'someStr'")
-      .customNode("custom", "outRec", "optionalEndingCustom", "param" -> "#strVar")
-      .buildSimpleVariable("mapToString", "mapToString", "#map.toString()")
-      .buildSimpleVariable("listToString", "listToString", "#list.toString()")
-      .buildSimpleVariable("outputVarToString", "outRecToString", "#outRec.toString()")
+      .buildSimpleVariable("map", "map", "{:}".spel)
+      .buildSimpleVariable("list", "list", "{}".spel)
+      .buildSimpleVariable("str", "strVar", "'someStr'".spel)
+      .customNode("custom", "outRec", "optionalEndingCustom", "param" -> "#strVar".spel)
+      .buildSimpleVariable("mapToString", "mapToString", "#map.toString()".spel)
+      .buildSimpleVariable("listToString", "listToString", "#list.toString()".spel)
+      .buildSimpleVariable("outputVarToString", "outRecToString", "#outRec.toString()".spel)
       .emptySink("out", "monitor")
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
@@ -55,9 +53,9 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
-      .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
-      .processor("proc2", "logService", "all" -> "#outRec")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'terefere'".spel)
+      .filter("delta", "#outRec.record.value1 > #outRec.previous + 5".spel)
+      .processor("proc2", "logService", "all" -> "#outRec".spel)
       .emptySink("out", "monitor")
 
     val data = List(
@@ -81,12 +79,12 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'terefere'".spel)
       .split(
         "split",
         GraphBuilder
-          .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
-          .processor("proc2", "logService", "all" -> "#outRec")
+          .filter("delta", "#outRec.record.value1 > #outRec.previous + 5".spel)
+          .processor("proc2", "logService", "all" -> "#outRec".spel)
           .emptySink("out", "monitor"),
         GraphBuilder
           .emptySink("out2", "monitor")
@@ -112,8 +110,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .customNodeNoOutput("id1", "customContextClear", "value" -> "#input.id")
-      .processor("proc2", "logService", "all" -> "'42'")
+      .customNodeNoOutput("id1", "customContextClear", "value" -> "#input.id".spel)
+      .processor("proc2", "logService", "all" -> "'42'".spel)
       .emptySink("out", "monitor")
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
@@ -125,21 +123,21 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
   test("be able to split after custom node") {
     val additionalFilterBranch = GraphBuilder
-      .filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1")
-      .customNode("custom2", "outRec2", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1".spel)
+      .customNode("custom2", "outRec2", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'terefere'".spel)
       .emptySink("outFalse", "monitor")
 
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'terefere'".spel)
       .split(
         "split",
-        GraphBuilder.processorEnd("proc3", "logService", "all" -> "'allRec-' + #outRec.record.value1"),
+        GraphBuilder.processorEnd("proc3", "logService", "all" -> "'allRec-' + #outRec.record.value1".spel),
         // additionalFilterBranch added, to make this case more complicated
         GraphBuilder
-          .filter("delta", "#outRec.record.value1 > #outRec.previous + 5", additionalFilterBranch)
-          .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added")
+          .filter("delta", "#outRec.record.value1 > #outRec.previous + 5".spel, additionalFilterBranch)
+          .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added".spel)
           .emptySink("out", "monitor")
       )
 
@@ -165,8 +163,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .filter("dummy", "false")
-      .split("split", GraphBuilder.processorEnd("proc2", "logService", "all" -> "#input"))
+      .filter("dummy", "false".spel)
+      .split("split", GraphBuilder.processorEnd("proc2", "logService", "all" -> "#input".spel))
 
     val data = List(
       SimpleRecord("1", 3, "a", new Date(0))
@@ -182,11 +180,11 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("a", "tv", "'alamakota'")
+      .buildSimpleVariable("a", "tv", "'alamakota'".spel)
       .split(
         "split",
-        GraphBuilder.processorEnd("proc3", "logService", "all" -> "'f1-' + #tv"),
-        GraphBuilder.processorEnd("proc4", "logService", "all" -> "'f2-' + #tv")
+        GraphBuilder.processorEnd("proc3", "logService", "all" -> "'f1-' + #tv".spel),
+        GraphBuilder.processorEnd("proc4", "logService", "all" -> "'f2-' + #tv".spel)
       )
 
     val data = List(
@@ -204,9 +202,9 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
-      .processorEnd("proc2", "logService", "all" -> "#beforeNode")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'".spel)
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'terefere'".spel)
+      .processorEnd("proc2", "logService", "all" -> "#beforeNode".spel)
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
     processInvoker.invokeWithSampleData(process, data)
@@ -219,9 +217,9 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
-      .processorEnd("proc2", "logService", "all" -> "#input.id")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'".spel)
+      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id".spel, "stringVal" -> "'terefere'".spel)
+      .processorEnd("proc2", "logService", "all" -> "#input.id".spel)
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
 
@@ -235,14 +233,14 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'".spel)
       .customNodeNoOutput(
         "custom",
         "customFilterContextTransformation",
-        "input"     -> "#input.id",
-        "stringVal" -> "'terefere'"
+        "input"     -> "#input.id".spel,
+        "stringVal" -> "'terefere'".spel
       )
-      .processorEnd("proc2", "logService", "all" -> "#input.id")
+      .processorEnd("proc2", "logService", "all" -> "#input.id".spel)
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
 
@@ -255,8 +253,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .customNodeNoOutput("id1", "customContextClear", "value" -> "'ala'")
-      .processorEnd("proc2", "logService", "all" -> "#input.id")
+      .customNodeNoOutput("id1", "customContextClear", "value" -> "'ala'".spel)
+      .processorEnd("proc2", "logService", "all" -> "#input.id".spel)
 
     val data = List()
 
@@ -271,9 +269,9 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
-      .filter("delta", "#outRec.record.value999 > #outRec.previous + 5")
-      .processor("proc2", "logService", "all" -> "#outRec")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'terefere'".spel)
+      .filter("delta", "#outRec.record.value999 > #outRec.previous + 5".spel)
+      .processor("proc2", "logService", "all" -> "#outRec".spel)
       .emptySink("out", "monitor")
 
     val thrown = the[IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, List.empty)
@@ -285,8 +283,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .customNode("id1", "output", "transformWithNullable", "param" -> "")
-      .processor("proc2", "logService", "all" -> "#output")
+      .customNode("id1", "output", "transformWithNullable", "param" -> "".spel)
+      .processor("proc2", "logService", "all" -> "#output".spel)
       .emptySink("out", "monitor")
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
@@ -300,9 +298,9 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("map", "map", "{:}")
-      .buildSimpleVariable("list", "list", "{}")
-      .endingCustomNode("custom", None, "optionalEndingCustom", "param" -> "#input.id")
+      .buildSimpleVariable("map", "map", "{:}".spel)
+      .buildSimpleVariable("list", "list", "{}".spel)
+      .endingCustomNode("custom", None, "optionalEndingCustom", "param" -> "#input.id".spel)
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
@@ -315,12 +313,12 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'".spel)
+      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id".spel, "stringVal" -> "'terefere'".spel)
       .split(
         "split",
         GraphBuilder.emptySink("out", "monitor"),
-        GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
+        GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'".spel)
       )
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
 

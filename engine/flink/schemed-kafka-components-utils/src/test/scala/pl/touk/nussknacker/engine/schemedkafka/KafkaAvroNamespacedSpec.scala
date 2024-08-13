@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
 import org.scalatest.OptionValues
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroNamespacedSpec.sinkForInputMetaResultsHolder
@@ -51,10 +51,15 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
     val topicConfig =
       TopicConfig(InputPaymentWithNamespaced, OutputPaymentWithNamespaced, PaymentV1.schema, isKey = false)
     // Process should be created from topic without namespace..
-    val processTopicConfig = TopicConfig("input_payment", "output_payment", PaymentV1.schema, isKey = false)
-    val sourceParam        = SourceAvroParam.forUniversal(processTopicConfig, ExistingSchemaVersion(1))
-    val sinkParam          = UniversalSinkParam(processTopicConfig, ExistingSchemaVersion(1), "#input")
-    val process            = createAvroProcess(sourceParam, sinkParam)
+    val processTopicConfig = TopicConfig(
+      input = TopicName.ForSource("input_payment"),
+      output = TopicName.ForSink("output_payment"),
+      schema = PaymentV1.schema,
+      isKey = false
+    )
+    val sourceParam = SourceAvroParam.forUniversal(processTopicConfig, ExistingSchemaVersion(1))
+    val sinkParam   = UniversalSinkParam(processTopicConfig, ExistingSchemaVersion(1), "#input")
+    val process     = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, List(PaymentV1.record), PaymentV1.record)
   }
@@ -71,10 +76,10 @@ object KafkaAvroNamespacedMockSchemaRegistry {
 
   final val namespace: String = "touk"
 
-  final val TestTopic: String                   = "test_topic"
-  final val SomeTopic: String                   = "topic"
-  final val InputPaymentWithNamespaced: String  = s"${namespace}_input_payment"
-  final val OutputPaymentWithNamespaced: String = s"${namespace}_output_payment"
+  final val TestTopic: String           = "test_topic"
+  final val SomeTopic: String           = "topic"
+  final val InputPaymentWithNamespaced  = TopicName.ForSource(s"${namespace}_input_payment")
+  final val OutputPaymentWithNamespaced = TopicName.ForSink(s"${namespace}_output_payment")
 
   private val IntSchema: Schema = AvroUtils.parseSchema(
     """{
@@ -88,8 +93,8 @@ object KafkaAvroNamespacedMockSchemaRegistry {
       .register(TestTopic, IntSchema, 1, isKey = true)         // key subject should be ignored
       .register(TestTopic, PaymentV1.schema, 1, isKey = false) // topic with bad namespace should be ignored
       .register(SomeTopic, PaymentV1.schema, 1, isKey = false) // topic without namespace should be ignored
-      .register(InputPaymentWithNamespaced, PaymentV1.schema, 1, isKey = false)
-      .register(OutputPaymentWithNamespaced, PaymentV1.schema, 1, isKey = false)
+      .register(InputPaymentWithNamespaced.name, PaymentV1.schema, 1, isKey = false)
+      .register(OutputPaymentWithNamespaced.name, PaymentV1.schema, 1, isKey = false)
       .build
 
 }

@@ -18,14 +18,11 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 object UsageStatisticsReportsSettingsService extends LazyLogging {
-
-  private val nuFingerprintFileName = new FileName("nussknacker.fingerprint")
 
   def apply(
       config: UsageStatisticsReportsConfig,
@@ -140,7 +137,7 @@ class UsageStatisticsReportsSettingsService(
       componentStatistics = ScenarioStatistics.getComponentStatistics(componentDesignerWideUsage, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
       designerUptimeStatistics = getDesignerUptimeStatistics
-      fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
+      fingerprint <- new EitherT(fingerprintService.fingerprint(config))
       requestId = RequestId()
       combinedStatistics = basicStatistics ++
         scenariosStatistics ++

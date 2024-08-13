@@ -36,7 +36,7 @@ import scala.jdk.CollectionConverters._
 class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
   import SingleSideJoinTransformerSpec._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val MainBranchId = "main"
 
@@ -56,7 +56,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       .sources(
         GraphBuilder
           .source("source", "start-main")
-          .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
+          .buildSimpleVariable("build-key", KeyVariableName, "#input.key".spel)
           .branchEnd(MainBranchId, JoinNodeId),
         GraphBuilder
           .source("joined-source", "start-joined")
@@ -68,17 +68,17 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
             Some(OutVariableName),
             List(
               MainBranchId -> List(
-                "branchType" -> s"T(${classOf[BranchType].getName}).MAIN",
-                "key"        -> s"#$KeyVariableName"
+                "branchType" -> s"T(${classOf[BranchType].getName}).MAIN".spel,
+                "key"        -> s"#$KeyVariableName".spel
               ),
               JoinedBranchId -> List(
-                "branchType" -> s"T(${classOf[BranchType].getName}).JOINED",
-                "key"        -> "#input.key"
+                "branchType" -> s"T(${classOf[BranchType].getName}).JOINED".spel,
+                "key"        -> "#input.key".spel
               )
             ),
-            "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})",
-            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')",
-            "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
+            "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})".spel,
+            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')".spel,
+            "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } ".spel
           )
           .emptySink(EndNodeId, "dead-end")
       )
@@ -142,8 +142,6 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 object SingleSideJoinTransformerSpec {
 
   private val customElementName = "single-side-join-in-test"
-
-  private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
 
   private val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
 

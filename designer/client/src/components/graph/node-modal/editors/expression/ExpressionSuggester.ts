@@ -13,6 +13,7 @@ export type ExpressionSuggestion = {
     methodName: string;
     refClazz: {
         display: string;
+        type: string;
     };
     fromClass: boolean;
     description?: string;

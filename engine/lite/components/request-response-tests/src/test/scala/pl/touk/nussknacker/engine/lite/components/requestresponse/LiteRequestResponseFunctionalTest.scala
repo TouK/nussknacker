@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
@@ -121,7 +121,7 @@ class LiteRequestResponseFunctionalTest
         |""".stripMargin
     val params: List[(String, Expression)] = List(
       // TODO: currently inline map is not properly typed here :/
-      "field" -> "#input"
+      "field" -> "#input".spel
     )
     val scenario = ScenarioBuilder
       .requestResponse("test")
@@ -132,7 +132,7 @@ class LiteRequestResponseFunctionalTest
         )
       )
       .source("input", "request")
-      .emptySink(sinkName, "response", (SinkRawEditorParamName.value -> ("false": Expression)) :: params: _*)
+      .emptySink(sinkName, "response", (SinkRawEditorParamName.value -> ("false".spel: Expression)) :: params: _*)
 
     val result = runner.runWithRequests(scenario) { _ => }
 
@@ -189,7 +189,7 @@ class LiteRequestResponseFunctionalTest
         )
       )
       .source("input", "request")
-      .emptySink(sinkName, "response", SinkRawEditorParamName.value -> "false")
+      .emptySink(sinkName, "response", SinkRawEditorParamName.value -> "false".spel)
 
     val result = runner.runWithRequests(scenario) { invoker =>
       invoker(HttpRequest(HttpMethods.POST, entity = "{}}")).rightValue
@@ -489,9 +489,9 @@ class LiteRequestResponseFunctionalTest
       .emptySink(
         sinkName,
         "response",
-        SinkRawEditorParamName.value          -> "true",
-        SinkValidationModeParameterName.value -> s"'${config.validationModeName}'",
-        SinkRawValueParamName.value           -> config.sinkDefinition
+        SinkRawEditorParamName.value          -> "true".spel,
+        SinkValidationModeParameterName.value -> s"'${config.validationModeName}'".spel,
+        SinkRawValueParamName.value           -> config.sinkDefinition.spel
       )
 
   case class ScenarioConfig(

@@ -39,6 +39,7 @@ final case class OAuth2Configuration(
     tokenCookie: Option[TokenCookieConfig] = None,
     overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
     usernameClaim: Option[UsernameClaim] = None,
+    realm: Option[String] = None
 ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 

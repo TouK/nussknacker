@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
 
-  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   import scala.jdk.CollectionConverters._
 
   test("string default") {
     verify("stringField_0")(
-      { _ shouldBe Some(asSpelExpression("'stringDefault'")) },
+      { _ shouldBe Some("'stringDefault'".spel) },
     )
   }
 
@@ -25,7 +25,7 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
 
   test("long default") {
     verify("longField_2")(
-      { _ shouldBe Some(asSpelExpression("42L")) },
+      { _ shouldBe Some("42L".spel) },
     )
   }
 
@@ -50,7 +50,7 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
 
   test("union with default of supported type") {
     verify("unionOfIntAndRecord_5")(
-      { _ shouldBe Some(asSpelExpression("42")) },
+      { _ shouldBe Some("42".spel) },
     )
   }
 
@@ -65,13 +65,13 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
 
   test("uuid default") {
     verify("uuidField_7")(
-      { _ shouldBe Some(asSpelExpression("T(java.util.UUID).fromString('00000000-0000-0000-0000-000000000000')")) },
+      { _ shouldBe Some("T(java.util.UUID).fromString('00000000-0000-0000-0000-000000000000')".spel) },
     )
   }
 
   private def verifyIsNull(fieldName: String): Unit = {
     verify(fieldName) {
-      { _ shouldBe Some(asSpelExpression("null")) }
+      { _ shouldBe Some("null".spel) }
     }
   }
 

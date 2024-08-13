@@ -209,7 +209,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
       )
   }
 
-  private lazy val processingTypeWithCategories = {
+  private lazy val processingTypeWithCategories: Set[(String, String)] = {
     val scenarioTypeConfigObject = designerConfig.getObject("scenarioTypes")
     val processingTypes          = scenarioTypeConfigObject.keySet().asScala.toSet
 

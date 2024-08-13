@@ -110,11 +110,11 @@ class RemoteEnvironmentResourcesSpec
 
   it should "compare environments" in {
 
-    import pl.touk.nussknacker.engine.spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
     val processId1 = ProcessName("proc1")
     val processId2 = ProcessName("proc2")
 
-    val difference = NodeNotPresentInOther("a", Filter("a", ""))
+    val difference = NodeNotPresentInOther("a", Filter("a", "".spel))
 
     val route = withPermissions(
       new RemoteEnvironmentResources(
@@ -144,11 +144,11 @@ class RemoteEnvironmentResourcesSpec
   }
 
   it should "not fail in comparing environments if process does not exist in the other one" in {
-    import pl.touk.nussknacker.engine.spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
     val processId1 = ProcessName("proc1")
     val processId2 = ProcessName("proc2")
 
-    val difference = NodeNotPresentInOther("a", Filter("a", ""))
+    val difference = NodeNotPresentInOther("a", Filter("a", "".spel))
 
     val route = withPermissions(
       new RemoteEnvironmentResources(

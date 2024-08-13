@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
+import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, NodeId, Params, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.{
@@ -26,7 +27,7 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
-      preparedTopics: List[PreparedKafkaTopic],
+      preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,
@@ -51,7 +52,7 @@ class LiteKafkaSourceImpl[K, V](
     contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
     deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
     val nodeId: NodeId,
-    preparedTopics: List[PreparedKafkaTopic],
+    preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     val kafkaConfig: KafkaConfig,
     val formatter: RecordFormatter,
     testParametersInfo: KafkaTestParametersInfo
@@ -67,7 +68,7 @@ class LiteKafkaSourceImpl[K, V](
     initializerFun = contextInitializer.initContext(contextIdGenerator)
   }
 
-  override val topics: List[String] = preparedTopics.map(_.prepared)
+  override lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
   override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
     val deserialized = deserializationSchema.deserialize(record)
@@ -79,7 +80,7 @@ class LiteKafkaSourceImpl[K, V](
   // We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
   // (see difference with Flink implementation)
   override def testRecordParser: TestRecordParser[ConsumerRecord[Array[Byte], Array[Byte]]] =
-    (testRecord: TestRecord) => formatter.parseRecord(topics.head, testRecord)
+    (testRecords: List[TestRecord]) => testRecords.map { testRecord => formatter.parseRecord(topics.head, testRecord) }
 
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 

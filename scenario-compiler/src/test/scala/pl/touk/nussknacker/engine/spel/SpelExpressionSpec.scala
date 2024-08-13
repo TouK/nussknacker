@@ -38,6 +38,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
   UnknownMethodError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
@@ -1243,6 +1244,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         .validValue
       parseV[Any](expression, validationContext).validValue.typingInfo.typingResult shouldBe expectedResultType
     }
+  }
+
+  test("should not validate array constructor") {
+    List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
+      illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
+    )
   }
 
 }

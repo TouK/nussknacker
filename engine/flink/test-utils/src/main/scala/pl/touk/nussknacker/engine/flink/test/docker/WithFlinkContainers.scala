@@ -8,6 +8,7 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.images.builder.ImageFromDockerfile
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.test.containers.{FileSystemBind, WithDockerContainers}
 
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}

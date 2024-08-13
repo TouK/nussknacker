@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   TypedNodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -47,7 +47,7 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSin
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{ModelData, spel}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.test.{NuScalaTestAssertions, VeryPatientScalaFutures}
 
 trait KafkaAvroSpecMixin
@@ -61,9 +61,9 @@ trait KafkaAvroSpecMixin
     with VeryPatientScalaFutures
     with Serializable {
 
-  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source]
+  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   protected var modelData: ModelData = _
 
@@ -103,6 +103,7 @@ trait KafkaAvroSpecMixin
     ) {
       override protected def prepareKafkaConfig: KafkaConfig =
         super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
+
     }
   }
 
@@ -115,7 +116,8 @@ trait KafkaAvroSpecMixin
     )
   }
 
-  protected def validationModeParam(validationMode: ValidationMode): expression.Expression = s"'${validationMode.name}'"
+  protected def validationModeParam(validationMode: ValidationMode): expression.Expression =
+    s"'${validationMode.name}'".spel
 
   protected def createAvroProcess(
       source: SourceAvroParam,
@@ -123,22 +125,21 @@ trait KafkaAvroSpecMixin
       filterExpression: Option[String] = None,
       sourceTopicParamValue: String => String = topic => s"'$topic'"
   ): CanonicalProcess = {
-    import spel.Implicits._
-    val sourceParams = List(topicParamName -> asSpelExpression(sourceTopicParamValue(source.topic))) ++ (source match {
+    val sourceParams = List(topicParamName -> sourceTopicParamValue(source.topic).spel) ++ (source match {
       case UniversalSourceParam(_, version) =>
-        List(schemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
+        List(schemaVersionParamName -> formatVersionParam(version).spel)
       case UniversalSourceWithKeySupportParam(_, version) =>
-        List(schemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
+        List(schemaVersionParamName -> formatVersionParam(version).spel)
     })
 
     val baseSinkParams: List[(String, expression.Expression)] = List(
-      topicParamName.value         -> s"'${sink.topic}'",
-      schemaVersionParamName.value -> formatVersionParam(sink.versionOption),
-      sinkKeyParamName.value       -> sink.key
+      topicParamName.value         -> s"'${sink.topic.name}'".spel,
+      schemaVersionParamName.value -> formatVersionParam(sink.versionOption).spel,
+      sinkKeyParamName.value       -> sink.key.spel
     )
 
     val editorParams: List[(String, expression.Expression)] = List(
-      sinkRawEditorParamName.value -> s"${sink.validationMode.isDefined}"
+      sinkRawEditorParamName.value -> s"${sink.validationMode.isDefined}".spel
     )
 
     val validationParams: List[(String, expression.Expression)] =
@@ -154,7 +155,7 @@ trait KafkaAvroSpecMixin
       )
 
     val filteredBuilder = filterExpression
-      .map(filter => builder.filter("filter", filter))
+      .map(filter => builder.filter("filter", filter.spel))
       .getOrElse(builder)
 
     filteredBuilder
@@ -165,7 +166,7 @@ trait KafkaAvroSpecMixin
           "kafka",
           baseSinkParams ++ editorParams ++ validationParams ++ sink.valueParams: _*
         ),
-        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "Value" -> "#inputMeta")
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "Value" -> "#inputMeta".spel)
       )
   }
 
@@ -200,9 +201,9 @@ trait KafkaAvroSpecMixin
       expected: List[AnyRef],
       additionalVerificationBeforeScenarioCancel: => Unit
   ): Unit = {
-    kafkaClient.createTopic(topic.input, partitions = 1)
+    kafkaClient.createTopic(topic.input.name, partitions = 1)
     events.foreach(obj => pushMessage(obj, topic.input))
-    kafkaClient.createTopic(topic.output, partitions = 1)
+    kafkaClient.createTopic(topic.output.name, partitions = 1)
 
     run(process) {
       consumeAndVerifyMessages(topic.output, expected)
@@ -233,18 +234,18 @@ trait KafkaAvroSpecMixin
 
   object SourceAvroParam {
     def forUniversal(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
-      UniversalSourceParam(topicConfig.input, versionOption)
+      UniversalSourceParam(topicConfig.input.name, versionOption)
 
     def forUniversalWithKeySchemaSupport(
         topicConfig: TopicConfig,
         versionOption: SchemaVersionOption
     ): SourceAvroParam =
-      UniversalSourceWithKeySupportParam(topicConfig.input, versionOption)
+      UniversalSourceWithKeySupportParam(topicConfig.input.name, versionOption)
 
   }
 
   case class UniversalSinkParam(
-      topic: String,
+      topic: TopicName.ForSink,
       versionOption: SchemaVersionOption,
       valueParams: List[(String, expression.Expression)],
       key: String,
@@ -252,8 +253,6 @@ trait KafkaAvroSpecMixin
   ) // TODO: improve it, but now - if defined we use 'raw editor' otherwise 'value editor'
 
   object UniversalSinkParam {
-
-    import spel.Implicits.asSpelExpression
 
     def apply(
         topicConfig: TopicConfig,
@@ -265,7 +264,7 @@ trait KafkaAvroSpecMixin
       new UniversalSinkParam(
         topicConfig.output,
         version,
-        (sinkValueParamName.value -> asSpelExpression(value)) :: Nil,
+        (sinkValueParamName.value -> value.spel) :: Nil,
         key,
         validationMode
       )
@@ -302,7 +301,7 @@ trait KafkaAvroSpecMixin
         val testData = source.generateTestData(1)
         info("test object: " + testData)
         val deserializedObj =
-          source.testRecordParser.parse(testData.testRecords.head).asInstanceOf[ConsumerRecord[Any, Any]]
+          source.testRecordParser.parse(testData.testRecords).head.asInstanceOf[ConsumerRecord[Any, Any]]
 
         deserializedObj.key() shouldEqual givenKey
         deserializedObj.value() shouldEqual givenValue

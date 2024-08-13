@@ -86,6 +86,4 @@ object Union extends CustomStreamTransformer {
     }
   }
 
-  override def canHaveManyInputs: Boolean = true
-
 }

@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers.KafkaContainer
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Suite
 import org.testcontainers.utility.DockerImageName
+import pl.touk.nussknacker.test.containers.WithDockerContainers
 
 import java.util.Arrays.asList
 

@@ -36,7 +36,7 @@ import scala.jdk.CollectionConverters._
 class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
   import FullOuterJoinTransformerSpec._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val JoinNodeId = "joined-node-id"
 
@@ -45,8 +45,6 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   private val KeyVariableName = "keyVar"
 
   private val OutVariableName = "outVar"
-
-  private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
 
   private def performTest(input: List[Either[OneRecord, OneRecord]], expected: List[Map[String, AnyRef]]): Unit = {
     val MainBranchId   = "main"
@@ -57,7 +55,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("source", "start-main")
-          .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
+          .buildSimpleVariable("build-key", KeyVariableName, "#input.key".spel)
           .branchEnd(MainBranchId, JoinNodeId),
         GraphBuilder
           .source("joined-source", "start-joined")
@@ -69,17 +67,17 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             Some(OutVariableName),
             List(
               MainBranchId -> List(
-                "key"         -> s"#$KeyVariableName",
-                "aggregator"  -> s"#AGG.map({last: #AGG.last, sum: #AGG.sum})",
-                "aggregateBy" -> "{last: #input.value, sum: #input.value } "
+                "key"         -> s"#$KeyVariableName".spel,
+                "aggregator"  -> s"#AGG.map({last: #AGG.last, sum: #AGG.sum})".spel,
+                "aggregateBy" -> "{last: #input.value, sum: #input.value } ".spel
               ),
               JoinedBranchId -> List(
-                "key" -> "#input.key",
-                "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})",
-                "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
+                "key" -> "#input.key".spel,
+                "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})".spel,
+                "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } ".spel
               )
             ),
-            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
+            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
           .emptySink(EndNodeId, "dead-end")
       )
@@ -426,7 +424,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("source", "start-main")
-          .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
+          .buildSimpleVariable("build-key", KeyVariableName, "#input.key".spel)
           .branchEnd(MainBranchId, JoinNodeId),
         GraphBuilder
           .source("joined-source", "start-joined")
@@ -438,17 +436,17 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             Some(OutVariableName),
             List(
               MainBranchId -> List(
-                "key"         -> s"#$KeyVariableName",
-                "aggregator"  -> s"#AGG.map({last: #AGG.last, sum: #AGG.sum})",
-                "aggregateBy" -> "{last: #input.value, sum: #input.value } "
+                "key"         -> s"#$KeyVariableName".spel,
+                "aggregator"  -> s"#AGG.map({last: #AGG.last, sum: #AGG.sum})".spel,
+                "aggregateBy" -> "{last: #input.value, sum: #input.value } ".spel
               ),
               JoinedBranchId -> List(
-                "key" -> "#input.key",
-                "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})",
-                "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
+                "key" -> "#input.key".spel,
+                "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})".spel,
+                "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } ".spel
               )
             ),
-            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
+            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
           .emptySink(EndNodeId, "dead-end")
       )
@@ -473,7 +471,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       .sources(
         GraphBuilder
           .source("source", "start-main")
-          .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
+          .buildSimpleVariable("build-key", KeyVariableName, "#input.key".spel)
           .branchEnd(MainBranchId, JoinNodeId),
         GraphBuilder
           .source("joined-source", "start-joined")
@@ -485,17 +483,17 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             Some(OutVariableName),
             List(
               MainBranchId -> List(
-                "key"         -> s"#$KeyVariableName",
-                "aggregator"  -> s"#AGG.map({last: #AGG.last, sum: #AGG.sum})",
-                "aggregateBy" -> "{last: #input.value, sum: #input.value } "
+                "key"         -> s"#$KeyVariableName".spel,
+                "aggregator"  -> s"#AGG.map({last: #AGG.last, sum: #AGG.sum})".spel,
+                "aggregateBy" -> "{last: #input.value, sum: #input.value } ".spel
               ),
               JoinedBranchId -> List(
-                "key" -> "#input.key",
-                "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})",
-                "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
+                "key" -> "#input.key".spel,
+                "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})".spel,
+                "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } ".spel
               )
             ),
-            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
+            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')".spel,
           )
           .emptySink(EndNodeId, "dead-end")
       )

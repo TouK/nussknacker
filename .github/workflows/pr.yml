@@ -612,9 +612,6 @@ jobs:
           - repo: nussknacker-quickstart
             workflow_id: pr.yml
             ref: staging
-          - repo: nussknacker-quickstart
-            workflow_id: benchmark-workflow.yml
-            ref: staging
           - repo: nussknacker-sample-components
             workflow_id: pr.yml
             ref: staging

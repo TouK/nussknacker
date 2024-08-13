@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.util.Date
@@ -48,7 +48,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
     val process = ScenarioBuilder
       .streaming("testProcess")
       .source("source", "source")
-      .filter("shouldFail", "1/{0, 1}[0] != 10")
+      .filter("shouldFail", "1/{0, 1}[0] != 10".spel)
       .emptySink("end", "sink")
 
     val env = flinkMiniCluster.createExecutionEnvironment()

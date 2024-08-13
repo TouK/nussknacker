@@ -22,15 +22,15 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 
 class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   test("resolve simple process") {
 
     val process = ScenarioBuilder
       .streaming("test")
       .source("source", "source1")
-      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "ala" -> "'makota'")
-      .fragmentOneOut("sub2", "fragment1", "output", "fragmentResult", "ala" -> "'makota'")
+      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "ala" -> "'makota'".spel)
+      .fragmentOneOut("sub2", "fragment1", "output", "fragmentResult", "ala" -> "'makota'".spel)
       .emptySink("sink", "sink1")
 
     val suprocessParameters = List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
@@ -39,7 +39,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(FragmentInputDefinition("start", suprocessParameters)),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()),
+        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
       List.empty
@@ -65,7 +65,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val process = ScenarioBuilder
       .streaming("test")
       .source("source", "source1")
-      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "param" -> "'makota'")
+      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "param" -> "'makota'".spel)
       .emptySink("sink", "sink1")
 
     val fragment = CanonicalProcess(
@@ -75,7 +75,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
         ),
         canonicalnode
-          .FilterNode(Filter("f1", "#param == 'a'"), List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))),
+          .FilterNode(Filter("f1", "#param == 'a'".spel), List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
       List.empty
@@ -88,7 +88,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
         ),
         canonicalnode.Fragment(
-          FragmentInput("sub2", FragmentRef("fragment2", List(NodeParameter(ParameterName("param"), "#param")))),
+          FragmentInput("sub2", FragmentRef("fragment2", List(NodeParameter(ParameterName("param"), "#param".spel)))),
           Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
         )
       ),
@@ -115,7 +115,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val process = ScenarioBuilder
       .streaming("test")
       .source("source", "source1")
-      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "ala" -> "'makota'")
+      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "ala" -> "'makota'".spel)
       .emptySink("sink", "sink1")
 
     val fragment = CanonicalProcess(
@@ -124,7 +124,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
         FlatNode(
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
         ),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()),
+        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
         FlatNode(FragmentOutputDefinition("out1", "badoutput", List.empty))
       ),
       List.empty
@@ -144,7 +144,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .fragmentDisabledManyOutputs(
         "sub",
         "fragment1",
-        List("ala" -> "'makota'"),
+        List("ala" -> "'makota'".spel),
         Map(
           "output1" -> GraphBuilder.emptySink("sink1", "out1"),
           "output2" -> GraphBuilder.emptySink("sink2", "out2")
@@ -157,7 +157,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
         FlatNode(
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
         ),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()),
+        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
         canonicalnode.SplitNode(
           Split("s"),
           List(
@@ -188,7 +188,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
         FlatNode(
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
         ),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()),
+        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
         FlatNode(Sink("disabledFragmentMockedSink", SinkRef("disabledFragmentMockedSink", List())))
       ),
       List.empty
@@ -204,16 +204,16 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val processWithEmptyFragment = ScenarioBuilder
       .streaming("test")
       .source("source", "source1")
-      .fragmentOneOut("sub", "emptyFragment", "output", "fragmentResult", "ala" -> "'makota'")
-      .filter("d", "true")
+      .fragmentOneOut("sub", "emptyFragment", "output", "fragmentResult", "ala" -> "'makota'".spel)
+      .filter("d", "true".spel)
       .emptySink("sink", "sink1")
 
     val processWithDisabledFragment =
       ScenarioBuilder
         .streaming("test")
         .source("source", "source1")
-        .fragmentDisabled("sub", "fragment1", "output", "ala" -> "'makota'")
-        .filter("d", "true")
+        .fragmentDisabled("sub", "fragment1", "output", "ala" -> "'makota'".spel)
+        .filter("d", "true".spel)
         .emptySink("sink", "sink1")
 
     val emptyFragment = CanonicalProcess(
@@ -232,7 +232,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
         FlatNode(
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
         ),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()),
+        canonicalnode.FilterNode(Filter("f1", "false".spel), List()),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
       List.empty
@@ -274,11 +274,11 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val process = ScenarioBuilder
       .streaming("test")
       .source("source", "source1")
-      .fragmentEnd("sub", "fragment1", "ala" -> "'makota'")
+      .fragmentEnd("sub", "fragment1", "ala" -> "'makota'".spel)
 
     val fragment = ScenarioBuilder
       .fragment("fragment1", "ala" -> classOf[String])
-      .filter("f1", "false")
+      .filter("f1", "false".spel)
       .emptySink("end", "sink1")
 
     val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
@@ -308,7 +308,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .fragment(
         "sub",
         "fragment1",
-        List("ala"   -> "'makota'"),
+        List("ala"   -> "'makota'".spel),
         Map("output" -> "fragmentResult"),
         Map(
           "output" ->
@@ -326,10 +326,13 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
           Split("split"),
           List(
             List(
-              FlatNode(Filter("filter2a", "false")),
+              FlatNode(Filter("filter2a", "false".spel)),
               FlatNode(BranchEndData(BranchEndDefinition("join2a", "join1")))
             ),
-            List(FlatNode(Filter("filter2b", "false")), FlatNode(BranchEndData(BranchEndDefinition("join2b", "join1"))))
+            List(
+              FlatNode(Filter("filter2b", "false".spel)),
+              FlatNode(BranchEndData(BranchEndDefinition("join2b", "join1")))
+            )
           )
         )
       ),
@@ -348,7 +351,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .fragment("fragment1")
       .split(
         "split",
-        GraphBuilder.fragmentOutput("end1", "output1", "field" -> "false"),
+        GraphBuilder.fragmentOutput("end1", "output1", "field" -> "false".spel),
         GraphBuilder.fragmentOutput("end2", "output2"),
       )
     val scenario = ScenarioBuilder

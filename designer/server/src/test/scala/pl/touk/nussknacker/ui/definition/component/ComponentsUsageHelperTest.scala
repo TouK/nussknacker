@@ -39,7 +39,7 @@ import java.util.UUID
 
 class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val fragment = CanonicalProcess(
     MetaData("fragment1", FragmentSpecificData()),
@@ -99,14 +99,14 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private val processWithSomeBasesStreaming = ScenarioBuilder
     .streaming("processWithSomeBasesStreaming")
     .source("source", ProcessTestData.existingSourceFactory)
-    .filter("checkId", "#input.id != null")
-    .filter("checkId2", "#input.id != null")
+    .filter("checkId", "#input.id != null".spel)
+    .filter("checkId2", "#input.id != null".spel)
     .switch(
       "switchStreaming",
-      "#input.id != null",
+      "#input.id != null".spel,
       "output",
-      Case("'1'", GraphBuilder.emptySink("out1", ProcessTestData.existingSinkFactory)),
-      Case("'2'", GraphBuilder.emptySink("out2", ProcessTestData.existingSinkFactory2))
+      Case("'1'".spel, GraphBuilder.emptySink("out1", ProcessTestData.existingSinkFactory)),
+      Case("'2'".spel, GraphBuilder.emptySink("out2", ProcessTestData.existingSinkFactory2))
     )
 
   private val processDetailsWithSomeBasesStreaming = wrapGraphWithScenarioDetailsEntity(
@@ -117,13 +117,13 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private val processWithSomeBasesFraud = ScenarioBuilder
     .streaming("processWithSomeBases")
     .source("source", ProcessTestData.existingSourceFactory)
-    .filter("checkId", "#input.id != null")
+    .filter("checkId", "#input.id != null".spel)
     .switch(
       "switchFraud",
-      "#input.id != null",
+      "#input.id != null".spel,
       "output",
-      Case("'1'", GraphBuilder.emptySink("out1", ProcessTestData.existingSinkFactory)),
-      Case("'2'", GraphBuilder.emptySink("out2", ProcessTestData.existingSinkFactory2))
+      Case("'1'".spel, GraphBuilder.emptySink("out1", ProcessTestData.existingSinkFactory)),
+      Case("'2'".spel, GraphBuilder.emptySink("out2", ProcessTestData.existingSinkFactory2))
     )
 
   private val processDetailsWithSomeBasesFraud = wrapGraphWithScenarioDetailsEntity(
@@ -162,7 +162,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       .withCustom(
         ProcessTestData.otherExistingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
         componentGroupName = None,
         designerWideComponentId =
           Some(DesignerWideComponentId(ProcessTestData.overriddenOtherExistingStreamTransformer))
@@ -170,7 +170,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       .withCustom(
         ProcessTestData.otherExistingStreamTransformer2,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
       )
       .build
 

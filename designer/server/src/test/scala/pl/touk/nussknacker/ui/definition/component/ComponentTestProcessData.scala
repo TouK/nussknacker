@@ -20,7 +20,7 @@ import java.util.UUID
 private[component] object ComponentTestProcessData {
 
   import VersionId._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   val DefaultSourceName = "source"
   val SecondSourceName  = "secondSource"
@@ -94,8 +94,8 @@ private[component] object ComponentTestProcessData {
         val process = ScenarioBuilder
           .streaming("not-used-name")
           .source(DefaultSourceName, SharedSourceName)
-          .filter(DefaultFilterName, "#input.id != null")
-          .filter(SecondFilterName, "#input.id != null")
+          .filter(DefaultFilterName, "#input.id != null".spel)
+          .filter(SecondFilterName, "#input.id != null".spel)
           .emptySink(DefaultSinkName, DefaultSinkName)
         CanonicalProcessConverter.toScenarioGraph(process)
       },
@@ -132,7 +132,7 @@ private[component] object ComponentTestProcessData {
     scenarioGraph = {
       val scenario = ScenarioBuilder
         .fragment("not-used-name", "in" -> classOf[String])
-        .filter(FragmentFilterName, "#input.id != null")
+        .filter(FragmentFilterName, "#input.id != null".spel)
         .fragmentOutput("fraudEnd", "output")
       CanonicalProcessConverter.toScenarioGraph(scenario)
     },
@@ -148,7 +148,7 @@ private[component] object ComponentTestProcessData {
       ScenarioBuilder
         .streaming("not-used-name")
         .source(SecondSourceName, SharedSourceName)
-        .filter(SecondFilterName, "#input.id != null")
+        .filter(SecondFilterName, "#input.id != null".spel)
         .fragment(
           FraudFragment.name.value,
           FraudFragment.name.value,

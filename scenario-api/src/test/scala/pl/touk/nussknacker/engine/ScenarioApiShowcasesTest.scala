@@ -15,7 +15,7 @@ import scala.language.implicitConversions
 
 class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val scenarioName = "fooId"
   private val sourceNodeId = "source"
@@ -93,9 +93,9 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
   test("should be able to create scenario using dsl and print it") {
     val scenarioDsl = ScenarioBuilder
       .streaming(scenarioName)
-      .source(sourceNodeId, sourceType, "foo" -> "'expression value'")
-      .filter("filter", "#input != 123")
-      .emptySink("sink", "sink-type", "bar" -> "#input")
+      .source(sourceNodeId, sourceType, "foo" -> "'expression value'".spel)
+      .filter("filter", "#input != 123".spel)
+      .emptySink("sink", "sink-type", "bar" -> "#input".spel)
 
     scenarioDsl.asJson.printWith(humanReadablePrinter) shouldEqual scenarioJson
   }

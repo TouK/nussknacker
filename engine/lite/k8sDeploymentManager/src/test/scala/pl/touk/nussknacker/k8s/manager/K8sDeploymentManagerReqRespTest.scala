@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -67,16 +67,17 @@ class K8sDeploymentManagerReqRespTest
       k8sTestUtils.withForwardedProxyPod(s"http://${service.name}:$givenServicePort") { proxyLocalPort =>
         val pingContent = """Nussknacker!"""
         val pingMessage = s"""{"ping":"$pingContent"}"""
-        val instanceIds = (1 to 10).map { _ =>
+        var instanceIds = Set.empty[String]
+        eventually {
           val request      = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
           val response     = request.body(pingMessage).send(backend).futureValue.body.rightValue
           val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
-          jsonResponse.hcursor.downField("instanceId").as[String].rightValue
-        }.toSet
+          instanceIds += jsonResponse.hcursor.downField("instanceId").as[String].rightValue
+          instanceIds should have size 2 // default number of replicas
+        }
 
         instanceIds.map(_.length) should contain only (5) // size of k8s instance id hash
-        instanceIds.size shouldEqual 2                    // default number of replicas
       }
     }
   }
@@ -360,14 +361,14 @@ class K8sDeploymentManagerReqRespTest
         )
       )
       .source("source", "request")
-      .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"")
+      .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"".spel)
       .emptySink(
         "sink",
         "response",
-        "Raw editor" -> "false",
-        "pong"       -> "#input.ping",
-        "instanceId" -> "#instanceId",
-        "version"    -> version.toString
+        "Raw editor" -> "false".spel,
+        "pong"       -> "#input.ping".spel,
+        "instanceId" -> "#instanceId".spel,
+        "version"    -> version.toString.spel
       )
   }
 

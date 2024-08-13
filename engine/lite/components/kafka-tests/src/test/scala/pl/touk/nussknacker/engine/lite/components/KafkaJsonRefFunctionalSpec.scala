@@ -3,16 +3,17 @@ package pl.touk.nussknacker.engine.lite.components
 import org.everit.json.schema.{CombinedSchema, NullSchema, NumberSchema, Schema}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider._
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner.LiteKafkaTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -23,11 +24,11 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with Validate
   private val runner = TestScenarioRunner.kafkaLiteBased().build()
 
   test("filled record after empty record with schema using refs") {
-    val inputTopic  = "schema-using-refs-input"
-    val outputTopic = "schema-using-refs-output"
-    runner.registerJsonSchema(inputTopic, RecordWithRef.jsonSchemaUsingRefs)
+    val inputTopic  = TopicName.ForSource("schema-using-refs-input")
+    val outputTopic = TopicName.ForSink("schema-using-refs-output")
+    runner.registerJsonSchema(inputTopic.toUnspecialized, RecordWithRef.jsonSchemaUsingRefs)
     runner.registerJsonSchema(
-      outputTopic,
+      outputTopic.toUnspecialized,
       CombinedSchema.anyOf(List(NumberSchema.builder().build(), NullSchema.INSTANCE).asJava).build()
     )
     val scenario = createScenario(inputTopic, outputTopic)
@@ -42,11 +43,11 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with Validate
   }
 
   test("filled record after empty record with schema with inlined refs") {
-    val inputTopic  = "schema-with-inlined-refs-input"
-    val outputTopic = "schema-with-inlined-refs-output"
-    runner.registerJsonSchema(inputTopic, RecordWithRef.jsonSchemaWithInlinedRefs)
+    val inputTopic  = TopicName.ForSource("schema-with-inlined-refs-input")
+    val outputTopic = TopicName.ForSink("schema-with-inlined-refs-output")
+    runner.registerJsonSchema(inputTopic.toUnspecialized, RecordWithRef.jsonSchemaWithInlinedRefs)
     runner.registerJsonSchema(
-      outputTopic,
+      outputTopic.toUnspecialized,
       CombinedSchema.anyOf(List(NumberSchema.builder().build(), NullSchema.INSTANCE).asJava).build()
     )
     val scenario = createScenario(inputTopic, outputTopic)
@@ -62,26 +63,26 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with Validate
     result.successes.map(_.value()) shouldEqual List("null", RecordWithRef.exampleValue.toString)
   }
 
-  private def createScenario(inputTopic: String, outputTopic: String): CanonicalProcess = {
-    import spel.Implicits._
+  private def createScenario(inputTopic: TopicName.ForSource, outputTopic: TopicName.ForSink): CanonicalProcess = {
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
     ScenarioBuilder
       .streaming(classOf[KafkaJsonRefFunctionalSpec].getSimpleName)
       .parallelism(1)
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value              -> s"'$outputTopic'",
-        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value            -> "",
-        sinkValueParamName.value          -> s"#input.field",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'"
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> s"#input.field".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'".spel
       )
   }
 

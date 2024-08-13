@@ -72,6 +72,7 @@ object WithCategoryUsedMoreThanOnceDesignerConfig {
     }
 
     def processingTypeBy(category: TestCategory): TestProcessingType = {
+      // This will not work if we have the same category for different processing types
       categoryByProcessingType
         .map(_.swap)
         .apply(category)

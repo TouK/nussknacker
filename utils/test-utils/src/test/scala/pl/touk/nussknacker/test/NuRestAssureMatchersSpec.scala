@@ -22,6 +22,10 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
                                |  }
                                |}""".stripMargin
 
+  private val newlineDelimitedJsons =
+    """{ "a": "Astring" }
+      |{ "a": "Bstring" }""".stripMargin
+
   test("it should match the current JSON") {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
@@ -379,6 +383,26 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |}""".stripMargin
       )
       .matches(currentJson) should be(false)
+  }
+
+  test("it should match current line delimited jsons") {
+    NuRestAssureMatchers
+      .matchAllNdJsonWithRegexValues(
+        s"""{
+         |  "a": "^\\\\wstring$$"
+         |}""".stripMargin
+      )
+      .matches(newlineDelimitedJsons) should be(true)
+  }
+
+  test("it should not match current line delimited jsons when any json in not matched") {
+    NuRestAssureMatchers
+      .matchAllNdJsonWithRegexValues(
+        s"""{
+         |  "a": "Astring"
+         |}""".stripMargin
+      )
+      .matches(newlineDelimitedJsons) should be(false)
   }
 
 }

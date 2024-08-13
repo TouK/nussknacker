@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.testing
 
-import cats.data.NonEmptySet
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
@@ -164,8 +163,11 @@ final case class ModelDefinitionBuilder(
   ): ModelDefinitionBuilder = {
     val defaultConfig =
       DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
-        componentTypeSpecificData,
-        staticDefinition.returnType.isDefined
+        componentTypeSpecificData.componentType,
+        staticDefinition.returnType.isDefined,
+        Option(componentTypeSpecificData).collect { case CustomComponentSpecificData(_, canBeEnding) =>
+          canBeEnding
+        }
       )
     val configWithOverridenGroupName =
       componentGroupName.map(group => defaultConfig.copy(componentGroup = Some(group))).getOrElse(defaultConfig)

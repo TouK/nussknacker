@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.process
 
-import cats.data.NonEmptySet
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
@@ -12,7 +11,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, VariableConstants}
 import shapeless.=:!=
 
-import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 /**
@@ -82,13 +80,6 @@ object SourceFactory {
     NoParamSourceFactory(
       createSource,
       Typed.fromDetailedType[T],
-      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
-    )
-
-  def noParamUnboundedStreamFromClassTag[T: ClassTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
-    NoParamSourceFactory(
-      _ => source,
-      Typed.apply[T],
       AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
     )
 

@@ -58,8 +58,8 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
     sinkForInputMetaResultsHolder().clear()
   }
 
-  protected def runAndVerify(topic: String, process: CanonicalProcess, givenObj: AnyRef): Unit = {
-    kafkaClient.createTopic(topic, partitions = 1)
+  protected def runAndVerify(topic: TopicName.ForSource, process: CanonicalProcess, givenObj: AnyRef): Unit = {
+    kafkaClient.createTopic(topic.name, partitions = 1)
     pushMessage(givenObj, topic)
     run(process) {
       eventually {
@@ -70,13 +70,13 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
   }
 
   protected def createProcessWithDelayedSource(
-      topic: String,
+      topic: TopicName.ForSource,
       version: SchemaVersionOption,
       timestampField: String,
       delay: String
   ): CanonicalProcess = {
 
-    import spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
 
     ScenarioBuilder
       .streaming("kafka-universal-delayed-test")
@@ -84,12 +84,12 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       .source(
         "start",
         "kafka-universal-delayed",
-        topicParamName.value               -> s"'$topic'",
-        schemaVersionParamName.value       -> asSpelExpression(formatVersionParam(version)),
-        timestampFieldParamName.value      -> timestampField,
-        delayParameter.parameterName.value -> delay
+        topicParamName.value               -> s"'${topic.name}'".spel,
+        schemaVersionParamName.value       -> formatVersionParam(version).spel,
+        timestampFieldParamName.value      -> timestampField.spel,
+        delayParameter.parameterName.value -> delay.spel
       )
-      .emptySink("out", "sinkForLongs", sinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()")
+      .emptySink("out", "sinkForLongs", sinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()".spel)
   }
 
 }

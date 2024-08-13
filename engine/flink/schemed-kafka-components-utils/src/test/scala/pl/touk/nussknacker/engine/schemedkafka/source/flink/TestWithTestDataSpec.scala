@@ -9,7 +9,6 @@ import org.apache.avro.Schema
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -27,7 +26,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -35,6 +34,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.KafkaConfigProperties
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.source.flink.TestWithTestDataSpec.sinkForInputMetaResultsHolder
 
@@ -50,16 +50,28 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   private lazy val config = ConfigFactory
     .empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
-    .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
+    .withValue(
+      KafkaConfigProperties.property("schema.registry.url"),
+      fromAnyRef("schema_registry_should_not_be_used:8081")
+    )
+    .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
     .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
   test("Should pass correct timestamp from test data") {
 
-    val topic             = "address"
+    val topic             = UnspecializedTopicName("address")
     val expectedTimestamp = System.currentTimeMillis()
-    val inputMeta =
-      InputMeta(null, topic, 0, 1, expectedTimestamp, TimestampType.CREATE_TIME, Collections.emptyMap(), 0)
+    val inputMeta = InputMeta(
+      key = null,
+      topic = topic.name,
+      partition = 0,
+      offset = 1,
+      timestamp = expectedTimestamp,
+      timestampType = TimestampType.CREATE_TIME,
+      headers = Collections.emptyMap(),
+      leaderEpoch = 0
+    )
     val id: Int = registerSchema(topic, Address.schema)
 
     val process = ScenarioBuilder
@@ -67,11 +79,11 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        topicParamName.value         -> s"'$topic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${topic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode)
@@ -91,22 +103,21 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
   }
 
   test("Should pass parameters correctly and use them in scenario test") {
-
-    val topic = "company"
+    val topic = UnspecializedTopicName("company")
     registerSchema(topic, Company.schema)
     val process = ScenarioBuilder
       .streaming("test")
       .source(
         "start",
         "kafka",
-        topicParamName.value         -> s"'$topic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${topic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
       .emptySink(
         "end",
         "sinkForInputMeta",
-        SingleValueParamName -> "#input.name + '-' + #input.address.city + '-' + #input.address.street"
+        SingleValueParamName -> "#input.name + '-' + #input.address.city + '-' + #input.address.street".spel
       )
 
     val parameterExpressions = Map(
@@ -124,8 +135,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
   test("should handle fragment test parameters in test") {
     val fragment = ScenarioBuilder
       .fragment("fragment1", "in" -> classOf[String])
-      .filter("filter", "#in != 'stop'")
-      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+      .filter("filter", "#in != 'stop'".spel)
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in".spel)
 
     val parameterExpressions = Map(
       ParameterName("in") -> Expression.spel("'some-text-id'")
@@ -148,7 +159,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
     results.exceptions shouldBe empty
   }
 
-  private def registerSchema(topic: String, schema: Schema) = {
+  private def registerSchema(topic: UnspecializedTopicName, schema: Schema) = {
     val subject      = ConfluentUtils.topicSubject(topic, isKey = false)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
     schemaRegistryMockClient.register(subject, parsedSchema)

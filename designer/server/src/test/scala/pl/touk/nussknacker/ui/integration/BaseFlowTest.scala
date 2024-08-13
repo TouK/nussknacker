@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition, Processor}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.definition.UiScenarioPropertyConfig
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
@@ -365,7 +365,7 @@ class BaseFlowTest
       .streaming(processId)
       .source("source", "csv-source")
       .enricher("enricher", "out", "complexReturnObjectService")
-      .emptySink("end", "sendSms", "Value" -> "''")
+      .emptySink("end", "sendSms", "Value" -> "''".spel)
 
     saveProcess(process)
 
@@ -462,7 +462,7 @@ class BaseFlowTest
     dynamicServiceParametersBeforeReload.exists(_.contains(parameterUUID)) shouldBe false
     dynamicServiceParameters shouldBe dynamicServiceParametersBeforeReload
     // service still does not accept parameter, redundant parameters for dynamic services are just skipped
-    val resultBeforeReload = updateProcess(processWithService(parameterUUID -> "'emptyString'"))
+    val resultBeforeReload = updateProcess(processWithService(parameterUUID -> "'emptyString'".spel))
     resultBeforeReload.errors shouldBe ValidationErrors.success
     resultBeforeReload.nodeResults
       .get(nodeUsingDynamicServiceId)
@@ -478,13 +478,13 @@ class BaseFlowTest
     beforeReload should not be afterReload
     // now parameter is known and required
     dynamicServiceParameters shouldBe Some(List(parameterUUID))
-    val resultAfterReload = updateProcess(processWithService(parameterUUID -> "'emptyString'"))
+    val resultAfterReload = updateProcess(processWithService(parameterUUID -> "'emptyString'".spel))
     resultAfterReload.errors shouldBe ValidationErrors.success
     resultAfterReload.nodeResults.get(nodeUsingDynamicServiceId).value.parameters.value.map(_.name).toSet shouldBe Set(
       parameterUUID
     )
     firstInvocationResult(
-      testProcess(processWithService(parameterUUID -> "#input.firstField"), testDataContent)
+      testProcess(processWithService(parameterUUID -> "#input.firstField".spel), testDataContent)
     ) shouldBe Some("field1")
   }
 

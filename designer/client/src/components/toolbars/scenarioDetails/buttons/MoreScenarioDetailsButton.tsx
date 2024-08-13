@@ -15,9 +15,8 @@ export const MoreScenarioDetailsButton = ({ scenario, processState }: Props) => 
     return (
         <Typography
             component={Link}
-            variant={"overline"}
-            color={"text"}
-            sx={(theme) => ({ cursor: "pointer", textDecorationColor: theme.palette.text.secondary, py: 0.5 })}
+            variant={"caption"}
+            sx={(theme) => ({ cursor: "pointer", color: theme.palette.primary.main, py: 0.5, textDecoration: "none" })}
             onClick={() =>
                 open({
                     kind: WindowKind.scenarioDetails,
@@ -26,7 +25,7 @@ export const MoreScenarioDetailsButton = ({ scenario, processState }: Props) => 
             }
             {...getEventTrackingProps({ selector: EventTrackingSelector.MoreScenarioDetails })}
         >
-            {i18next.t("panels.scenarioDetails.moreButton", "More scenario details")}
+            {i18next.t("panels.scenarioDetails.moreButton", "More details")}
         </Typography>
     );
 };

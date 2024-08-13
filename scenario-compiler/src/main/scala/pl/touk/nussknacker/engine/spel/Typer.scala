@@ -41,6 +41,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorE
   TernaryOperatorNotBooleanError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.{
+  ArrayConstructorError,
   BeanReferenceError,
   MapWithExpressionKeysError,
   ModificationError
@@ -258,14 +259,23 @@ private[spel] class Typer(
         }
 
       case e: ConstructorReference =>
+        // TODO: validate constructor parameters...
         withTypedChildren { _ =>
-          val className  = e.getChild(0).toStringAST
-          val classToUse = Try(evaluationContext.getTypeLocator.findType(className)).toOption
-          // TODO: validate constructor parameters...
-          val clazz = classToUse.flatMap(kl => classDefinitionSet.get(kl).map(_.clazzName))
-          clazz match {
-            case Some(typedClass) => valid(typedClass)
-            case None             => invalid(ConstructionOfUnknown(classToUse))
+          val className    = e.getChild(0).toStringAST
+          val classToUse   = Try(evaluationContext.getTypeLocator.findType(className)).toOption
+          val typingResult = classToUse.flatMap(kl => classDefinitionSet.get(kl).map(_.clazzName))
+          typingResult match {
+            case Some(tc @ TypedClass(_, _)) =>
+              if (isArrayConstructor(e)) {
+                invalid(ArrayConstructorError)
+              } else {
+                valid(tc)
+              }
+            case Some(_) =>
+              throw new IllegalStateException(
+                "Illegal construction of ConstructorReference. Expected nonempty typing result of TypedClass or empty typing result"
+              )
+            case None => invalid(ConstructionOfUnknown(classToUse))
           }
         }
       case e: Elvis =>
@@ -315,7 +325,7 @@ private[spel] class Typer(
           if (literalKeys.size != keys.size) {
             invalid(MapWithExpressionKeysError)
           } else {
-            valid(Typed.record(literalKeys.zip(typedValues).toMap))
+            valid(Typed.record(literalKeys.zip(typedValues)))
           }
         }
       case e: MethodReference =>
@@ -516,6 +526,12 @@ private[spel] class Typer(
           parentType
       }
     }
+  }
+
+  private def isArrayConstructor(constructorReference: ConstructorReference): Boolean = {
+    val dimensionsField = constructorReference.getClass.getDeclaredField("isArrayConstructor")
+    dimensionsField.setAccessible(true)
+    dimensionsField.get(constructorReference).asInstanceOf[Boolean]
   }
 
   private def checkEqualityLikeOperation(

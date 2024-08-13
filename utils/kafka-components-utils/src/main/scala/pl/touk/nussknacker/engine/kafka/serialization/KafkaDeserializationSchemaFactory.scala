@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
+import cats.data.NonEmptyList
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
@@ -9,5 +11,5 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   * @tparam T type of deserialized object
   */
 trait KafkaDeserializationSchemaFactory[T] extends Serializable {
-  def create(topics: List[String], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
+  def create(topics: NonEmptyList[TopicName.ForSource], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
 }

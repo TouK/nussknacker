@@ -6,7 +6,7 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.response.ValidatableResponse
 import org.hamcrest.{BaseMatcher, Description, Matcher}
-import pl.touk.nussknacker.test.NuRestAssureMatchers.{EqualsJson, MatchJsonWithRegexValues}
+import pl.touk.nussknacker.test.NuRestAssureMatchers.{EqualsJson, MatchJsonWithRegexValues, MatchNdJsonWithRegexValues}
 import ujson._
 
 import scala.util.Try
@@ -14,9 +14,12 @@ import scala.util.Try
 trait NuRestAssureMatchers {
 
   object regexes {
-    val zuluDateRegex = "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}(?:\\\\.\\\\d{3,6})?Z$$"
+    val localDateRegex     = "^\\\\d{4}-\\\\d{2}-\\\\d{2}\\\\s\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{1,3}$$"
+    val localDateTimeRegex = "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{1,3}$$"
+    val zuluDateRegex      = "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}(?:\\\\.\\\\d{3,6})?Z$$"
     // ujson treats all numbers as a double
-    val digitsRegex = "^\\\\d+\\\\.0$$"
+    val digitsRegex  = "^\\\\d+\\\\.0$$"
+    val decimalRegex = "^\\\\d+(\\\\.\\\\d+)?([eE]\\\\d+)?$$"
   }
 
   def equalsJson(expectedJsonString: String): Matcher[ValidatableResponse] =
@@ -24,6 +27,9 @@ trait NuRestAssureMatchers {
 
   def matchJsonWithRegexValues(expectedJsonWithRegexValuesString: String): Matcher[ValidatableResponse] =
     new MatchJsonWithRegexValues(expectedJsonWithRegexValuesString)
+
+  def matchAllNdJsonWithRegexValues(expectedJsonWithRegexValuesString: String): Matcher[ValidatableResponse] =
+    new MatchNdJsonWithRegexValues(expectedJsonWithRegexValuesString)
 }
 
 object NuRestAssureMatchers extends NuRestAssureMatchers {
@@ -148,7 +154,8 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
     ): Validated[String, Unit] = {
       stringToRegex(expectedValueRegex).map { regex =>
         currentValueString match {
-          case regex() => Validated.Valid(())
+          case regex()   => Validated.Valid(())
+          case regex(_*) => Validated.Valid(())
           case _ => Validated.Invalid(errorString(currentValueString, expectedValueRegex, source, withRegex = true))
         }
       }.get
@@ -181,6 +188,18 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
         case JsonValueParent.Array(parent, index)     => s"${parent.show}[$index]"
       }
 
+    }
+
+  }
+
+  private class MatchNdJsonWithRegexValues(expectedJsonWithRegexValuesString: String)
+      extends MatchJsonWithRegexValues(expectedJsonWithRegexValuesString) {
+
+    override def matches(actual: Any): Boolean = {
+      actual match {
+        case str: String => str.split('\n').forall(super.matches)
+        case _           => false
+      }
     }
 
   }

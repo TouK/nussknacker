@@ -3,14 +3,20 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withoutPermissions
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, UsageStatisticsReportsConfig}
+import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
+import pl.touk.nussknacker.ui.statistics.{Fingerprint, FingerprintService, StatisticError}
+
+import scala.concurrent.Future
 
 class SettingsResourcesSpec
     extends AnyFunSpec
@@ -24,15 +30,22 @@ class SettingsResourcesSpec
 
   private val authenticationConfig: BasicAuthenticationConfiguration =
     BasicAuthenticationConfiguration.create(testConfig)
-  private val analyticsConfig: Option[AnalyticsConfig] = AnalyticsConfig(testConfig)
   private val usageStatisticsReportsConfig: UsageStatisticsReportsConfig =
-    UsageStatisticsReportsConfig(true, None, None)
+    UsageStatisticsReportsConfig(true, true, None, None)
+  private val sampleFingerprint = "sample fingerprint"
+
+  private val mockedFingerprintService: FingerprintService = mock[FingerprintService](
+    new Answer[Future[Either[StatisticError, Fingerprint]]] {
+      override def answer(invocation: InvocationOnMock): Future[Either[StatisticError, Fingerprint]] =
+        Future.successful(Right(new Fingerprint(sampleFingerprint)))
+    }
+  )
 
   private val settingsRoute = new SettingsResources(
     featureTogglesConfig,
     authenticationConfig.name,
-    analyticsConfig,
-    usageStatisticsReportsConfig
+    usageStatisticsReportsConfig,
+    mockedFingerprintService
   )
 
   // Values are exists at test/resources/application.conf
@@ -48,6 +61,8 @@ class SettingsResourcesSpec
       data.intervalTimeSettings.processes shouldBe intervalTimeProcesses
       data.intervalTimeSettings.healthCheck shouldBe intervalTimeHealthCheck
       data.usageStatisticsReports.enabled shouldBe true
+      data.usageStatisticsReports.errorReportsEnabled shouldBe true
+      data.usageStatisticsReports.fingerprint shouldBe Some(sampleFingerprint)
     }
   }
 

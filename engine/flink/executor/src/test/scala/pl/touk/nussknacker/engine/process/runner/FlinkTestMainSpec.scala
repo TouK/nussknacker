@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.{ModelData, spel}
+import pl.touk.nussknacker.engine.ModelData
 
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -29,7 +29,7 @@ import scala.concurrent.{Await, Future}
 
 class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with BeforeAndAfterEach with OptionValues {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
   private val scenarioName      = "proc1"
@@ -57,11 +57,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .filter("filter1", "#input.value1 > 1")
-          .buildSimpleVariable("v1", "variable1", "'ala'")
-          .processor("eager1", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.id")
-          .processor("proc2", "logService", "all" -> "#input.id")
-          .emptySink("out", "valueMonitor", "Value" -> "#input.value1")
+          .filter("filter1", "#input.value1 > 1".spel)
+          .buildSimpleVariable("v1", "variable1", "'ala'".spel)
+          .processor("eager1", "collectingEager", "static" -> "'s'".spel, "dynamic" -> "#input.id".spel)
+          .processor("proc2", "logService", "all" -> "#input.id".spel)
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
       val input  = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
       val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -149,8 +149,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'s'")
-          .emptySink("out", "valueMonitor", "Value" -> "#input.value1 + ' ' + #out.previous")
+          .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'s'".spel)
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1 + ' ' + #out.previous".spel)
 
       val input  = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
       val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -229,8 +229,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
-          .filter("filter", "1 / #input.value1 >= 0")
+          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2".spel)
+          .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
 
       val results = runFlinkTest(
@@ -285,8 +285,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
-          .filter("filter", "1 / #input.value1 >= 0")
+          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2".spel)
+          .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
 
       val exceptionConsumerId = UUID.randomUUID().toString
@@ -318,7 +318,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2")
+          .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2".spel)
           .emptySink("out", "monitor")
 
       val run = Future {
@@ -333,7 +333,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "jsonInput")
-          .emptySink("out", "valueMonitor", "Value" -> "#input")
+          .emptySink("out", "valueMonitor", "Value" -> "#input".spel)
       val testData = ScenarioTestData(
         List(
           ScenarioTestJsonRecord(
@@ -377,8 +377,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
     "handle custom variables in source" in {
       val process = ScenarioBuilder
         .streaming(scenarioName)
-        .source(sourceNodeId, "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
-        .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo")
+        .source(sourceNodeId, "genericSourceWithCustomVariables", "elements" -> "{'abc'}".spel)
+        .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo".spel)
       val testData = ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("abc"))))
 
       val results = runFlinkTest(process, testData, useIOMonadInInterpreter)
@@ -399,7 +399,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .emptySink("out", "sinkForInts", "Value" -> "15 / {0, 1}[0]")
+          .emptySink("out", "sinkForInts", "Value" -> "15 / {0, 1}[0]".spel)
 
       val results =
         runFlinkTest(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))), useIOMonadInInterpreter)
@@ -416,7 +416,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .customNode("cid", "count", "transformWithTime", "seconds" -> "10")
+          .customNode("cid", "count", "transformWithTime", "seconds" -> "10".spel)
           .emptySink("out", "monitor")
 
       def recordWithSeconds(duration: FiniteDuration) =
@@ -446,8 +446,12 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       val process =
         ScenarioBuilder
           .streaming(scenarioName)
-          .source(sourceNodeId, "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
-          .emptySink("out", "valueMonitor", "Value" -> "#input.field1 + #input.field2")
+          .source(
+            sourceNodeId,
+            "typedJsonInput",
+            "type" -> """{"field1": "String", "field2": "java.lang.String"}""".spel
+          )
+          .emptySink("out", "valueMonitor", "Value" -> "#input.field1 + #input.field2".spel)
 
       val results = runFlinkTest(
         process,
@@ -474,11 +478,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
           "dependent",
           "parsed",
           "returningDependentTypeService",
-          "definition" -> "{'field1', 'field2'}",
-          "toFill"     -> "#input.value1.toString()",
-          "count"      -> countToPass.toString
+          "definition" -> "{'field1', 'field2'}".spel,
+          "toFill"     -> "#input.value1.toString()".spel,
+          "count"      -> countToPass.toString.spel
         )
-        .emptySink("out", "valueMonitor", "Value" -> "#parsed.size + ' ' + #parsed[0].field2")
+        .emptySink("out", "valueMonitor", "Value" -> "#parsed.size + ' ' + #parsed[0].field2".spel)
 
       val results =
         runFlinkTest(process, ScenarioTestData(List(createTestRecord(value1 = valueToReturn))), useIOMonadInInterpreter)
@@ -487,18 +491,17 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
     }
 
     "switch value should be equal to variable value" in {
-      import spel.Implicits._
       val process = ScenarioBuilder
         .streaming(scenarioName)
         .parallelism(1)
         .source(sourceNodeId, "input")
         .switch(
           "switch",
-          "#input.id == 'ala'",
+          "#input.id == 'ala'".spel,
           "output",
           Case(
-            "#output == false",
-            GraphBuilder.emptySink("out", "valueMonitor", "Value" -> "'any'")
+            "#output == false".spel,
+            GraphBuilder.emptySink("out", "valueMonitor", "Value" -> "'any'".spel)
           )
         )
 
@@ -523,8 +526,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
             .source(sourceNodeId, "input")
             .split(
               "split",
-              GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
-              GraphBuilder.filter("right", "#input.id != 'b'").branchEnd("end2", "join1")
+              GraphBuilder.filter("left", "#input.id != 'a'".spel).branchEnd("end1", "join1"),
+              GraphBuilder.filter("right", "#input.id != 'b'".spel).branchEnd("end2", "join1")
             ),
           GraphBuilder
             .join(
@@ -532,11 +535,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
               "joinBranchExpression",
               Some("input33"),
               List(
-                "end1" -> List("value" -> "#input"),
-                "end2" -> List("value" -> "#input")
+                "end1" -> List("value" -> "#input".spel),
+                "end2" -> List("value" -> "#input".spel)
               )
             )
-            .processorEnd("proc2", "logService", "all" -> "#input33.id")
+            .processorEnd("proc2", "logService", "all" -> "#input33.id".spel)
         )
 
       val recA = createTestRecord(id = "a")
@@ -566,11 +569,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         .sources(
           GraphBuilder
             .source("source1", "input")
-            .filter("filter1", "#input.id != 'a'")
+            .filter("filter1", "#input.id != 'a'".spel)
             .branchEnd("end1", "join"),
           GraphBuilder
             .source("source2", "input")
-            .filter("filter2", "#input.id != 'b'")
+            .filter("filter2", "#input.id != 'b'".spel)
             .branchEnd("end2", "join"),
           GraphBuilder
             .join(
@@ -578,11 +581,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
               "joinBranchExpression",
               Some("joinInput"),
               List(
-                "end1" -> List("value" -> "#input"),
-                "end2" -> List("value" -> "#input")
+                "end1" -> List("value" -> "#input".spel),
+                "end2" -> List("value" -> "#input".spel)
               )
             )
-            .processorEnd("proc2", "logService", "all" -> "#joinInput.id")
+            .processorEnd("proc2", "logService", "all" -> "#joinInput.id".spel)
         )
       val scenarioTestData = ScenarioTestData(
         List(
@@ -642,7 +645,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         .source("start", "input")
         .enricher("componentUseCaseService", "componentUseCaseService", "returningComponentUseCaseService")
         .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUseCase")
-        .emptySink("out", "valueMonitor", "Value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}")
+        .emptySink("out", "valueMonitor", "Value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}".spel)
 
       val results =
         runFlinkTest(process, ScenarioTestData(List(createTestRecord(sourceId = "start"))), useIOMonadInInterpreter)

@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -31,31 +31,43 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   private lazy val config = ConfigFactory
     .empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
-    .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
+    .withValue(
+      KafkaConfigProperties.property("schema.registry.url"),
+      fromAnyRef("schema_registry_should_not_be_used:8081")
+    )
+    .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
 
   protected lazy val modelData: ModelData =
     LocalModelData(
-      config,
-      List.empty,
+      inputConfig = config,
+      components = List.empty,
       configCreator = new KafkaSourceFactoryProcessConfigCreator(() => TestFromFileSpec.resultsHolders)
     )
 
   test("Should pass correct timestamp from test data") {
     val topic             = "simple"
     val expectedTimestamp = System.currentTimeMillis()
-    val inputMeta =
-      InputMeta(null, topic, 0, 1, expectedTimestamp, TimestampType.CREATE_TIME, Collections.emptyMap(), 0)
+    val inputMeta = InputMeta(
+      key = null,
+      topic = topic,
+      partition = 0,
+      offset = 1,
+      timestamp = expectedTimestamp,
+      timestampType = TimestampType.CREATE_TIME,
+      headers = Collections.emptyMap(),
+      leaderEpoch = 0
+    )
 
     val process = ScenarioBuilder
       .streaming("test")
       .source(
         "start",
         "kafka-jsonValueWithMeta",
-        TopicParamName.value -> s"'$topic'",
+        TopicParamName.value -> s"'$topic'".spel,
       )
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode)
@@ -75,17 +87,17 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   test("should test source emitting event extending DisplayWithEncoder") {
     val process = ScenarioBuilder
       .streaming("test")
-      .source("start", "kafka-jsonValueWithMeta", TopicParamName.value -> "'test.topic'")
-      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
+      .source("start", "kafka-jsonValueWithMeta", TopicParamName.value -> "'test.topic'".spel)
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
     val inputMeta = InputMeta(
-      null,
-      "test.topic",
-      0,
-      1,
-      System.currentTimeMillis(),
-      TimestampType.CREATE_TIME,
-      Collections.emptyMap(),
-      0
+      key = null,
+      topic = "test.topic",
+      partition = 0,
+      offset = 1,
+      timestamp = System.currentTimeMillis(),
+      timestampType = TimestampType.CREATE_TIME,
+      headers = Collections.emptyMap(),
+      leaderEpoch = 0
     )
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode)

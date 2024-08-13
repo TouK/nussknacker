@@ -2,18 +2,17 @@ package pl.touk.nussknacker.engine.flink.table
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider.configIndependentComponents
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
-import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.join.TableJoinComponent
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 import java.nio.file.{Path, Paths}
 import scala.util.{Failure, Success, Try}
@@ -30,40 +29,26 @@ import scala.util.{Failure, Success, Try}
  */
 class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
 
-  import net.ceedubs.ficus.Ficus._
-
   override def providerName: String = "flinkTable"
   private val tableComponentName    = "table"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val parsedConfig = config.rootAs[TableComponentProviderConfig]
-
-    val definition = extractTableDefinitionsFromSqlFileOrThrow(parsedConfig.tableDefinitionFilePath)
+    val parsedConfig                    = TableComponentProviderConfig.parse(config)
+    val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
+    val sqlStatements                   = readSqlFromFile(Paths.get(parsedConfig.tableDefinitionFilePath))
 
     ComponentDefinition(
       tableComponentName,
-      new TableSourceFactory(definition, parsedConfig.enableFlinkBatchExecutionMode)
+      new TableSourceFactory(
+        sqlStatements,
+        testDataGenerationModeOrDefault
+      )
     ) :: ComponentDefinition(
       tableComponentName,
-      new TableSinkFactory(definition)
+      new TableSinkFactory(sqlStatements)
     ) :: configIndependentComponents
-  }
-
-  private def extractTableDefinitionsFromSqlFileOrThrow(filePath: String) = {
-    val sqlStatements = readSqlFromFile(Paths.get(filePath))
-    val results       = extractTablesFromFlinkRuntime(sqlStatements)
-
-    if (results.sqlStatementExecutionErrors.nonEmpty) {
-      throw new IllegalStateException(
-        "Errors occurred when parsing sql component configuration file: " + results.sqlStatementExecutionErrors
-          .map(_.message)
-          .mkString(", ")
-      )
-    }
-
-    TableSqlDefinitions(results.tableDefinitions, sqlStatements)
   }
 
   private def readSqlFromFile(pathToFile: Path) = Try(ResourceLoader.load(pathToFile)) match {
@@ -88,15 +73,34 @@ object FlinkTableComponentProvider {
     ComponentDefinition(
       "aggregate",
       new TableAggregationFactory()
+    ),
+    ComponentDefinition(
+      "join",
+      TableJoinComponent
     )
   )
 
 }
 
-final case class TableSqlDefinitions(
-    tableDefinitions: List[TableDefinition],
-    sqlStatements: List[SqlStatement]
+final case class TableComponentProviderConfig(
+    tableDefinitionFilePath: String,
+    testDataGenerationMode: Option[TestDataGenerationMode]
 )
 
-// TODO: remove enableFlinkBatchExecutionMode after moving execution mode setting logic to executor
-final case class TableComponentProviderConfig(tableDefinitionFilePath: String, enableFlinkBatchExecutionMode: Boolean)
+object TableComponentProviderConfig {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.EnumerationReader._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
+
+  private[table] def parse(config: Config) = config.rootAs[TableComponentProviderConfig]
+
+  object TestDataGenerationMode extends Enumeration {
+    type TestDataGenerationMode = Value
+    val Random  = Value("random")
+    val Live    = Value("live")
+    val default = Live
+  }
+
+}

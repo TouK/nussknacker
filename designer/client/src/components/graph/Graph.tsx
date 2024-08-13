@@ -1,6 +1,5 @@
-/* eslint-disable i18next/no-literal-string */
 import { dia, g, shapes } from "jointjs";
-import styles from "jointjs/dist/joint.css";
+import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
@@ -39,9 +38,6 @@ import { Theme } from "@mui/material";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import { PaperContainer } from "./paperContainer";
 import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
-
-// TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
-styles;
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));

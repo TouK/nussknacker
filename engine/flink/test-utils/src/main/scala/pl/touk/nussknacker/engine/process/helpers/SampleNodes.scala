@@ -52,21 +52,6 @@ import scala.util.Try
 //TODO: clean up sample objects...
 object SampleNodes {
 
-  implicit val intTypeInformation: TypeInformation[Int] =
-    TypeInformation.of(classOf[Int])
-  implicit val longTypeInformation: TypeInformation[Long] =
-    TypeInformation.of(classOf[Long])
-  implicit val stringTypeInformation: TypeInformation[String] =
-    TypeInformation.of(classOf[String])
-  implicit val simpleRecordTypeInformation: TypeInformation[SimpleRecord] =
-    TypeInformation.of(classOf[SampleNodes.SimpleRecord])
-  implicit val simpleJsonRecordTypeInformation: TypeInformation[SimpleJsonRecord] =
-    TypeInformation.of(classOf[SampleNodes.SimpleJsonRecord])
-  implicit val typedMapTypeInformation: TypeInformation[TypedMap] =
-    TypeInformation.of(classOf[TypedMap])
-
-  // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
-
   case class SimpleRecord(
       id: String,
       value1: Long,
@@ -87,8 +72,8 @@ object SampleNodes {
   class IntParamSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke
-    def create(@ParamName("param") param: Int) =
-      new CollectionSource[Int](list = List(param), timestampAssigner = None, returnType = Typed[Int])
+    def create(@ParamName("param") param: Integer) =
+      new CollectionSource[Integer](list = List(param), timestampAssigner = None, returnType = Typed[Integer])
 
   }
 
@@ -439,7 +424,7 @@ object SampleNodes {
         @ParamName("count") count: Int,
         @OutputVariableName outputVar: String
     )(implicit nodeId: NodeId): ContextTransformation = {
-      val listType                        = Typed.record(definition.asScala.map(_ -> Typed[String]).toMap)
+      val listType                        = Typed.record(definition.asScala.map(_ -> Typed[String]))
       val returnType: typing.TypingResult = Typed.genericTypeClass[java.util.List[_]](List(listType))
 
       EnricherContextTransformation(
@@ -667,7 +652,7 @@ object SampleNodes {
     )(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
-          val result = Typed.record(rest.map { case (k, v) => k.value -> v.returnType }.toMap)
+          val result = Typed.record(rest.map { case (k, v) => k.value -> v.returnType })
           FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), result))
         case None =>
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
@@ -885,8 +870,10 @@ object SampleNodes {
           elementsValue.map(e => TestRecord(Json.fromString(e)))
         )
 
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-          CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+        override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+          testRecords.map { testRecord =>
+            CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+          }
 
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
       }
@@ -1015,7 +1002,7 @@ object SampleNodes {
 
   private val simpleRecordParser = new TestRecordParser[SimpleRecord] {
 
-    override def parse(testRecord: TestRecord): SimpleRecord = {
+    override def parse(testRecords: List[TestRecord]) = testRecords.map { testRecord =>
       val parts = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
       SimpleRecord(
         parts(0),
@@ -1043,9 +1030,10 @@ object SampleNodes {
     new CollectionSource[SimpleJsonRecord](List(), None, Typed[SimpleJsonRecord])
       with FlinkSourceTestSupport[SimpleJsonRecord] {
 
-      override def testRecordParser: TestRecordParser[SimpleJsonRecord] = (testRecord: TestRecord) => {
-        CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](testRecord.json, "invalid request")
-      }
+      override def testRecordParser: TestRecordParser[SimpleJsonRecord] = (testRecords: List[TestRecord]) =>
+        testRecords.map { testRecord =>
+          CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](testRecord.json, "invalid request")
+        }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
     }
@@ -1063,9 +1051,10 @@ object SampleNodes {
         with FlinkSourceTestSupport[TypedMap]
         with ReturningType {
 
-        override def testRecordParser: TestRecordParser[TypedMap] = (testRecord: TestRecord) => {
-          TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](testRecord.json, "invalid request"))
-        }
+        override def testRecordParser: TestRecordParser[TypedMap] = (testRecords: List[TestRecord]) =>
+          testRecords.map { testRecord =>
+            TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](testRecord.json, "invalid request"))
+          }
 
         override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 

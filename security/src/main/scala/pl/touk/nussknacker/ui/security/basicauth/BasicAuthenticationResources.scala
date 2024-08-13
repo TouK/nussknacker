@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.security.basicauth
 
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
+import pl.touk.nussknacker.ui.security.api.AuthenticationResources.defaultRealm
 import pl.touk.nussknacker.ui.security.api._
 import sttp.model.headers.WWWAuthenticateChallenge
 import sttp.tapir._
@@ -10,7 +11,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class BasicAuthenticationResources(
     override val name: String,
-    realm: String,
     override val configuration: BasicAuthenticationConfiguration
 )(
     implicit executionContext: ExecutionContext
@@ -52,4 +52,6 @@ class BasicAuthenticationResources(
   }
 
   override def getAnonymousRole: Option[String] = configuration.anonymousUserRole
+
+  private def realm = configuration.realm.getOrElse(defaultRealm)
 }

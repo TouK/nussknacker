@@ -105,9 +105,6 @@ lazy val publishSettings = Seq(
 def defaultMergeStrategy: String => MergeStrategy = {
   // remove JPMS module descriptors (a proper soultion would be to merge them)
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
-  // this prevents problem with table api in runtime:
-  // https://stackoverflow.com/questions/60436823/issue-when-flink-upload-a-job-with-stream-sql-query
-  case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
   // merge Netty version information files
@@ -487,7 +484,7 @@ lazy val distribution: Project = sbt
       List(
         (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
         (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
-        (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar"
+        (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar",
       )
     },
     componentArtifacts                       := {
@@ -511,8 +508,8 @@ lazy val distribution: Project = sbt
     },
     devArtifacts                             := {
       modelArtifacts.value ++ List(
-        (flinkDevModel / assembly).value -> "model/devModel.jar",
-        (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar",
+        (flinkDevModel / assembly).value                  -> "model/devModel.jar",
+        (flinkPeriodicDeploymentManager / assembly).value -> "managers/nussknacker-flink-periodic-manager.jar",
       )
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
@@ -640,6 +637,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
 lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic"))
   .settings(commonSettings)
   .settings(assemblyNoScala("nussknacker-flink-periodic-manager.jar"): _*)
+  .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
@@ -714,18 +712,6 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
     extensionsApi,
     flinkComponentsUtils % Provided
   )
-
-lazy val devPeriodicDM = (project in flink("management/dev-periodic-dm"))
-  .settings(commonSettings)
-  .settings(assemblyNoScala("devPeriodicDm.jar"): _*)
-  .settings(
-    name := "nussknacker-dev-periodic-dm",
-    libraryDependencies ++= {
-      Seq(
-      )
-    }
-  )
-  .dependsOn(flinkPeriodicDeploymentManager, deploymentManagerApi % Provided)
 
 lazy val flinkTests = (project in flink("tests"))
   .settings(commonSettings)
@@ -1163,8 +1149,7 @@ lazy val flinkComponentsUtils = (project in flink("components-utils"))
     name := "nussknacker-flink-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"     % flinkV % Provided,
-        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
       )
     }
   )
@@ -1805,6 +1790,7 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     componentsUtils    % Provided
   )
 
+// TODO: check if any flink-table / connector / format dependencies' scope can be limited
 lazy val flinkTableApiComponents = (project in flink("components/table"))
   .settings(commonSettings)
   .settings(assemblyNoScala("flinkTable.jar"): _*)
@@ -1817,6 +1803,9 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
+        "org.apache.flink" % "flink-clients"               % flinkV,
+        "org.apache.flink" % "flink-connector-files"       % flinkV, // needed for testing data generation
+        "org.apache.flink" % "flink-json"                  % flinkV, // needed for testing data generation
       )
     }
   )
@@ -1826,6 +1815,7 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     commonUtils          % Provided,
     componentsUtils      % Provided,
     flinkComponentsUtils % Provided,
+    jsonUtils            % Provided,
   )
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
@@ -2011,7 +2001,7 @@ lazy val designer = (project in file("designer/server"))
     liteEmbeddedDeploymentManager     % Provided,
     liteK8sDeploymentManager          % Provided,
     developmentTestsDeploymentManager % Provided,
-    devPeriodicDM                     % Provided,
+    flinkPeriodicDeploymentManager    % Provided,
     schemedKafkaComponentsUtils       % Provided,
   )
 
@@ -2041,7 +2031,7 @@ lazy val e2eTests = (project in file("e2e-tests"))
   )
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
-  .dependsOn(testUtils % Test)
+  .dependsOn(testUtils % Test, scenarioApi % Test, designer % Test)
 
 lazy val doTest = Seq(
   Test / testOptions += Tests.Setup { () =>
@@ -2105,7 +2095,6 @@ lazy val modules = List[ProjectReference](
   flinkDevModel,
   flinkDevModelJava,
   flinkTableApiComponents,
-  devPeriodicDM,
   defaultModel,
   openapiComponents,
   scenarioCompiler,

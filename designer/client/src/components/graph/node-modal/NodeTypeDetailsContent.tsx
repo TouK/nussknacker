@@ -22,7 +22,7 @@ import FragmentOutputDefinition from "./FragmentOutputDefinition";
 import { Filter } from "./filter";
 import { EnricherProcessor } from "./enricherProcessor";
 import { FragmentInput } from "./fragmentInput";
-import { JoinCustomNode } from "./joinCustomNode";
+import { JoinNode } from "./joinNode";
 import { VariableBuilder } from "./variableBuilder";
 import { Switch } from "./switch";
 import { Split } from "./split";
@@ -30,6 +30,7 @@ import { Properties } from "./properties";
 import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import Variable from "./Variable";
 import { FragmentInputParameter } from "./fragment-input-definition/item";
+import { CustomNode } from "./customNode";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
@@ -256,9 +257,23 @@ export function NodeTypeDetailsContent({
                 />
             );
         case "Join":
+            return (
+                <JoinNode
+                    errors={errors}
+                    findAvailableVariables={findAvailableVariables}
+                    isEditMode={isEditMode}
+                    node={node}
+                    parameterDefinitions={parameterDefinitions}
+                    processDefinitionData={processDefinitionData}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    showSwitch={showSwitch}
+                    showValidation={showValidation}
+                />
+            );
         case "CustomNode":
             return (
-                <JoinCustomNode
+                <CustomNode
                     errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}

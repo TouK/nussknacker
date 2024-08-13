@@ -5,12 +5,11 @@ import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OidcAuthenticationResources(name: String, realm: String, configuration: OidcAuthenticationConfiguration)(
+class OidcAuthenticationResources(name: String, configuration: OidcAuthenticationConfiguration)(
     implicit ec: ExecutionContext,
     sttpBackend: SttpBackend[Future, Any]
 ) extends OAuth2AuthenticationResources(
       name = name,
-      realm = realm,
       service = new CachingOAuth2Service(
         new UserMappingOAuth2Service[OidcUserInfo, DefaultOidcAuthorizationData](
           new OidcService(configuration),

@@ -58,10 +58,23 @@ case class FlinkCustomNodeContext(
     lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
   }
 
+  def branchValidationContext(branchId: String): ValidationContext = asJoinContext.getOrElse(
+    branchId,
+    throw new IllegalArgumentException(s"No validation context for branchId [$branchId] is defined")
+  )
+
   private def asOneOutputContext: ValidationContext =
-    validationContext.left.getOrElse(throw new IllegalArgumentException("This node is a join, use asJoinContext"))
+    validationContext.left.getOrElse(
+      throw new IllegalArgumentException(
+        "This node is a join, asJoinContext should be used to extract validation context"
+      )
+    )
 
   private def asJoinContext: Map[String, ValidationContext] =
-    validationContext.getOrElse(throw new IllegalArgumentException())
+    validationContext.getOrElse(
+      throw new IllegalArgumentException(
+        "This node is a single input node. asOneOutputContext should be used to extract validation context"
+      )
+    )
 
 }

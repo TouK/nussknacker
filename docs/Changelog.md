@@ -1,5 +1,55 @@
 # Changelog
 
+1.17.0 (Not released yet)
+-------------------------
+* [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
+* [#6282](https://github.com/TouK/nussknacker/pull/6184) From now on, the existence of Kafka topics used in Sources and/or 
+  Sinks will always be validated. (`topicsExistenceValidationConfig.enabled` default was changed from `false` to `true`)
+* [#6384](https://github.com/TouK/nussknacker/pull/6384) Value of [Realm](https://datatracker.ietf.org/doc/html/rfc2617#section-1.2) 
+  can be customized using env `AUTHENTICATION_REALM` (its default value "nussknacker" remains un changed)
+* [#6363](https://github.com/TouK/nussknacker/pull/6363) Improvement on SpEL suggestions mechanism, now we are able to 
+  provide suggestions even if the whole expression does not evaluate to proper SpEL expression. 
+* [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
+* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+* [#6333](https://github.com/TouK/nussknacker/pull/6333) Test data generation: more meaningful error message when no data to generate
+* [#6386](https://github.com/TouK/nussknacker/pull/6386) Security fix for situation where array constructor could be 
+  used to execute unallowed expressions by exploiting the lack of full validation inside array dimensions. 
+  * Array constructor expressions are now illegal.
+* [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
+  increased from `500ms` to `10s` to avoid scenario starting problems
+* [#6217](https://github.com/TouK/nussknacker/pull/6217) Improvement: Make flink-metrics-dropwizard as provided dependency at flink-components-utils
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Performance improvement: simple types such as numbers, boolean, string, date types
+  and arrays are serialized/deserialized more optimal in aggregates
+* [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
+  POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
+* [#6415](https://github.com/TouK/nussknacker/pull/6415) Added "Component group" field to fragment properties, which allows selection of the group of components in the Creator Panel in which the fragment will be available
+* [#6462](https://github.com/TouK/nussknacker/pull/6462) Improvement of Component's API: `canHaveManyInputs` property is now 
+  determined automatically, developer doesn't need to provide it by his/her own
+* [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
+* [#6436](https://github.com/TouK/nussknacker/pull/6436) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
+    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
+* [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
+* Batch processing mode related improvements:
+  * [#6353](https://github.com/TouK/nussknacker/pull/6353) [#6467](https://github.com/TouK/nussknacker/pull/6467) Added `join` component
+  * [#6503](https://github.com/TouK/nussknacker/pull/6503) Records are produced by Table Source as `Row`s instead of `Map`s. 
+    Thanks to that, more scenario constructions work correctly with table components such as `join`.
+  * [#6195](https://github.com/TouK/nussknacker/pull/6195) [#6340](https://github.com/TouK/nussknacker/pull/6340) [#6506](https://github.com/TouK/nussknacker/pull/6506) Added test data generation and testing for Table Source:
+    * Added test data generation with 2 modes:
+      * Live (default) - creates records by pulling data from the currently configured data source
+      * Random - creates randomized records
+    * Data generation mode can be configured through the `testDataGenerationMode` in the table components configuration 
+      with `"live"` or `"random"` setting
+    * The test data can be generated into a file through the `generate file` button
+    * Added ability to run tests on data from file or generated on the spot (the `generated` button)
+  * [#6518](https://github.com/TouK/nussknacker/pull/6518) Added user friendly editor for Table Sink output value
+    * The editor can be easily switched backed to 'raw' version similarly to the current Kafka Sink
+  * [#6545](https://github.com/TouK/nussknacker/pull/6545) Non-physical columns are properly handled in Table Sink now
+    * User need to provide only persisted column values now - values for computed columns and virtual columns are not required anymore
+* [#6559](https://github.com/TouK/nussknacker/pull/6559) Extension: Move previousValue and delay components from unbounded to base Flink components
+* [#6567](https://github.com/TouK/nussknacker/pull/6567) Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode)
+  can now be set for Flink-based scenario types under `modelConfig.executionMode`.
+* [#6570](https://github.com/TouK/nussknacker/pull/6570) Generic parameters of collection types are better typed now: e.g. `List[Integer]` can be passed to `List[Number]` but not the other way
+
 1.16.3 (8 August 2024)
 -------------------------
 * [#6527](https://github.com/TouK/nussknacker/pull/6527) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
@@ -10,6 +60,7 @@
 -------------------------
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
+* [#6438](https://github.com/TouK/nussknacker/pull/6438) Fragment icon can be changed in the fragment properties
 
 1.16.1 (16 July 2024)
 -------------------------

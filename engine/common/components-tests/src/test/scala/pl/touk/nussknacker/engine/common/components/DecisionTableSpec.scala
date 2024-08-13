@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
@@ -38,13 +37,13 @@ trait DecisionTableSpec
     with Eventually
     with VeryPatientScalaFutures {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   "Decision Table component should" - {
     "filter and return decision table's rows filtered by the expression" in {
       val result = execute[TestMessage, SCENARIO_RESULT](
         scenario = decisionTableExampleScenario(
-          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null".spel
         ),
         withData = List(
           TestMessage(id = "1", minAge = 30),
@@ -71,8 +70,8 @@ trait DecisionTableSpec
     "return proper typingResult as java list which allows to run method on" in {
       val result = execute[TestMessage, SCENARIO_RESULT](
         scenario = decisionTableExampleScenario(
-          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
-          sinkValueExpression = "#dtResult.size"
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null".spel,
+          sinkValueExpression = "#dtResult.size".spel
         ),
         withData = List(
           TestMessage(id = "1", minAge = 30),
@@ -90,7 +89,7 @@ trait DecisionTableSpec
       "non-present column name is used" in {
         val result = execute[TestMessage, SCENARIO_RESULT](
           scenario = decisionTableExampleScenario(
-            expression = "#ROW['years'] > #input.minAge"
+            expression = "#ROW['years'] > #input.minAge".spel
           ),
           withData = List(
             TestMessage(id = "1", minAge = 30),
@@ -114,7 +113,7 @@ trait DecisionTableSpec
       "type of the accessed column is wrong" in {
         val result = execute[TestMessage, SCENARIO_RESULT](
           scenario = decisionTableExampleScenario(
-            expression = "#ROW['name'] > #input.minAge"
+            expression = "#ROW['name'] > #input.minAge".spel
           ),
           withData = List(
             TestMessage(id = "1", minAge = 30),
@@ -141,7 +140,7 @@ trait DecisionTableSpec
         val result = execute[TestMessage, SCENARIO_RESULT](
           scenario = decisionTableExampleScenario(
             basicDecisionTableDefinition = invalidColumnTypeDecisionTableJson,
-            expression = """#ROW.age > #input.minAge && #ROW.name == "John"""",
+            expression = """#ROW.age > #input.minAge && #ROW.name == "John"""".spel,
           ),
           withData = List(
             TestMessage(id = "1", minAge = 30),
@@ -234,7 +233,7 @@ trait DecisionTableSpec
 
   private def decisionTableExampleScenario(
       expression: Expression,
-      sinkValueExpression: Expression = "#dtResult",
+      sinkValueExpression: Expression = "#dtResult".spel,
       basicDecisionTableDefinition: Expression = exampleDecisionTableJson
   ) = {
     ScenarioBuilder

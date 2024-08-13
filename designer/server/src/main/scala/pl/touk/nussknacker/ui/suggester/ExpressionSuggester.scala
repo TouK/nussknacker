@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, SpelExpressionSugg
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.util.CaretPosition2d
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,11 +40,12 @@ class ExpressionSuggester(
     expression.language match {
       // currently we only support Spel and SpelTemplate expressions
       case Language.Spel | Language.SpelTemplate =>
-        spelExpressionSuggester.expressionSuggestions(
-          expression,
-          caretPosition2d.normalizedCaretPosition(expression.expression),
-          validationContext
-        )
+        spelExpressionSuggester
+          .expressionSuggestions(
+            expression,
+            caretPosition2d,
+            validationContext
+          )
       case _ => Future.successful(Nil)
     }
   }
@@ -60,15 +62,6 @@ object ExpressionSuggester {
       modelData.modelClassLoader.classLoader,
       scenarioPropertiesNames
     )
-  }
-
-}
-
-@JsonCodec
-final case class CaretPosition2d(row: Int, column: Int) {
-
-  def normalizedCaretPosition(inputValue: String): Int = {
-    inputValue.split("\n").take(row).map(_.length).sum + row + column
   }
 
 }

@@ -21,9 +21,10 @@ import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegist
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
-import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
+import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 import java.time.{Duration, LocalDateTime}
 import scala.collection.immutable.ListMap
@@ -593,8 +594,122 @@ class ExpressionSuggesterSpec
     )
   }
 
+  test("should not suggest completions when it infers that expression is enclosed in quotes") {
+    spelSuggestionsFor(
+      "{'ala', 'ma', '#'}",
+      0,
+      "{'ala', 'ma', '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"'\", '\"', '#}",
+      0,
+      "{\"'\", '\"', '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"'\", '\"', \"#}",
+      0,
+      "{\"'\", '\"', \"#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{'\"', '\'', \"#}",
+      0,
+      "{'\"', '\'', \"#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{'\"', '\'', '#}",
+      0,
+      "{'\"', '\'', '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"\"\", \"\'\", '#}",
+      0,
+      "{\"\"\", \"\'\", '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"\"\", \"\'\", \"#}",
+      0,
+      "{\"\"\", \"\'\", \"#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"\"\", '\'', '#}",
+      0,
+      "{\"\"\", '\'', '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"\"\", '\'', \"#}",
+      0,
+      "{\"\"\", '\'', \"#".length
+    ) shouldBe Nil
+  }
+
+  test("should suggest completions of the previous token even if the whole expression is not proper SpEL expression") {
+    spelSuggestionsFor(
+      "#AN #hell",
+      0,
+      "#AN".length
+    ) shouldBe List(
+      suggestion("#ANOTHER", Typed[A]),
+    )
+
+    spelSuggestionsFor(
+      "#AN (#hell)",
+      0,
+      "#AN".length
+    ) shouldBe List(
+      suggestion("#ANOTHER", Typed[A]),
+    )
+
+    spelSuggestionsFor(
+      "#input. #ANOT",
+      0,
+      "#input.".length
+    ) shouldBe List(
+      suggestion("barB", Typed[B]),
+      suggestion("foo", Typed[A]),
+      suggestion("fooString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
+
+    spelSuggestionsFor(
+      """
+        |{
+        |  foo: #inpu,
+        |  bar: #input. (#input.fooSt)
+        |}
+        |""".stripMargin,
+      3,
+      "  bar: #input.".length
+    ) shouldBe List(
+      suggestion("barB", Typed[B]),
+      suggestion("foo", Typed[A]),
+      suggestion("fooString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
+
+    spelSuggestionsFor(
+      """
+        |{
+        |  foo: #inpu,
+        |  bar: #listVar.listField[ 0 ].f (#input.fooSt)
+        |}
+        |""".stripMargin,
+      3,
+      "  bar: #listVar.listField[ 0 ].f".length
+    ) shouldBe List(
+      suggestion("foo", Typed[A]),
+      suggestion("fooString", Typed[String]),
+    )
+  }
+
   test("should not throw exception for invalid spel expression") {
-    spelSuggestionsFor("# #input.barB", 0, "#".length) shouldBe Nil
     spelSuggestionsFor("# - 2a") shouldBe Nil
     spelSuggestionsFor("foo") shouldBe Nil
     spelSuggestionsFor("##") shouldBe Nil

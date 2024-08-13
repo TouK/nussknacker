@@ -17,7 +17,6 @@ export type SettingsState = {
     loggedUser: Partial<User>;
     featuresSettings: Partial<FeaturesSettings>;
     authenticationSettings: AuthenticationSettings;
-    analyticsSettings: $TodoType;
     processDefinitionData: ProcessDefinitionData;
     processToolbarsConfiguration: WithId<ToolbarsConfig>;
 };
@@ -55,7 +54,6 @@ const initialState: SettingsState = {
     loggedUser: {},
     featuresSettings: {},
     authenticationSettings: {},
-    analyticsSettings: {},
     processDefinitionData: {},
     processToolbarsConfiguration: null,
 };
@@ -75,7 +73,6 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
                 ...state,
                 featuresSettings: action.settings.features,
                 authenticationSettings: action.settings.authentication,
-                analyticsSettings: action.settings.analytics,
             };
         }
         case "PROCESS_DEFINITION_DATA": {

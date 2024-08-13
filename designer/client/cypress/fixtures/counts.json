@@ -1,0 +1,74 @@
+{
+    "metaData": {
+        "id": "e2e-001-counts-test-process",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "periodic",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1S')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "dead-end",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 180
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": []
+}

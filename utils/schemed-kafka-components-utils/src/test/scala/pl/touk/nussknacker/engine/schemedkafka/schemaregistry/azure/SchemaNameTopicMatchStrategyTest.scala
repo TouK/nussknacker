@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy.FullSchemaNameDecomposed
 
 class SchemaNameTopicMatchStrategyTest extends AnyFunSuite with Matchers with OptionValues {
@@ -16,9 +17,13 @@ class SchemaNameTopicMatchStrategyTest extends AnyFunSuite with Matchers with Op
   }
 
   test("should convert topic to schema name") {
-    SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName("foo") shouldEqual "FooValue"
-    SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName("foo-bar") shouldEqual "FooBarValue"
-    SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName("foo.bar") shouldEqual "FooBarValue"
+    SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName(UnspecializedTopicName("foo")) shouldEqual "FooValue"
+    SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName(
+      UnspecializedTopicName("foo-bar")
+    ) shouldEqual "FooBarValue"
+    SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName(
+      UnspecializedTopicName("foo.bar")
+    ) shouldEqual "FooBarValue"
   }
 
   test("should list topics matching schemas") {
@@ -26,7 +31,7 @@ class SchemaNameTopicMatchStrategyTest extends AnyFunSuite with Matchers with Op
       "foo.bar",
       "foo-baz",
       "without.schema"
-    )
+    ) map (UnspecializedTopicName.apply)
     val schemasToMatch = List(
       "some.namespace.FooBarKey",
       "some.namespace.FooBarValue",
@@ -35,8 +40,8 @@ class SchemaNameTopicMatchStrategyTest extends AnyFunSuite with Matchers with Op
     )
     val matchStrategy = SchemaNameTopicMatchStrategy(referenceTopics)
     matchStrategy.getAllMatchingTopics(schemasToMatch, isKey = false) shouldEqual List(
-      "foo.bar",
-      "foo-baz"
+      UnspecializedTopicName("foo.bar"),
+      UnspecializedTopicName("foo-baz")
     )
   }
 
@@ -48,13 +53,25 @@ class SchemaNameTopicMatchStrategyTest extends AnyFunSuite with Matchers with Op
       "some.namespace.WithoutTopicValue"
     )
 
-    SchemaNameTopicMatchStrategy.getMatchingSchemas("foo.bar", schemasToMatch, isKey = false) shouldEqual List(
+    SchemaNameTopicMatchStrategy.getMatchingSchemas(
+      UnspecializedTopicName("foo.bar"),
+      schemasToMatch,
+      isKey = false
+    ) shouldEqual List(
       "some.namespace.FooBarValue"
     )
-    SchemaNameTopicMatchStrategy.getMatchingSchemas("foo-bar", schemasToMatch, isKey = false) shouldEqual List(
+    SchemaNameTopicMatchStrategy.getMatchingSchemas(
+      UnspecializedTopicName("foo-bar"),
+      schemasToMatch,
+      isKey = false
+    ) shouldEqual List(
       "some.namespace.FooBarValue"
     )
-    SchemaNameTopicMatchStrategy.getMatchingSchemas("without.schema", schemasToMatch, isKey = false) shouldEqual Nil
+    SchemaNameTopicMatchStrategy.getMatchingSchemas(
+      UnspecializedTopicName("without.schema"),
+      schemasToMatch,
+      isKey = false
+    ) shouldEqual Nil
   }
 
 }

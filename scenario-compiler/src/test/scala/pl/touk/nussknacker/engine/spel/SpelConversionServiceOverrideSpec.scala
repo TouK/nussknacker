@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
@@ -67,8 +67,8 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       .source("start", "stringSource")
       // here is done conversion from comma separated string to list[string] which is currently not supported by nussknacker typing
       // system so is also disabled in spel evaluation but can be turned on by passing customConversionsProviders with SpEL's DefaultConversionService
-      .enricher("invoke-service", "output", "service", "listParam" -> "#CONV.toAny(#input)")
-      .processorEnd("dummy", "service", "listParam" -> "{}")
+      .enricher("invoke-service", "output", "service", "listParam" -> "#CONV.toAny(#input)".spel)
+      .processorEnd("dummy", "service", "listParam" -> "{}".spel)
     val inputValue = "123,234"
 
     interpret(process, None, inputValue) should matchPattern {

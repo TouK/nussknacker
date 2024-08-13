@@ -12,7 +12,12 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor, SimpleParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  FixedExpressionValue,
+  FixedExpressionValueWithIcon,
+  ParameterEditor,
+  SimpleParameterEditor
+}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, ColumnDefinition, ErrorDetails}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
@@ -41,12 +46,12 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
+import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
   MalformedTypingResult,
@@ -603,10 +608,11 @@ object NodesApiEndpoints {
     implicit lazy val edgeSchema: Schema[Edge]                    = Schema.derived
     implicit lazy val cellErrorSchema: Schema[CellError]          = Schema.derived
     import pl.touk.nussknacker.ui.api.TapirCodecs.ClassCodec._
-    implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]         = Schema.derived
-    implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                 = Schema.derived
-    implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
-    implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived
+    implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]                         = Schema.derived
+    implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                                 = Schema.derived
+    implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]                   = Schema.derived
+    implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue]                 = Schema.derived
+    implicit lazy val fixedExpressionValueWithIconSchema: Schema[FixedExpressionValueWithIcon] = Schema.derived
 
     implicit lazy val expressionSchema: Schema[Expression] = {
       implicit val languageSchema: Schema[Language] = Schema.string[Language]
@@ -1492,7 +1498,7 @@ object NodesApiEndpoints {
 
 }
 
-object TypingDtoSchemas {
+object TypingDtoSchemas { // todo
 
   import pl.touk.nussknacker.engine.api.typed.typing._
   import sttp.tapir.Schema.SName

@@ -49,6 +49,10 @@ export const isDeployPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
     (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 );
+export const isDeployedVersion = createSelector(
+    [getProcessVersionId, createSelector(getScenario, (scenario) => scenario?.lastDeployedAction?.processVersionId)],
+    (visibleVersion, deployedVersion) => visibleVersion === deployedVersion,
+);
 export const isMigrationPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],
     (saveDisabled, error, state, fragment) => saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state)),
@@ -61,6 +65,7 @@ export const isArchivePossible = createSelector(
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);
+export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
 export const getShowRunProcessDetails = createSelector(
     [getTestResults, getProcessCounts],

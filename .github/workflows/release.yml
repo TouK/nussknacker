@@ -106,6 +106,13 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
+          sudo rm -rf /usr/lib/firefox
+          sudo rm -rf /opt/google/chrome
+          sudo rm -rf /opt/microsoft/msedge
+          sudo rm -rf /opt/microsoft/powershell
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/share/powershell
       - name: "Build"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}

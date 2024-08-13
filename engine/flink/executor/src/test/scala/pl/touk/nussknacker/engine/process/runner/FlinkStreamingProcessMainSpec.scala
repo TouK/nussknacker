@@ -17,13 +17,12 @@ import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator.{
   sinkForIntsResultsHolder,
   valueMonitorResultsHolder
 }
-import pl.touk.nussknacker.engine.spel
 
 import java.net.ConnectException
 
 class FlinkStreamingProcessMainSpec extends AnyFlatSpec with Matchers with Inside {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   object TestFlinkStreamingProcessMain extends BaseFlinkStreamingProcessMain {
 
@@ -38,8 +37,8 @@ class FlinkStreamingProcessMainSpec extends AnyFlatSpec with Matchers with Insid
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "input")
-        .filter("filter1", "#sum(#input.![value1]) > 24")
-        .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")
+        .filter("filter1", "#sum(#input.![value1]) > 24".spel)
+        .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])".spel)
         .emptySink("out", "monitor")
 
     TestFlinkStreamingProcessMain.main(

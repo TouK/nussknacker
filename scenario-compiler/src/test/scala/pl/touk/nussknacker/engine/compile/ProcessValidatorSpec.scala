@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
@@ -45,7 +45,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with OptionValues {
 
-  private val nonEndingOneInputComponent = CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+  private val nonEndingOneInputComponent = CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false)
 
   private val baseDefinitionBuilder = ModelDefinitionBuilder.empty
     .withGlobalVariable("processHelper", ProcessHelper)
@@ -164,9 +164,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "sourceWithUnknown")
-      .filter("filter1", "#input.imaginary")
-      .filter("filter2", "#input.imaginaryMethod()")
-      .buildSimpleVariable("result-id2", "result", "#input")
+      .filter("filter1", "#input.imaginary".spel)
+      .filter("filter2", "#input.imaginaryMethod()".spel)
+      .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
@@ -180,9 +180,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "sourceWithUnknown")
-      .filter("filter1", "#input.imaginary")
-      .filter("filter2", "#input.imaginaryMethod()")
-      .buildSimpleVariable("result-id2", "result", "#input")
+      .filter("filter1", "#input.imaginary".spel)
+      .filter("filter2", "#input.imaginaryMethod()".spel)
+      .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
@@ -212,8 +212,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("TypeReferenceClassValidationSuccess")
         .source("source1", "source")
-        .filter("filter1", filterPredicateExpression)
-        .buildSimpleVariable("result-id1", "result", "#input")
+        .filter("filter1", filterPredicateExpression.spel)
+        .buildSimpleVariable("result-id1", "result", "#input".spel)
         .emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
@@ -231,8 +231,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("TypeReferenceClassValidationSuccess")
         .source("source1", "source")
-        .filter("filter1", filterPredicateExpression)
-        .buildSimpleVariable("result-id1", "result", "#input")
+        .filter("filter1", filterPredicateExpression.spel)
+        .buildSimpleVariable("result-id1", "result", "#input".spel)
         .emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
@@ -262,8 +262,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("TypeReferenceClassValidationFailure")
         .source("source1", "source")
-        .filter("filter1", filterPredicateExpression)
-        .buildSimpleVariable("result-id1", "result", "#input")
+        .filter("filter1", filterPredicateExpression.spel)
+        .buildSimpleVariable("result-id1", "result", "#input".spel)
         .emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
@@ -292,8 +292,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .filter("filter1", "#input['plainValue'] == 1")
-      .buildSimpleVariable("result-id2", "result", "#input")
+      .filter("filter1", "#input['plainValue'] == 1".spel)
+      .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
@@ -306,8 +306,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .filter("filter1", "#input['plainValue'] == 1")
-      .buildSimpleVariable("result-id2", "result", "#input")
+      .filter("filter1", "#input['plainValue'] == 1".spel)
+      .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
@@ -332,8 +332,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .filter("filter1", "{{\"\"}, {0}}[0][0] == 0 ")
-      .buildSimpleVariable("result-id2", "result", "#input")
+      .filter("filter1", "{{\"\"}, {0}}[0][0] == 0 ".spel)
+      .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
@@ -346,17 +346,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .filter("filter1", "#input.plainValueOpt + 1 > 1")
-      .filter("filter2", "#input.plainValueOpt.abs + 1 > 1")
-      .filter("filter3", "#input.intAsAny + 1 > 1")
+      .filter("filter1", "#input.plainValueOpt + 1 > 1".spel)
+      .filter("filter2", "#input.plainValueOpt.abs + 1 > 1".spel)
+      .filter("filter3", "#input.intAsAny + 1 > 1".spel)
       .processor("sampleProcessor1", "sampleEnricher")
       .enricher("sampleProcessor2", "out", "sampleEnricher")
       .buildVariable(
         "bv1",
         "vars",
-        "v1"             -> "42",
-        "recordVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
-        "spelVariable"   -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
+        "v1"             -> "42".spel,
+        "recordVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }".spel,
+        "spelVariable"   -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)".spel
       )
       .emptySink("id2", "sink")
 
@@ -426,8 +426,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("allow global variables in source definition") {
     val correctProcess = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "sourceWithParam", "param" -> "#processHelper")
-      .buildSimpleVariable("result-id2", "result", "#input")
+      .source("id1", "sourceWithParam", "param" -> "#processHelper".spel)
+      .buildSimpleVariable("result-id2", "result", "#input".spel)
       .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
@@ -501,10 +501,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .source("source", "source")
         .switch(
           "switch",
-          "''",
+          "''".spel,
           "var",
-          Case("'1'", GraphBuilder.emptySink(duplicatedId, "sink")),
-          Case("'2'", GraphBuilder.emptySink(duplicatedId, "sink"))
+          Case("'1'".spel, GraphBuilder.emptySink(duplicatedId, "sink")),
+          Case("'2'".spel, GraphBuilder.emptySink(duplicatedId, "sink"))
         )
     validate(processWithDuplicatedIds, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
@@ -516,7 +516,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .buildSimpleVariable("result-id2", "result", "wtf!!!")
+        .buildSimpleVariable("result-id2", "result", "wtf!!!".spel)
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
@@ -529,7 +529,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withMandatoryParams", "mandatoryParam" -> "")
+        .customNode("customNodeId", "event", "withMandatoryParams", "mandatoryParam" -> "".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
@@ -542,11 +542,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId1", "event", "withNotBlankParams", "notBlankParam" -> "''")
-        .customNode("customNodeId2", "event2", "withNotBlankParams", "notBlankParam" -> "'   '")
-        .customNode("customNodeId3", "event3", "withNotBlankParams", "notBlankParam" -> " '' ")
-        .customNode("customNodeId4", "event4", "withNotBlankParams", "notBlankParam" -> " '  ' ")
-        .customNode("customNodeId5", "event5", "withNotBlankParams", "notBlankParam" -> "'test'")
+        .customNode("customNodeId1", "event", "withNotBlankParams", "notBlankParam" -> "''".spel)
+        .customNode("customNodeId2", "event2", "withNotBlankParams", "notBlankParam" -> "'   '".spel)
+        .customNode("customNodeId3", "event3", "withNotBlankParams", "notBlankParam" -> " '' ".spel)
+        .customNode("customNodeId4", "event4", "withNotBlankParams", "notBlankParam" -> " '  ' ".spel)
+        .customNode("customNodeId5", "event5", "withNotBlankParams", "notBlankParam" -> "'test'".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
@@ -568,7 +568,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "12")
+        .customNode(
+          "customNodeId",
+          "event",
+          "withNullableLiteralIntegerParam",
+          "nullableLiteralIntegerParam" -> "12".spel
+        )
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
@@ -580,7 +585,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "")
+        .customNode(
+          "customNodeId",
+          "event",
+          "withNullableLiteralIntegerParam",
+          "nullableLiteralIntegerParam" -> "".spel
+        )
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
@@ -592,12 +602,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "as")
+        .customNode(
+          "customNodeId",
+          "event",
+          "withNullableLiteralIntegerParam",
+          "nullableLiteralIntegerParam" -> "as".spel
+        )
         .customNode(
           "customNodeId2",
           "event2",
           "withNullableLiteralIntegerParam",
-          "nullableLiteralIntegerParam" -> "1.23"
+          "nullableLiteralIntegerParam" -> "1.23".spel
         )
         .emptySink("emptySink", "sink")
 
@@ -630,8 +645,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withRegExpParam", "regExpParam" -> "as")
-        .customNode("customNodeId2", "event", "withRegExpParam", "regExpParam" -> "1.23")
+        .customNode("customNodeId", "event", "withRegExpParam", "regExpParam" -> "as".spel)
+        .customNode("customNodeId2", "event", "withRegExpParam", "regExpParam" -> "1.23".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
@@ -649,7 +664,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withJsonParam", "jsonParam" -> "'{\"example\": \"json\"}'")
+        .customNode("customNodeId", "event", "withJsonParam", "jsonParam" -> "'{\"example\": \"json\"}'".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithValidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
@@ -661,10 +676,15 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event1", "withJsonParam", "jsonParam" -> "'{'")
-        .customNode("customNodeId2", "event2", "withJsonParam", "jsonParam" -> "'{\"}'")
-        .customNode("customNodeId3", "event3", "withJsonParam", "jsonParam" -> "'{\"invalid\" : \"json\" : \"0\"}'")
-        .customNode("customNodeId4", "event4", "withJsonParam", "jsonParam" -> "'{\"invalid\" : [\"json\"}'")
+        .customNode("customNodeId", "event1", "withJsonParam", "jsonParam" -> "'{'".spel)
+        .customNode("customNodeId2", "event2", "withJsonParam", "jsonParam" -> "'{\"}'".spel)
+        .customNode(
+          "customNodeId3",
+          "event3",
+          "withJsonParam",
+          "jsonParam" -> "'{\"invalid\" : \"json\" : \"0\"}'".spel
+        )
+        .customNode("customNodeId4", "event4", "withJsonParam", "jsonParam" -> "'{\"invalid\" : [\"json\"}'".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
@@ -688,7 +708,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNode("customNodeId", "event", "customTransformer")
-        .processor("id2", missingServiceId, "foo" -> "'bar'")
+        .processor("id2", missingServiceId, "foo" -> "'bar'".spel)
         .emptySink("sink", "sink")
 
     val compilationResult = validate(processWithRefToMissingService, baseDefinition)
@@ -717,7 +737,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .processorEnd("id2", serviceId, redundantServiceParameter -> "'bar'")
+        .processorEnd("id2", serviceId, redundantServiceParameter -> "'bar'".spel)
 
     validate(processWithInvalidServiceInvocation, definition).result should matchPattern {
       case Invalid(NonEmptyList(RedundantParameters(_, _), _)) =>
@@ -730,9 +750,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .filter("filter", "#input != null")
-        .buildSimpleVariable("simple", "simpleVar", "'simple'")
-        .processorEnd("id2", serviceId, "foo" -> "'bar'")
+        .filter("filter", "#input != null".spel)
+        .buildSimpleVariable("simple", "simpleVar", "'simple'".spel)
+        .processorEnd("id2", serviceId, "foo" -> "'bar'".spel)
 
     val definition = ModelDefinitionBuilder.empty.withService(serviceId, Parameter[String](ParameterName("foo"))).build
     val compilationResult = validate(processWithRefToMissingService, definition)
@@ -752,7 +772,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("custom", "out", "notExisting", "dummy" -> "input")
+        .customNode("custom", "out", "notExisting", "dummy" -> "input".spel)
         .emptySink("id2", "sink")
 
     validate(processWithRefToMissingService, baseDefinition).result should matchPattern {
@@ -764,8 +784,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .buildVariable("bv1", "doesExist", "v1" -> "42")
-      .filter("sampleFilter", "#doesExist.v1 + #doesNotExist1 + #doesNotExist2 > 10")
+      .buildVariable("bv1", "doesExist", "v1" -> "42".spel)
+      .filter("sampleFilter", "#doesExist.v1 + #doesNotExist1 + #doesNotExist2 > 10".spel)
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
       case Invalid(
@@ -795,8 +815,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .filter("sampleFilter1", "#input.plainValue > 10")
-      .filter("sampleFilter2", "input.plainValue > 10")
+      .filter("sampleFilter1", "#input.plainValue > 10".spel)
+      .filter("sampleFilter2", "input.plainValue > 10".spel)
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
       case Invalid(
@@ -818,8 +838,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .filter("sampleFilter1", "#input.value1.value2 > 10")
-      .filter("sampleFilter2", "#input.value1.value3 > 10")
+      .filter("sampleFilter1", "#input.value1.value2 > 10".spel)
+      .filter("sampleFilter2", "#input.value1.value3 > 10".spel)
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(
@@ -841,8 +861,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
-      .filter("sampleFilter2", "#input.value1.value3 > 10")
+      .customNode("cNode1", "out1", "custom", "par1" -> "'1'".spel)
+      .filter("sampleFilter2", "#input.value1.value3 > 10".spel)
       .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode.build
 
@@ -869,7 +889,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .split(
         "split1",
         GraphBuilder.emptySink("id2", "sink"),
-        GraphBuilder.filter("sampleFilter2", "#input.value1.value3 > 10").emptySink("id3", "sink")
+        GraphBuilder.filter("sampleFilter2", "#input.value1.value3 > 10".spel).emptySink("id3", "sink")
       )
 
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode.build
@@ -905,10 +925,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .customNodeNoOutput("noOutput", "withoutReturnType", "par1" -> "'1'")
-      .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
-      .filter("sampleFilter1", "#out1.value2 > 0")
-      .filter("sampleFilter2", "#out1.terefere")
+      .customNodeNoOutput("noOutput", "withoutReturnType", "par1" -> "'1'".spel)
+      .customNode("cNode1", "out1", "custom", "par1" -> "'1'".spel)
+      .filter("sampleFilter1", "#out1.value2 > 0".spel)
+      .filter("sampleFilter2", "#out1.terefere".spel)
       .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode.build
 
@@ -932,7 +952,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .customNode("cNode1", "out1", "custom", "par1" -> "#strangeVar")
+      .customNode("cNode1", "out1", "custom", "par1" -> "#strangeVar".spel)
       .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode.build
 
@@ -969,7 +989,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
+      .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10".spel)
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(
@@ -993,10 +1013,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "typed-source")
       .split(
         "split",
-        GraphBuilder.processorEnd("p1", "withParamsService", "par1" -> "#terefere"),
-        GraphBuilder.customNode("c1", "output", "withParamsTransformer", "par1" -> "{").emptySink("id2", "sink"),
+        GraphBuilder.processorEnd("p1", "withParamsService", "par1" -> "#terefere".spel),
+        GraphBuilder.customNode("c1", "output", "withParamsTransformer", "par1" -> "{".spel).emptySink("id2", "sink"),
         GraphBuilder
-          .buildVariable("v1", "output", "par1" -> "#terefere22")
+          .buildVariable("v1", "output", "par1" -> "#terefere22".spel)
           .emptySink("id3", "sink")
       )
 
@@ -1036,8 +1056,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .buildSimpleVariable("var1", "var1", "''")
-      .buildSimpleVariable("var1overwrite", "var1", "''")
+      .buildSimpleVariable("var1", "var1", "''".spel)
+      .buildSimpleVariable("var1overwrite", "var1", "''".spel)
       .emptySink("id2", "sink")
     val compilationResult = validate(process, definitionWithTypedSource)
     compilationResult.result should matchPattern {
@@ -1055,8 +1075,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .buildSimpleVariable("var1", "var1", "''")
-      .switch("var1overwrite", "''", "var1", GraphBuilder.emptySink("id2", "sink"))
+      .buildSimpleVariable("var1", "var1", "''".spel)
+      .switch("var1overwrite", "''".spel, "var1", GraphBuilder.emptySink("id2", "sink"))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
@@ -1067,7 +1087,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .buildSimpleVariable("var1", "var1", "''")
+      .buildSimpleVariable("var1", "var1", "''".spel)
       .enricher("var1overwrite", "var1", "sampleEnricher")
       .emptySink("id2", "sink")
 
@@ -1080,8 +1100,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .buildSimpleVariable("var1", "var1", "''")
-      .buildVariable("var1overwrite", "var1", "a" -> "''")
+      .buildSimpleVariable("var1", "var1", "''".spel)
+      .buildVariable("var1overwrite", "var1", "a" -> "''".spel)
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
@@ -1092,9 +1112,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .buildVariable("valr", "var1", "a" -> "''", "b" -> "11")
-      .buildSimpleVariable("working", "var2", "#var1.b > 10")
-      .buildSimpleVariable("notWorking", "var3", "#var1.a > 10")
+      .buildVariable("valr", "var1", "a" -> "''".spel, "b" -> "11".spel)
+      .buildSimpleVariable("working", "var2", "#var1.b > 10".spel)
+      .buildSimpleVariable("notWorking", "var3", "#var1.a > 10".spel)
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSource).result should matchPattern {
@@ -1117,8 +1137,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .buildSimpleVariable("var1", "var1", "''")
-      .customNode("var1overwrite", "var1", "custom", "par1" -> "''")
+      .buildSimpleVariable("var1", "var1", "''".spel)
+      .customNode("var1overwrite", "var1", "custom", "par1" -> "''".spel)
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSourceAndTransformNode.build).result should matchPattern {
@@ -1132,10 +1152,13 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "typed-source")
       .switch(
         "switch",
-        "''",
+        "''".spel,
         "var2",
-        GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-        Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink"))
+        GraphBuilder.buildSimpleVariable("var3", "var3", "''".spel).emptySink("id2", "sink"),
+        Case(
+          "true".spel,
+          GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()".spel).emptySink("id3", "sink")
+        )
       )
 
     val compilationResult = validate(process, definitionWithTypedSource)
@@ -1163,10 +1186,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "typed-source")
       .switch(
         "switch",
-        "''",
+        "''".spel,
         "var2",
-        GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-        Case("false", GraphBuilder.buildSimpleVariable("id3", "result", "#var3").emptySink("end3", "sink"))
+        GraphBuilder.buildSimpleVariable("var3", "var3", "''".spel).emptySink("id2", "sink"),
+        Case("false".spel, GraphBuilder.buildSimpleVariable("id3", "result", "#var3".spel).emptySink("end3", "sink"))
       )
 
     validate(process, definitionWithTypedSource).result should matchPattern {
@@ -1189,7 +1212,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "typed-source")
-      .switch("switch", "''", "var2", Case("#notExist", GraphBuilder.emptySink("end1", "sink")))
+      .switch("switch", "''".spel, "var2", Case("#notExist".spel, GraphBuilder.emptySink("end1", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(
@@ -1212,8 +1235,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("custom", "varName", "withoutReturnType", "par1" -> "'1'")
-        .buildSimpleVariable("result-id2", "result", "''")
+        .customNode("custom", "varName", "withoutReturnType", "par1" -> "'1'".spel)
+        .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
@@ -1227,7 +1250,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNodeNoOutput("custom", "customTransformer")
-        .buildSimpleVariable("result-id2", "result", "''")
+        .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
@@ -1245,11 +1268,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           "custom",
           "outVar",
           "withManyParameters",
-          "long"       -> "123123123133L",
-          "lazyString" -> "'44'",
-          "lazyInt"    -> "43"
+          "long"       -> "123123123133L".spel,
+          "lazyString" -> "'44'".spel,
+          "lazyInt"    -> "43".spel
         )
-        .buildSimpleVariable("result-id2", "result", "''")
+        .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
     validate(process, baseDefinition).result should matchPattern { case Valid(_) =>
@@ -1271,7 +1294,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .buildSimpleVariable("result-id2", "result", "''")
+        .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
@@ -1296,8 +1319,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           "serviceDef",
           "defined",
           "returningTypeService",
-          "definition" -> "{param1: 'String', param2: 'Integer'}",
-          "inRealTime" -> "#input.toString()"
+          "definition" -> "{param1: 'String', param2: 'Integer'}".spel,
+          "inRealTime" -> "#input.toString()".spel
         )
         .emptySink("id2", "sink")
 
@@ -1327,8 +1350,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           "serviceDef",
           "defined",
           "returningTypeService",
-          "definition" -> "{param1: 'String', param2: 'Integer'}",
-          "inRealTime" -> "#input.toString()"
+          "definition" -> "{param1: 'String', param2: 'Integer'}".spel,
+          "inRealTime" -> "#input.toString()".spel
         )
         .emptySink("id2", "sink")
 
@@ -1350,9 +1373,15 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .enricher("service-1", "output1", "withCustomValidation", "age" -> "12", "fields" -> "{:}")
-        .enricher("service-2", "output2", "withCustomValidation", "age" -> "30", "fields" -> "{invalid: 'yes'}")
-        .buildSimpleVariable("result-id2", "result", "''")
+        .enricher("service-1", "output1", "withCustomValidation", "age" -> "12".spel, "fields" -> "{:}".spel)
+        .enricher(
+          "service-2",
+          "output2",
+          "withCustomValidation",
+          "age"    -> "30".spel,
+          "fields" -> "{invalid: 'yes'}".spel
+        )
+        .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
     val result = validate(process, withServiceRef)
@@ -1370,7 +1399,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("custom", "outVar", "withParamsTransformer", "par1" -> "#input.toString()")
+        .customNode("custom", "outVar", "withParamsTransformer", "par1" -> "#input.toString()".spel)
         .emptySink("id2", "sink")
 
     validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
@@ -1398,10 +1427,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           "custom",
           "outVar",
           "manyParams",
-          "par1" -> "#input.toString()",
-          "par2" -> "''",
-          "par3" -> "#input.toString()",
-          "par4" -> "''"
+          "par1" -> "#input.toString()".spel,
+          "par2" -> "''".spel,
+          "par3" -> "#input.toString()".spel,
+          "par4" -> "''".spel
         )
         .emptySink("id2", "sink")
 
@@ -1414,7 +1443,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .emptySink("sinkWithLazyParam", "sinkWithLazyParam", "lazyString" -> "#input.toString()")
+        .emptySink("sinkWithLazyParam", "sinkWithLazyParam", "lazyString" -> "#input.toString()".spel)
 
     validate(process, baseDefinition).result should matchPattern { case Valid(_) =>
     }
@@ -1426,7 +1455,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .additionalFields(properties = Map("property1" -> "value1"))
         .source("id1", "source")
-        .buildSimpleVariable("var1", "var1", "#meta.properties.property1")
+        .buildSimpleVariable("var1", "var1", "#meta.properties.property1".spel)
         .emptySink("sink", "sink")
 
     validate(process, baseDefinition).result should matchPattern { case Valid(_) =>
@@ -1438,7 +1467,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .buildSimpleVariable("var1", "var1", "#meta.processName")
+        .buildSimpleVariable("var1", "var1", "#meta.processName".spel)
         .emptySink("sink", "sink")
 
     validate(process, baseDefinition).result should matchPattern { case Valid(_) =>
@@ -1457,7 +1486,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process")
         .source("source", "source")
-        .filter("filter", "true")
+        .filter("filter", "true".spel)
         .emptySink("sink", "sink")
 
     val compilationResult = validate(process, baseDefinition)
@@ -1481,7 +1510,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process =
       ScenarioBuilder
         .streaming("process")
-        .source("source", "sourceWithParam", "param" -> "123")
+        .source("source", "sourceWithParam", "param" -> "123".spel)
         .emptySink("sink", "sink")
 
     val compilationResult = validate(process, baseDefinition)
@@ -1505,7 +1534,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process")
         .source("source", "source")
-        .emptySink("sink", "sinkWithLazyParam", "lazyString" -> "'123'")
+        .emptySink("sink", "sinkWithLazyParam", "lazyString" -> "'123'".spel)
 
     val compilationResult = validate(process, baseDefinition)
 
@@ -1528,7 +1557,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process")
         .source("source", "source")
-        .customNode("customNode", "out", "withParamsTransformer", "par1" -> "'123'")
+        .customNode("customNode", "out", "withParamsTransformer", "par1" -> "'123'".spel)
         .emptySink("sink", "sink")
 
     val compilationResult = validate(process, baseDefinition)
@@ -1552,8 +1581,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "source")
-      .buildSimpleVariable("sampleVar", "var", "#processHelper.futureValue")
-      .buildSimpleVariable("sampleVar2", "var2", "#processHelper.identity(#var)")
+      .buildSimpleVariable("sampleVar", "var", "#processHelper.futureValue".spel)
+      .buildSimpleVariable("sampleVar2", "var2", "#processHelper.identity(#var)".spel)
       .emptySink("sink", "sink")
 
     val compilationResult = validate(process, baseDefinition)
@@ -1579,7 +1608,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'")
+        .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithValidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
@@ -1591,8 +1620,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'")
-        .customNode("customNodeId2", "event1", "withCustomValidatorParam", "param" -> "'Baaaa'")
+        .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'".spel)
+        .customNode("customNodeId2", "event1", "withCustomValidatorParam", "param" -> "'Baaaa'".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
@@ -1610,7 +1639,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withAdditionalVariable", "param" -> "#additional.toString")
+        .customNode("customNodeId", "event", "withAdditionalVariable", "param" -> "#additional.toString".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithValidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
@@ -1622,7 +1651,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("customNodeId", "event", "withVariablesToHide", "param" -> "#input.toString")
+        .customNode("customNodeId", "event", "withVariablesToHide", "param" -> "#input.toString".spel)
         .emptySink("emptySink", "sink")
 
     validate(processWithValidExpression, baseDefinition).result should matchPattern {
@@ -1647,13 +1676,13 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     def scenario(outputName: String) = ScenarioBuilder
       .streaming("scenario1")
       .source("id1", "source")
-      .buildSimpleVariable("var1", usedVarName, "''")
+      .buildSimpleVariable("var1", usedVarName, "''".spel)
       .fragmentOneOut("sample", "frag1", "output1", outputName)
       .emptySink("emptySink", "sink")
 
     val fragment = ScenarioBuilder
       .fragment("frag1")
-      .fragmentOutput("out", "output1", "field1" -> "''")
+      .fragmentOutput("out", "output1", "field1" -> "''".spel)
     val resolver = FragmentResolver(List(fragment))
 
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
@@ -1683,8 +1712,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         metaData,
         List(),
         List(
-          List(FlatNode(Variable(variableName1, "varName", "'str'"))),
-          List(FlatNode(Variable(variableName2, "varName", "'str'"))),
+          List(FlatNode(Variable(variableName1, "varName", "'str'".spel))),
+          List(FlatNode(Variable(variableName2, "varName", "'str'".spel))),
           List(FlatNode(Source(sourceName1, SourceRef("source", List())))),
           List(FlatNode(Source(sourceName2, SourceRef("source", List())))),
         )
@@ -1774,7 +1803,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     override def returnType(
         validationContext: ValidationContext,
         parameters: Map[ParameterName, DefinedSingleParameter]
-    ): ValidatedNel[ProcessCompilationError, TypingResult] = {
+    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, TypingResult] = {
       Valid(
         parameters
           .get(ParameterName("definition"))

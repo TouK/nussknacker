@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -572,20 +571,23 @@ class DefaultComponentServiceSpec
 
     forAll(testingData) {
       (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
-        val returnedComponents = componentService.getComponentsList(user).futureValue
+        val returnedComponentsWithUsages    = componentService.getComponentsList(skipUsages = false)(user).futureValue
+        val returnedComponentsWithoutUsages = componentService.getComponentsList(skipUsages = true)(user).futureValue
 
-        returnedComponents.map(_.id).sortBy(_.value) should contain theSameElementsAs expectedComponents
+        returnedComponentsWithUsages.map(_.id) shouldBe returnedComponentsWithoutUsages.map(_.id)
+
+        returnedComponentsWithUsages.map(_.id).sortBy(_.value) should contain theSameElementsAs expectedComponents
           .map(_.id)
           .sortBy(
             _.value
           )
 
         def counts(list: List[ComponentListElement]) = list.map(el => el.id -> el.usageCount).toMap
-        val returnedCounts                           = counts(returnedComponents)
+        val returnedCounts                           = counts(returnedComponentsWithUsages)
         val expectedCounts                           = counts(expectedComponents)
         returnedCounts should contain theSameElementsAs expectedCounts
 
-        forAll(Table("returnedComponents", returnedComponents: _*)) { returnedComponent =>
+        forAll(Table("returnedComponents", returnedComponentsWithUsages: _*)) { returnedComponent =>
           checkLinks(returnedComponent)
 
           // Components should contain only user categories
@@ -681,7 +683,7 @@ class DefaultComponentServiceSpec
     )
     inside {
       intercept[TestFailedException] {
-        componentService.getComponentsList(admin).futureValue
+        componentService.getComponentsList(skipUsages = false)(admin).futureValue
       }.cause
     } { case Some(ComponentConfigurationException(_, wrongConfigurations)) =>
       wrongConfigurations.toList should contain theSameElementsAs expectedWrongConfigurations

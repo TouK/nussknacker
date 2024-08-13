@@ -272,6 +272,7 @@ Diagnosing most of the problems below requires access to:
 | Redeploy of scenario times out                                                              | Check jobmanager logs and/or Flink console                                                                                                                                                              |
 | `State is incompatible, please stop process and start again with clean state` during deploy | <ul><li>Check if Nussknacker has access to savepoints</li><li>Analyze if new state was added - if this is the case probably cancel before deploy is needed (to get rid of incompatible state)</li></ul> |
 | Aggregate events are not emitted by aggregate in time windows nodes                         | Idle source (Kafka topic) or idle Kafka partition confuse Flink's watermark mechanism. To avoid this problem ensure that each Kafka source partition continually gets events. Alternatively change [idleTimeout](../integration/KafkaIntegration.md/#configuration-for-flink-engine) configuration to ensure that idle source emits watermarks at acceptable intervals.  |
+
 ### Nussknacker metrics
 
 One of the crucial aspects of running production streaming jobs is monitoring. In this section we'll explain how the Nussknacker scenario running on the Flink cluster gives rise to certain metrics, how to process them and display them in Grafana.
