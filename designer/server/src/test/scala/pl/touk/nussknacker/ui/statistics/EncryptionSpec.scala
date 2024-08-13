@@ -26,11 +26,4 @@ class EncryptionSpec
       )
   }
 
-  // todo should be moved to proper test class
-  "Should not encrypt if wrong public key" in {
-    val ex = intercept[Exception](PublicEncryptionKey("abc"))
-
-    ex shouldBe a[IllegalStateException]
-  }
-
 }

@@ -94,8 +94,6 @@ class UsageStatisticsReportsSettingsServiceTest
     RequestIdStat,
   ).map(_.name)
 
-  //    TODO: switch once logstash is ready
-  //  private val cfg = StatisticUrlConfig()
   private val cfg = StatisticUrlConfig(maybePublicEncryptionKey = None)
 
   test("should determine query params with version and source") {
