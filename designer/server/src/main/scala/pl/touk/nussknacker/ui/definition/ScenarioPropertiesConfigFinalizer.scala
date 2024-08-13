@@ -11,13 +11,15 @@ class ScenarioPropertiesConfigFinalizer(
 ) {
 
   def finalizeScenarioPropertiesParameters(
-                                            parametersConfig: Map[String, ScenarioPropertiesParameterConfig],
+      parametersConfig: Map[String, ScenarioPropertiesParameterConfig],
   ): Map[String, ScenarioPropertiesParameterConfig] = {
     additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| parametersConfig
   }
 
   def finalizePropertiesConfig(scenarioPropertiesConfig: ScenarioPropertiesConfig): ScenarioPropertiesConfig = {
-    scenarioPropertiesConfig.copy(parameterConfig = finalizeScenarioPropertiesParameters(scenarioPropertiesConfig.parameterConfig))
+    scenarioPropertiesConfig.copy(parameterConfig =
+      finalizeScenarioPropertiesParameters(scenarioPropertiesConfig.parameterConfig)
+    )
   }
 
 }
