@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
@@ -98,11 +99,12 @@ object ProcessingTypeData {
         deploymentConfig,
         scenarioStateCacheTTL
       )
-    val scenarioProperties = ScenarioPropertiesConfig(
-      deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelData.modelConfig
-        .getOrElse[Map[ProcessingType, ScenarioPropertiesConfig]]("scenarioPropertiesConfig", Map.empty),
-      modelData.)
 
+    val modelScenarioProps = modelData.modelConfig
+      .getOrElse[ScenarioPropertiesConfig]("scenarioPropertiesConfig", ScenarioPropertiesConfig.empty())
+
+    val runtimeScenarioProps =
+      deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelScenarioProps
     val fragmentProperties = modelData.modelConfig
       .getOrElse[Map[ProcessingType, ScenarioPropertiesParameterConfig]]("fragmentPropertiesConfig", Map.empty)
 

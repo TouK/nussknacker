@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
@@ -280,8 +281,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     new DefinitionsService(
       modelData = model,
       staticDefinitionForDynamicComponents = Map.empty,
-      scenarioPropertiesConfig = Map.empty,
       fragmentPropertiesConfig = Map.empty,
+      scenarioPropertiesConfig = ScenarioPropertiesConfig.empty(),
       deploymentManager = new MockDeploymentManager,
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
