@@ -137,14 +137,15 @@ object FlinkStreamingPropertiesConfig {
         hintText = None
       )
 
-  private val checkpointIntervalConfig: (String, ScenarioPropertiesParameterConfig) = StreamMetaData.checkpointIntervalName ->
-    ScenarioPropertiesParameterConfig(
-      defaultValue = None,
-      editor = Some(StringParameterEditor),
-      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
-      label = Some("Checkpoint interval in seconds"),
-      hintText = None
-    )
+  private val checkpointIntervalConfig: (String, ScenarioPropertiesParameterConfig) =
+    StreamMetaData.checkpointIntervalName ->
+      ScenarioPropertiesParameterConfig(
+        defaultValue = None,
+        editor = Some(StringParameterEditor),
+        validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+        label = Some("Checkpoint interval in seconds"),
+        hintText = None
+      )
 
   val properties: Map[String, ScenarioPropertiesParameterConfig] =
     Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
