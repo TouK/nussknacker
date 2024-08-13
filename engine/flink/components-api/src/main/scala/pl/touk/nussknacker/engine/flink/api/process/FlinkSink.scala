@@ -68,3 +68,40 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
   def toFlinkFunction: SinkFunction[Value]
 
 }
+
+trait BasicFlinkSinkWithContext extends FlinkSink with ExplicitUidInOperatorsSupport {
+
+  def typeResult: TypingResult = Unknown
+
+  override def prepareValue(
+      dataStream: DataStream[Context],
+      flinkCustomNodeContext: FlinkCustomNodeContext
+  ): DataStream[ValueWithContext[Value]] =
+    dataStream.flatMap(
+      valueFunction(flinkCustomNodeContext.lazyParameterHelper),
+      flinkCustomNodeContext.valueWithContextInfo.forType(typeResult)
+    )
+
+  override def registerSink(
+      dataStream: DataStream[ValueWithContext[Value]],
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStreamSink[ValueWithContext[_]] =
+    setUidToNodeIdIfNeed(
+      flinkNodeContext,
+      dataStream
+        .map(
+          identity,
+          flinkNodeContext.typeInformationDetection
+            .forType(typeResult)
+            .asInstanceOf[TypeInformation[ValueWithContext[Value]]]
+        )
+        .addSink(toFlinkFunction)
+    )
+
+  def valueFunction(
+      helper: FlinkLazyParameterFunctionHelper
+  ): FlatMapFunction[Context, ValueWithContext[Value]]
+
+  def toFlinkFunction: SinkFunction[ValueWithContext[Value]]
+
+}
