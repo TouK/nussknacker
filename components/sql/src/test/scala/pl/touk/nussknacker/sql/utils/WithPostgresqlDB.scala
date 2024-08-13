@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.sql.utils
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import org.hsqldb.jdbcDriver
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.testcontainers.utility.DockerImageName
-import scala.jdk.CollectionConverters._
 
 import java.sql.{Connection, DriverManager}
-import java.util.UUID
+import java.time.ZoneId
+import scala.jdk.CollectionConverters._
 
-trait WithPostgresqlDB {
+trait WithPostgresqlDB extends LazyLogging {
   self: BeforeAndAfterAll with ForAllTestContainer =>
 
   var conn: Connection = _
@@ -43,6 +43,12 @@ trait WithPostgresqlDB {
       val ddlStatement = conn.prepareStatement(ddlStr)
       try ddlStatement.execute()
       finally ddlStatement.close()
+    }
+    val statement = conn.createStatement()
+    val resultSet = statement.executeQuery("SHOW timezone")
+    if (resultSet.next()) {
+      val timezone = resultSet.getString(1)
+      logger.info("Postgres Timezone: " + timezone + s" default timezone: ${ZoneId.systemDefault().toString}")
     }
   }
 
