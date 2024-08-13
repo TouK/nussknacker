@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import cats.Always
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
@@ -7,7 +8,7 @@ import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelDependencies
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{ComponentProvider, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -15,7 +16,10 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.process.processingtype.loader.{
+  LoadableConfigBasedProcessingTypesConfig,
+  ProcessingTypeConfigProviderBasedProcessingTypeDataLoader
+}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.nio.file.Path
@@ -274,15 +278,18 @@ class ScenarioParametersServiceTest
         "SCHEMA_REGISTRY_URL" -> "foo"
       ).asJava
     )
-    val designerConfig =
-      DesignerConfigLoader.load(
-        ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig),
-        getClass.getClassLoader
-      )
+
     val workPath = designerServerModuleDir.resolve("work")
     logDirectoryStructure(workPath)
-    val processingTypeData = ProcessingTypeDataReader.loadProcessingTypeData(
-      designerConfig,
+    val processingTypeDataReader = new ProcessingTypeConfigProviderBasedProcessingTypeDataLoader(
+      new LoadableConfigBasedProcessingTypesConfig(
+        Always {
+          ConfigWithUnresolvedVersion(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
+        }
+      )
+    )
+
+    val processingTypeData = processingTypeDataReader.loadProcessingTypeData(
       processingType =>
         ModelDependencies(
           Map.empty,

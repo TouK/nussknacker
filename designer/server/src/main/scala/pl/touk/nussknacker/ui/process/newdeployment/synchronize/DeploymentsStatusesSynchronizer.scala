@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 

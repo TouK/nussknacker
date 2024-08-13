@@ -1,36 +1,25 @@
-package pl.touk.nussknacker.ui.process.processingtype
+package pl.touk.nussknacker.ui.process.processingtype.loader
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{
-  ConfigWithUnresolvedVersion,
-  DeploymentManagerDependencies,
-  DeploymentManagerProvider,
-  ModelData,
-  ModelDependencies,
-  ProcessingTypeConfig
-}
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.toValueWithRestriction
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
+import pl.touk.nussknacker.ui.process.processingtype._
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
-object ProcessingTypeDataReader extends ProcessingTypeDataReader {
+class ProcessingTypeConfigProviderBasedProcessingTypeDataLoader(configurationReader: ProcessingTypesConfig)
+    extends ProcessingTypeDataLoader
+    with LazyLogging {
 
-  def toValueWithRestriction(processingTypeData: ProcessingTypeData): ValueWithRestriction[ProcessingTypeData] = {
-    ValueWithRestriction.userWithAccessRightsToAnyOfCategories(processingTypeData, Set(processingTypeData.category))
-  }
-
-}
-
-trait ProcessingTypeDataReader extends LazyLogging {
-
-  def loadProcessingTypeData(
-      config: ConfigWithUnresolvedVersion,
+  override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val processingTypesConfig = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+    val processingTypesConfig = configurationReader
+      .processingTypeConfigs()
+      .mapValuesNow(ProcessingTypeConfig.read)
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
     // See DeploymentManagerProvider.engineSetupIdentity
@@ -48,20 +37,21 @@ trait ProcessingTypeDataReader extends LazyLogging {
     val processingTypesData = providerWithNameInputData
       .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
         logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
-        val processingTypeData = createProcessingTypeData(
+        val processingTypeData = ProcessingTypeData.createProcessingTypeData(
           processingType,
-          processingTypeConfig,
-          getModelDependencies(processingType),
+          ModelData(processingTypeConfig, getModelDependencies(processingType)),
           deploymentManagerProvider,
           getDeploymentManagerDependencies(processingType),
           engineSetupNames(processingType),
+          processingTypeConfig.deploymentConfig,
+          processingTypeConfig.category
         )
         processingType -> processingTypeData
       }
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    val combinedData = createCombinedData(processingTypesData)
+    val combinedData = CombinedProcessingTypeData.create(processingTypesData)
 
     ProcessingTypeDataState(
       processingTypesData.mapValuesNow(toValueWithRestriction),
@@ -71,33 +61,8 @@ trait ProcessingTypeDataReader extends LazyLogging {
     )
   }
 
-  protected def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
+  private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
     ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType)
-  }
-
-  protected def createProcessingTypeData(
-      processingType: ProcessingType,
-      processingTypeConfig: ProcessingTypeConfig,
-      modelDependencies: ModelDependencies,
-      deploymentManagerProvider: DeploymentManagerProvider,
-      deploymentManagerDependencies: DeploymentManagerDependencies,
-      engineSetupName: EngineSetupName
-  ): ProcessingTypeData = {
-    ProcessingTypeData.createProcessingTypeData(
-      processingType,
-      ModelData(processingTypeConfig, modelDependencies),
-      deploymentManagerProvider,
-      deploymentManagerDependencies,
-      engineSetupName,
-      processingTypeConfig.deploymentConfig,
-      processingTypeConfig.category
-    )
-  }
-
-  protected def createCombinedData(
-      valueMap: Map[ProcessingType, ProcessingTypeData],
-  ): CombinedProcessingTypeData = {
-    CombinedProcessingTypeData.create(valueMap)
   }
 
 }

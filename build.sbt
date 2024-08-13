@@ -1987,7 +1987,7 @@ lazy val designer = (project in file("designer/server"))
             "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
             "org.scala-lang.modules" %% "scala-xml"                  % "2.1.0"
           )
-        case _       => Seq(),
+        case _       => Seq()
       }
     }
   )

@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.description.ScenarioParametersApiEndpoints
 import pl.touk.nussknacker.ui.api.description.ScenarioParametersApiEndpoints.Dtos.ScenarioParametersCombinationWithEngineErrors
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
+import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}

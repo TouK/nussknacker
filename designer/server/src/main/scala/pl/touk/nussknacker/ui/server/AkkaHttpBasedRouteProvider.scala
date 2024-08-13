@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.server
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import cats.effect.{IO, Resource}
@@ -10,13 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  AdditionalUIConfigProviderFactory,
-  DesignerWideComponentId,
-  EmptyAdditionalUIConfigProviderFactory
-}
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeployedScenariosProvider
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
@@ -43,7 +36,6 @@ import pl.touk.nussknacker.ui.definition.{
   DefinitionsService,
   ScenarioPropertiesConfigFinalizer
 }
-import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -70,14 +62,14 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
+import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
-import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
-import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.statistics.{FingerprintService, StatisticUrlConfig, UsageStatisticsReportsSettingsService}
@@ -98,7 +90,7 @@ import scala.util.control.NonFatal
 class AkkaHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
-    processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
+    processingTypeDataReader: ProcessingTypeDataLoader,
     feStatisticsRepository: FEStatisticsRepository[Future],
     designerClock: Clock
 )(implicit system: ActorSystem, materializer: Materializer)
@@ -118,11 +110,8 @@ class AkkaHttpBasedRouteProvider(
       actionServiceSupplier      = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
-        config,
-        processingTypeDataStateFactory,
         additionalUIConfigProvider,
         actionServiceSupplier,
-        DefaultProcessingTypeDeployedScenariosProvider(dbRef, _),
         sttpBackend,
       )
       deploymentRepository = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
@@ -637,20 +626,17 @@ class AkkaHttpBasedRouteProvider(
   }
 
   private def prepareProcessingTypeDataReload(
-      designerConfig: ConfigWithUnresolvedVersion,
-      processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
-      createDeployedScenariosProvider: ProcessingType => ProcessingTypeDeployedScenariosProvider,
       sttpBackend: SttpBackend[Future, Any],
-  ): Resource[IO, ProcessingTypeDataReload] = {
+  )(implicit executionContext: ExecutionContext): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
         acquire = IO(
-          new ProcessingTypeDataReload({ () =>
+          new ReloadableProcessingTypeDataProvider({ () =>
             def getDeploymentManagerDependencies(processingType: ProcessingType) = {
               DeploymentManagerDependencies(
-                createDeployedScenariosProvider(processingType),
+                DefaultProcessingTypeDeployedScenariosProvider(dbRef, processingType),
                 new DefaultProcessingTypeActionService(
                   processingType,
                   actionServiceProvider.get(),
@@ -669,8 +655,7 @@ class AkkaHttpBasedRouteProvider(
                 _ => true
               )
             }
-            processingTypeDataStateFactory.create(
-              designerConfig,
+            processingTypeDataReader.loadProcessingTypeData(
               getModelDependencies,
               getDeploymentManagerDependencies,
             )
@@ -686,6 +671,8 @@ class AkkaHttpBasedRouteProvider(
           }
       )
   }
+
+  private def createProcessingTypeDataReload() = {}
 
   private def createAdditionalUIConfigProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext

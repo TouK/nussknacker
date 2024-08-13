@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import cats.Always
 import com.typesafe
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.ui.process.processingtype.loader.LoadableConfigBasedProcessingTypesConfig
 
 class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
 
@@ -31,7 +33,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
     val config = configuration.resolve()
 
     intercept[typesafe.config.ConfigException] {
-      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(config))
+      processingTypeDataReader(config).processingTypeConfigs()
     }.getMessage should include("No configuration setting found for key 'deploymentConfig.type'")
   }
 
@@ -45,8 +47,12 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
     val config = configuration.resolve()
 
     intercept[RuntimeException] {
-      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(config))
+      processingTypeDataReader(config).processingTypeConfigs()
     }.getMessage should include("No scenario types configuration provided")
+  }
+
+  private def processingTypeDataReader(config: Config) = {
+    new LoadableConfigBasedProcessingTypesConfig(Always(ConfigWithUnresolvedVersion(config)))
   }
 
 }

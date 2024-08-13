@@ -11,7 +11,10 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.processingtype.provider.{
+  ProcessingTypeDataProvider,
+  ReloadableProcessingTypeDataProvider
+}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser, NussknackerInternalUser}
 
@@ -21,7 +24,7 @@ import scala.util.control.NonFatal
 class AppApiHttpService(
     config: Config,
     authManager: AuthManager,
-    processingTypeDataReloader: ProcessingTypeDataReload,
+    processingTypeDataReloader: ReloadableProcessingTypeDataProvider,
     modelBuildInfos: ProcessingTypeDataProvider[Map[String, String], _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,

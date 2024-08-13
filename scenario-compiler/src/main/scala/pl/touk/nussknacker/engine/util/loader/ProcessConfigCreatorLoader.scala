@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 
 class ProcessConfigCreatorLoader(shouldIncludeConfigCreator: ProcessConfigCreator => Boolean)
     extends LoadClassFromClassLoader {
+
   type JPCC = pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator
   type SPCC = ProcessConfigCreator
 

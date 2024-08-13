@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 
 /**
   * This class handles two parts of ui config loading:
@@ -16,10 +17,18 @@ object DesignerConfigLoader {
 
   private val defaultConfigResource = "defaultDesignerConfig.conf"
 
+  def load(classLoader: ClassLoader): ConfigWithUnresolvedVersion = {
+    load(ConfigFactoryExt.parseUnresolved(classLoader = classLoader), classLoader)
+  }
+
   def load(baseUnresolvedConfig: Config, classLoader: ClassLoader): ConfigWithUnresolvedVersion = {
     val parsedDefaultUiConfig                  = ConfigFactory.parseResources(defaultConfigResource)
     val unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
     ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults)
+  }
+
+  def from(config: Config): ConfigWithUnresolvedVersion = {
+    ConfigWithUnresolvedVersion(this.getClass.getClassLoader, config)
   }
 
 }

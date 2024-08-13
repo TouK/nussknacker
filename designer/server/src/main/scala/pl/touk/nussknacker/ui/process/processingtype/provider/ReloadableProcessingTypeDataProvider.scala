@@ -1,7 +1,8 @@
-package pl.touk.nussknacker.ui.process.processingtype
+package pl.touk.nussknacker.ui.process.processingtype.provider
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.process.processingtype.{CombinedProcessingTypeData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
 /**
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
  * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
  * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
-class ProcessingTypeDataReload(
+class ReloadableProcessingTypeDataProvider(
     loadMethod: () => ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]
 ) extends ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
     with LazyLogging {

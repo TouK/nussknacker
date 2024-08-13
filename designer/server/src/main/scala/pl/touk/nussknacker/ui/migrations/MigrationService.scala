@@ -22,7 +22,8 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
+import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser

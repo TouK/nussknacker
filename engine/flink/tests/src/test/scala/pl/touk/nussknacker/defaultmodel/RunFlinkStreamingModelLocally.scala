@@ -6,26 +6,27 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.DeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.{DeploymentManagerProviderStub, LocalModelData}
 import pl.touk.nussknacker.test.KafkaConfigProperties
-import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel
+import pl.touk.nussknacker.ui.LocalNussknackerWithSingleModel
 
 //Sample app to simplify local development.
 object RunFlinkStreamingModelLocally extends IOApp.Simple {
 
-  val modelConfig = ConfigFactory
-    .empty()
-    // TODO: Fix: Idea loads kafka lite component provider
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
-    .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:1111"))
+  private val modelData = LocalModelData(
+    inputConfig = ConfigFactory
+      .empty()
+      // TODO: Fix: Idea loads kafka lite component provider
+      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
+      .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:1111")),
+    components = List.empty,
+    configCreator = new DefaultConfigCreator
+  )
 
-  val modelData = LocalModelData(modelConfig, List.empty, configCreator = new DefaultConfigCreator)
-
-  val managerConfig = ConfigFactory.empty()
   // For simplicity we use stub here, one can add real Flink implementation after add appropriate dependencies
-  val provider: DeploymentManagerProvider = new DeploymentManagerProviderStub
+  private val provider: DeploymentManagerProvider = new DeploymentManagerProviderStub
 
   override def run: IO[Unit] = {
     LocalNussknackerWithSingleModel
-      .run(modelData, provider, managerConfig)
+      .run(modelData, provider)
       .use(_ => IO.never)
   }
 
