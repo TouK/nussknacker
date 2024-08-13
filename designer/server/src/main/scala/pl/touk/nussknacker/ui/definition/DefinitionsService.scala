@@ -79,7 +79,7 @@ class DefinitionsService(
           (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig else finalizedScenarioPropertiesConfig.parameterConfig)
             .mapValuesNow(createUIScenarioAdditionalFieldConfig),
         docsUrlIconConfig = finalizedScenarioPropertiesConfig.docsIconConfig.map(config =>
-          ScenarioPropertiesDocsUrlIconConfig(config.docsUrl, config.docsIconPath)
+          ScenarioPropertiesDocsUrlIconConfig(config.docsUrl, config.docsUrl)
         )
       ),
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
