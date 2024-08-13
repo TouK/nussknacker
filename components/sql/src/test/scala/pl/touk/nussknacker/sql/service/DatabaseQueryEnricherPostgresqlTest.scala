@@ -21,7 +21,7 @@ class DatabaseQueryEnricherPostgresqlTest
     "CREATE TABLE types_test(t_time TIME, t_timestamp TIMESTAMP, t_timestamptz TIMESTAMPTZ, t_date DATE, " +
       "t_array INT[], t_boolean BOOLEAN, t_text TEXT);",
     "INSERT INTO types_test(t_time, t_timestamp, t_timestamptz, t_date, t_array, t_boolean, t_text) VALUES (" +
-      "'08:00:00', '2024-08-12 08:00:00', '2024-08-12 08:00:00+01:00', '2024-08-12', '{1,2,3,4,5}', true, 'long text');"
+      "'08:00:00', '2024-08-12 10:00:00', '2024-08-12 09:00:00+01:00', '2024-08-12', '{1,2,3,4,5}', true, 'long text');"
   )
 
   override protected def afterEach(): Unit = {
@@ -88,12 +88,12 @@ class DatabaseQueryEnricherPostgresqlTest
       TypedMap(
         Map(
           "t_boolean"     -> true,
-          "t_timestamp"   -> Instant.parse("2024-08-12T06:00:00Z"),
+          "t_timestamp"   -> Instant.parse("2024-08-12T08:00:00Z"),
           "t_date"        -> LocalDate.parse("2024-08-12"),
           "t_array"       -> List(1, 2, 3, 4, 5).asJava,
           "t_text"        -> "long text",
           "t_time"        -> LocalTime.parse("08:00"),
-          "t_timestamptz" -> Instant.parse("2024-08-12T07:00:00Z")
+          "t_timestamptz" -> Instant.parse("2024-08-12T08:00:00Z")
         )
       )
     )
