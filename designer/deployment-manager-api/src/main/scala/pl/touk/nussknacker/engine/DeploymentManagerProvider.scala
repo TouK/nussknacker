@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.MetaDataInitializer.MetadataType
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
 import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.IdToTitleConverter
@@ -25,7 +26,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def metaDataInitializer(config: Config): MetaDataInitializer
 
-  def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] = Map.empty
+  def scenarioPropertiesConfig(config: Config): ScenarioPropertiesConfig = ScenarioPropertiesConfig.empty()
 
   def additionalValidators(config: Config): List[CustomProcessValidator] = Nil
 

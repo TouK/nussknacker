@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, St
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
@@ -40,8 +41,8 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
 
-  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] =
-    FlinkStreamingPropertiesConfig.properties
+  override def scenarioPropertiesConfig(config: Config): ScenarioPropertiesConfig =
+    ScenarioPropertiesConfig.fromParameterMap(FlinkStreamingPropertiesConfig.properties)
 
   override val name: String = "mockable"
 

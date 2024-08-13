@@ -8,15 +8,11 @@ import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
-import pl.touk.nussknacker.engine.api.definition.{
-  DateParameterEditor,
-  LiteralIntegerValidator,
-  MandatoryParameterValidator,
-  StringParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition.{DateParameterEditor, LiteralIntegerValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
@@ -238,10 +234,12 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
 
-  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] =
-    Map(
+  override def scenarioPropertiesConfig(config: Config): ScenarioPropertiesConfig =
+    ScenarioPropertiesConfig.fromParameterMap(
+      Map(
       "deploymentManagerProperty" -> ScenarioPropertiesParameterConfig(None, None, None, None, None)
     ) ++ FlinkStreamingPropertiesConfig.properties
+    )
 
   override def name: String = "development-tests"
 

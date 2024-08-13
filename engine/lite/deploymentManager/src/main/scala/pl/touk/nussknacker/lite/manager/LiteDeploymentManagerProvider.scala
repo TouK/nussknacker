@@ -3,12 +3,9 @@ package pl.touk.nussknacker.lite.manager
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
-import pl.touk.nussknacker.engine.api.definition.{
-  LiteralIntegerValidator,
-  MinimalNumberValidator,
-  StringParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition.{LiteralIntegerValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitializer}
 
@@ -26,10 +23,10 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
   protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String
 
-  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] = forMode(config)(
+  override def scenarioPropertiesConfig(config: Config): ScenarioPropertiesConfig= ScenarioPropertiesConfig.fromParameterMap(forMode(config)(
     LitePropertiesConfig.streamProperties,
     LitePropertiesConfig.requestResponseProperties
-  )
+  ))
 
   // TODO: Lite DM will be able to handle both streaming and rr, without mode, when we add scenarioType to
   //       TypeSpecificInitialData.forScenario and add scenarioType -> mode mapping with reasonable defaults to configuration

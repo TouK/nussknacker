@@ -8,4 +8,13 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfi
     docsIconConfig: Option[ScenarioPropertiesDocsUrlConfig]
 )
 
-@JsonCodec case class ScenarioPropertiesDocsUrlConfig(docsUrl: String, docsIconPath: String)
+object ScenarioPropertiesConfig {
+  def empty(): ScenarioPropertiesConfig = { ScenarioPropertiesConfig(Map.empty, None) }
+
+  def fromParameterMap(parameterMap: Map[String, ScenarioPropertiesParameterConfig]): ScenarioPropertiesConfig = {
+    ScenarioPropertiesConfig(parameterMap, None)
+  }
+
+}
+
+@JsonCodec case class ScenarioPropertiesDocsUrlConfig(docsUrl: String)
