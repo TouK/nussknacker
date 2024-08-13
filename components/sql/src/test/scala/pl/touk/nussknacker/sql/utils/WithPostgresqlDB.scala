@@ -19,6 +19,7 @@ trait WithPostgresqlDB {
 
   {
     container.container.setPortBindings(List("5432:5432").asJava)
+    container.container.addEnv("TZ", "Europe/Warsaw")
   }
 
   private val driverClassName = "org.postgresql.Driver"
