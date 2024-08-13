@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.utils.BasePostgresqlQueryEnricherTest
 
-import java.time.{Instant, LocalDate, LocalTime, ZonedDateTime}
+import java.time.{LocalDate, LocalTime, ZonedDateTime}
 
 class DatabaseQueryEnricherPostgresqlTest
     extends BasePostgresqlQueryEnricherTest
