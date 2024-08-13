@@ -74,12 +74,14 @@ class DefinitionsService(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
-      scenarioPropertiesConfig =
-        UiScenarioPropertiesConfig(
-        additionalFieldsConfig = (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig else finalizedScenarioPropertiesConfig.parameterConfig)
-          .mapValuesNow(createUIScenarioAdditionalFieldConfig),
-          docsUrlIconConfig = finalizedScenarioPropertiesConfig.docsIconConfig.map(config => ScenarioPropertiesDocsUrlIconConfig(config.docsUrl, config.docsIconPath))
-        ),
+      scenarioPropertiesConfig = UiScenarioPropertiesConfig(
+        additionalFieldsConfig =
+          (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig else finalizedScenarioPropertiesConfig.parameterConfig)
+            .mapValuesNow(createUIScenarioAdditionalFieldConfig),
+        docsUrlIconConfig = finalizedScenarioPropertiesConfig.docsIconConfig.map(config =>
+          ScenarioPropertiesDocsUrlIconConfig(config.docsUrl, config.docsIconPath)
+        )
+      ),
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )
@@ -134,7 +136,9 @@ object DefinitionsService {
     )
   }
 
-  def createUIScenarioAdditionalFieldConfig(config: ScenarioPropertiesParameterConfig): UiScenarioAdditionalFieldConfig = {
+  def createUIScenarioAdditionalFieldConfig(
+      config: ScenarioPropertiesParameterConfig
+  ): UiScenarioAdditionalFieldConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
     UiScenarioAdditionalFieldConfig(config.defaultValue, editor, config.label, config.hintText)
   }

@@ -25,13 +25,14 @@ object NewProcessPreparer {
 }
 
 class NewProcessPreparer(
-                          creator: MetaDataInitializer,
-                          scenarioProperties: Map[String, ScenarioPropertiesParameterConfig],
-                          scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer
+    creator: MetaDataInitializer,
+    scenarioProperties: Map[String, ScenarioPropertiesParameterConfig],
+    scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer
 ) {
 
   def prepareEmptyProcess(processName: ProcessName, isFragment: Boolean): CanonicalProcess = {
-    val finalizedScenarioProperties = scenarioPropertiesConfigFinalizer.finalizeScenarioPropertiesParameters(scenarioProperties)
+    val finalizedScenarioProperties =
+      scenarioPropertiesConfigFinalizer.finalizeScenarioPropertiesParameters(scenarioProperties)
 
     val initialProperties = finalizedScenarioProperties.map { case (key, config) =>
       (key, config.defaultValue.getOrElse(""))

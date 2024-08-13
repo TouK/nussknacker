@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.component
 
 class DefaultAdditionalUIConfigProvider(
-                                         processingTypeToConfig: Map[String, Map[DesignerWideComponentId, ComponentAdditionalConfig]],
-                                         processingTypeToAdditionalPropertiesConfig: Map[String, Map[String, ScenarioPropertiesParameterConfig]],
+    processingTypeToConfig: Map[String, Map[DesignerWideComponentId, ComponentAdditionalConfig]],
+    processingTypeToAdditionalPropertiesConfig: Map[String, Map[String, ScenarioPropertiesParameterConfig]],
 ) extends AdditionalUIConfigProvider {
 
   override def getAllForProcessingType(
