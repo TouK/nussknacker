@@ -8,7 +8,6 @@ import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.process.processingtype.loader._
@@ -20,18 +19,15 @@ object NussknackerAppFactory
 
 class NussknackerAppFactory(processingTypeDataLoader: ProcessingTypeDataLoader) extends LazyLogging {
 
-  def this() = {
+  def this(classLoader: ClassLoader) = {
     this(
-      new ProcessingTypeConfigProviderBasedProcessingTypeDataLoader(
-        new LoadableDesignerConfigBasedProcessingTypesConfig(NussknackerAppFactory.getClass.getClassLoader)
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(
+        new LoadableDesignerConfigBasedProcessingTypesConfig(classLoader)
       )
     )
   }
 
-  def createApp(
-      config: ConfigWithUnresolvedVersion = DesignerConfigLoader.load(getClass.getClassLoader),
-      clock: Clock = Clock.systemUTC()
-  ): Resource[IO, Unit] = {
+  def createApp(config: ConfigWithUnresolvedVersion, clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
       system <- createActorSystem(config)
       materializer = Materializer(system)

@@ -12,11 +12,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.{
-  WithBusinessCaseRestAssuredUsersExtensions,
-  WithMockableDeploymentManager,
-  WithSimplifiedDesignerConfig
-}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithMockableDeploymentManager, WithSimplifiedDesignerConfig}
 
 class AppApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -269,6 +266,19 @@ class AppApiHttpServiceBusinessSpec
              |  "Category1": "streaming"
              |}""".stripMargin
         )
+    }
+  }
+
+  "The processing type data reload endpoint should" - {
+    "reload processing types-related model data when" - {
+      "'scenarioTypes' configuration is changed" in {
+        given()
+          .when()
+          .basicAuthAdmin()
+          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .Then()
+          .statusCode(204)
+      }
     }
   }
 

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.RealLoggedUser
+import cats.effect.unsafe.implicits.global
 
 class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
 
@@ -51,10 +52,8 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
       }.toMap,
       deploymentManagerProvider = new DeploymentManagerProviderStub
     )
-      .loadProcessingTypeData(
-        _ => TestFactory.modelDependencies,
-        _ => TestFactory.deploymentManagerDependencies
-      )
+      .loadProcessingTypeData(_ => TestFactory.modelDependencies, _ => TestFactory.deploymentManagerDependencies)
+      .unsafeRunSync()
   }
 
 }

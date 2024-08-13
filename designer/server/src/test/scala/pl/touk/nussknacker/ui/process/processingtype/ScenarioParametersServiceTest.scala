@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import cats.Always
 import cats.data.Validated.Invalid
+import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Inside.inside
@@ -16,26 +16,24 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.process.processingtype.loader.{
-  LoadableConfigBasedProcessingTypesConfig,
-  ProcessingTypeConfigProviderBasedProcessingTypeDataLoader
-}
+import pl.touk.nussknacker.ui.process.processingtype.loader.{LoadableConfigBasedProcessingTypesConfig, ProcessingTypesConfigBasedProcessingTypeDataLoader}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import cats.effect.unsafe.implicits.global
 
 import java.nio.file.Path
 import scala.jdk.CollectionConverters._
 
 class ScenarioParametersServiceTest
-    extends AnyFunSuite
+  extends AnyFunSuite
     with Matchers
     with ValidatedValuesDetailedMessage
     with OptionValues
     with LazyLogging {
 
   private val oneToOneProcessingType1 = "oneToOneProcessingType1"
-  private val oneToOneCategory1       = "OneToOneCategory1"
+  private val oneToOneCategory1 = "OneToOneCategory1"
   private val oneToOneProcessingType2 = "oneToOneProcessingType2"
-  private val oneToOneCategory2       = "OneToOneCategory2"
+  private val oneToOneCategory2 = "OneToOneCategory2"
 
   test("processing type to category in one to one relation") {
     val combinations = Map(
@@ -47,11 +45,11 @@ class ScenarioParametersServiceTest
 
   test("ambiguous category to processing type mapping detection") {
     val categoryUsedMoreThanOnce = "CategoryUsedMoreThanOnce"
-    val scenarioTypeA            = "scenarioTypeA"
-    val scenarioTypeB            = "scenarioTypeB"
+    val scenarioTypeA = "scenarioTypeA"
+    val scenarioTypeB = "scenarioTypeB"
     val combinations = Map(
-      scenarioTypeA           -> parametersWithCategory(categoryUsedMoreThanOnce),
-      scenarioTypeB           -> parametersWithCategory(categoryUsedMoreThanOnce),
+      scenarioTypeA -> parametersWithCategory(categoryUsedMoreThanOnce),
+      scenarioTypeB -> parametersWithCategory(categoryUsedMoreThanOnce),
       oneToOneProcessingType1 -> parametersWithCategory(oneToOneCategory1),
     )
 
@@ -93,7 +91,7 @@ class ScenarioParametersServiceTest
     val bCategory = "bCategory"
 
     val unboundedType = "unboundedType"
-    val boundedType   = "boundedType"
+    val boundedType = "boundedType"
     val bCategoryType = "bCategoryType"
 
     val service = ScenarioParametersService
@@ -131,10 +129,10 @@ class ScenarioParametersServiceTest
   test(
     "should return correct processing type when there is no category passed and some non visible for user combinations are available"
   ) {
-    val categoryWithAccess    = "categoryWithAccess"
+    val categoryWithAccess = "categoryWithAccess"
     val categoryWithoutAccess = "categoryWithoutAccess"
 
-    val processingTypeWithAccess    = "processingTypeWithAccess"
+    val processingTypeWithAccess = "processingTypeWithAccess"
     val processingTypeWithoutAccess = "processingTypeWithoutAccess"
 
     val service = ScenarioParametersService
@@ -169,11 +167,11 @@ class ScenarioParametersServiceTest
   }
 
   test("should return engine errors that are only available for user with write access to the given category") {
-    val writeAccessCategory        = "writeAccessCategory"
-    val noAccessCategory           = "noAccessCategory"
+    val writeAccessCategory = "writeAccessCategory"
+    val noAccessCategory = "noAccessCategory"
     val writeAccessEngineSetupName = EngineSetupName("writeAccessEngine")
-    val noAccessEngineSetupName    = EngineSetupName("noAccessEngine")
-    val noErrorEngineSetupName     = EngineSetupName("noErrorsEngine")
+    val noAccessEngineSetupName = EngineSetupName("noAccessEngine")
+    val noErrorEngineSetupName = EngineSetupName("noErrorsEngine")
     implicit val user: LoggedUser = RealLoggedUser(
       id = "1",
       username = "user",
@@ -211,10 +209,10 @@ class ScenarioParametersServiceTest
   test(
     "should return engine errors when user has no access to some category where engine setup was used but has access to some other category with the same engine setup"
   ) {
-    val writeAccessCategory                       = "writeAccessCategory"
-    val noAccessCategory                          = "noAccessCategory"
+    val writeAccessCategory = "writeAccessCategory"
+    val noAccessCategory = "noAccessCategory"
     val engineSetupNameUsedForMoreThanOneCategory = EngineSetupName("foo")
-    val noErrorEngineSetupName                    = EngineSetupName("noErrorsEngine")
+    val noErrorEngineSetupName = EngineSetupName("noErrorsEngine")
     implicit val user: LoggedUser = RealLoggedUser(
       id = "1",
       username = "user",
@@ -269,10 +267,10 @@ class ScenarioParametersServiceTest
   // Alternatively we could introduce a separate sbt project that would depend on designer and dist/Universal/stage
   // but it seems to be a very heavy solution
   ignore("should allow to run docker image without flink") {
-    val resourcesDir            = Path.of(getClass.getResource("/").toURI)
+    val resourcesDir = Path.of(getClass.getResource("/").toURI)
     val designerServerModuleDir = resourcesDir.getParent.getParent.getParent
-    val distModuleDir           = designerServerModuleDir.getParent.getParent.resolve("nussknacker-dist")
-    val devApplicationConfFile  = distModuleDir.resolve("src/universal/conf/application.conf").toFile
+    val distModuleDir = designerServerModuleDir.getParent.getParent.resolve("nussknacker-dist")
+    val devApplicationConfFile = distModuleDir.resolve("src/universal/conf/application.conf").toFile
     val fallbackConfig = ConfigFactory.parseMap(
       Map(
         "SCHEMA_REGISTRY_URL" -> "foo"
@@ -281,24 +279,24 @@ class ScenarioParametersServiceTest
 
     val workPath = designerServerModuleDir.resolve("work")
     logDirectoryStructure(workPath)
-    val processingTypeDataReader = new ProcessingTypeConfigProviderBasedProcessingTypeDataLoader(
-      new LoadableConfigBasedProcessingTypesConfig(
-        Always {
-          ConfigWithUnresolvedVersion(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
-        }
-      )
+    val processingTypeDataReader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(
+      new LoadableConfigBasedProcessingTypesConfig(IO.pure {
+        ConfigWithUnresolvedVersion(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
+      })
     )
 
-    val processingTypeData = processingTypeDataReader.loadProcessingTypeData(
-      processingType =>
-        ModelDependencies(
-          Map.empty,
-          componentId => DesignerWideComponentId(componentId.toString),
-          Some(workPath),
-          shouldIncludeComponentProvider(processingType, _)
-        ),
-      _ => TestFactory.deploymentManagerDependencies,
-    )
+    val processingTypeData = processingTypeDataReader
+      .loadProcessingTypeData(
+        processingType =>
+          ModelDependencies(
+            Map.empty,
+            componentId => DesignerWideComponentId(componentId.toString),
+            Some(workPath),
+            shouldIncludeComponentProvider(processingType, _)
+          ),
+        _ => TestFactory.deploymentManagerDependencies,
+      )
+      .unsafeRunSync()
     val parametersService = processingTypeData.getCombined().parametersService
 
     parametersService.scenarioParametersCombinationsWithWritePermission(TestFactory.adminUser()) shouldEqual List(
@@ -307,7 +305,7 @@ class ScenarioParametersServiceTest
       ScenarioParameters(ProcessingMode.RequestResponse, "Default", EngineSetupName("Lite Embedded"))
     )
     parametersService.engineSetupErrorsWithWritePermission(TestFactory.adminUser()) shouldEqual Map(
-      EngineSetupName("Flink")         -> List("Invalid configuration: missing restUrl"),
+      EngineSetupName("Flink") -> List("Invalid configuration: missing restUrl"),
       EngineSetupName("Lite Embedded") -> List.empty
     )
   }
@@ -315,6 +313,7 @@ class ScenarioParametersServiceTest
   private def logDirectoryStructure(workPath: Path): Unit = {
     def listFiles(path: Path): Unit =
       logger.info(s"$path files: ${Option(path.toFile.list()).map(_.mkString(", ")).getOrElse("<missing>")}")
+
     List(
       workPath,
       workPath.resolve("components"),
@@ -332,11 +331,11 @@ class ScenarioParametersServiceTest
       componentProvider.providerName,
       componentProvider.getClass.getClassLoader.getName == "app"
     ) match {
-      case (_, "test", _)                                    => false
-      case ("streaming", _, true)                            => false
+      case (_, "test", _) => false
+      case ("streaming", _, true) => false
       case ("streaming-lite-embedded", "requestResponse", _) => false
-      case ("request-response-embedded", "kafka", _)         => false
-      case _                                                 => true
+      case ("request-response-embedded", "kafka", _) => false
+      case _ => true
     }
   }
 

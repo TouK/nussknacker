@@ -17,8 +17,9 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.{
 }
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.util.ExecutionContextWithIORuntime
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class AppApiHttpService(
@@ -29,9 +30,11 @@ class AppApiHttpService(
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
     shouldExposeConfig: Boolean
-)(implicit executionContext: ExecutionContext)
+)(implicit ec: ExecutionContextWithIORuntime)
     extends BaseHttpService(authManager)
     with LazyLogging {
+
+  import ec.ioRuntime
 
   private val appApiEndpoints = new AppApiEndpoints(authManager.authenticationEndpointInput())
 
@@ -156,10 +159,8 @@ class AppApiHttpService(
   expose {
     appApiEndpoints.processingTypeDataReloadEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
-      .serverLogic { _ => _ =>
-        Future(
-          success(processingTypeDataReloader.reloadAll())
-        )
+      .serverLogicSuccess { _ => _ =>
+        processingTypeDataReloader.reloadAll().unsafeToFuture()
       }
   }
 

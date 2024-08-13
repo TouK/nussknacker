@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
-import cats.Always
+import cats.effect.IO
 import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
@@ -52,7 +52,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
   }
 
   private def processingTypeDataReader(config: Config) = {
-    new LoadableConfigBasedProcessingTypesConfig(Always(ConfigWithUnresolvedVersion(config)))
+    new LoadableConfigBasedProcessingTypesConfig(IO.pure(ConfigWithUnresolvedVersion(config)))
   }
 
 }

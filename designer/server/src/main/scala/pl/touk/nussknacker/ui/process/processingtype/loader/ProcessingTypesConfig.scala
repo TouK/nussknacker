@@ -1,26 +1,30 @@
 package pl.touk.nussknacker.ui.process.processingtype.loader
 
-import cats.Always
+import cats.effect.IO
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 
 trait ProcessingTypesConfig {
-  def processingTypeConfigs(): Map[String, ConfigWithUnresolvedVersion]
+  def processingTypeConfigs(): IO[Map[String, ConfigWithUnresolvedVersion]]
 }
 
-class LoadableConfigBasedProcessingTypesConfig(loadConfig: Always[ConfigWithUnresolvedVersion])
+class LoadableConfigBasedProcessingTypesConfig(loadConfig: IO[ConfigWithUnresolvedVersion])
     extends ProcessingTypesConfig {
 
   import scala.jdk.CollectionConverters._
 
-  private var lastLoadedConfig = loadConfig.value
+//  private var lastLoadedConfig = loadConfig.value
 
-  override def processingTypeConfigs(): Map[String, ConfigWithUnresolvedVersion] = {
-    val config = loadConfig.value
-    lastLoadedConfig = config // todo: continue
-    read(config, "scenarioTypes").getOrElse {
-      throw new RuntimeException("No scenario types configuration provided")
-    }
+  override def processingTypeConfigs(): IO[Map[String, ConfigWithUnresolvedVersion]] = {
+    loadConfig
+      .map { config =>
+        read(config, "scenarioTypes").getOrElse {
+          throw new RuntimeException("No scenario types configuration provided")
+        }
+      }
+//    val config = loadConfig.value
+//    lastLoadedConfig = config // todo: continue
+
   }
 
   private def read(
@@ -46,4 +50,4 @@ class LoadableConfigBasedProcessingTypesConfig(loadConfig: Always[ConfigWithUnre
 }
 
 class LoadableDesignerConfigBasedProcessingTypesConfig(classLoader: ClassLoader)
-    extends LoadableConfigBasedProcessingTypesConfig(Always(DesignerConfigLoader.load(classLoader)))
+    extends LoadableConfigBasedProcessingTypesConfig(DesignerConfigLoader.load(classLoader))

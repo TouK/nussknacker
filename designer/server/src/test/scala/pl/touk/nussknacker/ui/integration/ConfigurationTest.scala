@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
-
+import cats.effect.unsafe.implicits.global
 import java.net.URI
 import java.nio.file.Files
 import java.util.UUID
@@ -31,6 +31,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   test("defaultConfig works") {
     DesignerConfigLoader
       .load(globalConfig, classLoader)
+      .unsafeRunSync()
       .resolved
       .getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
   }
@@ -38,8 +39,10 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultDesignerConfig.conf
 
-    val loadedConfig =
-      DesignerConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
+    val loadedConfig = DesignerConfigLoader
+      .load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
+      .unsafeRunSync()
+
     loadedConfig.resolved.getString("foo") shouldEqual "./storage"
   }
 
@@ -78,7 +81,9 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
     val result =
       try {
         System.setProperty(randomPropertyName, "I win!")
-        DesignerConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
+        DesignerConfigLoader
+          .load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
+          .unsafeRunSync()
       } finally {
         System.getProperties.remove(randomPropertyName)
       }

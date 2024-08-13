@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype.loader
 
+import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
@@ -16,7 +17,7 @@ class LocalProcessingTypeDataLoader(
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies
-  ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
+  ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = IO {
     val processingTypes = modelData.map { case (processingType, (category, model)) =>
       val deploymentManagerDependencies = getDeploymentManagerDependencies(processingType)
       val data = ProcessingTypeData.createProcessingTypeData(
