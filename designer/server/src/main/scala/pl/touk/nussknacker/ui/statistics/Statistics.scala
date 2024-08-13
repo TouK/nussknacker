@@ -32,33 +32,40 @@ object Statistics extends LazyLogging {
         .sortBy(_._1)
         .map(encodeQueryParam)
         .groupByMaxChunkSize(cfg.urlBytesSizeLimit)
-        .flatMap(queryParams => prepareUrlString(queryParams, cfg))
-        .traverse(toURL)
+        .map(queryParams => prepareUrlString(queryParams, cfg))
+        .sequence
+        .flatMap(
+          _.flatten
+            .map(toURL)
+            .sequence
+        )
 
     private def encodeQueryParam(entry: (String, String)): String =
       s"${URLEncoder.encode(entry._1, StandardCharsets.UTF_8)}=${URLEncoder.encode(entry._2, StandardCharsets.UTF_8)}"
 
-    private def prepareUrlString(queryParams: Iterable[String], cfg: StatisticUrlConfig): Option[String] = {
-      val joinedQueryParams = if (queryParams.nonEmpty && cfg.publicEncryptionKey.plainPublicEncryptionKey.isDefined) {
-        val joinedQueryParams = joinQueryParamsToString(queryParams, cfg)
-        cfg.publicEncryptionKey.plainPublicEncryptionKey.map(key => encryptQueryParams(key, joinedQueryParams))
-      } else if (queryParams.nonEmpty) {
-        Some(joinQueryParamsToString(queryParams, cfg))
-      } else {
-        None
+    private def prepareUrlString(
+        queryParams: Iterable[String],
+        cfg: StatisticUrlConfig
+    ): Either[StatisticError, Option[String]] = {
+      cfg.maybePublicEncryptionKey match {
+        case Some(key) if queryParams.nonEmpty =>
+          val joinedQP          = joinQueryParamsToString(queryParams, cfg)
+          val encryptedJoinedQP = encryptQueryParams(key, joinedQP)
+          encryptedJoinedQP.map(qp => Some(prependWithAddress(qp, cfg)))
+        case None if queryParams.nonEmpty =>
+          val joinedQP = joinQueryParamsToString(queryParams, cfg)
+          val url      = prependWithAddress(joinedQP, cfg)
+          Right(Some(url))
+        case _ => Right(None)
       }
-      joinedQueryParams.map(jqp => prependWithAddress(jqp, cfg))
     }
 
-    private def encryptQueryParams(publicEncryptionKey: String, queryParams: String): String = {
-      val encryptionResult = Encryption.encrypt(PublicEncryptionKey(Some(publicEncryptionKey)), queryParams)
-      encryptionResult match {
-        case Success(encryptionResult) =>
-          s"$encryptedParamsQueryParamKey=${encryptionResult.encryptedValue}&$encryptionKeyQueryParamKey=${encryptionResult.encryptedSymmetricKey}"
-        case Failure(exception) =>
-          exception.printStackTrace()
-          queryParams
-      }
+    private def encryptQueryParams(key: PublicEncryptionKey, queryParams: String): Either[StatisticError, String] = {
+      Encryption
+        .encrypt(key, queryParams)
+        .map(r =>
+          s"$encryptedParamsQueryParamKey=${r.encryptedValue}&$encryptionKeyQueryParamKey=${r.encryptedSymmetricKey}"
+        )
     }
 
     private def joinQueryParamsToString(queryParams: Iterable[String], cfg: StatisticUrlConfig): String = {
