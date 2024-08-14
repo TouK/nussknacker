@@ -74,14 +74,13 @@ class DefinitionsService(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
-      scenarioPropertiesConfig = UiScenarioPropertiesConfig(
-        additionalFieldsConfig =
-          (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig else finalizedScenarioPropertiesConfig.parameterConfig)
-            .mapValuesNow(createUIScenarioAdditionalFieldConfig),
-        docsUrlIconConfig = finalizedScenarioPropertiesConfig.docsIconConfig.map(config =>
-          ScenarioPropertiesDocsUrlIconConfig(config.docsUrl, config.docsUrl)
-        )
-      ),
+      scenarioPropertiesConfig = {
+        val (props, url) =
+          (if (forFragment) (FragmentPropertiesConfig.properties, None) ++ fragmentPropertiesConfig
+           else (finalizedScenarioPropertiesConfig.parameterConfig, finalizedScenarioPropertiesConfig.docsUrl))
+        val transformedProps = props.mapValuesNow(createUIScenarioAdditionalFieldConfig)
+        UiScenarioPropertiesConfig(additionalFieldsConfig = transformedProps, docsUrl = url)
+      },
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )

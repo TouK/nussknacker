@@ -5,12 +5,12 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfi
 
 @JsonCodec case class ScenarioPropertiesConfig(
     parameterConfig: Map[String, ScenarioPropertiesParameterConfig],
-    docsIconConfig: Option[ScenarioPropertiesDocsUrlConfig]
+    docsUrl: Option[String] = None
 ) {
 
-  // it will overwrite docsIcon, with the approach that the latest config is the proper one.
+  // it will overwrite docsUrl, with the approach that the latest config is the proper one.
   def ++(newConfig: ScenarioPropertiesConfig): ScenarioPropertiesConfig = {
-    this.copy(parameterConfig = this.parameterConfig ++ newConfig.parameterConfig, newConfig.docsIconConfig)
+    this.copy(parameterConfig = this.parameterConfig ++ newConfig.parameterConfig, newConfig.docsUrl)
   }
 
 }
@@ -23,5 +23,3 @@ object ScenarioPropertiesConfig {
   }
 
 }
-
-@JsonCodec case class ScenarioPropertiesDocsUrlConfig(docsUrl: String)
