@@ -52,3 +52,8 @@ export const ComponentIcon = ({ node, ...props }: ComponentIconProps) => {
     const src = useComponentIcon(node);
     return <Icon src={src} {...props} />;
 };
+
+export const PreloadedIcon = ({ src, ...props }: { src: string }) => {
+    const iconSrc = preloadBeImage(src);
+    return <Icon src={iconSrc} {...props} />;
+};

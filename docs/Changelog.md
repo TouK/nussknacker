@@ -12,6 +12,7 @@
 -------------------------
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
+* [#6438](https://github.com/TouK/nussknacker/pull/6438) Fragment icon can be changed in the fragment properties
 
 1.16.1 (16 July 2024)
 -------------------------

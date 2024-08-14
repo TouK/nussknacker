@@ -119,6 +119,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
           valid(new MockDeploymentManager),
           MetaDataInitializer(StreamMetaData.typeName),
           Map.empty,
+          Map.empty,
           List.empty,
           DeploymentManagerType(deploymentManagerProvider.name),
           engineSetupName
