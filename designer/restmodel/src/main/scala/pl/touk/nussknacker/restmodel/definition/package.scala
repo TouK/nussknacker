@@ -121,7 +121,7 @@ package object definition {
 
   @JsonCodec final case class UiScenarioPropertiesConfig(
       additionalFieldsConfig: Map[String, UiScenarioAdditionalFieldConfig],
-      docsUrlIconConfig: Option[ScenarioPropertiesDocsUrlIconConfig]
+      docsUrl: Option[String]
   )
 
   @JsonCodec final case class UiScenarioAdditionalFieldConfig(
@@ -132,8 +132,6 @@ package object definition {
       label: Option[String],
       hintText: Option[String]
   )
-
-  @JsonCodec final case class ScenarioPropertiesDocsUrlIconConfig(docsUrl: String, imagePath: String)
 
   object UIParameter {
     implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] =
