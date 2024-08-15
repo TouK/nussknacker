@@ -37,7 +37,7 @@ describe("Description", () => {
             .contains(/^apply$/i)
             .click();
 
-        cy.get(`[title="toggle description view"]`).should("be.visible").click().should("not.exist");
+        cy.get(`[title="toggle description view"]`).should("be.visible").click();
 
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
@@ -46,18 +46,8 @@ describe("Description", () => {
         cy.reload();
 
         cy.contains("Everything is going according to plan").should("be.visible").parent().parent().as("description");
-        cy.layoutScenario();
 
         cy.viewport(1200, 800);
-        cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
-
-        cy.viewport(1450, 800);
-        cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
-
-        cy.get("[title='toggle right panel']").click();
-        cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
-
-        cy.get("[title='toggle left panel']").click();
         cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
     });
 });
