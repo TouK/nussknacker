@@ -11,7 +11,8 @@ import { WindowKind } from "./WindowKind";
 export const NodeViewMode = {
     edit: false,
     readonly: true,
-    description: "description",
+    descriptionView: "description",
+    descriptionEdit: "descriptionEdit",
 } as const;
 export type NodeViewMode = (typeof NodeViewMode)[keyof typeof NodeViewMode];
 
@@ -19,8 +20,10 @@ function mapModeToKind(mode: NodeViewMode): WindowKind {
     switch (mode) {
         case NodeViewMode.readonly:
             return WindowKind.viewNode;
-        case NodeViewMode.description:
+        case NodeViewMode.descriptionView:
             return WindowKind.viewDescription;
+        case NodeViewMode.descriptionEdit:
+            return WindowKind.editDescription;
     }
     return WindowKind.editNode;
 }

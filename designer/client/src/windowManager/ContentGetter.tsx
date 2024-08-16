@@ -12,6 +12,9 @@ const AddProcessDialog = loadable(() => import("../components/AddProcessDialog")
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
     fallback: <LoaderSpinner show />,
 });
+const DescriptionDialog = loadable(() => import("../components/graph/node-modal/node/DescriptionDialog"), {
+    fallback: <LoaderSpinner show />,
+});
 const CountsDialog = loadable(() => import("../components/modals/CalculateCounts"), { fallback: <LoaderSpinner show /> });
 const CompareVersionsDialog = loadable(() => import("../components/modals/CompareVersionsDialog"), {
     fallback: <LoaderSpinner show />,
@@ -72,10 +75,13 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
         case WindowKind.inform:
             return <GenericInfoDialog {...props} />;
         case WindowKind.editNode:
-        case WindowKind.viewDescription:
             return <NodeDetails {...props} />;
         case WindowKind.viewNode:
             return <NodeDetails {...props} readOnly />;
+        case WindowKind.editDescription:
+            return <DescriptionDialog {...props} editMode />;
+        case WindowKind.viewDescription:
+            return <DescriptionDialog {...props} />;
         case WindowKind.survey:
             return <FrameDialog {...props} />;
         case WindowKind.scenarioDetails:

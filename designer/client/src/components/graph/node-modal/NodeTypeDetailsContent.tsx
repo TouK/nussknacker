@@ -43,7 +43,7 @@ export type NodeTypeDetailsContentProps = {
     errors: NodeValidationError[];
 };
 
-export function useNodeTypeDetailsContentLogic(props: NodeTypeDetailsContentProps) {
+export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
     const { onChange, node, edges, showValidation } = props;
     const dispatch = useDispatch();
     const isEditMode = !!onChange;
@@ -162,7 +162,7 @@ export function useNodeTypeDetailsContentLogic(props: NodeTypeDetailsContentProp
     };
 }
 
-export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): JSX.Element {
+export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTypeDetailsContentProps): JSX.Element {
     const {
         isEditMode,
         processDefinitionData,
@@ -176,9 +176,7 @@ export function NodeTypeDetailsContent(props: NodeTypeDetailsContentProps): JSX.
         setProperty,
         node,
         edges,
-        errors,
         showValidation,
-        showSwitch,
     } = useNodeTypeDetailsContentLogic(props);
 
     switch (NodeUtils.nodeType(node)) {

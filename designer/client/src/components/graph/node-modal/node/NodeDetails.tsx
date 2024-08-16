@@ -1,15 +1,12 @@
 import { css } from "@emotion/css";
-import { Edit } from "@mui/icons-material";
-import { DefaultComponents, WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { useKey } from "rooks";
 import urljoin from "url-join";
 import { editNode } from "../../../../actions/nk";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { BASE_PATH } from "../../../../config";
-import { isInputTarget } from "../../../../containers/BindKeyboardShortcuts";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { RootState } from "../../../../reducers";
 import { getScenario } from "../../../../reducers/selectors/graph";
@@ -19,7 +16,6 @@ import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
-import { DescriptionOnlyContent } from "../DescriptionOnlyContent";
 import { applyIdFromFakeName } from "../IdField";
 import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
@@ -29,159 +25,136 @@ function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
 }
 
-interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; scenario: Scenario }> {
+type NodeDetailsMeta = { node: NodeType; scenario: Scenario };
+type NodeDetailsProps = WindowContentProps<WindowKind, NodeDetailsMeta> & {
     readOnly?: boolean;
-}
+};
 
-export function NodeDetails(props: NodeDetailsProps): JSX.Element {
+type NodeState = {
+    scenario: Scenario;
+    node: NodeType;
+    editedNode: NodeType;
+    outputEdges: Edge[];
+    onChange: (node: React.SetStateAction<NodeType>, edges?: React.SetStateAction<Edge[]>) => void;
+    performNodeEdit: () => Promise<void>;
+    isTouched: boolean;
+};
+
+export function useNodeState(data: NodeDetailsMeta): NodeState {
+    const dispatch = useDispatch();
     const scenarioFromGlobalStore = useSelector(getScenario);
-    const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
 
-    const { node, scenario = scenarioFromGlobalStore } = props.data.meta;
+    const { node, scenario = scenarioFromGlobalStore } = data;
     const [editedNode, setEditedNode] = useState<NodeType>(node);
-    const [outputEdges, setOutputEdges] = useState(() => scenario.scenarioGraph.edges.filter(({ from }) => from === node.id));
+    const [outputEdges, setOutputEdges] = useState<Edge[]>(() => scenario.scenarioGraph.edges.filter(({ from }) => from === node.id));
 
-    const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
+    const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]> = (v) => v) => {
         setEditedNode(node);
         setOutputEdges(edges);
     }, []);
 
-    const dispatch = useDispatch();
+    const isTouched = useMemo(() => node !== editedNode, [editedNode, node]);
 
     const performNodeEdit = useCallback(async () => {
         try {
             //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
             mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-            await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
-            props.close();
+            dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
         } catch (e) {
             //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
             mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
         }
-    }, [scenario, node, editedNode, outputEdges, dispatch, props]);
+    }, [node, dispatch, scenario, editedNode, outputEdges]);
 
+    return {
+        scenario,
+        node,
+        editedNode,
+        outputEdges,
+        onChange,
+        performNodeEdit,
+        isTouched,
+    };
+}
+
+export function useNodeDetailsButtons({
+    editedNode,
+    performNodeEdit,
+    close,
+    readOnly,
+}: {
+    editedNode: NodeType;
+    performNodeEdit: () => Promise<void>;
+    close: () => void;
+    readOnly?: boolean;
+}) {
     const { t } = useTranslation();
 
-    useKey("Escape", (e) => {
-        e.preventDefault();
-        if (!isInputTarget(e.composedPath().shift())) {
-            props.close();
-        }
-    });
-
-    const descriptionOnly = props.data.kind === WindowKind.viewDescription;
-    const [previewMode, setPreviewMode] = useState(true);
-    const touched = useMemo(() => node !== editedNode, [editedNode, node]);
-
-    const applyButtonData = useMemo<WindowButtonProps | null>(() => {
-        if (readOnly || (descriptionOnly && previewMode && !touched)) return null;
+    const apply = useMemo<WindowButtonProps | false>(() => {
+        if (readOnly) return false;
         return {
             title: t("dialog.button.apply", "apply"),
-            action: performNodeEdit,
+            action: () => performNodeEdit().then(() => close()),
             disabled: !editedNode.id?.length,
         };
-    }, [descriptionOnly, editedNode.id?.length, performNodeEdit, previewMode, readOnly, t, touched]);
+    }, [close, editedNode.id?.length, performNodeEdit, readOnly, t]);
 
-    const openFragmentButtonData = useMemo<WindowButtonProps | null>(() => {
-        if (!NodeUtils.nodeIsFragment(editedNode) || descriptionOnly) return null;
+    const cancel = useMemo<WindowButtonProps | false>(() => {
+        return {
+            title: t("dialog.button.cancel", "cancel"),
+            action: () => close(),
+            className: LoadingButtonTypes.secondaryButton,
+        };
+    }, [close, t]);
+
+    return { apply, cancel };
+}
+
+function NodeDetails(props: NodeDetailsProps): JSX.Element {
+    const { t } = useTranslation();
+    const { close, data } = props;
+    const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly));
+
+    const { node, editedNode, onChange, scenario, outputEdges, performNodeEdit } = useNodeState(data.meta);
+    const { cancel, apply } = useNodeDetailsButtons({ editedNode, performNodeEdit, close, readOnly });
+
+    useEffect(() => {
+        mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
+        return () => {
+            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+        };
+    }, [node.id]);
+
+    const openFragment = useMemo<WindowButtonProps | false>(() => {
+        if (!NodeUtils.nodeIsFragment(editedNode)) return false;
         return {
             title: t("dialog.button.fragment.edit", "edit fragment"),
             action: () => {
                 window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)));
             },
-            classname: "tertiary-button",
+            className: "tertiary-button",
         };
-    }, [descriptionOnly, editedNode, t]);
-
-    const cancelButtonData = useMemo<WindowButtonProps | null>(() => {
-        if (descriptionOnly && previewMode && !touched) return null;
-        return {
-            title: t("dialog.button.cancel", "cancel"),
-            action: descriptionOnly
-                ? () => {
-                      setEditedNode(node);
-                      setPreviewMode(true);
-                  }
-                : props.close,
-            classname: LoadingButtonTypes.secondaryButton,
-        };
-    }, [descriptionOnly, node, previewMode, props.close, t, touched]);
-
-    const previewButtonData = useMemo<WindowButtonProps | null>(() => {
-        if (!descriptionOnly || !touched) return null;
-        return {
-            title: previewMode ? "edit" : "preview",
-            action: () => setPreviewMode((v) => !v),
-            className: LoadingButtonTypes.tertiaryButton,
-        };
-    }, [descriptionOnly, previewMode, touched]);
-
-    const buttons: WindowButtonProps[] = useMemo(
-        () => [openFragmentButtonData, previewButtonData, cancelButtonData, applyButtonData].filter(Boolean),
-        [applyButtonData, cancelButtonData, openFragmentButtonData, previewButtonData],
-    );
-
-    useEffect(() => {
-        if (!descriptionOnly) {
-            mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
-            return () => {
-                mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-            };
-        }
-    }, [descriptionOnly, node.id]);
-
-    const componentsOverride = useMemo<Partial<typeof DefaultComponents>>(() => {
-        if (!descriptionOnly) return {};
-
-        const HeaderTitle = () => <div />;
-
-        if (touched || !previewMode) {
-            return { HeaderTitle };
-        }
-
-        const Header = (props) => <DefaultComponents.Header {...props} className={css({ fontSize: ".75em" })} />;
-        const HeaderButtonZoom = (props) => (
-            <>
-                <DefaultComponents.HeaderButton action={() => setPreviewMode(false)} name="edit">
-                    <Edit
-                        sx={{
-                            fontSize: "inherit",
-                            width: "unset",
-                            height: "unset",
-                            padding: ".25em",
-                        }}
-                    />
-                </DefaultComponents.HeaderButton>
-                <DefaultComponents.HeaderButtonZoom {...props} />
-            </>
-        );
-
-        return { Header, HeaderTitle, HeaderButtonZoom };
-    }, [touched, descriptionOnly, previewMode]);
+    }, [editedNode, t]);
 
     //no process? no nodes? no window contents! no errors for whole tree!
-    if (!scenarioFromGlobalStore?.scenarioGraph.nodes) {
+    if (!scenario?.scenarioGraph.nodes) {
         return null;
     }
 
     return (
         <WindowContent
             {...props}
+            closeWithEsc
+            buttons={[openFragment, cancel, apply]}
             title={getNodeDetailsModalTitle(node)}
-            buttons={buttons}
             icon={<NodeDetailsModalIcon node={node} />}
             subheader={<NodeDetailsModalSubheader node={node} />}
             classnames={{
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
-            components={componentsOverride}
         >
             <ErrorBoundary>
-                {descriptionOnly ? (
-                    <DescriptionOnlyContent node={editedNode} onChange={!readOnly && onChange} preview={previewMode} />
-                ) : (
-                    <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
-                )}
+                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
             </ErrorBoundary>
         </WindowContent>
     );

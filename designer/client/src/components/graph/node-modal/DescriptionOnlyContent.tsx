@@ -7,42 +7,39 @@ import { rowAceEditor } from "./NodeDetailsContent/NodeTableStyled";
 import { NodeField } from "./NodeField";
 import { NodeTypeDetailsContentProps, useNodeTypeDetailsContentLogic } from "./NodeTypeDetailsContent";
 
-export function DescriptionOnlyContent({
-    preview,
-    ...props
-}: Pick<NodeTypeDetailsContentProps, "node" | "onChange"> & {
+type DescriptionOnlyContentProps = Pick<NodeTypeDetailsContentProps, "node" | "onChange"> & {
+    fieldPath: string;
     preview?: boolean;
-}): JSX.Element {
-    const { setProperty, node } = useNodeTypeDetailsContentLogic({ ...props, errors: [] });
-    const fieldName = "additionalFields.description";
+};
+
+export function DescriptionOnlyContent({ fieldPath, preview, node, onChange }: DescriptionOnlyContentProps) {
+    const { setProperty } = useNodeTypeDetailsContentLogic({ node, onChange, errors: [] });
+
+    if (preview) {
+        return <DescriptionView>{get(node, fieldPath)}</DescriptionView>;
+    }
 
     return (
-        <>
-            {!preview ? (
-                <Box
-                    sx={{
-                        [`.${rowAceEditor}, .ace_editor`]: {
-                            outline: "none",
-                        },
-                        padding: 2,
-                    }}
-                >
-                    <NodeField
-                        autoFocus
-                        renderFieldLabel={() => null}
-                        setProperty={setProperty}
-                        node={node}
-                        isEditMode={true}
-                        showValidation={false}
-                        readonly={false}
-                        errors={[]}
-                        fieldType={FieldType.markdown}
-                        fieldName={fieldName}
-                    />
-                </Box>
-            ) : (
-                <DescriptionView>{get(node, fieldName)}</DescriptionView>
-            )}
-        </>
+        <Box
+            sx={{
+                [`.${rowAceEditor}, .ace_editor`]: {
+                    outline: "none",
+                },
+                padding: 2,
+            }}
+        >
+            <NodeField
+                autoFocus
+                renderFieldLabel={() => null}
+                setProperty={setProperty}
+                node={node}
+                isEditMode={true}
+                showValidation={false}
+                readonly={false}
+                errors={[]}
+                fieldType={FieldType.markdown}
+                fieldName={fieldPath}
+            />
+        </Box>
     );
 }

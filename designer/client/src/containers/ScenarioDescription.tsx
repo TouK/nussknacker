@@ -16,12 +16,12 @@ export const ScenarioDescription = () => {
 
     const openDescription = useCallback(() => {
         const { top, left } = ref.current.getBoundingClientRect();
-        openProperties(NodeViewMode.description, { top, left, width: 600 });
-    }, [openProperties]);
+        openProperties(description ? NodeViewMode.descriptionView : NodeViewMode.descriptionEdit, { top, left, width: 600 });
+    }, [description, openProperties]);
 
     useEffect(
         () => {
-            if (showDescription) {
+            if (description && showDescription) {
                 openDescription();
             }
         },
@@ -31,8 +31,6 @@ export const ScenarioDescription = () => {
 
     const { t } = useTranslation();
     const title = t("graph.description.toggle", "toggle description view");
-
-    if (!description) return null;
 
     return (
         <IconButton

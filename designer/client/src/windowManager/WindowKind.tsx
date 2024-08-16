@@ -17,4 +17,5 @@ export enum WindowKind {
     survey,
     scenarioDetails,
     viewDescription,
+    editDescription,
 }
