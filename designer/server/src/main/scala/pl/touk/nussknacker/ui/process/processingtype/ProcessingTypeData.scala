@@ -3,10 +3,10 @@ package pl.touk.nussknacker.ui.process.processingtype
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
+import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
+import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
@@ -101,7 +101,7 @@ object ProcessingTypeData {
       )
 
     val modelScenarioProps = modelData.modelConfig
-      .getOrElse[ScenarioPropertiesConfig]("scenarioPropertiesConfig", ScenarioPropertiesConfig.empty())
+      .getOrElse[ScenarioProperties]("scenarioPropertiesConfig", ScenarioProperties.empty())
 
     val runtimeScenarioProps =
       deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelScenarioProps

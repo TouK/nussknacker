@@ -2,10 +2,14 @@ package pl.touk.nussknacker.lite.manager
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
-import pl.touk.nussknacker.engine.api.definition.{LiteralIntegerValidator, MinimalNumberValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{
+  LiteralIntegerValidator,
+  MinimalNumberValidator,
+  StringParameterEditor
+}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
+import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitializer}
 
@@ -23,10 +27,12 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
   protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String
 
-  override def scenarioPropertiesConfig(config: Config): ScenarioPropertiesConfig= ScenarioPropertiesConfig.fromParameterMap(forMode(config)(
-    LitePropertiesConfig.streamProperties,
-    LitePropertiesConfig.requestResponseProperties
-  ))
+  override def scenarioPropertiesConfig(config: Config): ScenarioProperties = ScenarioProperties.fromParameterMap(
+    forMode(config)(
+      LitePropertiesConfig.streamProperties,
+      LitePropertiesConfig.requestResponseProperties
+    )
+  )
 
   // TODO: Lite DM will be able to handle both streaming and rr, without mode, when we add scenarioType to
   //       TypeSpecificInitialData.forScenario and add scenarioType -> mode mapping with reasonable defaults to configuration
@@ -42,8 +48,8 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
 object LitePropertiesConfig {
 
-  private val parallelismConfig: (String, ScenarioPropertiesParameterConfig) = LiteStreamMetaData.parallelismName ->
-    ScenarioPropertiesParameterConfig(
+  private val parallelismConfig: (String, SingleScenarioPropertyConfig) = LiteStreamMetaData.parallelismName ->
+    SingleScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
@@ -51,8 +57,8 @@ object LitePropertiesConfig {
       hintText = None
     )
 
-  private val slugConfig: (String, ScenarioPropertiesParameterConfig) = RequestResponseMetaData.slugName ->
-    ScenarioPropertiesParameterConfig(
+  private val slugConfig: (String, SingleScenarioPropertyConfig) = RequestResponseMetaData.slugName ->
+    SingleScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = None,
@@ -60,9 +66,9 @@ object LitePropertiesConfig {
       hintText = None
     )
 
-  val streamProperties: Map[String, ScenarioPropertiesParameterConfig] = Map(parallelismConfig)
+  val streamProperties: Map[String, SingleScenarioPropertyConfig] = Map(parallelismConfig)
 
-  val requestResponseProperties: Map[String, ScenarioPropertiesParameterConfig] =
+  val requestResponseProperties: Map[String, SingleScenarioPropertyConfig] =
     RequestResponseOpenApiSettings.scenarioPropertiesConfig ++ Map(slugConfig)
 
 }
