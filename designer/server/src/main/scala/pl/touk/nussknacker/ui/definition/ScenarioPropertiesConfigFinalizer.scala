@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.definition
 
 import cats.implicits.catsSyntaxSemigroup
-import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ScenarioPropertiesParameterConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, SingleScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
+import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 
 class ScenarioPropertiesConfigFinalizer(
     additionalUIConfigProvider: AdditionalUIConfigProvider,
@@ -11,14 +11,14 @@ class ScenarioPropertiesConfigFinalizer(
 ) {
 
   def finalizeScenarioPropertiesParameters(
-      parametersConfig: Map[String, ScenarioPropertiesParameterConfig],
-  ): Map[String, ScenarioPropertiesParameterConfig] = {
+      parametersConfig: Map[String, SingleScenarioPropertyConfig],
+  ): Map[String, SingleScenarioPropertyConfig] = {
     additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| parametersConfig
   }
 
-  def finalizePropertiesConfig(scenarioPropertiesConfig: ScenarioPropertiesConfig): ScenarioPropertiesConfig = {
-    scenarioPropertiesConfig.copy(parameterConfig =
-      finalizeScenarioPropertiesParameters(scenarioPropertiesConfig.parameterConfig)
+  def finalizePropertiesConfig(scenarioPropertiesConfig: ScenarioProperties): ScenarioProperties = {
+    scenarioPropertiesConfig.copy(propertiesConfig =
+      finalizeScenarioPropertiesParameters(scenarioPropertiesConfig.propertiesConfig)
     )
   }
 

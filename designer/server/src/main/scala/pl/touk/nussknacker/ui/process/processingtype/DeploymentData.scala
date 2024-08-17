@@ -2,20 +2,19 @@ package pl.touk.nussknacker.ui.process.processingtype
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
+import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
+import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 
 final case class DeploymentData(
-                                 validDeploymentManager: ValidatedNel[String, DeploymentManager],
-                                 metaDataInitializer: MetaDataInitializer,
-                                 scenarioPropertiesConfig: ScenarioPropertiesConfig,
-                                 fragmentPropertiesConfig: Map[String, ScenarioPropertiesParameterConfig],
-
-                                 additionalValidators: List[CustomProcessValidator],
-                                 deploymentManagerType: DeploymentManagerType,
-                                 engineSetupName: EngineSetupName
+    validDeploymentManager: ValidatedNel[String, DeploymentManager],
+    metaDataInitializer: MetaDataInitializer,
+    scenarioPropertiesConfig: ScenarioProperties,
+    fragmentPropertiesConfig: Map[String, SingleScenarioPropertyConfig],
+    additionalValidators: List[CustomProcessValidator],
+    deploymentManagerType: DeploymentManagerType,
+    engineSetupName: EngineSetupName
 ) {
 
   def validDeploymentManagerOrStub: DeploymentManager =

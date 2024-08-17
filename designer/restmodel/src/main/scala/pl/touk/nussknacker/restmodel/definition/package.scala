@@ -21,11 +21,10 @@ package object definition {
 
   // This class contains various views on definitions, used in a different FE contexts
   @JsonCodec(encodeOnly = true) final case class UIDefinitions(
-      // This is dedicated view for the components toolbox panel
       componentGroups: List[UIComponentGroup],
       components: Map[ComponentId, UIComponentDefinition],
       classes: List[TypingResult],
-      scenarioPropertiesConfig: UiScenarioPropertiesConfig,
+      scenarioProperties: UiScenarioProperties,
       edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
   )
@@ -119,12 +118,12 @@ package object definition {
       components: List[UIComponentNodeTemplate]
   )
 
-  @JsonCodec final case class UiScenarioPropertiesConfig(
-      additionalFieldsConfig: Map[String, UiScenarioAdditionalFieldConfig],
+  @JsonCodec final case class UiScenarioProperties(
+      propertiesConfig: Map[String, UiSingleScenarioPropertyConfig],
       docsUrl: Option[String]
   )
 
-  @JsonCodec final case class UiScenarioAdditionalFieldConfig(
+  @JsonCodec final case class UiSingleScenarioPropertyConfig(
       // This attribute is deprecated on BE and FE as it's not used anywhere.
       // Right now it's only kept because an external project uses it but it will be removed in the future.
       defaultValue: Option[String],

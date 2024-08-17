@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
+import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -119,7 +119,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         DeploymentData(
           valid(new MockDeploymentManager),
           MetaDataInitializer(StreamMetaData.typeName),
-          ScenarioPropertiesConfig.empty(),
+          ScenarioProperties.empty(),
           Map.empty,
           List.empty,
           DeploymentManagerType(deploymentManagerProvider.name),

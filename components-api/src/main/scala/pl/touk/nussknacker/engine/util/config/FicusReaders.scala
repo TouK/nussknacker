@@ -5,7 +5,7 @@ import io.circe.Decoder
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
+import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
 
 import scala.reflect.ClassTag
 
@@ -20,5 +20,5 @@ object FicusReaders {
 
   implicit val paramValidatorReader: ValueReader[ParameterValidator] = forDecoder
 
-  implicit val paramConfigReader: ValueReader[ScenarioPropertiesParameterConfig] = forDecoder
+  implicit val paramConfigReader: ValueReader[SingleScenarioPropertyConfig] = forDecoder
 }

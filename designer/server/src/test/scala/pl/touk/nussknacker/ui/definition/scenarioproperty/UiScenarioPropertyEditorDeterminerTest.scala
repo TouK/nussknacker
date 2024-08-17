@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesParameterEditor,
   StringParameterEditor
 }
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
+import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
 
 class UiScenarioPropertyEditorDeterminerTest extends AnyFunSuite with Matchers {
 
@@ -15,13 +15,15 @@ class UiScenarioPropertyEditorDeterminerTest extends AnyFunSuite with Matchers {
     val configured = FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))
 
     val determined =
-      UiScenarioPropertyEditorDeterminer.determine(ScenarioPropertiesParameterConfig(None, Some(configured), None, None, None))
+      UiScenarioPropertyEditorDeterminer.determine(
+        SingleScenarioPropertyConfig(None, Some(configured), None, None, None)
+      )
 
     determined shouldBe configured
   }
 
   test("should determine StringParameter editor for scenario property by default") {
-    val determined = UiScenarioPropertyEditorDeterminer.determine(ScenarioPropertiesParameterConfig.empty)
+    val determined = UiScenarioPropertyEditorDeterminer.determine(SingleScenarioPropertyConfig.empty)
 
     determined shouldBe StringParameterEditor
   }

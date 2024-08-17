@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import pl.touk.nussknacker.engine.api.definition.ParameterValidator
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
+import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
 
 object ScenarioPropertyValidatorDeterminerChain {
 
-  def apply(config: ScenarioPropertiesParameterConfig): ScenarioPropertyValidatorsDeterminerChain = {
+  def apply(config: SingleScenarioPropertyConfig): ScenarioPropertyValidatorsDeterminerChain = {
     val strategies = Seq(
       new ScenarioPropertyConfigValidatorDeterminer(config),
       new ScenarioPropertyEditorValidatorDeterminer(config.editor)

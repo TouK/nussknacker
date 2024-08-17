@@ -320,14 +320,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   test("validate missing required scenario properties") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
-        "field1" -> ScenarioPropertiesParameterConfig(
+        "field1" -> SingleScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = Some(List(MandatoryParameterValidator)),
           label = Some("label1"),
           hintText = None
         ),
-        "field2" -> ScenarioPropertiesParameterConfig(
+        "field2" -> SingleScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = None,
@@ -410,14 +410,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   test("don't validate properties on fragment") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
-        "field1" -> ScenarioPropertiesParameterConfig(
+        "field1" -> SingleScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = Some(List(MandatoryParameterValidator)),
           label = Some("label1"),
           hintText = None
         ),
-        "field2" -> ScenarioPropertiesParameterConfig(
+        "field2" -> SingleScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = Some(List(MandatoryParameterValidator)),
@@ -439,14 +439,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
-        "field1" -> ScenarioPropertiesParameterConfig(
+        "field1" -> SingleScenarioPropertyConfig(
           defaultValue = None,
           editor = Some(FixedValuesParameterEditor(possibleValues)),
           validators = Some(List(FixedValuesValidator(possibleValues))),
           label = Some("label"),
           hintText = None
         ),
-        "field2" -> ScenarioPropertiesParameterConfig(
+        "field2" -> SingleScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = Some(List(LiteralIntegerValidator)),
@@ -470,7 +470,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   test("handle unknown properties validation") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
-        "field2" -> ScenarioPropertiesParameterConfig(
+        "field2" -> SingleScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = Some(List(CompileTimeEvaluableValueValidator)),
@@ -2105,21 +2105,21 @@ private object UIProcessValidatorSpec {
 
   private val configuredValidator: UIProcessValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
     Map(
-      "requiredStringProperty" -> ScenarioPropertiesParameterConfig(
+      "requiredStringProperty" -> SingleScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(StringParameterEditor),
         validators = Some(List(MandatoryParameterValidator)),
         label = Some("label"),
         hintText = None
       ),
-      "numberOfThreads" -> ScenarioPropertiesParameterConfig(
+      "numberOfThreads" -> SingleScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(FixedValuesParameterEditor(TestFactory.possibleValues)),
         validators = Some(List(FixedValuesValidator(TestFactory.possibleValues))),
         label = None,
         hintText = None
       ),
-      "maxEvents" -> ScenarioPropertiesParameterConfig(
+      "maxEvents" -> SingleScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
         validators = Some(List(CompileTimeEvaluableValueValidator)),

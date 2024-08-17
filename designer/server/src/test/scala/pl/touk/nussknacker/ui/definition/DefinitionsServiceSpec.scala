@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
-import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
+import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
@@ -260,7 +260,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     val definitions = prepareDefinitions(model, List.empty)
 
-    definitions.scenarioPropertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
+    definitions.scenarioProperties.propertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
       .mapValuesNow(createUIScenarioAdditionalFieldConfig)
   }
 
@@ -282,7 +282,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       modelData = model,
       staticDefinitionForDynamicComponents = Map.empty,
       fragmentPropertiesConfig = Map.empty,
-      scenarioPropertiesConfig = ScenarioPropertiesConfig.empty(),
+      scenarioPropertiesConfig = ScenarioProperties.empty(),
       deploymentManager = new MockDeploymentManager,
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
