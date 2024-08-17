@@ -1,0 +1,225 @@
+[info] welcome to sbt 1.9.6 (Eclipse Adoptium Java 11.0.21)
+[info] loading settings for project nussknacker-build from plugins.sbt ...
+[info] loading project definition from /home/ramcel/Dev/nussknacker/project
+[info] loading settings for project root from build.sbt,version.sbt ...
+[info] resolving key references (98771 settings) ...
+[info] set current project to nussknacker (in build file:/home/ramcel/Dev/nussknacker/)
+[success] Total time: 0 s, completed Aug 17, 2024, 5:44:10 PM
+[info] E2E tests are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12
+[info] compiling 2 Java sources to /home/ramcel/Dev/nussknacker/engine/flink/scala-utils/target/scala-2.13/classes ...
+[info] compiling 1 Scala source to /home/ramcel/Dev/nussknacker/common-api/target/scala-2.13/classes ...
+[info] done compiling
+17:44:17.432 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.a
+  Current value:
+  Astring
+  should match:
+  ^\w\w$
+
+17:44:17.452 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.g.a
+  Current value:
+  Bstring
+  should match:
+  ^\w\w$
+
+17:44:17.456 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.b
+  Current value:
+  true
+  should match:
+  ^false$
+
+17:44:17.462 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.g.b
+  Current value:
+  false
+  should match:
+  ^true$
+
+17:44:17.466 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.c
+  Current value:
+  1.0
+  should match:
+  ^\d{2}\.0$
+
+17:44:17.472 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.g.c
+  Current value:
+  2.0
+  should match:
+  ^\d{2}\.0$
+
+17:44:17.490 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.e[0]
+  Current value:
+  "a"
+  expected value:
+  1
+
+* Comparing JSONs failed at $.e[1]
+  Current value:
+  1.0
+  should match:
+  a
+
+17:44:17.500 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.e
+  Current value:
+  ["a",1,true,[],null,{}]
+  expected value:
+  ["a",1,true,[],null]
+
+17:44:17.505 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.e[5]
+  Current value:
+  {}
+  expected value:
+  {"a":true}
+
+17:44:17.509 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.g.e[1]
+  Current value:
+  1
+  expected value:
+  true
+
+* Comparing JSONs failed at $.g.e[2]
+  Current value:
+  true
+  expected value:
+  1
+
+17:44:17.512 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.g.e
+  Current value:
+  ["a",1,true,[],null,{}]
+  expected value:
+  ["a",1,true,[],{}]
+
+17:44:17.517 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.g.e[5]
+  Current value:
+  {}
+  expected value:
+  {"a":true}
+
+17:44:17.521 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $
+  Current value:
+  {"a":"Astring","b":true,"c":1,"d":null,"e":["a",1,true,[],null,{}],"f":{},"g":{"a":"Bstring","b":false,"c":2,"d":null,"e":["a",1,true,[],null,{}],"f":{}}}
+  expected value:
+  {"a":"Astring","b":true,"c":1,"d":null,"e":["a",1,true,[],null,{}],"f":{},"g":{"a":"Bstring","b":false,"c":2,"d":null,"e":["a",1,true,[],null,{}],"f":{}},"h":{}}
+
+17:44:17.526 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.g
+  Current value:
+  {"a":"Bstring","b":false,"c":2,"d":null,"e":["a",1,true,[],null,{}],"f":{}}
+  expected value:
+  {"a":"Bstring","b":false,"c":2,"d":null,"e":["a",1,true,[],null,{}],"f":{},"g":{}}
+
+17:44:17.533 [pool-9-thread-14-ScalaTest-running-NuRestAssureMatchersSpec] ERROR p.t.n.t.NuRestAssureMatchers$MatchNdJsonWithRegexValues - Comparing JSONs errors:
+
+* Comparing JSONs failed at $.a
+  Current value:
+  Bstring
+  should match:
+  Astring
+
+[info] NuRestAssureMatchersSpec:
+[info] - it should match the current JSON (699 milliseconds)
+[info] - it should not match when string value field in root level is not matched (149 milliseconds)
+[info] - it should not match when string value field in nested level is not matched (4 milliseconds)
+[info] - it should not match when boolean value field in root level is not matched (3 milliseconds)
+[info] - it should not match when boolean value field in nested level is not matched (5 milliseconds)
+[info] - it should not match when number value field in root level is not matched (3 milliseconds)
+[info] - it should not match when number value field in nested level is not matched (6 milliseconds)
+[info] - it should not match when array value field in root level is not matched (because of different order of elements) (17 milliseconds)
+[info] - it should not match when array value field in root level is not matched (because of different count of elements) (9 milliseconds)
+[info] - it should not match when array value field in root level is not matched (because of object in array is different) (3 milliseconds)
+[info] - it should not match when array value field in nested level is not matched (because of different order of elements) (3 milliseconds)
+[info] - it should not match when array value field in nested level is not matched (because of different count of elements) (3 milliseconds)
+[info] - it should not match when array value field in nested level is not matched (because of object in array is different) (4 milliseconds)
+[info] - it should not match when expected JSON has more fields in root level (4 milliseconds)
+[info] - it should not match when expected JSON has more fields in nested level (3 milliseconds)
+[info] - it should match current line delimited jsons (3 milliseconds)
+[info] - it should not match current line delimited jsons when any json in not matched (2 milliseconds)
+[info] Run completed in 1 second, 651 milliseconds.
+[info] Total number of tests run: 17
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 17, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[info] done compiling
+[info] CaseClassSerializationTest:
+[info] - Simple case class should be the same after serialization and deserialization (1 second, 310 milliseconds)
+[info] - Case class with field in body should be the same after serialization and deserialization (6 milliseconds)
+[info] - Case class with secondary constructor should be the same after serialization and deserialization (6 milliseconds)
+[info] compiling 1 Scala source to /home/ramcel/Dev/nussknacker/scenario-api/target/scala-2.13/classes ...
+[info] Run completed in 1 second, 754 milliseconds.
+[info] Total number of tests run: 3
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 3, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[info] compiling 5 Scala sources and 19 Java sources to /home/ramcel/Dev/nussknacker/components-api/target/scala-2.13/classes ...
+[info] TabularTypedDataCodersSpec:
+[info] we should be able to encode and then decode
+[info] - empty data (357 milliseconds)
+[info] - some non-trivial data (10 milliseconds)
+[info] TypeSpecificDataTest:
+[info] - create MetaData from full properties (43 milliseconds)
+[info] - create MetaData from full properties and additional ones (3 milliseconds)
+[info] - create empty MetaData from invalid properties (2 milliseconds)
+[info] - create empty MetaData from no properties (0 milliseconds)
+[info] - throw exception for creating typeSpecificData with unrecognized metadata name (1 millisecond)
+[info] - should create map from TypeSpecificData (3 milliseconds)
+[info] TabularTypedDataSpec:
+[info] TabularTypedData should not able to be created when
+[info] - column names are not unique (15 milliseconds)
+[info] - unsupported column's type is used (3 milliseconds)
+[info] - there are more cells in some rows than the columns number (1 millisecond)
+[info] - there are less cells in some rows than the columns number (1 millisecond)
+[info]   cannot convert some cell values to declared column's type when
+[info]   - the type is java.time.LocalDate (1 millisecond)
+[info]   - the type is java.lang.Boolean (6 milliseconds)
+[info] Run completed in 671 milliseconds.
+[info] Total number of tests run: 14
+[info] Suites: completed 3, aborted 0
+[info] Tests: succeeded 14, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[info] done compiling
+[info] ScenarioApiShowcasesTest:
+[info] - should be able to parse scenario and easily extract its fields (516 milliseconds)
+[info] - should be able to create scenario using dsl and print it (63 milliseconds)
+[info] - should be able to rewrite scenario (10 milliseconds)
+[info] FragmentRefSerializationSpec:
+[info] - should deserialize FragmentRef without outputVariableNames [backwards compatibility test] (2 milliseconds)
+[info] - should deserialize FragmentRef (1 millisecond)
+[info] ProcessMarshallerBackwardsCompatibilitySpec:
+[info] - should decode legacy json with no additional fields (36 milliseconds)
+[info] - should decode new json with no additional fields (0 milliseconds)
+[info] - should decode new json and old with no additional fields to the same structure (1 millisecond)
+[info] - should decode legacy json with description and no scenario properties (2 milliseconds)
+[info] - should decode new json with description and no scenario properties (0 milliseconds)
+[info] - should decode new json and old with description and no scenario properties to the same structure (1 millisecond)
+[info] - should decode legacy json with scenario properties (1 millisecond)
+[info] - should decode new json with scenario properties (1 millisecond)
+[info] - should decode new json and old with scenario properties to the same structure (1 millisecond)
+[info] FragmentParameterSerializationSpec:
+[info] - should deserialize FragmentParameter without required, initialValue, hintText, valueEditor, valueCompileTimeValidation [backwards compatibility test] (12 milliseconds)
+[info] - should deserialize FragmentParameter - ValueInputWithFixedValuesProvided (7 milliseconds)
+[info] - should deserialize FragmentParameter - ValueInputWithDictEditor (1 millisecond)
