@@ -24,8 +24,13 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentO
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.restmodel.definition.{UiScenarioAdditionalFieldConfig, UiScenarioPropertiesConfig}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.definition.{UiScenarioProperties, UiSingleScenarioPropertyConfig}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  ValidationErrors,
+  ValidationResult
+}
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
@@ -252,25 +257,25 @@ class BaseFlowTest
     val settingsJson        = response.extractFieldJsonValue("scenarioPropertiesConfig")
     val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-    val settings = Decoder[UiScenarioPropertiesConfig].decodeJson(settingsJson).toOption.get
-    val additionalFields = settings.additionalFieldsConfig
+    val settings         = Decoder[UiScenarioProperties].decodeJson(settingsJson).toOption.get
+    val additionalFields = settings.propertiesConfig
     val streamingDefaultPropertyConfig =
       FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioAdditionalFieldConfig(p._2))
 
     val underTest = Map(
-      "environment" -> UiScenarioAdditionalFieldConfig(
+      "environment" -> UiSingleScenarioPropertyConfig(
         defaultValue = Some("test"),
         editor = StringParameterEditor,
         label = Some("Environment"),
         hintText = None
       ),
-      "maxEvents" -> UiScenarioAdditionalFieldConfig(
+      "maxEvents" -> UiSingleScenarioPropertyConfig(
         defaultValue = None,
         editor = StringParameterEditor,
         label = Some("Max events"),
         hintText = Some("Maximum number of events")
       ),
-      "numberOfThreads" -> UiScenarioAdditionalFieldConfig(
+      "numberOfThreads" -> UiSingleScenarioPropertyConfig(
         defaultValue = Some("1"),
         editor = FixedValuesParameterEditor(fixedPossibleValues),
         label = Some("Number of threads"),

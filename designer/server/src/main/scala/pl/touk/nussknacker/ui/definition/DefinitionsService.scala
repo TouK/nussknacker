@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.properties.ScenarioPropertiesConfig
+import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioAdditionalFieldConfig}
 import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
@@ -25,8 +25,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class DefinitionsService(
     modelData: ModelData,
     staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
-    scenarioPropertiesConfig: ScenarioPropertiesConfig,
-    fragmentPropertiesConfig: Map[String, ScenarioPropertiesParameterConfig],
+    scenarioPropertiesConfig: ScenarioProperties,
+    fragmentPropertiesConfig: Map[String, SingleScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
@@ -68,18 +68,18 @@ class DefinitionsService(
   private def prepareUIDefinitions(
       components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
-      finalizedScenarioPropertiesConfig: ScenarioPropertiesConfig
+      finalizedScenarioPropertiesConfig: ScenarioProperties
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
-      scenarioPropertiesConfig = {
+      scenarioProperties = {
         val (props, url) =
           (if (forFragment) (FragmentPropertiesConfig.properties, None) ++ fragmentPropertiesConfig
-           else (finalizedScenarioPropertiesConfig.parameterConfig, finalizedScenarioPropertiesConfig.docsUrl))
+           else (finalizedScenarioPropertiesConfig.propertiesConfig, finalizedScenarioPropertiesConfig.docsUrl))
         val transformedProps = props.mapValuesNow(createUIScenarioAdditionalFieldConfig)
-        UiScenarioPropertiesConfig(additionalFieldsConfig = transformedProps, docsUrl = url)
+        UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = url)
       },
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
@@ -136,10 +136,10 @@ object DefinitionsService {
   }
 
   def createUIScenarioAdditionalFieldConfig(
-      config: ScenarioPropertiesParameterConfig
-  ): UiScenarioAdditionalFieldConfig = {
+      config: SingleScenarioPropertyConfig
+  ): UiSingleScenarioPropertyConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
-    UiScenarioAdditionalFieldConfig(config.defaultValue, editor, config.label, config.hintText)
+    UiSingleScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
   }
 
 }

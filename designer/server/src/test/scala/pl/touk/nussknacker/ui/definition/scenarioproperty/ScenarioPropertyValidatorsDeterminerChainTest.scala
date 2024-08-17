@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesValidator,
   MandatoryParameterValidator
 }
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
+import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
 
 class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Matchers {
 
   test("determine property validator based on config") {
-    val config = ScenarioPropertiesParameterConfig(
+    val config = SingleScenarioPropertyConfig(
       None,
       None,
       Some(List(MandatoryParameterValidator)),
@@ -28,7 +28,7 @@ class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Mat
 
   test("determine property validator based on fixed value editor") {
     val possibleValues = List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
-    val config = ScenarioPropertiesParameterConfig(
+    val config = SingleScenarioPropertyConfig(
       None,
       Some(FixedValuesParameterEditor(possibleValues)),
       None,
