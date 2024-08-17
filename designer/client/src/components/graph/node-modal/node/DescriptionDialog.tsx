@@ -13,6 +13,7 @@ import { Scenario } from "../../../Process/types";
 import { DescriptionOnlyContent } from "../DescriptionOnlyContent";
 import { useNodeDetailsButtons, useNodeState } from "./NodeDetails";
 import { getReadOnly } from "./selectors";
+import { StyledHeader } from "./StyledHeader";
 
 interface DescriptionDialogProps extends WindowContentProps<WindowKind, { node: NodeType; scenario: Scenario }> {
     editMode?: boolean;
@@ -60,10 +61,19 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
         const HeaderTitle = () => <div />;
 
         if (isTouched || !previewMode) {
-            return { HeaderTitle };
+            return {};
         }
 
-        const Header = (props) => <DefaultComponents.Header {...props} className={css({ fontSize: ".75em" })} />;
+        const Header = (props) => (
+            <StyledHeader
+                {...props}
+                sx={{
+                    fontSize: ".75em",
+                    backgroundColor: "transparent",
+                    "&:hover, &:active": { backgroundColor: "var(--backgroundColor)" },
+                }}
+            />
+        );
         const HeaderButtonZoom = (props) => (
             <>
                 <DefaultComponents.HeaderButton action={() => setPreviewMode(false)} name="edit">

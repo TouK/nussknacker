@@ -13,7 +13,7 @@ type DescriptionOnlyContentProps = Pick<NodeTypeDetailsContentProps, "node" | "o
 };
 
 export function DescriptionOnlyContent({ fieldPath, preview, node, onChange }: DescriptionOnlyContentProps) {
-    const { setProperty } = useNodeTypeDetailsContentLogic({ node, onChange, errors: [] });
+    const { setProperty } = useNodeTypeDetailsContentLogic({ node, onChange });
 
     if (preview) {
         return <DescriptionView>{get(node, fieldPath)}</DescriptionView>;
