@@ -37,8 +37,10 @@ export type CustomActionParameter = {
     editor: EditorProps;
 };
 
-export type ScenarioPropertiesConfig = Record<string, ScenarioPropertyConfig>;
-
+export interface UiScenarioProperties {
+    propertiesConfig: { [key: string]: ScenarioPropertyConfig };
+    docsUrl?: string;
+}
 //"ReturnType" is builtin type alias
 export interface ReturnedType {
     display: string;
@@ -60,7 +62,7 @@ export interface ProcessDefinitionData {
     components?: Record<string, ComponentDefinition>;
     classes?: TypingResult[];
     componentGroups?: ComponentGroup[];
-    scenarioPropertiesConfig?: ScenarioPropertiesConfig;
+    scenarioPropertiesConfig?: UiScenarioProperties;
     edgesForNodes?: EdgesForNode[];
     customActions?: Array<CustomAction>;
 }
