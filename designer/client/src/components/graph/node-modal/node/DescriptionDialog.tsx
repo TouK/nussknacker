@@ -61,7 +61,7 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
         const HeaderTitle = () => <div />;
 
         if (isTouched || !previewMode) {
-            return {};
+            return { HeaderTitle };
         }
 
         const Header = (props) => (

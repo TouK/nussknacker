@@ -32,6 +32,8 @@ export const ScenarioDescription = () => {
     const { t } = useTranslation();
     const title = t("graph.description.toggle", "toggle description view");
 
+    if (!description) return null;
+
     return (
         <IconButton
             ref={ref}
