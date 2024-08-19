@@ -1,14 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
-import "ace-builds/src-noconflict/ace";
-import React, { ForwardedRef, forwardRef, useMemo } from "react";
-import ReactAce, { IAceEditorProps } from "react-ace/lib/ace";
-import { IAceOptions, IEditorProps } from "react-ace/src/types";
-import AceEditor from "./ace";
-import { ICommand } from "react-ace/lib/types";
+import { SerializedStyles } from "@emotion/react";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
+import React, { ForwardedRef, forwardRef, useMemo } from "react";
+import ReactAce, { IAceEditorProps } from "react-ace/lib/ace";
+import { ICommand } from "react-ace/lib/types";
+import { IAceOptions, IEditorProps } from "react-ace/src/types";
+import AceEditor from "./ace";
 import { EditorMode, ExpressionLang } from "./types";
-import { SerializedStyles } from "@emotion/react";
 
 export type AceWrapperInputProps = {
     language: string;
