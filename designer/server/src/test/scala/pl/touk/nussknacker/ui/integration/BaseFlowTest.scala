@@ -254,7 +254,7 @@ class BaseFlowTest
     )
     response.code shouldEqual StatusCode.Ok
 
-    val settingsJson        = response.extractFieldJsonValue("scenarioPropertiesConfig")
+    val settingsJson        = response.extractFieldJsonValue("scenarioProperties")
     val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
     val settings         = Decoder[UiScenarioProperties].decodeJson(settingsJson).toOption.get
