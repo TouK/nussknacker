@@ -17,7 +17,6 @@ trait WithPostgresqlDB {
 
   {
     container.container.setPortBindings(List("5432:5432").asJava)
-    container.container.addEnv("PGTZ", "Europe/Warsaw")
   }
 
   private val driverClassName = "org.postgresql.Driver"
@@ -37,18 +36,11 @@ trait WithPostgresqlDB {
 
   override protected def beforeAll(): Unit = {
     conn = DriverManager.getConnection(url, username, password)
-    setupTimezone
     preparePostgresqlDDLs.foreach { ddlStr =>
       val ddlStatement = conn.prepareStatement(ddlStr)
       try ddlStatement.execute()
       finally ddlStatement.close()
     }
-  }
-
-  private def setupTimezone: Unit = {
-    val statement = conn.createStatement()
-    statement.executeUpdate("SET TIME ZONE 'Europe/Warsaw'")
-    statement.close()
   }
 
   override protected def afterAll(): Unit = {
