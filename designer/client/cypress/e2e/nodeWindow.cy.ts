@@ -28,7 +28,7 @@ describe("Node window", () => {
                 force: true,
             });
 
-        cy.getNode("periodic").dblclick();
+        cy.getNode("periodic").scrollIntoView().dblclick();
 
         // TODO: fix validation display in node windows
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");
