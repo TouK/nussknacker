@@ -25,7 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class DefinitionsService(
     modelData: ModelData,
     staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
-    scenarioPropertiesConfig: ScenarioProperties,
+    scenarioProperties: ScenarioProperties,
     fragmentPropertiesConfig: Map[String, SingleScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
@@ -55,7 +55,7 @@ class DefinitionsService(
       }
 
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
-        .finalizePropertiesConfig(scenarioPropertiesConfig)
+        .finalizePropertiesConfig(scenarioProperties)
 
       prepareUIDefinitions(
         withStaticDefinition,
@@ -76,8 +76,8 @@ class DefinitionsService(
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioProperties = {
         val (props, url) =
-          (if (forFragment) (FragmentPropertiesConfig.properties, None) ++ fragmentPropertiesConfig
-           else (finalizedScenarioPropertiesConfig.propertiesConfig, finalizedScenarioPropertiesConfig.docsUrl))
+          if (forFragment) (FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, None)
+          else (finalizedScenarioPropertiesConfig.propertiesConfig, finalizedScenarioPropertiesConfig.docsUrl)
         val transformedProps = props.mapValuesNow(createUIScenarioAdditionalFieldConfig)
         UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = url)
       },
