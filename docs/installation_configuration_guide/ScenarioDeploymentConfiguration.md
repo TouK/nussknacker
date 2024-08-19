@@ -12,7 +12,7 @@ To enable given [Deployment Manager](../about/GLOSSARY#deployment-manager) you n
 Nussknacker is distributed with three default [Deployment Managers](../about/GLOSSARY#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers`
 directory. Depending on which [Deployment Manager](../about/GLOSSARY#deployment-manager) you've selected, you should provide parameters values for it specifically - see sections below to find out available parameters.
 
-Section with `deploymentConfig` needs to be placed in the correct place in the Designer's configuration. Check [configuration areas](./Common.md#configuration-areas) to understand the structure of the configuration.
+Section with `deploymentConfig` needs to be placed in the correct place in the Designer's configuration. Check [configuration areas](./Common.mdx#configuration-areas) to understand the structure of the configuration.
 
 Below you can find a snippet of scenario deployment configuration.
 
@@ -172,7 +172,7 @@ Please note that you cannot override names or labels configured by Nussknacker.
 
 In most cases, the model configuration values passed to the Lite Engine runtime are the ones from
 the `modelConfig` section
-of [main configuration file](./Common.md#configuration-areas).
+of [main configuration file](./Common.mdx#configuration-areas).
 However, there are two exception to this rule:
 
 - there
