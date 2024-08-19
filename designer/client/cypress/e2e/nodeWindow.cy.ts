@@ -18,6 +18,7 @@ describe("Node window", () => {
         cy.contains(/^sources$/)
             .should("exist")
             .scrollIntoView();
+        cy.layoutScenario();
         cy.get("[data-testid='component:periodic']")
             .should("be.visible")
             .drag("#nk-graph-main", {
@@ -28,7 +29,7 @@ describe("Node window", () => {
                 force: true,
             });
 
-        cy.getNode("periodic").scrollIntoView().dblclick();
+        cy.getNode("periodic").dblclick();
 
         // TODO: fix validation display in node windows
         cy.intercept("POST", "/api/nodes/*/validation").as("validation");
