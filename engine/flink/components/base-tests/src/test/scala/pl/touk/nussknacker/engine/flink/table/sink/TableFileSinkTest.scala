@@ -40,42 +40,51 @@ class TableFileSinkTest
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val pingPongInputTableName         = "ping-pong-input"
-  private val advancedPingPongInputTableName = "advanced-ping-pong-input"
-  private val virtualColumnInputTableName    = "virtual-column-input"
+  private val basicPingPongInputTableName    = "basic-ping-pong-input"
+  private val basicPingPongOutputTableName   = "basic-ping-pong-output"
+  private val basicExpressionOutputTableName = "basic-expression-output"
 
-  private val pingPongOutputTableName           = "ping-pong-output"
-  private val rowFieldAccessOutputTableName     = "row-field-access-output"
-  private val expressionOutputTableName         = "expression-output"
-  private val oneColumnOutputTableName          = "one-column-output"
-  private val virtualColumnOutputTableName      = "virtual-column-output"
-  private val genericsOutputTableName           = "generics-output"
+  private val advancedPingPongInputTableName    = "advanced-ping-pong-input"
   private val advancedPingPongOutputTableName   = "advanced-ping-pong-output"
   private val advancedExpressionOutputTableName = "advanced-expression-output"
 
-  private lazy val pingPongInputDirectory =
-    new File("engine/flink/components/base-tests/src/test/resources/tables/primitives").toPath.toAbsolutePath
+  private val datetimePingPongInputTableName  = "datetime-ping-pong-input"
+  private val datetimePingPongOutputTableName = "datetime-ping-pong-output"
+
+  private val virtualColumnInputTableName  = "virtual-column-input"
+  private val virtualColumnOutputTableName = "virtual-column-output"
+
+  private val oneColumnOutputTableName = "one-column-output"
+  private val genericsOutputTableName  = "generics-output"
+
+  private lazy val basicPingPongInputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$basicPingPongInputTableName")
+  private lazy val basicPingPongOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$basicPingPongOutputTableName")
+  private lazy val basicExpressionOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$basicExpressionOutputTableName")
+
   private lazy val advancedPingPongInputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$advancedPingPongInputTableName")
-
-  private lazy val pingPongOutputDirectory =
-    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$pingPongOutputTableName")
-  private lazy val rowFieldAccessOutputDirectory =
-    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$rowFieldAccessOutputTableName")
-  private lazy val expressionOutputDirectory =
-    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$expressionOutputTableName")
-  private lazy val oneColumnOutputDirectory =
-    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$oneColumnOutputTableName")
-  private lazy val virtualColumnOutputDirectory =
-    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$virtualColumnOutputTableName")
   private lazy val advancedPingPongOutputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$advancedPingPongOutputTableName")
   private lazy val advancedExpressionOutputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$advancedExpressionOutputTableName")
 
+  private lazy val datetimePingPongInputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$datetimePingPongInputTableName")
+  private lazy val datetimePingPongOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$datetimePingPongOutputTableName")
+
+  private lazy val virtualColumnOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$virtualColumnOutputTableName")
+
+  private lazy val oneColumnOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$oneColumnOutputTableName")
+
   private lazy val tablesDefinition =
     s"""
-      |CREATE TABLE `$pingPongInputTableName` (
+      |CREATE TABLE `$basicPingPongInputTableName` (
       |    `string`              STRING,
       |    `boolean`             BOOLEAN,
       |    `tinyInt`             TINYINT,
@@ -84,34 +93,24 @@ class TableFileSinkTest
       |    `bigint`              BIGINT,
       |    `float`               FLOAT,
       |    `double`              DOUBLE,
-      |    `decimal`             DECIMAL,
-      |    `date`                DATE,
-      |    `time`                TIME,
-      |    `timestamp`           TIMESTAMP,
-      |    `timestampLtz`        TIMESTAMP_LTZ
+      |    `decimal`             DECIMAL
       |) WITH (
       |      'connector' = 'filesystem',
-      |      'path' = 'file:///$pingPongInputDirectory',
+      |      'path' = 'file:///$basicPingPongInputDirectory',
       |      'format' = 'json'
       |);
       |
-      |CREATE TABLE `$pingPongOutputTableName` WITH (
+      |CREATE TABLE `$basicPingPongOutputTableName` WITH (
       |      'connector' = 'filesystem',
-      |      'path' = 'file:///$pingPongOutputDirectory',
+      |      'path' = 'file:///$basicPingPongOutputDirectory',
       |      'format' = 'json'
-      |) LIKE `$pingPongInputTableName`;
+      |) LIKE `$basicPingPongInputTableName`;
       |
-      |CREATE TABLE `$rowFieldAccessOutputTableName` WITH (
+      |CREATE TABLE `$basicExpressionOutputTableName` WITH (
       |      'connector' = 'filesystem',
-      |      'path' = 'file:///$rowFieldAccessOutputDirectory',
-      |      'format' = 'json'
-      |) LIKE `$pingPongInputTableName`;
-      |
-      |CREATE TABLE `$expressionOutputTableName` WITH (
-      |      'connector' = 'filesystem',
-      |      'path' = 'file:///$expressionOutputDirectory',
+      |      'path' = 'file:///$basicExpressionOutputDirectory',
       |      'format' = 'csv'
-      |) LIKE `$pingPongInputTableName`;
+      |) LIKE `$basicPingPongInputTableName`;
       |
       |CREATE TABLE `$oneColumnOutputTableName` (
       |      `one` INT
@@ -184,6 +183,23 @@ class TableFileSinkTest
       |      'path' = 'file:///$advancedExpressionOutputDirectory',
       |      'format' = 'json'
       |);
+      |
+      |CREATE TABLE `$datetimePingPongInputTableName` (
+      |      `date` DATE,
+      |      `time` TIME,
+      |      `timestamp` TIMESTAMP,
+      |      `timestamp_ltz` TIMESTAMP_LTZ
+      |) WITH (
+      |      'connector' = 'filesystem',
+      |      'path' = 'file:///$datetimePingPongInputDirectory',
+      |      'format' = 'json'
+      |);
+      |
+      |CREATE TABLE `$datetimePingPongOutputTableName` WITH (
+      |      'connector' = 'filesystem',
+      |      'path' = 'file:///$datetimePingPongOutputDirectory',
+      |      'format' = 'json'
+      |) LIKE `$datetimePingPongInputTableName`;
       |""".stripMargin
 
   private lazy val sqlTablesDefinitionFilePath = {
@@ -211,35 +227,69 @@ class TableFileSinkTest
     .build()
 
   override protected def afterAll(): Unit = {
-    FileUtils.deleteQuietly(pingPongOutputDirectory.toFile)
-    FileUtils.deleteQuietly(expressionOutputDirectory.toFile)
-    FileUtils.deleteQuietly(oneColumnOutputDirectory.toFile)
-    FileUtils.deleteQuietly(virtualColumnOutputDirectory.toFile)
+    FileUtils.deleteQuietly(basicPingPongInputDirectory.toFile)
+    FileUtils.deleteQuietly(basicPingPongOutputDirectory.toFile)
+    FileUtils.deleteQuietly(basicExpressionOutputDirectory.toFile)
     FileUtils.deleteQuietly(advancedPingPongInputDirectory.toFile)
     FileUtils.deleteQuietly(advancedPingPongOutputDirectory.toFile)
     FileUtils.deleteQuietly(advancedExpressionOutputDirectory.toFile)
+    FileUtils.deleteQuietly(datetimePingPongInputDirectory.toFile)
+    FileUtils.deleteQuietly(datetimePingPongOutputDirectory.toFile)
+    FileUtils.deleteQuietly(oneColumnOutputDirectory.toFile)
+    FileUtils.deleteQuietly(virtualColumnOutputDirectory.toFile)
     super.afterAll()
   }
 
-  test("should do file-to-file ping-pong for all primitive types") {
+  test("should do file-to-file ping-pong for all basic types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
+      .source("start", "table", "Table" -> s"'$basicPingPongInputTableName'".spel)
+      .buildVariable(
+        "example-transformations",
+        "out",
+        "string"   -> "#input.string.length".spel,
+        "boolean"  -> "#input.boolean.booleanValue".spel,
+        "tinyInt"  -> "#input.tinyInt.intValue".spel,
+        "smallInt" -> "#input.smallInt.intValue".spel,
+        "int"      -> "#input.int.intValue".spel,
+        "bigint"   -> "#input.bigint.intValue".spel,
+        "float"    -> "#input.float.intValue".spel,
+        "double"   -> "#input.double.intValue".spel,
+        "decimal"  -> "#input.decimal.longValueExact".spel
+      )
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$pingPongOutputTableName'".spel,
+        "Table"      -> s"'$basicPingPongOutputTableName'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
 
+    val inputContent = Json
+      .fromFields(
+        List(
+          "string" -> Json.fromString(
+            "bd23cc017c0927ae2a7769177eb0cf2ae6aa2d01013e142170f61c5659abd37665bb44dc47c525750673a80a6d48fcd9e665"
+          ),
+          "boolean"  -> Json.fromBoolean(true),
+          "tinyInt"  -> Json.fromInt(-1),
+          "smallInt" -> Json.fromInt(-11796),
+          "int"      -> Json.fromInt(1781149910),
+          "bigint"   -> Json.fromLong(6740817575276386000L),
+          "float"    -> Json.fromDoubleOrNull(2.0957512e+38),
+          "double"   -> Json.fromDoubleOrNull(6.366705250892882e+307),
+          "decimal"  -> Json.fromLong(2312106163L),
+        )
+      )
+      .noSpaces
+    Files.writeString(basicPingPongInputDirectory.resolve("file.json"), inputContent, StandardCharsets.UTF_8)
+
     val result = runner.runWithoutData(scenario)
-    result shouldBe Symbol("valid")
+    result.validValue.errors shouldBe empty
 
-    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(pingPongOutputDirectory)
-    val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(pingPongInputDirectory)
+    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(basicPingPongOutputDirectory).loneElement
 
-    outputFileContent shouldBe inputFileContent
+    outputFileContent shouldBe inputContent
   }
 
   test("should be able to access virtual columns in input table") {
@@ -255,7 +305,7 @@ class TableFileSinkTest
       )
 
     val result = runner.runWithoutData(scenario)
-    result shouldBe Symbol("valid")
+    result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(virtualColumnOutputDirectory)
 
@@ -264,30 +314,8 @@ class TableFileSinkTest
     costStr.toDouble shouldEqual expectedCost
   }
 
-  test("should allow to access fields of Row produced by source") {
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
-      .buildSimpleVariable("variable", "someVar", "#input.string.length".spel)
-      .emptySink(
-        "end",
-        "table",
-        "Table"      -> s"'$rowFieldAccessOutputTableName'".spel,
-        "Raw editor" -> "true".spel,
-        "Value"      -> "#input".spel
-      )
-
-    val result = runner.runWithoutData(scenario)
-    result shouldBe Symbol("valid")
-
-    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(rowFieldAccessOutputDirectory)
-    val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(pingPongInputDirectory)
-
-    outputFileContent shouldBe inputFileContent
-  }
-
-  test("should do spel-to-file for all primitive types") {
-    val primitiveTypesRecordCsvFirstLine =
+  test("should do spel-to-file for all basic types") {
+    val basicTypesRecordCsvFirstLine =
       "str," +
         "true," +
         "123," +
@@ -296,12 +324,9 @@ class TableFileSinkTest
         "123," +
         "123.12," +
         "123.12," +
-        "1," +
-        "2020-12-31,10:15:00," +
-        "\"2020-12-31 10:15:00\"," +
-        "\"2020-12-31 10:15:00Z\""
+        "1"
 
-    val primitiveTypesExpression = Expression.spel(s"""
+    val basicTypesExpression = Expression.spel(s"""
         |{
         |  boolean: $spelBoolean,
         |  string: $spelStr,
@@ -311,11 +336,7 @@ class TableFileSinkTest
         |  bigint: $spelLong,
         |  decimal: $spelBigDecimal,
         |  float:  $spelFloat,
-        |  double: $spelDouble,
-        |  date: $spelLocalDate,
-        |  time: $spelLocalTime,
-        |  timestamp: $spelLocalDateTime,
-        |  timestampLtz: $spelInstant
+        |  double: $spelDouble
         |}
         |""".stripMargin)
 
@@ -325,19 +346,19 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$expressionOutputTableName'".spel,
+        "Table"      -> s"'$basicExpressionOutputTableName'".spel,
         "Raw editor" -> "true".spel,
-        "Value"      -> primitiveTypesExpression
+        "Value"      -> basicTypesExpression
       )
 
     val result = runner.runWithoutData(
       scenario = scenario
     )
-    result shouldBe Symbol("valid")
+    result.validValue.errors shouldBe empty
 
     getLinesOfSingleFileInDirectoryEventually(
-      expressionOutputDirectory
-    ).loneElement shouldBe primitiveTypesRecordCsvFirstLine
+      basicExpressionOutputDirectory
+    ).loneElement shouldBe basicTypesRecordCsvFirstLine
   }
 
   test("should skip redundant fields") {
@@ -362,7 +383,7 @@ class TableFileSinkTest
     val result = runner.runWithoutData(
       scenario = scenario
     )
-    result shouldBe Symbol("valid")
+    result.validValue.errors shouldBe empty
 
     getLinesOfSingleFileInDirectoryEventually(oneColumnOutputDirectory).loneElement shouldBe "123"
   }
@@ -430,7 +451,7 @@ class TableFileSinkTest
 
     Files.writeString(advancedPingPongInputDirectory.resolve("file.json"), inputContent, StandardCharsets.UTF_8)
     val result = runner.runWithoutData(scenario)
-    result shouldBe Symbol("valid")
+    result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(advancedPingPongOutputDirectory)
 
@@ -468,7 +489,7 @@ class TableFileSinkTest
     val result = runner.runWithoutData(
       scenario = scenario
     )
-    result shouldBe Symbol("valid")
+    result.validValue.errors shouldBe empty
 
     val expectedNestedRecord = Json.fromFields(
       List(
@@ -496,6 +517,57 @@ class TableFileSinkTest
     getLinesOfSingleFileInDirectoryEventually(
       advancedExpressionOutputDirectory
     ).loneElement shouldBe expectedContent
+  }
+
+  test("should do file-to-file ping-pong for datetime types") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'$datetimePingPongInputTableName'".spel)
+      .buildVariable(
+        "example-transformations",
+        "out",
+        "date"          -> "#input.date.atStartOfDay".spel,
+        "time"          -> "#input.time.atDate('2024-01-01')".spel,
+        "timestamp"     -> "#input.timestamp.toLocalDate".spel,
+        "timestamp_ltz" -> "#input.timestamp_ltz.toEpochMilli".spel
+      )
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$datetimePingPongOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
+      )
+
+    val inputContent = Json
+      .fromFields(
+        List(
+          "date"          -> Json.fromString("2024-01-01"),
+          "time"          -> Json.fromString("12:01:02.000000003"),
+          "timestamp"     -> Json.fromString("2024-01-01 12:01:02.000000003"),
+          "timestamp_ltz" -> Json.fromString("2024-01-01 12:01:02.000000003Z"),
+        )
+      )
+      .noSpaces
+    val expectedContent = Json
+      .fromFields(
+        List(
+          "date" -> Json.fromString("2024-01-01"),
+          // CREATE TABLE statement doesn't take into consideration fractional seconds precision - it is always TIME(0)
+          "time"          -> Json.fromString("12:01:02"),
+          "timestamp"     -> Json.fromString("2024-01-01 12:01:02.000000003"),
+          "timestamp_ltz" -> Json.fromString("2024-01-01 12:01:02.000000003Z"),
+        )
+      )
+      .noSpaces
+
+    Files.writeString(datetimePingPongInputDirectory.resolve("file.json"), inputContent, StandardCharsets.UTF_8)
+    val result = runner.runWithoutData(scenario)
+    result.validValue.errors shouldBe empty
+
+    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimePingPongOutputDirectory)
+
+    outputFileContent.loneElement shouldBe expectedContent
   }
 
   test("should not allow to pass floating point types into decimal types in generics") {
