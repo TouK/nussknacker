@@ -22,7 +22,8 @@ export const ScenarioDescription = () => {
     useEffect(
         () => {
             if (description && showDescription) {
-                openDescription();
+                // delaying this is a cheap way to wait for stable positions
+                setTimeout(openDescription, 750);
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps

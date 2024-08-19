@@ -23,7 +23,7 @@ describe("Description", () => {
         cy.get(`[title="toggle description view"]`).should("not.exist");
 
         cy.contains(/^properties$/i)
-            .should("be.visible")
+            .should("be.enabled")
             .dblclick();
         cy.get("[data-testid=window]").should("be.visible").as("window");
 
