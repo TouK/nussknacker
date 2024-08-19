@@ -19,7 +19,7 @@ It supports:
 
 ## Configuration
 
-You have to configure a database connection pool you will be using in your `Sql` enricher. It is performed at the root level of the configuration file (the same level as all other configs from Designer configuration area) - see [configuration file](../installation_configuration_guide/Common.md#configuration-file).
+You have to configure a database connection pool you will be using in your `Sql` enricher. It is performed at the root level of the configuration file (the same level as all other configs from Designer configuration area) - see [configuration file](../installation_configuration_guide/Common.mdx#configuration-file).
 
 Sample configuration:
 

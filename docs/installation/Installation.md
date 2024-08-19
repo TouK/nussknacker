@@ -66,7 +66,7 @@ All configuration options are described in [Configuration](../installation_confi
 Some of them can be configured using already predefined environment variables, which is mostly useful in the Docker setup.
 The table below shows all the predefined environment variables used in the Nussknacker image. `$NUSSKNACKER_DIR` is a placeholder pointing to the Nussknacker installation directory.
 
-Because we use [HOCON](../installation_configuration_guide/Common.md#conventions), you can set (or override) any configuration value used by Nussknacker even if the already predefined environment variable does not exist. This is achieved by setting the JVM property `-Dconfig.override_with_env_vars=true` and setting environment variables following conventions described [here](https://github.com/lightbend/config?tab=readme-ov-file#optional-system-or-env-variable-overrides).
+Because we use [HOCON](../installation_configuration_guide/Common.mdx#conventions), you can set (or override) any configuration value used by Nussknacker even if the already predefined environment variable does not exist. This is achieved by setting the JVM property `-Dconfig.override_with_env_vars=true` and setting environment variables following conventions described [here](https://github.com/lightbend/config?tab=readme-ov-file#optional-system-or-env-variable-overrides).
 
 ### Basic environment variables
 
