@@ -89,7 +89,7 @@ import scala.util.control.NonFatal
 class AkkaHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
-    processingTypeDataReader: ProcessingTypeDataLoader,
+    processingTypeDataLoader: ProcessingTypeDataLoader,
     feStatisticsRepository: FEStatisticsRepository[Future],
     designerClock: Clock
 )(implicit system: ActorSystem, materializer: Materializer)
@@ -630,7 +630,7 @@ class AkkaHttpBasedRouteProvider(
       .make(
         acquire = IO(
           new ReloadableProcessingTypeDataProvider(
-            processingTypeDataReader.loadProcessingTypeData(
+            processingTypeDataLoader.loadProcessingTypeData(
               getModelDependencies(additionalUIConfigProvider, _),
               getDeploymentManagerDependencies(actionServiceProvider, sttpBackend, _),
             )
