@@ -23,8 +23,15 @@ declare global {
     }
 }
 
-const MarkdownWithPlugins = ({ remarkPlugins = [], children, components = {}, ...props }: PropsOf<typeof Markdown>) => (
+const MarkdownWithPlugins = ({
+    remarkPlugins = [],
+    children,
+    components = {},
+    linkTarget = "_blank",
+    ...props
+}: PropsOf<typeof Markdown>) => (
     <Markdown
+        linkTarget={linkTarget}
         components={{
             "router-link": RouterLink,
             ...components,
