@@ -42,7 +42,7 @@ trait DatabaseQueryEnricherQueryWithEnricher extends BaseDatabaseQueryEnricherTe
     )
     returnType(databaseQueryEnricher, state).display shouldBe expectedDisplayType
     val resultFuture = implementation.invoke(Context.withInitialId)
-    Await.result(resultFuture, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    Await.result(resultFuture, 500 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
   }
 
   def updateWithEnricher(

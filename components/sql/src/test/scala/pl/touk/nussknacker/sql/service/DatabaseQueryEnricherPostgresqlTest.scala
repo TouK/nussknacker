@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.utils.BasePostgresqlQueryEnricherTest
 
-import java.time.{LocalDate, LocalTime, ZonedDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 
 class DatabaseQueryEnricherPostgresqlTest
     extends BasePostgresqlQueryEnricherTest
@@ -21,7 +21,7 @@ class DatabaseQueryEnricherPostgresqlTest
     "CREATE TABLE types_test(t_time TIME, t_timestamp TIMESTAMP, t_timestamptz TIMESTAMPTZ, t_date DATE, " +
       "t_array INT[], t_boolean BOOLEAN, t_text TEXT);",
     "INSERT INTO types_test(t_time, t_timestamp, t_timestamptz, t_date, t_array, t_boolean, t_text) VALUES (" +
-      "'08:00:00', '2024-08-12 10:00:00', '2024-08-12 09:00:00+01:00', '2024-08-12', '{1,2,3,4,5}', true, 'long text');"
+      "'08:00:00', '2024-08-12 08:00:00', '2024-08-12 09:00:00+01:00', '2024-08-12', '{1,2,3,4,5}', true, 'long text');"
   )
 
   override protected def afterEach(): Unit = {
@@ -88,12 +88,12 @@ class DatabaseQueryEnricherPostgresqlTest
       TypedMap(
         Map(
           "t_boolean"     -> true,
-          "t_timestamp"   -> ZonedDateTime.parse("2024-08-12T10:00:00+02:00").toInstant,
+          "t_timestamp"   -> LocalDateTime.parse("2024-08-12T08:00:00").atZone(ZoneId.systemDefault()).toInstant,
           "t_date"        -> LocalDate.parse("2024-08-12"),
           "t_array"       -> List(1, 2, 3, 4, 5).asJava,
           "t_text"        -> "long text",
           "t_time"        -> LocalTime.parse("08:00"),
-          "t_timestamptz" -> ZonedDateTime.parse("2024-08-12T10:00:00+02:00").toInstant
+          "t_timestamptz" -> ZonedDateTime.parse("2024-08-12T09:00:00+01:00").toInstant
         )
       )
     )
