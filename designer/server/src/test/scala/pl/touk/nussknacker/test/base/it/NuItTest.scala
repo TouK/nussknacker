@@ -8,6 +8,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithDesignerConfig
+import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 import pl.touk.nussknacker.ui.process.processingtype.loader._

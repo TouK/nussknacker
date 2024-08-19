@@ -6,10 +6,7 @@ import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.process.processingtype.loader.{
-  LoadableConfigBasedNussknackerConfig,
-  LocalProcessingTypeDataLoader
-}
+import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 
 import java.io.File
 import java.nio.charset.StandardCharsets

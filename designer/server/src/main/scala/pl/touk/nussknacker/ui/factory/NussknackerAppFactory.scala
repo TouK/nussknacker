@@ -8,6 +8,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
+import pl.touk.nussknacker.ui.{LoadableDesignerConfigBasedNussknackerConfig, NussknackerConfig}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.process.processingtype.loader._
@@ -30,7 +31,7 @@ class NussknackerAppFactory(nussknackerConfig: NussknackerConfig, processingType
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
-      config <- Resource.eval(nussknackerConfig.applicationConfig())
+      config <- Resource.eval(nussknackerConfig.loadApplicationConfig())
       system <- createActorSystem(config)
       materializer = Materializer(system)
       _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))

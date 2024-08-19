@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.NussknackerConfig
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
@@ -20,8 +20,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     config
-      .processingTypeConfigs()
-      .map(_.mapValuesNow(ProcessingTypeConfig.read))
+      .loadProcessingTypeConfigs()
       .map { processingTypesConfig =>
         // This step with splitting DeploymentManagerProvider loading for all processing types
         // and after that creating ProcessingTypeData is done because of the deduplication of deployments
