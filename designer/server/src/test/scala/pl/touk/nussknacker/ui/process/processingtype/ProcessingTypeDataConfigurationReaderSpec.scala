@@ -6,7 +6,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.ui.process.processingtype.loader.LoadableConfigBasedProcessingTypesConfig
+import pl.touk.nussknacker.ui.process.processingtype.loader.LoadableConfigBasedNussknackerConfig
 
 class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
 
@@ -52,7 +52,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
   }
 
   private def processingTypeDataReader(config: Config) = {
-    new LoadableConfigBasedProcessingTypesConfig(IO.pure(ConfigWithUnresolvedVersion(config)))
+    new LoadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(config)))
   }
 
 }

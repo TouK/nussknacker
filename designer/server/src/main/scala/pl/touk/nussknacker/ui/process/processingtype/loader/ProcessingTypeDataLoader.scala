@@ -10,8 +10,6 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 
-import scala.concurrent._
-
 trait ProcessingTypeDataLoader {
 
   def loadProcessingTypeData(

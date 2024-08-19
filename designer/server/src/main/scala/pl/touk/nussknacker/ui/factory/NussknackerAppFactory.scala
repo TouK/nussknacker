@@ -17,18 +17,20 @@ import java.time.Clock
 
 object NussknackerAppFactory
 
-class NussknackerAppFactory(processingTypeDataLoader: ProcessingTypeDataLoader) extends LazyLogging {
+class NussknackerAppFactory(nussknackerConfig: NussknackerConfig, processingTypeDataLoader: ProcessingTypeDataLoader)
+    extends LazyLogging {
 
-  def this(classLoader: ClassLoader) = {
-    this(
-      new ProcessingTypesConfigBasedProcessingTypeDataLoader(
-        new LoadableDesignerConfigBasedProcessingTypesConfig(classLoader)
-      )
-    )
+  def this(nussknackerConfig: NussknackerConfig) = {
+    this(nussknackerConfig, new ProcessingTypesConfigBasedProcessingTypeDataLoader(nussknackerConfig))
   }
 
-  def createApp(config: ConfigWithUnresolvedVersion, clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
+  def this(classLoader: ClassLoader) = {
+    this(new LoadableDesignerConfigBasedNussknackerConfig(classLoader))
+  }
+
+  def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
+      config <- Resource.eval(nussknackerConfig.applicationConfig())
       system <- createActorSystem(config)
       materializer = Materializer(system)
       _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))

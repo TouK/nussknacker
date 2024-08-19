@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.RealLoggedUser
-import cats.effect.unsafe.implicits.global
 
 class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
 
@@ -38,7 +38,7 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
 
   private def mockProcessingTypeData(processingTypeName: String, processingTypeNames: String*) = {
     val allProcessingTypes = (processingTypeName :: processingTypeNames.toList).toSet
-    new LocalProcessingTypeDataLoader(
+    val loader = new LocalProcessingTypeDataLoader(
       modelData = allProcessingTypes.map { name =>
         name -> (
           s"${name}Category",
@@ -52,6 +52,7 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
       }.toMap,
       deploymentManagerProvider = new DeploymentManagerProviderStub
     )
+    loader
       .loadProcessingTypeData(_ => TestFactory.modelDependencies, _ => TestFactory.deploymentManagerDependencies)
       .unsafeRunSync()
   }

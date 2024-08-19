@@ -6,7 +6,10 @@ import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.loader.{
+  LoadableConfigBasedNussknackerConfig,
+  LocalProcessingTypeDataLoader
+}
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -45,12 +48,13 @@ object LocalNussknackerWithSingleModel {
       appConfig: Config
   ): Resource[IO, Unit] = {
     // TODO: figure out how to perform e.g. hotswap
-    val local      = new LocalProcessingTypeDataLoader(
-      Map(typeName -> (category, modelData)),
-      deploymentManagerProvider
+    val local = new LocalProcessingTypeDataLoader(
+      modelData = Map(typeName -> (category, modelData)),
+      deploymentManagerProvider = deploymentManagerProvider
     )
-    val appFactory = new NussknackerAppFactory(local)
-    appFactory.createApp(DesignerConfigLoader.from(appConfig))
+    val nussknackerConfig = new LoadableConfigBasedNussknackerConfig(IO.delay(DesignerConfigLoader.from(appConfig)))
+    val appFactory        = new NussknackerAppFactory(nussknackerConfig, local)
+    appFactory.createApp()
   }
 
   // TODO: easier way of handling users file

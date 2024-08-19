@@ -4,26 +4,22 @@ import cats.effect.IO
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 
-trait ProcessingTypesConfig {
-  def processingTypeConfigs(): IO[Map[String, ConfigWithUnresolvedVersion]]
-}
+import scala.jdk.CollectionConverters._
 
-class LoadableConfigBasedProcessingTypesConfig(loadConfig: IO[ConfigWithUnresolvedVersion])
-    extends ProcessingTypesConfig {
+// todo: move
+trait NussknackerConfig {
 
-  import scala.jdk.CollectionConverters._
+  def applicationConfig(): IO[ConfigWithUnresolvedVersion]
 
-//  private var lastLoadedConfig = loadConfig.value
-
-  override def processingTypeConfigs(): IO[Map[String, ConfigWithUnresolvedVersion]] = {
-    loadConfig
+  final def processingTypeConfigs(): IO[Map[String, ConfigWithUnresolvedVersion]] = {
+    applicationConfig()
       .map { config =>
         read(config, "scenarioTypes").getOrElse {
           throw new RuntimeException("No scenario types configuration provided")
         }
       }
-//    val config = loadConfig.value
-//    lastLoadedConfig = config // todo: continue
+    //    val config = loadConfig.value
+    //    lastLoadedConfig = config // todo: continue
 
   }
 
@@ -49,5 +45,14 @@ class LoadableConfigBasedProcessingTypesConfig(loadConfig: IO[ConfigWithUnresolv
 
 }
 
-class LoadableDesignerConfigBasedProcessingTypesConfig(classLoader: ClassLoader)
-    extends LoadableConfigBasedProcessingTypesConfig(DesignerConfigLoader.load(classLoader))
+class LoadableConfigBasedNussknackerConfig(loadConfig: IO[ConfigWithUnresolvedVersion]) extends NussknackerConfig {
+
+  // todo:
+  //  private var lastLoadedConfig = loadConfig.value
+
+  override def applicationConfig(): IO[ConfigWithUnresolvedVersion] = loadConfig
+
+}
+
+class LoadableDesignerConfigBasedNussknackerConfig(classLoader: ClassLoader)
+    extends LoadableConfigBasedNussknackerConfig(DesignerConfigLoader.load(classLoader))
