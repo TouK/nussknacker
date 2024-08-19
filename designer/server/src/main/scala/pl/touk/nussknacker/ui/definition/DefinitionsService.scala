@@ -76,7 +76,7 @@ class DefinitionsService(
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioProperties = {
         val (props, url) =
-          (if (forFragment) (FragmentPropertiesConfig.properties, None) ++ fragmentPropertiesConfig
+          (if (forFragment) (FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, None)
            else (finalizedScenarioPropertiesConfig.propertiesConfig, finalizedScenarioPropertiesConfig.docsUrl))
         val transformedProps = props.mapValuesNow(createUIScenarioAdditionalFieldConfig)
         UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = url)

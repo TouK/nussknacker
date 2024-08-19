@@ -64,8 +64,8 @@ object FragmentPropertiesConfig {
     FixedExpressionValueWithIcon(VariableIcon, "Variable", VariableIcon),
   )
 
-  val iconConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.iconName ->
-    ScenarioPropertyConfig(
+  val iconConfig: (String, SingleScenarioPropertyConfig) = FragmentSpecificData.iconName ->
+    SingleScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(FixedValuesWithIconParameterEditor(icons)),
       validators = Some(List(MandatoryParameterValidator)),

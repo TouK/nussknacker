@@ -118,7 +118,7 @@ object ProcessingTypeData {
     DeploymentData(
       validDeploymentManager,
       metaDataInitializer,
-      scenarioProperties,
+      runtimeScenarioProps,
       fragmentProperties,
       deploymentManagerProvider.additionalValidators(deploymentConfig),
       DeploymentManagerType(deploymentManagerProvider.name),
