@@ -103,11 +103,17 @@ object ProcessingTypeData {
     val modelScenarioProps = modelData.modelConfig
       .getOrElse[ScenarioProperties]("scenarioPropertiesConfig", ScenarioProperties.empty())
 
-    val runtimeScenarioProps =
-      deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelScenarioProps
-    val fragmentProperties = modelData.modelConfig
-      .getOrElse[Map[ProcessingType, ScenarioPropertiesParameterConfig]]("fragmentPropertiesConfig", Map.empty)
+    def mergeConfigs = {
+      modelScenarioProps.copy(
+        modelScenarioProps.propertiesConfig ++ deploymentManagerProvider
+          .scenarioPropertiesConfig(deploymentConfig)
+          .propertiesConfig
+      )
+    }
+    val runtimeScenarioProps: ScenarioProperties = mergeConfigs
 
+    val fragmentProperties = modelData.modelConfig
+      .getOrElse[Map[ProcessingType, SingleScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     DeploymentData(
       validDeploymentManager,
