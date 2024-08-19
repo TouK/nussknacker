@@ -10,6 +10,7 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
@@ -28,6 +29,8 @@ class AppApiHttpServiceBusinessSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
+
+  private var simulateChangeInApplicationConfig: Boolean = false
 
   "The app health check endpoint should" - {
     "return simple designer health check (with no scenario statuses check)" in {
@@ -275,25 +278,72 @@ class AppApiHttpServiceBusinessSpec
   "The processing type data reload endpoint should" - {
     "reload processing types-related model data when" - {
       "'scenarioTypes' configuration is changed" in {
+        val componentNamesBeforeReload = fetchComponentNames().toSet
+
         given()
+          .applicationState {
+//            simulateChangeInApplicationConfig = true
+          }
           .when()
           .basicAuthAdmin()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
           .statusCode(204)
+
+        val componentNamesAfterReload = fetchComponentNames().toSet
+
+        componentNamesBeforeReload shouldBe componentNamesAfterReload
       }
     }
   }
 
-  override def designerConfig: Config = super.designerConfig
-    .withValue("enableConfigEndpoint", fromAnyRef(true))
-    .withValue(
-      "globalBuildInfo",
-      ConfigFactory
-        .empty()
-        .withValue("build-config-1", fromAnyRef("1"))
-        .withValue("build-config-2", fromAnyRef("2"))
-        .root()
+  override def designerConfig: Config = {
+    if (simulateChangeInApplicationConfig) {
+      additionalProcessingTypeCustomization.withFallback(originDesignerConfig)
+    } else {
+      originDesignerConfig
+    }
+  }
+
+  private def originDesignerConfig = {
+    super.designerConfig
+      .withValue("enableConfigEndpoint", fromAnyRef(true))
+      .withValue(
+        "globalBuildInfo",
+        ConfigFactory
+          .empty()
+          .withValue("build-config-1", fromAnyRef("1"))
+          .withValue("build-config-2", fromAnyRef("2"))
+          .root()
+      )
+  }
+
+  private def additionalProcessingTypeCustomization = {
+    ConfigFactory.parseString(
+      s"""
+         |scenarioTypes {
+         |  streaming3 {
+         |    deploymentConfig {
+         |      type: "mockable"
+         |      id: "3"
+         |      engineSetupName: "Mockable"
+         |    }
+         |    modelConfig: $${baseModelConfig}
+         |    category: "Category1"
+         |  }
+         |}
+         |""".stripMargin
     )
+  }
+
+  private def fetchComponentNames() = {
+    given()
+      .when()
+      .basicAuthAdmin()
+      .get(s"$nuDesignerHttpAddress/api/components")
+      .Then()
+      .statusCode(200)
+      .extractList("name")
+  }
 
 }
