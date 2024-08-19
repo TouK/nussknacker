@@ -38,16 +38,17 @@ describe("Description", () => {
             .click();
 
         cy.get(`[title="toggle description view"]`).should("be.visible").click();
+        cy.contains("description header").should("be.visible");
+        cy.get("[data-testid=window]").should("be.visible").find("header").find("[name=close]").click();
 
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
-        cy.contains("description header").should("be.visible");
         cy.reload();
 
-        cy.contains("Everything is going according to plan").should("be.visible").parent().parent().as("description");
+        cy.contains("Everything is going according to plan").should("be.visible");
 
         cy.viewport(1200, 800);
-        cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
+        cy.get("[data-testid=window]").matchImage({ screenshotConfig: { padding: [20, 100] } });
     });
 });
