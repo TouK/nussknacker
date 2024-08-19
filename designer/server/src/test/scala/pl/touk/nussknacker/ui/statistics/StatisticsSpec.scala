@@ -9,6 +9,7 @@ import java.net.URL
 class StatisticsSpec extends AnyFunSuite with Matchers {
   private val cfg                     = StatisticUrlConfig(maybePublicEncryptionKey = None)
   private val sizeForQueryParamsNames = "q1=&q2=a".length
+  private val maxUrlLength            = 7000
 
   test("should split parameters into a list of URLS") {
     val twoThousandCharsParam = (1 to 2000).map(_ => "x").mkString
@@ -91,7 +92,7 @@ class StatisticsSpec extends AnyFunSuite with Matchers {
       .getOrElse(List.empty)
       .head
       .toString
-      .length should be < 7000
+      .length should be < maxUrlLength
   }
 
 }
