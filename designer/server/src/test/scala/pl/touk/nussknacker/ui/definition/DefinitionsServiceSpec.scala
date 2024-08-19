@@ -282,7 +282,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       modelData = model,
       staticDefinitionForDynamicComponents = Map.empty,
       fragmentPropertiesConfig = Map.empty,
-      scenarioPropertiesConfig = ScenarioProperties.empty(),
+      scenarioProperties = ScenarioProperties.empty(),
       deploymentManager = new MockDeploymentManager,
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
