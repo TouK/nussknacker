@@ -7,7 +7,8 @@ import pl.touk.nussknacker.test.utils.StatisticEncryptionSupport
 import java.net.URL
 
 class StatisticsSpec extends AnyFunSuite with Matchers {
-  private val cfg = StatisticUrlConfig(maybePublicEncryptionKey = None)
+  private val cfg                     = StatisticUrlConfig(maybePublicEncryptionKey = None)
+  private val sizeForQueryParamsNames = "q1=&q2=a".length
 
   test("should split parameters into a list of URLS") {
     val twoThousandCharsParam = (1 to 2000).map(_ => "x").mkString
@@ -69,6 +70,28 @@ class StatisticsSpec extends AnyFunSuite with Matchers {
       .map { url =>
         StatisticEncryptionSupport.decode(url.toString)
       } shouldBe Some(Map("f" -> "a+b", "v" -> "1.6.5-a%26b%3Dc", "fingerprint" -> "t", "req_id" -> "req_id"))
+  }
+
+  test("should not split links if below the limit") {
+    val cfg = StatisticUrlConfig(
+      maybePublicEncryptionKey = Some(PublicEncryptionKey(StatisticEncryptionSupport.publicKeyForTest))
+    )
+    val almostLimitLongParam = (1 to cfg.urlBytesSizeLimit - sizeForQueryParamsNames).map(_ => "x").mkString
+    val urls = new Statistics.NonEmpty(
+      new Fingerprint("t"),
+      new RequestId("req_id"),
+      Map("q1" -> almostLimitLongParam, "q2" -> "a")
+    ).prepareURLs(cfg)
+
+    urls
+      .getOrElse(List.empty)
+      .length shouldBe 1
+
+    urls
+      .getOrElse(List.empty)
+      .head
+      .toString
+      .length should be < 7000
   }
 
 }
