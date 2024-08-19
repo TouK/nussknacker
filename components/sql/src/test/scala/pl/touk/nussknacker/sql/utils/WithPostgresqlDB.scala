@@ -12,11 +12,10 @@ trait WithPostgresqlDB {
 
   var conn: Connection = _
 
-  override val container: PostgreSQLContainer =
-    PostgreSQLContainer(DockerImageName.parse("postgres:13"))
-
-  {
+  override val container: PostgreSQLContainer = {
+    val container = PostgreSQLContainer(DockerImageName.parse("postgres:13"))
     container.container.setPortBindings(List("5432:5432").asJava)
+    container
   }
 
   private val driverClassName = "org.postgresql.Driver"
