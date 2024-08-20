@@ -1,58 +1,27 @@
+import { get, uniqBy } from "lodash";
 import React, { createContext, PropsWithChildren, useCallback, useMemo, useState } from "react";
-import { ParametersListProps } from "../parametersList";
-import { useParameterPath } from "../parameterHelpers";
-import { get, padStart, uniqBy } from "lodash";
-import { AggregateValue, AggRow, appendUuid } from "./aggregatorField";
-import { useDiffMark } from "../PathsToMark";
 import { NodeValidationError } from "../../../../types";
-import { AggMapLikeLexer, AggMapLikeParser } from "./aggMapLikeParser";
-
-function useAggParamsSerializer(): [(text: string) => Record<string, string>, (paramName: string, map: Record<string, string>) => string] {
-    const parser = useMemo(() => new AggMapLikeParser(), []);
-
-    const deserialize = useCallback(
-        (text: string): Record<string, string> => {
-            const lexingResult = AggMapLikeLexer.tokenize(text);
-            parser.input = lexingResult.tokens;
-            return parser.object() || null;
-        },
-        [parser],
-    );
-
-    const serialize = useCallback((paramName: string, map: Record<string, string>): string => {
-        const entries = Object.entries(map || {}).map(([key, value]) => {
-            const trimmedKey = key.trim();
-            return [/^[^a-zA-Z]|\W/.test(trimmedKey) ? `"${trimmedKey}"` : trimmedKey, value];
-        });
-
-        const keyLength = entries.reduce((value, [key]) => Math.max(value, key.length), 0);
-        const content = entries.map(([key, value]) => `  ${padStart(key, keyLength, " ")}: ${value}`).join(",\n");
-
-        if (!content) return "";
-
-        switch (paramName) {
-            case "aggregator":
-                return `#AGG.map({\n${content}\n})`;
-            case "aggregateBy":
-                return `{\n${content}\n}`;
-        }
-    }, []);
-    return [deserialize, serialize];
-}
+import { useParameterPath } from "../parameterHelpers";
+import { ParametersListProps } from "../parametersList";
+import { useDiffMark } from "../PathsToMark";
+import { AggregateValue, AggRow, appendUuid } from "./aggregatorField";
+import { useAggParamsSerializer, useGroupByParamsSerializer } from "./useAggParamsSerializer";
 
 type AggregateContextProviderProps = PropsWithChildren<Pick<ParametersListProps, "node" | "setProperty" | "errors">>;
 
 export const AggregateContextProvider = ({ children, node, setProperty, errors }: AggregateContextProviderProps) => {
     const { parameters } = node;
 
-    const [deserialize, serialize] = useAggParamsSerializer();
+    const [deserializeGroupBy, serializeGroupBy] = useGroupByParamsSerializer();
+    const [deserializeAggregate, serializeAggregate] = useAggParamsSerializer();
 
+    const groupByPath = useParameterPath(parameters, "groupBy");
     const aggregatorPath = useParameterPath(parameters, "aggregator");
     const aggregateByPath = useParameterPath(parameters, "aggregateBy");
 
-    const [values = [], setValues] = useState(() => {
-        const aggregatorParam = deserialize(get(node, aggregatorPath));
-        const aggregateByParam = deserialize(get(node, aggregateByPath));
+    const [aggValues = [], setAggValues] = useState(() => {
+        const aggregatorParam = deserializeAggregate(get(node, aggregatorPath));
+        const aggregateByParam = deserializeAggregate(get(node, aggregateByPath));
 
         const keys = Object.keys({ ...aggregateByParam, ...aggregatorParam });
 
@@ -69,42 +38,75 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
             .map(appendUuid);
     });
 
-    const onChange = useCallback(
+    const onAggChange = useCallback(
         (values: AggregateValue[]) => {
-            setValues(values);
+            setAggValues(values);
             const aggregator = Object.fromEntries(values.map(({ name, agg }) => (name && agg ? [name, agg] : null)).filter(Boolean));
             const aggregateBy = Object.fromEntries(
                 values.map(({ name, expression }) => (name && expression ? [name, expression] : null)).filter(Boolean),
             );
-            setProperty(aggregatorPath, serialize("aggregator", aggregator));
-            setProperty(aggregateByPath, serialize("aggregateBy", aggregateBy));
+            setProperty(aggregatorPath, serializeAggregate("aggregator", aggregator));
+            setProperty(aggregateByPath, serializeAggregate("aggregateBy", aggregateBy));
         },
-        [aggregateByPath, aggregatorPath, serialize, setProperty],
+        [aggregateByPath, aggregatorPath, serializeAggregate, setProperty],
     );
 
     const [diffMark] = useDiffMark();
-    const isMarked = useMemo(() => diffMark(aggregatorPath) || diffMark(aggregateByPath), [aggregateByPath, aggregatorPath, diffMark]);
 
-    const fieldErrors = useMemo(() => {
-        const fieldErrors = errors.filter(({ fieldName }) => ["aggregator", "aggregateBy"].includes(fieldName));
-        return uniqBy(fieldErrors, "message");
-    }, [errors]);
-
-    const value = useMemo(
+    const aggregator = useMemo(
         () => ({
-            values,
-            onChange,
-            isMarked,
-            fieldErrors,
+            values: aggValues,
+            onChange: onAggChange,
+            isMarked: diffMark(aggregatorPath) || diffMark(aggregateByPath),
+            fieldErrors: uniqBy(
+                errors.filter(({ fieldName }) => ["aggregator", "aggregateBy"].includes(fieldName)),
+                "message",
+            ),
         }),
-        [fieldErrors, isMarked, onChange, values],
+        [aggregateByPath, aggregatorPath, diffMark, errors, onAggChange, aggValues],
     );
-    return <AggregateContext.Provider value={value}>{children}</AggregateContext.Provider>;
+
+    const [groupByValues, setGroupByValues] = useState<string[]>(() => {
+        const value: string = get(node, groupByPath) || serializeGroupBy("groupBy", []);
+        return value ? deserializeGroupBy(value) : [];
+    });
+
+    const groupBy = useMemo(
+        () => ({
+            values: groupByValues,
+            onChange: (values) => {
+                setGroupByValues(values);
+                setProperty(groupByPath, serializeGroupBy("groupBy", values));
+            },
+            isMarked: diffMark(groupByPath),
+            fieldErrors: errors.filter(({ fieldName }) => ["groupBy"].includes(fieldName)),
+        }),
+        [diffMark, errors, groupByPath, groupByValues, serializeGroupBy, setProperty],
+    );
+
+    return (
+        <AggregateContext.Provider
+            value={{
+                aggregator,
+                groupBy,
+            }}
+        >
+            {children}
+        </AggregateContext.Provider>
+    );
+};
+
+type FieldContext<T> = {
+    values: T[] | null;
+    onChange?: (value: T[]) => void;
+    isMarked?: boolean;
+    fieldErrors?: NodeValidationError[];
 };
 
 export const AggregateContext = createContext<{
-    values: AggregateValue[];
-    onChange?: (value: AggregateValue[]) => void;
-    isMarked?: boolean;
-    fieldErrors?: NodeValidationError[];
-}>({ values: null });
+    aggregator: FieldContext<AggregateValue>;
+    groupBy: FieldContext<string>;
+}>({
+    aggregator: { values: null },
+    groupBy: { values: null },
+});
