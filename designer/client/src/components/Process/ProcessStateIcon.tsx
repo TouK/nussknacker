@@ -2,8 +2,13 @@ import React from "react";
 import { ProcessStateType, Scenario } from "./types";
 import ProcessStateUtils from "./ProcessStateUtils";
 import UrlIcon from "../UrlIcon";
-import { Box, Divider, Popover, Typography } from "@mui/material";
+import { Box, Divider, Popover, styled, Typography } from "@mui/material";
 import { Errors } from "./ProcessErrors";
+
+const StyledUrlIcon = styled(UrlIcon)(({ theme }) => ({
+    width: theme.spacing(2.5),
+    height: theme.spacing(2.5),
+}));
 
 interface Props {
     processState?: ProcessStateType;
@@ -17,7 +22,7 @@ function ProcessStateIcon({ scenario, processState }: Props) {
 
     return (
         <>
-            <UrlIcon src={icon} title={tooltip} onClick={(event) => processState && setAnchorEl(event.currentTarget)} />
+            <StyledUrlIcon src={icon} title={tooltip} onClick={(event) => processState && setAnchorEl(event.currentTarget)} />
             <Popover
                 anchorEl={anchorEl}
                 anchorOrigin={{

@@ -43,6 +43,7 @@ class FragmentComponentDefinitionExtractor(
         outputNames = outputNames,
         docsUrl = fragmentSpecificData.docsUrl,
         componentGroupName = fragmentSpecificData.componentGroup.map(ComponentGroupName(_)),
+        icon = fragmentSpecificData.icon,
         translateGroupName = translateGroupName,
         designerWideId = componentId,
         allowedProcessingModes = allowedProcessingModes

@@ -59,9 +59,7 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
 
     switch (additionalInfo.type) {
         case "MarkdownAdditionalInfo": {
-            // eslint-disable-next-line i18next/no-literal-string
-            const linkTarget = "_blank";
-            return <MarkdownStyled linkTarget={linkTarget}>{additionalInfo.content}</MarkdownStyled>;
+            return <MarkdownStyled>{additionalInfo.content}</MarkdownStyled>;
         }
         default:
             // eslint-disable-next-line i18next/no-literal-string
