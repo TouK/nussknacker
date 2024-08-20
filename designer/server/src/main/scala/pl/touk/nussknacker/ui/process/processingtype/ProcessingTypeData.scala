@@ -101,7 +101,7 @@ object ProcessingTypeData {
       )
 
     val modelScenarioProps = modelData.modelConfig
-      .getOrElse[ScenarioProperties]("scenarioPropertiesConfig", ScenarioProperties.empty())
+      .getOrElse[ScenarioProperties]("scenarioProperties", ScenarioProperties.empty())
 
     def mergeConfigs = {
       modelScenarioProps.copy(
