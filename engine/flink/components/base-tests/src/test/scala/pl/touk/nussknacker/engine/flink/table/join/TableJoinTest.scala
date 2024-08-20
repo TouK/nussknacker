@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.join
 
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.types.Row
 import org.scalatest.funsuite.AnyFunSuite
@@ -12,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.{FlinkTableComponentProvider, SpelValues}
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -183,16 +182,96 @@ class TableJoinTest
     }
   }
 
+  test("should allow to use various types in main branch context") {
+    val mainBranchLocalVariableFields = Map(
+      "nestedRecord"  -> "{foo: 1, bar: '123'}".spel,
+      "listOfRecords" -> "{{foo: 1, bar: '123'}}".spel,
+      "instant"       -> SpelValues.spelInstant,
+      // TODO: add support for types not supported in table api
+//      "nullable" -> "null".spel,
+//      "offsetDateTime" -> SpelValues.spelOffsetDateTime,
+    )
+    val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
+      prepareJoiningScenario(JoinType.INNER, mainBranchLocalVariableFields = mainBranchLocalVariableFields),
+      List(someProduct, orderReferringToExistingProduct),
+      OrderOrProduct.`type`,
+      Boundedness.BOUNDED
+    )
+
+    enrichedOrders.validValue.errors shouldBe empty
+    enrichedOrders.validValue.successes shouldEqual List(
+      Map(
+        "orderId" -> orderReferringToExistingProduct.id,
+        "product" -> Map(
+          "id"   -> someProduct.id,
+          "name" -> someProduct.name
+        ).asJava
+      ).asJava
+    )
+  }
+
+  test("should allow to use various types in keys") {
+    val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
+      prepareJoiningScenario(
+        JoinType.INNER,
+        orderKeyExpression = "{foo: #input.productId}".spel,
+        productKeyExpression = "{foo: #input.id}".spel
+      ),
+      List(someProduct, orderReferringToExistingProduct),
+      OrderOrProduct.`type`,
+      Boundedness.BOUNDED
+    )
+
+    enrichedOrders.validValue.errors shouldBe empty
+    enrichedOrders.validValue.successes shouldEqual List(
+      Map(
+        "orderId" -> orderReferringToExistingProduct.id,
+        "product" -> Map(
+          "id"   -> someProduct.id,
+          "name" -> someProduct.name
+        ).asJava
+      ).asJava
+    )
+  }
+
+  test("should allow to use various types in joined output") {
+    val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
+      prepareJoiningScenario(
+        JoinType.INNER,
+        productOutputExpression = "{foo: #input}".spel,
+        extractProductField = "#product?.foo." + _
+      ),
+      List(someProduct, orderReferringToExistingProduct),
+      OrderOrProduct.`type`,
+      Boundedness.BOUNDED
+    )
+
+    enrichedOrders.validValue.errors shouldBe empty
+    enrichedOrders.validValue.successes shouldEqual List(
+      Map(
+        "orderId" -> orderReferringToExistingProduct.id,
+        "product" -> Map(
+          "id"   -> someProduct.id,
+          "name" -> someProduct.name
+        ).asJava
+      ).asJava
+    )
+  }
+
   private def prepareJoiningScenario(
       joinType: JoinType,
       orderKeyExpression: Expression = "#input.productId".spel,
-      productKeyExpression: Expression = "#input.id".spel
+      productKeyExpression: Expression = "#input.id".spel,
+      productOutputExpression: Expression = "#input".spel,
+      extractProductField: String => String = "#product?." + _,
+      mainBranchLocalVariableFields: Iterable[(String, Expression)] = Seq.empty
   ) = ScenarioBuilder
     .streaming(classOf[TableJoinTest].getSimpleName)
     .sources(
       GraphBuilder
         .source("orders-source", TestScenarioRunner.testDataSource)
         .filter("orders-filter", "#input.type == 'order'".spel)
+        .buildVariable("example-transformations", "out", mainBranchLocalVariableFields.toSeq: _*)
         .branchEnd(mainBranchId, joinNodeId),
       GraphBuilder
         .source("products-source", TestScenarioRunner.testDataSource)
@@ -214,19 +293,19 @@ class TableJoinTest
             )
           ),
           "Join Type" -> s"T(${classOf[JoinType].getName}).$joinType".spel,
-          "Output"    -> "#input".spel,
+          "Output"    -> productOutputExpression,
         )
         .emptySink(
           "end",
           TestScenarioRunner.testResultSink,
           "value" ->
-            """{
-              |  orderId: #input.id,
-              |  product: {
-              |   id: #product?.id,
-              |   name: #product?.name
-              |  }
-              |}""".stripMargin.spel
+            s"""{
+               |  orderId: #input.id,
+               |  product: {
+               |   id: ${extractProductField("id")},
+               |   name: ${extractProductField("name")}
+               |  }
+               |}""".stripMargin.spel
         )
     )
 

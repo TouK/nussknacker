@@ -12,27 +12,37 @@ object RowConversions {
 
   import scala.jdk.CollectionConverters._
 
-  def contextToRow(context: Context): Row = {
-    def scalaMapToRow(map: Map[String, Any]): Row = {
-      val row = Row.withNames()
-      map.foreach { case (name, value) =>
-        row.setField(name, value)
-      }
-      row
-    }
-    val row          = Row.withPositions(context.parentContext.map(_ => 3).getOrElse(2))
-    val variablesRow = scalaMapToRow(context.variables)
+  def contextToRow(context: Context, validationContext: ValidationContext): Row = {
+    val parentContextAsRow = for {
+      parentValidationContext <- validationContext.parent
+      parentContext           <- context.parentContext
+    } yield contextToRow(parentContext, parentValidationContext)
+    val row          = Row.withPositions(parentContextAsRow.map(_ => 3).getOrElse(2))
+    val variablesRow = encodeVariables(context.variables, validationContext)
     row.setField(0, context.id)
     row.setField(1, variablesRow)
-    context.parentContext.map(contextToRow).foreach(row.setField(2, _))
+    parentContextAsRow.foreach(row.setField(2, _))
+    row
+  }
+
+  private def encodeVariables(variables: Map[String, Any], validationContext: ValidationContext): Row = {
+    val row = Row.withNames()
+    variables.foreach { case (variableName, variableValue) =>
+      val encodedValue = validationContext
+        .get(variableName)
+        .map(BestEffortTableTypeEncoder.encode(variableValue, _))
+        .getOrElse(variableValue)
+      row.setField(variableName, encodedValue)
+    }
     row
   }
 
   def rowToContext(row: Row): Context = {
     def rowToScalaMap(row: Row): Map[String, AnyRef] = {
       val fieldNames = row.getFieldNames(true).asScala
-      val fields     = fieldNames.map(n => n -> row.getField(n)).toMap
-      fields
+      fieldNames.map { fieldName =>
+        fieldName -> row.getField(fieldName)
+      }.toMap
     }
     Context(
       row.getField(0).asInstanceOf[String],
@@ -45,7 +55,10 @@ object RowConversions {
 
     def contextRowTypeInfo(validationContext: ValidationContext): TypeInformation[_] = {
       val (fieldNames, typeInfos) =
-        validationContext.localVariables.mapValuesNow(typeInformationDetection.forType).unzip
+        validationContext.localVariables
+          .mapValuesNow(BestEffortTableTypeEncoder.alignTypingResult)
+          .mapValuesNow(typeInformationDetection.forType)
+          .unzip
       val variablesRow = new RowTypeInfo(typeInfos.toArray[TypeInformation[_]], fieldNames.toArray)
       Types.ROW(Types.STRING :: variablesRow :: validationContext.parent.map(contextRowTypeInfo).toList: _*)
     }

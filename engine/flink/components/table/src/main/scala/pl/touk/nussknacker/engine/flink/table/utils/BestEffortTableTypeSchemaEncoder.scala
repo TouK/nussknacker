@@ -17,6 +17,10 @@ object BestEffortTableTypeSchemaEncoder {
 
   private val rowClass = classOf[Row]
 
+  private val listClass = classOf[java.util.List[_]]
+
+  private val arrayClass = classOf[Array[AnyRef]]
+
   def encode(value: Any, targetType: LogicalType): Any = {
     val alignedValue = (value, targetType) match {
       case (null, _) =>
@@ -103,10 +107,10 @@ object BestEffortTableTypeSchemaEncoder {
       case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil), multisetType: MultisetType)
           if valueType.canBeSubclassOf(Typed[Int]) =>
         alignMultisetType(keyType, multisetType)
-      case (TypedClass(clazz, elementType :: Nil), arrayType: ArrayType) if clazz == classOf[Array[AnyRef]] =>
-        Typed.genericTypeClass(classOf[Array[AnyRef]], List(alignTypingResult(elementType, arrayType.getElementType)))
-      case (TypedClass(clazz, elementType :: Nil), arrayType: ArrayType) if clazz == classOf[java.util.List[_]] =>
-        Typed.genericTypeClass(classOf[Array[AnyRef]], List(alignTypingResult(elementType, arrayType.getElementType)))
+      case (TypedClass(`arrayClass`, elementType :: Nil), arrayType: ArrayType) =>
+        Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
+      case (TypedClass(`listClass`, elementType :: Nil), arrayType: ArrayType) =>
+        Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
       case (other, _) =>
         // We fallback to input typing result - some conversions could be done by Flink
         other
