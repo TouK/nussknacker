@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.{FlinkTableComponentProvider, SpelValues}
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
 import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.table.utils.NotConvertibleResultOfAlignmentException
@@ -48,8 +48,9 @@ class TableFileSinkTest
   private val advancedPingPongOutputTableName   = "advanced-ping-pong-output"
   private val advancedExpressionOutputTableName = "advanced-expression-output"
 
-  private val datetimePingPongInputTableName  = "datetime-ping-pong-input"
-  private val datetimePingPongOutputTableName = "datetime-ping-pong-output"
+  private val datetimePingPongInputTableName    = "datetime-ping-pong-input"
+  private val datetimePingPongOutputTableName   = "datetime-ping-pong-output"
+  private val datetimeExpressionOutputTableName = "datetime-expression-output"
 
   private val virtualColumnInputTableName  = "virtual-column-input"
   private val virtualColumnOutputTableName = "virtual-column-output"
@@ -75,6 +76,8 @@ class TableFileSinkTest
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$datetimePingPongInputTableName")
   private lazy val datetimePingPongOutputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$datetimePingPongOutputTableName")
+  private lazy val datetimeExpressionOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$datetimeExpressionOutputTableName")
 
   private lazy val virtualColumnOutputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$virtualColumnOutputTableName")
@@ -200,6 +203,12 @@ class TableFileSinkTest
       |      'path' = 'file:///$datetimePingPongOutputDirectory',
       |      'format' = 'json'
       |) LIKE `$datetimePingPongInputTableName`;
+      |
+      |CREATE TABLE `$datetimeExpressionOutputTableName` WITH (
+      |      'connector' = 'filesystem',
+      |      'path' = 'file:///$datetimeExpressionOutputDirectory',
+      |      'format' = 'json'
+      |) LIKE `$datetimePingPongInputTableName`;
       |""".stripMargin
 
   private lazy val sqlTablesDefinitionFilePath = {
@@ -235,6 +244,7 @@ class TableFileSinkTest
     FileUtils.deleteQuietly(advancedExpressionOutputDirectory.toFile)
     FileUtils.deleteQuietly(datetimePingPongInputDirectory.toFile)
     FileUtils.deleteQuietly(datetimePingPongOutputDirectory.toFile)
+    FileUtils.deleteQuietly(datetimeExpressionOutputDirectory.toFile)
     FileUtils.deleteQuietly(oneColumnOutputDirectory.toFile)
     FileUtils.deleteQuietly(virtualColumnOutputDirectory.toFile)
     super.afterAll()
@@ -566,6 +576,41 @@ class TableFileSinkTest
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimePingPongOutputDirectory)
+
+    outputFileContent.loneElement shouldBe expectedContent
+  }
+
+  test("should be possible to provide values for datetime types by spel expressions") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"         -> s"'$datetimeExpressionOutputTableName'".spel,
+        "Raw editor"    -> "false".spel,
+        "date"          -> "T(java.time.LocalDate).parse('2024-01-01')".spel,
+        "time"          -> "T(java.time.LocalTime).parse('12:01:02.000000003')".spel,
+        "timestamp"     -> "T(java.time.LocalDateTime).parse('2024-01-01T12:01:02.000000003')".spel,
+        "timestamp_ltz" -> "T(java.time.Instant).parse('2024-01-01T12:01:02.000000003Z')".spel,
+      )
+
+    val expectedContent = Json
+      .fromFields(
+        List(
+          "date" -> Json.fromString("2024-01-01"),
+          // CREATE TABLE statement doesn't take into consideration fractional seconds precision - it is always TIME(0)
+          "time"          -> Json.fromString("12:01:02"),
+          "timestamp"     -> Json.fromString("2024-01-01 12:01:02.000000003"),
+          "timestamp_ltz" -> Json.fromString("2024-01-01 12:01:02.000000003Z"),
+        )
+      )
+      .noSpaces
+
+    val result = runner.runWithoutData(scenario)
+    result.validValue.errors shouldBe empty
+
+    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimeExpressionOutputDirectory)
 
     outputFileContent.loneElement shouldBe expectedContent
   }
