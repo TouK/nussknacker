@@ -129,9 +129,9 @@ paths:
                   summary: Result of activities full-text search
                   value:
                     foundActivities:
-                    - id: 2c0af07d-4eaa-422a-8d1a-84d299e74fe2
+                    - id: f640f359-64b8-47cc-80a3-c48c266dc070
                       index: 101
-                    - id: 7889376c-af8d-4dfa-9a72-83ca73f29946
+                    - id: 14f4f954-6d66-4a5a-87b1-afa543cff9c5
                       index: 498
         '400':
           description: 'Invalid value for: query parameter searchText, Invalid value
@@ -305,39 +305,39 @@ paths:
                   summary: Display scenario actions
                   value:
                     activities:
-                    - id: 8252c5f8-1a66-492e-a502-d0e77b5ebead
+                    - id: 33e5143e-187d-455e-99ec-56f607729c98
                       type: SCENARIO_CREATED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       additionalFields: []
-                    - id: bd37b413-c5c1-4531-bccf-2c7c9ef3c767
+                    - id: 4677ad89-154a-424d-b1d3-26632b0b6b8a
                       type: SCENARIO_ARCHIVED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       additionalFields: []
-                    - id: dbac6264-fa76-49d4-8adc-383771c9391f
+                    - id: aa4b30a8-9051-4a2a-ae6e-7042210ae096
                       type: SCENARIO_UNARCHIVED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       additionalFields: []
-                    - id: 97955662-253a-4b47-a3a1-a3c686e2ceeb
+                    - id: 10b5f550-eaef-419d-8264-219dca9a84c5
                       type: SCENARIO_DEPLOYED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Deployment of scenario - task JIRA-1234
                       additionalFields: []
-                    - id: 03b56b73-cfa7-4944-9662-5c4e1b8f1226
+                    - id: d3381b4d-220e-459e-bedd-71b142c257a7
                       type: SCENARIO_CANCELED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Canceled because marketing campaign ended
                       additionalFields: []
-                    - id: 9157e61e-bb4c-44ac-b23b-05239e7cdbf4
+                    - id: c21a0472-6bef-4b44-aacc-aae307546d89
                       type: SCENARIO_MODIFIED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -345,7 +345,7 @@ paths:
                       comment: Added new processing step
                       additionalFields: []
                       overrideDisplayableName: Version 1 saved
-                    - id: 424d8abf-1b84-4fcb-b9f7-d9b93a603ecf
+                    - id: 4a6805de-6555-4976-92b2-9baefcccd990
                       type: SCENARIO_NAME_CHANGED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -355,14 +355,14 @@ paths:
                         value: marketing campaign
                       - name: newName
                         value: old marketing campaign
-                    - id: 75ee76d6-4ef8-4649-be1a-6688b730f218
+                    - id: cd1eb7b8-b266-44b3-983b-e4ba0cecb44b
                       type: COMMENT_ADDED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Now scenario handles errors in datasource better
                       additionalFields: []
-                    - id: e25efda9-f5d3-470d-9d96-adc180a878ef
+                    - id: 552cf846-a330-46d8-a747-5884813ea6a3
                       type: COMMENT_ADDED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -371,7 +371,7 @@ paths:
                       - name: deletedByUser
                         value: John Doe
                       overrideSupportedActions: []
-                    - id: ece0ceec-621d-4261-9b3d-54205c3e8ed4
+                    - id: 12540601-f4d4-43ca-a303-a19baee30f8f
                       type: ATTACHMENT_ADDED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -381,7 +381,7 @@ paths:
                         value: '10000001'
                       - name: attachmentFilename
                         value: attachment01.png
-                    - id: 7136db97-cb7d-489b-be29-aa104ade7811
+                    - id: b350c1f4-0dda-4672-a525-23697fd58a2c
                       type: ATTACHMENT_ADDED
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -390,7 +390,7 @@ paths:
                       - name: deletedByUser
                         value: John Doe
                       overrideSupportedActions: []
-                    - id: 03f1f6b8-40ef-4fea-9ebd-75ffe34b894e
+                    - id: 4de805c3-498d-4d51-837e-6931ba58f9fb
                       type: CHANGED_PROCESSING_MODE
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -400,7 +400,7 @@ paths:
                         value: Request-Response
                       - name: to
                         value: Request-Response
-                    - id: 0e3aacb9-0353-41d1-a9ca-5c49fe97f145
+                    - id: adaa9335-6ca9-4afe-9791-0bb71375f6e8
                       type: INCOMING_MIGRATION
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -411,7 +411,7 @@ paths:
                         value: preprod
                       - name: sourceProcessVersionId
                         value: '23'
-                    - id: f0aba6b8-28c7-4575-8fc2-f46e53def821
+                    - id: 3dedd8bf-b3da-4d91-a3ea-a424a5248548
                       type: OUTGOING_MIGRATION
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -420,7 +420,7 @@ paths:
                       additionalFields:
                       - name: destinationEnvironment
                         value: preprod
-                    - id: c72d3bfb-6040-4225-9f61-95de4be206a2
+                    - id: 44a59921-c99b-4dcd-8ec3-06739c0825e3
                       type: PERFORMED_SINGLE_EXECUTION
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -430,7 +430,7 @@ paths:
                         value: '2024-01-17T14:21:17Z'
                       - name: status
                         value: Successfully executed
-                    - id: 2172c10a-dee5-4d80-9a1e-7730a9ec3bf0
+                    - id: f1bd6bc5-f624-4074-aa3d-072fda51331d
                       type: PERFORMED_SCHEDULED_EXECUTION
                       user: some user
                       date: '2024-01-17T14:21:17Z'
@@ -442,7 +442,7 @@ paths:
                         value: '2024-01-17T14:21:17Z'
                       - name: status
                         value: Successfully executed
-                    - id: 76f65549-39ac-430d-9158-a51debf0479d
+                    - id: e4f55ffb-e595-417b-8586-2c2eee99d75e
                       type: AUTOMATIC_UPDATE
                       user: some user
                       date: '2024-01-17T14:21:17Z'

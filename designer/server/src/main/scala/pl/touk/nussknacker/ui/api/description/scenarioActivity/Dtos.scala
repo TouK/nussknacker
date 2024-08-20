@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.Enum
 import enumeratum.EnumEntry.UpperSnakecase
+import enumeratum.{Enum, EnumEntry}
 import io.circe
 import io.circe.generic.extras.Configuration
 import io.circe.{Decoder, Encoder}
@@ -23,6 +23,7 @@ import sttp.tapir.derevo.schema
 
 import java.io.InputStream
 import java.time.Instant
+import scala.collection.immutable
 
 object Dtos {
 
@@ -81,7 +82,7 @@ object Dtos {
 
   }
 
-  sealed trait ScenarioActivityType extends UpperSnakecase {
+  sealed trait ScenarioActivityType extends EnumEntry with UpperSnakecase {
     def displayableName: String
     def icon: String
     def supportedActions: List[String]
@@ -179,7 +180,7 @@ object Dtos {
       override def supportedActions: List[String] = List("compare")
     }
 
-    override def values: IndexedSeq[ScenarioActivityType] = findValues
+    override def values: immutable.IndexedSeq[ScenarioActivityType] = findValues
 
   }
 
