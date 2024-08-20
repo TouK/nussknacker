@@ -4,7 +4,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import pl.touk.nussknacker.engine.api.typed.TypingResultGen._
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-import java.time.LocalDateTime
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
 import java.util.Collections
 import scala.jdk.CollectionConverters._
 
@@ -27,9 +27,15 @@ class TypingResultGen private (features: EnabledTypedFeatures) {
 
   private lazy val stringGen = Gen.const("foo")
 
-  private lazy val localDateTimeGen = Gen.const(LocalDateTime.now())
+  private lazy val timeGen = Gen.oneOf(
+    Gen.const(LocalDateTime.now()),
+    Gen.const(LocalDate.now()),
+    Gen.const(LocalTime.now()),
+    Gen.const(Duration.ofDays(1)),
+    Gen.const(Period.ofDays(2)),
+  )
 
-  private lazy val simpleTypeGen = Gen.oneOf(nullGen, numberGen, booleanGen, stringGen, localDateTimeGen)
+  private lazy val simpleTypeGen = Gen.oneOf(nullGen, numberGen, booleanGen, stringGen, timeGen)
 
   private lazy val listGen = valueGen.map(Collections.singletonList)
 
