@@ -84,6 +84,28 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
     result.isValid shouldBe true
   }
 
+  test("should be able to group by advanced types") {
+    val aggregatingBranches =
+      ("{foo: 1}".spel ::
+        "{{foo: 1, bar: '123'}}".spel :: Nil).zipWithIndex.map { case (expr, branchIndex) =>
+        aggregationTypeTestingBranch(
+          groupByExpr = expr,
+          aggregateByExpr = spelStr,
+          idSuffix = branchIndex.toString
+        )
+      }
+
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .split(
+        "split",
+        aggregatingBranches: _*
+      )
+    val result = runner.runWithoutData(scenario)
+    result shouldBe Symbol("valid")
+  }
+
   // TODO: remove when Flink Table API adds support for OffsetDateTime
   test("throws exception when using not supported OffsetDateTime in aggregate") {
     val scenario = ScenarioBuilder
