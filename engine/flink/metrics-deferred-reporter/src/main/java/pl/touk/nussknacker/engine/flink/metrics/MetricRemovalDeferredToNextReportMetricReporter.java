@@ -1,19 +1,19 @@
 package pl.touk.nussknacker.engine.flink.metrics;
 
-import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.metrics.Metric;
 import org.apache.flink.metrics.MetricConfig;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.reporter.MetricReporter;
 import org.apache.flink.metrics.reporter.Scheduled;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MetricRemovalDeferredToNextReportMetricReporter implements MetricReporter, Scheduled {
 
     private final MetricReporter delegate;
-    private final Set<Tuple3<Metric, String, MetricGroup>> metricsToRemoveAfterNextReport = new HashSet<>();
+    private final Map<Metric, Tuple2<String, MetricGroup>> metricsToRemoveAfterNextReport = new HashMap<>();
 
     public MetricRemovalDeferredToNextReportMetricReporter(MetricReporter delegate) {
         if (!(delegate instanceof Scheduled)) {
@@ -33,13 +33,14 @@ public class MetricRemovalDeferredToNextReportMetricReporter implements MetricRe
     }
 
     @Override
-    public void notifyOfAddedMetric(Metric metric, String metricName, MetricGroup group) {
+    public synchronized void notifyOfAddedMetric(Metric metric, String metricName, MetricGroup group) {
         delegate.notifyOfAddedMetric(metric, metricName, group);
+        metricsToRemoveAfterNextReport.remove(metric);
     }
 
     @Override
     public synchronized void notifyOfRemovedMetric(Metric metric, String metricName, MetricGroup group) {
-        metricsToRemoveAfterNextReport.add(Tuple3.of(metric, metricName, group));
+        metricsToRemoveAfterNextReport.put(metric, Tuple2.of(metricName, group));
     }
 
     @Override
@@ -47,7 +48,7 @@ public class MetricRemovalDeferredToNextReportMetricReporter implements MetricRe
         try {
             ((Scheduled) delegate).report();
         } finally {
-            metricsToRemoveAfterNextReport.forEach(metricTuple -> delegate.notifyOfRemovedMetric(metricTuple.f0, metricTuple.f1, metricTuple.f2));
+            metricsToRemoveAfterNextReport.forEach((key, value) -> delegate.notifyOfRemovedMetric(key, value.f0, value.f1));
             metricsToRemoveAfterNextReport.clear();
         }
     }
