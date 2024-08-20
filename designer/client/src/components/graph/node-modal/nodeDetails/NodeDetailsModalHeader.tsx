@@ -51,9 +51,16 @@ export const getNodeDetailsModalTitle = (node: NodeType): string => {
 };
 
 export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactElement => {
-    const { components = {} } = useSelector(getProcessDefinitionData);
+    const { components = {}, scenarioPropertiesConfig } = useSelector(getProcessDefinitionData);
 
-    const docsUrl = useMemo(() => ProcessUtils.extractComponentDefinition(node, components)?.docsUrl, [components, node]);
+    const docsUrl = useMemo(() => {
+        // we check for properties icon for dynamic url load through user config
+        if (node.type === "Properties" && scenarioPropertiesConfig) {
+            return scenarioPropertiesConfig.docsUrl;
+        }
+        return ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
+    }, [components, node, scenarioPropertiesConfig]);
+
     const nodeClass = findNodeClass(node);
 
     return <NodeDocs name={nodeClass} href={docsUrl} />;
