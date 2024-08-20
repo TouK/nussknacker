@@ -11,7 +11,7 @@ import java.util
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
-object BestEffortTableTypeEncoder {
+object BestEffortTableTypeSchemaEncoder {
 
   private val javaMapClass = classOf[java.util.Map[_, _]]
 

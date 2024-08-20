@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExc
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.utils.BestEffortTableTypeEncoder
+import pl.touk.nussknacker.engine.flink.table.utils.BestEffortTableTypeSchemaEncoder
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 
 class TableSink(
@@ -83,7 +83,7 @@ class EncodeAsTableTypeFunction private (
   override def flatMap(valueWithContext: ValueWithContext[AnyRef], out: Collector[Row]): Unit = {
     exceptionHandler
       .handling(Some(NodeComponentInfo(nodeId, ComponentType.Sink, "table")), valueWithContext.context) {
-        BestEffortTableTypeEncoder.encode(valueWithContext.value, sinkRowType)
+        BestEffortTableTypeSchemaEncoder.encode(valueWithContext.value, sinkRowType)
       }
       .foreach(out.collect)
   }
@@ -99,7 +99,7 @@ object EncodeAsTableTypeFunction {
       valueReturnType: TypingResult,
       sinkRowType: RowType
   ): EncodeAsTableTypeFunction = {
-    val alignedType  = BestEffortTableTypeEncoder.alignTypingResult(valueReturnType, sinkRowType)
+    val alignedType  = BestEffortTableTypeSchemaEncoder.alignTypingResult(valueReturnType, sinkRowType)
     val producedType = flinkNodeContext.typeInformationDetection.forType[Row](alignedType)
     new EncodeAsTableTypeFunction(
       flinkNodeContext.exceptionHandlerPreparer,
