@@ -1,18 +1,18 @@
-import { FieldWrapperProps } from "../ParameterExpressionField";
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { findParamDefinitionByName } from "../parameterHelpers";
-import { useArrayState } from "rooks";
-import { NodeRowFieldsProvider } from "../node-row-fields-provider";
-import { v4 as uuid4 } from "uuid";
-import { AggregatorFieldsStack } from "./aggregatorFieldsStack";
-import { useSelector } from "react-redux";
-import { getFindAvailableVariables } from "../NodeDetailsContent/selectors";
-import { FieldsRow } from "../fragment-input-definition/FieldsRow";
-import { DndItems } from "../../../common/dndItems/DndItems";
 import { cx } from "@emotion/css";
+import { Box } from "@mui/material";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import { useArrayState } from "rooks";
+import { v4 as uuid4 } from "uuid";
+import { DndItems } from "../../../common/dndItems/DndItems";
+import { FieldsRow } from "../fragment-input-definition/FieldsRow";
+import { NodeRowFieldsProvider } from "../node-row-fields-provider";
+import { getFindAvailableVariables } from "../NodeDetailsContent/selectors";
+import { FieldWrapperProps } from "../ParameterExpressionField";
+import { findParamDefinitionByName } from "../parameterHelpers";
 
 import { AggregateContext } from "./aggregateContext";
-import { Box } from "@mui/material";
+import { AggregatorFieldsStack } from "./aggregatorFieldsStack";
 
 export type AggRow = {
     name: string;
@@ -36,7 +36,8 @@ export function AggregatorField({ parameterDefinitions, node: { id }, isEditMode
         return definition.editor.simpleEditor.possibleValues;
     }, [parameterDefinitions]);
 
-    const { values, onChange, isMarked, fieldErrors = [] } = useContext(AggregateContext);
+    const { aggregator } = useContext(AggregateContext);
+    const { values, onChange, isMarked, fieldErrors = [] } = aggregator;
     const [data, dataControls] = useArrayState<AggregateValue>(() => values);
 
     const onAdd = useCallback(

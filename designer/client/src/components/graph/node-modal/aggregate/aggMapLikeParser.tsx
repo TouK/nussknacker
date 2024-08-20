@@ -1,5 +1,21 @@
 import { createToken, EmbeddedActionsParser, Lexer } from "chevrotain";
 
+const CollectionOpen = createToken({
+    name: "CollectionOpen",
+    pattern: /#COLLECTION.join\(\{/,
+});
+const CollectionClose = createToken({
+    name: "CollectionClose",
+    pattern: /}, "|"\)/,
+});
+const ListOpen = createToken({
+    name: "ListOpen",
+    pattern: /{/,
+});
+const ListClose = createToken({
+    name: "ListClose",
+    pattern: /}\.toString/,
+});
 const MapOpen = createToken({
     name: "MapOpen",
     pattern: /(#AGG\.map\()?{/,
@@ -34,7 +50,20 @@ const WhiteSpace = createToken({
     group: Lexer.SKIPPED,
 });
 
-const aggMapTokens = [MapClose, MapOpen, Comma, Spel, Identifier, Number, Colon, WhiteSpace];
+const aggMapTokens = [
+    CollectionClose,
+    CollectionOpen,
+    ListClose,
+    ListOpen,
+    MapClose,
+    MapOpen,
+    Comma,
+    Spel,
+    Identifier,
+    Number,
+    Colon,
+    WhiteSpace,
+];
 
 export const AggMapLikeLexer = new Lexer(aggMapTokens);
 
@@ -80,5 +109,54 @@ export class AggMapLikeParser extends EmbeddedActionsParser {
         }
 
         return obj;
+    });
+
+    collection = this.RULE("collection", () => {
+        const arr = [];
+
+        this.OR([
+            {
+                ALT: () => {
+                    this.CONSUME(CollectionOpen);
+                    this.AT_LEAST_ONE_SEP({
+                        SEP: Comma,
+                        DEF: () => {
+                            const item = this.SUBRULE(this.collectionItem);
+                            if (!item) return;
+                            arr.push(item);
+                        },
+                    });
+                    this.CONSUME(CollectionClose);
+                },
+            },
+            {
+                ALT: () => {
+                    this.CONSUME(ListOpen);
+                    this.AT_LEAST_ONE_SEP2({
+                        SEP: Comma,
+                        DEF: () => {
+                            const item = this.SUBRULE2(this.collectionItem);
+                            if (!item) return;
+                            arr.push(item);
+                        },
+                    });
+                    this.CONSUME(ListClose);
+                },
+            },
+        ]);
+
+        return arr;
+    });
+
+    collectionItem = this.RULE("collectionItem", () => {
+        const value = this.OR([
+            { ALT: () => this.CONSUME(Spel) },
+            { ALT: () => this.CONSUME(Identifier) },
+            { ALT: () => this.CONSUME(Number) },
+        ]);
+
+        if (!value.isInsertedInRecovery) {
+            return value.image;
+        }
     });
 }

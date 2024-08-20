@@ -52,7 +52,7 @@ function splitElements(sortedElements: HTMLElement[], currentElement: HTMLElemen
     return [nextElements, prevElements];
 }
 
-function getTabindexedElements(root: Element, currentElement?: HTMLElement): [HTMLElement[], HTMLElement[]] {
+export function getTabindexedElements(root: Element, currentElement?: HTMLElement): [HTMLElement[], HTMLElement[]] {
     const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, (node: HTMLElement) => {
         if (currentElement === node) {
             return NodeFilter.FILTER_ACCEPT;
