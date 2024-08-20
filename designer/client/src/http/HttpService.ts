@@ -234,9 +234,8 @@ class HttpService {
     }
 
     fetchProcessDefinitionData(processingType: string, isFragment: boolean) {
-        const promise = api
-            .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`)
-            .then(({ data, ...response }) => ({
+        const promise = api.get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`).then(
+            ({ data, ...response }): AxiosResponse<ProcessDefinitionData> => ({
                 ...response,
                 data: {
                     ...data,
@@ -245,7 +244,8 @@ class HttpService {
                         components: components.map(fixBranchParametersTemplate).map(fixAggregateParameters),
                     })),
                 },
-            }));
+            }),
+        );
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true),
         );
