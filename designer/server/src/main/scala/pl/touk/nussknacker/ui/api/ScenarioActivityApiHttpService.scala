@@ -3,15 +3,16 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
-import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints
-import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError.{
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   NoComment,
   NoPermission,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Endpoints
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -32,26 +33,31 @@ class ScenarioActivityApiHttpService(
     streamEndpointProvider: TapirStreamEndpointProvider
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
+    with BaseEndpointDefinitions
     with LazyLogging {
 
-  private val scenarioActivityApiEndpoints = new ScenarioActivityApiEndpoints(
-    authManager.authenticationEndpointInput()
-  )
+  implicit val streamEndpointProviderImpl: TapirStreamEndpointProvider = streamEndpointProvider
+
+  private val securityInput = authManager.authenticationEndpointInput()
+
+  Endpoints.swaggerEndpoints.foreach(expose)
 
   expose {
-    scenarioActivityApiEndpoints.scenarioActivityEndpoint
+    Endpoints.scenarioActivityEndpoint
+      .withSecurity(securityInput)
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
         for {
           scenarioId       <- getScenarioIdByName(scenarioName)
           _                <- isAuthorized(scenarioId, Permission.Read)
           scenarioActivity <- EitherT.right(scenarioActivityRepository.findActivity(scenarioId))
-        } yield ScenarioActivity(scenarioActivity)
+        } yield ScenarioCommentsAndAttachments(scenarioActivity)
       }
   }
 
   expose {
-    scenarioActivityApiEndpoints.addCommentEndpoint
+    Endpoints.addCommentEndpoint
+      .withSecurity(securityInput)
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: AddCommentRequest =>
         for {
@@ -63,7 +69,8 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    scenarioActivityApiEndpoints.deleteCommentEndpoint
+    Endpoints.deleteCommentEndpoint
+      .withSecurity(securityInput)
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: DeleteCommentRequest =>
         for {
@@ -75,8 +82,8 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    scenarioActivityApiEndpoints
-      .addAttachmentEndpoint(streamEndpointProvider.streamBodyEndpointInput)
+    Endpoints.addAttachmentEndpoint
+      .withSecurity(securityInput)
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: AddAttachmentRequest =>
         for {
@@ -88,8 +95,8 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    scenarioActivityApiEndpoints
-      .downloadAttachmentEndpoint(streamEndpointProvider.streamBodyEndpointOutput)
+    Endpoints.downloadAttachmentEndpoint
+      .withSecurity(securityInput)
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
         for {

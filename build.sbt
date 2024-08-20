@@ -1867,6 +1867,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
   .enablePlugins(GenerateDesignerOpenApiPlugin)
+  .enablePlugins(GenerateScenarioActivityOpenApiPlugin)
   .settings(slowTestsSettings)
   .settings(commonSettings)
   .settings(
