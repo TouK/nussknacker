@@ -338,15 +338,15 @@ class TableFileSinkTest
 
     val basicTypesExpression = Expression.spel(s"""
         |{
-        |  boolean: $spelBoolean,
-        |  string: $spelStr,
-        |  tinyInt: $spelByte,
-        |  smallInt: $spelShort,
-        |  int: $spelInt,
-        |  bigint: $spelLong,
-        |  decimal: $spelBigDecimal,
-        |  float:  $spelFloat,
-        |  double: $spelDouble
+        |  boolean: ${spelBoolean.expression},
+        |  string: ${spelStr.expression},
+        |  tinyInt: ${spelByte.expression},
+        |  smallInt: ${spelShort.expression},
+        |  int: ${spelInt.expression},
+        |  bigint: ${spelLong.expression},
+        |  decimal: ${spelBigDecimal.expression},
+        |  float:  ${spelFloat.expression},
+        |  double: ${spelDouble.expression}
         |}
         |""".stripMargin)
 
@@ -374,8 +374,8 @@ class TableFileSinkTest
   test("should skip redundant fields") {
     val valueExpression = Expression.spel(s"""
          |{
-         |  two: $spelInt,
-         |  one: $spelInt
+         |  two: 234,
+         |  one: 123
          |}
          |""".stripMargin)
 
