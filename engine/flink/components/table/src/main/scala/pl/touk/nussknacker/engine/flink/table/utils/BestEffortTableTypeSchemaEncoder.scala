@@ -62,8 +62,7 @@ object BestEffortTableTypeSchemaEncoder {
 
   private def encodeRecord[RecordType](record: RecordType, rowType: RowType, getField: RecordType => String => Any) = {
     val row = Row.withNames()
-    // We have to keep elements in the same order as in TypingInfo generated based on TypingResults, see TypingResultAwareTypeInformationDetection
-    rowType.getFields.asScala.sortBy(_.getName).foreach { fieldType =>
+    rowType.getFields.asScala.foreach { fieldType =>
       val fieldValue = getField(record)(fieldType.getName)
       row.setField(fieldType.getName, encode(fieldValue, fieldType.getType))
     }
