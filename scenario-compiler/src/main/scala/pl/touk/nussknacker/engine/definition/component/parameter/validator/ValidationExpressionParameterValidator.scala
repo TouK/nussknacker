@@ -22,6 +22,17 @@ case class ValidationExpressionParameterValidator(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     value match {
+      case None if !expression.expression.isBlank =>
+        invalid(
+          CustomParameterValidationError(
+            message =
+              s"Value of expression '${expression.expression}' was unable to be determined at deployment time and it cannot be used with expression validation.",
+            description =
+              s"Please provide a value that is evaluable at deployment time and satisfies the validation expression '${validationExpression.original}'",
+            paramName = paramName,
+            nodeId = nodeId.id
+          )
+        )
       case None       => valid(())
       case Some(null) => valid(())
       case Some(v)    => validateValue(paramName, v)
