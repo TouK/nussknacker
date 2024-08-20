@@ -7,7 +7,6 @@ import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
 import sttp.model.HeaderNames
 import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
-import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
 import sttp.tapir.docs.openapi.OpenAPIDocsOptions
 import sttp.tapir.json.circe.jsonBody
@@ -15,7 +14,6 @@ import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
-import java.time.Instant
 import scala.concurrent.Future
 
 object Endpoints extends BaseEndpointDefinitions {
@@ -26,6 +24,7 @@ object Endpoints extends BaseEndpointDefinitions {
   import TapirCodecs.VersionIdCodec._
   import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError._
   import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
+  import pl.touk.nussknacker.ui.api.description.scenarioActivity.InputOutput._
 
   val apiDocumentTitle = "Nussknacker Scenario Activity API"
 
@@ -44,10 +43,14 @@ object Endpoints extends BaseEndpointDefinitions {
 
   def apiEndpoints(implicit streamProvider: TapirStreamEndpointProvider): List[PublicEndpoint[_, _, _, Any]] = List(
     scenarioActivityEndpoint,
+    scenarioActivitiesCountEndpoint,
+    scenarioActivitiesSearchEndpoint,
     scenarioActivitiesMetadataEndpoint,
     scenarioActivitiesEndpoint,
     addCommentEndpoint,
+    editCommentEndpoint,
     deleteCommentEndpoint,
+    attachmentsEndpoint,
     addAttachmentEndpoint,
     downloadAttachmentEndpoint,
   )
@@ -56,37 +59,11 @@ object Endpoints extends BaseEndpointDefinitions {
       : PublicEndpoint[ProcessName, ScenarioActivityError, ScenarioCommentsAndAttachments, Any] =
     baseNuApiEndpoint
       .summary("Scenario activity service")
-      .tag("Scenario")
+      .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity")
       .out(
-        statusCode(Ok).and(
-          jsonBody[ScenarioCommentsAndAttachments].example(
-            Example.of(
-              summary = Some("Display scenario activity"),
-              value = ScenarioCommentsAndAttachments(
-                comments = List(
-                  Comment(
-                    id = 1L,
-                    processVersionId = 1L,
-                    content = "some comment",
-                    user = "test",
-                    createDate = Instant.parse("2024-01-17T14:21:17Z")
-                  )
-                ),
-                attachments = List(
-                  Attachment(
-                    id = 1L,
-                    processVersionId = 1L,
-                    fileName = "some_file.txt",
-                    user = "test",
-                    createDate = Instant.parse("2024-01-17T14:21:17Z")
-                  )
-                )
-              )
-            )
-          )
-        )
+        statusCode(Ok).and(jsonBody[ScenarioCommentsAndAttachments].example(Examples.scenarioCommentsAndAttachments))
       )
       .errorOut(scenarioNotFoundErrorOutput)
       .deprecated()
@@ -95,170 +72,65 @@ object Endpoints extends BaseEndpointDefinitions {
       : PublicEndpoint[ProcessName, ScenarioActivityError, ScenarioActivitiesMetadata, Any] =
     baseNuApiEndpoint
       .summary("Scenario activities metadata service")
-      .tag("Scenario")
+      .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "metadata")
       .out(statusCode(Ok).and(jsonBody[ScenarioActivitiesMetadata].example(ScenarioActivitiesMetadata.default)))
       .errorOut(scenarioNotFoundErrorOutput)
 
   lazy val scenarioActivitiesEndpoint: PublicEndpoint[
-    (ProcessName, PaginationContext, Option[String]),
+    (ProcessName, PaginationContext, List[ScenarioActivityType]),
     ScenarioActivityError,
     ScenarioActivities,
     Any
   ] =
     baseNuApiEndpoint
       .summary("Scenario activities service")
-      .tag("Scenario")
+      .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities")
       .in(paginationContextInput)
+      .in(activityTypeFilterInput)
+      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities)))
+      .errorOut(scenarioNotFoundErrorOutput)
+
+  lazy val scenarioActivitiesCountEndpoint: PublicEndpoint[
+    (ProcessName, List[ScenarioActivityType]),
+    ScenarioActivityError,
+    ScenarioActivitiesCount,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Scenario activities count service")
+      .tag("Activities")
+      .get
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "count")
+      .in(activityTypeFilterInput)
+      .out(statusCode(Ok).and(jsonBody[ScenarioActivitiesCount].example(ScenarioActivitiesCount(123))))
+      .errorOut(scenarioNotFoundErrorOutput)
+
+  lazy val scenarioActivitiesSearchEndpoint: PublicEndpoint[
+    (ProcessName, String, List[ScenarioActivityType]),
+    ScenarioActivityError,
+    ScenarioActivitiesSearchResult,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Scenario activities count service")
+      .tag("Activities")
+      .get
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "search")
       .in(searchTextInput)
+      .in(activityTypeFilterInput)
       .out(
-        statusCode(Ok).and(
-          jsonBody[ScenarioActivities].example(
-            Example.of(
-              summary = Some("Display scenario actions"),
-              value = ScenarioActivities(
-                activities = List(
-                  ScenarioActivity.ScenarioCreated(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                  ),
-                  ScenarioActivity.ScenarioArchived(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                  ),
-                  ScenarioActivity.ScenarioUnarchived(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                  ),
-                  ScenarioActivity.ScenarioDeployed(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = Some("Deployment of scenario - task JIRA-1234"),
-                  ),
-                  ScenarioActivity.ScenarioCanceled(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = Some("Canceled because marketing campaign ended"),
-                  ),
-                  ScenarioActivity.ScenarioModified(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = Some("Added new processing step"),
-                  ),
-                  ScenarioActivity.ScenarioNameChanged(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                    oldName = "marketing campaign",
-                    newName = "old marketing campaign",
-                  ),
-                  ScenarioActivity.CommentAdded(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = Some("Now scenario handles errors in datasource better"),
-                  ),
-                  ScenarioActivity.CommentAddedAndDeleted(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                    deletedByUser = "John Doe",
-                  ),
-                  ScenarioActivity.AttachmentAdded(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                    attachment = Attachment(
-                      id = 10000001,
-                      processVersionId = 1,
-                      fileName = "attachment01.png",
-                      user = "John Doe",
-                      createDate = Instant.parse("2024-01-17T14:21:17Z"),
-                    ),
-                  ),
-                  ScenarioActivity.AttachmentAddedAndDeleted(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                    deletedByUser = "John Doe",
-                  ),
-                  ScenarioActivity.ChangedProcessingMode(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                    from = "Request-Response",
-                    to = "Batch",
-                  ),
-                  ScenarioActivity.IncomingMigration(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = Some("Migration from preprod"),
-                    sourceEnvironment = "preprod",
-                    sourceProcessVersionId = "23",
-                  ),
-                  ScenarioActivity.OutgoingMigration(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = Some("Migration to preprod"),
-                    destinationEnvironment = "preprod",
-                  ),
-                  ScenarioActivity.PerformedSingleExecution(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    comment = None,
-                    dateFinished = "2024-01-17T14:21:17Z",
-                    status = "Successfully executed",
-                  ),
-                  ScenarioActivity.PerformedScheduledExecution(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    dateFinished = "2024-01-17T14:21:17Z",
-                    comment = None,
-                    params = "Batch size=1",
-                    status = "Successfully executed",
-                  ),
-                  ScenarioActivity.AutomaticUpdate(
-                    user = "some user",
-                    date = Instant.parse("2024-01-17T14:21:17Z"),
-                    processVersionId = 1,
-                    dateFinished = "2024-01-17T14:21:17Z",
-                    comment = None,
-                    changes = "JIRA-12345, JIRA-32146",
-                    status = "Successful",
-                  ),
-                ),
-              )
-            )
-          )
-        )
+        statusCode(Ok).and(jsonBody[ScenarioActivitiesSearchResult].example(Examples.scenarioActivitiesSearchResult))
       )
       .errorOut(scenarioNotFoundErrorOutput)
 
   lazy val addCommentEndpoint: PublicEndpoint[AddCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Add scenario comment service")
-      .tag("Scenario")
+      .tag("Comments")
       .post
       .in("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity" / "comments")
       .in(stringBody)
@@ -266,45 +138,53 @@ object Endpoints extends BaseEndpointDefinitions {
       .out(statusCode(Ok))
       .errorOut(scenarioNotFoundErrorOutput)
 
+  lazy val editCommentEndpoint: PublicEndpoint[EditCommentRequest, ScenarioActivityError, Unit, Any] =
+    baseNuApiEndpoint
+      .summary("Edit process comment service")
+      .tag("Comments")
+      .put
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[Long]("commentId"))
+      .in(stringBody)
+      .mapInTo[EditCommentRequest]
+      .out(statusCode(Ok))
+      .errorOut(
+        oneOf[ScenarioActivityError](
+          oneOfVariantFromMatchType(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariantFromMatchType(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError))
+        )
+      )
+
   lazy val deleteCommentEndpoint: PublicEndpoint[DeleteCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Delete process comment service")
-      .tag("Scenario")
+      .tag("Comments")
       .delete
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[Long]("commentId"))
       .mapInTo[DeleteCommentRequest]
       .out(statusCode(Ok))
       .errorOut(
         oneOf[ScenarioActivityError](
-          oneOfVariantFromMatchType(
-            NotFound,
-            plainBody[NoScenario]
-              .example(
-                Example.of(
-                  summary = Some("No scenario {scenarioName} found"),
-                  value = NoScenario(ProcessName("'example scenario'"))
-                )
-              )
-          ),
-          oneOfVariantFromMatchType(
-            InternalServerError,
-            plainBody[NoComment]
-              .example(
-                Example.of(
-                  summary = Some("Unable to delete comment with id: {commentId}"),
-                  value = NoComment(1L)
-                )
-              )
-          )
+          oneOfVariantFromMatchType(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariantFromMatchType(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError))
         )
       )
+
+  val attachmentsEndpoint: PublicEndpoint[ProcessName, ScenarioActivityError, ScenarioAttachments, Any] = {
+    baseNuApiEndpoint
+      .summary("Scenario attachments service")
+      .tag("Attachments")
+      .get
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "attachments")
+      .out(statusCode(Ok).and(jsonBody[ScenarioAttachments].example(Examples.scenarioAttachments)))
+      .errorOut(scenarioNotFoundErrorOutput)
+  }
 
   def addAttachmentEndpoint(
       implicit streamProvider: TapirStreamEndpointProvider
   ): PublicEndpoint[AddAttachmentRequest, ScenarioActivityError, Unit, Any] = {
     baseNuApiEndpoint
       .summary("Add scenario attachment service")
-      .tag("Scenario")
+      .tag("Attachments")
       .post
       .in("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity" / "attachments")
       .in(streamProvider.streamBodyEndpointInput)
@@ -319,7 +199,7 @@ object Endpoints extends BaseEndpointDefinitions {
   ): PublicEndpoint[GetAttachmentRequest, ScenarioActivityError, GetAttachmentResponse, Any] = {
     baseNuApiEndpoint
       .summary("Download attachment service")
-      .tag("Scenario")
+      .tag("Attachments")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "attachments" / path[Long]("attachmentId"))
       .mapInTo[GetAttachmentRequest]
@@ -332,27 +212,5 @@ object Endpoints extends BaseEndpointDefinitions {
       )
       .errorOut(scenarioNotFoundErrorOutput)
   }
-
-  private lazy val scenarioNotFoundErrorOutput: EndpointOutput.OneOf[ScenarioActivityError, ScenarioActivityError] =
-    oneOf[ScenarioActivityError](
-      oneOfVariantFromMatchType(
-        NotFound,
-        plainBody[NoScenario]
-          .example(
-            Example.of(
-              summary = Some("No scenario {scenarioName} found"),
-              value = NoScenario(ProcessName("'example scenario'"))
-            )
-          )
-      )
-    )
-
-  private val paginationContextInput: EndpointInput[PaginationContext] =
-    query[Long]("pageSize")
-      .and(query[Long]("pageNumber"))
-      .map(PaginationContext.tupled.apply(_))(PaginationContext.unapply(_).get)
-
-  private val searchTextInput: EndpointInput[Option[String]] =
-    query[Option[String]]("searchText")
 
 }

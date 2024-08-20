@@ -6,7 +6,7 @@ paths:
   /api/processes/{scenarioName}/activity:
     get:
       tags:
-      - Scenario
+      - Activities
       summary: Scenario activity service
       operationId: getApiProcessesScenarionameActivity
       parameters:
@@ -49,10 +49,111 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
       deprecated: true
+  /api/processes/{scenarioName}/activity/activities/count:
+    get:
+      tags:
+      - Activities
+      summary: Scenario activities count service
+      operationId: getApiProcessesScenarionameActivityActivitiesCount
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: activityType
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioActivitiesCount'
+              example:
+                fullCount: 123
+        '400':
+          description: 'Invalid value for: query parameter activityType'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+  /api/processes/{scenarioName}/activity/activities/search:
+    get:
+      tags:
+      - Activities
+      summary: Scenario activities count service
+      operationId: getApiProcessesScenarionameActivityActivitiesSearch
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: searchText
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: activityType
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioActivitiesSearchResult'
+              examples:
+                Example:
+                  summary: Result of activities full-text search
+                  value:
+                    foundActivities:
+                    - id: 2c0af07d-4eaa-422a-8d1a-84d299e74fe2
+                      index: 101
+                    - id: 7889376c-af8d-4dfa-9a72-83ca73f29946
+                      index: 498
+        '400':
+          description: 'Invalid value for: query parameter searchText, Invalid value
+            for: query parameter activityType'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
   /api/processes/{scenarioName}/activity/activities/metadata:
     get:
       tags:
-      - Scenario
+      - Activities
       summary: Scenario activities metadata service
       operationId: getApiProcessesScenarionameActivityActivitiesMetadata
       parameters:
@@ -73,108 +174,66 @@ paths:
                 - type: SCENARIO_CREATED
                   displayableName: Scenario created
                   icon: /assets/states/error.svg
-                  additionalFields: []
                   supportedActions: []
                 - type: SCENARIO_ARCHIVED
                   displayableName: Scenario archived
                   icon: /assets/states/error.svg
-                  additionalFields: []
                   supportedActions: []
                 - type: SCENARIO_UNARCHIVED
                   displayableName: Scenario unarchived
                   icon: /assets/states/error.svg
-                  additionalFields: []
                   supportedActions: []
                 - type: SCENARIO_DEPLOYED
                   displayableName: Deployment
                   icon: /assets/states/error.svg
-                  additionalFields: []
                   supportedActions: []
                 - type: SCENARIO_CANCELED
                   displayableName: Cancel
                   icon: /assets/states/error.svg
-                  additionalFields: []
                   supportedActions: []
                 - type: SCENARIO_MODIFIED
-                  displayableName: Version {processVersionId} saved
+                  displayableName: New version saved
                   icon: /assets/states/error.svg
-                  additionalFields: []
                   supportedActions:
                   - compare
                 - type: SCENARIO_NAME_CHANGED
                   displayableName: Scenario name changed
                   icon: /assets/states/error.svg
-                  additionalFields:
-                  - oldName
-                  - newName
                   supportedActions: []
                 - type: COMMENT_ADDED
                   displayableName: Comment
                   icon: /assets/states/error.svg
-                  additionalFields: []
                   supportedActions:
                   - delete_comment
                   - edit_comment
-                - type: COMMENT_ADDED_AND_DELETED
-                  displayableName: Comment
-                  icon: /assets/states/error.svg
-                  additionalFields:
-                  - deletedByUser
-                  supportedActions: []
                 - type: ATTACHMENT_ADDED
                   displayableName: Attachment
                   icon: /assets/states/error.svg
-                  additionalFields: []
-                  supportedActions: []
-                - type: ATTACHMENT_ADDED_AND_DELETED
-                  displayableName: Attachment
-                  icon: /assets/states/error.svg
-                  additionalFields:
-                  - deletedByUser
                   supportedActions: []
                 - type: CHANGED_PROCESSING_MODE
                   displayableName: Processing mode change
                   icon: /assets/states/error.svg
-                  additionalFields:
-                  - from
-                  - to
                   supportedActions: []
                 - type: INCOMING_MIGRATION
                   displayableName: Incoming migration
                   icon: /assets/states/error.svg
-                  additionalFields:
-                  - sourceEnvironment
-                  - sourceProcessVersionId
                   supportedActions:
                   - compare
                 - type: OUTGOING_MIGRATION
                   displayableName: Outgoing migration
                   icon: /assets/states/error.svg
-                  additionalFields:
-                  - destinationEnvironment
                   supportedActions: []
                 - type: PERFORMED_SINGLE_EXECUTION
                   displayableName: Processing data
                   icon: /assets/states/error.svg
-                  additionalFields:
-                  - dateFinished
-                  - status
                   supportedActions: []
                 - type: PERFORMED_SCHEDULED_EXECUTION
                   displayableName: Processing data
                   icon: /assets/states/error.svg
-                  additionalFields:
-                  - params
-                  - dateFinished
-                  - status
                   supportedActions: []
                 - type: AUTOMATIC_UPDATE
                   displayableName: Automatic update
                   icon: /assets/states/error.svg
-                  additionalFields:
-                  - dateFinished
-                  - changes
-                  - status
                   supportedActions:
                   - compare
                 actions:
@@ -206,7 +265,7 @@ paths:
   /api/processes/{scenarioName}/activity/activities:
     get:
       tags:
-      - Scenario
+      - Activities
       summary: Scenario activities service
       operationId: getApiProcessesScenarionameActivityActivities
       parameters:
@@ -227,13 +286,13 @@ paths:
         schema:
           type: integer
           format: int64
-      - name: searchText
+      - name: activityType
         in: query
         required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: array
+          items:
+            type: string
       responses:
         '200':
           description: ''
@@ -246,106 +305,158 @@ paths:
                   summary: Display scenario actions
                   value:
                     activities:
-                    - user: some user
-                      date: '2024-01-17T14:21:17Z'
-                      processVersionId: 1
+                    - id: 8252c5f8-1a66-492e-a502-d0e77b5ebead
                       type: SCENARIO_CREATED
-                    - user: some user
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
+                      additionalFields: []
+                    - id: bd37b413-c5c1-4531-bccf-2c7c9ef3c767
                       type: SCENARIO_ARCHIVED
-                    - user: some user
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
+                      additionalFields: []
+                    - id: dbac6264-fa76-49d4-8adc-383771c9391f
                       type: SCENARIO_UNARCHIVED
-                    - user: some user
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      processVersionId: 1
+                      additionalFields: []
+                    - id: 97955662-253a-4b47-a3a1-a3c686e2ceeb
+                      type: SCENARIO_DEPLOYED
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Deployment of scenario - task JIRA-1234
-                      type: SCENARIO_DEPLOYED
-                    - user: some user
+                      additionalFields: []
+                    - id: 03b56b73-cfa7-4944-9662-5c4e1b8f1226
+                      type: SCENARIO_CANCELED
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Canceled because marketing campaign ended
-                      type: SCENARIO_CANCELED
-                    - user: some user
+                      additionalFields: []
+                    - id: 9157e61e-bb4c-44ac-b23b-05239e7cdbf4
+                      type: SCENARIO_MODIFIED
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Added new processing step
-                      type: SCENARIO_MODIFIED
-                    - user: some user
+                      additionalFields: []
+                      overrideDisplayableName: Version 1 saved
+                    - id: 424d8abf-1b84-4fcb-b9f7-d9b93a603ecf
+                      type: SCENARIO_NAME_CHANGED
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
-                      oldName: marketing campaign
-                      newName: old marketing campaign
-                      type: SCENARIO_NAME_CHANGED
-                    - user: some user
+                      additionalFields:
+                      - name: oldName
+                        value: marketing campaign
+                      - name: newName
+                        value: old marketing campaign
+                    - id: 75ee76d6-4ef8-4649-be1a-6688b730f218
+                      type: COMMENT_ADDED
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Now scenario handles errors in datasource better
+                      additionalFields: []
+                    - id: e25efda9-f5d3-470d-9d96-adc180a878ef
                       type: COMMENT_ADDED
-                    - user: some user
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
-                      deletedByUser: John Doe
-                      type: COMMENT_ADDED_AND_DELETED
-                    - user: some user
-                      date: '2024-01-17T14:21:17Z'
-                      processVersionId: 1
-                      attachment:
-                        id: 10000001
-                        processVersionId: 1
-                        fileName: attachment01.png
-                        user: John Doe
-                        createDate: '2024-01-17T14:21:17Z'
+                      additionalFields:
+                      - name: deletedByUser
+                        value: John Doe
+                      overrideSupportedActions: []
+                    - id: ece0ceec-621d-4261-9b3d-54205c3e8ed4
                       type: ATTACHMENT_ADDED
-                    - user: some user
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
-                      deletedByUser: John Doe
-                      type: ATTACHMENT_ADDED_AND_DELETED
-                    - user: some user
+                      additionalFields:
+                      - name: attachmentId
+                        value: '10000001'
+                      - name: attachmentFilename
+                        value: attachment01.png
+                    - id: 7136db97-cb7d-489b-be29-aa104ade7811
+                      type: ATTACHMENT_ADDED
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
-                      from: Request-Response
-                      to: Batch
+                      additionalFields:
+                      - name: deletedByUser
+                        value: John Doe
+                      overrideSupportedActions: []
+                    - id: 03f1f6b8-40ef-4fea-9ebd-75ffe34b894e
                       type: CHANGED_PROCESSING_MODE
-                    - user: some user
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      processVersionId: 1
+                      additionalFields:
+                      - name: from
+                        value: Request-Response
+                      - name: to
+                        value: Request-Response
+                    - id: 0e3aacb9-0353-41d1-a9ca-5c49fe97f145
+                      type: INCOMING_MIGRATION
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Migration from preprod
-                      sourceEnvironment: preprod
-                      sourceProcessVersionId: '23'
-                      type: INCOMING_MIGRATION
-                    - user: some user
+                      additionalFields:
+                      - name: sourceEnvironment
+                        value: preprod
+                      - name: sourceProcessVersionId
+                        value: '23'
+                    - id: f0aba6b8-28c7-4575-8fc2-f46e53def821
+                      type: OUTGOING_MIGRATION
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
                       comment: Migration to preprod
-                      destinationEnvironment: preprod
-                      type: OUTGOING_MIGRATION
-                    - user: some user
-                      date: '2024-01-17T14:21:17Z'
-                      processVersionId: 1
-                      dateFinished: '2024-01-17T14:21:17Z'
-                      status: Successfully executed
+                      additionalFields:
+                      - name: destinationEnvironment
+                        value: preprod
+                    - id: c72d3bfb-6040-4225-9f61-95de4be206a2
                       type: PERFORMED_SINGLE_EXECUTION
-                    - user: some user
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
-                      dateFinished: '2024-01-17T14:21:17Z'
-                      params: Batch size=1
-                      status: Successfully executed
+                      additionalFields:
+                      - name: dateFinished
+                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Successfully executed
+                    - id: 2172c10a-dee5-4d80-9a1e-7730a9ec3bf0
                       type: PERFORMED_SCHEDULED_EXECUTION
-                    - user: some user
+                      user: some user
                       date: '2024-01-17T14:21:17Z'
                       processVersionId: 1
-                      dateFinished: '2024-01-17T14:21:17Z'
-                      changes: JIRA-12345, JIRA-32146
-                      status: Successful
+                      additionalFields:
+                      - name: params
+                        value: Batch size=1
+                      - name: dateFinished
+                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Successfully executed
+                    - id: 76f65549-39ac-430d-9158-a51debf0479d
                       type: AUTOMATIC_UPDATE
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      processVersionId: 1
+                      additionalFields:
+                      - name: changes
+                        value: JIRA-12345, JIRA-32146
+                      - name: dateFinished
+                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Successful
         '400':
           description: 'Invalid value for: query parameter pageSize, Invalid value
-            for: query parameter pageNumber, Invalid value for: query parameter searchText'
+            for: query parameter pageNumber, Invalid value for: query parameter activityType'
           content:
             text/plain:
               schema:
@@ -363,7 +474,7 @@ paths:
   /api/processes/{scenarioName}/{versionId}/activity/comments:
     post:
       tags:
-      - Scenario
+      - Comments
       summary: Add scenario comment service
       operationId: postApiProcessesScenarionameVersionidActivityComments
       parameters:
@@ -405,9 +516,62 @@ paths:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
   /api/processes/{scenarioName}/activity/comments/{commentId}:
+    put:
+      tags:
+      - Comments
+      summary: Edit process comment service
+      operationId: putApiProcessesScenarionameActivityCommentsCommentid
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: path parameter commentId, Invalid value
+            for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: 'Unable to edit comment with id: {commentId}'
+                  value: 'Unable to delete comment with id: 1'
     delete:
       tags:
-      - Scenario
+      - Comments
       summary: Delete process comment service
       operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
       parameters:
@@ -449,12 +613,51 @@ paths:
                 type: string
               examples:
                 Example:
-                  summary: 'Unable to delete comment with id: {commentId}'
+                  summary: 'Unable to edit comment with id: {commentId}'
                   value: 'Unable to delete comment with id: 1'
+  /api/processes/{scenarioName}/activity/attachments:
+    get:
+      tags:
+      - Attachments
+      summary: Scenario attachments service
+      operationId: getApiProcessesScenarionameActivityAttachments
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioAttachments'
+              examples:
+                Example:
+                  summary: Display scenario activity
+                  value:
+                    attachments:
+                    - id: 1
+                      processVersionId: 1
+                      fileName: some_file.txt
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
   /api/processes/{scenarioName}/{versionId}/activity/attachments:
     post:
       tags:
-      - Scenario
+      - Attachments
       summary: Add scenario attachment service
       operationId: postApiProcessesScenarionameVersionidActivityAttachments
       parameters:
@@ -504,7 +707,7 @@ paths:
   /api/processes/{scenarioName}/activity/attachments/{attachmentId}:
     get:
       tags:
-      - Scenario
+      - Attachments
       summary: Download attachment service
       operationId: getApiProcessesScenarionameActivityAttachmentsAttachmentid
       parameters:
@@ -556,6 +759,17 @@ paths:
                   value: No scenario 'example scenario' found
 components:
   schemas:
+    AdditionalField:
+      title: AdditionalField
+      type: object
+      required:
+      - name
+      - value
+      properties:
+        name:
+          type: string
+        value:
+          type: string
     Attachment:
       title: Attachment
       type: object
@@ -579,119 +793,6 @@ components:
         createDate:
           type: string
           format: date-time
-    AttachmentAdded:
-      title: AttachmentAdded
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - attachment
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        attachment:
-          $ref: '#/components/schemas/Attachment'
-        type:
-          type: string
-    AttachmentAddedAndDeleted:
-      title: AttachmentAddedAndDeleted
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - deletedByUser
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        deletedByUser:
-          type: string
-        type:
-          type: string
-    AutomaticUpdate:
-      title: AutomaticUpdate
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - dateFinished
-      - changes
-      - status
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        dateFinished:
-          type: string
-        changes:
-          type: string
-        status:
-          type: string
-        type:
-          type: string
-    ChangedProcessingMode:
-      title: ChangedProcessingMode
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - from
-      - to
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        from:
-          type: string
-        to:
-          type: string
-        type:
-          type: string
     Comment:
       title: Comment
       type: object
@@ -715,171 +816,18 @@ components:
         createDate:
           type: string
           format: date-time
-    CommentAdded:
-      title: CommentAdded
+    FoundActivity:
+      title: FoundActivity
       type: object
       required:
-      - user
-      - date
-      - processVersionId
-      - type
+      - id
+      - index
       properties:
-        user:
+        id:
           type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
+        index:
           type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
-    CommentAddedAndDeleted:
-      title: CommentAddedAndDeleted
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - deletedByUser
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        deletedByUser:
-          type: string
-        type:
-          type: string
-    IncomingMigration:
-      title: IncomingMigration
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - sourceEnvironment
-      - sourceProcessVersionId
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        sourceEnvironment:
-          type: string
-        sourceProcessVersionId:
-          type: string
-        type:
-          type: string
-    OutgoingMigration:
-      title: OutgoingMigration
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - destinationEnvironment
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        destinationEnvironment:
-          type: string
-        type:
-          type: string
-    PerformedScheduledExecution:
-      title: PerformedScheduledExecution
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - dateFinished
-      - params
-      - status
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        dateFinished:
-          type: string
-        params:
-          type: string
-        status:
-          type: string
-        type:
-          type: string
-    PerformedSingleExecution:
-      title: PerformedSingleExecution
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - dateFinished
-      - status
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        dateFinished:
-          type: string
-        status:
-          type: string
-        type:
-          type: string
+          format: int32
     ScenarioActivities:
       title: ScenarioActivities
       type: object
@@ -888,6 +836,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ScenarioActivity'
+    ScenarioActivitiesCount:
+      title: ScenarioActivitiesCount
+      type: object
+      required:
+      - fullCount
+      properties:
+        fullCount:
+          type: integer
+          format: int64
     ScenarioActivitiesMetadata:
       title: ScenarioActivitiesMetadata
       type: object
@@ -900,46 +857,70 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ScenarioActivityActionMetadata'
+    ScenarioActivitiesSearchResult:
+      title: ScenarioActivitiesSearchResult
+      type: object
+      properties:
+        foundActivities:
+          type: array
+          items:
+            $ref: '#/components/schemas/FoundActivity'
     ScenarioActivity:
       title: ScenarioActivity
-      oneOf:
-      - $ref: '#/components/schemas/AttachmentAdded'
-      - $ref: '#/components/schemas/AttachmentAddedAndDeleted'
-      - $ref: '#/components/schemas/AutomaticUpdate'
-      - $ref: '#/components/schemas/ChangedProcessingMode'
-      - $ref: '#/components/schemas/CommentAdded'
-      - $ref: '#/components/schemas/CommentAddedAndDeleted'
-      - $ref: '#/components/schemas/IncomingMigration'
-      - $ref: '#/components/schemas/OutgoingMigration'
-      - $ref: '#/components/schemas/PerformedScheduledExecution'
-      - $ref: '#/components/schemas/PerformedSingleExecution'
-      - $ref: '#/components/schemas/ScenarioArchived'
-      - $ref: '#/components/schemas/ScenarioCanceled'
-      - $ref: '#/components/schemas/ScenarioCreated'
-      - $ref: '#/components/schemas/ScenarioDeployed'
-      - $ref: '#/components/schemas/ScenarioModified'
-      - $ref: '#/components/schemas/ScenarioNameChanged'
-      - $ref: '#/components/schemas/ScenarioUnarchived'
-      discriminator:
-        propertyName: type
-        mapping:
-          ATTACHMENT_ADDED: '#/components/schemas/AttachmentAdded'
-          ATTACHMENT_ADDED_AND_DELETED: '#/components/schemas/AttachmentAddedAndDeleted'
-          AUTOMATIC_UPDATE: '#/components/schemas/AutomaticUpdate'
-          CHANGED_PROCESSING_MODE: '#/components/schemas/ChangedProcessingMode'
-          COMMENT_ADDED: '#/components/schemas/CommentAdded'
-          COMMENT_ADDED_AND_DELETED: '#/components/schemas/CommentAddedAndDeleted'
-          INCOMING_MIGRATION: '#/components/schemas/IncomingMigration'
-          OUTGOING_MIGRATION: '#/components/schemas/OutgoingMigration'
-          PERFORMED_SCHEDULED_EXECUTION: '#/components/schemas/PerformedScheduledExecution'
-          PERFORMED_SINGLE_EXECUTION: '#/components/schemas/PerformedSingleExecution'
-          SCENARIO_ARCHIVED: '#/components/schemas/ScenarioArchived'
-          SCENARIO_CANCELED: '#/components/schemas/ScenarioCanceled'
-          SCENARIO_CREATED: '#/components/schemas/ScenarioCreated'
-          SCENARIO_DEPLOYED: '#/components/schemas/ScenarioDeployed'
-          SCENARIO_MODIFIED: '#/components/schemas/ScenarioModified'
-          SCENARIO_NAME_CHANGED: '#/components/schemas/ScenarioNameChanged'
-          SCENARIO_UNARCHIVED: '#/components/schemas/ScenarioUnarchived'
+      type: object
+      required:
+      - id
+      - type
+      - user
+      - date
+      - processVersionId
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+          - SCENARIO_CREATED
+          - SCENARIO_ARCHIVED
+          - SCENARIO_UNARCHIVED
+          - SCENARIO_DEPLOYED
+          - SCENARIO_CANCELED
+          - SCENARIO_MODIFIED
+          - SCENARIO_NAME_CHANGED
+          - COMMENT_ADDED
+          - ATTACHMENT_ADDED
+          - CHANGED_PROCESSING_MODE
+          - INCOMING_MIGRATION
+          - OUTGOING_MIGRATION
+          - PERFORMED_SINGLE_EXECUTION
+          - PERFORMED_SCHEDULED_EXECUTION
+          - AUTOMATIC_UPDATE
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        processVersionId:
+          type: integer
+          format: int64
+        comment:
+          type:
+          - string
+          - 'null'
+        additionalFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalField'
+        overrideDisplayableName:
+          type:
+          - string
+          - 'null'
+        overrideSupportedActions:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
     ScenarioActivityActionMetadata:
       title: ScenarioActivityActionMetadata
       type: object
@@ -968,60 +949,18 @@ components:
           type: string
         icon:
           type: string
-        additionalFields:
-          type: array
-          items:
-            type: string
         supportedActions:
           type: array
           items:
             type: string
-    ScenarioArchived:
-      title: ScenarioArchived
+    ScenarioAttachments:
+      title: ScenarioAttachments
       type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - type
       properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
-    ScenarioCanceled:
-      title: ScenarioCanceled
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
     ScenarioCommentsAndAttachments:
       title: ScenarioCommentsAndAttachments
       type: object
@@ -1034,124 +973,3 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Attachment'
-    ScenarioCreated:
-      title: ScenarioCreated
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
-    ScenarioDeployed:
-      title: ScenarioDeployed
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
-    ScenarioModified:
-      title: ScenarioModified
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
-    ScenarioNameChanged:
-      title: ScenarioNameChanged
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - oldName
-      - newName
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        oldName:
-          type: string
-        newName:
-          type: string
-        type:
-          type: string
-    ScenarioUnarchived:
-      title: ScenarioUnarchived
-      type: object
-      required:
-      - user
-      - date
-      - processVersionId
-      - type
-      properties:
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        processVersionId:
-          type: integer
-          format: int64
-        comment:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
