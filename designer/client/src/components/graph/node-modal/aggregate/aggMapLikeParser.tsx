@@ -77,7 +77,7 @@ export class AggMapLikeParser extends EmbeddedActionsParser {
     object = this.RULE("object", () => {
         const obj = {};
 
-        this.CONSUME(MapOpen);
+        this.OR([{ ALT: () => this.CONSUME(MapOpen) }, { ALT: () => this.CONSUME(ListOpen) }]);
         this.MANY_SEP({
             SEP: Comma,
             DEF: () => {
