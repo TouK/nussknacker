@@ -101,14 +101,19 @@ object Endpoints extends BaseEndpointDefinitions {
       .out(statusCode(Ok).and(jsonBody[ScenarioActivitiesMetadata].example(ScenarioActivitiesMetadata.default)))
       .errorOut(scenarioNotFoundErrorOutput)
 
-  lazy val scenarioActivitiesEndpoint
-      : PublicEndpoint[(ProcessName, PaginationContext), ScenarioActivityError, ScenarioActivities, Any] =
+  lazy val scenarioActivitiesEndpoint: PublicEndpoint[
+    (ProcessName, PaginationContext, Option[String]),
+    ScenarioActivityError,
+    ScenarioActivities,
+    Any
+  ] =
     baseNuApiEndpoint
       .summary("Scenario activities service")
       .tag("Scenario")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities")
       .in(paginationContextInput)
+      .in(searchTextInput)
       .out(
         statusCode(Ok).and(
           jsonBody[ScenarioActivities].example(
@@ -346,5 +351,8 @@ object Endpoints extends BaseEndpointDefinitions {
     query[Long]("pageSize")
       .and(query[Long]("pageNumber"))
       .map(PaginationContext.tupled.apply(_))(PaginationContext.unapply(_).get)
+
+  private val searchTextInput: EndpointInput[Option[String]] =
+    query[Option[String]]("searchText")
 
 }

@@ -227,6 +227,13 @@ paths:
         schema:
           type: integer
           format: int64
+      - name: searchText
+        in: query
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -338,7 +345,7 @@ paths:
                       type: AUTOMATIC_UPDATE
         '400':
           description: 'Invalid value for: query parameter pageSize, Invalid value
-            for: query parameter pageNumber'
+            for: query parameter pageNumber, Invalid value for: query parameter searchText'
           content:
             text/plain:
               schema:
