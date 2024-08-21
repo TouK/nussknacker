@@ -58,6 +58,7 @@ object ProcessService {
   @JsonCodec final case class UpdateScenarioCommand(
       scenarioGraph: ScenarioGraph,
       comment: Option[UpdateProcessComment],
+      scenarioLabels: Option[List[String]],
       forwardedUserName: Option[RemoteUserName]
   )
 
@@ -398,9 +399,10 @@ class DBProcessService(
         )
       val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
       val updateProcessAction = UpdateProcessAction(
-        processIdWithName.id,
-        substituted,
-        action.comment,
+        processId = processIdWithName.id,
+        canonicalProcess = substituted,
+        comment = action.comment,
+        labels = action.scenarioLabels,
         increaseVersionWhenJsonNotChanged = false,
         forwardedUserName = action.forwardedUserName
       )

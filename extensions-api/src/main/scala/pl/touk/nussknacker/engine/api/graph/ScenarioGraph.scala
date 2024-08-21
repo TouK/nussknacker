@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
     edges: List[Edge]
 ) {
 
-  def toMetaData(name: ProcessName): MetaData = properties.toMetaData(name)
+  def toMetaData(name: ProcessName, labels: List[String]): MetaData = properties.toMetaData(name, labels)
 
 }
 
@@ -25,8 +25,9 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 // TODO: remove additionalFields nesting when we stop treating properties as a node on the FE side
 final case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
-  def toMetaData(scenarioName: ProcessName): MetaData = MetaData(
+  def toMetaData(scenarioName: ProcessName, labels: List[String]): MetaData = MetaData(
     id = scenarioName.value,
+    labels = labels,
     additionalFields = additionalFields
   )
 

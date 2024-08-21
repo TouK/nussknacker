@@ -35,7 +35,7 @@ trait ListenerScenarioWithDetails {
 
   def createdBy: String
 
-  def tags: Option[List[String]]
+  def scenarioLabels: List[String]
 
   def lastDeployedAction: Option[ProcessAction]
 

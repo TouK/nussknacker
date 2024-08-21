@@ -7,12 +7,13 @@ import pl.touk.nussknacker.engine.api.TypeSpecificDataTestData._
 
 class TypeSpecificDataTest extends AnyFunSuite with Matchers {
 
-  private val testId = "Id"
+  private val testId     = "Id"
+  private val testLabels = List.empty[String]
 
   test("create MetaData from full properties") {
     forAll(fullMetaDataCases) {
       (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
-        val metaData = MetaData(testId, ProcessAdditionalFields(None, properties, metaDataName))
+        val metaData = MetaData(testId, testLabels, ProcessAdditionalFields(None, properties, metaDataName))
         metaData.typeSpecificData shouldBe typeSpecificData
     }
   }
@@ -21,7 +22,7 @@ class TypeSpecificDataTest extends AnyFunSuite with Matchers {
     forAll(fullMetaDataCases) {
       (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
         val mergedProperties = nonTypeSpecificProperties ++ properties
-        val metaData         = MetaData(testId, ProcessAdditionalFields(None, mergedProperties, metaDataName))
+        val metaData = MetaData(testId, testLabels, ProcessAdditionalFields(None, mergedProperties, metaDataName))
         metaData.typeSpecificData shouldBe typeSpecificData
         metaData.additionalFields.properties shouldBe mergedProperties
     }
@@ -30,7 +31,7 @@ class TypeSpecificDataTest extends AnyFunSuite with Matchers {
   test("create empty MetaData from invalid properties") {
     forAll(invalidTypeAndEmptyMetaDataCases) {
       (properties: Map[String, String], metaDataName: String, emptyTypeSpecificData: TypeSpecificData) =>
-        val metaData = MetaData(testId, ProcessAdditionalFields(None, properties, metaDataName))
+        val metaData = MetaData(testId, testLabels, ProcessAdditionalFields(None, properties, metaDataName))
         metaData.typeSpecificData shouldBe emptyTypeSpecificData
         metaData.additionalFields.properties shouldBe properties
     }
@@ -38,14 +39,18 @@ class TypeSpecificDataTest extends AnyFunSuite with Matchers {
 
   test("create empty MetaData from no properties") {
     forAll(invalidTypeAndEmptyMetaDataCases) { (_, metaDataName: String, emptyTypeSpecificData: TypeSpecificData) =>
-      val metaData = MetaData(testId, ProcessAdditionalFields(None, Map.empty, metaDataName))
+      val metaData = MetaData(testId, testLabels, ProcessAdditionalFields(None, Map.empty, metaDataName))
       metaData.typeSpecificData shouldBe emptyTypeSpecificData
     }
   }
 
   test("throw exception for creating typeSpecificData with unrecognized metadata name") {
     assertThrows[IllegalStateException](
-      MetaData(testId, ProcessAdditionalFields(None, flinkFullProperties, "fakeMetaDataName")).typeSpecificData
+      MetaData(
+        testId,
+        testLabels,
+        ProcessAdditionalFields(None, flinkFullProperties, "fakeMetaDataName")
+      ).typeSpecificData
     )
   }
 

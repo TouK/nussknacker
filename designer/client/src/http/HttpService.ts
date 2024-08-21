@@ -29,6 +29,7 @@ import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-
 import { GenericValidationRequest } from "../actions/nk/genericAction";
 import { EventTrackingSelector } from "../containers/event-tracking";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
+import { AvailableScenarioLabels } from "../components/Labels/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -273,6 +274,16 @@ class HttpService {
             .catch((error) =>
                 Promise.reject(
                     this.#addError(i18next.t("notification.error.cannotFetchStatusDefinitions", "Cannot fetch status definitions"), error),
+                ),
+            );
+    }
+
+    fetchScenarioLabels() {
+        return api
+            .get<AvailableScenarioLabels>(`/scenarioLabels`)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotFetchStatusDefinitions", "Cannot fetch scenario labels"), error),
                 ),
             );
     }
@@ -593,8 +604,8 @@ class HttpService {
     }
 
     //to prevent closing edit node modal and corrupting graph display
-    saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string) {
-        const data = { scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph), comment: comment };
+    saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string, labels: string[]) {
+        const data = { scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph), comment: comment, scenarioLabels: labels };
         return api.put(`/processes/${encodeURIComponent(processName)}`, data).catch((error) => {
             this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true);
             return Promise.reject(error);

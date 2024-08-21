@@ -95,6 +95,10 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
                                 <Typography variant={"caption"}>{scenario.engineSetupName}</Typography>
                             </ItemWrapperStyled>
                             <ItemWrapperStyled>
+                                <ItemLabelStyled>{i18next.t("scenarioDetails.label.labels", "Labels")}</ItemLabelStyled>
+                                <Typography variant={"caption"}>{(scenario.labels || []).join(", ")}</Typography>
+                            </ItemWrapperStyled>
+                            <ItemWrapperStyled>
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.created", "Created")}</ItemLabelStyled>
                                 <Typography variant={"caption"}>{moment(scenario.createdAt).format(DATE_FORMAT)}</Typography>
                             </ItemWrapperStyled>

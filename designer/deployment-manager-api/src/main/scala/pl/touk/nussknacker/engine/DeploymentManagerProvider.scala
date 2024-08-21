@@ -57,9 +57,10 @@ final case class MetaDataInitializer(
     overrideDefaultProperties: ProcessName => Map[String, String] = _ => Map.empty
 ) {
 
-  def create(name: ProcessName, initialProperties: Map[String, String]): MetaData =
+  def create(name: ProcessName, labels: List[String], initialProperties: Map[String, String]): MetaData =
     MetaData(
       name.value,
+      labels,
       ProcessAdditionalFields(None, initialProperties ++ overrideDefaultProperties(name), metadataType)
     )
 

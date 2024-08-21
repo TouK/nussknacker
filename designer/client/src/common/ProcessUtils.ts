@@ -21,7 +21,6 @@ class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
         const scenario = state.graphReducer.scenario;
         const savedProcessState = state.graphReducer.history.past[0]?.scenario || state.graphReducer.history.present.scenario;
-
         const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
 
@@ -33,7 +32,10 @@ class ProcessUtils {
             return true;
         }
 
-        return !savedProcessState || isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
+        const isGraphUpdated = isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
+        const areScenarioLabelsUpdated = isEqual(scenario.labels, savedProcessState.labels);
+
+        return !savedProcessState || (isGraphUpdated && areScenarioLabelsUpdated);
     };
 
     canExport = (state: RootState): boolean => {

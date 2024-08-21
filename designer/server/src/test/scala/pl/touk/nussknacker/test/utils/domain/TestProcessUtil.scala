@@ -100,6 +100,7 @@ object TestProcessUtil {
       processingType: ProcessingType = ProcessingTypeStreaming,
       lastAction: Option[ScenarioActionName] = None,
       description: Option[String] = None,
+      scenarioLabels: List[String] = List.empty,
       history: Option[List[ScenarioVersion]] = None
   ): ScenarioWithDetailsEntity[ScenarioGraph] = {
     val jsonData = scenarioGraph
@@ -119,7 +120,7 @@ object TestProcessUtil {
       modifiedBy = "user1",
       createdAt = Instant.now(),
       createdBy = "user1",
-      tags = None,
+      scenarioLabels = scenarioLabels,
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
         case action if ScenarioActionName.StateActions.contains(action) => createProcessAction(action)

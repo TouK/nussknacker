@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import akka.http.scaladsl.model.HttpHeader
+import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
@@ -8,7 +9,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData, ScenarioLabelEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -19,6 +20,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
+import pl.touk.nussknacker.ui.process.repository.ScenarioLabelsRepository.ScenarioLabel
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
@@ -44,9 +46,10 @@ object ProcessRepository {
   def create(
       dbRef: DbRef,
       commentRepository: CommentRepository,
+      scenarioLabelsRepository: ScenarioLabelsRepository,
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _]
   ): DBProcessRepository =
-    new DBProcessRepository(dbRef, commentRepository, migrations.mapValues(_.version))
+    new DBProcessRepository(dbRef, commentRepository, scenarioLabelsRepository, migrations.mapValues(_.version))
 
   final case class CreateProcessAction(
       processName: ProcessName,
@@ -61,6 +64,7 @@ object ProcessRepository {
       private val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
       comment: Option[Comment],
+      labels: Option[List[String]],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
   ) {
@@ -89,6 +93,7 @@ trait ProcessRepository[F[_]] {
 class DBProcessRepository(
     protected val dbRef: DbRef,
     commentRepository: CommentRepository,
+    scenarioLabelsRepository: ScenarioLabelsRepository,
     modelVersion: ProcessingTypeDataProvider[Int, _]
 ) extends ProcessRepository[DB]
     with NuTables
@@ -158,19 +163,27 @@ class DBProcessRepository(
         .sequence
     }
 
-    updateProcessInternal(
-      updateProcessAction.id,
-      updateProcessAction.canonicalProcess,
-      updateProcessAction.increaseVersionWhenJsonNotChanged,
-      userName
-    ).flatMap {
-      // Comment should be added via ProcessService not to mix this repository responsibility.
-      case updateProcessRes @ ProcessUpdated(processId, _, Some(newVersion)) =>
-        addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
-      case updateProcessRes @ ProcessUpdated(processId, Some(oldVersion), _) =>
-        addNewCommentToVersion(processId, oldVersion).map(_ => updateProcessRes)
-      case a => DBIO.successful(a)
-    }
+    for {
+      updateProcessRes <- updateProcessInternal(
+        updateProcessAction.id,
+        updateProcessAction.canonicalProcess,
+        updateProcessAction.increaseVersionWhenJsonNotChanged,
+        userName
+      )
+      _ <- updateProcessRes match {
+        // Comment should be added via ProcessService not to mix this repository responsibility.
+        case updateProcessRes @ ProcessUpdated(processId, _, Some(newVersion)) =>
+          addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
+        case updateProcessRes @ ProcessUpdated(processId, Some(oldVersion), _) =>
+          addNewCommentToVersion(processId, oldVersion).map(_ => updateProcessRes)
+        case _ => dbMonad.unit
+      }
+      _ <- updateProcessAction.labels match {
+        case Some(labels) =>
+          scenarioLabelsRepository.overwriteLabels(updateProcessAction.id.id, labels.map(ScenarioLabel.apply))
+        case None => dbMonad.unit
+      }
+    } yield updateProcessRes
   }
 
   private def updateProcessInternal(

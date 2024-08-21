@@ -17,7 +17,7 @@ object NewProcessPreparer {
     Map(
       FragmentSpecificData.docsUrlName        -> "",
       FragmentSpecificData.componentGroupName -> DefaultsComponentGroupName.FragmentsGroupName.value,
-      FragmentSpecificData.iconName               -> DefaultsComponentIcon.FragmentIcon
+      FragmentSpecificData.iconName           -> DefaultsComponentIcon.FragmentIcon
     ),
     FragmentSpecificData.typeName
   )
@@ -37,8 +37,8 @@ class NewProcessPreparer(
       (key, config.defaultValue.getOrElse(""))
     }
     val initialMetadata =
-      if (isFragment) MetaData(processName.value, initialFragmentFields)
-      else creator.create(processName, initialProperties)
+      if (isFragment) MetaData(processName.value, List.empty, initialFragmentFields)
+      else creator.create(processName, List.empty, initialProperties)
 
     val emptyCanonical = CanonicalProcess(
       metaData = initialMetadata,

@@ -22,12 +22,15 @@ import {
 } from "./ScenarioDetailsComponents";
 import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";
 import { CategoryDetails } from "./CategoryDetails";
+import { ScenarioLabels } from "./ScenarioLabels";
+import { getLoggedUser } from "../../../reducers/selectors/settings";
 
 const ScenarioDetails = memo((props: ToolbarPanelProps) => {
     const scenario = useSelector((state: RootState) => getScenario(state));
     const isRenamePending = useSelector((state: RootState) => isProcessRenamed(state));
     const unsavedNewName = useSelector((state: RootState) => getProcessUnsavedNewName(state));
     const processState = useSelector((state: RootState) => getProcessState(state));
+    const loggedUser = useSelector((state: RootState) => getLoggedUser(state));
 
     const transitionKey = ProcessStateUtils.getTransitionKey(scenario, processState);
 
@@ -56,6 +59,7 @@ const ScenarioDetails = memo((props: ToolbarPanelProps) => {
                                 <ProcessName variant={"subtitle2"}>{scenario.name}</ProcessName>
                             )}
                         </ScenarioDetailsItemWrapper>
+                        <ScenarioLabels readOnly={!loggedUser.isWriter()} />
                         <MoreScenarioDetailsButton scenario={scenario} processState={processState} />
                     </PanelScenarioDetails>
                 </CssFade>

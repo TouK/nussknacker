@@ -32,6 +32,7 @@ final case class ScenarioWithDetails(
     createdAt: Instant,
     createdBy: String,
     tags: Option[List[String]],
+    labels: Option[List[String]],
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],

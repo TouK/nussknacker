@@ -35,14 +35,17 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
     mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
   ) with DbioRepository
 
+  private val scenarioLabelsRepository: ScenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
+
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
     new CommentRepository(dbRef),
+    scenarioLabelsRepository,
     mapProcessingTypeDataProvider(1)
   )
 
   private val futureFetchingScenarioRepository: DBFetchingProcessRepository[Future] =
-    new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
+    new DBFetchingProcessRepository[Future](dbRef, actionRepository, scenarioLabelsRepository) with BasicRepository
 
   def createEmptyScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     val newProcessPreparer: NewProcessPreparer = new NewProcessPreparer(

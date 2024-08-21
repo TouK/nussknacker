@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 
 class ProcessPropertiesTest extends AnyFunSuite with Matchers {
 
-  private val id = "testId"
+  private val id     = "testId"
+  private val labels = List.empty[String]
 
   test("construct ProcessProperties from TypeSpecificData") {
     forAll(fullMetaDataCases) {
@@ -30,7 +31,7 @@ class ProcessPropertiesTest extends AnyFunSuite with Matchers {
     forAll(fullMetaDataCases) {
       (fullProperties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
         {
-          val metaData = ProcessProperties(typeSpecificData).toMetaData(ProcessName(id))
+          val metaData = ProcessProperties(typeSpecificData).toMetaData(ProcessName(id), labels)
           metaData.typeSpecificData shouldBe typeSpecificData
           metaData.additionalFields shouldBe ProcessAdditionalFields(None, fullProperties, metaDataName)
         }

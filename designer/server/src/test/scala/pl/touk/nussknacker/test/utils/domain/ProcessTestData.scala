@@ -406,7 +406,7 @@ object ProcessTestData {
       edges = List.empty
     )
 
-    UpdateScenarioCommand(scenarioGraph, comment, None)
+    UpdateScenarioCommand(scenarioGraph, comment, None, None)
   }
 
   def validProcessWithFragment(

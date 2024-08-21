@@ -10,7 +10,7 @@ trait NuTables
     with ProcessVersionEntityFactory
     with EnvironmentsEntityFactory
     with ProcessActionEntityFactory
-    with TagsEntityFactory
+    with ScenarioLabelsEntityFactory
     with AttachmentEntityFactory
     with DeploymentEntityFactory {
   protected val profile: JdbcProfile

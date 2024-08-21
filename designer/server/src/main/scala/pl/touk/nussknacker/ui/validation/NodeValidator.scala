@@ -23,10 +23,10 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository) {
 
-  def validate(scenarioName: ProcessName, nodeData: NodeValidationRequest)(
+  def validate(scenarioName: ProcessName, labels: List[String], nodeData: NodeValidationRequest)(
       implicit loggedUser: LoggedUser
   ): NodeValidationResult = {
-    implicit val metaData: MetaData = nodeData.processProperties.toMetaData(scenarioName)
+    implicit val metaData: MetaData = nodeData.processProperties.toMetaData(scenarioName, labels)
 
     val nodeDataValidator = new NodeDataValidator(modelData)
 

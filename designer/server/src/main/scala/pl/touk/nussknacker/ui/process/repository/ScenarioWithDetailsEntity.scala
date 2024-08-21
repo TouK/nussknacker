@@ -33,7 +33,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     modifiedBy: String,
     createdAt: Instant,
     createdBy: String,
-    tags: Option[List[String]],
+    scenarioLabels: List[String],
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[
       ProcessAction

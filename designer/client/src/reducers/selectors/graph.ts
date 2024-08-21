@@ -15,6 +15,8 @@ export const getScenario = createSelector(getGraph, (g) => g.scenario);
 export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
     memoizeOptions: { equalityCheck: isEqual, resultEqualityCheck: isEqual },
 });
+
+export const getScenarioLabels = createSelector(getGraph, (g) => g.scenario.labels);
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);

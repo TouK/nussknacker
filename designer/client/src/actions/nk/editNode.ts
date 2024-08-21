@@ -17,6 +17,18 @@ export type RenameProcessAction = {
     name: string;
 };
 
+export type EditScenarioLabels = {
+    type: "EDIT_LABELS";
+    labels: string[];
+}
+
+
+export function editScenarioLabels(scenarioLabels: string[]) {
+    return (dispatch) => {
+        dispatch({type: "EDIT_LABELS", labels: scenarioLabels.sort((a, b) => a.localeCompare(b))})
+    };
+}
+
 export function editNode(scenarioBefore: Scenario, before: NodeType, after: NodeType, outputEdges?: Edge[]): ThunkAction {
     return async (dispatch) => {
         const { processName, scenarioGraph } = await dispatch(calculateProcessAfterChange(scenarioBefore, before, after, outputEdges));

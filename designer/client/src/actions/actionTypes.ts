@@ -22,6 +22,7 @@ export type ActionTypes =
     | "RESET_SELECTION"
     | "EDIT_NODE"
     | "PROCESS_RENAME"
+    | "EDIT_LABELS"
     | "SHOW_METRICS"
     | "UPDATE_TEST_CAPABILITIES"
     | "UPDATE_TEST_FORM_PARAMETERS"

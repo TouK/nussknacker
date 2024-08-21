@@ -145,16 +145,24 @@ object TestFactory {
 
   def newCommentRepository(dbRef: DbRef) = new CommentRepository(dbRef)
 
+  def newScenarioLabelsRepository(dbRef: DbRef) = new ScenarioLabelsRepository(dbRef)
+
   def newFutureFetchingScenarioRepository(dbRef: DbRef) =
-    new DBFetchingProcessRepository[Future](dbRef, newActionProcessRepository(dbRef)) with BasicRepository
+    new DBFetchingProcessRepository[Future](
+      dbRef,
+      newActionProcessRepository(dbRef),
+      newScenarioLabelsRepository(dbRef)
+    ) with BasicRepository
 
   def newFetchingProcessRepository(dbRef: DbRef) =
-    new DBFetchingProcessRepository[DB](dbRef, newActionProcessRepository(dbRef)) with DbioRepository
+    new DBFetchingProcessRepository[DB](dbRef, newActionProcessRepository(dbRef), newScenarioLabelsRepository(dbRef))
+      with DbioRepository
 
   def newWriteProcessRepository(dbRef: DbRef, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(
       dbRef,
       newCommentRepository(dbRef),
+      newScenarioLabelsRepository(dbRef),
       mapProcessingTypeDataProvider(modelVersions.map(Streaming.stringify -> _).toList: _*)
     )
 

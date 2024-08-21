@@ -53,6 +53,7 @@ export interface Scenario {
     createdAt: Instant;
     modifiedAt: Instant;
     createdBy: string;
+    labels?: string[];
     lastAction?: ProcessActionType;
     lastDeployedAction?: ProcessActionType;
     state: ProcessStateType;

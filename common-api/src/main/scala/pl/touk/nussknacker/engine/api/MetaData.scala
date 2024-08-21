@@ -11,7 +11,11 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 // TODO: This class should be moved into components-api, scenario-api shouldn't use this. It should hold only properties
 //       and ScenarioRuntimeMetadata (Currently called ProcessVersion)
-@ConfiguredJsonCodec(encodeOnly = true) case class MetaData(id: String, additionalFields: ProcessAdditionalFields) {
+@ConfiguredJsonCodec(encodeOnly = true) case class MetaData(
+    id: String,
+    labels: List[String],
+    additionalFields: ProcessAdditionalFields
+) {
   def typeSpecificData: TypeSpecificData = additionalFields.typeSpecificProperties
 
   def withTypeSpecificData(typeSpecificData: TypeSpecificData): MetaData = {
@@ -58,7 +62,14 @@ object MetaData {
       }
   }
 
-  implicit val decoder: Decoder[MetaData] = actualDecoder or legacyDecoder
+  private val decoderWithLabelsFallback: Decoder[MetaData] = { (c: HCursor) =>
+    for {
+      id         <- c.downField("id").as[String]
+      properties <- c.downField("additionalFields").as[ProcessAdditionalFields]
+    } yield MetaData(id = id, labels = List.empty, additionalFields = properties)
+  }
+
+  implicit val decoder: Decoder[MetaData] = actualDecoder or decoderWithLabelsFallback or legacyDecoder
 
   // TODO: remove legacy constructors after the migration is completed
   def combineTypeSpecificProperties(
@@ -68,6 +79,7 @@ object MetaData {
   ): MetaData = {
     MetaData(
       id = id,
+      labels = List.empty,
       additionalFields = additionalFields.combineTypeSpecificProperties(typeSpecificData)
     )
   }
@@ -75,6 +87,7 @@ object MetaData {
   def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
     MetaData(
       id = id,
+      labels = List.empty,
       additionalFields = ProcessAdditionalFields(None, typeSpecificData.toMap, typeSpecificData.metaDataType)
     )
   }

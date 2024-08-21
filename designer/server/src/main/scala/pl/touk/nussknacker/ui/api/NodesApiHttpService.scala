@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
@@ -89,7 +90,7 @@ class NodesApiHttpService(
             modelData <- getModelData(scenario.processingType)
             nodeValidator = processingTypeToNodeValidator.forProcessingTypeUnsafe(scenario.processingType)
             nodeData   <- dtoToNodeRequest(nodeValidationRequestDto, modelData)
-            validation <- getNodeValidation(nodeValidator, scenarioName, nodeData)
+            validation <- getNodeValidation(nodeValidator, scenario, nodeData)
             validationDto = NodeValidationResultDto.apply(validation)
           } yield validationDto
         }
@@ -106,7 +107,7 @@ class NodesApiHttpService(
             additionalInfo <- EitherT.right(
               additionalInfoProviders
                 .prepareAdditionalInfoForProperties(
-                  scenarioProperties.toMetaData(scenarioName),
+                  scenarioProperties.toMetaData(scenarioName, scenario.tags.getOrElse(List.empty)),
                   scenario.processingType
                 )
             )
@@ -190,14 +191,14 @@ class NodesApiHttpService(
 
   private def getNodeValidation(
       nodeValidator: NodeValidator,
-      scenarioName: ProcessName,
+      scenario: ScenarioWithDetails,
       nodeData: NodeValidationRequest
   )(
       implicit user: LoggedUser
   ): EitherT[Future, NodesError, NodeValidationResult] =
     EitherT.fromEither(
       try {
-        Right(nodeValidator.validate(scenarioName, nodeData))
+        Right(nodeValidator.validate(scenario.name, scenario.tags.getOrElse(List.empty), nodeData))
       } catch {
         case e: ProcessNotFoundError =>
           Left(NoScenario(ProcessName(e.name.value)))

@@ -1,7 +1,7 @@
 import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { layoutChanged, Position } from "./ui/layout";
-import { EditNodeAction, RenameProcessAction } from "./editNode";
+import {EditNodeAction, EditScenarioLabels, RenameProcessAction} from "./editNode";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import NodeUtils from "../../components/graph/NodeUtils";
@@ -154,4 +154,5 @@ export type NodeActions =
     | NodesWithEdgesAddedAction
     | ValidationResultAction
     | EditNodeAction
-    | RenameProcessAction;
+    | RenameProcessAction
+    | EditScenarioLabels;
