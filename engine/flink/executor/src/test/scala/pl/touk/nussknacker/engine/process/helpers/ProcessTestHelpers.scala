@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import com.typesafe.config.Config
+import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -10,11 +12,20 @@ import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.api.process.{
+  BasicFlinkSink,
+  FlinkCustomNodeContext,
+  FlinkLazyParameterFunctionHelper,
+  FlinkSink
+}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
+
+import java.util.concurrent.atomic.AtomicInteger
 
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
@@ -74,6 +85,7 @@ object ProcessTestHelpers extends Serializable {
     ComponentDefinition("genericParametersSource", GenericParametersSource),
     ComponentDefinition("genericSourceWithCustomVariables", GenericSourceWithCustomVariables),
     ComponentDefinition("monitor", SinkFactory.noParam(MonitorEmptySink)),
+    ComponentDefinition("sinkAccessingNodeContext", SinkFactory.noParam(SinkAccessingNodeContext)),
     ComponentDefinition("sinkForInts", SinkForInts(sinkForIntsResultsHolder)),
     ComponentDefinition("sinkForStrings", SinkForStrings(sinkForStringsResultsHolder)),
     ComponentDefinition(
@@ -113,6 +125,19 @@ object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
       List.empty,
       dictionaries = Map(dictId -> dictDef)
     )
+  }
+
+}
+
+case object SinkAccessingNodeContext extends EmptySink with Serializable {
+
+  @transient private var _nodeId: String = _
+
+  def nodeId: String = _nodeId
+
+  override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[AnyRef] = {
+    _nodeId = flinkNodeContext.nodeId
+    super.toFlinkFunction(flinkNodeContext)
   }
 
 }

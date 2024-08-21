@@ -566,9 +566,10 @@ object SampleNodes {
       ): FlatMapFunction[Context, ValueWithContext[String]] =
         (ctx, collector) => collector.collect(ValueWithContext(serializableValue, ctx))
 
-      override def toFlinkFunction: SinkFunction[String] = new SinkFunction[String] {
-        override def invoke(value: String, context: SinkFunction.Context): Unit = resultsHolder.add(value)
-      }
+      override def toFlinkFunction(flinkCustomNodeContext: FlinkCustomNodeContext): SinkFunction[String] =
+        new SinkFunction[String] {
+          override def invoke(value: String, context: SinkFunction.Context): Unit = resultsHolder.add(value)
+        }
 
       override type Value = String
     }
