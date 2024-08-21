@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="NussknackerApp" type="Application" factoryName="Application">
-    <option name="ALTERNATIVE_JRE_PATH" value="/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk/Contents/Home" />
+    <option name="ALTERNATIVE_JRE_PATH" value="corretto-11" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <envs>
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
@@ -21,7 +21,7 @@
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
-    <module name="nussknacker-designer" />
+    <module name="nussknacker.nussknacker-designer" />
     <option name="VM_PARAMETERS" value="-Dconfig.override_with_env_vars=true -Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../../../nussknacker-dist/src/universal/conf/logback.xml" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/designer/server/work" />
     <extension name="coverage">
