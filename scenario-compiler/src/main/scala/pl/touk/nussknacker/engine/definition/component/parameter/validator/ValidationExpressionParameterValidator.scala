@@ -21,7 +21,7 @@ case class ValidationExpressionParameterValidator(
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
-    CompileTimeEvaluableValueValidator // // validation expression validation requires the value of the expression to be known at compile-time
+    CompileTimeEvaluableValueValidator // validation expression validation requires the value of the expression to be known
       .isValid(paramName, expression, value, label)
       .andThen { _ =>
         value match {
