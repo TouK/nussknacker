@@ -4,7 +4,12 @@ import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyParameterFunctionHelper, FlinkSink}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  BasicFlinkSink,
+  FlinkCustomNodeContext,
+  FlinkLazyParameterFunctionHelper,
+  FlinkSink
+}
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 
 object SingleValueSinkFactory {
@@ -23,7 +28,7 @@ class SingleValueSinkFactory[T <: AnyRef](sink: => SinkFunction[T]) extends Sink
           helper: FlinkLazyParameterFunctionHelper
       ): FlatMapFunction[Context, ValueWithContext[Value]] = helper.lazyMapFunction(value)
 
-      override def toFlinkFunction: SinkFunction[Value] = sink
+      override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value] = sink
     }
   }
 
