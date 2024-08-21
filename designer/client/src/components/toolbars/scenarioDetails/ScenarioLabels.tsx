@@ -1,8 +1,8 @@
 import { useDispatch, useSelector } from "react-redux";
 import { getScenario, getScenarioLabels } from "../../../reducers/selectors/graph";
-import { Autocomplete, Box, Link, SxProps, TextField, Theme, Typography, useTheme } from "@mui/material";
+import { Autocomplete, Box, Link, styled, SxProps, TextField, Theme, Typography, useTheme } from "@mui/material";
 import { selectStyled } from "../../../stylesheets/SelectStyled";
-import React, { ForwardRefExoticComponent, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ForwardRefExoticComponent, useCallback, useState } from "react";
 import HttpService from "../../../http/HttpService";
 import i18next from "i18next";
 import { Chip } from "@mui/material";
@@ -27,6 +27,25 @@ const AddLabel = ({ onClick }) => {
     );
 };
 
+const StyledAutocomplete = styled(Autocomplete)<{ isEdited: boolean }>(({ isEdited, theme }) => ({
+    ".MuiFormControl-root": {
+        margin: 0,
+    },
+    ...{
+        ...(!isEdited && {
+            "&:hover": {
+                backgroundColor: theme.palette.action.hover,
+            },
+            ".MuiInputBase-input": {
+                outline: "none",
+            },
+            ".MuiOutlinedInput-notchedOutline": {
+                border: "none",
+            },
+        }),
+    },
+}));
+
 export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
     const scenario = useSelector(getScenario);
     const scenarioLabels = useSelector(getScenarioLabels);
@@ -41,6 +60,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
     const [options, setOptions] = useState<string[]>([]);
     const handleAddLabelClick = () => {
         setShowLabelsEditor(true);
+        setIsEdited(true);
     };
 
     // todo debounce or refresh to limit calls
@@ -49,7 +69,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
         const { data } = await HttpService.fetchScenarioLabels();
         setIsFetching(false);
         return data.labels;
-    }, [scenario.name]);
+    }, []);
 
     const saveLabels = (labels: string[]) => {
         const sortedLabels = labels.sort((a, b) => a.localeCompare(b));
@@ -57,11 +77,12 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
     };
 
     return (
-        <div>
+        <>
             {!showLabelsEditor ? (
                 <AddLabel onClick={handleAddLabelClick} />
             ) : (
-                <Autocomplete
+                <StyledAutocomplete
+                    isEdited={isEdited}
                     id="scenario-labels"
                     clearOnBlur={true}
                     disabled={readOnly}
@@ -96,14 +117,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                     options={options}
                     renderInput={(params) => (
                         <div ref={params.InputProps.ref}>
-                            <TextField
-                                size="small"
-                                {...params}
-                                variant="outlined"
-                                sx={labelsInput({}, !isEdited) as SxProps<Theme>}
-                                // we need to set the props below to disable input's border
-                                // sx={{"& fieldset": { border: 'none' }} }
-                            />
+                            <TextField size="small" {...params} variant="outlined" autoFocus={isEdited} />
                         </div>
                     )}
                     renderOption={(props, option) => {
@@ -124,6 +138,6 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                     value={scenarioLabels}
                 />
             )}
-        </div>
+        </>
     );
 };
