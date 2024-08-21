@@ -574,8 +574,10 @@ class DefaultComponentServiceSpec
 
     forAll(testingData) {
       (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
-        val returnedComponentsWithUsages    = componentService.getComponentsList(skipUsages = false)(user).futureValue
-        val returnedComponentsWithoutUsages = componentService.getComponentsList(skipUsages = true)(user).futureValue
+        val returnedComponentsWithUsages =
+          componentService.getComponentsList(skipUsages = false, skipFragments = false)(user).futureValue
+        val returnedComponentsWithoutUsages =
+          componentService.getComponentsList(skipUsages = true, skipFragments = false)(user).futureValue
 
         returnedComponentsWithUsages.map(_.id) shouldBe returnedComponentsWithoutUsages.map(_.id)
 
@@ -686,7 +688,7 @@ class DefaultComponentServiceSpec
     )
     inside {
       intercept[TestFailedException] {
-        componentService.getComponentsList(skipUsages = false)(admin).futureValue
+        componentService.getComponentsList(skipUsages = false, skipFragments = false)(admin).futureValue
       }.cause
     } { case Some(ComponentConfigurationException(_, wrongConfigurations)) =>
       wrongConfigurations.toList should contain theSameElementsAs expectedWrongConfigurations

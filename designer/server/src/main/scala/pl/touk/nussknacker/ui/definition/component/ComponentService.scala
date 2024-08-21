@@ -26,7 +26,10 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
-  def getComponentsList(skipUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]]
+
+  def getComponentsList(skipUsages: Boolean, skipFragments: Boolean)(
+      implicit user: LoggedUser
+  ): Future[List[ComponentListElement]]
 
   def getComponentUsages(designerWideComponentId: DesignerWideComponentId)(
       implicit user: LoggedUser
@@ -70,10 +73,12 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  override def getComponentsList(skipUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
+  override def getComponentsList(skipUsages: Boolean, skipFragments: Boolean)(
+      implicit user: LoggedUser
+  ): Future[List[ComponentListElement]] = {
     for {
       components <- processingTypeDataProvider.all.toList.flatTraverse { case (processingType, processingTypeData) =>
-        extractComponentsFromProcessingType(processingTypeData, processingType)
+        extractComponentsFromProcessingType(processingTypeData, processingType, skipFragments)
       }
       // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
       mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
@@ -123,16 +128,21 @@ class DefaultComponentService(
 
   private def extractComponentsFromProcessingType(
       processingTypeData: ComponentServiceProcessingTypeData,
-      processingType: ProcessingType
+      processingType: ProcessingType,
+      skipFragments: Boolean
   )(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
-    fragmentsRepository
-      .fetchLatestFragments(processingType)
-      .map { fragments =>
-        createComponents(
-          definedComponents(processingTypeData, fragments),
-          processingTypeData.category,
-        )
-      }
+    val fragments =
+      if (skipFragments)
+        Future.successful(List.empty)
+      else
+        fragmentsRepository.fetchLatestFragments(processingType)
+
+    fragments.map { fetchedFragments =>
+      createComponents(
+        definedComponents(processingTypeData, fetchedFragments),
+        processingTypeData.category,
+      )
+    }
   }
 
   private def createComponents(
