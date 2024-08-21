@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.util.functions
 
+import cats.NonEmptyAlternative.ops.toAllNonEmptyAlternativeOps
 import cats.data.ValidatedNel
-import cats.implicits.catsSyntaxValidatedId
+import cats.implicits.{catsSyntaxValidatedId, catsSyntaxValidatedIdBinCompat0}
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeNumbersOperation
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import java.util.{Collections, Objects}
+import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.reflect.ClassTag
@@ -120,6 +122,29 @@ trait CollectionUtils extends HideToString {
     }
     values
   }
+
+  @Documentation(description =
+    "Returns a list of all elements sorted by record field (field cannot be nullable) " +
+      "in ascending order (elements must be comparable)"
+  )
+  @GenericType(typingFunction = classOf[RecordCollectionSortingTyping])
+  def sortedAscBy(
+      @ParamName("list") list: java.util.Collection[java.util.Map[String, Any]],
+      @ParamName("fieldName") fieldName: String
+  ): java.util.List[java.util.Map[String, Any]] = {
+    list.asScala.toList.sortWith { (firstMap, secondMap) =>
+      (firstMap.get(fieldName), secondMap.get(fieldName)) match {
+        case (a, b) if a != null && b != null =>
+          a.asInstanceOf[Comparable[Any]].compareTo(b.asInstanceOf[Comparable[Any]]) < 0
+        case _ => throw new IllegalStateException("Elements cannot be compared")
+      }
+    }.asJava
+  }
+
+  @Documentation(description = "Returns a list that contains elements in reversed order from the given list")
+  @GenericType(typingFunction = classOf[ListTyping])
+  def reverse(@ParamName("list") list: java.util.List[_]): java.util.List[_] =
+    list.asScala.reverse.asJava
 
   @Documentation(description = "Returns a list made of first n elements of the given list")
   @GenericType(typingFunction = classOf[ListTyping])
@@ -344,4 +369,45 @@ object CollectionUtils {
   class ListElementTyping extends CollectionElementTyping[java.util.List]
 
   class ListElementTypingForSum extends CollectionElementTypingForSum[java.util.List]
+
+  class RecordCollectionSortingTyping extends TypingFunction {
+    private val listClass       = classOf[java.util.List[java.util.Map[String, Any]]]
+    private val fieldClass      = classOf[String]
+    private val comparableClass = classOf[Comparable[Any]]
+
+    override def computeResultType(
+        arguments: List[typing.TypingResult]
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
+      arguments match {
+        case (f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil))
+            :: TypedObjectWithValue(TypedClass(`fieldClass`, Nil), field) :: _ =>
+          listResultType(f, e, fields, field)
+        case TypedObjectWithValue(f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil), _) ::
+            TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
+          listResultType(f, e, fields, fieldName)
+        case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      }
+    }
+
+    private def listResultType(
+        baseTypeClass: TypedClass,
+        parametersTypes: TypedObjectTypingResult,
+        fields: ListMap[String, typing.TypingResult],
+        fieldName: Any
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
+      fields.get(fieldName.asInstanceOf[String]) match {
+        case Some(TypedClass(klass, _)) =>
+          if (comparableClass.isAssignableFrom(klass)) {
+            baseTypeClass.copy(params = parametersTypes.withoutValue :: Nil).validNel
+          } else {
+            GenericFunctionTypingError.OtherError(s"Field must implement Comparable interface").invalidNel
+          }
+        case Some(Unknown) =>
+          GenericFunctionTypingError.OtherError(s"Field must implement Comparable interface").invalidNel
+        case _ => GenericFunctionTypingError.OtherError(s"Record must contain field: $fieldName").invalidNel
+      }
+    }
+
+  }
+
 }
