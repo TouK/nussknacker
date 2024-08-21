@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.validation
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, UnknownProperty}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValida
 import scala.util.Try
 
 class ScenarioPropertiesValidator(
-    scenarioPropertiesConfig: Map[String, SingleScenarioPropertyConfig],
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer
 ) {
 
@@ -25,7 +25,7 @@ class ScenarioPropertiesValidator(
 
   implicit val nodeId: NodeId = NodeId("properties")
 
-  type PropertyConfig = Map[String, SingleScenarioPropertyConfig]
+  type PropertyConfig = Map[String, ScenarioPropertyConfig]
 
   def validate(scenarioProperties: List[(String, String)]): ValidationResult = {
     val finalizedScenarioPropertiesConfig =
@@ -125,7 +125,7 @@ private final case class MissingRequiredPropertyValidator(actualPropertyNames: L
 
 }
 
-private final case class UnknownPropertyValidator(config: Map[String, SingleScenarioPropertyConfig]) {
+private final case class UnknownPropertyValidator(config: Map[String, ScenarioPropertyConfig]) {
 
   def isValid(propertyName: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
     if (config.contains(propertyName)) {

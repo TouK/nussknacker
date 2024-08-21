@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   DateParameterEditor,
   LiteralIntegerValidator,
@@ -242,7 +242,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
   override def scenarioPropertiesConfig(config: Config): ScenarioProperties =
     ScenarioProperties.fromParameterMap(
       Map(
-        "deploymentManagerProperty" -> SingleScenarioPropertyConfig(None, None, None, None, None)
+        "deploymentManagerProperty" -> ScenarioPropertyConfig(None, None, None, None, None)
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
 

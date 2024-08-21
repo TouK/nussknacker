@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import pl.touk.nussknacker.engine.api.FragmentSpecificData
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -26,8 +26,8 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsCom
 
 object FragmentPropertiesConfig {
 
-  val docsUrlConfig: (String, SingleScenarioPropertyConfig) = FragmentSpecificData.docsUrlName ->
-    SingleScenarioPropertyConfig(
+  val docsUrlConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.docsUrlName ->
+    ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       // TODO: some validator
@@ -36,8 +36,8 @@ object FragmentPropertiesConfig {
       hintText = None
     )
 
-  val componentGroupNameConfig: (String, SingleScenarioPropertyConfig) = FragmentSpecificData.componentGroupName ->
-    SingleScenarioPropertyConfig(
+  val componentGroupNameConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.componentGroupName ->
+    ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(
         FixedValuesParameterEditor(
@@ -64,8 +64,8 @@ object FragmentPropertiesConfig {
     FixedExpressionValueWithIcon(VariableIcon, "Variable", VariableIcon),
   )
 
-  val iconConfig: (String, SingleScenarioPropertyConfig) = FragmentSpecificData.iconName ->
-    SingleScenarioPropertyConfig(
+  val iconConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.iconName ->
+    ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(FixedValuesWithIconParameterEditor(icons)),
       validators = Some(List(MandatoryParameterValidator)),
@@ -74,6 +74,6 @@ object FragmentPropertiesConfig {
     )
 
   // TODO: We should probably allow to add some properties definition using configuration like in the scenario case
-  val properties: Map[String, SingleScenarioPropertyConfig] = Map(docsUrlConfig, componentGroupNameConfig, iconConfig)
+  val properties: Map[String, ScenarioPropertyConfig] = Map(docsUrlConfig, componentGroupNameConfig, iconConfig)
 
 }

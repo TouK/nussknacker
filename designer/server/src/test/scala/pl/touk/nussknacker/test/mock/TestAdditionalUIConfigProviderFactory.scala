@@ -21,9 +21,9 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   val componentGroupName: ComponentGroupName = ComponentGroupName("someComponentGroup")
   val scenarioPropertyName                   = "someScenarioProperty1"
 
-  val scenarioPropertyConfigDefault: Map[String, SingleScenarioPropertyConfig] =
+  val scenarioPropertyConfigDefault: Map[String, ScenarioPropertyConfig] =
     Map(
-      scenarioPropertyName -> SingleScenarioPropertyConfig.empty.copy(
+      scenarioPropertyName -> ScenarioPropertyConfig.empty.copy(
         defaultValue = Some("someDefault")
       )
     )
@@ -31,9 +31,9 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   val scenarioPropertyPossibleValues: List[FixedExpressionValue] =
     List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
 
-  val scenarioPropertyConfigOverride: Map[String, SingleScenarioPropertyConfig] =
+  val scenarioPropertyConfigOverride: Map[String, ScenarioPropertyConfig] =
     Map(
-      scenarioPropertyName -> SingleScenarioPropertyConfig.empty.copy(
+      scenarioPropertyName -> ScenarioPropertyConfig.empty.copy(
         defaultValue = Some("defaultValueOverride"),
         validators = Some(List(FixedValuesValidator(scenarioPropertyPossibleValues))),
         label = Some("labelOverride"),
@@ -68,7 +68,7 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
     else
       Map.empty
 
-  override def getScenarioPropertiesUIConfigs(processingType: String): Map[String, SingleScenarioPropertyConfig] =
+  override def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig] =
     if (processingType == Streaming.stringify)
       scenarioPropertyConfigOverride
     else

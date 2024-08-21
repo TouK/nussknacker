@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -17,7 +17,7 @@ object NewProcessPreparer {
     Map(
       FragmentSpecificData.docsUrlName        -> "",
       FragmentSpecificData.componentGroupName -> DefaultsComponentGroupName.FragmentsGroupName.value,
-      FragmentSpecificData.iconName               -> DefaultsComponentIcon.FragmentIcon
+      FragmentSpecificData.iconName           -> DefaultsComponentIcon.FragmentIcon
     ),
     FragmentSpecificData.typeName
   )
@@ -26,7 +26,7 @@ object NewProcessPreparer {
 
 class NewProcessPreparer(
     creator: MetaDataInitializer,
-    scenarioProperties: Map[String, SingleScenarioPropertyConfig],
+    scenarioProperties: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer
 ) {
 

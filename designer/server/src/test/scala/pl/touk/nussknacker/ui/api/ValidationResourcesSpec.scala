@@ -10,7 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -52,21 +52,21 @@ class ValidationResourcesSpec
     Streaming.stringify -> new UIProcessResolver(
       TestFactory.processValidator.withScenarioPropertiesConfig(
         Map(
-          "requiredStringProperty" -> SingleScenarioPropertyConfig(
+          "requiredStringProperty" -> ScenarioPropertyConfig(
             None,
             Some(StringParameterEditor),
             Some(List(MandatoryParameterValidator)),
             Some("label"),
             None
           ),
-          "numberOfThreads" -> SingleScenarioPropertyConfig(
+          "numberOfThreads" -> ScenarioPropertyConfig(
             None,
             Some(FixedValuesParameterEditor(TestFactory.possibleValues)),
             Some(List(FixedValuesValidator(TestFactory.possibleValues))),
             None,
             None
           ),
-          "maxEvents" -> SingleScenarioPropertyConfig(
+          "maxEvents" -> ScenarioPropertyConfig(
             None,
             None,
             Some(List(LiteralIntegerValidator)),
