@@ -1364,9 +1364,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       case Some(
             List(
               NodeValidationError(
-                "CustomParameterValidationError",
-                "Value of expression 'T(java.time.LocalDateTime).now' was unable to be determined at deployment time and it cannot be used with expression validation.",
-                "Please provide a value that is evaluable at deployment time and satisfies the validation expression '#value.dayOfWeek.name == 'FRIDAY''",
+                "CompileTimeEvaluableParameterNotEvaluable",
+                "This field's value has to be evaluable at deployment time",
+                "Please provide a value that is evaluable at deployment time",
                 Some("localDateTimeParam"),
                 NodeValidationErrorType.SaveAllowed,
                 None
