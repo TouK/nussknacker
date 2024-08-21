@@ -17,6 +17,10 @@ object BestEffortTableTypeSchemaEncoder {
 
   private val rowClass = classOf[Row]
 
+  private val listClass = classOf[java.util.List[_]]
+
+  private val arrayClass = classOf[Array[AnyRef]]
+
   def encode(value: Any, targetType: LogicalType): Any = {
     val alignedValue = (value, targetType) match {
       case (null, _) =>
@@ -26,7 +30,7 @@ object BestEffortTableTypeSchemaEncoder {
         NumberUtils
           .convertNumberToTargetClass[Number](number, targetType.getDefaultConversion.asInstanceOf[Class[Number]])
       case (_, rowType: RowType) =>
-        encode(value, rowType)
+        encodeAsRow(value, rowType)
       case (javaMap: java.util.Map[_, _], mapType: MapType) =>
         javaMap.asScala.map { case (key, value) =>
           encode(key, mapType.getKeyType) -> encode(value, mapType.getValueType)
@@ -39,11 +43,9 @@ object BestEffortTableTypeSchemaEncoder {
           )
         }.asJava
       case (array: Array[_], arrayType: ArrayType) =>
-        array.map(encode(_, arrayType.getElementType)).toArray(ClassTag(arrayType.getElementType.getDefaultConversion))
+        encodeAsArray(array, arrayType)
       case (list: java.util.List[Any @unchecked], arrayType: ArrayType) =>
-        list.asScala
-          .map(encode(_, arrayType.getElementType))
-          .toArray(ClassTag(arrayType.getElementType.getDefaultConversion))
+        encodeAsArray(list.asScala, arrayType)
       case (other, _) => other
     }
     if (alignedValue != null && !targetType.supportsInputConversion(alignedValue.getClass)) {
@@ -52,7 +54,7 @@ object BestEffortTableTypeSchemaEncoder {
     alignedValue
   }
 
-  def encode(value: Any, rowType: RowType): Row = value match {
+  def encodeAsRow(value: Any, rowType: RowType): Row = value match {
     case row: Row =>
       encodeRecord[Row](row, rowType, _.getField)
     case javaMap: java.util.Map[String @unchecked, _] =>
@@ -67,6 +69,10 @@ object BestEffortTableTypeSchemaEncoder {
       row.setField(fieldType.getName, encode(fieldValue, fieldType.getType))
     }
     row
+  }
+
+  private def encodeAsArray(list: Seq[Any], arrayType: ArrayType): Array[Any] = {
+    list.map(encode(_, arrayType.getElementType)).toArray(ClassTag(arrayType.getElementType.getDefaultConversion))
   }
 
   def alignTypingResult(typingResult: TypingResult, targetType: LogicalType): TypingResult = {
@@ -103,10 +109,10 @@ object BestEffortTableTypeSchemaEncoder {
       case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil), multisetType: MultisetType)
           if valueType.canBeSubclassOf(Typed[Int]) =>
         alignMultisetType(keyType, multisetType)
-      case (TypedClass(clazz, elementType :: Nil), arrayType: ArrayType) if clazz == classOf[Array[AnyRef]] =>
-        Typed.genericTypeClass(classOf[Array[AnyRef]], List(alignTypingResult(elementType, arrayType.getElementType)))
-      case (TypedClass(clazz, elementType :: Nil), arrayType: ArrayType) if clazz == classOf[java.util.List[_]] =>
-        Typed.genericTypeClass(classOf[Array[AnyRef]], List(alignTypingResult(elementType, arrayType.getElementType)))
+      case (TypedClass(`arrayClass`, elementType :: Nil), arrayType: ArrayType) =>
+        Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
+      case (TypedClass(`listClass`, elementType :: Nil), arrayType: ArrayType) =>
+        Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
       case (other, _) =>
         // We fallback to input typing result - some conversions could be done by Flink
         other

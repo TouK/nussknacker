@@ -83,7 +83,7 @@ class EncodeAsTableTypeFunction private (
   override def flatMap(valueWithContext: ValueWithContext[AnyRef], out: Collector[Row]): Unit = {
     exceptionHandler
       .handling(Some(NodeComponentInfo(nodeId, ComponentType.Sink, "table")), valueWithContext.context) {
-        BestEffortTableTypeSchemaEncoder.encode(valueWithContext.value, sinkRowType)
+        BestEffortTableTypeSchemaEncoder.encodeAsRow(valueWithContext.value, sinkRowType)
       }
       .foreach(out.collect)
   }
