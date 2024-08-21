@@ -71,7 +71,7 @@ object BestEffortTableTypeSchemaEncoder {
     row
   }
 
-  private def encodeAsArray(list: Seq[Any], arrayType: ArrayType): Array[Any] = {
+  private def encodeAsArray(list: collection.Seq[Any], arrayType: ArrayType): Array[Any] = {
     list.map(encode(_, arrayType.getElementType)).toArray(ClassTag(arrayType.getElementType.getDefaultConversion))
   }
 
