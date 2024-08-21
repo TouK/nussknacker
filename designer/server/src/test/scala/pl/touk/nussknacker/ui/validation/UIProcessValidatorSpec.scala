@@ -1364,7 +1364,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       case Some(
             List(
               NodeValidationError(
-                "CompileTimeEvaluableParameterNotEvaluable",
+                "CompileTimeEvaluableParameterNotEvaluated",
                 "This field's value has to be evaluable at deployment time",
                 "Please provide a value that is evaluable at deployment time",
                 Some("localDateTimeParam"),
