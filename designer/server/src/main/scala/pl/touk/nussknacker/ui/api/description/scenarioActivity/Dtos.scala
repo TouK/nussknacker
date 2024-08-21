@@ -257,7 +257,7 @@ object Dtos {
       `type`: ScenarioActivityType,
       user: String,
       date: Instant,
-      processVersionId: Long,
+      scenarioVersion: Long,
       comment: Option[String],
       additionalFields: List[AdditionalField],
       overrideDisplayableName: Option[String] = None,
@@ -276,14 +276,14 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.ScenarioCreated,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List.empty,
     )
@@ -292,14 +292,14 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.ScenarioArchived,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List.empty,
     )
@@ -308,14 +308,14 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.ScenarioUnarchived,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List.empty,
     )
@@ -326,14 +326,14 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.ScenarioDeployed,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List.empty,
     )
@@ -342,14 +342,14 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.ScenarioCanceled,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List.empty,
     )
@@ -360,24 +360,24 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.ScenarioModified,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List.empty,
-      overrideDisplayableName = Some(s"Version $processVersionId saved"),
+      overrideDisplayableName = Some(s"Version $scenarioVersion saved"),
     )
 
     def forScenarioNameChanged(
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         oldName: String,
         newName: String,
@@ -386,7 +386,7 @@ object Dtos {
       `type` = ScenarioActivityType.ScenarioNameChanged,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("oldName", oldName),
@@ -398,14 +398,14 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.CommentAdded,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List.empty,
     )
@@ -414,7 +414,7 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         deletedByUser: String,
     ): ScenarioActivity = ScenarioActivity(
@@ -422,7 +422,7 @@ object Dtos {
       `type` = ScenarioActivityType.CommentAdded,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("deletedByUser", deletedByUser),
@@ -434,7 +434,7 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         attachmentId: String,
         attachmentFilename: String,
@@ -443,7 +443,7 @@ object Dtos {
       `type` = ScenarioActivityType.AttachmentAdded,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("attachmentId", attachmentId),
@@ -455,7 +455,7 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         deletedByUser: String,
     ): ScenarioActivity = ScenarioActivity(
@@ -463,7 +463,7 @@ object Dtos {
       `type` = ScenarioActivityType.AttachmentAdded,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("deletedByUser", deletedByUser),
@@ -475,7 +475,7 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         from: String,
         to: String,
@@ -484,7 +484,7 @@ object Dtos {
       `type` = ScenarioActivityType.ChangedProcessingMode,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("from", from),
@@ -498,20 +498,20 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         sourceEnvironment: String,
-        sourceProcessVersionId: String,
+        sourceScenarioVersion: String,
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.IncomingMigration,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("sourceEnvironment", sourceEnvironment),
-        AdditionalField("sourceProcessVersionId", sourceProcessVersionId),
+        AdditionalField("sourceScenarioVersion", sourceScenarioVersion),
       )
     )
 
@@ -519,7 +519,7 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         destinationEnvironment: String,
     ): ScenarioActivity = ScenarioActivity(
@@ -527,7 +527,7 @@ object Dtos {
       `type` = ScenarioActivityType.OutgoingMigration,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("destinationEnvironment", destinationEnvironment),
@@ -540,7 +540,7 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         dateFinished: String,
         status: String,
@@ -549,7 +549,7 @@ object Dtos {
       `type` = ScenarioActivityType.PerformedSingleExecution,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("dateFinished", dateFinished),
@@ -561,7 +561,7 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         dateFinished: String,
         params: String,
@@ -571,7 +571,7 @@ object Dtos {
       `type` = ScenarioActivityType.PerformedScheduledExecution,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("params", params),
@@ -586,7 +586,7 @@ object Dtos {
         id: String,
         user: String,
         date: Instant,
-        processVersionId: Long,
+        scenarioVersion: Long,
         comment: Option[String],
         dateFinished: String,
         changes: String,
@@ -596,7 +596,7 @@ object Dtos {
       `type` = ScenarioActivityType.AutomaticUpdate,
       user = user,
       date = date,
-      processVersionId = processVersionId,
+      scenarioVersion = scenarioVersion,
       comment = comment,
       additionalFields = List(
         AdditionalField("changes", changes),
@@ -626,7 +626,7 @@ object Dtos {
   @derive(encoder, decoder, schema)
   final case class Comment private (
       id: Long,
-      processVersionId: Long,
+      scenarioVersion: Long,
       content: String,
       user: String,
       createDate: Instant
@@ -637,7 +637,7 @@ object Dtos {
     def apply(comment: DbComment): Comment =
       new Comment(
         id = comment.id,
-        processVersionId = comment.processVersionId.value,
+        scenarioVersion = comment.processVersionId.value,
         content = comment.content,
         user = comment.user,
         createDate = comment.createDate
@@ -648,7 +648,7 @@ object Dtos {
   @derive(encoder, decoder, schema)
   final case class Attachment private (
       id: Long,
-      processVersionId: Long,
+      scenarioVersion: Long,
       fileName: String,
       user: String,
       createDate: Instant
@@ -659,7 +659,7 @@ object Dtos {
     def apply(attachment: DbAttachment): Attachment =
       new Attachment(
         id = attachment.id,
-        processVersionId = attachment.processVersionId.value,
+        scenarioVersion = attachment.processVersionId.value,
         fileName = attachment.fileName,
         user = attachment.user,
         createDate = attachment.createDate

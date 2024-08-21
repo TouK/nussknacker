@@ -30,7 +30,7 @@ object InputOutput {
   val paginationContextInput: EndpointInput[PaginationContext] =
     query[Long]("pageSize")
       .and(query[Long]("pageNumber"))
-      .map(PaginationContext.tupled.apply(_))(PaginationContext.unapply(_).get)
+      .map(PaginationContext.tupled.apply(_))(ctx => (ctx.pageSize, ctx.pageNumber))
 
   val searchTextInput: EndpointInput[String] =
     query[String]("searchText")

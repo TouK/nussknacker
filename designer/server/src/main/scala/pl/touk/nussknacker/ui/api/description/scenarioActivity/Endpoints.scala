@@ -58,7 +58,7 @@ object Endpoints extends BaseEndpointDefinitions {
   lazy val scenarioActivityEndpoint
       : PublicEndpoint[ProcessName, ScenarioActivityError, ScenarioCommentsAndAttachments, Any] =
     baseNuApiEndpoint
-      .summary("Scenario activity service")
+      .summary("Deprecated scenario comments and attachments service")
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity")
@@ -76,22 +76,6 @@ object Endpoints extends BaseEndpointDefinitions {
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "metadata")
       .out(statusCode(Ok).and(jsonBody[ScenarioActivitiesMetadata].example(ScenarioActivitiesMetadata.default)))
-      .errorOut(scenarioNotFoundErrorOutput)
-
-  lazy val scenarioActivitiesEndpoint: PublicEndpoint[
-    (ProcessName, PaginationContext, List[ScenarioActivityType]),
-    ScenarioActivityError,
-    ScenarioActivities,
-    Any
-  ] =
-    baseNuApiEndpoint
-      .summary("Scenario activities service")
-      .tag("Activities")
-      .get
-      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities")
-      .in(paginationContextInput)
-      .in(activityTypeFilterInput)
-      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities)))
       .errorOut(scenarioNotFoundErrorOutput)
 
   lazy val scenarioActivitiesCountEndpoint: PublicEndpoint[
@@ -116,7 +100,7 @@ object Endpoints extends BaseEndpointDefinitions {
     Any
   ] =
     baseNuApiEndpoint
-      .summary("Scenario activities count service")
+      .summary("Scenario activities search service")
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "search")
@@ -125,6 +109,22 @@ object Endpoints extends BaseEndpointDefinitions {
       .out(
         statusCode(Ok).and(jsonBody[ScenarioActivitiesSearchResult].example(Examples.scenarioActivitiesSearchResult))
       )
+      .errorOut(scenarioNotFoundErrorOutput)
+
+  lazy val scenarioActivitiesEndpoint: PublicEndpoint[
+    (ProcessName, PaginationContext, List[ScenarioActivityType]),
+    ScenarioActivityError,
+    ScenarioActivities,
+    Any
+  ] =
+    baseNuApiEndpoint
+      .summary("Scenario activities service")
+      .tag("Activities")
+      .get
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities")
+      .in(paginationContextInput)
+      .in(activityTypeFilterInput)
+      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities)))
       .errorOut(scenarioNotFoundErrorOutput)
 
   lazy val addCommentEndpoint: PublicEndpoint[AddCommentRequest, ScenarioActivityError, Unit, Any] =
