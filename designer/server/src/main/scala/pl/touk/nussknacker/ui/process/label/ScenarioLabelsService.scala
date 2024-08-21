@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process
+package pl.touk.nussknacker.ui.process.label
 
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioLabelsRepository}
 

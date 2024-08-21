@@ -276,7 +276,7 @@ class StandardRemoteEnvironmentSpec
 
           NOTE TO DEVELOPER:
 
-          This mock code block is currently commented out. It should be enabled when MigrateScenarioRequestV2 will be prsent
+          This mock code block is currently commented out. It should be enabled when MigrateScenarioRequestV2 will be present
 
             parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
             case Right(migrateScenarioRequestDtoV2) if migrateScenarioRequestDtoV2.version == 2 =>

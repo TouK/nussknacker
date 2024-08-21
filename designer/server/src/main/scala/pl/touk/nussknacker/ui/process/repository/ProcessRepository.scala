@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData, ScenarioLabelEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.ui.process.label.ValidatedScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
@@ -64,7 +65,7 @@ object ProcessRepository {
       private val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
       comment: Option[Comment],
-      labels: Option[List[String]],
+      labels: Option[List[ValidatedScenarioLabel]],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
   ) {
@@ -180,7 +181,10 @@ class DBProcessRepository(
       }
       _ <- updateProcessAction.labels match {
         case Some(labels) =>
-          scenarioLabelsRepository.overwriteLabels(updateProcessAction.id.id, labels.map(ScenarioLabel.apply))
+          scenarioLabelsRepository.overwriteLabels(
+            updateProcessAction.id.id,
+            labels.map(label => ScenarioLabel(label.value))
+          )
         case None => dbMonad.unit
       }
     } yield updateProcessRes

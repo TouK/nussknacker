@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.description.ScenarioLabelsApiEndpoints
 import pl.touk.nussknacker.ui.api.description.ScenarioLabelsApiEndpoints.Dtos.ScenarioLabels
-import pl.touk.nussknacker.ui.process.ScenarioLabelsService
+import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.ExecutionContext

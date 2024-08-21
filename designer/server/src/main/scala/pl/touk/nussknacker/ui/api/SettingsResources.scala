@@ -36,6 +36,7 @@ class SettingsResources(
                 environmentAlert = config.environmentAlert,
                 commentSettings = config.commentSettings,
                 deploymentCommentSettings = config.deploymentCommentSettings,
+                scenarioLabelsSettings = config.scenarioLabelSettings,
                 surveySettings = config.surveySettings,
                 tabs = config.tabs,
                 intervalTimeSettings = config.intervalTimeSettings,
@@ -67,9 +68,9 @@ class SettingsResources(
 
 @JsonCodec final case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-@JsonCodec final case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
-
 @JsonCodec final case class SurveySettings(key: String, text: String, link: URL)
+
+@JsonCodec final case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
 
 object DeploymentCommentSettings {
 
@@ -91,6 +92,28 @@ object DeploymentCommentSettings {
 }
 
 final case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
+
+@JsonCodec final case class ScenarioLabelSettings(validationPattern: String)
+
+object ScenarioLabelSettings {
+
+  def create(
+      validationPattern: String,
+  ): Validated[EmptyScenarioLabelSettingsError, ScenarioLabelSettings] = {
+    Validated.cond(
+      validationPattern.nonEmpty,
+      new ScenarioLabelSettings(validationPattern),
+      EmptyScenarioLabelSettingsError("Field validationPattern cannot be empty.")
+    )
+  }
+
+  def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
+    new DeploymentCommentSettings(validationPattern, exampleComment)
+  }
+
+}
+
+final case class EmptyScenarioLabelSettingsError(message: String) extends Exception(message)
 
 @JsonCodec final case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
@@ -130,6 +153,7 @@ object TopTabType extends Enumeration {
     environmentAlert: Option[EnvironmentAlert],
     commentSettings: Option[CommentSettings],
     deploymentCommentSettings: Option[DeploymentCommentSettings],
+    scenarioLabelsSettings: Option[ScenarioLabelSettings],
     surveySettings: Option[SurveySettings],
     tabs: Option[List[TopTab]],
     intervalTimeSettings: IntervalTimeSettings,
