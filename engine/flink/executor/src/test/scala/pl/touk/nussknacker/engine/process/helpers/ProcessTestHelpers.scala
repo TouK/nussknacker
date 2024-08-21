@@ -85,7 +85,7 @@ object ProcessTestHelpers extends Serializable {
     ComponentDefinition("genericParametersSource", GenericParametersSource),
     ComponentDefinition("genericSourceWithCustomVariables", GenericSourceWithCustomVariables),
     ComponentDefinition("monitor", SinkFactory.noParam(MonitorEmptySink)),
-    ComponentDefinition("monitorWithParameter", SinkFactory.noParam(MonitorEmptySinkWithParameter)),
+    ComponentDefinition("sinkAccessingNodeContext", SinkFactory.noParam(SinkAccessingNodeContext)),
     ComponentDefinition("sinkForInts", SinkForInts(sinkForIntsResultsHolder)),
     ComponentDefinition("sinkForStrings", SinkForStrings(sinkForStringsResultsHolder)),
     ComponentDefinition(
@@ -129,7 +129,7 @@ object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
 
 }
 
-case object MonitorEmptySinkWithParameter extends EmptySink with Serializable {
+case object SinkAccessingNodeContext extends EmptySink with Serializable {
 
   @transient private var _nodeId: String = _
 

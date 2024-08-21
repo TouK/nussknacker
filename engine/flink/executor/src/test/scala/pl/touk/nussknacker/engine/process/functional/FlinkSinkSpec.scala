@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.process.functional
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.process.helpers.{MonitorEmptySinkWithParameter, ProcessTestHelpers}
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MonitorEmptySink, SimpleRecord}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
+import pl.touk.nussknacker.engine.process.helpers.{ProcessTestHelpers, SinkAccessingNodeContext}
 
 import java.util.Date
 
@@ -21,14 +21,14 @@ class FlinkSinkSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "''".spel)
       .buildSimpleVariable("mapToString", "mapToString", "#map.toString()".spel)
       .buildSimpleVariable("listToString", "listToString", "#list.toString()".spel)
-      .emptySink("out", "monitorWithParameter")
+      .emptySink("out", "sinkAccessingNodeContext")
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
     // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
 
-    MonitorEmptySinkWithParameter.nodeId shouldBe "out"
+    SinkAccessingNodeContext.nodeId shouldBe "out"
   }
 
 }
