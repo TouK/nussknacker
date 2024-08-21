@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentO
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.restmodel.definition.{UiScenarioProperties, UiSingleScenarioPropertyConfig}
+import pl.touk.nussknacker.restmodel.definition.{UiScenarioProperties, UiScenarioPropertyConfig}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -257,25 +257,25 @@ class BaseFlowTest
     val settingsJson        = response.extractFieldJsonValue("scenarioProperties")
     val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-    val settings         = Decoder[UiScenarioProperties].decodeJson(settingsJson).toOption.get
-    val additionalFields = settings.propertiesConfig
+    val properties       = Decoder[UiScenarioProperties].decodeJson(settingsJson).toOption.get
+    val additionalFields = properties.propertiesConfig
     val streamingDefaultPropertyConfig =
       FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioAdditionalFieldConfig(p._2))
 
     val underTest = Map(
-      "environment" -> UiSingleScenarioPropertyConfig(
+      "environment" -> UiScenarioPropertyConfig(
         defaultValue = Some("test"),
         editor = StringParameterEditor,
         label = Some("Environment"),
         hintText = None
       ),
-      "maxEvents" -> UiSingleScenarioPropertyConfig(
+      "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
         editor = StringParameterEditor,
         label = Some("Max events"),
         hintText = Some("Maximum number of events")
       ),
-      "numberOfThreads" -> UiSingleScenarioPropertyConfig(
+      "numberOfThreads" -> UiScenarioPropertyConfig(
         defaultValue = Some("1"),
         editor = FixedValuesParameterEditor(fixedPossibleValues),
         label = Some("Number of threads"),

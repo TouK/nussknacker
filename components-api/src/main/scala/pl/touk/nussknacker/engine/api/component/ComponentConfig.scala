@@ -6,7 +6,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
-case class SingleComponentConfig(
+case class ComponentConfig(
     params: Option[Map[ParameterName, ParameterConfig]],
     icon: Option[String],
     docsUrl: Option[String],
@@ -19,11 +19,11 @@ case class SingleComponentConfig(
     disabled: Boolean = false
 )
 
-object SingleComponentConfig {
+object ComponentConfig {
 
-  val zero: SingleComponentConfig = SingleComponentConfig(None, None, None, None, None)
+  val zero: ComponentConfig = ComponentConfig(None, None, None, None, None)
 
-  implicit val semigroup: Semigroup[SingleComponentConfig] = {
+  implicit val semigroup: Semigroup[ComponentConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
       case (None, None)    => None
       case (None, Some(x)) => Some(x)
@@ -44,8 +44,8 @@ object SingleComponentConfig {
       case (Some(x), Some(y)) => Some(x |+| y)
     }
 
-    Semigroup.instance[SingleComponentConfig] { (x, y) =>
-      SingleComponentConfig(
+    Semigroup.instance[ComponentConfig] { (x, y) =>
+      ComponentConfig(
         x.params |+| y.params,
         x.icon |+| y.icon,
         x.docsUrl |+| y.docsUrl,
@@ -69,7 +69,7 @@ object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None, None, None, None)
 }
 
-@JsonCodec case class SingleScenarioPropertyConfig(
+@JsonCodec case class ScenarioPropertyConfig(
     defaultValue: Option[String],
     editor: Option[SimpleParameterEditor],
     validators: Option[List[ParameterValidator]],
@@ -77,18 +77,18 @@ object ParameterConfig {
     hintText: Option[String]
 )
 
-object SingleScenarioPropertyConfig {
-  val empty: SingleScenarioPropertyConfig = SingleScenarioPropertyConfig(None, None, None, None, None)
+object ScenarioPropertyConfig {
+  val empty: ScenarioPropertyConfig = ScenarioPropertyConfig(None, None, None, None, None)
 
-  implicit val semigroup: Semigroup[SingleScenarioPropertyConfig] = {
+  implicit val semigroup: Semigroup[ScenarioPropertyConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
       case (None, None)    => None
       case (None, Some(x)) => Some(x)
       case (Some(x), _)    => Some(x)
     }
 
-    Semigroup.instance[SingleScenarioPropertyConfig] { (x, y) =>
-      SingleScenarioPropertyConfig(
+    Semigroup.instance[ScenarioPropertyConfig] { (x, y) =>
+      ScenarioPropertyConfig(
         x.defaultValue |+| y.defaultValue,
         x.editor |+| y.editor,
         x.validators |+| y.validators,

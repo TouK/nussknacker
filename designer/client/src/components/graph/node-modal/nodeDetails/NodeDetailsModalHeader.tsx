@@ -51,15 +51,15 @@ export const getNodeDetailsModalTitle = (node: NodeType): string => {
 };
 
 export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactElement => {
-    const { components = {}, scenarioPropertiesConfig } = useSelector(getProcessDefinitionData);
+    const { components = {}, scenarioProperties } = useSelector(getProcessDefinitionData);
 
     const docsUrl = useMemo(() => {
         // we check for properties icon for dynamic url load through user config
-        if (node.type === "Properties" && scenarioPropertiesConfig) {
-            return scenarioPropertiesConfig.docsUrl;
+        if (node.type === "Properties" && scenarioProperties) {
+            return scenarioProperties.docsUrl;
         }
         return ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
-    }, [components, node, scenarioPropertiesConfig]);
+    }, [components, node, scenarioProperties]);
 
     const nodeClass = findNodeClass(node);
 
