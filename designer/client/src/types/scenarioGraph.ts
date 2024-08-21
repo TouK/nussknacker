@@ -62,7 +62,7 @@ export interface ProcessDefinitionData {
     components?: Record<string, ComponentDefinition>;
     classes?: TypingResult[];
     componentGroups?: ComponentGroup[];
-    scenarioPropertiesConfig?: UiScenarioProperties;
+    scenarioProperties?: UiScenarioProperties;
     edgesForNodes?: EdgesForNode[];
     customActions?: Array<CustomAction>;
 }

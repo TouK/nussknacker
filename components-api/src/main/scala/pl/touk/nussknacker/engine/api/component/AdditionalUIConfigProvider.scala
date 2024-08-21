@@ -16,7 +16,7 @@ trait AdditionalUIConfigProvider extends Serializable {
   def getAllForProcessingType(processingType: String): Map[DesignerWideComponentId, ComponentAdditionalConfig]
 
   // Takes effect immediately (doesn't require model reload).
-  def getScenarioPropertiesUIConfigs(processingType: String): Map[String, SingleScenarioPropertyConfig]
+  def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig]
 
 }
 

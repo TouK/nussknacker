@@ -11,7 +11,7 @@ const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 const getComponentsDefinition = createSelector(getProcessDefinitionData, (s) => s.components);
 export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
-    (s) => (s.scenarioPropertiesConfig || {}) as UiScenarioProperties,
+    (s) => (s.scenarioProperties || {}) as UiScenarioProperties,
 );
 const getNodeResults = createSelector(getScenario, (scenario) => ProcessUtils.getNodeResults(scenario));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>

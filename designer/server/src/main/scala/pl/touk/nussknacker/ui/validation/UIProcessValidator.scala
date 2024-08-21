@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 class UIProcessValidator(
     processingType: ProcessingType,
     validator: ProcessValidator,
-    scenarioProperties: Map[String, SingleScenarioPropertyConfig],
+    scenarioProperties: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     additionalValidators: List[CustomProcessValidator],
     fragmentResolver: FragmentResolver,
@@ -59,7 +59,7 @@ class UIProcessValidator(
     )
 
   // TODO: It is used only in tests, remove it from the prodcution code
-  def withScenarioPropertiesConfig(scenarioPropertiesConfig: Map[String, SingleScenarioPropertyConfig]) =
+  def withScenarioPropertiesConfig(scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]) =
     new UIProcessValidator(
       processingType,
       validator,

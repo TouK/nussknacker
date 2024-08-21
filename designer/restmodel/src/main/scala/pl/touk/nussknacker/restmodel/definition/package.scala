@@ -119,11 +119,11 @@ package object definition {
   )
 
   @JsonCodec final case class UiScenarioProperties(
-      propertiesConfig: Map[String, UiSingleScenarioPropertyConfig],
+      propertiesConfig: Map[String, UiScenarioPropertyConfig],
       docsUrl: Option[String]
   )
 
-  @JsonCodec final case class UiSingleScenarioPropertyConfig(
+  @JsonCodec final case class UiScenarioPropertyConfig(
       // This attribute is deprecated on BE and FE as it's not used anywhere.
       // Right now it's only kept because an external project uses it but it will be removed in the future.
       defaultValue: Option[String],

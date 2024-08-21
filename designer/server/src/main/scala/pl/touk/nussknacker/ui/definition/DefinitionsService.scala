@@ -26,7 +26,7 @@ class DefinitionsService(
     modelData: ModelData,
     staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
     scenarioProperties: ScenarioProperties,
-    fragmentPropertiesConfig: Map[String, SingleScenarioPropertyConfig],
+    fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
@@ -136,10 +136,10 @@ object DefinitionsService {
   }
 
   def createUIScenarioAdditionalFieldConfig(
-      config: SingleScenarioPropertyConfig
-  ): UiSingleScenarioPropertyConfig = {
+      config: ScenarioPropertyConfig
+  ): UiScenarioPropertyConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
-    UiSingleScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
+    UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
   }
 
 }

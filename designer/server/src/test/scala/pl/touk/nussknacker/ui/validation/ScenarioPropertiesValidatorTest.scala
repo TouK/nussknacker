@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -23,35 +23,35 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
   private val validator = new ScenarioPropertiesValidator(
     Map(
-      reqFieldName -> SingleScenarioPropertyConfig(
+      reqFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
         validators = Some(List(LiteralIntegerValidator, MandatoryParameterValidator)),
         label = Some(label),
         hintText = None
       ),
-      regexpFieldName -> SingleScenarioPropertyConfig(
+      regexpFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
         validators = Some(List(LiteralIntegerValidator)),
         label = Some(label),
         hintText = None
       ),
-      optionalFieldName -> SingleScenarioPropertyConfig(
+      optionalFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(StringParameterEditor),
         validators = None,
         label = Some(label),
         hintText = None
       ),
-      optFixedFieldName -> SingleScenarioPropertyConfig(
+      optFixedFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(FixedValuesParameterEditor(possibleValues)),
         validators = Some(List(FixedValuesValidator(possibleValues))),
         label = Some(label),
         hintText = None
       ),
-      TestAdditionalUIConfigProvider.scenarioPropertyName -> SingleScenarioPropertyConfig(
+      TestAdditionalUIConfigProvider.scenarioPropertyName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
         validators = None,

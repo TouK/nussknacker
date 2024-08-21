@@ -2,7 +2,7 @@ package pl.touk.nussknacker.lite.manager
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   LiteralIntegerValidator,
   MinimalNumberValidator,
@@ -48,8 +48,8 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
 object LitePropertiesConfig {
 
-  private val parallelismConfig: (String, SingleScenarioPropertyConfig) = LiteStreamMetaData.parallelismName ->
-    SingleScenarioPropertyConfig(
+  private val parallelismConfig: (String, ScenarioPropertyConfig) = LiteStreamMetaData.parallelismName ->
+    ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
@@ -57,8 +57,8 @@ object LitePropertiesConfig {
       hintText = None
     )
 
-  private val slugConfig: (String, SingleScenarioPropertyConfig) = RequestResponseMetaData.slugName ->
-    SingleScenarioPropertyConfig(
+  private val slugConfig: (String, ScenarioPropertyConfig) = RequestResponseMetaData.slugName ->
+    ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = None,
@@ -66,9 +66,9 @@ object LitePropertiesConfig {
       hintText = None
     )
 
-  val streamProperties: Map[String, SingleScenarioPropertyConfig] = Map(parallelismConfig)
+  val streamProperties: Map[String, ScenarioPropertyConfig] = Map(parallelismConfig)
 
-  val requestResponseProperties: Map[String, SingleScenarioPropertyConfig] =
+  val requestResponseProperties: Map[String, ScenarioPropertyConfig] =
     RequestResponseOpenApiSettings.scenarioPropertiesConfig ++ Map(slugConfig)
 
 }

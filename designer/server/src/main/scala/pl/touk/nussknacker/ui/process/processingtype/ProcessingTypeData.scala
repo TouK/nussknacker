@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.processingtype
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
@@ -113,7 +113,7 @@ object ProcessingTypeData {
     val runtimeScenarioProps: ScenarioProperties = mergeConfigs
 
     val fragmentProperties = modelData.modelConfig
-      .getOrElse[Map[ProcessingType, SingleScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
+      .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     DeploymentData(
       validDeploymentManager,

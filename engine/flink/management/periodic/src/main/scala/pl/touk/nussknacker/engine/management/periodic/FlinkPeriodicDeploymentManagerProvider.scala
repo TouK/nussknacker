@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.SingleScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
@@ -25,7 +25,7 @@ class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider w
 
   private val delegate = new FlinkStreamingDeploymentManagerProvider()
 
-  private val cronConfig = CronSchedulePropertyExtractor.CronPropertyDefaultName -> SingleScenarioPropertyConfig(
+  private val cronConfig = CronSchedulePropertyExtractor.CronPropertyDefaultName -> ScenarioPropertyConfig(
     defaultValue = None,
     editor = Some(StringParameterEditor),
     validators = Some(List(MandatoryParameterValidator, CronParameterValidator.delegate)),
