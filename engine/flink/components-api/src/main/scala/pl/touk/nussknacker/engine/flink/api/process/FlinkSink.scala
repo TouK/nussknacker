@@ -58,13 +58,12 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
           (k: ValueWithContext[Value]) => k.value,
           flinkNodeContext.typeInformationDetection.forType(typeResult).asInstanceOf[TypeInformation[Value]]
         )
-        .addSink(toFlinkFunction)
+        .addSink(toFlinkFunction(flinkNodeContext))
     )
 
   def valueFunction(
       helper: FlinkLazyParameterFunctionHelper
   ): FlatMapFunction[Context, ValueWithContext[Value]]
 
-  def toFlinkFunction: SinkFunction[Value]
-
+  def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value]
 }
