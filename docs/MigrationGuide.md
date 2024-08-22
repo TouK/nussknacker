@@ -24,7 +24,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     single `TestRecord` and returns a list of results instead of a single result.
   * [#6520](https://github.com/TouK/nussknacker/pull/6520) `ExplicitTypeInformationSource` trait was removed - now
     `TypeInformation` produced by `SourceFunction` passed to `StreamExecutionEnvironment.addSource` is detected based
-    on `TypingResult` (thanks to `GenericTypeInformationDetection`)
+    on `TypingResult` (thanks to `TypeInformationDetection`)
     * `BlockingQueueSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
     * `EmitWatermarkAfterEachElementCollectionSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
     * `CollectionSource`'s `TypeInformation` implicit parameter was removed
@@ -56,6 +56,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   configure it under `modelConfig.executionMode` or for test purposes through `FlinkTestScenarioRunnerBuilder.withExecutionMode` method.
 * [#6610](https://github.com/TouK/nussknacker/pull/6610) Add flink node context as parameter to BasicFlinkSink.
   Now one can use `FlinkCustomNodeContext` in order to build sink in `BasicFlinkSink#toFlinkFunction` method.
+* [#6635](https://github.com/TouK/nussknacker/pull/6635) `TypingResultTypeInformation` can't be loaded via SPI mechanism anymore
 
 ### REST API changes
 
@@ -64,6 +65,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6213](https://github.com/TouK/nussknacker/pull/6213) Improvement: Load resource config only in test context
   * `WithConfig` from `test-utils` modules behaviour changes: now it only parses given config, 
     without resolving reference configs, system env variables etc.
+
+### Configuration changes
+* [#6635](https://github.com/TouK/nussknacker/pull/6635) `globalParameters.useTypingResultTypeInformation` parameter was removed.
+  Now we always use TypingResultTypeInformation
 
 ## In version 1.16.3
 
