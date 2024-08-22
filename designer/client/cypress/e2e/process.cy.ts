@@ -44,8 +44,8 @@ describe("Process", () => {
                 .should("be.enabled")
                 .click();
             cy.get("[data-testid=window]").should("be.visible");
-            cy.get("[data-testid=window]").find("input").first().click().type("-renamed");
-            cy.get("[data-testid=window]").find("textarea").last().click().type("RENAMED");
+            cy.get('[title="Name"]').siblings().first().click().type("-renamed");
+            cy.get('[title="Description"]').siblings().first().type("RENAMED");
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
@@ -60,7 +60,7 @@ describe("Process", () => {
             cy.contains(/^properties/i)
                 .should("be.enabled")
                 .click();
-            cy.get("[data-testid=window]").find("textarea").last().should("contain", "RENAMED");
+            cy.get('[title="Description"]').siblings().first().should("contain", "RENAMED");
         });
 
         it("should allow archive with redirect to list", function () {
@@ -114,7 +114,7 @@ describe("Process", () => {
     describe("with data", () => {
         const screenshotOptions: Cypress.MatchImageOptions = {
             screenshotConfig: {
-                blackout: ["> div > :not(#nk-graph-main)"],
+                blackout: ["> div > :not(#nk-graph-main) > div"],
             },
         };
 

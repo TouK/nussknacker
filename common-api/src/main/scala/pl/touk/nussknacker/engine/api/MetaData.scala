@@ -82,7 +82,12 @@ object MetaData {
 }
 
 // TODO: remove metaDataType val and typeSpecificProperties def after the migration is completed
-case class ProcessAdditionalFields(description: Option[String], properties: Map[String, String], metaDataType: String) {
+case class ProcessAdditionalFields(
+    description: Option[String],
+    properties: Map[String, String],
+    metaDataType: String,
+    showDescription: Boolean = false
+) {
 
   def combineTypeSpecificProperties(typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
     this.copy(properties = properties ++ typeSpecificData.toMap)
@@ -106,12 +111,13 @@ object ProcessAdditionalFields {
   private case class OptionalProcessAdditionalFields(
       description: Option[String],
       properties: Option[Map[String, String]],
-      metaDataType: String
+      metaDataType: String,
+      showDescription: Boolean = false
   )
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields] =
     deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp =>
-      ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.metaDataType)
+      ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.metaDataType, opp.showDescription)
     )
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder

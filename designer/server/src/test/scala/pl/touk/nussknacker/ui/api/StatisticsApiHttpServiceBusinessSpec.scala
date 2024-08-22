@@ -83,6 +83,7 @@ class StatisticsApiHttpServiceBusinessSpec
     .withValue("questDbSettings.instanceId", fromAnyRef(questDbRelativePathString))
     .withValue("questDbSettings.tasksExecutionDelay", fromAnyRef("2 seconds"))
     .withValue("questDbSettings.retentionDelay", fromAnyRef("2 seconds"))
+    .withValue("usageStatisticsReports.encryptionEnabled", fromAnyRef(false))
 
   private val exampleScenario = ScenarioBuilder
     .streaming(UUID.randomUUID().toString)

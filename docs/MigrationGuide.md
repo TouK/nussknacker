@@ -54,6 +54,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6567](https://github.com/TouK/nussknacker/pull/6567) Removed ability to set Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode) 
   in sources: `TableSource`, `CollectionSource` and in `FlinkTestScenarioRunner.runWithData` method. Now you can
   configure it under `modelConfig.executionMode` or for test purposes through `FlinkTestScenarioRunnerBuilder.withExecutionMode` method.
+* [#6610](https://github.com/TouK/nussknacker/pull/6610) Add flink node context as parameter to BasicFlinkSink.
+  Now one can use `FlinkCustomNodeContext` in order to build sink in `BasicFlinkSink#toFlinkFunction` method.
 
 ### REST API changes
 

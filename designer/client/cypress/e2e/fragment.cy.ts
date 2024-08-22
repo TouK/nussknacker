@@ -175,7 +175,7 @@ describe("Fragment", () => {
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
-                    x: 800,
+                    x: 840,
                     y: 600,
                 },
                 force: true,
@@ -241,7 +241,7 @@ describe("Fragment", () => {
                 request.alias = "suggestions";
             }
         });
-        cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.");
+        cy.get('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
         // We wait for validation result to be sure that red message below the form field will be visible
         cy.wait("@validation")
             .its("response.statusCode")
@@ -394,8 +394,8 @@ describe("Fragment", () => {
             .should("be.visible")
             .drag("@output", {
                 target: {
-                    x: 0,
-                    y: 0,
+                    x: 30,
+                    y: 30,
                 },
                 force: true,
             });

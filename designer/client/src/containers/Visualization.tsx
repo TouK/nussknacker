@@ -28,6 +28,7 @@ import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { Scenario } from "../components/Process/types";
 import { useInterval } from "./Interval";
 import { useWindowManager } from "@touk/window-manager";
+import { ScenarioDescription } from "./ScenarioDescription";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -155,16 +156,18 @@ function Visualization() {
         <ErrorHandler>
             <DndProvider options={HTML5toTouch}>
                 <GraphPage data-testid="graphPage">
-                    <GraphProvider graph={getGraphInstance}>
-                        <SelectionContextProvider pastePosition={getPastePosition}>
-                            <BindKeyboardShortcuts disabled={windows.length > 0} />
-                            <Toolbars isReady={dataResolved} />
-                        </SelectionContextProvider>
-                    </GraphProvider>
-
                     <SpinnerWrapper isReady={!graphNotReady}>
                         {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
                     </SpinnerWrapper>
+
+                    <GraphProvider graph={getGraphInstance}>
+                        <SelectionContextProvider pastePosition={getPastePosition}>
+                            <BindKeyboardShortcuts disabled={windows.length > 0} />
+                            <Toolbars isReady={dataResolved}>
+                                <ScenarioDescription />
+                            </Toolbars>
+                        </SelectionContextProvider>
+                    </GraphProvider>
                 </GraphPage>
             </DndProvider>
         </ErrorHandler>
