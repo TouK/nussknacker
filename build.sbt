@@ -1692,7 +1692,7 @@ lazy val sqlComponents = (project in component("sql"))
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
       "org.apache.ignite"    % "ignite-core"                     % igniteV              % Test,
       "org.apache.ignite"    % "ignite-indexing"                 % igniteV              % Test,
-      "com.ing.data"         % "cassandra-jdbc-wrapper"          % cassandraDriverV     % Test,
+      "com.ing.data"         % "cassandra-jdbc-wrapper"          % cassandraDriverV     % Compile,
       "org.apache.cassandra" % "java-driver-core"                % "4.18.1"             % Compile,
       "org.postgresql"       % "postgresql"                      % postgresV            % Test,
       "org.scalatest"       %% "scalatest"                       % scalaTestV           % Test,
