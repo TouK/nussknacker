@@ -25,8 +25,8 @@ case class ValidationExpressionParameterValidator(
       .isValid(paramName, expression, value, label)
       .andThen { _ =>
         value match {
-          case Some(v) => validateValue(paramName, v)
-          case _       => valid(())
+          case None | Some(null) => valid(())
+          case Some(v)           => validateValue(paramName, v)
         }
       }
 
