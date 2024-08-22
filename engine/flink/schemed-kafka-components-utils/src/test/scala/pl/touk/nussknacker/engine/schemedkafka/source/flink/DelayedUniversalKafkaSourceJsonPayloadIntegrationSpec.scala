@@ -46,7 +46,7 @@ class DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends DelayedUnive
   override protected val sinkForLongsResultsHolder: () => TestResultsHolder[java.lang.Long] =
     () => DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec.sinkForLongsResultsHolder
 
-  override protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[InputMeta[_]] =
+  override protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[java.util.Map[String @unchecked, _]] =
     () => DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 }
 
@@ -54,6 +54,6 @@ object DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends Serializabl
 
   private val sinkForLongsResultsHolder = new TestResultsHolder[java.lang.Long]
 
-  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[java.util.Map[String @unchecked, _]]
 
 }

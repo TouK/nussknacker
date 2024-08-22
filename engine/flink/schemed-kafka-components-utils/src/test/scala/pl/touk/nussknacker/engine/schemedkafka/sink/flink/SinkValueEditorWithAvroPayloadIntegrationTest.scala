@@ -85,7 +85,7 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
 
 object SinkValueEditorWithAvroPayloadIntegrationTest {
 
-  private val sinkForInputMetaResultsHolder      = new TestResultsHolder[InputMeta[_]]
+  private val sinkForInputMetaResultsHolder      = new TestResultsHolder[java.util.Map[String @unchecked, _]]
   private val avroEncoder: BestEffortAvroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
   private def encode(a: Any, schema: Schema): AnyRef =

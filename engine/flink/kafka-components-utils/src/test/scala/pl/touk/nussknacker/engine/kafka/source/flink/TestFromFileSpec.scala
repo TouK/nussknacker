@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json.{Null, fromString, obj}
 import org.apache.kafka.common.record.TimestampType
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
@@ -15,19 +16,24 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.test.KafkaConfigProperties
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 
 import java.util.Collections
 
-class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
+class TestFromFileSpec
+    extends AnyFunSuite
+    with Matchers
+    with LazyLogging
+    with EitherValuesDetailedMessage
+    with OptionValues {
 
   private lazy val config = ConfigFactory
     .empty()
@@ -58,6 +64,18 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       headers = Collections.emptyMap(),
       leaderEpoch = 0
     )
+    val inputMetaAsJson = Json.fromFields(
+      Map(
+        "key"           -> Json.Null,
+        "topic"         -> Json.fromString(topic),
+        "partition"     -> Json.fromInt(0),
+        "offset"        -> Json.fromInt(1),
+        "timestamp"     -> Json.fromLong(expectedTimestamp),
+        "timestampType" -> Json.fromString("CreateTime"),
+        "headers"       -> Json.fromFields(List.empty),
+        "leaderEpoch"   -> Json.fromInt(0)
+      )
+    )
 
     val process = ScenarioBuilder
       .streaming("test")
@@ -69,19 +87,17 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
-    val consumerRecord = new InputMetaToJson()
-      .encoder(BestEffortJsonEncoder.defaultForTests.encode)
-      .apply(inputMeta)
+    val consumerRecord = BestEffortJsonEncoder.defaultForTests
+      .encode(inputMeta)
       .mapObject(
-        _.add("key", Null)
-          .add("value", obj("id" -> fromString("fooId"), "field" -> fromString("fooField")))
+        _.add("value", obj("id" -> fromString("fooId"), "field" -> fromString("fooField")))
       )
 
     val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
     val testResultVars = results.nodeResults("end").head.variables
-    testResultVars("extractedTimestamp") shouldBe variable(expectedTimestamp)
-    testResultVars("inputMeta") shouldBe variable(inputMeta)
+    testResultVars("extractedTimestamp").hcursor.downField("pretty").as[Long].rightValue shouldBe expectedTimestamp
+    testResultVars("inputMeta").hcursor.downField("pretty").focus.value shouldBe inputMetaAsJson
   }
 
   test("should test source emitting event extending DisplayWithEncoder") {
@@ -99,9 +115,8 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       headers = Collections.emptyMap(),
       leaderEpoch = 0
     )
-    val consumerRecord = new InputMetaToJson()
-      .encoder(BestEffortJsonEncoder.defaultForTests.encode)
-      .apply(inputMeta)
+    val consumerRecord = BestEffortJsonEncoder.defaultForTests
+      .encode(inputMeta)
       .mapObject(
         _.add("key", Null)
           .add("value", obj("id" -> fromString("1234"), "field" -> fromString("abcd")))
@@ -112,7 +127,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     results.nodeResults shouldBe Symbol("nonEmpty")
   }
 
-  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[_] = {
+  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(
         modelData,
@@ -121,18 +136,6 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
         FlinkTestConfiguration.configuration(),
       )
     }
-  }
-
-  private def variable(value: Any) = {
-    val json = value match {
-      case im: InputMeta[_] =>
-        new InputMetaToJson()
-          .encoder(BestEffortJsonEncoder.defaultForTests.encode)
-          .apply(im)
-      case ln: Long => Json.fromLong(ln)
-      case any      => Json.fromString(any.toString)
-    }
-    Json.obj("pretty" -> json)
   }
 
 }
