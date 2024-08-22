@@ -27,19 +27,21 @@ class CassandraEnrichmentLiteRuntimeTest
 
   val cyclistId = "someText"
 
-  val insertStatement = s"INSERT INTO cycling.cyclist_alt_stats (id, lastname) VALUES ('$cyclistId', 'Kowalski');"
+  val insertStatements = List(
+    s"INSERT INTO cycling.cyclist_alt_stats (id, lastname, age) VALUES ('${cyclistId}-1', 'Kowalski-1', 48);",
+    s"INSERT INTO cycling.cyclist_alt_stats (id, lastname, age) VALUES ('$cyclistId', 'Kowalski', 49);",
+    s"INSERT INTO cycling.cyclist_alt_stats (id, lastname, age) VALUES ('${cyclistId}1', 'Kowalski2', 50);",
+  )
 
   override val prepareCassandraSqlDDLs: List[String] = List(
     "CREATE KEYSPACE cycling WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };",
-    "CREATE TABLE cycling.cyclist_alt_stats (id text PRIMARY KEY, lastname text);",
-    insertStatement
-  )
+    "CREATE TABLE cycling.cyclist_alt_stats (id text PRIMARY KEY, lastname text, age int);",
+  ) ++ insertStatements
 
   override protected def afterEach(): Unit = {
     val cleanupStatements = List(
       "TRUNCATE TABLE cycling.cyclist_alt_stats;",
-      insertStatement
-    )
+    ) ++ insertStatements
     cleanupStatements.foreach { ddlStr =>
       val ddlStatement = conn.prepareStatement(ddlStr)
       try ddlStatement.execute()
@@ -84,12 +86,11 @@ class CassandraEnrichmentLiteRuntimeTest
 
     val resultList = validatedResult.validValue.successes
     resultList should have length 1
-    val resultScalaMap = resultList.head.asInstanceOf[util.HashMap[String, AnyRef]].asScala.map { case (key, value) =>
-      (key, value.toString)
-    }
+    val resultScalaMap = resultList.head.asInstanceOf[util.HashMap[String, AnyRef]].asScala
 
     resultScalaMap.get("id").shouldEqual(Some(cyclistId))
     resultScalaMap.get("lastname").shouldEqual(Some("Kowalski"))
+    resultScalaMap.get("age").shouldEqual(Some(49))
   }
 
 }
