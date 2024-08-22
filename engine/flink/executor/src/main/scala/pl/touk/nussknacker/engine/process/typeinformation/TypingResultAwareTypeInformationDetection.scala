@@ -26,35 +26,22 @@ object TypingResultAwareTypeInformationDetection {
 
   def apply(classLoader: ClassLoader): TypingResultAwareTypeInformationDetection = {
     val customisations = ScalaServiceLoader.load[TypingResultAwareTypeInformationCustomisation](classLoader)
-    new TypingResultAwareTypeInformationDetection(new CompositeCustomisation(customisations))
-  }
-
-  class CompositeCustomisation(customisations: List[TypingResultAwareTypeInformationCustomisation])
-      extends TypingResultAwareTypeInformationCustomisation {
-
-    override def customise(
-        originalDetection: TypeInformationDetection
-    ): PartialFunction[TypingResult, TypeInformation[_]] =
-      customisations.map(_.customise(originalDetection)).reduceOption(_.orElse(_)).getOrElse(Map.empty)
-
+    new TypingResultAwareTypeInformationDetection(customisations)
   }
 
 }
 
 // TODO: handle avro types - see FlinkConfluentUtils
 /*
-  This is *experimental* TypeInformationDetection, which generates TypeInformation based on ValidationContext and TypingResult.
+  This class generates TypeInformation based on ValidationContext and TypingResult.
   Please note that it is much more sensitive to differences between ValidationContext and real values (e.g. Int vs Long etc...)
   (see TypingResultAwareTypeInformationDetectionSpec."number promotion behaviour" test)
-
-  To use it for serialization between operators use TypeInformationDetection service loading.
-  To use it for state serialization one can use it directly in operators/process functions (compatibility is *NOT* guaranteed ATM).
 
   We should try to produce types supported in TypeInfoDataTypeConverter. Otherwise, we will get problems like:
   Column types of query result and sink for '...' do not match.
   when we use non handled type of variable in table api component.
  */
-class TypingResultAwareTypeInformationDetection(customisation: TypingResultAwareTypeInformationCustomisation)
+class TypingResultAwareTypeInformationDetection(customisations: List[TypingResultAwareTypeInformationCustomisation])
     extends TypeInformationDetection {
 
   private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
@@ -138,6 +125,6 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
   }
 
   private lazy val additionalTypeInfoDeterminer: PartialFunction[TypingResult, TypeInformation[_]] =
-    customisation.customise(this)
+    customisations.map(_.customise(this)).reduceOption(_.orElse(_)).getOrElse(Map.empty)
 
 }
