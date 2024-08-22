@@ -55,7 +55,7 @@ export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactEl
 
     const docsUrl = useMemo(() => {
         // we check for properties icon for dynamic url load through user config
-        if (node.type === "Properties" && scenarioProperties) {
+        if (scenarioProperties.docsUrl) {
             return scenarioProperties.docsUrl;
         }
         return ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
