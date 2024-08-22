@@ -36,10 +36,10 @@ class TypingResultAwareTypeInformationDetectionSpec
     with OptionValues {
 
   private val informationDetection =
-    new TypingResultAwareTypeInformationDetection((originalDetection: TypeInformationDetection) => {
+    new TypingResultAwareTypeInformationDetection(List((originalDetection: TypeInformationDetection) => {
       case e: TypedObjectTypingResult if e.objType == Typed.typedClass[CustomTypedObject] =>
         CustomObjectTypeInformation(e.fields.mapValuesNow(originalDetection.forType))
-    })
+    }))
 
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")
