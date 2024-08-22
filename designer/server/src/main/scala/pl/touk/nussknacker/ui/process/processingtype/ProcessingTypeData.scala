@@ -100,8 +100,11 @@ object ProcessingTypeData {
         scenarioStateCacheTTL
       )
 
-    val modelScenarioProps = modelData.modelConfig
-      .getOrElse[ScenarioProperties]("scenarioProperties", ScenarioProperties.empty())
+    val modelScenarioPropsMap = modelData.modelConfig
+      .getOrElse[Map[String, ScenarioPropertyConfig]]("propertiesConfig", Map.empty)
+    val modelScenarioPropsDocsUrl = modelData.modelConfig.getOrElse[Option[String]]("docsUrl", None)
+
+    val modelScenarioProps = ScenarioProperties(modelScenarioPropsMap, modelScenarioPropsDocsUrl)
 
     def mergeConfigs = {
       modelScenarioProps.copy(
