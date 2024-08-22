@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 
 /**
- * This is *experimental* trait that allows for providing more details TypeInformation when ValidationContext is known
- * It *probably* will change, by default generic Flink mechanisms are used
+ * This is trait that allows for providing more details TypeInformation when ValidationContext is known,
+ * by default generic Flink mechanisms are used
  */
 trait TypeInformationDetection extends Serializable {
 
