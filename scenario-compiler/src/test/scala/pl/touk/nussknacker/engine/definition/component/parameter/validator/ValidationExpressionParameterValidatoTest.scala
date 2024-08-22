@@ -22,7 +22,7 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
       Table(
         ("validationExpression", "paramName", "inputExpression", "value", "isValid"),
         ("#value > 10", "param", "", Some(null), true),
-        ("#value > 10", "param", "#input.foo", None, true),
+        ("#value > 10", "param", "#input.foo", None, false),
         ("#value > 10", "param", "-14", Some(-14), false),
         (
           "#value.toLowerCase() == \"left\" || #value.toLowerCase() == \"right\"",
