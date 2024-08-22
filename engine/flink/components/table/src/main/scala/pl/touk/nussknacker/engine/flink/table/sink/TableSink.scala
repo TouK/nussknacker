@@ -1,19 +1,23 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, SingleOutputStreamOperator}
+import org.apache.flink.api.common.functions.{RichFlatMapFunction, RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.typeutils.ResultTypeQueryable
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
-import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
+import org.apache.flink.table.types.logical.RowType
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.TypingResultExtension
-
-import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.flink.table.utils.BestEffortTableTypeSchemaEncoder
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 
 class TableSink(
     tableDefinition: TableDefinition,
@@ -42,25 +46,15 @@ class TableSink(
 
     /*
       DataStream to Table transformation:
-      1. Map the dataStream[any record type] to dataStream[Row]
-      2. Map dataStream[Row] to table
-      3. Add sink table to environment
-      4. Insert the input value table into the sink table in the correct order of column names
-      5. Put the insert operation in the statementSet and do attachAsDataStream on it
-      6. Continue with a DiscardingSink as DataStream
+      1. Map the dataStream[any record type] to dataStream[Row] with table types alignment
+      2. Map dataStream[Row] to Table
+      3. Insert rows from the input table to sink table
+      4. Put the insert operation in the statementSet and do attachAsDataStream on it
+      5. Continue with a DiscardingSink as DataStream
      */
-    val streamOfRows: SingleOutputStreamOperator[Row] = dataStream
-      .map(
-        { (valueWithContext: ValueWithContext[Value]) =>
-          // We validated that target type is Record so we can cast to this type
-          RowConversions.toRowNested(valueWithContext.value).asInstanceOf[Row]
-        },
-        flinkNodeContext.typeInformationDetection.forType(value.returnType.toRowNested)
-      )
-
-    val inputValueTable = tableEnv
-      .fromDataStream(streamOfRows)
-      .select(tableDefinition.sinkRowDataType.toLogicalRowTypeUnsafe.getFieldNames.asScala.toList.map($): _*)
+    val sinkRowType     = tableDefinition.schema.toSinkRowDataType.getLogicalType.toRowTypeUnsafe
+    val streamOfRows    = dataStream.flatMap(EncodeAsTableTypeFunction(flinkNodeContext, value.returnType, sinkRowType))
+    val inputValueTable = tableEnv.fromDataStream(streamOfRows)
 
     sqlStatements.foreach(tableEnv.executeSql)
 
@@ -73,6 +67,46 @@ class TableSink(
       https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
      */
     dataStream.addSink(new DiscardingSink())
+  }
+
+}
+
+class EncodeAsTableTypeFunction private (
+    override protected val exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
+    nodeId: String,
+    sinkRowType: RowType,
+    producedType: TypeInformation[Row]
+) extends RichFlatMapFunction[ValueWithContext[AnyRef], Row]
+    with ResultTypeQueryable[Row]
+    with WithExceptionHandler {
+
+  override def flatMap(valueWithContext: ValueWithContext[AnyRef], out: Collector[Row]): Unit = {
+    exceptionHandler
+      .handling(Some(NodeComponentInfo(nodeId, ComponentType.Sink, "table")), valueWithContext.context) {
+        BestEffortTableTypeSchemaEncoder.encodeAsRow(valueWithContext.value, sinkRowType)
+      }
+      .foreach(out.collect)
+  }
+
+  override def getProducedType: TypeInformation[Row] = producedType
+
+}
+
+object EncodeAsTableTypeFunction {
+
+  def apply(
+      flinkNodeContext: FlinkCustomNodeContext,
+      valueReturnType: TypingResult,
+      sinkRowType: RowType
+  ): EncodeAsTableTypeFunction = {
+    val alignedType  = BestEffortTableTypeSchemaEncoder.alignTypingResult(valueReturnType, sinkRowType)
+    val producedType = flinkNodeContext.typeInformationDetection.forType[Row](alignedType)
+    new EncodeAsTableTypeFunction(
+      flinkNodeContext.exceptionHandlerPreparer,
+      flinkNodeContext.nodeId,
+      sinkRowType,
+      producedType
+    )
   }
 
 }
