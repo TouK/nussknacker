@@ -80,7 +80,6 @@ class FlinkProcessRegistrar(
       val compilerData = compilerDataForUsedNodesAndClassloader(UsedNodes.empty, userClassLoader)
 
       streamExecutionEnvPreparer.preRegistration(env, compilerData, deploymentData)
-      val typeInformationDetection = TypingResultAwareTypeInformationDetection(userClassLoader)
 
       val compilerDataForProcessPart =
         FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
@@ -90,7 +89,6 @@ class FlinkProcessRegistrar(
         compilerData,
         process,
         resultCollector,
-        typeInformationDetection,
         deploymentData
       )
       streamExecutionEnvPreparer.postRegistration(env, compilerData, deploymentData)
@@ -127,7 +125,6 @@ class FlinkProcessRegistrar(
       compilerData: FlinkProcessCompilerData,
       process: CanonicalProcess,
       resultCollector: ResultCollector,
-      typeInformationDetection: TypeInformationDetection,
       deploymentData: DeploymentData
   ): Unit = {
 
@@ -156,7 +153,7 @@ class FlinkProcessRegistrar(
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
         validationContext,
-        typeInformationDetection,
+        TypeInformationDetection.instance,
         compilerData.componentUseCase,
         // TODO: we should verify if component supports given node data type. If not, we should throw some error instead
         //       of silently skip these data
@@ -180,7 +177,7 @@ class FlinkProcessRegistrar(
       // TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource]
 
-      val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
+      val contextTypeInformation = TypeInformationDetection.instance.forContext(part.validationContext)
 
       val start = source
         .contextStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
@@ -200,7 +197,7 @@ class FlinkProcessRegistrar(
         case (BranchEndDefinition(id, joinId), BranchEndData(validationContext, stream)) if joinPart.id == joinId =>
           id -> (stream.map(
             (value: InterpretationResult) => value.finalContext,
-            typeInformationDetection.forContext(validationContext)
+            TypeInformationDetection.instance.forContext(validationContext)
           ), validationContext)
       }
 
@@ -221,7 +218,7 @@ class FlinkProcessRegistrar(
         )
         .map(
           (value: ValueWithContext[AnyRef]) => newContextFun(value),
-          typeInformationDetection.forContext(joinPart.validationContext)
+          TypeInformationDetection.instance.forContext(joinPart.validationContext)
         )
 
       val afterSplit = registerInterpretationPart(newStart, joinPart, BranchInterpretationName)
@@ -236,8 +233,8 @@ class FlinkProcessRegistrar(
       val branchesForParts = part.nextParts
         .map { part =>
           val typeInformationForTi =
-            InterpretationResultTypeInformation.create(typeInformationDetection, part.contextBefore)
-          val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
+            InterpretationResultTypeInformation.create(part.contextBefore)
+          val typeInformationForVC = TypeInformationDetection.instance.forContext(part.contextBefore)
 
           registerSubsequentPart(
             sideOutput(start, new OutputTag[InterpretationResult](part.id, typeInformationForTi))
@@ -249,7 +246,7 @@ class FlinkProcessRegistrar(
           _ ++ _
         }
       val branchForEnds = part.ends.collect { case TypedEnd(be: BranchEnd, validationContext) =>
-        val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext)
+        val ti = InterpretationResultTypeInformation.create(validationContext)
         be.definition -> BranchEndData(
           validationContext,
           sideOutput(start, new OutputTag[InterpretationResult](be.nodeId, ti))
@@ -279,8 +276,8 @@ class FlinkProcessRegistrar(
         sink: FlinkSink,
         contextBefore: ValidationContext
     ): Map[BranchEndDefinition, BranchEndData] = {
-      val typeInformationForIR  = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore)
-      val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
+      val typeInformationForIR  = InterpretationResultTypeInformation.create(contextBefore)
+      val typeInformationForCtx = TypeInformationDetection.instance.forContext(contextBefore)
       // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = sideOutput(
         registerInterpretationPart(start, part, SinkInterpretationName),
@@ -329,7 +326,7 @@ class FlinkProcessRegistrar(
         .transform(start, customNodeContext)
         .map(
           (value: ValueWithContext[_]) => newContextFun(value),
-          typeInformationDetection.forContext(part.validationContext)
+          TypeInformationDetection.instance.forContext(part.validationContext)
         )
       // TODO: for ending custom nodes there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = registerInterpretationPart(transformed, part, CustomNodeInterpretationName)
@@ -378,7 +375,7 @@ class FlinkProcessRegistrar(
           )
         )
       } else {
-        val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
+        val ti = InterpretationResultTypeInformation.create(outputContexts)
         stream.flatMap(
           new SyncInterpretationFunction(
             compilerDataForProcessPart(Some(part)),
@@ -392,7 +389,7 @@ class FlinkProcessRegistrar(
 
       resultStream
         .name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
-        .process(new SplitFunction(outputContexts, typeInformationDetection), TypeInformation.of(classOf[Unit]))
+        .process(new SplitFunction(outputContexts), TypeInformation.of(classOf[Unit]))
     }
 
   }

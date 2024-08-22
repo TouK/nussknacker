@@ -4,9 +4,9 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import scala.jdk.CollectionConverters._
 
@@ -16,7 +16,7 @@ class InputMetaDeserializationSpec extends AnyFunSuite with Matchers with FlinkT
     "should serialize and deserialize input metadata with TypingResultAwareTypeInformationDetection"
   ) {
     val typeInformation =
-      new TypingResultAwareTypeInformationDetection(List.empty).forType[java.util.Map[String @unchecked, _]](
+      TypeInformationDetection.instance.forType[java.util.Map[String @unchecked, _]](
         InputMeta.withType(Typed.record(List("partOne" -> Typed[String], "partTwo" -> Typed[Int])))
       )
     val givenObj = InputMeta(

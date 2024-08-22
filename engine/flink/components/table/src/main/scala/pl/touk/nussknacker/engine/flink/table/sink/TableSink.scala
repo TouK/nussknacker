@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import org.apache.flink.api.common.functions.{RichFlatMapFunction, RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
@@ -11,9 +11,10 @@ import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, NodeId, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeSchemaBasedEncoder
@@ -100,7 +101,7 @@ object EncodeAsTableTypeFunction {
       sinkRowType: RowType
   ): EncodeAsTableTypeFunction = {
     val alignedType  = ToTableTypeSchemaBasedEncoder.alignTypingResult(valueReturnType, sinkRowType)
-    val producedType = flinkNodeContext.typeInformationDetection.forType[Row](alignedType)
+    val producedType = TypeInformationDetection.instance.forType[Row](alignedType)
     new EncodeAsTableTypeFunction(
       flinkNodeContext.exceptionHandlerPreparer,
       flinkNodeContext.nodeId,
