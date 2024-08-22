@@ -25,7 +25,6 @@ trait NussknackerConfig {
 class LoadableConfigBasedNussknackerConfig(loadConfig: IO[ConfigWithUnresolvedVersion]) extends NussknackerConfig {
 
   override def loadApplicationConfig(): IO[ConfigWithUnresolvedVersion] = loadConfig
-
 }
 
 class LoadableDesignerConfigBasedNussknackerConfig(classLoader: ClassLoader)

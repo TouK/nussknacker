@@ -19,12 +19,15 @@ object DesignerConfigLoader {
   private val defaultConfigResource = "defaultDesignerConfig.conf"
 
   def load(classLoader: ClassLoader): IO[ConfigWithUnresolvedVersion] = {
-    load(ConfigFactoryExt.parseUnresolved(classLoader = classLoader), classLoader)
+    for {
+      baseConfig   <- IO(ConfigFactoryExt.parseUnresolved(classLoader = classLoader))
+      loadedConfig <- load(baseConfig, classLoader)
+    } yield loadedConfig
   }
 
   def load(baseUnresolvedConfig: Config, classLoader: ClassLoader): IO[ConfigWithUnresolvedVersion] = {
     IO.blocking {
-      val parsedDefaultUiConfig                  = ConfigFactory.parseResources(defaultConfigResource)
+      val parsedDefaultUiConfig                  = ConfigFactory.parseResources(classLoader, defaultConfigResource)
       val unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
       ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults)
     }
