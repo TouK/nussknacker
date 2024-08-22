@@ -77,6 +77,7 @@ import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
@@ -94,6 +95,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
   private val validationExpressionForList = Expression.spel(s"#value.size() == 2 && #value[0] == 'foo'")
+
+  private val validationExpressionForLocalDateTime =
+    Expression.spel(
+      s"""#${ValidationExpressionParameterValidator.variableName}.dayOfWeek.name == 'FRIDAY'"""
+    )
 
   test("check for not unique edge types") {
     val process = createGraph(
@@ -1323,6 +1329,54 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
+  test(
+    "ValidationExpressionParameterValidator fails if expression value is not compile-time evaluable"
+  ) {
+    val process = processWithService(
+      LocalDateTimeParameterService.serviceId,
+      List(
+        NodeParameter(
+          ParameterName("localDateTimeParam"),
+          Expression.spel("T(java.time.LocalDateTime).now")
+        ),
+      )
+    )
+
+    val validator = validatorWithComponentsAndConfig(
+      List(ComponentDefinition(LocalDateTimeParameterService.serviceId, LocalDateTimeParameterService)),
+      Map(
+        DesignerWideComponentId(
+          s"streaming-service-${LocalDateTimeParameterService.serviceId}"
+        ) -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            ParameterName("localDateTimeParam") -> paramConfigWithValidationExpression(
+              validationExpressionForLocalDateTime
+            ),
+          )
+        )
+      )
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CompileTimeEvaluableParameterNotEvaluated",
+                "This field's value has to be evaluable at deployment time",
+                "Please provide a value that is evaluable at deployment time",
+                Some("localDateTimeParam"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
   test("validate service parameter based on input config - MandatoryParameterValidator") {
     val validator = new UIProcessValidator(
       processingType = "Streaming",
@@ -2179,6 +2233,18 @@ private object UIProcessValidatorSpec {
         listParam1: Option[java.util.List[String]],
         @ParamName("listParam2")
         listParam2: Option[java.util.List[String]]
+    ): Future[String] = ???
+
+  }
+
+  object LocalDateTimeParameterService extends Service {
+
+    val serviceId = "localDateTimeParameterService"
+
+    @MethodToInvoke
+    def method(
+        @ParamName("localDateTimeParam")
+        localDateTimeParam: Option[LocalDateTime]
     ): Future[String] = ???
 
   }
