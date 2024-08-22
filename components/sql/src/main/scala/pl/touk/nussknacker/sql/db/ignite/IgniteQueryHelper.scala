@@ -2,10 +2,10 @@ package pl.touk.nussknacker.sql.db.ignite
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.sql.db.MetaDataProviderUtils
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
 
-import java.sql.{Connection, PreparedStatement, ResultSet}
-import scala.collection.mutable.ArrayBuffer
+import java.sql.Connection
 import scala.util.Using
 
 class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
@@ -20,13 +20,15 @@ class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
 
   def fetchTablesMeta: Map[String, TableDefinition] = {
     Using.resource(getConnection()) { connection =>
-      getIgniteQueryResults(
-        connection = connection,
-        query = tablesInSchemaQuery,
-        setArgs = List(_.setString(1, connection.getSchema))
-      ) { r =>
-        (r.getString("TABLE_NAME"), r.getString("COLUMN_NAME"), r.getString("TYPE"), r.getBoolean("AFFINITY_COLUMN"))
-      }.groupBy { case (tableName, _, _, _) => tableName }
+      MetaDataProviderUtils
+        .getQueryResults(
+          connection = connection,
+          query = tablesInSchemaQuery,
+          setArgs = List(_.setString(1, connection.getSchema))
+        ) { r =>
+          (r.getString("TABLE_NAME"), r.getString("COLUMN_NAME"), r.getString("TYPE"), r.getBoolean("AFFINITY_COLUMN"))
+        }
+        .groupBy { case (tableName, _, _, _) => tableName }
         .map { case (tableName, entries) =>
           val columnTypings = entries.map { case (_, columnName, klassName, _) =>
             columnName -> Typed.typedClass(Class.forName(klassName))
@@ -34,23 +36,6 @@ class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
 
           tableName -> TableDefinition.applyList(columnTypings)
         }
-    }
-  }
-
-  private def getIgniteQueryResults[T](
-      connection: Connection,
-      query: String,
-      setArgs: List[PreparedStatement => Unit] = Nil
-  )(f: ResultSet => T): List[T] = {
-    Using.resource(connection.prepareStatement(query)) { statement =>
-      logger.debug(s"Executing query: $query")
-      setArgs.foreach(setArg => setArg(statement))
-      val resultSet = statement.executeQuery()
-      val arr       = ArrayBuffer.empty[T]
-      while (resultSet.next()) {
-        arr += f(resultSet)
-      }
-      arr.toList
     }
   }
 

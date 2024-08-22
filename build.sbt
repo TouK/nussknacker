@@ -353,6 +353,7 @@ val findBugsV                 = "3.0.2"
 val enumeratumV               = "1.7.3"
 val ujsonV                    = "3.1.2"
 val igniteV                   = "2.10.0"
+val cassandraDriverV          = "4.13.0"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion) {
@@ -1687,15 +1688,18 @@ lazy val sqlComponents = (project in component("sql"))
   .settings(
     name := "nussknacker-sql",
     libraryDependencies ++= Seq(
-      "com.zaxxer"        % "HikariCP"                        % hikariCpV,
+      "com.zaxxer"           % "HikariCP"                        % hikariCpV,
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
-      "org.apache.ignite" % "ignite-core"                     % igniteV              % Test,
-      "org.apache.ignite" % "ignite-indexing"                 % igniteV              % Test,
-      "org.postgresql"    % "postgresql"                      % postgresV            % Test,
-      "org.scalatest"    %% "scalatest"                       % scalaTestV           % Test,
-      "org.hsqldb"        % "hsqldb"                          % hsqldbV              % Test,
-      "com.dimafeng"     %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
-      "com.dimafeng"     %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
+      "org.apache.ignite"    % "ignite-core"                     % igniteV              % Test,
+      "org.apache.ignite"    % "ignite-indexing"                 % igniteV              % Test,
+      "com.ing.data"         % "cassandra-jdbc-wrapper"          % cassandraDriverV     % Test,
+      "org.apache.cassandra" % "java-driver-core"                % "4.18.1"             % Compile,
+      "org.postgresql"       % "postgresql"                      % postgresV            % Test,
+      "org.scalatest"       %% "scalatest"                       % scalaTestV           % Test,
+      "org.hsqldb"           % "hsqldb"                          % hsqldbV              % Test,
+      "com.dimafeng"        %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
+      "com.dimafeng"        %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
+      "com.dimafeng"        %% "testcontainers-scala-cassandra"  % testContainersScalaV % Test,
     ),
   )
   .dependsOn(
