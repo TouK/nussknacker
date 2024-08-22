@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import java.util.{Collections, Objects}
-import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.reflect.ClassTag
@@ -396,7 +395,7 @@ object CollectionUtils {
     private def listResultType(
         baseTypeClass: TypedClass,
         parametersTypes: TypedObjectTypingResult,
-        fields: ListMap[String, typing.TypingResult],
+        fields: Map[String, typing.TypingResult],
         fieldName: Any
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
       fields.get(fieldName.asInstanceOf[String]) match {
