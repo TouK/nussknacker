@@ -551,41 +551,59 @@ class DefaultComponentServiceSpec
       createFragmentEntity(name = category, category = category, processingType = processingType)
     }
 
-  it should "return components for each user" in {
-    val processes        = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
-    val componentService = prepareService(modelDataMap, processes, fragmentFromCategories)
+  private val processes        = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
+  private val componentService = prepareService(modelDataMap, processes, fragmentFromCategories)
 
-    def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
-      prepareComponents(user)
-        .map(c => c -> categories.intersect(c.categories))
-        .filter(seq => seq._2.nonEmpty)
-        .map(seq => seq._1.copy(categories = seq._2))
+  def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
+    prepareComponents(user)
+      .map(c => c -> categories.intersect(c.categories))
+      .filter(seq => seq._2.nonEmpty)
+      .map(seq => seq._1.copy(categories = seq._2))
 
-    val expectedAdminComponents     = prepareComponents(admin)
-    val expectedMarketingComponents = filterUserComponents(marketingUser, List(CategoryMarketing))
-    val expectedFraudComponents     = filterUserComponents(fraudUser, List(CategoryFraud))
+  private val expectedAdminComponents     = prepareComponents(admin)
+  private val expectedMarketingComponents = filterUserComponents(marketingUser, List(CategoryMarketing))
+  private val expectedFraudComponents     = filterUserComponents(fraudUser, List(CategoryFraud))
 
-    val testingData = Table(
-      ("user", "expectedComponents", "possibleCategories"),
-      (marketingUser, expectedMarketingComponents, List(CategoryMarketing)),
-      (fraudUser, expectedFraudComponents, List(CategoryFraud)),
-      (admin, expectedAdminComponents, AllCategories)
+  private val testingData = Table(
+    ("user", "expectedComponents", "possibleCategories"),
+    (marketingUser, expectedMarketingComponents, List(CategoryMarketing)),
+    (fraudUser, expectedFraudComponents, List(CategoryFraud)),
+    (admin, expectedAdminComponents, AllCategories)
+  )
+
+  it should "return expected components for all combinations of skipUsages/skipFragments" in {
+    val combinations = Table(
+      ("skipUsages", "skipFragments"),
+      (false, false),
+      (true, false),
+      (false, true),
+      (true, true)
     )
+
+    forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], _) =>
+      forAll(combinations) { (skipUsages: Boolean, skipFragments: Boolean) =>
+        val returnedComponents =
+          componentService.getComponentsList(skipUsages = skipUsages, skipFragments = skipFragments)(user).futureValue
+
+        if (skipFragments)
+          returnedComponents.size should be < expectedComponents.size
+        else
+          returnedComponents.size shouldBe expectedComponents.size
+
+        val filteredExpectedComponents = expectedComponents
+          .filter(component => !(skipFragments && component.componentType == ComponentType.Fragment))
+
+        returnedComponents.map(_.id) should contain theSameElementsAs filteredExpectedComponents.map(_.id)
+      }
+    }
+  }
+
+  it should "return components with correct counts for each user" in {
 
     forAll(testingData) {
       (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
         val returnedComponentsWithUsages =
           componentService.getComponentsList(skipUsages = false, skipFragments = false)(user).futureValue
-        val returnedComponentsWithoutUsages =
-          componentService.getComponentsList(skipUsages = true, skipFragments = false)(user).futureValue
-
-        returnedComponentsWithUsages.map(_.id) shouldBe returnedComponentsWithoutUsages.map(_.id)
-
-        returnedComponentsWithUsages.map(_.id).sortBy(_.value) should contain theSameElementsAs expectedComponents
-          .map(_.id)
-          .sortBy(
-            _.value
-          )
 
         def counts(list: List[ComponentListElement]) = list.map(el => el.id -> el.usageCount).toMap
         val returnedCounts                           = counts(returnedComponentsWithUsages)
