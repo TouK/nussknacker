@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.M
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixin with BeforeAndAfter {
 
@@ -59,7 +59,7 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
       process,
       topicConfig,
       PaymentV1.exampleData,
-      BestEffortJsonEncoder.defaultForTests.encode(PaymentV1.exampleData)
+      ToJsonEncoder.defaultForTests.encode(PaymentV1.exampleData)
     )
   }
 

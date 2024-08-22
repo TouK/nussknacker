@@ -23,7 +23,7 @@ import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 import scala.collection.compat.immutable.LazyList
 
-class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
+class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
 
   import scala.jdk.CollectionConverters._
 
@@ -245,10 +245,10 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
 
 }
 
-object BestEffortAvroEncoder {
+object ToAvroSchemaBasedEncoder {
 
   final private val DefaultSchemaEvolution = new DefaultAvroSchemaEvolution
 
-  def apply(validationMode: ValidationMode): BestEffortAvroEncoder =
-    new BestEffortAvroEncoder(DefaultSchemaEvolution, validationMode)
+  def apply(validationMode: ValidationMode): ToAvroSchemaBasedEncoder =
+    new ToAvroSchemaBasedEncoder(DefaultSchemaEvolution, validationMode)
 }

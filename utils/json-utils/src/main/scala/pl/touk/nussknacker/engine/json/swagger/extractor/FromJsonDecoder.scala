@@ -10,7 +10,7 @@ import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 import scala.util.Try
 
 // TODO: Validated
-object JsonToNuStruct {
+object FromJsonDecoder {
 
   import scala.jdk.CollectionConverters._
 
@@ -20,7 +20,7 @@ object JsonToNuStruct {
       )
 
   // TODO: remove flow control using exceptions
-  def apply(json: Json, definition: SwaggerTyped, path: String = ""): AnyRef = {
+  def decode(json: Json, definition: SwaggerTyped, path: String = ""): AnyRef = {
 
     def extract[A](fun: Json => Option[A], trans: A => AnyRef = identity[AnyRef] _): AnyRef =
       fun(json).map(trans).getOrElse(throw JsonToObjectError(json, definition, path))
@@ -41,14 +41,14 @@ object JsonToNuStruct {
           TypedMap(
             jo.toMap.collect {
               case (key, value) if obj.elementType.contains(key) =>
-                key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
+                key -> FromJsonDecoder.decode(value, obj.elementType(key), addPath(key))
               case keyValue @ KeyMatchingPatternSchema(patternPropertySchema) =>
                 val (key, value) = keyValue
-                key -> JsonToNuStruct(value, patternPropertySchema, addPath(key))
+                key -> FromJsonDecoder.decode(value, patternPropertySchema, addPath(key))
               case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled =>
                 obj.additionalProperties match {
                   case add: AdditionalPropertiesEnabled =>
-                    key -> JsonToNuStruct(value, add.value, addPath(key))
+                    key -> FromJsonDecoder.decode(value, add.value, addPath(key))
                   case _ =>
                     key -> jsonToAny(value)
                 }
@@ -88,12 +88,12 @@ object JsonToNuStruct {
         case SwaggerArray(elementType) =>
           extract[Vector[Json]](
             _.asArray,
-            _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava
+            _.zipWithIndex.map { case (el, idx) => FromJsonDecoder.decode(el, elementType, s"$path[$idx]") }.asJava
           )
         case obj: SwaggerObject => extractObject(obj)
         case u @ SwaggerUnion(types) =>
           types.view
-            .flatMap(aType => Try(apply(json, aType)).toOption)
+            .flatMap(aType => Try(decode(json, aType)).toOption)
             .headOption
             .getOrElse(throw JsonToObjectError(json, u, path))
         case SwaggerAny => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))

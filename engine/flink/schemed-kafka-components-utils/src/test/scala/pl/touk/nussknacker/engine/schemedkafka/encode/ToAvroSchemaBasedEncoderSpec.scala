@@ -16,11 +16,11 @@ import java.time._
 import java.util.UUID
 import scala.collection.immutable.ListSet
 
-class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValuesDetailedMessage {
+class ToAvroSchemaBasedEncoderSpec extends AnyFunSpec with Matchers with EitherValuesDetailedMessage {
 
   import scala.jdk.CollectionConverters._
 
-  final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  final protected val avroEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
 
   it("should create simple record") {
     val schema = wrapWithRecordSchema("""[
@@ -193,9 +193,9 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
         |  { "name": "foo", "type": "string" }
         |]""".stripMargin)
 
-    BestEffortAvroEncoder(ValidationMode.strict)
+    ToAvroSchemaBasedEncoder(ValidationMode.strict)
       .encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe Symbol("invalid")
-    BestEffortAvroEncoder(ValidationMode.lax)
+    ToAvroSchemaBasedEncoder(ValidationMode.lax)
       .encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe Symbol("valid")
   }
 

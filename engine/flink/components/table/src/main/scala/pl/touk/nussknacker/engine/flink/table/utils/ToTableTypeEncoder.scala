@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
-object BestEffortTableTypeEncoder {
+object ToTableTypeEncoder {
 
   private val javaMapClass = classOf[java.util.Map[_, _]]
 

@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
 import org.everit.json.schema.Schema
-import pl.touk.nussknacker.engine.util.json.{EncodeInput, EncodeOutput, ToJsonBasedOnSchemaEncoder}
+import pl.touk.nussknacker.engine.util.json.{EncodeInput, EncodeOutput, ToJsonSchemaBasedEncoderCustomisation}
 import scala.jdk.CollectionConverters._
 
-class AvroToJsonBasedOnSchemaEncoder extends ToJsonBasedOnSchemaEncoder {
+class AvroToJsonSchemaBasedEncoderCustomisation extends ToJsonSchemaBasedEncoderCustomisation {
 
   override def encoder(
       delegateEncode: EncodeInput => EncodeOutput

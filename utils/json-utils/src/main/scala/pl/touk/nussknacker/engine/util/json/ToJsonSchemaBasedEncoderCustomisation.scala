@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util.json
 
-trait ToJsonBasedOnSchemaEncoder {
+trait ToJsonSchemaBasedEncoderCustomisation {
 
   def encoder(delegateEncode: EncodeInput => EncodeOutput): PartialFunction[EncodeInput, EncodeOutput]
 }

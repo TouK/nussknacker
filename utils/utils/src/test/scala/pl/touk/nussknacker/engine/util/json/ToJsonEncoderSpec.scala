@@ -11,9 +11,9 @@ import java.util
 import java.util.UUID
 import scala.collection.immutable.{ListMap, ListSet}
 
-class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
+class ToJsonEncoderSpec extends AnyFunSpec with Matchers {
 
-  private val encoder = BestEffortJsonEncoder.defaultForTests
+  private val encoder = ToJsonEncoder.defaultForTests
 
   it("should encode simple elements as a json") {
     encoder.encode(1) shouldEqual fromLong(1)
@@ -81,9 +81,9 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
   it("should use custom encoders from classloader") {
 
     ClassLoaderWithServices.withCustomServices(
-      List(classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder1], classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder2])
+      List(classOf[ToJsonEncoderCustomisation] -> classOf[CustomJsonEncoderCustomisation1], classOf[ToJsonEncoderCustomisation] -> classOf[CustomJsonEncoderCustomisation2])
     ) { classLoader =>
-      val encoder = BestEffortJsonEncoder(failOnUnknown = true, classLoader)
+      val encoder = ToJsonEncoder(failOnUnknown = true, classLoader)
 
       encoder.encode(
         Map(
@@ -100,7 +100,7 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
 
 }
 
-class CustomJsonEncoder1 extends ToJsonEncoder {
+class CustomJsonEncoderCustomisation1 extends ToJsonEncoderCustomisation {
 
   override def encoder(encode: Any => Json): PartialFunction[Any, Json] = { case CustomClassToEncode(value) =>
     obj("customEncode" -> encode(value))
@@ -108,7 +108,7 @@ class CustomJsonEncoder1 extends ToJsonEncoder {
 
 }
 
-class CustomJsonEncoder2 extends ToJsonEncoder {
+class CustomJsonEncoderCustomisation2 extends ToJsonEncoderCustomisation {
 
   override def encoder(encode: Any => Json): PartialFunction[Any, Json] = { case _: NestedClassToEncode =>
     fromString("value")

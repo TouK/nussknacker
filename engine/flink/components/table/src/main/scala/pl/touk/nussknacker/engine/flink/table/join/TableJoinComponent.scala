@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper
 }
-import pl.touk.nussknacker.engine.flink.table.utils.{BestEffortTableTypeEncoder, RowConversions}
+import pl.touk.nussknacker.engine.flink.table.utils.{RowConversions, ToTableTypeEncoder}
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.{TypeInformationDetectionExtension, rowToContext}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -221,7 +221,7 @@ object TableJoinComponent
         row.setField(contextInternalColumnName, RowConversions.contextToRow(context, mainBranchValidationContext))
         row.setField(
           mainKeyInternalColumnName,
-          BestEffortTableTypeEncoder.encode(evaluateKey(context), mainKeyLazyParam.returnType)
+          ToTableTypeEncoder.encode(evaluateKey(context), mainKeyLazyParam.returnType)
         )
         row
       }
@@ -238,7 +238,7 @@ object TableJoinComponent
       Array(contextInternalColumnName, mainKeyInternalColumnName),
       flinkNodeContext.typeInformationDetection.contextRowTypeInfo(mainBranchValidationContext),
       flinkNodeContext.typeInformationDetection.forType(
-        BestEffortTableTypeEncoder.alignTypingResult(mainKeyLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(mainKeyLazyParam.returnType)
       )
     )
   }
@@ -259,11 +259,11 @@ object TableJoinComponent
         val row = Row.withNames()
         row.setField(
           joinedKeyInternalColumnName,
-          BestEffortTableTypeEncoder.encode(evaluateKey(context), joinedKeyLazyParam.returnType)
+          ToTableTypeEncoder.encode(evaluateKey(context), joinedKeyLazyParam.returnType)
         )
         row.setField(
           outputInternalColumnName,
-          BestEffortTableTypeEncoder.encode(evaluateOutput(context), outputLazyParam.returnType)
+          ToTableTypeEncoder.encode(evaluateOutput(context), outputLazyParam.returnType)
         )
         row
       }
@@ -279,10 +279,10 @@ object TableJoinComponent
     Types.ROW_NAMED(
       Array(joinedKeyInternalColumnName, outputInternalColumnName),
       flinkNodeContext.typeInformationDetection.forType(
-        BestEffortTableTypeEncoder.alignTypingResult(joinedKeyLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(joinedKeyLazyParam.returnType)
       ),
       flinkNodeContext.typeInformationDetection.forType(
-        BestEffortTableTypeEncoder.alignTypingResult(outputLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(outputLazyParam.returnType)
       )
     )
   }
