@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{
 }
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
+import java.util
 import java.util.{Collections, Objects}
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
@@ -124,8 +125,7 @@ trait CollectionUtils extends HideToString {
   }
 
   @Documentation(description =
-    "Returns a list of all elements sorted by record field (field cannot be nullable) " +
-      "in ascending order (elements must be comparable)"
+    "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)"
   )
   @GenericType(typingFunction = classOf[RecordCollectionSortingTyping])
   def sortedAscBy(
@@ -134,17 +134,23 @@ trait CollectionUtils extends HideToString {
   ): java.util.List[java.util.Map[String, Any]] = {
     list.asScala.toList.sortWith { (firstMap, secondMap) =>
       (firstMap.get(fieldName), secondMap.get(fieldName)) match {
-        case (a, b) if a != null && b != null =>
+        case (a, b) if a != null && b != null && a.getClass == b.getClass && a.isInstanceOf[Comparable[_]] =>
           a.asInstanceOf[Comparable[Any]].compareTo(b.asInstanceOf[Comparable[Any]]) < 0
-        case _ => throw new IllegalStateException("Elements cannot be compared")
+        case (a, b) if a == null && b != null => true
+        case (a, b) if a != null && b == null => false
+        case (a, b) if a == null && b == null => false
+        case _                                => throw new IllegalArgumentException("Elements cannot be compared")
       }
     }.asJava
   }
 
   @Documentation(description = "Returns a list that contains elements in reversed order from the given list")
   @GenericType(typingFunction = classOf[ListTyping])
-  def reverse(@ParamName("list") list: java.util.List[_]): java.util.List[_] =
-    list.asScala.reverse.asJava
+  def reverse(@ParamName("list") list: java.util.List[_]): java.util.List[_] = {
+    val result = new java.util.ArrayList(list)
+    Collections.reverse(result)
+    result
+  }
 
   @Documentation(description = "Returns a list made of first n elements of the given list")
   @GenericType(typingFunction = classOf[ListTyping])
@@ -396,15 +402,21 @@ object CollectionUtils {
         fieldName: Any
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
       fields.get(fieldName.asInstanceOf[String]) match {
-        case Some(TypedClass(klass, _)) =>
-          if (comparableClass.isAssignableFrom(klass)) {
-            baseTypeClass.copy(params = parametersTypes.withoutValue :: Nil).validNel
-          } else {
-            GenericFunctionTypingError.OtherError(s"Field must implement Comparable interface").invalidNel
-          }
-        case Some(Unknown) =>
-          GenericFunctionTypingError.OtherError(s"Field must implement Comparable interface").invalidNel
-        case _ => GenericFunctionTypingError.OtherError(s"Record must contain field: $fieldName").invalidNel
+        case Some(TypedClass(klass, _)) if comparableClass.isAssignableFrom(klass) =>
+          baseTypeClass.copy(params = parametersTypes.withoutValue :: Nil).validNel
+        case Some(t @ (TypedClass(_, _) | Unknown)) =>
+          GenericFunctionTypingError
+            .OtherError(
+              s"Field: $fieldName of the type: ${t.display} isn't comparable (doesn't implement the " +
+                s"Comparable interface) and cannot be used for sorting purposes."
+            )
+            .invalidNel
+        case _ =>
+          GenericFunctionTypingError
+            .OtherError(
+              s"Type: ${parametersTypes.display} doesn't contain field: $fieldName."
+            )
+            .invalidNel
       }
     }
 

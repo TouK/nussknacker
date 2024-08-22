@@ -13434,7 +13434,7 @@
       ],
       "sortedAscBy": [
         {
-          "description": "Returns a list of all elements sorted by record field (field cannot be nullable) in ascending order (elements must be comparable)",
+          "description": "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)",
           "name": "sortedAscBy",
           "signatures": [
             {

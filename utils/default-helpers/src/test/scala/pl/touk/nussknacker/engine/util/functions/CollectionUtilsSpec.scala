@@ -327,10 +327,14 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
         "list" -> List(
           Map("k" -> "v3").asJava,
           Map("k" -> "v1").asJava,
+          Map("k" -> null).asJava,
           Map("k" -> "v2").asJava,
+          Map("k" -> null).asJava,
         ).asJava,
       )
     ) shouldBe List(
+      Map("k" -> null).asJava,
+      Map("k" -> null).asJava,
       Map("k" -> "v1").asJava,
       Map("k" -> "v2").asJava,
       Map("k" -> "v3").asJava,
@@ -410,10 +414,14 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
   test("should throw if sorted records does not contain a required field") {
     Table(
       ("expression", "errorMessage"),
-      ("#COLLECTION.sortedAscBy({{a: 'a'}, {a: 'b'}}, 'missing_field')", "Record must contain field: missing_field"),
+      (
+        "#COLLECTION.sortedAscBy({{a: 'a'}, {a: 'b'}}, 'missing_field')",
+        "Type: Record{a: String} doesn't contain field: missing_field."
+      ),
       (
         "#COLLECTION.sortedAscBy({{a: 'a'}, {a: #NUMERIC.toNumber('42')}}, 'a')",
-        "Field must implement Comparable interface"
+        "Field: a of the type: Unknown isn't comparable (doesn't implement the Comparable interface) and cannot " +
+          "be used for sorting purposes."
       ),
     ).forEvery { case (expression, errorMessage) =>
       val caught = intercept[ParseException] {
