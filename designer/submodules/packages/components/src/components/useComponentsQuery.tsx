@@ -12,7 +12,7 @@ export function useComponentsQuery(): UseQueryResult<ComponentType[]> {
     return useQuery({
         queryKey: "components",
         queryFn: async () => {
-            const { data } = await api.fetchComponents(false);
+            const { data } = await api.fetchComponents(false, false);
             return data;
         },
         enabled: !!api,
