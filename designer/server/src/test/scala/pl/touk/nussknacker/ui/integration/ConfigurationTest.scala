@@ -48,12 +48,12 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   }
 
   test("model config is accessible from modelData") {
-    modelDataConfig.getString("scenarioPropertiesConfig.propertiesConfig.environment.label") shouldBe "Environment"
-    globalConfig.hasPath("scenarioPropertiesConfig.propertiesConfig.environment.label") shouldBe false
+    modelDataConfig.getString("propertiesConfig.environment.label") shouldBe "Environment"
+    globalConfig.hasPath("propertiesConfig.environment.label") shouldBe false
   }
 
   test("Can override model.conf from application config, also substitutions") {
-    modelDataConfig.getString("scenarioPropertiesConfig.propertiesConfig.environment.value") shouldBe "OverriddenByConf"
+    modelDataConfig.getString("propertiesConfig.environment.value") shouldBe "OverriddenByConf"
     // in model.conf it's: ${documentationBase}"filter", in designer.conf we substitute documentationBase only
     modelDataConfig.getString("componentsUiConfig.filter.docsUrl") shouldBe "https://touk.github.io/nussknacker/filter"
   }
