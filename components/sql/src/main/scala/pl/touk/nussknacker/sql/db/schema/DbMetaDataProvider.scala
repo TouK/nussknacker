@@ -5,7 +5,8 @@ trait DbMetaDataProvider {
 
   def getTableMetaData(tableName: String): TableMetaData
 
-  def getQueryMetaData(query: String): TableMetaData
+  // possible values of resultStrategyName are defined in QueryResultStrategy implementations
+  def getQueryMetaData(query: String, resultStrategyName: String): TableMetaData
 
   def getSchemaDefinition(): SchemaDefinition
 }
