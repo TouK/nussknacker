@@ -20,7 +20,7 @@ object DesignerConfigLoader {
 
   def load(classLoader: ClassLoader): IO[ConfigWithUnresolvedVersion] = {
     for {
-      baseConfig   <- IO(ConfigFactoryExt.parseUnresolved(classLoader = classLoader))
+      baseConfig   <- IO.blocking(ConfigFactoryExt.parseUnresolved(classLoader = classLoader))
       loadedConfig <- load(baseConfig, classLoader)
     } yield loadedConfig
   }
