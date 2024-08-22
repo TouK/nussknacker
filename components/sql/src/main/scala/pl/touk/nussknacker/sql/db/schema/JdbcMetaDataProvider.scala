@@ -12,7 +12,7 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
       DialectMetaData(metaData.getIdentifierQuoteString)
     }
 
-  def getTableMetaData(tableName: String): TableMetaData = getQueryMetaData(query(tableName))
+  def getTableMetaData(tableName: String): TableMetaData = getQueryMetaDataImpl(query(tableName))
 
   def getSchemaDefinition(): SchemaDefinition =
     Using.resource(getConnection()) { connection =>
@@ -27,7 +27,10 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
       SchemaDefinition(results)
     }
 
-  override def getQueryMetaData(query: String): TableMetaData =
+  override def getQueryMetaData(query: String, resultStrategyName: String): TableMetaData =
+    getQueryMetaDataImpl(query)
+
+  private def getQueryMetaDataImpl(query: String): TableMetaData = {
     Using.resource(getConnection()) { connection =>
       Using.resource(connection.prepareStatement(query)) { statement =>
         TableMetaData( // For updates getMetaData return null, so TableDefinition is None
@@ -36,5 +39,6 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
         )
       }
     }
+  }
 
 }
