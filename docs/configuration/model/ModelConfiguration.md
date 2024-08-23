@@ -179,3 +179,9 @@ scenarioPropertiesConfig {
 }
 ```
 Configuration is similar to [component configuration](#configuration-of-ui-attributes-of-components)
+
+The docs button which is displayed in the modal window of a component is by default disabled for properties. One can enable it by adding
+
+``` docsUrl: "custom-configurable-link"```
+
+in the config. 
