@@ -80,7 +80,7 @@ object ComponentDefinitionExtractor {
 
       additionalConfigsFromProvider
         .get(designerWideId)
-        .map(ComponentAdditionalConfigConverter.toSingleComponentConfig)
+        .map(ComponentAdditionalConfigConverter.toComponentConfig)
         .getOrElse(ComponentConfig.zero)
         .copy(
           componentId = Some(designerWideId)

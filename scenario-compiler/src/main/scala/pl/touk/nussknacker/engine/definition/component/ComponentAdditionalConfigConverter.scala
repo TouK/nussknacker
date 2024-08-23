@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
 
 object ComponentAdditionalConfigConverter {
 
-  def toSingleComponentConfig(componentAdditionalConfig: ComponentAdditionalConfig): ComponentConfig =
+  def toComponentConfig(componentAdditionalConfig: ComponentAdditionalConfig): ComponentConfig =
     ComponentConfig(
       params = Some(componentAdditionalConfig.parameterConfigs.map { case (name, p) =>
         name -> toParameterConfig(p, name)
