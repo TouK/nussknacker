@@ -12,11 +12,11 @@ import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 import scala.util.control.NonFatal
 
-/* We have 3 different places where expressions can be evaluated:
+/* We have 4 different places where expressions can be evaluated:
   - Interpreter - evaluation of service parameters and variable definitions
   - CompilerLazyInterpreter - evaluation of parameters of CustomStreamTransformers
   - ComponentExecutorFactory - evaluation of eager parameters for all components that are Executor's factories and for ExceptionHandler
-  // todo ValidationExpressionParameterValidator
+  - ValidationExpressionParameterValidator (inside ExpressionCompiler) - evaluation of validation expressions
   They are evaluated with different contexts - e.g. in interpreter we can use process variables, but in source/sink we can use only global ones.
  */
 object ExpressionEvaluator {
