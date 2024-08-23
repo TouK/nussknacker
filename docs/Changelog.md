@@ -56,6 +56,7 @@
 * [#6591](https://github.com/TouK/nussknacker/pull/6591) The whole model can be reloaded with `POST /api/app/processingtype/reload` now - you can use this endpoint to reconfigure Nu processing types without need to restart the app
 * [#6623](https://github.com/TouK/nussknacker/pull/6623) Added `sortedAscBy` and `reverse` functions to `#COLLECTION`
   helper.
+* [#6650](https://github.com/TouK/nussknacker/pull/6650) Added a workaround for situations when an updated scenario with Kafka source started reading from the earliest offsets
 
 1.16.3 (8 August 2024)
 -------------------------
