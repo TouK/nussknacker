@@ -57,7 +57,7 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
       ValidationExpressionParameterValidator(
         new TestSpelExpression(validationExpression),
         None,
-        ExpressionEvaluator.optimizedEvaluator(GlobalVariablesPreparer(expressionConfig), Seq.empty),
+        ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig)),
         MetaData("FooProcess", StreamMetaData())
       )
         .isValid(ParameterName(paramName), Expression.spel(inputExpression), value, None)(nodeId)
