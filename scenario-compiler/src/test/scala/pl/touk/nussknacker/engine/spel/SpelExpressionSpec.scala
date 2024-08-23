@@ -1262,9 +1262,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .evaluateSync[util.List[String]](ctx) shouldBe List("a").asJava
   }
 
-  test("should convert array to list") {
-    parse[util.List[String]]("#arr", ctx).validExpression
-      .evaluateSync[util.List[String]](ctx) shouldBe List("a", "b").asJava
+  test("should convert array to list when passing arg which type should be list") {
+    parse[String]("T(java.lang.String).join(',', #arr)", ctx).validExpression
+      .evaluateSync[String](ctx) shouldBe "a,b"
   }
 
 }

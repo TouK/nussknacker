@@ -66,7 +66,10 @@
 * [#6656](https://github.com/TouK/nussknacker/pull/6656)
   * Remove not working MODEL_CLASS_PATH environment variable
   * Add default DB connection name
-* [#6614](https://github.com/TouK/nussknacker/pull/6614) Added automatic array to collection conversion in SpEL.
+* [#6614](https://github.com/TouK/nussknacker/pull/6614) Added automatic Array to List conversion in SpEL during:
+  * Selection (`.?`) - e.g. `#array.?[#this == 'some value']`.
+  * Projection (`.!`) - e.g. `#array.![#this]`.
+  * Passing Array as a parameter with type List - e.g. `T(java.lang.String).join(',', #array)`.
 
 1.16.3 (8 August 2024)
 -------------------------

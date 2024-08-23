@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -54,8 +53,8 @@ import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
-import scala.jdk.CollectionConverters._
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
@@ -131,14 +130,7 @@ private[spel] class Typer(
       current: TypingContext
   ): NodeTypingResult = {
 
-    // We are converting arrays to lists everywhere
-    def toNodeResult(typ: TypingResult) = {
-      val nodeType = typ match {
-        case tc: TypedClass if tc.objType.klass.isArray => Typed.genericTypeClass[java.util.List[_]](tc.params)
-        case _                                          => typ
-      }
-      current.toResult(TypedNode(node, TypingResultWithContext(nodeType)))
-    }
+    def toNodeResult(typ: TypingResult) = current.toResult(TypedNode(node, TypingResultWithContext(typ)))
 
     def validNodeResult(typ: TypingResult) = valid(toNodeResult(typ))
 

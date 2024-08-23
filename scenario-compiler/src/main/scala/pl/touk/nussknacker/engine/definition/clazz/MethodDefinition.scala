@@ -9,7 +9,8 @@ import pl.touk.nussknacker.engine.api.generics.{
   MethodTypeInfo,
   Parameter
 }
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
 
 sealed trait MethodDefinition {
@@ -30,7 +31,13 @@ sealed trait MethodDefinition {
 
   protected def isValidMethodInfo(arguments: List[TypingResult], methodTypeInfo: MethodTypeInfo): Boolean = {
     val checkNoVarArgs = arguments.length >= methodTypeInfo.noVarArgs.length &&
-      arguments.zip(methodTypeInfo.noVarArgs).forall { case (x, Parameter(_, y)) => x.canBeSubclassOf(y) }
+      arguments.zip(methodTypeInfo.noVarArgs).forall {
+        // Allow pass array as List argument because of array to list auto conversion:
+        // pl.touk.nussknacker.engine.spel.internal.ArrayToListConverter
+        case (tc @ TypedClass(klass, _), Parameter(_, y)) if klass.isArray =>
+          Typed.genericTypeClass[java.util.List[_]](tc.params).canBeSubclassOf(y)
+        case (x, Parameter(_, y)) => x.canBeSubclassOf(y)
+      }
 
     val checkVarArgs = methodTypeInfo.varArg match {
       case Some(Parameter(_, t)) =>
