@@ -31,7 +31,6 @@ export function Properties({
 }: Props): JSX.Element {
     const scenarioProperties = useSelector(getScenarioPropertiesConfig);
     const scenarioPropertiesConfig = scenarioProperties?.propertiesConfig ?? {};
-    console.log("scenarioPropertiesConfig:", scenarioPropertiesConfig); // Log the value for debugging
 
     //fixme move this configuration to some better place?
     //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
