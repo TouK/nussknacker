@@ -4,7 +4,6 @@ export * from "./comment";
 export * from "./displayProcessActivity";
 export * from "./displayProcessCounts";
 export * from "./editNode";
-export * from "./errors";
 export * from "./importExport";
 export * from "./node";
 export * from "./process";
