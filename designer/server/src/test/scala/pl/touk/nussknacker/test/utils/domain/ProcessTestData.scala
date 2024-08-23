@@ -145,6 +145,7 @@ object ProcessTestData {
     scenarioProperties = Map.empty,
     scenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+    scenarioLabelSettings = None,
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
@@ -155,6 +156,7 @@ object ProcessTestData {
     scenarioProperties = Map.empty,
     scenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+    scenarioLabelSettings = None,
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )

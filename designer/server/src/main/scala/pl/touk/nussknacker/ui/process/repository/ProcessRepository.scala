@@ -9,10 +9,10 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData, ScenarioLabelEntityData}
+import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
-import pl.touk.nussknacker.ui.process.label.ValidatedScenarioLabel
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
@@ -21,7 +21,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
-import pl.touk.nussknacker.ui.process.repository.ScenarioLabelsRepository.ScenarioLabel
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
@@ -65,7 +64,7 @@ object ProcessRepository {
       private val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
       comment: Option[Comment],
-      labels: Option[List[ValidatedScenarioLabel]],
+      labels: Option[List[ScenarioLabel]],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
   ) {

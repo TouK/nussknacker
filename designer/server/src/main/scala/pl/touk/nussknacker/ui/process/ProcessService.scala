@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
@@ -297,7 +298,12 @@ class DBProcessService(
     ScenarioWithDetailsConversions.fromEntity(
       entity.mapScenario { canonical: CanonicalProcess =>
         val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(entity.processingType)
-        processResolver.validateAndReverseResolve(canonical, entity.name, entity.isFragment)
+        processResolver.validateAndReverseResolve(
+          canonical,
+          entity.name,
+          entity.isFragment,
+          entity.scenarioLabels.map(ScenarioLabel.apply)
+        )
       },
       parameters
     )
@@ -393,16 +399,22 @@ class DBProcessService(
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
       val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
+      val scenarioLabels  = action.scenarioLabels.map(_.map(ScenarioLabel.apply))
       val validation =
         FatalValidationError.saveNotAllowedAsError(
-          processResolver.validateBeforeUiResolving(action.scenarioGraph, details.name, details.isFragment)
+          processResolver.validateBeforeUiResolving(
+            action.scenarioGraph,
+            details.name,
+            details.isFragment,
+            scenarioLabels.getOrElse(List.empty)
+          )
         )
       val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
       val updateProcessAction = UpdateProcessAction(
         processId = processIdWithName.id,
         canonicalProcess = substituted,
         comment = action.comment,
-        labels = action.scenarioLabels,
+        labels = scenarioLabels, // action.scenarioLabels,
         increaseVersionWhenJsonNotChanged = false,
         forwardedUserName = action.forwardedUserName
       )

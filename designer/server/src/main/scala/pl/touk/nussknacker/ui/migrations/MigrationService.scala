@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   GetScenarioWithDetailsOptions,
   UpdateScenarioCommand
 }
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
@@ -96,11 +97,13 @@ class MigrationService(
           UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by Unknown user")
       }
     }
+    val scenarioLabels: List[ScenarioLabel] = List.empty
+
     val updateScenarioCommand =
       UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = Some(updateProcessComment),
-        scenarioLabels = None,
+        scenarioLabels = Some(scenarioLabels.map(_.value)),
         forwardedUserName = forwardedUsernameO
       )
 
@@ -113,7 +116,13 @@ class MigrationService(
     val result: EitherT[Future, MigrationError, Unit] = for {
       processingType <- EitherT.fromEither[Future](processingTypeValidated.toEither).leftMap(MigrationError.from(_))
       validationResult <-
-        validateProcessingTypeAndUIProcessResolver(scenarioGraph, processName, isFragment, processingType)
+        validateProcessingTypeAndUIProcessResolver(
+          scenarioGraph,
+          processName,
+          isFragment,
+          scenarioLabels,
+          processingType
+        )
       _ <- checkForValidationErrors(validationResult)
       _ <- checkOrCreateAndCheckArchivedProcess(
         processName,
@@ -213,6 +222,7 @@ class MigrationService(
       scenarioGraph: ScenarioGraph,
       processName: ProcessName,
       isFragment: Boolean,
+      labels: List[ScenarioLabel],
       processingType: ProcessingType
   )(implicit loggedUser: LoggedUser) = {
     EitherT
@@ -222,7 +232,7 @@ class MigrationService(
           case Left(e) => Left(e)
           case Right(uiProcessResolver) =>
             FatalValidationError.renderNotAllowedAsError(
-              uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
+              uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment, labels)
             )
         }
       )

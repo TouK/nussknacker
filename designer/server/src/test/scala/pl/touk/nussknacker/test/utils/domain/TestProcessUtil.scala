@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -138,6 +139,7 @@ object TestProcessUtil {
       scenarioGraph: ScenarioGraph,
       name: ProcessName = ProcessTestData.sampleProcessName,
       isFragment: Boolean = false,
+      labels: Option[List[String]] = None,
       validationResult: ValidationResult = ValidationResult.success
   ): ScenarioWithDetailsForMigrations = {
     ScenarioWithDetailsForMigrations(
@@ -146,6 +148,7 @@ object TestProcessUtil {
       isFragment = isFragment,
       processingType = ProcessingTypeStreaming,
       processCategory = "Category1",
+      labels = labels,
       scenarioGraph = Some(scenarioGraph),
       validationResult = Some(validationResult),
       history = None,

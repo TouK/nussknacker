@@ -171,6 +171,7 @@ class AkkaHttpBasedRouteProvider(
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
           processingTypeData.deploymentData.scenarioPropertiesConfig,
           new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
+          featureTogglesConfig.scenarioLabelSettings,
           processingTypeData.deploymentData.additionalValidators,
           fragmentResolver
         )

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -19,8 +19,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
+import pl.touk.nussknacker.ui.api.ScenarioLabelSettings
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
+import pl.touk.nussknacker.ui.process.label.{ScenarioLabel, ValidatedScenarioLabel}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -29,6 +31,7 @@ class UIProcessValidator(
     validator: ProcessValidator,
     scenarioProperties: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
+    scenarioLabelSettings: Option[ScenarioLabelSettings],
     additionalValidators: List[CustomProcessValidator],
     fragmentResolver: FragmentResolver,
 ) {
@@ -44,6 +47,7 @@ class UIProcessValidator(
       validator,
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
+      scenarioLabelSettings,
       additionalValidators,
       fragmentResolver
     )
@@ -54,6 +58,7 @@ class UIProcessValidator(
       transform(validator),
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
+      scenarioLabelSettings,
       additionalValidators,
       fragmentResolver
     )
@@ -65,14 +70,20 @@ class UIProcessValidator(
       validator,
       scenarioPropertiesConfig,
       scenarioPropertiesConfigFinalizer,
+      scenarioLabelSettings,
       additionalValidators,
       fragmentResolver
     )
 
-  def validate(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
+  def validate(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean,
+      labels: List[ScenarioLabel]
+  )(
       implicit loggedUser: LoggedUser
   ): ValidationResult = {
-    val uiValidationResult = uiValidation(scenarioGraph, processName, isFragment)
+    val uiValidationResult = uiValidation(scenarioGraph, processName, isFragment, labels)
 
     // TODO: Enable further validation when save is not allowed
     // The problem preventing further validation is that loose nodes and their children are skipped during conversion
@@ -91,8 +102,14 @@ class UIProcessValidator(
   // is an error preventing graph canonization. For example we want to display node and scenario id errors for scenarios
   // that have loose nodes. If you want to achieve this result, you need to add these validations here and deduplicate
   // resulting errors later.
-  def uiValidation(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean): ValidationResult = {
+  def uiValidation(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean,
+      labels: List[ScenarioLabel]
+  ): ValidationResult = {
     validateScenarioName(processName, isFragment)
+      .add(validateScenarioLabels(labels))
       .add(validateNodesId(scenarioGraph))
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
@@ -180,6 +197,35 @@ class UIProcessValidator(
     nodeIdErrors match {
       case Some(value) => formatErrors(value)
       case None        => ValidationResult.success
+    }
+  }
+
+  private def validateScenarioLabels(labels: List[ScenarioLabel]): ValidationResult = {
+    scenarioLabelSettings match {
+      case Some(settings) =>
+        val notValidLabels = labels
+          .filter(label => !label.value.matches(settings.validationPattern))
+
+        if (notValidLabels.nonEmpty) {
+          ValidationResult.globalErrors(
+            List(
+              UIGlobalError(
+                PrettyValidationErrors.formatErrorMessage(
+                  ScenarioLabelValidationError(
+                    s"Bad scenario label format for labels ${notValidLabels
+                        .mkString("'", ",", "'")}. Validation pattern: ${settings.validationPattern}",
+                    ""
+                  )
+                ),
+                List.empty
+              )
+            ),
+          )
+        } else {
+          ValidationResult.success
+        }
+      case None =>
+        ValidationResult.success
     }
   }
 

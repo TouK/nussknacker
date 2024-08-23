@@ -30,7 +30,7 @@ object ValidatedScenarioLabel {
 
     def apply(label: String, scenarioLabelSettings: ScenarioLabelSettings): LabelValidationError = {
       new LabelValidationError(
-        s"Bad label format '$label'. Validation pattern: ${scenarioLabelSettings.validationPattern}"
+        s"Bad scenario label format '$label'. Validation pattern: ${scenarioLabelSettings.validationPattern}"
       )
     }
 

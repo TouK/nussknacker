@@ -1,29 +1,20 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import cats.data.NonEmptyList
-import db.util.DBIOActionInstances.DB
+import db.util.DBIOActionInstances.{DB, _}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.db.entity.ScenarioLabelEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import slick.jdbc.JdbcProfile
-import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.ui.process.repository.ScenarioLabelsRepository.ScenarioLabel
 
 import scala.concurrent.ExecutionContext
-
-object ScenarioLabelsRepository {
-  final case class ScenarioLabel(value: String)
-
-  object ScenarioLabel {
-    implicit val scenarioLabelOrdering: Ordering[ScenarioLabel] = Ordering.by(_.value)
-  }
-
-}
 
 class ScenarioLabelsRepository(protected val dbRef: DbRef)(implicit ec: ExecutionContext) extends NuTables {
 
   override protected val profile: JdbcProfile = dbRef.profile
+
+  private implicit val scenarioLabelOrdering: Ordering[ScenarioLabel] = Ordering.by(_.value)
 
   import profile.api._
 

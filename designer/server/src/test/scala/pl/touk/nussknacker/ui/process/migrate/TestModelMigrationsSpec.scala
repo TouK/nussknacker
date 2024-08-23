@@ -99,7 +99,12 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       )
 
     val validationResult =
-      flinkProcessValidator.validate(invalidGraph, ProcessTestData.sampleProcessName, isFragment = false)
+      flinkProcessValidator.validate(
+        invalidGraph,
+        ProcessTestData.sampleProcessName,
+        isFragment = false,
+        labels = List.empty
+      )
     val process = wrapWithDetailsForMigration(invalidGraph, validationResult = validationResult)
 
     val results = testMigration.testMigrations(List(process), List(), batchingExecutionContext)

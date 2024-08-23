@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionSt
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.ScenarioLabelsRepository.ScenarioLabel
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -110,7 +110,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
           lastStateActionData = lastStateActionPerProcess.get(process.id),
           lastDeployedActionData = lastDeployedActionPerProcess.get(process.id),
           isLatestVersion = true,
-          labels = labels.getOrElse(process.id, List.empty).sorted,
+          labels = labels.getOrElse(process.id, List.empty),
           // For optimisation reasons we don't return history when querying for list of processes
           history = None
         )
@@ -224,7 +224,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       lastStateActionData: Option[ProcessAction],
       lastDeployedActionData: Option[ProcessAction],
       isLatestVersion: Boolean,
-      labels: Seq[ScenarioLabel],
+      labels: List[ScenarioLabel],
       history: Option[Seq[ScenarioVersion]]
   ): ScenarioWithDetailsEntity[PS] = {
     repository.ScenarioWithDetailsEntity[PS](
@@ -240,7 +240,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       lastAction = lastActionData,
       lastStateAction = lastStateActionData,
       lastDeployedAction = lastDeployedActionData,
-      scenarioLabels = labels.map(_.value).toList,
+      scenarioLabels = labels.map(_.value),
       modificationDate = processVersion.createDate.toInstant,
       modifiedAt = processVersion.createDate.toInstant,
       modifiedBy = processVersion.user,

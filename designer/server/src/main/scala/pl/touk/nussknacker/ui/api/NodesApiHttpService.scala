@@ -35,7 +35,9 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   prepareTypingResultDecoder
 }
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -126,7 +128,12 @@ class NodesApiHttpService(
             scenario = ScenarioGraph(ProcessProperties(request.additionalFields), Nil, Nil)
             result = processingTypeToProcessValidator
               .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
-              .validate(scenario, request.name, scenarioWithDetails.isFragment)
+              .validate(
+                scenario,
+                request.name,
+                scenarioWithDetails.isFragment,
+                scenarioWithDetails.scenarioLabels,
+              )
             validation = NodeValidationResultDto(
               parameters = None,
               expressionType = None,

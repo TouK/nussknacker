@@ -8,7 +8,9 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
@@ -53,7 +55,8 @@ class ProcessesExportResources(
               process,
               processDetails.processingType,
               processDetails.name,
-              processDetails.isFragment
+              processDetails.isFragment,
+              processDetails.scenarioLabels,
             )
           }
         }
@@ -92,10 +95,12 @@ class ProcessesExportResources(
       processWithDictLabels: ScenarioGraph,
       processingType: ProcessingType,
       processName: ProcessName,
-      isFragment: Boolean
+      isFragment: Boolean,
+      scenarioLabels: List[ScenarioLabel]
   )(implicit user: LoggedUser): HttpResponse = {
     val processResolver = processResolvers.forProcessingTypeUnsafe(processingType)
-    val resolvedProcess = processResolver.validateAndResolve(processWithDictLabels, processName, isFragment)
+    val resolvedProcess =
+      processResolver.validateAndResolve(processWithDictLabels, processName, isFragment, scenarioLabels)
     fileResponse(resolvedProcess)
   }
 

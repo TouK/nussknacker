@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   TestFromParametersRequest,
   prepareTestFromParametersDecoder
 }
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -195,6 +196,7 @@ class ManagementResources(
                             details.idWithNameUnsafe,
                             scenarioGraph,
                             details.isFragment,
+                            details.scenarioLabels,
                             RawScenarioTestData(testDataContent)
                           )
                           .flatMap(mapResultsToHttpResponse)
@@ -220,6 +222,7 @@ class ManagementResources(
                           scenarioGraph,
                           processName,
                           details.isFragment,
+                          details.scenarioLabels,
                           testSampleSize
                         ) match {
                           case Left(error) => Future.failed(ProcessUnmarshallingError(error))
@@ -229,6 +232,7 @@ class ManagementResources(
                                 details.idWithNameUnsafe,
                                 scenarioGraph,
                                 details.isFragment,
+                                details.scenarioLabels,
                                 rawScenarioTestData
                               )
                               .flatMap(mapResultsToHttpResponse)
@@ -257,6 +261,7 @@ class ManagementResources(
                           process.idWithNameUnsafe,
                           testParametersRequest.scenarioGraph,
                           process.isFragment,
+                          process.scenarioLabels,
                           testParametersRequest.sourceParameters
                         )
                         .flatMap(mapResultsToHttpResponse)
