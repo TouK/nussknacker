@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.process.compiler.{
   FlinkProcessCompilerDataFactory,
   UsedNodes
 }
-import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
+import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkCompatibilityProvider, FlinkJobConfig}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
@@ -80,7 +80,7 @@ class FlinkProcessRegistrar(
       val compilerData = compilerDataForUsedNodesAndClassloader(UsedNodes.empty, userClassLoader)
 
       streamExecutionEnvPreparer.preRegistration(env, compilerData, deploymentData)
-      val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
+      val typeInformationDetection = TypingResultAwareTypeInformationDetection(userClassLoader)
 
       val compilerDataForProcessPart =
         FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
