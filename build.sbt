@@ -1618,7 +1618,6 @@ lazy val flinkComponentsApi = (project in flink("components-api"))
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
-        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
       )
     }
   )

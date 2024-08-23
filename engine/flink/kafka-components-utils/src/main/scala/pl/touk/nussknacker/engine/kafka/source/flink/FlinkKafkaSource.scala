@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.eventtime.WatermarkStrategy
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
-import java.time.Duration
+import java.util
 import java.util.Properties
 import scala.jdk.CollectionConverters._
 
@@ -151,13 +151,15 @@ class FlinkKafkaConsumerHandlingExceptions[T](
     exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     nodeId: NodeId
-) extends FlinkKafkaConsumer[T](topics, deserializationSchema, props) {
+) extends FlinkKafkaConsumer[T](topics, deserializationSchema, props)
+    with LazyLogging {
 
   protected var exceptionHandler: ExceptionHandler = _
 
   protected var exceptionPurposeContextIdGenerator: ContextIdGenerator = _
 
   override def open(parameters: Configuration): Unit = {
+    patchRestoredState()
     super.open(parameters)
     exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
     exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
@@ -169,6 +171,47 @@ class FlinkKafkaConsumerHandlingExceptions[T](
       exceptionHandler.close()
     }
     super.close()
+  }
+
+  /**
+   * We observed that [[FlinkKafkaConsumerBase]], in `initializeState()`, may set a non-null but empty `restoredState`
+   * even though the saved state clearly contained proper state data. This makes the `open()` method treat
+   * all partitions as new ones instead of trying to fall back to offsets stored in associated consumer group.
+   *
+   * This may happen when we are changing Kafka source to a different implementation (but still a compatible one),
+   * but also when there are no changes in the scenario. There's possibly some kind of strange state incompatibility,
+   * and Flink accepts the old state from savepoint as compatible, but it restores it as empty state.
+   *
+   * It's impossible to fix Flink's source because it's deprecated and doesn't accept any changes, including bugfixes.
+   *
+   * To work around this issue we patch `restoredState` value to prevent invalid state restores and treat
+   * this situation as a new deployment without state.
+   *
+   * Note that our change may break a source reading from topics indicated by a pattern which, at the time
+   * of snapshot creation, indicates zero partitions. Nussknacker always uses concrete topic names, so for us this
+   * is acceptable.
+   */
+  private def patchRestoredState(): Unit = {
+    assert(
+      this.isInstanceOf[FlinkKafkaConsumerBase[_]],
+      s"$this must be an instance of ${classOf[FlinkKafkaConsumerBase[_]]}"
+    )
+    val restoredStateField = classOf[FlinkKafkaConsumerBase[_]].getDeclaredField("restoredState")
+    restoredStateField.setAccessible(true)
+    restoredStateField.get(this) match {
+      case null => // there is no restored stare
+      case tm: util.TreeMap[_, _] =>
+        if (tm.isEmpty) {
+          logger.warn("Got empty restoredState, patching it to prevent automatic reset to the earliest offsets")
+          // removing state with empty offset list will make the `open` method use its default behavior,
+          // i.e. Kafka fetcher will be initialized using configured `startupMode`
+          restoredStateField.set(this, null)
+        }
+      case other =>
+        throw new RuntimeException(
+          s"Expected restoredState to be of type ${classOf[util.TreeMap[_, _]]} but got ${other.getClass}"
+        )
+    }
   }
 
 }
