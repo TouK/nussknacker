@@ -129,6 +129,7 @@ trait CollectionUtils extends HideToString {
       @ParamName("list") list: java.util.Collection[java.util.Map[String, Any]],
       @ParamName("fieldName") fieldName: String
   ): java.util.List[java.util.Map[String, Any]] = {
+    checkIfNotNull(fieldName, "fieldName")
     list.asScala.toList.sortWith { (firstMap, secondMap) =>
       (firstMap.get(fieldName), secondMap.get(fieldName)) match {
         case (a, b) if a != null && b != null && a.getClass == b.getClass && a.isInstanceOf[Comparable[_]] =>
@@ -223,6 +224,11 @@ trait CollectionUtils extends HideToString {
   private def checkIfComparable(element: Any): Unit =
     if (!element.isInstanceOf[Comparable[_]]) {
       throw new java.lang.ClassCastException("Provided value is not comparable: " + element)
+    }
+
+  private def checkIfNotNull[T](t: T, fieldName: String): Unit =
+    if (t == null) {
+      throw new IllegalArgumentException(s"Provided '$fieldName' cannot be null")
     }
 
 }
@@ -383,8 +389,8 @@ object CollectionUtils {
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
       arguments match {
         case (f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil))
-            :: TypedObjectWithValue(TypedClass(`fieldClass`, Nil), field) :: _ =>
-          listResultType(f, e, fields, field)
+            :: TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
+          listResultType(f, e, fields, fieldName)
         case TypedObjectWithValue(f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil), _) ::
             TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
           listResultType(f, e, fields, fieldName)

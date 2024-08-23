@@ -423,11 +423,16 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
         "Field: a of the type: Unknown isn't comparable (doesn't implement the Comparable interface) and cannot " +
           "be used for sorting purposes."
       ),
+      (
+        "#COLLECTION.sortedAscBy({{k: 'a'}, {k: 'b'}}, null)",
+        "Mismatch parameter types. Found: sortedAscBy(List[Record{k: String}]({{k=a}, {k=b}}), Null). " +
+          "Required: sortedAscBy(Collection[Map[String,Unknown]], String)"
+      ),
     ).forEvery { case (expression, errorMessage) =>
       val caught = intercept[ParseException] {
         evaluateAny(expression)
       }
-      caught.getMessage should include(errorMessage)
+      caught.getMessage should be(errorMessage)
     }
   }
 
