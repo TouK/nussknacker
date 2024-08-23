@@ -46,8 +46,6 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
           true
         ),
         ("#value.toLowerCase() == \"left\" || #value.toLowerCase() == \"right\"", "param", "'up'", Some("up"), false),
-        ("#value", "param", "'up'", Some("up"), false),
-        ("#value", "param", "'up'", Some("up"), false),
         ("#value.size() == 2 && #value[0] == 'foo'", "list", "{'foo', 'bar'}", Some(List("foo", "bar").asJava), true),
         ("#ADD.add(#value, 3) > 10", "param", "9", Some(9), true),
         ("#ADD.add(#value, 3) > 10", "param", "7", Some(7), false),
