@@ -41,19 +41,26 @@ final class ArrayToListConverter implements ConditionalGenericConverter {
 
 	@Override
 	@Nullable
-	public Object convert(@Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+	public Object convert(
+        @Nullable Object source,
+        TypeDescriptor sourceTypeDescriptor,
+        TypeDescriptor targetTypeDescriptor
+    ) {
 		if (source == null) {
 			return null;
 		}
-		int length = Array.getLength(source);
-		TypeDescriptor elementDesc = targetType.getElementTypeDescriptor();
-		Collection<Object> target = CollectionFactory.createCollection(List.class,
-				(elementDesc != null ? elementDesc.getType() : null), length);
-        for (int i = 0; i < length; i++) {
+		int arrayLength = Array.getLength(source);
+		TypeDescriptor elementTypeDescriptor = targetTypeDescriptor.getElementTypeDescriptor();
+		Collection<Object> result = CollectionFactory.createCollection(
+            List.class,
+            elementTypeDescriptor != null ? elementTypeDescriptor.getType() : null,
+            arrayLength
+        );
+        for (int i = 0; i < arrayLength; i++) {
             Object sourceElement = Array.get(source, i);
-            target.add(sourceElement);
+            result.add(sourceElement);
         }
-		return target;
+		return result;
 	}
 
 }
