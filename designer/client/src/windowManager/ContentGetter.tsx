@@ -1,15 +1,18 @@
+import loadable from "@loadable/component";
 import { WindowContentProps } from "@touk/window-manager";
 import React from "react";
+import FrameDialog from "../components/FrameDialog";
+import LoaderSpinner from "../components/spinner/Spinner";
 import { Debug } from "../containers/Debug";
+import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import { WindowContent } from "./WindowContent";
 import { WindowKind } from "./WindowKind";
-import loadable from "@loadable/component";
-import LoaderSpinner from "../components/spinner/Spinner";
-import FrameDialog from "../components/FrameDialog";
-import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
+    fallback: <LoaderSpinner show />,
+});
+const DescriptionDialog = loadable(() => import("../components/graph/node-modal/node/DescriptionDialog"), {
     fallback: <LoaderSpinner show />,
 });
 const CountsDialog = loadable(() => import("../components/modals/CalculateCounts"), { fallback: <LoaderSpinner show /> });
@@ -75,11 +78,14 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <NodeDetails {...props} />;
         case WindowKind.viewNode:
             return <NodeDetails {...props} readOnly />;
+        case WindowKind.editDescription:
+            return <DescriptionDialog {...props} editMode />;
+        case WindowKind.viewDescription:
+            return <DescriptionDialog {...props} />;
         case WindowKind.survey:
             return <FrameDialog {...props} />;
-        case WindowKind.scenarioDetails: {
+        case WindowKind.scenarioDetails:
             return <ScenarioDetailsDialog {...props} />;
-        }
         default:
             return (
                 <WindowContent {...props}>

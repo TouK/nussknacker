@@ -33,12 +33,9 @@ import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.{
-  ProcessingTypeData,
-  ProcessingTypeDataProvider,
-  ProcessingTypeDataReader,
-  ScenarioParametersService
-}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
@@ -816,7 +813,7 @@ class DefaultComponentServiceSpec
     }
 
     ProcessingTypeDataProvider(
-      processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithRestriction),
+      processingTypeDataMap.mapValuesNow(ProcessingTypeDataLoader.toValueWithRestriction),
       ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
     ).mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
