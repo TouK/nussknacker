@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.description.{DisplayableUser, UserApiEndpoints}
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}

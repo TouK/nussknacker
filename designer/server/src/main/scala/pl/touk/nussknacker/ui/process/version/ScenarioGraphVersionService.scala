@@ -4,7 +4,7 @@ import cats.data.EitherT
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.version.ScenarioGraphVersionService.ScenarioGraphValidationError
 import pl.touk.nussknacker.ui.security.api.LoggedUser

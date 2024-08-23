@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.DictError.{
   NoProcessingType
 }
 import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.Dtos.DictDto
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
