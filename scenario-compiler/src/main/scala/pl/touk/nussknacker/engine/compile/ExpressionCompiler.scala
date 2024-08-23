@@ -4,7 +4,7 @@ import cats.data.Validated.{Valid, invalid, invalidNel, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
@@ -124,7 +124,8 @@ class ExpressionCompiler(
       nodeParameters: List[NodeParameter],
       ctx: ValidationContext
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      metaData: MetaData
   ): ValidatedNel[PartSubGraphCompilationError, List[CompiledParameter]] = {
     compileNodeParameters(
       parameterDefinitions,
@@ -150,7 +151,8 @@ class ExpressionCompiler(
       branchContexts: Map[String, ValidationContext],
       treatEagerParametersAsLazy: Boolean = false
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      metaData: MetaData
   ): ValidatedNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
 
     val redundantMissingValidation = Validations.validateRedundantAndMissingParameters(
@@ -183,7 +185,7 @@ class ExpressionCompiler(
   }
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId, metaData: MetaData
   ) =
     parameterDefinitions
       .map(p => p.name -> p.validators.map { v => compileValidator(v, p.name, p.typ, globalVariables) }.sequence)
@@ -273,7 +275,7 @@ class ExpressionCompiler(
       paramName: ParameterName,
       paramType: TypingResult,
       globalVariables: Map[String, TypingResult]
-  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Validator] =
+  )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[PartSubGraphCompilationError, Validator] =
     validator match {
       case v: ValidationExpressionParameterValidatorToCompile =>
         compileValidationExpressionParameterValidator(
@@ -291,7 +293,8 @@ class ExpressionCompiler(
       paramType: TypingResult,
       globalVariables: Map[String, TypingResult]
   )(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      metaData: MetaData
   ): Validated[NonEmptyList[PartSubGraphCompilationError], ValidationExpressionParameterValidator] =
     compile(
       toCompileValidator.validationExpression,
@@ -326,7 +329,8 @@ class ExpressionCompiler(
             ValidationExpressionParameterValidator(
               expression,
               toCompileValidator.validationFailedMessage,
-              expressionEvaluator
+              expressionEvaluator,
+              metaData
             )
           )
       }

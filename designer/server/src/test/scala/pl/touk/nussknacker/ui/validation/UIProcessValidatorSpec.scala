@@ -108,7 +108,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   private val validationExpressionForListWithGlobalHelper =
     Expression.spel(s"#COLLECTION.max(#value.![#this.length()]) > 2")
 
-  // todo expression with #metadata?
+  private val validationExpressionForListWithMetadata =
+    Expression.spel(s"#value[0] == #meta.processName.toLowerCase")
+
 
   private val validationExpressionForLocalDateTime =
     Expression.spel(
@@ -1386,6 +1388,60 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "CustomParameterValidationError",
                 "some custom failure message",
                 "Please provide value that satisfies the validation expression '#COLLECTION.max(#value.![#this.length()]) > 2'",
+                Some("listParam2"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+
+  test(
+    "validate List service parameter based on additional config from provider - ValidationExpressionParameterValidator with #meta variable"
+  ) {
+    val process = processWithService(
+      ListParameterService.serviceId,
+      List(
+        NodeParameter(
+          ParameterName("listParam1"),
+          "{'fooprocess'}".spel
+        ),
+        NodeParameter(
+          ParameterName("listParam2"),
+          "{'foobar'}".spel
+        ),
+      )
+    )
+
+    val validator = validatorWithComponentsAndConfig(
+      List(ComponentDefinition(ListParameterService.serviceId, ListParameterService)),
+      Map(
+        DesignerWideComponentId(s"streaming-service-${ListParameterService.serviceId}") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            ParameterName("listParam1") -> paramConfigWithValidationExpression(
+              validationExpressionForListWithMetadata
+            ),
+            ParameterName("listParam2") -> paramConfigWithValidationExpression(
+              validationExpressionForListWithMetadata
+            )
+          )
+        )
+      )
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                "Please provide value that satisfies the validation expression '#value[0] == #meta.processName.toLowerCase'",
                 Some("listParam2"),
                 NodeValidationErrorType.SaveAllowed,
                 None

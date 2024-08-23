@@ -18,7 +18,7 @@ case class ValidationExpressionParameterValidator(
     validationExpression: CompiledExpression,
     validationFailedMessage: Option[String],
     expressionEvaluator: ExpressionEvaluator,
-    // todo metadata here or in def isValid (?)
+    metaData: MetaData
 ) extends Validator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
@@ -39,9 +39,11 @@ case class ValidationExpressionParameterValidator(
     // TODO: paramName should be used here, but a lot of parameters have names that are not valid variables (e.g. "Topic name")
     val context = Context("validator", Map(variableName -> value), None)
 
-    implicit val metadata: MetaData = MetaData("TODO", CustomMetaData(Map.empty)) // FIXME
-
-    Try(expressionEvaluator.evaluate[java.lang.Boolean](validationExpression, "TODO", nodeId.id, context)).fold(
+    Try(
+      expressionEvaluator.evaluate[java.lang.Boolean](validationExpression, "validationExpression", nodeId.id, context)(
+        metaData
+      )
+    ).fold(
       e =>
         invalid(
           CustomParameterValidationError(
