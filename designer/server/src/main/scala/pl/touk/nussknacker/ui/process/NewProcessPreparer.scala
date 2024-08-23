@@ -17,7 +17,7 @@ object NewProcessPreparer {
     Map(
       FragmentSpecificData.docsUrlName        -> "",
       FragmentSpecificData.componentGroupName -> DefaultsComponentGroupName.FragmentsGroupName.value,
-      FragmentSpecificData.iconName               -> DefaultsComponentIcon.FragmentIcon
+      FragmentSpecificData.iconName           -> DefaultsComponentIcon.FragmentIcon
     ),
     FragmentSpecificData.typeName
   )

@@ -1,11 +1,12 @@
-package pl.touk.nussknacker.ui.util
+package pl.touk.nussknacker.ui
 
 import cats.effect.{IO, Resource}
-import com.typesafe.config.ConfigValueFactory._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
-import pl.touk.nussknacker.ui.factory.{LocalProcessingTypeDataStateFactory, NussknackerAppFactory}
+import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
+import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -22,8 +23,7 @@ object LocalNussknackerWithSingleModel {
 
   def run(
       modelData: ModelData,
-      deploymentManagerProvider: DeploymentManagerProvider,
-      managerConfig: Config
+      deploymentManagerProvider: DeploymentManagerProvider
   ): Resource[IO, Unit] = {
     for {
       appConfig <- Resource.eval(IO {
@@ -35,20 +35,23 @@ object LocalNussknackerWithSingleModel {
             ).asJava
           )
       })
-      _ <- run(modelData, deploymentManagerProvider, managerConfig, appConfig)
+      _ <- run(modelData, deploymentManagerProvider, appConfig)
     } yield ()
   }
 
   def run(
       modelData: ModelData,
       deploymentManagerProvider: DeploymentManagerProvider,
-      managerConfig: Config,
       appConfig: Config
   ): Resource[IO, Unit] = {
     // TODO: figure out how to perform e.g. hotswap
-    val local      = new LocalProcessingTypeDataStateFactory(modelData, deploymentManagerProvider, managerConfig)
-    val appFactory = new NussknackerAppFactory(local)
-    appFactory.createApp(appConfig)
+    val local = new LocalProcessingTypeDataLoader(
+      modelData = Map(typeName -> (category, modelData)),
+      deploymentManagerProvider = deploymentManagerProvider
+    )
+    val nussknackerConfig = new LoadableConfigBasedNussknackerConfig(IO.delay(DesignerConfigLoader.from(appConfig)))
+    val appFactory        = new NussknackerAppFactory(nussknackerConfig, local)
+    appFactory.createApp()
   }
 
   // TODO: easier way of handling users file

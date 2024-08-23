@@ -6,10 +6,12 @@ import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.must.Matchers.be
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
@@ -28,6 +30,8 @@ class AppApiHttpServiceBusinessSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
+
+  private var simulateChangeInApplicationConfig: Boolean = false
 
   "The app health check endpoint should" - {
     "return simple designer health check (with no scenario statuses check)" in {
@@ -272,15 +276,99 @@ class AppApiHttpServiceBusinessSpec
     }
   }
 
-  override def designerConfig: Config = super.designerConfig
-    .withValue("enableConfigEndpoint", fromAnyRef(true))
-    .withValue(
-      "globalBuildInfo",
-      ConfigFactory
-        .empty()
-        .withValue("build-config-1", fromAnyRef("1"))
-        .withValue("build-config-2", fromAnyRef("2"))
-        .root()
+  "The processing type data reload endpoint should" - {
+    "reload processing types-related model data when" - {
+      "'scenarioTypes' configuration is changed" in {
+        val componentNamesBeforeReload = fetchSortedComponentNames()
+
+        given()
+          .applicationState {
+            simulateChangeInApplicationConfig = true
+          }
+          .when()
+          .basicAuthAdmin()
+          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .Then()
+          .statusCode(204)
+
+        val componentNamesAfterReload = fetchSortedComponentNames()
+
+        componentNamesAfterReload shouldNot be(componentNamesBeforeReload)
+        componentNamesAfterReload.length should be > (componentNamesBeforeReload.length)
+      }
+    }
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    if (simulateChangeInApplicationConfig) {
+      simulateChangeInApplicationConfig = false
+      forceReloadProcessingTypes()
+    }
+  }
+
+  override def designerConfig: Config = {
+    if (simulateChangeInApplicationConfig) {
+      additionalProcessingTypeCustomization.withFallback(originDesignerConfig)
+    } else {
+      originDesignerConfig
+    }
+  }
+
+  private def originDesignerConfig = {
+    super.designerConfig
+      .withValue("enableConfigEndpoint", fromAnyRef(true))
+      .withValue(
+        "globalBuildInfo",
+        ConfigFactory
+          .empty()
+          .withValue("build-config-1", fromAnyRef("1"))
+          .withValue("build-config-2", fromAnyRef("2"))
+          .root()
+      )
+  }
+
+  private def additionalProcessingTypeCustomization = {
+    ConfigFactory.parseString(
+      s"""
+         |scenarioTypes {
+         |  streaming3 {
+         |    deploymentConfig {
+         |      type: "mockable"
+         |      id: "3"
+         |      engineSetupName: "Mockable"
+         |    }
+         |    modelConfig: {
+         |      classPath: [
+         |        "engine/flink/management/dev-model/target/scala-"$${scala.major.version}"/devModel.jar",
+         |        "engine/flink/executor/target/scala-"$${scala.major.version}"/flinkExecutor.jar"
+         |      ]
+         |    }
+         |    category: "Category1"
+         |  }
+         |}
+         |""".stripMargin
     )
+  }
+
+  private def fetchSortedComponentNames(): List[String] = {
+    given()
+      .when()
+      .basicAuthAdmin()
+      .get(s"$nuDesignerHttpAddress/api/components")
+      .Then()
+      .statusCode(200)
+      .extractList("name")
+      .sorted
+  }
+
+  private def forceReloadProcessingTypes(): Unit = {
+    given()
+      .when()
+      .basicAuthAdmin()
+      .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+      .Then()
+      .statusCode(204)
+  }
 
 }

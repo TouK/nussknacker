@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.processingtype
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 class ProcessingTypeDataProviderTest extends AnyFunSuite with Matchers {

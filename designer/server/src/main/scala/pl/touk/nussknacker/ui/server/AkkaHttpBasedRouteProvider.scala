@@ -9,13 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  AdditionalUIConfigProviderFactory,
-  DesignerWideComponentId,
-  EmptyAdditionalUIConfigProviderFactory
-}
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeployedScenariosProvider
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
@@ -41,7 +35,6 @@ import pl.touk.nussknacker.ui.definition.{
   DefinitionsService,
   ScenarioPropertiesConfigFinalizer
 }
-import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -68,12 +61,14 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.statistics.{
@@ -84,7 +79,7 @@ import pl.touk.nussknacker.ui.statistics.{
 }
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
+import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -99,7 +94,7 @@ import scala.util.control.NonFatal
 class AkkaHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
-    processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
+    processingTypeDataLoader: ProcessingTypeDataLoader,
     feStatisticsRepository: FEStatisticsRepository[Future],
     designerClock: Clock
 )(implicit system: ActorSystem, materializer: Materializer)
@@ -108,7 +103,9 @@ class AkkaHttpBasedRouteProvider(
     with LazyLogging {
 
   override def createRoute(config: ConfigWithUnresolvedVersion): Resource[IO, Route] = {
-    import system.dispatcher
+    implicit val executionContextWithIORuntime: ExecutionContextWithIORuntime =
+      ActorSystemBasedExecutionContextWithIORuntime.createFrom(system)
+    import executionContextWithIORuntime.ioRuntime
     for {
       sttpBackend <- createSttpBackend()
       resolvedConfig       = config.resolved
@@ -119,11 +116,8 @@ class AkkaHttpBasedRouteProvider(
       actionServiceSupplier      = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
-        config,
-        processingTypeDataStateFactory,
         additionalUIConfigProvider,
         actionServiceSupplier,
-        DefaultProcessingTypeDeployedScenariosProvider(dbRef, _),
         sttpBackend,
       )
       deploymentRepository = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
@@ -231,7 +225,8 @@ class AkkaHttpBasedRouteProvider(
 
       // we need to reload processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
-      processingTypeDataProvider.reloadAll()
+      processingTypeDataProvider.reloadAll().unsafeRunSync()
+
       val processActivityRepository = new DbProcessActivityRepository(dbRef, commentRepository)
 
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
@@ -536,10 +531,7 @@ class AkkaHttpBasedRouteProvider(
           statisticsApiHttpService
         )
 
-      val akkaHttpServerInterpreter = {
-        import system.dispatcher
-        new NuAkkaHttpServerInterpreterForTapirPurposes()
-      }
+      val akkaHttpServerInterpreter = new NuAkkaHttpServerInterpreterForTapirPurposes()
 
       createAppRoute(
         resolvedConfig = resolvedConfig,
@@ -603,7 +595,6 @@ class AkkaHttpBasedRouteProvider(
       environment: String,
       backend: SttpBackend[Future, Any]
   ) = {
-
     featureTogglesConfig.counts match {
       case Some(config) => prepareCountsReporter(environment, config, backend)
       case None         => Resource.pure[IO, None.type](None)
@@ -642,55 +633,56 @@ class AkkaHttpBasedRouteProvider(
   }
 
   private def prepareProcessingTypeDataReload(
-      designerConfig: ConfigWithUnresolvedVersion,
-      processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
-      createDeployedScenariosProvider: ProcessingType => ProcessingTypeDeployedScenariosProvider,
       sttpBackend: SttpBackend[Future, Any],
-  ): Resource[IO, ProcessingTypeDataReload] = {
+  )(implicit executionContext: ExecutionContext): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
         acquire = IO(
-          new ProcessingTypeDataReload({ () =>
-            def getDeploymentManagerDependencies(processingType: ProcessingType) = {
-              DeploymentManagerDependencies(
-                createDeployedScenariosProvider(processingType),
-                new DefaultProcessingTypeActionService(
-                  processingType,
-                  actionServiceProvider.get(),
-                ),
-                system.dispatcher,
-                system,
-                sttpBackend
-              )
-            }
-            def getModelDependencies(processingType: ProcessingType) = {
-              val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
-              ModelDependencies(
-                additionalConfigsFromProvider,
-                DesignerWideComponentId.default(processingType, _),
-                workingDirectoryOpt = None, // we use the default working directory
-                _ => true
-              )
-            }
-            processingTypeDataStateFactory.create(
-              designerConfig,
-              getModelDependencies,
-              getDeploymentManagerDependencies,
+          new ReloadableProcessingTypeDataProvider(
+            processingTypeDataLoader.loadProcessingTypeData(
+              getModelDependencies(additionalUIConfigProvider, _),
+              getDeploymentManagerDependencies(actionServiceProvider, sttpBackend, _),
             )
-          })
+          )
         )
       )(
-        release = reload =>
-          IO {
-            reload
-              .all(NussknackerInternalUser.instance)
-              .values
-              .foreach(_.close())
-          }
+        release = _.close()
       )
   }
+
+  private def getDeploymentManagerDependencies(
+      actionServiceProvider: Supplier[ActionService],
+      sttpBackend: SttpBackend[Future, Any],
+      processingType: ProcessingType
+  )(implicit executionContext: ExecutionContext) = {
+    DeploymentManagerDependencies(
+      DefaultProcessingTypeDeployedScenariosProvider(dbRef, processingType),
+      new DefaultProcessingTypeActionService(
+        processingType,
+        actionServiceProvider.get(),
+      ),
+      system.dispatcher,
+      system,
+      sttpBackend
+    )
+  }
+
+  private def getModelDependencies(
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      processingType: ProcessingType
+  ) = {
+    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
+    ModelDependencies(
+      additionalConfigsFromProvider,
+      DesignerWideComponentId.default(processingType, _),
+      workingDirectoryOpt = None, // we use the default working directory
+      _ => true
+    )
+  }
+
+  private def createProcessingTypeDataReload() = {}
 
   private def createAdditionalUIConfigProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext

@@ -1,9 +1,10 @@
-package pl.touk.nussknacker.ui.process.processingtype
+package pl.touk.nussknacker.ui.process.processingtype.provider
 
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
+import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.util.concurrent.atomic.AtomicReference
