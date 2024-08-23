@@ -16,6 +16,7 @@ import scala.util.control.NonFatal
   - Interpreter - evaluation of service parameters and variable definitions
   - CompilerLazyInterpreter - evaluation of parameters of CustomStreamTransformers
   - ComponentExecutorFactory - evaluation of eager parameters for all components that are Executor's factories and for ExceptionHandler
+  // todo ValidationExpressionParameterValidator
   They are evaluated with different contexts - e.g. in interpreter we can use process variables, but in source/sink we can use only global ones.
  */
 object ExpressionEvaluator {

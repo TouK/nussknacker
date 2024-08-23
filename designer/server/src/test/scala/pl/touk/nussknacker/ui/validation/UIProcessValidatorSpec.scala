@@ -22,7 +22,15 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{
+  ComponentUseCase,
+  EmptyProcessConfigCreator,
+  ExpressionConfig,
+  ProcessName,
+  ProcessObjectDependencies,
+  ProcessingType,
+  WithCategories
+}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -49,6 +57,7 @@ import pl.touk.nussknacker.engine.testing.{LocalModelData, ModelDefinitionBuilde
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.util.functions.collection
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
   SaveAllowed,
@@ -95,6 +104,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
   private val validationExpressionForList = Expression.spel(s"#value.size() == 2 && #value[0] == 'foo'")
+
+  private val validationExpressionForListWithGlobalHelper =
+    Expression.spel(s"#COLLECTION.max(#value.![#this.length()]) > 2")
+
+  // todo expression with #metadata?
 
   private val validationExpressionForLocalDateTime =
     Expression.spel(
@@ -1330,6 +1344,59 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test(
+    "validate List service parameter based on additional config from provider - ValidationExpressionParameterValidator with global helper"
+  ) {
+    val process = processWithService(
+      ListParameterService.serviceId,
+      List(
+        NodeParameter(
+          ParameterName("listParam1"),
+          "{'fo', 'bar', 'ba'}".spel
+        ),
+        NodeParameter(
+          ParameterName("listParam2"),
+          "{'ba'}".spel
+        ),
+      )
+    )
+
+    val validator = validatorWithComponentsAndConfig(
+      List(ComponentDefinition(ListParameterService.serviceId, ListParameterService)),
+      Map(
+        DesignerWideComponentId(s"streaming-service-${ListParameterService.serviceId}") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            ParameterName("listParam1") -> paramConfigWithValidationExpression(
+              validationExpressionForListWithGlobalHelper
+            ),
+            ParameterName("listParam2") -> paramConfigWithValidationExpression(
+              validationExpressionForListWithGlobalHelper
+            )
+          )
+        )
+      )
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                "Please provide value that satisfies the validation expression '#COLLECTION.max(#value.![#this.length()]) > 2'",
+                Some("listParam2"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test(
     "ValidationExpressionParameterValidator fails if expression value is not compile-time evaluable"
   ) {
     val process = processWithService(
@@ -2366,7 +2433,17 @@ private object UIProcessValidatorSpec {
       LocalModelData(
         ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
         components,
-        additionalConfigsFromProvider = additionalConfigsFromProvider
+        additionalConfigsFromProvider = additionalConfigsFromProvider,
+        configCreator = new EmptyProcessConfigCreator {
+
+          override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
+            super
+              .expressionConfig(modelDependencies)
+              .copy(
+                globalProcessVariables = Map("COLLECTION" -> WithCategories.anyCategory(collection))
+              )
+
+        }
       )
     ),
     scenarioProperties = Map.empty,
