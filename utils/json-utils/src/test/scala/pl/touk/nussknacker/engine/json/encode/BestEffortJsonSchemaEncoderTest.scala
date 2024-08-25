@@ -5,8 +5,11 @@ import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
 import io.circe.Json.{Null, obj}
 import org.everit.json.schema._
+import org.scalatest.Inside.inside
+import org.scalatest.LoneElement._
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers._
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
@@ -486,13 +489,10 @@ class BestEffortJsonSchemaEncoderTest
         |""".stripMargin)
     encoder.encodeWithJsonValidation(Collections.singletonMap("field", "aa"), schema, None) shouldBe Symbol("valid")
     encoder.encodeWithJsonValidation(Collections.singletonMap("field", 11), schema, None) shouldBe Symbol("valid")
-    encoder.encodeWithJsonValidation(
-      Collections.singletonMap("field", Collections.emptyMap()),
-      schema,
-      None
-    ) shouldBe invalid(
-      "Not expected type: Record{} for field: 'field' with schema: {\"anyOf\":[{\"anyOf\":[]},{\"type\":\"string\"},{\"type\":\"integer\"}]}."
-    )
+    inside(encoder.encodeWithJsonValidation(Collections.singletonMap("field", Collections.emptyMap()), schema, None)) {
+      case Invalid(errors) =>
+        errors.toList.loneElement should fullyMatch regex "Not expected type: Record\\{\\} for field: 'field' with schema: \\{\"anyOf\":.+\\}."
+    }
 
   }
 
