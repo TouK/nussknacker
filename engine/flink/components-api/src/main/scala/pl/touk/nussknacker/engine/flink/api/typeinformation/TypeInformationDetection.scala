@@ -35,7 +35,7 @@ trait TypeInformationDetection extends Serializable {
 
 object TypeInformationDetection {
 
-  // We could just inline implementation of TypeInformationDetection but we don't want expose too much implementation
+  // We could just inline implementation of TypeInformationDetection but we don't want to expose too much implementation
   // details so we load the implementation using SPI. As an alternative to SPI was to use Class.forName
   val instance: TypeInformationDetection = {
     val classloader = Thread.currentThread().getContextClassLoader
@@ -48,7 +48,7 @@ object TypeInformationDetection {
         throw new IllegalStateException(
           s"Missing ${classOf[TypeInformationDetection].getSimpleName} implementation on the classpath. " +
             s"Classloader: ${printClassloaderDebugDetails(classloader)}. " +
-            s"Ensure that your classpath is correctly configured, probable flinkExecutor.jar is missing"
+            s"Ensure that your classpath is correctly configured, flinkExecutor.jar is probably missing"
         )
       case moreThanOne =>
         throw new IllegalStateException(
