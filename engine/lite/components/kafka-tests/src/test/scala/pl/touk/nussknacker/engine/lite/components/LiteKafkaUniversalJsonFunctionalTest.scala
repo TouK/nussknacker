@@ -492,7 +492,7 @@ class LiteKafkaUniversalJsonFunctionalTest
           fromFields(List.empty),
           fromFields(List(ObjectFieldName -> fromString("foo")))
         ),
-        // schema evolution on output - it is done by Nussknacker's code - see BestEffortJsonSchemaEncoder
+        // schema evolution on output - it is done by Nussknacker's code - see ToJsonSchemaBasedEncoder
         (
           createObjSchema(required = true, schemaString, schemaNull),
           createObjSchema(required = true, StringSchema.builder().defaultValue("foo").build()),

@@ -1,10 +1,9 @@
+import { FormLabel } from "@mui/material";
 import React, { useCallback } from "react";
 import { Edge, EdgeKind, EdgeType } from "../../../../types";
 import BaseModalContent from "../BaseModalContent";
 import EditableEditor from "../editors/EditableEditor";
 import { useDiffMark } from "../PathsToMark";
-import { getValidationErrorsForField } from "../editors/Validators";
-import { FormLabel } from "@mui/material";
 
 interface Props {
     edge: Edge;
@@ -14,12 +13,17 @@ interface Props {
     showValidation?: boolean;
     showSwitch?: boolean;
     variableTypes;
-    edgeErrors?;
 }
 
-export default function EdgeDetailsContent(props: Props): JSX.Element | null {
-    const { edge, edgeErrors, readOnly, changeEdgeTypeCondition, showValidation, showSwitch, changeEdgeTypeValue, variableTypes } = props;
-
+export default function EdgeDetailsContent({
+    edge,
+    readOnly,
+    changeEdgeTypeValue,
+    changeEdgeTypeCondition,
+    showValidation,
+    showSwitch,
+    variableTypes,
+}: Props): JSX.Element | null {
     const [isMarked] = useDiffMark();
     const renderFieldLabel = useCallback((label) => <FormLabel>{label}</FormLabel>, []);
 
@@ -28,7 +32,7 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
             return (
                 <BaseModalContent
                     edge={edge}
-                    edgeErrors={edgeErrors}
+                    edgeErrors={[]}
                     readOnly={readOnly}
                     isMarked={isMarked}
                     changeEdgeTypeValue={changeEdgeTypeValue}
@@ -43,7 +47,7 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
             return (
                 <BaseModalContent
                     edge={edge}
-                    edgeErrors={edgeErrors}
+                    edgeErrors={[]}
                     readOnly={readOnly}
                     isMarked={isMarked}
                     changeEdgeTypeValue={changeEdgeTypeValue}
@@ -58,7 +62,7 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
                         showValidation={showValidation}
                         showSwitch={showSwitch}
                         onValueChange={changeEdgeTypeCondition}
-                        fieldErrors={getValidationErrorsForField(edgeErrors, "edgeType.condition.expression")}
+                        fieldErrors={[]}
                     />
                 </BaseModalContent>
             );

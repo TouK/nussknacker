@@ -3,10 +3,30 @@ import { defaults } from "lodash";
 import { useCallback, useMemo } from "react";
 import { useUserSettings } from "../common/userSettings";
 import { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
-import { NodeType } from "../types";
-import { WindowKind } from "./WindowKind";
 import { InfoDialogData } from "../components/modals/GenericInfoDialog";
 import { Scenario } from "../components/Process/types";
+import { NodeType } from "../types";
+import { WindowKind } from "./WindowKind";
+
+export const NodeViewMode = {
+    edit: false,
+    readonly: true,
+    descriptionView: "description",
+    descriptionEdit: "descriptionEdit",
+} as const;
+export type NodeViewMode = (typeof NodeViewMode)[keyof typeof NodeViewMode];
+
+function mapModeToKind(mode: NodeViewMode): WindowKind {
+    switch (mode) {
+        case NodeViewMode.readonly:
+            return WindowKind.viewNode;
+        case NodeViewMode.descriptionView:
+            return WindowKind.viewDescription;
+        case NodeViewMode.descriptionEdit:
+            return WindowKind.editDescription;
+    }
+    return WindowKind.editNode;
+}
 
 export function useWindows(parent?: WindowId) {
     const { open: _open, closeAll } = useWindowManager(parent);
@@ -22,15 +42,17 @@ export function useWindows(parent?: WindowId) {
     );
 
     const openNodeWindow = useCallback(
-        (node: NodeType, scenario: Scenario, readonly?: boolean) =>
-            open({
+        (node: NodeType, scenario: Scenario, viewMode: NodeViewMode = false, layoutData?: WindowType["layoutData"]) => {
+            return open({
                 id: node.id,
                 title: node.id,
                 isResizable: true,
-                kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
+                kind: mapModeToKind(viewMode),
                 meta: { node, scenario },
                 shouldCloseOnEsc: false,
-            }),
+                layoutData,
+            });
+        },
         [open],
     );
 

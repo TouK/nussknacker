@@ -18,6 +18,7 @@ describe("Node window", () => {
         cy.contains(/^sources$/)
             .should("exist")
             .scrollIntoView();
+        cy.layoutScenario();
         cy.get("[data-testid='component:periodic']")
             .should("be.visible")
             .drag("#nk-graph-main", {

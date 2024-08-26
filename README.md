@@ -35,7 +35,9 @@ An essential part of Nussknacker is a visual design tool for decision algorithms
 
 The way the data are processed and the features available depend on the processing mode and engine used. 
 
-Nussknacker supports three [processing modes](https://nussknacker.io/documentation/docs/about/ProcessingModes/): streaming, request-response and batch (planned in version 1.16). In streaming mode, Nussknacker uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode, it exposes HTTP endpoints with OpenAPI definitions. 
+Nussknacker supports two [processing modes](https://nussknacker.io/documentation/docs/about/ProcessingModes/): streaming and request-response. In streaming mode, Nussknacker uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode, it exposes HTTP endpoints with OpenAPI definitions.
+
+Support for batch processing mode is in active development and is planned to be released soon. For a preview, check out our [blog post](https://nussknacker.io/blog/batch-processing-on-apache-flink/).
 
 There are two engines to which scenarios can be deployed: Flink and Lite. Check out [this document](https://nussknacker.io/documentation/docs/about/engines/) to understand which of the two fits your use case better. 
 

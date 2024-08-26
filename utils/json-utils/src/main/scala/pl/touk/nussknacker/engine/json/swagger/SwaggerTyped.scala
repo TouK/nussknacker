@@ -4,14 +4,14 @@ import cats.data.NonEmptyList
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
-import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
+import io.circe.generic.JsonCodec
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import java.util
@@ -57,11 +57,11 @@ case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 @JsonCodec case class SwaggerEnum private (values: List[Any]) extends SwaggerTyped
 
 object SwaggerEnum {
-  private val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
-  private implicit val decoder: Decoder[List[Any]] =
+  private lazy val om       = new ObjectMapper()
+  private val toJsonEncoder = ToJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
+  private implicit val listDecoder: Decoder[List[Any]] =
     Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
-  private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
-  private lazy val om                              = new ObjectMapper()
+  private implicit val listEncoder: Encoder[List[Any]] = Encoder.instance[List[Any]](toJsonEncoder.encode)
 
   def apply(schema: Schema[_]): SwaggerEnum = {
     val list = schema.getEnum.asScala.toList.map {

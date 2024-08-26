@@ -1,25 +1,33 @@
+import { WindowType } from "@touk/window-manager";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
-import { getProcessUnsavedNewName, hasError, hasPropertiesErrors, getScenario } from "../../../../reducers/selectors/graph";
+import { getProcessUnsavedNewName, getScenario, hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
+import { NodeViewMode } from "../../../../windowManager/useWindows";
 import NodeUtils from "../../../graph/NodeUtils";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 
-function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
-    const { t } = useTranslation();
+export function useOpenProperties() {
     const { openNodeWindow } = useWindows();
-    const { disabled, type } = props;
     const scenario = useSelector(getScenario);
     const name = useSelector(getProcessUnsavedNewName);
+    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(scenario, name), [name, scenario]);
+    return useCallback(
+        (mode?: NodeViewMode, layout?: WindowType["layoutData"]) => openNodeWindow(processProperties, scenario, mode, layout),
+        [openNodeWindow, processProperties, scenario],
+    );
+}
+
+function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
+    const { t } = useTranslation();
+    const { disabled, type } = props;
     const propertiesErrors = useSelector(hasPropertiesErrors);
     const errors = useSelector(hasError);
 
-    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(scenario, name), [name, scenario]);
-
-    const onClick = useCallback(() => openNodeWindow(processProperties, scenario), [openNodeWindow, processProperties, scenario]);
+    const openProperties = useOpenProperties();
 
     return (
         <ToolbarButton
@@ -27,7 +35,7 @@ function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
             hasError={errors && propertiesErrors}
             icon={<Icon />}
             disabled={disabled}
-            onClick={onClick}
+            onClick={() => openProperties()}
             type={type}
         />
     );

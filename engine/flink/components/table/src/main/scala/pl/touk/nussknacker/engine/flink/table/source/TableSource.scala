@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestD
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._
 
 import scala.jdk.CollectionConverters._
@@ -37,7 +37,6 @@ import scala.jdk.CollectionConverters._
 class TableSource(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
-    enableFlinkBatchExecutionMode: Boolean,
     testDataGenerationMode: TestDataGenerationMode
 ) extends StandardFlinkSource[Row]
     with TestWithParametersSupport[Row]
@@ -48,10 +47,6 @@ class TableSource(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Row] = {
-    // TODO: move this to flink-executor - ideally should set be near level of ExecutionConfigPreparer
-    if (enableFlinkBatchExecutionMode) {
-      env.setRuntimeMode(RuntimeExecutionMode.BATCH)
-    }
     val tableEnv = StreamTableEnvironment.create(env)
 
     executeSqlDDL(sqlStatements, tableEnv)

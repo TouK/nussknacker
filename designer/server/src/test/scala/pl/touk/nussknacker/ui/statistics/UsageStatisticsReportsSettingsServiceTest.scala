@@ -94,6 +94,8 @@ class UsageStatisticsReportsSettingsServiceTest
     RequestIdStat,
   ).map(_.name)
 
+  private val cfg = StatisticUrlConfig(maybePublicEncryptionKey = None)
+
   test("should determine query params with version and source") {
     val urls = new UsageStatisticsReportsSettingsService(
       config = UsageStatisticsReportsConfig(enabled = true, errorReportsEnabled = true, Some(sampleFingerprint), None),
@@ -107,7 +109,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .value
 
     urls.length shouldEqual 1
@@ -132,7 +134,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .value
       .map(_.toString)
       .head
@@ -155,7 +157,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .value
       .map(_.toString)
       .head
@@ -212,7 +214,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .value
       .map(_.toString)
       .head
@@ -255,7 +257,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .map(_.map(_.toString).reduce(_ ++ _))
       .value
 

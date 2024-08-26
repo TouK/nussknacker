@@ -8,7 +8,10 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithDesignerConfig
+import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
+import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
+import pl.touk.nussknacker.ui.process.processingtype.loader._
 
 trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with WithClock with BeforeAndAfterAll {
   this: Suite with WithDesignerConfig =>
@@ -21,8 +24,11 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Wit
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    releaseAppResources = new NussknackerAppFactory()
-      .createApp(adjustNuTestConfig(), clock)
+    val nussknackerConfig = new LoadableConfigBasedNussknackerConfig(
+      IO.delay(DesignerConfigLoader.from(adjustNuTestConfig()))
+    )
+    releaseAppResources = new NussknackerAppFactory(nussknackerConfig)
+      .createApp(clock = clock)
       .allocated
       .unsafeRunSync()
       ._2

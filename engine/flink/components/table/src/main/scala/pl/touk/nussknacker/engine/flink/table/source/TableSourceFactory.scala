@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
 
 class TableSourceFactory(
     sqlStatements: List[SqlStatement],
-    enableFlinkBatchExecutionMode: Boolean,
     testDataGenerationMode: TestDataGenerationMode
 ) extends SingleInputDynamicComponent[Source]
     with SourceFactory
@@ -60,7 +59,7 @@ class TableSourceFactory(
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    new TableSource(selectedTable, sqlStatements, enableFlinkBatchExecutionMode, testDataGenerationMode)
+    new TableSource(selectedTable, sqlStatements, testDataGenerationMode)
   }
 
   override def nodeDependencies: List[NodeDependency] = List.empty

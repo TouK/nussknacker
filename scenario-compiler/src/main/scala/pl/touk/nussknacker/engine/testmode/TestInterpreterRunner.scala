@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testmode
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 object TestInterpreterRunner {
 
@@ -12,7 +12,7 @@ object TestInterpreterRunner {
    * and in this case there is loaders conflict
    */
   private[testmode] def testResultsVariableEncoder: Any => io.circe.Json = {
-    lazy val encoder = BestEffortJsonEncoder(failOnUnknown = false, Thread.currentThread().getContextClassLoader)
+    lazy val encoder = ToJsonEncoder(failOnUnknown = false, Thread.currentThread().getContextClassLoader)
     def encode(a: Any): Json = a match {
       case scenarioGraph: DisplayJson =>
         def safeString(a: String): Json = Option(a).map(Json.fromString).getOrElse(Json.Null)

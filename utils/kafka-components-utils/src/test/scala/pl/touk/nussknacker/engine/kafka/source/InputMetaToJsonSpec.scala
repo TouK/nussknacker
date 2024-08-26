@@ -8,13 +8,13 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import scala.jdk.CollectionConverters._
 
 class InputMetaToJsonSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
-  private val encoder = BestEffortJsonEncoder.defaultForTests
+  private val encoder = ToJsonEncoder.defaultForTests
 
   test("should encode for various keys") {
 

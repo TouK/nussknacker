@@ -121,6 +121,35 @@ trait CollectionUtils extends HideToString {
     values
   }
 
+  @Documentation(description =
+    "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)"
+  )
+  @GenericType(typingFunction = classOf[RecordCollectionSortingTyping])
+  def sortedAscBy(
+      @ParamName("list") list: java.util.Collection[java.util.Map[String, Any]],
+      @ParamName("fieldName") fieldName: String
+  ): java.util.List[java.util.Map[String, Any]] = {
+    checkIfNotNull(fieldName, "fieldName")
+    list.asScala.toList.sortWith { (firstMap, secondMap) =>
+      (firstMap.get(fieldName), secondMap.get(fieldName)) match {
+        case (a, b) if a != null && b != null && a.getClass == b.getClass && a.isInstanceOf[Comparable[_]] =>
+          a.asInstanceOf[Comparable[Any]].compareTo(b.asInstanceOf[Comparable[Any]]) < 0
+        case (a, b) if a == null && b != null => true
+        case (a, b) if a != null && b == null => false
+        case (a, b) if a == null && b == null => false
+        case _                                => throw new IllegalArgumentException("Elements cannot be compared")
+      }
+    }.asJava
+  }
+
+  @Documentation(description = "Returns a list that contains elements in reversed order from the given list")
+  @GenericType(typingFunction = classOf[ListTyping])
+  def reverse(@ParamName("list") list: java.util.List[_]): java.util.List[_] = {
+    val result = new java.util.ArrayList(list)
+    Collections.reverse(result)
+    result
+  }
+
   @Documentation(description = "Returns a list made of first n elements of the given list")
   @GenericType(typingFunction = classOf[ListTyping])
   def take[T](@ParamName("list") list: java.util.List[T], @ParamName("max") max: Int): java.util.List[T] =
@@ -195,6 +224,11 @@ trait CollectionUtils extends HideToString {
   private def checkIfComparable(element: Any): Unit =
     if (!element.isInstanceOf[Comparable[_]]) {
       throw new java.lang.ClassCastException("Provided value is not comparable: " + element)
+    }
+
+  private def checkIfNotNull[T](t: T, fieldName: String): Unit =
+    if (t == null) {
+      throw new IllegalArgumentException(s"Provided '$fieldName' cannot be null")
     }
 
 }
@@ -344,4 +378,51 @@ object CollectionUtils {
   class ListElementTyping extends CollectionElementTyping[java.util.List]
 
   class ListElementTypingForSum extends CollectionElementTypingForSum[java.util.List]
+
+  class RecordCollectionSortingTyping extends TypingFunction {
+    private val listClass       = classOf[java.util.List[java.util.Map[String, Any]]]
+    private val fieldClass      = classOf[String]
+    private val comparableClass = classOf[Comparable[Any]]
+
+    override def computeResultType(
+        arguments: List[typing.TypingResult]
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
+      arguments match {
+        case (f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil))
+            :: TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
+          listResultType(f, e, fields, fieldName)
+        case TypedObjectWithValue(f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil), _) ::
+            TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
+          listResultType(f, e, fields, fieldName)
+        case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      }
+    }
+
+    private def listResultType(
+        baseTypeClass: TypedClass,
+        parametersTypes: TypedObjectTypingResult,
+        fields: Map[String, typing.TypingResult],
+        fieldName: Any
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
+      fields.get(fieldName.asInstanceOf[String]) match {
+        case Some(TypedClass(klass, _)) if comparableClass.isAssignableFrom(klass) =>
+          baseTypeClass.copy(params = parametersTypes.withoutValue :: Nil).validNel
+        case Some(t @ (TypedClass(_, _) | Unknown)) =>
+          GenericFunctionTypingError
+            .OtherError(
+              s"Field: $fieldName of the type: ${t.display} isn't comparable (doesn't implement the " +
+                s"Comparable interface) and cannot be used for sorting purposes."
+            )
+            .invalidNel
+        case _ =>
+          GenericFunctionTypingError
+            .OtherError(
+              s"Type: ${parametersTypes.display} doesn't contain field: $fieldName."
+            )
+            .invalidNel
+      }
+    }
+
+  }
+
 }
