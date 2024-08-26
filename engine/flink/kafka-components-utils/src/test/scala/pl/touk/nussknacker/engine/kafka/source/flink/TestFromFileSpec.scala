@@ -16,13 +16,13 @@ import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
+import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJsonCustomisation}
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.util.Collections
@@ -69,8 +69,8 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
-    val consumerRecord = new InputMetaToJson()
-      .encoder(BestEffortJsonEncoder.defaultForTests.encode)
+    val consumerRecord = new InputMetaToJsonCustomisation()
+      .encoder(ToJsonEncoder.defaultForTests.encode)
       .apply(inputMeta)
       .mapObject(
         _.add("key", Null)
@@ -99,8 +99,8 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       headers = Collections.emptyMap(),
       leaderEpoch = 0
     )
-    val consumerRecord = new InputMetaToJson()
-      .encoder(BestEffortJsonEncoder.defaultForTests.encode)
+    val consumerRecord = new InputMetaToJsonCustomisation()
+      .encoder(ToJsonEncoder.defaultForTests.encode)
       .apply(inputMeta)
       .mapObject(
         _.add("key", Null)
@@ -126,8 +126,8 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   private def variable(value: Any) = {
     val json = value match {
       case im: InputMeta[_] =>
-        new InputMetaToJson()
-          .encoder(BestEffortJsonEncoder.defaultForTests.encode)
+        new InputMetaToJsonCustomisation()
+          .encoder(ToJsonEncoder.defaultForTests.encode)
           .apply(im)
       case ln: Long => Json.fromLong(ln)
       case any      => Json.fromString(any.toString)

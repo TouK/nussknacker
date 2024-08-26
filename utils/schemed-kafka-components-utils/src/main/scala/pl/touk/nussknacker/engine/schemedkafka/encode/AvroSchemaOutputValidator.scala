@@ -41,7 +41,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   )
 
   /**
-    * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
+    * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder} for underlying avro types
     */
   def validate(typingResult: TypingResult, schema: Schema): ValidatedNel[OutputValidatorError, Unit] =
     validateTypingResult(typingResult, schema, None)

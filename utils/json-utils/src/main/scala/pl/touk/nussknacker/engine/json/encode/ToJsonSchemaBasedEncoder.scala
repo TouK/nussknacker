@@ -14,15 +14,15 @@ import java.util.ServiceLoader
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
+class ToJsonSchemaBasedEncoder(validationMode: ValidationMode) {
 
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
   private val classLoader = this.getClass.getClassLoader
-  private val jsonEncoder = BestEffortJsonEncoder(failOnUnknown = false, this.getClass.getClassLoader)
+  private val jsonEncoder = ToJsonEncoder(failOnUnknown = false, this.getClass.getClassLoader)
 
   private val optionalEncoders = ServiceLoader
-    .load(classOf[ToJsonBasedOnSchemaEncoder], classLoader)
+    .load(classOf[ToJsonSchemaBasedEncoderCustomisation], classLoader)
     .asScala
     .map(_.encoder(this.encodeBasedOnSchema))
 

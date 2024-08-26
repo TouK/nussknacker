@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 import java.util.Collections
 
-class BestEffortJsonSchemaEncoderTest
+class ToJsonSchemaBasedEncoderTest
     extends AnyFunSuite
     with ValidatedValuesDetailedMessage
     with OptionValues
@@ -30,7 +30,7 @@ class BestEffortJsonSchemaEncoderTest
 
   private val FieldName = "foo"
 
-  private val encoder = new BestEffortJsonSchemaEncoder(ValidationMode.strict)
+  private val encoder = new ToJsonSchemaBasedEncoder(ValidationMode.strict)
 
   private val schemaNumber: NumberSchema        = NumberSchema.builder().build()
   private val schemaIntegerNumber: NumberSchema = NumberSchema.builder().requiresInteger(true).build()

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRe
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
+import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJsonCustomisation}
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.test.KafkaConfigProperties
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -85,8 +85,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
-    val consumerRecord = new InputMetaToJson()
-      .encoder(BestEffortJsonEncoder.defaultForTests.encode)
+    val consumerRecord = new InputMetaToJsonCustomisation()
+      .encoder(ToJsonEncoder.defaultForTests.encode)
       .apply(inputMeta)
       .mapObject(
         _.add("key", Null)
@@ -179,8 +179,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
   private def variable(value: Any) = {
     val json = value match {
       case im: InputMeta[_] =>
-        new InputMetaToJson()
-          .encoder(BestEffortJsonEncoder.defaultForTests.encode)
+        new InputMetaToJsonCustomisation()
+          .encoder(ToJsonEncoder.defaultForTests.encode)
           .apply(im)
       case ln: Long => Json.fromLong(ln)
       case any      => Json.fromString(any.toString)

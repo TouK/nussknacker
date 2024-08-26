@@ -57,6 +57,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6610](https://github.com/TouK/nussknacker/pull/6610) Add flink node context as parameter to BasicFlinkSink.
   Now one can use `FlinkCustomNodeContext` in order to build sink in `BasicFlinkSink#toFlinkFunction` method.
 * [#6635](https://github.com/TouK/nussknacker/pull/6635) `TypingResultTypeInformation` can't be loaded via SPI mechanism anymore
+* [#6640](https://github.com/TouK/nussknacker/pull/6640) `BestEffort*Encoder` naming changes:
+  * All `BestEffort*Encoder` classes renamed to fit `To<TargetFormat>(SchemaBased)Encoder` naming schema
+  * `JsonToNuStruct` renamed to `FromJsonDecoder` (to fit `From<SourceFormat>Decoder` naming schema)
+  * `ToJsonEncoder` renamed to `ToJsonEncoderCustomisation`
+  * `ToJsonBasedOnSchemaEncoder` renamed to `ToJsonSchemaBasedEncoderCustomisation`
 
 ### REST API changes
 

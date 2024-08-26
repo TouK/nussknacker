@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBasedParameter
-import pl.touk.nussknacker.engine.json.encode.{BestEffortJsonSchemaEncoder, JsonSchemaOutputValidator}
+import pl.touk.nussknacker.engine.json.encode.{JsonSchemaOutputValidator, ToJsonSchemaBasedEncoder}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.encode._
@@ -99,7 +99,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
   }
 
   override def formValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = {
-    val encoder = BestEffortAvroEncoder(validationMode)
+    val encoder = ToAvroSchemaBasedEncoder(validationMode)
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
   }
 
@@ -154,7 +154,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   }
 
   override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = { (value: Any) =>
-    new BestEffortJsonSchemaEncoder(mode).encodeOrError(value, schema.cast().rawSchema())
+    new ToJsonSchemaBasedEncoder(mode).encodeOrError(value, schema.cast().rawSchema())
   }
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =

@@ -30,7 +30,7 @@ object RowConversions {
     variables.foreach { case (variableName, variableValue) =>
       val encodedValue = validationContext
         .get(variableName)
-        .map(BestEffortTableTypeEncoder.encode(variableValue, _))
+        .map(ToTableTypeEncoder.encode(variableValue, _))
         .getOrElse(variableValue)
       row.setField(variableName, encodedValue)
     }
@@ -56,7 +56,7 @@ object RowConversions {
     def contextRowTypeInfo(validationContext: ValidationContext): TypeInformation[_] = {
       val (fieldNames, typeInfos) =
         validationContext.localVariables
-          .mapValuesNow(BestEffortTableTypeEncoder.alignTypingResult)
+          .mapValuesNow(ToTableTypeEncoder.alignTypingResult)
           .mapValuesNow(typeInformationDetection.forType)
           .unzip
       val variablesRow = new RowTypeInfo(typeInfos.toArray[TypeInformation[_]], fieldNames.toArray)
