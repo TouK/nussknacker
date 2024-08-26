@@ -2,15 +2,17 @@ package pl.touk.nussknacker.sql.db.schema
 
 import com.zaxxer.hikari.util.DriverDataSource
 import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.sql.db.cassandra.CassandraMetaDataProvider
 import pl.touk.nussknacker.sql.db.ignite.IgniteMetaDataProvider
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
-import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory.igniteDriverPrefix
+import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory.{cassandraDriverName, igniteDriverPrefix}
 
 import java.sql.Connection
 import java.util.Properties
 
 object MetaDataProviderFactory {
-  private val igniteDriverPrefix = "org.apache.ignite.IgniteJdbc"
+  private val igniteDriverPrefix  = "org.apache.ignite.IgniteJdbc"
+  private val cassandraDriverName = "com.ing.data.cassandra.jdbc.CassandraDriver"
 }
 
 class MetaDataProviderFactory {
@@ -36,6 +38,7 @@ class MetaDataProviderFactory {
     }
     dbPoolConfig.driverClassName match {
       case className if className.startsWith(igniteDriverPrefix) => new IgniteMetaDataProvider(getConnection)
+      case className if className == cassandraDriverName         => new CassandraMetaDataProvider(getConnection)
       case _                                                     => new JdbcMetaDataProvider(getConnection)
     }
   }

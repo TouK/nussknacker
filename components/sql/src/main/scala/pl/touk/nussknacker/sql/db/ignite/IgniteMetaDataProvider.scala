@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.sql.db.ignite
 
+import pl.touk.nussknacker.sql.db.MetaDataProviderUtils
 import pl.touk.nussknacker.sql.db.schema._
 
 import java.sql.Connection
-import scala.util.Using
 
 class IgniteMetaDataProvider(getConnection: () => Connection) extends JdbcMetaDataProvider(getConnection) {
-  private def query(tableName: String) = s"SELECT * FROM $tableName"
 
   private val queryHelper = new IgniteQueryHelper(getConnection)
 
@@ -17,14 +16,7 @@ class IgniteMetaDataProvider(getConnection: () => Connection) extends JdbcMetaDa
   override def getTableMetaData(tableName: String): TableMetaData = {
     val tableDefinition =
       queryHelper.fetchTablesMeta.getOrElse(tableName, throw new IllegalArgumentException("Table metadata not present"))
-    Using.resource(getConnection()) { connection =>
-      Using.resource(connection.prepareStatement(query(tableName))) { statement =>
-        TableMetaData(
-          Option(tableDefinition),
-          DbParameterMetaData(statement.getParameterMetaData.getParameterCount)
-        )
-      }
-    }
+    MetaDataProviderUtils.createTableMetaData(tableName, tableDefinition, getConnection)
   }
 
   override def getSchemaDefinition(): SchemaDefinition = SchemaDefinition(queryHelper.fetchTablesMeta.keys.toList)
