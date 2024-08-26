@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
 
-  def getComponentsList(skipUsages: Boolean, skipFragments: Boolean)(
+  def getComponentsList(queryOptions: ComponentListQueryOptions)(
       implicit user: LoggedUser
   ): Future[List[ComponentListElement]]
 
@@ -73,24 +73,24 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  override def getComponentsList(skipUsages: Boolean, skipFragments: Boolean)(
+  override def getComponentsList(queryOptions: ComponentListQueryOptions)(
       implicit user: LoggedUser
   ): Future[List[ComponentListElement]] = {
     for {
       components <- processingTypeDataProvider.all.toList.flatTraverse { case (processingType, processingTypeData) =>
-        extractComponentsFromProcessingType(processingTypeData, processingType, skipFragments)
+        extractComponentsFromProcessingType(processingTypeData, processingType, queryOptions)
       }
       // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
       mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
-      optionallyEnrichedComponents <- enrichUsagesIfNeeded(mergedComponents, skipUsages)
+      optionallyEnrichedComponents <- enrichUsagesIfNeeded(mergedComponents, queryOptions)
     } yield optionallyEnrichedComponents.sortBy(ComponentListElement.sortMethod)
   }
 
   private def enrichUsagesIfNeeded(
       components: List[ComponentListElement],
-      skipUsages: Boolean
+      queryOptions: ComponentListQueryOptions
   )(implicit loggedUser: LoggedUser): Future[List[ComponentListElement]] = {
-    if (skipUsages) {
+    if (queryOptions.skipUsages) {
       Future.successful(components)
     } else {
       for {
@@ -129,10 +129,10 @@ class DefaultComponentService(
   private def extractComponentsFromProcessingType(
       processingTypeData: ComponentServiceProcessingTypeData,
       processingType: ProcessingType,
-      skipFragments: Boolean
+      queryOptions: ComponentListQueryOptions
   )(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     val fragments =
-      if (skipFragments)
+      if (queryOptions.skipFragments)
         Future.successful(List.empty)
       else
         fragmentsRepository.fetchLatestFragments(processingType)
@@ -244,3 +244,40 @@ case class ComponentServiceProcessingTypeData(
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     category: String
 )
+
+sealed trait ComponentListQueryOptions {
+  def skipUsages: Boolean
+  def skipFragments: Boolean
+}
+
+object ComponentListQueryOptions {
+
+  case object FetchAllWithUsages extends ComponentListQueryOptions {
+    val skipUsages: Boolean    = false
+    val skipFragments: Boolean = false
+  }
+
+  case object FetchNonFragmentsWithUsages extends ComponentListQueryOptions {
+    val skipUsages: Boolean    = false
+    val skipFragments: Boolean = true
+  }
+
+  case object FetchAllWithoutUsages extends ComponentListQueryOptions {
+    val skipUsages: Boolean    = true
+    val skipFragments: Boolean = false
+  }
+
+  case object FetchNonFragmentsWithoutUsages extends ComponentListQueryOptions {
+    val skipUsages: Boolean    = true
+    val skipFragments: Boolean = true
+  }
+
+  def from(skipUsages: Boolean, skipFragments: Boolean): ComponentListQueryOptions =
+    (skipUsages, skipFragments) match {
+      case (false, false) => FetchAllWithUsages
+      case (false, true)  => FetchNonFragmentsWithUsages
+      case (true, false)  => FetchAllWithoutUsages
+      case (true, true)   => FetchNonFragmentsWithoutUsages
+    }
+
+}

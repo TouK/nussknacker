@@ -28,6 +28,12 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
+import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
+  FetchAllWithUsages,
+  FetchAllWithoutUsages,
+  FetchNonFragmentsWithUsages,
+  FetchNonFragmentsWithoutUsages
+}
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
@@ -571,27 +577,27 @@ class DefaultComponentServiceSpec
     (admin, expectedAdminComponents, AllCategories)
   )
 
-  it should "return expected components for all combinations of skipUsages/skipFragments" in {
-    val combinations = Table(
-      ("skipUsages", "skipFragments"),
-      (false, false),
-      (true, false),
-      (false, true),
-      (true, true)
+  it should "return expected components for all query options" in {
+    val queryOptionsList = Table(
+      "query options",
+      FetchAllWithUsages,
+      FetchNonFragmentsWithUsages,
+      FetchAllWithoutUsages,
+      FetchNonFragmentsWithoutUsages
     )
 
     forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], _) =>
-      forAll(combinations) { (skipUsages: Boolean, skipFragments: Boolean) =>
+      forAll(queryOptionsList) { (queryOptions: ComponentListQueryOptions) =>
         val returnedComponents =
-          componentService.getComponentsList(skipUsages = skipUsages, skipFragments = skipFragments)(user).futureValue
+          componentService.getComponentsList(queryOptions)(user).futureValue
 
-        if (skipFragments)
+        if (queryOptions.skipFragments)
           returnedComponents.size should be < expectedComponents.size
         else
           returnedComponents.size shouldBe expectedComponents.size
 
         val filteredExpectedComponents = expectedComponents
-          .filter(component => !(skipFragments && component.componentType == ComponentType.Fragment))
+          .filter(component => !(queryOptions.skipFragments && component.componentType == ComponentType.Fragment))
 
         returnedComponents.map(_.id) should contain theSameElementsAs filteredExpectedComponents.map(_.id)
       }
@@ -603,7 +609,7 @@ class DefaultComponentServiceSpec
     forAll(testingData) {
       (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
         val returnedComponentsWithUsages =
-          componentService.getComponentsList(skipUsages = false, skipFragments = false)(user).futureValue
+          componentService.getComponentsList(FetchAllWithUsages)(user).futureValue
 
         def counts(list: List[ComponentListElement]) = list.map(el => el.id -> el.usageCount).toMap
         val returnedCounts                           = counts(returnedComponentsWithUsages)
@@ -706,7 +712,7 @@ class DefaultComponentServiceSpec
     )
     inside {
       intercept[TestFailedException] {
-        componentService.getComponentsList(skipUsages = false, skipFragments = false)(admin).futureValue
+        componentService.getComponentsList(FetchAllWithUsages)(admin).futureValue
       }.cause
     } { case Some(ComponentConfigurationException(_, wrongConfigurations)) =>
       wrongConfigurations.toList should contain theSameElementsAs expectedWrongConfigurations
