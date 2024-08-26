@@ -16,6 +16,12 @@ import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
+import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
+  FetchAllWithUsages,
+  FetchAllWithoutUsages,
+  FetchNonFragmentsWithUsages,
+  FetchNonFragmentsWithoutUsages
+}
 import pl.touk.nussknacker.ui.definition.component.DefaultComponentService.toComponentUsagesInScenario
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -89,18 +95,18 @@ class DefaultComponentService(
   private def enrichUsagesIfNeeded(
       components: List[ComponentListElement],
       queryOptions: ComponentListQueryOptions
-  )(implicit loggedUser: LoggedUser): Future[List[ComponentListElement]] = {
-    if (queryOptions.skipUsages) {
-      Future.successful(components)
-    } else {
-      for {
-        userAccessibleComponentUsages <- getUserAccessibleComponentUsages
-        enrichedWithUsagesComponents = components.map(c =>
-          c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
-        )
-      } yield enrichedWithUsagesComponents
+  )(implicit loggedUser: LoggedUser): Future[List[ComponentListElement]] =
+    queryOptions match {
+      case FetchAllWithUsages | FetchNonFragmentsWithUsages =>
+        for {
+          userAccessibleComponentUsages <- getUserAccessibleComponentUsages
+          enrichedWithUsagesComponents = components.map(c =>
+            c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
+          )
+        } yield enrichedWithUsagesComponents
+      case FetchAllWithoutUsages | FetchNonFragmentsWithoutUsages =>
+        Future.successful(components)
     }
-  }
 
   override def getComponentUsages(
       designerWideComponentId: DesignerWideComponentId
@@ -131,11 +137,12 @@ class DefaultComponentService(
       processingType: ProcessingType,
       queryOptions: ComponentListQueryOptions
   )(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
-    val fragments =
-      if (queryOptions.skipFragments)
-        Future.successful(List.empty)
-      else
+    val fragments = queryOptions match {
+      case FetchAllWithUsages | FetchAllWithoutUsages =>
         fragmentsRepository.fetchLatestFragments(processingType)
+      case FetchNonFragmentsWithUsages | FetchNonFragmentsWithoutUsages =>
+        Future.successful(List.empty)
+    }
 
     fragments.map { fetchedFragments =>
       createComponents(
@@ -245,32 +252,17 @@ case class ComponentServiceProcessingTypeData(
     category: String
 )
 
-sealed trait ComponentListQueryOptions {
-  def skipUsages: Boolean
-  def skipFragments: Boolean
-}
+sealed trait ComponentListQueryOptions
 
 object ComponentListQueryOptions {
 
-  case object FetchAllWithUsages extends ComponentListQueryOptions {
-    val skipUsages: Boolean    = false
-    val skipFragments: Boolean = false
-  }
+  case object FetchAllWithUsages extends ComponentListQueryOptions
 
-  case object FetchNonFragmentsWithUsages extends ComponentListQueryOptions {
-    val skipUsages: Boolean    = false
-    val skipFragments: Boolean = true
-  }
+  case object FetchNonFragmentsWithUsages extends ComponentListQueryOptions
 
-  case object FetchAllWithoutUsages extends ComponentListQueryOptions {
-    val skipUsages: Boolean    = true
-    val skipFragments: Boolean = false
-  }
+  case object FetchAllWithoutUsages extends ComponentListQueryOptions
 
-  case object FetchNonFragmentsWithoutUsages extends ComponentListQueryOptions {
-    val skipUsages: Boolean    = true
-    val skipFragments: Boolean = true
-  }
+  case object FetchNonFragmentsWithoutUsages extends ComponentListQueryOptions
 
   def from(skipUsages: Boolean, skipFragments: Boolean): ComponentListQueryOptions =
     (skipUsages, skipFragments) match {

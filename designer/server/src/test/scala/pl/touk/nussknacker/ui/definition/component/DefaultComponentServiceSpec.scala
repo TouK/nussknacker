@@ -591,13 +591,22 @@ class DefaultComponentServiceSpec
         val returnedComponents =
           componentService.getComponentsList(queryOptions)(user).futureValue
 
-        if (queryOptions.skipFragments)
-          returnedComponents.size should be < expectedComponents.size
-        else
-          returnedComponents.size shouldBe expectedComponents.size
+        queryOptions match {
+          case FetchNonFragmentsWithUsages | FetchNonFragmentsWithoutUsages =>
+            returnedComponents.size should be < expectedComponents.size
+          case FetchAllWithUsages | FetchAllWithoutUsages =>
+            returnedComponents.size shouldBe expectedComponents.size
+        }
 
         val filteredExpectedComponents = expectedComponents
-          .filter(component => !(queryOptions.skipFragments && component.componentType == ComponentType.Fragment))
+          .filter(component =>
+            queryOptions match {
+              case FetchNonFragmentsWithUsages | FetchNonFragmentsWithoutUsages =>
+                component.componentType != ComponentType.Fragment
+              case FetchAllWithUsages | FetchAllWithoutUsages =>
+                true
+            }
+          )
 
         returnedComponents.map(_.id) should contain theSameElementsAs filteredExpectedComponents.map(_.id)
       }
