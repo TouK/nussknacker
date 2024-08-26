@@ -73,6 +73,5 @@ Because we use [HOCON](#conventions), you can set (or override) any configuratio
 | OAUTH2_RESPONSE_TYPE                            | string          | code              |
 | OAUTH2_SCOPE                                    | string          | read:user         |
 | OAUTH2_AUDIENCE                                 | string          |                   |
-| OAUTH2_ROLES_CLAIMS                             | list of strings |                   |
 | OAUTH2_USERNAME_CLAIM                           | string          |                   |
 
