@@ -33,7 +33,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFacto
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
@@ -137,8 +137,8 @@ abstract class FlinkWithKafkaSuite
       fromAnyRef(false)
     )
 
-  lazy val kafkaConfig: KafkaConfig                = KafkaConfig.parseConfig(config, "config")
-  protected val avroEncoder: BestEffortAvroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  lazy val kafkaConfig: KafkaConfig                   = KafkaConfig.parseConfig(config, "config")
+  protected val avroEncoder: ToAvroSchemaBasedEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
 
   protected val givenNotMatchingAvroObj: GenericData.Record = avroEncoder.encodeRecordOrError(
     Map("first" -> "Zenon", "last" -> "Nowak"),

@@ -11,15 +11,15 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
+import pl.touk.nussknacker.engine.json.encode.ToJsonSchemaBasedEncoder
 
-class BestEffortJsonSchemaWithAvroEncoderTest extends AnyFunSuite with Matchers {
+class AvroToJsonSchemaBasedEncoderCustomisationTest extends AnyFunSuite with Matchers {
 
   test("should encode avro generic record") {
     type WithError[T] = ValidatedNel[String, T]
-    val encoder = new BestEffortJsonSchemaEncoder(ValidationMode.strict)
+    val encoder = new ToJsonSchemaBasedEncoder(ValidationMode.strict)
     val avroToJsonEncoder: PartialFunction[(Any, Schema, Option[String]), WithError[Json]] =
-      new AvroToJsonBasedOnSchemaEncoder().encoder(encoder.encodeBasedOnSchema)
+      new AvroToJsonSchemaBasedEncoderCustomisation().encoder(encoder.encodeBasedOnSchema)
 
     val avroSchema =
       SchemaBuilder

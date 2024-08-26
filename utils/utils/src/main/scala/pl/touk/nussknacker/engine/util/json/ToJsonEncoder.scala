@@ -14,13 +14,13 @@ import java.util.ServiceLoader
 import java.util.UUID
 import scala.jdk.CollectionConverters._
 
-object BestEffortJsonEncoder {
+object ToJsonEncoder {
 
-  val defaultForTests: BestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
+  val defaultForTests: ToJsonEncoder = ToJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
 
 }
 
-case class BestEffortJsonEncoder(
+case class ToJsonEncoder(
     failOnUnknown: Boolean,
     classLoader: ClassLoader,
     highPriority: PartialFunction[Any, Json] = Map()
@@ -35,12 +35,10 @@ case class BestEffortJsonEncoder(
   private val safeBigInt     = safeJson[java.math.BigInteger](a => fromBigInt(a))
   private val safeNumber     = safeJson[Number](a => fromDoubleOrNull(a.doubleValue())) // is it correct?
 
-  val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
+  private val optionalCustomisations =
+    ServiceLoader.load(classOf[ToJsonEncoderCustomisation], classLoader).asScala.map(_.encoder(this.encode))
 
-  private val optionalEncoders =
-    ServiceLoader.load(classOf[ToJsonEncoder], classLoader).asScala.map(_.encoder(this.encode))
-
-  def encode(obj: Any): Json = optionalEncoders
+  def encode(obj: Any): Json = optionalCustomisations
     .foldLeft(highPriority)(_.orElse(_))
     .applyOrElse(
       obj,

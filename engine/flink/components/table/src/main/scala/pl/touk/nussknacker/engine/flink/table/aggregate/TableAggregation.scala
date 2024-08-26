@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation.{
   aggregateByInternalColumnName,
   groupByInternalColumnName
 }
-import pl.touk.nussknacker.engine.flink.table.utils.BestEffortTableTypeEncoder
+import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeEncoder
 
 object TableAggregation {
   private val aggregateByInternalColumnName = "aggregateByInternalColumn"
@@ -80,9 +80,9 @@ class TableAggregation(
 
     override def flatMap(context: Context, out: Collector[Row]): Unit = {
       collectHandlingErrors(context, out) {
-        val evaluatedGroupBy = BestEffortTableTypeEncoder.encode(evaluateGroupBy(context), groupByParam.returnType)
+        val evaluatedGroupBy = ToTableTypeEncoder.encode(evaluateGroupBy(context), groupByParam.returnType)
         val evaluatedAggregateBy =
-          BestEffortTableTypeEncoder.encode(evaluateAggregateByParam(context), aggregateByParam.returnType)
+          ToTableTypeEncoder.encode(evaluateAggregateByParam(context), aggregateByParam.returnType)
 
         val row = Row.withNames()
         row.setField(groupByInternalColumnName, evaluatedGroupBy)
@@ -97,10 +97,10 @@ class TableAggregation(
     Types.ROW_NAMED(
       Array(groupByInternalColumnName, aggregateByInternalColumnName),
       context.typeInformationDetection.forType(
-        BestEffortTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)
       ),
       context.typeInformationDetection.forType(
-        BestEffortTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
+        ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
       )
     )
   }
@@ -132,8 +132,8 @@ class TableAggregation(
   private def aggregateResultTypeInfo(context: FlinkCustomNodeContext) = {
     context.typeInformationDetection.forValueWithContext[AnyRef](
       ValidationContext.empty
-        .withVariableUnsafe(KeyVariableName, BestEffortTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)),
-      BestEffortTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
+        .withVariableUnsafe(KeyVariableName, ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)),
+      ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
     )
   }
 
