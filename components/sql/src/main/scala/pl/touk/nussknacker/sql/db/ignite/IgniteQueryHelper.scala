@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.sql.db.ignite
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
 
 import java.sql.{Connection, PreparedStatement, ResultSet}
@@ -29,9 +28,8 @@ class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
       }.groupBy { case (tableName, _, _, _) => tableName }
         .map { case (tableName, entries) =>
           val columnTypings = entries.map { case (_, columnName, klassName, _) =>
-            columnName -> Typed.typedClass(Class.forName(klassName))
+            columnName -> klassName
           }
-
           tableName -> TableDefinition.applyList(columnTypings)
         }
     }

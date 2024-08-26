@@ -57,6 +57,12 @@
 * [#6623](https://github.com/TouK/nussknacker/pull/6623) Added `sortedAscBy` and `reverse` functions to `#COLLECTION`
   helper.
 * [#6650](https://github.com/TouK/nussknacker/pull/6650) Added a workaround for situations when an updated scenario with Kafka source started reading from the earliest offsets
+* [#6586](https://github.com/TouK/nussknacker/pull/6586) For now on, the SQL enricher automatically converts types as shown below:
+  * java.sql.Array -> java.util.List
+  * java.sql.Time -> java.time.LocalTime 
+  * java.sql.Date -> java.time.LocalDate
+  * java.sql.Timestamp -> java.time.Instant
+  * java.sql.Clob -> java.lang.String
 
 1.16.3 (8 August 2024)
 -------------------------

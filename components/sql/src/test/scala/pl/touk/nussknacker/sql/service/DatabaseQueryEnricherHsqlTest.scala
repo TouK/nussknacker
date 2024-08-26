@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.sql.service
 
-import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
-import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 import org.scalatest.BeforeAndAfterEach
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
+import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 class DatabaseQueryEnricherHsqlTest
     extends BaseHsqlQueryEnricherTest
@@ -15,7 +15,9 @@ class DatabaseQueryEnricherHsqlTest
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE people (id INT, name VARCHAR(40));",
-    "INSERT INTO people (id, name) VALUES (1, 'John')"
+    "INSERT INTO people (id, name) VALUES (1, 'John');",
+    "CREATE TABLE types_test(t_clob CLOB);",
+    "INSERT INTO types_test(t_clob) values ('very long text');"
   )
 
   override protected def afterEach(): Unit = {
@@ -63,6 +65,19 @@ class DatabaseQueryEnricherHsqlTest
     val queryResultSet = conn.prepareStatement("SELECT * FROM people WHERE id = 1").executeQuery()
     queryResultSet.next()
     queryResultSet.getObject("name") shouldBe "Don"
+  }
+
+  test("DatabaseQueryEnricher#type conversions") {
+    val result = queryWithEnricher(
+      "select * from types_test",
+      Map(),
+      conn,
+      service,
+      "List[Record{T_CLOB: String}]"
+    )
+    result shouldBe List(
+      TypedMap(Map("T_CLOB" -> "very long text"))
+    )
   }
 
 }

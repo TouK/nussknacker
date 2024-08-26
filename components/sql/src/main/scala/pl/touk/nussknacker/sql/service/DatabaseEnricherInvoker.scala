@@ -19,7 +19,6 @@ class DatabaseEnricherInvoker(
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
     queryArgumentsExtractor: (Int, Params, Context) => QueryArguments,
-    val returnType: typing.TypingResult,
     val getConnection: () => Connection,
     val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
     params: Params,
