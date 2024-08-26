@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.spel.internal;
 
-import org.springframework.core.CollectionFactory;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
 import org.springframework.lang.Nullable;
 
-import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -49,18 +48,7 @@ final class ArrayToListConverter implements ConditionalGenericConverter {
 		if (source == null) {
 			return null;
 		}
-		int arrayLength = Array.getLength(source);
-		TypeDescriptor elementTypeDescriptor = targetTypeDescriptor.getElementTypeDescriptor();
-		Collection<Object> result = CollectionFactory.createCollection(
-            List.class,
-            elementTypeDescriptor != null ? elementTypeDescriptor.getType() : null,
-            arrayLength
-        );
-        for (int i = 0; i < arrayLength; i++) {
-            Object sourceElement = Array.get(source, i);
-            result.add(sourceElement);
-        }
-		return result;
+        return Arrays.asList((Object[]) source);
 	}
 
 }
