@@ -178,13 +178,13 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
   override protected val sinkForLongsResultsHolder: () => TestResultsHolder[java.lang.Long] =
     () => DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec.sinkForLongsResultsHolder
 
-  override protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[InputMeta[_]] =
+  override protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[java.util.Map[String @unchecked, _]] =
     () => DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder
 }
 
 object DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends Serializable {
 
   private val sinkForLongsResultsHolder     = new TestResultsHolder[java.lang.Long]
-  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[java.util.Map[String @unchecked, _]]
 
 }

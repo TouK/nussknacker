@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import scala.jdk.CollectionConverters._
 
 import java.nio.charset.StandardCharsets
 
@@ -464,8 +465,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     }
   }
 
-  private def verifyInputMeta[T](key: T, topic: TopicName.ForSource, partition: Int, offset: Long): Assertion = {
-    val expectedInputMeta = InputMeta[T](
+  private def verifyInputMeta(key: Any, topic: TopicName.ForSource, partition: Int, offset: Long): Assertion = {
+    val expectedInputMeta = InputMeta(
       key = key,
       topic = topic.name,
       partition = partition,
@@ -477,9 +478,9 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     )
 
     eventually {
-      val results = KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder.results.map(
-        _.asInstanceOf[InputMeta[T]].copy(timestamp = 0L)
-      )
+      val results = KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder.results.map { inputMeta =>
+        (inputMeta.asScala.toMap + (InputMeta.timestampParameterName -> 0L)).asJava
+      }
       results should not be empty
       results should contain(expectedInputMeta)
     }
@@ -489,7 +490,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
 object KafkaAvroPayloadIntegrationSpec extends Serializable {
 
-  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[java.util.Map[String @unchecked, _]]
 
 }
 
