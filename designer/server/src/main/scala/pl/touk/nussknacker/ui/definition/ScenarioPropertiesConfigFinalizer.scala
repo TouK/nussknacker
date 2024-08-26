@@ -17,8 +17,8 @@ class ScenarioPropertiesConfigFinalizer(
   }
 
   def finalizePropertiesConfig(scenarioPropertiesConfig: ScenarioProperties): ScenarioProperties = {
-    scenarioPropertiesConfig.copy(propertiesConfig =
-      finalizeScenarioPropertiesParameters(scenarioPropertiesConfig.propertiesConfig)
+    scenarioPropertiesConfig.copy(scenarioPropertiesConfig =
+      finalizeScenarioPropertiesParameters(scenarioPropertiesConfig.scenarioPropertiesConfig)
     )
   }
 

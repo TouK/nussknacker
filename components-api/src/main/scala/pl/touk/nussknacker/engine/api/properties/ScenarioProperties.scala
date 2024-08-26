@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 
 @JsonCodec case class ScenarioProperties(
-    propertiesConfig: Map[String, ScenarioPropertyConfig],
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     docsUrl: Option[String] = None
 )
 

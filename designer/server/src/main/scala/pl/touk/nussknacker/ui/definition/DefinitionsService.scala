@@ -77,7 +77,7 @@ class DefinitionsService(
       scenarioProperties = {
         val (props, url) =
           if (forFragment) (FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, None)
-          else (finalizedScenarioPropertiesConfig.propertiesConfig, finalizedScenarioPropertiesConfig.docsUrl)
+          else (finalizedScenarioPropertiesConfig.scenarioPropertiesConfig, finalizedScenarioPropertiesConfig.docsUrl)
         val transformedProps = props.mapValuesNow(createUIScenarioAdditionalFieldConfig)
         UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = url)
       },

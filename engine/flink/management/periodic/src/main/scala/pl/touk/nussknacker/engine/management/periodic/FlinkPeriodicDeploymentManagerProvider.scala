@@ -71,7 +71,7 @@ class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider w
 
   override def scenarioPropertiesConfig(config: Config): ScenarioProperties = {
     val props = delegate.scenarioPropertiesConfig(config)
-    props.copy(props.propertiesConfig ++ Map(cronConfig))
+    props.copy(props.scenarioPropertiesConfig ++ Map(cronConfig))
   }
 
   override def defaultEngineSetupName: EngineSetupName =

@@ -165,7 +165,7 @@ class AkkaHttpBasedRouteProvider(
         val validator = new UIProcessValidator(
           processingTypeData.name,
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
-          processingTypeData.deploymentData.scenarioPropertiesConfig.propertiesConfig,
+          processingTypeData.deploymentData.scenarioPropertiesConfig.scenarioPropertiesConfig,
           new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
           processingTypeData.deploymentData.additionalValidators,
           fragmentResolver
@@ -243,7 +243,7 @@ class AkkaHttpBasedRouteProvider(
       val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
         new NewProcessPreparer(
           processingTypeData.deploymentData.metaDataInitializer,
-          processingTypeData.deploymentData.scenarioPropertiesConfig.propertiesConfig,
+          processingTypeData.deploymentData.scenarioPropertiesConfig.scenarioPropertiesConfig,
           new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
         )
       }
@@ -344,13 +344,13 @@ class AkkaHttpBasedRouteProvider(
         processingTypeToExpressionSuggester = processingTypeDataProvider.mapValues(v =>
           ExpressionSuggester(
             v.designerModelData.modelData,
-            v.deploymentData.scenarioPropertiesConfig.propertiesConfig.keys
+            v.deploymentData.scenarioPropertiesConfig.scenarioPropertiesConfig.keys
           )
         ),
         processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
           new ParametersValidator(
             v.designerModelData.modelData,
-            v.deploymentData.scenarioPropertiesConfig.propertiesConfig.keys
+            v.deploymentData.scenarioPropertiesConfig.scenarioPropertiesConfig.keys
           )
         ),
         scenarioService = processService

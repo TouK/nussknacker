@@ -101,16 +101,16 @@ object ProcessingTypeData {
       )
 
     val modelScenarioPropsMap = modelData.modelConfig
-      .getOrElse[Map[String, ScenarioPropertyConfig]]("propertiesConfig", Map.empty)
+      .getOrElse[Map[String, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
     val modelScenarioPropsDocsUrl = modelData.modelConfig.getOrElse[Option[String]]("docsUrl", None)
 
     val modelScenarioProps = ScenarioProperties(modelScenarioPropsMap, modelScenarioPropsDocsUrl)
 
     def mergeConfigs = {
       modelScenarioProps.copy(
-        modelScenarioProps.propertiesConfig ++ deploymentManagerProvider
+        modelScenarioProps.scenarioPropertiesConfig ++ deploymentManagerProvider
           .scenarioPropertiesConfig(deploymentConfig)
-          .propertiesConfig
+          .scenarioPropertiesConfig
       )
     }
     val runtimeScenarioProps: ScenarioProperties = mergeConfigs
