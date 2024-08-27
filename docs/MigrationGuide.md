@@ -62,6 +62,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `JsonToNuStruct` renamed to `FromJsonDecoder` (to fit `From<SourceFormat>Decoder` naming schema)
   * `ToJsonEncoder` renamed to `ToJsonEncoderCustomisation`
   * `ToJsonBasedOnSchemaEncoder` renamed to `ToJsonSchemaBasedEncoderCustomisation`
+* [#6586](https://github.com/TouK/nussknacker/pull/6586) For now on, the SQL enricher automatically converts types as shown below:
+    * java.sql.Array -> java.util.List
+    * java.sql.Time -> java.time.LocalTime
+    * java.sql.Date -> java.time.LocalDate
+    * java.sql.Timestamp -> java.time.Instant
+    * java.sql.Clob -> java.lang.String
 
 ### REST API changes
 
