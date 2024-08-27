@@ -35,8 +35,8 @@ trait TypeInformationDetection extends Serializable {
 
 object TypeInformationDetection {
 
-  // We could just inline implementation of TypeInformationDetection but we don't want to expose too much implementation
-  // details so we load the implementation using SPI. As an alternative to SPI was to use Class.forName
+  // We use SPI to provide implementation of TypeInformationDetection because we don't want to make
+  // implementation classes available in flink-components-api module.
   val instance: TypeInformationDetection = {
     val classloader = Thread.currentThread().getContextClassLoader
     ServiceLoader
