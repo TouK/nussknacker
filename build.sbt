@@ -2001,6 +2001,7 @@ lazy val designer = (project in file("designer/server"))
     deploymentManagerApi,
     restmodel,
     listenerApi,
+    defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
     componentsApi                     % "test->test",
