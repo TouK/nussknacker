@@ -9,7 +9,7 @@ import { NotFound } from "../components/common/error-boundary/NotFound";
 import { CustomTab, StarRedirect } from "./CustomTab";
 import { useTabData } from "./CustomTabPage";
 import { NussknackerApp } from "./NussknackerApp";
-import { RouteErrorFallbackComponent } from "../components/common/error-boundary";
+import { FullPageErrorBoundaryFallbackComponent } from "../components/common/error-boundary";
 
 const Visualization = loadable(() => import("./Visualization"), { fallback: <LoaderSpinner show={true} /> });
 const ScenariosTab = loadable(() => import("./ScenariosTab"), { fallback: <LoaderSpinner show={true} /> });
@@ -21,10 +21,10 @@ function DefaultRedirect() {
 }
 
 export default createRoutesFromElements(
-    <Route path="/" element={<NussknackerApp />} errorElement={<RouteErrorFallbackComponent />}>
+    <Route path="/" element={<NussknackerApp />} errorElement={<FullPageErrorBoundaryFallbackComponent />}>
         <Route index element={<DefaultRedirect />} />
         <Route path="/404" element={<NotFound />} />
-        <Route errorElement={<RouteErrorFallbackComponent />}>
+        <Route errorElement={<FullPageErrorBoundaryFallbackComponent />}>
             <Route path={`${VisualizationBasePath}/:processName`} element={<Visualization />} />
 
             {/* overrides scenarios custom tab */}
