@@ -281,13 +281,13 @@ lazy val commonSettings =
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
 val flinkV               = "1.18.1"
-val flinkConnectorKafkaV = "3.1.0-1.18"
+val flinkConnectorKafkaV = "3.2.0-1.18"
 val flinkCommonsLang3V   = "3.12.0"
 val flinkCommonsTextV    = "1.10.0"
 val flinkCommonsIOV      = "2.11.0"
-val avroV                = "1.11.3"
+val avroV                = "1.12.0"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV               = "3.6.2"
+val kafkaV               = "3.8.0"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV              = "5.2.23.RELEASE"
 val scalaTestV           = "3.2.18"
@@ -334,10 +334,10 @@ val hsqldbV                   = "2.7.2"
 val postgresV                 = "42.7.3"
 // Flway 10 requires Java 17
 val flywayV                   = "9.22.3"
-val confluentV                = "7.5.1"
+val confluentV                = "7.7.0"
 val azureKafkaSchemaRegistryV = "1.1.1"
-val azureSchemaRegistryV      = "1.4.4"
-val azureIdentityV            = "1.12.0"
+val azureSchemaRegistryV      = "1.4.9"
+val azureIdentityV            = "1.13.2"
 val bcryptV                   = "0.10.2"
 val cronParserV               = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
