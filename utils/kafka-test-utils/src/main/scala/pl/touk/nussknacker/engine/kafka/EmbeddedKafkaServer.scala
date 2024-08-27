@@ -101,7 +101,7 @@ object EmbeddedKafkaServer {
       new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM),
       Seq(logDir.getAbsolutePath),
       StorageTool.buildMetadataProperties(clusterId.toString, kafkaConfig),
-      MetadataVersion.MINIMUM_BOOTSTRAP_VERSION,
+      MetadataVersion.LATEST_PRODUCTION,
       ignoreFormatted = false
     )
   }
