@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation
 }
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation.{
   aggregateByInternalColumnName,
   groupByInternalColumnName
@@ -96,10 +97,10 @@ class TableAggregation(
   private def groupByInputTypeInfo(context: FlinkCustomNodeContext) = {
     Types.ROW_NAMED(
       Array(groupByInternalColumnName, aggregateByInternalColumnName),
-      context.typeInformationDetection.forType(
+      TypeInformationDetection.instance.forType(
         ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)
       ),
-      context.typeInformationDetection.forType(
+      TypeInformationDetection.instance.forType(
         ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
       )
     )
@@ -130,7 +131,7 @@ class TableAggregation(
   }
 
   private def aggregateResultTypeInfo(context: FlinkCustomNodeContext) = {
-    context.typeInformationDetection.forValueWithContext[AnyRef](
+    TypeInformationDetection.instance.forValueWithContext[AnyRef](
       ValidationContext.empty
         .withVariableUnsafe(KeyVariableName, ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)),
       ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
