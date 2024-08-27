@@ -7,20 +7,25 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
 
-  private val expressionDefinition = ModelDefinitionBuilder.emptyExpressionConfig
+  private val expressionDefinition    = ModelDefinitionBuilder.emptyExpressionConfig
+  private val globalVariablesPreparer = GlobalVariablesPreparer(expressionDefinition)
+  private val evaluator               = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
     getClass.getClassLoader,
     new SimpleDictRegistry(Map.empty),
     expressionDefinition,
-    classDefinitionSet = ClassDefinitionSet.forDefaultAdditionalClasses
+    classDefinitionSet = ClassDefinitionSet.forDefaultAdditionalClasses,
+    evaluator
   )
 
   private val validationContext = ValidationContext(vars.mapValuesNow(Typed.fromInstance), Map.empty)
