@@ -390,7 +390,6 @@ authentication: {
     scope: ${?OAUTH2_SCOPE}
     audience: ${?OAUTH2_AUDIENCE}
   }
-  rolesClaims: ${?OAUTH2_ROLES_CLAIMS}
   usernameClaim: ${?OAUTH2_USERNAME_CLAIM}
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}

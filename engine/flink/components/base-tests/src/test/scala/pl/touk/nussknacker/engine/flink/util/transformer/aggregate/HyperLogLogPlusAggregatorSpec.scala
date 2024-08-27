@@ -11,6 +11,7 @@ import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
@@ -88,7 +89,7 @@ class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
 
     }
 
-    val typedTypeInfo = TypingResultAwareTypeInformationDetection(getClass.getClassLoader).forType(storedType)
+    val typedTypeInfo = TypeInformationDetection.instance.forType(storedType)
 
     /*
       Checks below assert that our serialization remains efficient. bytesOverHead value comes from KryoSerializable and Value implementations in CardinalityWrapper

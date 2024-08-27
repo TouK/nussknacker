@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSourceFunctionUtils
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import scala.jdk.CollectionConverters._
 
@@ -30,7 +31,7 @@ case class CollectionSource[T](
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[T] = {
-    val typeInformation = flinkNodeContext.typeInformationDetection.forType[T](returnType)
+    val typeInformation = TypeInformationDetection.instance.forType[T](returnType)
     boundedness match {
       case Boundedness.BOUNDED =>
         env.fromCollection(list.asJava, typeInformation)

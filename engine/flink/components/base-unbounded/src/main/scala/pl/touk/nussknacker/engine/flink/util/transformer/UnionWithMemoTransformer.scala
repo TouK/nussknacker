@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataS
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
@@ -66,7 +67,7 @@ class UnionWithMemoTransformer(
               transformContextsDefinition(valueByBranchId, variableName)(context.validationContext.toOption.get)
             val finalContext = finalContextValidated.toOption.get
 
-            val mapTypeInfo = context.typeInformationDetection
+            val mapTypeInfo = TypeInformationDetection.instance
               .forType(
                 Typed.record(
                   valueByBranchId.mapValuesNow(_.returnType),
@@ -76,8 +77,8 @@ class UnionWithMemoTransformer(
               .asInstanceOf[TypeInformation[java.util.Map[String, AnyRef]]]
 
             val processedTypeInfo =
-              context.typeInformationDetection.forValueWithContext(finalContext, KeyedValueType.info(mapTypeInfo))
-            val returnTypeInfo = context.typeInformationDetection.forValueWithContext(finalContext, mapTypeInfo)
+              TypeInformationDetection.instance.forValueWithContext(finalContext, KeyedValueType.info(mapTypeInfo))
+            val returnTypeInfo = TypeInformationDetection.instance.forValueWithContext(finalContext, mapTypeInfo)
 
             val keyedInputStreams = inputs.toList.map { case (branchId, stream) =>
               val keyParam   = keyByBranchId(branchId)

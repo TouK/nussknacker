@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource,
   StandardFlinkSourceFunctionUtils
 }
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 case class EmptySource(returnType: TypingResult) extends StandardFlinkSource[Any] with ReturningType {
 
@@ -25,7 +26,7 @@ case class EmptySource(returnType: TypingResult) extends StandardFlinkSource[Any
         override def cancel(): Unit                                    = {}
         override def run(ctx: SourceFunction.SourceContext[Any]): Unit = {}
       },
-      typeInformation = flinkNodeContext.typeInformationDetection.forType[Any](returnType)
+      typeInformation = TypeInformationDetection.instance.forType[Any](returnType)
     )
 
 }
