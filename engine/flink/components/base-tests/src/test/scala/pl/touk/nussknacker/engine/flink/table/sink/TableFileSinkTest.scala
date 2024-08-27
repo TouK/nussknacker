@@ -12,9 +12,8 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.{FlinkTableComponentProvider, SpelValues}
+import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
-import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.table.utils.NotConvertibleResultOfAlignmentException
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
@@ -232,7 +231,7 @@ class TableFileSinkTest
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
     .withExecutionMode(ExecutionMode.Batch)
-    .withExtraComponents(singleRecordBatchTable :: tableComponents)
+    .withExtraComponents(tableComponents)
     .build()
 
   override protected def afterAll(): Unit = {
@@ -352,7 +351,7 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
@@ -361,10 +360,8 @@ class TableFileSinkTest
         "Value"      -> basicTypesExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
-    result.validValue.errors shouldBe empty
+    val result = runner.runWithSingleRecordBounded(scenario)
+    result shouldBe Symbol("valid")
 
     getLinesOfSingleFileInDirectoryEventually(
       basicExpressionOutputDirectory
@@ -381,7 +378,7 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
@@ -390,9 +387,8 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
+    val result = runner.runWithSingleRecordBounded(scenario)
+    result shouldBe Symbol("valid")
     result.validValue.errors shouldBe empty
 
     getLinesOfSingleFileInDirectoryEventually(oneColumnOutputDirectory).loneElement shouldBe "123"
@@ -487,7 +483,7 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
@@ -496,9 +492,8 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
+    val result = runner.runWithSingleRecordBounded(scenario)
+    result shouldBe Symbol("valid")
     result.validValue.errors shouldBe empty
 
     val expectedNestedRecord = Json.fromFields(
@@ -583,7 +578,7 @@ class TableFileSinkTest
   test("should be possible to provide values for datetime types by spel expressions") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
@@ -607,7 +602,8 @@ class TableFileSinkTest
       )
       .noSpaces
 
-    val result = runner.runWithoutData(scenario)
+    val result = runner.runWithSingleRecordBounded(scenario)
+    result shouldBe Symbol("valid")
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimeExpressionOutputDirectory)
@@ -625,7 +621,7 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
@@ -634,9 +630,7 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
+    val result = runner.runWithSingleRecordBounded(scenario)
 
     val expectedMessage =
       """Provided value does not match scenario output - errors:
@@ -658,7 +652,7 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
@@ -667,9 +661,8 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
+    val result = runner.runWithSingleRecordBounded(scenario)
+
     val intType = DataTypes.INT().getLogicalType
     result.validValue.errors should matchPattern {
       case ExceptionResult(_, Some("end"), NotConvertibleResultOfAlignmentException("ala", "ala", `intType`)) :: Nil =>

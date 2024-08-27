@@ -15,11 +15,10 @@ import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregator.{
   NuAggregationFunctionCallContext,
   buildError,
-  dataTypeFactory,
-  validateFirstLastInputType
+  dataTypeFactory
 }
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypeFactoryPreparer
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions.LogicalTypeConverter
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.LogicalTypeExtension
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import java.util
@@ -118,7 +117,8 @@ object TableAggregator extends Enum[TableAggregator] {
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.VAR_SAMP
   }
 
-  private val dataTypeFactory   = DataTypeFactoryPreparer.prepare()
+  private val dataTypeFactory = DataTypeFactoryPreparer.prepare()
+  // TODO: TypeInformationDetection.instance after merging of PR #6643
   private val typeInfoDetection = TypingResultAwareTypeInformationDetection.apply(getClass.getClassLoader)
 
   private class NuAggregationFunctionCallContext(

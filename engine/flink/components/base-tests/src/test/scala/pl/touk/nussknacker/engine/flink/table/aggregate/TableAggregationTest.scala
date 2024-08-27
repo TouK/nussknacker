@@ -53,7 +53,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   test("first value aggregator should be able to aggregate by number types, string and boolean declared in spel") {
     val aggregationParameters =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions).map { expr =>
-        AggregationParameters(aggregator = "'First'".spel, aggregateBy = expr.spel, groupBy = spelStr.spel)
+        AggregationParameters(aggregator = "'First'".spel, aggregateBy = expr, groupBy = spelStr)
       }
     val scenario = buildMultipleAggregationsScenario(aggregationParameters)
     val result   = runner.runWithSingleRecordBounded(scenario)
@@ -65,7 +65,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     val aggregationParameters =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions ::: tableApiSupportedTimeLiteralExpressions)
         .map { expr =>
-          AggregationParameters("'First'".spel, spelStr.spel, expr.spel)
+          AggregationParameters("'First'".spel, spelStr, expr)
         }
 
     val scenario = buildMultipleAggregationsScenario(aggregationParameters)
@@ -75,24 +75,11 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   }
 
   test("should be able to group by advanced types") {
-    val aggregatingBranches =
+    val aggregationParameters =
       ("{foo: 1}".spel ::
-        "{{foo: 1, bar: '123'}}".spel :: Nil).zipWithIndex.map { case (expr, branchIndex) =>
-        aggregationTypeTestingBranch(
-          groupByExpr = expr,
-          aggregateByExpr = spelStr,
-          idSuffix = branchIndex.toString
-        )
-      }
-
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .split(
-        "split",
-        aggregatingBranches: _*
-      )
-    val result = runner.runWithoutData(scenario)
+        "{{foo: 1, bar: '123'}}".spel :: Nil).map { expr => AggregationParameters("'First'".spel, spelStr, expr) }
+    val scenario = buildMultipleAggregationsScenario(aggregationParameters)
+    val result   = runner.runWithSingleRecordBounded(scenario)
     result shouldBe Symbol("valid")
   }
 

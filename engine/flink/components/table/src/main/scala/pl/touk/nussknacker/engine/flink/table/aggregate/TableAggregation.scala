@@ -135,7 +135,7 @@ class TableAggregation(
     context.typeInformationDetection.forValueWithContext[AnyRef](
       ValidationContext.empty
         .withVariableUnsafe(KeyVariableName, ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)),
-      ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
+      ToTableTypeEncoder.alignTypingResult(aggregationResultType)
     )
   }
 
