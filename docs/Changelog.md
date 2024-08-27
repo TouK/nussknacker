@@ -55,8 +55,7 @@
 * [#6570](https://github.com/TouK/nussknacker/pull/6570) Generic parameters of collection types are better typed now: e.g. `List[Integer]` can be passed to `List[Number]` but not the other way
 * [#6615](https://github.com/TouK/nussknacker/pull/6615) Add encode/decode support for typed SpEL values of types: `java.time.LocalDateTime`, `java.time.LocalDate`, `java.time.LocalTime`, `java.time.Duration`, `java.time.Period`
 * [#6591](https://github.com/TouK/nussknacker/pull/6591) The whole model can be reloaded with `POST /api/app/processingtype/reload` now - you can use this endpoint to reconfigure Nu processing types without need to restart the app
-* [#6623](https://github.com/TouK/nussknacker/pull/6623) Added `sortedAscBy` and `reverse` functions to `#COLLECTION`
-  helper.
+* [#6623](https://github.com/TouK/nussknacker/pull/6623) Added `sortedAscBy` and `reverse` functions to `#COLLECTION` helper
 * [#6650](https://github.com/TouK/nussknacker/pull/6650) Added a workaround for situations when an updated scenario with Kafka source started reading from the earliest offsets
 * [#6586](https://github.com/TouK/nussknacker/pull/6586) For now on, the SQL enricher automatically converts types as shown below:
   * java.sql.Array -> java.util.List
@@ -64,6 +63,9 @@
   * java.sql.Date -> java.time.LocalDate
   * java.sql.Timestamp -> java.time.Instant
   * java.sql.Clob -> java.lang.String
+* [#6656](https://github.com/TouK/nussknacker/pull/6656)
+  * Remove not working MODEL_CLASS_PATH environment variable
+  * Add default DB connection name
 
 1.16.3 (8 August 2024)
 -------------------------
