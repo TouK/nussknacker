@@ -9,19 +9,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.{
-  DMCancelScenarioCommand,
-  DMRunDeploymentCommand,
-  DataFreshnessPolicy,
-  DeploymentUpdateStrategy,
-  ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub
-}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
-import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
+import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
 import skuber.LabelSelector.dsl._
 import skuber.Pod.LogQueryParams
 import skuber.api.client.KubernetesClient
@@ -29,8 +22,6 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
-
-import scala.jdk.CollectionConverters._
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
@@ -42,7 +33,7 @@ import scala.util.control.NonFatal
 class BaseK8sDeploymentManagerTest
     extends AnyFunSuite
     with Matchers
-    with ExtremelyPatientScalaFutures
+    with VeryPatientScalaFutures
     with BeforeAndAfterAll {
   self: LazyLogging =>
 

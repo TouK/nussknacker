@@ -12,6 +12,7 @@ import ujson.Value
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.io.{File => JFile}
+import java.time.Duration
 
 // Before running tests in this module, a fresh docker image should be built from sources and placed in the local
 // registry. If you run tests based on this trait in Intellij Idea and the images is not built, you can do it manually:
@@ -75,8 +76,15 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
       ServiceLogConsumer("spec-setup", new Slf4jLogConsumer(logger.underlying))
     ),
     waitingFor = Some(
-      WaitingForService("spec-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))
-    )
+      WaitingForService(
+        "spec-setup",
+        new LogMessageWaitStrategy()
+          .withRegEx("^Setup done!.*")
+          .withStartupTimeout(Duration.ofSeconds(120L))
+      )
+    ),
+    // Change to 'true' to enable logging
+    tailChildContainers = false
   )
 
   singletonContainer.start()

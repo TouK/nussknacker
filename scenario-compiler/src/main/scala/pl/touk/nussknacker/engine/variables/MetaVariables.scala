@@ -34,7 +34,7 @@ object MetaVariables {
   }
 
   private def propertiesType(scenarioPropertiesNames: Iterable[String]): TypedObjectTypingResult = {
-    Typed.record(scenarioPropertiesNames.map(_ -> Typed[String]).toMap)
+    Typed.record(scenarioPropertiesNames.map(_ -> Typed[String]))
   }
 
 }

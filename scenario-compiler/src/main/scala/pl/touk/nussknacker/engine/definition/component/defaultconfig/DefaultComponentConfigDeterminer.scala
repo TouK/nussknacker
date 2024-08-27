@@ -1,34 +1,36 @@
 package pl.touk.nussknacker.engine.definition.component.defaultconfig
 
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.definition.component._
 
 object DefaultComponentConfigDeterminer {
 
   def forNotBuiltInComponentType(
-      componentTypeSpecificData: ComponentTypeSpecificData,
-      hasReturn: Boolean
+      componentType: ComponentType,
+      hasReturn: Boolean,
+      customCanBeEnding: Option[Boolean]
   ): SingleComponentConfig = {
     // TODO: use convention icon = componentGroup instead of code
-    val configData = componentTypeSpecificData match {
-      case SourceSpecificData =>
+    val configData = componentType match {
+      case ComponentType.Source =>
         ComponentConfigData(DefaultsComponentGroupName.SourcesGroupName, DefaultsComponentIcon.SourceIcon)
-      case SinkSpecificData =>
+      case ComponentType.Sink =>
         ComponentConfigData(DefaultsComponentGroupName.SinksGroupName, DefaultsComponentIcon.SinkIcon)
-      case ServiceSpecificData if hasReturn =>
+      case ComponentType.Service if hasReturn =>
         ComponentConfigData(DefaultsComponentGroupName.EnrichersGroupName, DefaultsComponentIcon.EnricherIcon)
-      case ServiceSpecificData =>
+      case ComponentType.Service =>
         ComponentConfigData(DefaultsComponentGroupName.ServicesGroupName, DefaultsComponentIcon.ServiceIcon)
-      case CustomComponentSpecificData(_, true) =>
+      case ComponentType.CustomComponent if customCanBeEnding.contains(true) =>
         ComponentConfigData(
           DefaultsComponentGroupName.OptionalEndingCustomGroupName,
           DefaultsComponentIcon.CustomComponentIcon
         )
-      case CustomComponentSpecificData(_, _) =>
+      case ComponentType.CustomComponent =>
         ComponentConfigData(DefaultsComponentGroupName.CustomGroupName, DefaultsComponentIcon.CustomComponentIcon)
-      case _ =>
+      case ComponentType.BuiltIn =>
         throw new IllegalStateException(
-          s"InitialComponentConfigDeterminer used with non model component: $componentTypeSpecificData"
+          s"DefaultComponentConfigDeterminer used with built-in component"
         )
     }
     SingleComponentConfig(
@@ -60,15 +62,18 @@ object DefaultComponentConfigDeterminer {
   // We can just return final, ComponentUiDefinition
   def forFragment(
       docsUrl: Option[String],
+      componentGroupName: Option[ComponentGroupName],
+      icon: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
   ): ComponentUiDefinition = {
-    val originalGroupName = DefaultsComponentGroupName.FragmentsGroupName
+    val beforeTranslationGroupName = componentGroupName.getOrElse(DefaultsComponentGroupName.FragmentsGroupName)
+
     ComponentUiDefinition(
-      originalGroupName = originalGroupName,
-      componentGroup = translateGroupName(originalGroupName)
+      originalGroupName = beforeTranslationGroupName,
+      componentGroup = translateGroupName(beforeTranslationGroupName)
         .getOrElse(throw new IllegalStateException("Fragments can't be assigned to the null component group")),
-      icon = DefaultsComponentIcon.FragmentIcon,
+      icon = icon.getOrElse(DefaultsComponentIcon.FragmentIcon),
       docsUrl = docsUrl,
       designerWideId = designerWideId
     )

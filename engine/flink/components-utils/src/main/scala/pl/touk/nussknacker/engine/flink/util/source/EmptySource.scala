@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -12,21 +11,22 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource,
   StandardFlinkSourceFunctionUtils
 }
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
-case class EmptySource[T: TypeInformation](returnType: TypingResult) extends StandardFlinkSource[T] with ReturningType {
+case class EmptySource(returnType: TypingResult) extends StandardFlinkSource[Any] with ReturningType {
 
   @silent("deprecated")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[T] =
+  ): DataStreamSource[Any] =
     StandardFlinkSourceFunctionUtils.createSourceStream(
       env = env,
-      sourceFunction = new SourceFunction[T] {
-        override def cancel(): Unit                                  = {}
-        override def run(ctx: SourceFunction.SourceContext[T]): Unit = {}
+      sourceFunction = new SourceFunction[Any] {
+        override def cancel(): Unit                                    = {}
+        override def run(ctx: SourceFunction.SourceContext[Any]): Unit = {}
       },
-      typeInformation = implicitly[TypeInformation[T]]
+      typeInformation = TypeInformationDetection.instance.forType[Any](returnType)
     )
 
 }

@@ -16,6 +16,7 @@ export enum TimeRange {
     Days = "DAYS",
     Hours = "HOURS",
     Minutes = "MINUTES",
+    Seconds = "SECONDS",
 }
 
 const components: Record<string, TimeRangeComponentType> = {
@@ -38,6 +39,10 @@ const components: Record<string, TimeRangeComponentType> = {
     [TimeRange.Minutes]: {
         label: "minutes",
         fieldName: "minutes",
+    },
+    [TimeRange.Seconds]: {
+        label: "seconds",
+        fieldName: "seconds",
     },
 };
 

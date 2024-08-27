@@ -11,19 +11,28 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
+import pl.touk.nussknacker.engine.flink.table.TableDefinition
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractor
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.tableNameParamName
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
-import pl.touk.nussknacker.engine.flink.table.{TableDefinition, TableSqlDefinitions}
 
-class TableSourceFactory(definition: TableSqlDefinitions, enableFlinkBatchExecutionMode: Boolean)
-    extends SingleInputDynamicComponent[Source]
+class TableSourceFactory(
+    sqlStatements: List[SqlStatement],
+    testDataGenerationMode: TestDataGenerationMode
+) extends SingleInputDynamicComponent[Source]
     with SourceFactory
     with BoundedStreamComponent {
 
+  @transient
+  private lazy val tableDefinitions = TablesExtractor.extractTablesFromFlinkRuntimeUnsafe(sqlStatements)
+
   override type State = TableDefinition
 
-  private val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(definition.tableDefinitions)
+  private val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -35,9 +44,10 @@ class TableSourceFactory(definition: TableSqlDefinitions, enableFlinkBatchExecut
         state = None
       )
     case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
-      val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
-      val typingResult  = selectedTable.typingResult
-      val initializer   = new BasicContextInitializer(typingResult)
+      val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
+      val initializer = new BasicContextInitializer(
+        selectedTable.schema.toSourceRowDataType.getLogicalType.toTypingResult
+      )
       FinalResults.forValidation(context, Nil, Some(selectedTable))(initializer.validationContext)
   }
 
@@ -49,7 +59,7 @@ class TableSourceFactory(definition: TableSqlDefinitions, enableFlinkBatchExecut
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    new TableSource(selectedTable, definition.sqlStatements, enableFlinkBatchExecutionMode)
+    new TableSource(selectedTable, sqlStatements, testDataGenerationMode)
   }
 
   override def nodeDependencies: List[NodeDependency] = List.empty

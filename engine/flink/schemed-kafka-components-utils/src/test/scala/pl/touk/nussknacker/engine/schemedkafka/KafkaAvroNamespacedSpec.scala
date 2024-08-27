@@ -68,7 +68,7 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
 object KafkaAvroNamespacedSpec {
 
-  private val sinkForInputMetaResultsHolder = new TestResultsHolder[InputMeta[_]]
+  private val sinkForInputMetaResultsHolder = new TestResultsHolder[java.util.Map[String @unchecked, _]]
 
 }
 

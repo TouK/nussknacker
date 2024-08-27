@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.connector.source.Boundedness
-import org.apache.flink.table.api.TableException
+import org.apache.flink.table.api.ValidationException
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -15,6 +14,7 @@ import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.TestRecord
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
@@ -30,15 +30,47 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(additionalComponents)
     .build()
 
   // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
   // See: https://issues.apache.org/jira/browse/FLINK-15867
-  test("should be able to aggregate by non-time primitive types") {
-    val aggregatingBranches = nonTimePrimitives.zipWithIndex.map { case (expr, i) =>
-      aggregationTypeTestingBranch(groupByExpr = spelStr.spel, aggregateByExpr = expr.spel, idSuffix = i.toString)
-    }
+  // See AggFunctionFactory.createFirstValueAggFunction
+  test("should be able to aggregate by number types, string and boolean") {
+    val aggregatingBranches =
+      (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions).zipWithIndex.map {
+        case (expr, branchIndex) =>
+          aggregationTypeTestingBranch(
+            groupByExpr = spelStr,
+            aggregateByExpr = expr,
+            idSuffix = branchIndex.toString
+          )
+      }
+
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .split(
+        "split",
+        aggregatingBranches: _*
+      )
+
+    val result = runner.runWithoutData(scenario)
+    result shouldBe Symbol("valid")
+  }
+
+  // TODO: make this test check output value
+  test("should be able to group by simple types") {
+    val aggregatingBranches =
+      (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions ::: tableApiSupportedTimeLiteralExpressions).zipWithIndex
+        .map { case (expr, branchIndex) =>
+          aggregationTypeTestingBranch(
+            groupByExpr = expr,
+            aggregateByExpr = spelStr,
+            idSuffix = branchIndex.toString
+          )
+        }
 
     val scenario = ScenarioBuilder
       .streaming("test")
@@ -52,11 +84,16 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
     result.isValid shouldBe true
   }
 
-  test("should be able to group by primitive types") {
-    val aggregatingBranches = (nonTimePrimitives ++ tableApiSupportedTimePrimitives).zipWithIndex.map {
-      case (expr, i) =>
-        aggregationTypeTestingBranch(groupByExpr = expr.spel, aggregateByExpr = spelStr.spel, idSuffix = i.toString)
-    }
+  test("should be able to group by advanced types") {
+    val aggregatingBranches =
+      ("{foo: 1}".spel ::
+        "{{foo: 1, bar: '123'}}".spel :: Nil).zipWithIndex.map { case (expr, branchIndex) =>
+        aggregationTypeTestingBranch(
+          groupByExpr = expr,
+          aggregateByExpr = spelStr,
+          idSuffix = branchIndex.toString
+        )
+      }
 
     val scenario = ScenarioBuilder
       .streaming("test")
@@ -65,9 +102,8 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         "split",
         aggregatingBranches: _*
       )
-
     val result = runner.runWithoutData(scenario)
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
   }
 
   // TODO: remove when Flink Table API adds support for OffsetDateTime
@@ -77,18 +113,18 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
       .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
       .to(
         aggregationTypeTestingBranch(
-          groupByExpr = spelOffsetDateTime.spel,
-          aggregateByExpr = spelStr.spel,
+          groupByExpr = spelOffsetDateTime,
+          aggregateByExpr = spelStr,
           idSuffix = ""
         )
       )
 
-    assertThrows[TableException] {
+    assertThrows[ValidationException] {
       runner.runWithoutData(scenario)
     }
   }
 
-  test("should round decimal to default scale when given scale above default") {
+  test("should use Flink default scale (18) for big decimal") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", TestScenarioRunner.testDataSource)
@@ -102,14 +138,15 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
       )
       .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg".spel)
 
+    val decimal = java.math.BigDecimal.valueOf(0.123456789)
     val result = runner.runWithData(
       scenario,
-      List(java.math.BigDecimal.valueOf(0.123456789)),
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      List(decimal),
+      Boundedness.BOUNDED
     )
 
-    result.validValue.successes shouldBe java.math.BigDecimal.valueOf(0.12345679) :: Nil
+    val decimalWithAlignedScale = java.math.BigDecimal.valueOf(0.123456789).setScale(18)
+    result.validValue.successes shouldBe decimalWithAlignedScale :: Nil
   }
 
   test("table aggregation should emit groupBy key and aggregated values as separate variables") {
@@ -134,8 +171,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         TestRecord("A", 1),
         TestRecord("B", 2),
       ),
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      Boundedness.BOUNDED
     )
 
     result.validValue.successes.toSet shouldBe Set(

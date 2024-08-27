@@ -10,7 +10,6 @@ import org.apache.flink.api.common.typeutils.{
   TypeSerializerSnapshot
 }
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
-import org.apache.flink.util.InstantiationUtil
 
 import scala.reflect.ClassTag
 
@@ -126,8 +125,6 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
 
   protected var serializersSnapshots: Array[(String, TypeSerializerSnapshot[_])] = _
 
-  protected def compatibilityRequiresSameKeys: Boolean
-
   def this(serializers: Array[(String, TypeSerializerSnapshot[_])]) = {
     this()
     this.serializersSnapshots = serializers
@@ -207,22 +204,20 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
           )
           TypeSerializerSchemaCompatibility.incompatible()
         }
+      } else if (fieldsCompatibility.isIncompatible) {
+        logger.info(
+          s"Schema is incompatible, as fields are not equal (old keys: ${currentKeys
+              .mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
+            s" and fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible"
+        )
+        TypeSerializerSchemaCompatibility.incompatible()
       } else {
-        if (compatibilityRequiresSameKeys || fieldsCompatibility.isIncompatible) {
-          logger.info(
-            s"Schema is incompatible, as fields are not equal (old keys: ${currentKeys
-                .mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
-              s" and fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible"
-          )
-          TypeSerializerSchemaCompatibility.incompatible()
-        } else {
-          logger.info(
-            s"Schema migration needed, as fields are not equal (old keys: ${currentKeys
-                .mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
-              s" fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration"
-          )
-          TypeSerializerSchemaCompatibility.compatibleAfterMigration()
-        }
+        logger.info(
+          s"Schema migration needed, as fields are not equal (old keys: ${currentKeys
+              .mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
+            s" fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration"
+        )
+        TypeSerializerSchemaCompatibility.compatibleAfterMigration()
       }
     }
   }

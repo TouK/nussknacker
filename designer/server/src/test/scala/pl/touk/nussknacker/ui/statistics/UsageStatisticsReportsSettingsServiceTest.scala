@@ -94,9 +94,11 @@ class UsageStatisticsReportsSettingsServiceTest
     RequestIdStat,
   ).map(_.name)
 
+  private val cfg = StatisticUrlConfig(maybePublicEncryptionKey = None)
+
   test("should determine query params with version and source") {
     val urls = new UsageStatisticsReportsSettingsService(
-      config = UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      config = UsageStatisticsReportsConfig(enabled = true, errorReportsEnabled = true, Some(sampleFingerprint), None),
       fingerprintService = mockedFingerprintService,
       fetchNonArchivedScenariosInputData = () => Future.successful(Right(List.empty)),
       fetchActivity = () => Future.successful(Map.empty),
@@ -107,7 +109,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .value
 
     urls.length shouldEqual 1
@@ -120,7 +122,7 @@ class UsageStatisticsReportsSettingsServiceTest
 
   test("should determine statistics for components") {
     val url = new UsageStatisticsReportsSettingsService(
-      config = UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      config = UsageStatisticsReportsConfig(enabled = true, errorReportsEnabled = true, Some(sampleFingerprint), None),
       fingerprintService = mockedFingerprintService,
       fetchNonArchivedScenariosInputData =
         () => Future.successful(Right(List(nonRunningScenario, k8sRRScenario, runningScenario))),
@@ -132,7 +134,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .value
       .map(_.toString)
       .head
@@ -144,7 +146,7 @@ class UsageStatisticsReportsSettingsServiceTest
 
   test("should combined statistics for all scenarios") {
     val url = new UsageStatisticsReportsSettingsService(
-      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      UsageStatisticsReportsConfig(enabled = true, errorReportsEnabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
       () => Future.successful(processActivityMap),
@@ -155,7 +157,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .value
       .map(_.toString)
       .head
@@ -201,7 +203,7 @@ class UsageStatisticsReportsSettingsServiceTest
 
   test("should provide all statistics even without any scenarios present") {
     val url = new UsageStatisticsReportsSettingsService(
-      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      UsageStatisticsReportsConfig(enabled = true, errorReportsEnabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty),
@@ -212,7 +214,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .value
       .map(_.toString)
       .head
@@ -224,7 +226,7 @@ class UsageStatisticsReportsSettingsServiceTest
 
   test("should not generate an url if it's not configured") {
     val sut = new UsageStatisticsReportsSettingsService(
-      config = UsageStatisticsReportsConfig(enabled = false, None, None),
+      config = UsageStatisticsReportsConfig(enabled = false, errorReportsEnabled = true, None, None),
       fingerprintService = fingerprintService,
       fetchNonArchivedScenariosInputData = () => Future.successful(Right(Nil)),
       fetchActivity = () => Future.successful(Map.empty[String, Int]),
@@ -239,7 +241,12 @@ class UsageStatisticsReportsSettingsServiceTest
 
   test("should include all statisticKeys even without any scenarios created") {
     val url = new UsageStatisticsReportsSettingsService(
-      config = UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), Some("source")),
+      config = UsageStatisticsReportsConfig(
+        enabled = true,
+        errorReportsEnabled = true,
+        Some(sampleFingerprint),
+        Some("source")
+      ),
       fingerprintService = mockedFingerprintService,
       fetchNonArchivedScenariosInputData = () => Future.successful(Right(List.empty)),
       fetchActivity = () => Future.successful(Map.empty[String, Int]),
@@ -250,7 +257,7 @@ class UsageStatisticsReportsSettingsServiceTest
     ).prepareStatisticsUrl()
       .futureValue
       .value
-      .prepareURLs(StatisticUrlConfig())
+      .prepareURLs(cfg)
       .map(_.map(_.toString).reduce(_ ++ _))
       .value
 

@@ -56,19 +56,22 @@ class ValidationResourcesSpec
             None,
             Some(StringParameterEditor),
             Some(List(MandatoryParameterValidator)),
-            Some("label")
+            Some("label"),
+            None
           ),
           "numberOfThreads" -> ScenarioPropertyConfig(
             None,
             Some(FixedValuesParameterEditor(TestFactory.possibleValues)),
             Some(List(FixedValuesValidator(TestFactory.possibleValues))),
+            None,
             None
           ),
           "maxEvents" -> ScenarioPropertyConfig(
             None,
             None,
             Some(List(LiteralIntegerValidator)),
-            Some("label")
+            Some("label"),
+            None
           )
         )
       ),

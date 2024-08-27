@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker
 }
+import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 class FragmentComponentDefinitionExtractor(
     classLoader: ClassLoader,
@@ -31,18 +32,21 @@ class FragmentComponentDefinitionExtractor(
       val parameters =
         parametersExtractor.extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
       val outputNames = outputs.map(_.name).sorted
-      val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
       val componentId = determineDesignerWideId(ComponentId(ComponentType.Fragment, fragment.name.value))
+      val fragmentSpecificData = MetaDataExtractor
+        .extractTypeSpecificDataOrDefault[FragmentSpecificData](fragment.metaData, FragmentSpecificData())
 
       FragmentComponentDefinition(
         name = fragment.name.value,
         implementationInvoker = ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
         parameters = parameters,
         outputNames = outputNames,
-        docsUrl = docsUrl,
+        docsUrl = fragmentSpecificData.docsUrl,
+        componentGroupName = fragmentSpecificData.componentGroup.map(ComponentGroupName(_)),
+        icon = fragmentSpecificData.icon,
         translateGroupName = translateGroupName,
         designerWideId = componentId,
-        allowedProcessingModes = allowedProcessingModes,
+        allowedProcessingModes = allowedProcessingModes
       )
     }
   }

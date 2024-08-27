@@ -28,6 +28,7 @@ import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { Scenario } from "../components/Process/types";
 import { useInterval } from "./Interval";
 import { useWindowManager } from "@touk/window-manager";
+import { ScenarioDescription } from "./ScenarioDescription";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -55,27 +56,41 @@ function useProcessState(refreshTime = 10000) {
     const fetch = useCallback(() => dispatch(loadProcessState(name)), [dispatch, name]);
     const disabled = !name || isFragment || isArchived;
 
-    useInterval(fetch, { refreshTime, disabled });
+    useInterval(fetch, {
+        refreshTime,
+        disabled,
+    });
 }
 
 function useCountsIfNeeded() {
     const dispatch = useDispatch();
-    const name = useSelector(getScenario)?.name;
+    const scenario = useSelector(getScenario);
     const scenarioGraph = useSelector(getScenarioGraph);
 
     const [searchParams] = useSearchParams();
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+    const refresh = searchParams.get("refresh");
     useEffect(() => {
-        const countParams = VisualizationUrl.extractCountParams({ from, to });
-        if (name && countParams) {
-            dispatch(fetchAndDisplayProcessCounts(name, countParams.from, countParams.to, scenarioGraph));
-        }
-    }, [dispatch, from, name, to, scenarioGraph]);
+        if (!scenario || scenario.isFragment) return;
+
+        const countParams = VisualizationUrl.extractCountParams({ from, to, refresh });
+        if (!countParams) return;
+
+        dispatch(
+            fetchAndDisplayProcessCounts({
+                processName: scenario.name,
+                scenarioGraph,
+                ...countParams,
+            }),
+        );
+    }, [dispatch, from, refresh, scenario, scenarioGraph, to]);
 }
 
 function Visualization() {
-    const { processName } = useDecodedParams<{ processName: string }>();
+    const { processName } = useDecodedParams<{
+        processName: string;
+    }>();
     const dispatch = useDispatch();
 
     const graphRef = useRef<Graph>();
@@ -101,8 +116,14 @@ function Visualization() {
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
-        const { x, y } = paper?.getArea()?.center() || { x: 300, y: 100 };
-        return { x: Math.floor(x), y: Math.floor(y) };
+        const { x, y } = paper?.getArea()?.center() || {
+            x: 300,
+            y: 100,
+        };
+        return {
+            x: Math.floor(x),
+            y: Math.floor(y),
+        };
     }, [getGraphInstance]);
 
     useEffect(() => {
@@ -135,16 +156,18 @@ function Visualization() {
         <ErrorHandler>
             <DndProvider options={HTML5toTouch}>
                 <GraphPage data-testid="graphPage">
-                    <GraphProvider graph={getGraphInstance}>
-                        <SelectionContextProvider pastePosition={getPastePosition}>
-                            <BindKeyboardShortcuts disabled={windows.length > 0} />
-                            <Toolbars isReady={dataResolved} />
-                        </SelectionContextProvider>
-                    </GraphProvider>
-
                     <SpinnerWrapper isReady={!graphNotReady}>
                         {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
                     </SpinnerWrapper>
+
+                    <GraphProvider graph={getGraphInstance}>
+                        <SelectionContextProvider pastePosition={getPastePosition}>
+                            <BindKeyboardShortcuts disabled={windows.length > 0} />
+                            <Toolbars isReady={dataResolved}>
+                                <ScenarioDescription />
+                            </Toolbars>
+                        </SelectionContextProvider>
+                    </GraphProvider>
                 </GraphPage>
             </DndProvider>
         </ErrorHandler>

@@ -7,6 +7,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
+import pl.touk.nussknacker.ui.statistics.{Fingerprint, FingerprintService}
 
 import java.net.URL
 import scala.concurrent.ExecutionContext
@@ -14,7 +15,8 @@ import scala.concurrent.ExecutionContext
 class SettingsResources(
     config: FeatureTogglesConfig,
     authenticationMethod: String,
-    usageStatisticsReportsConfig: UsageStatisticsReportsConfig
+    usageStatisticsReportsConfig: UsageStatisticsReportsConfig,
+    fingerprintService: FingerprintService
 )(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -24,26 +26,29 @@ class SettingsResources(
     pathPrefix("settings") {
       get {
         complete {
-          val toggleOptions = ToggleFeaturesOptions(
-            counts = config.counts.isDefined,
-            metrics = config.metrics,
-            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
-            environmentAlert = config.environmentAlert,
-            commentSettings = config.commentSettings,
-            deploymentCommentSettings = config.deploymentCommentSettings,
-            surveySettings = config.surveySettings,
-            tabs = config.tabs,
-            intervalTimeSettings = config.intervalTimeSettings,
-            testDataSettings = config.testDataSettings,
-            redirectAfterArchive = config.redirectAfterArchive,
-            usageStatisticsReports = UsageStatisticsReportsSettings(usageStatisticsReportsConfig.enabled)
-          )
-
-          val authenticationSettings = AuthenticationSettings(
-            authenticationMethod
-          )
-
-          UISettings(toggleOptions, authenticationSettings)
+          fingerprintService
+            .fingerprint(usageStatisticsReportsConfig)
+            .map { fingerprint =>
+              val toggleOptions = ToggleFeaturesOptions(
+                counts = config.counts.isDefined,
+                metrics = config.metrics,
+                remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
+                environmentAlert = config.environmentAlert,
+                commentSettings = config.commentSettings,
+                deploymentCommentSettings = config.deploymentCommentSettings,
+                surveySettings = config.surveySettings,
+                tabs = config.tabs,
+                intervalTimeSettings = config.intervalTimeSettings,
+                testDataSettings = config.testDataSettings,
+                redirectAfterArchive = config.redirectAfterArchive,
+                usageStatisticsReports =
+                  UsageStatisticsReportsSettings(usageStatisticsReportsConfig, fingerprint.toOption)
+              )
+              val authenticationSettings = AuthenticationSettings(
+                authenticationMethod
+              )
+              UISettings(toggleOptions, authenticationSettings)
+            }
         }
       }
     }
@@ -140,4 +145,22 @@ object TopTabType extends Enumeration {
     authentication: AuthenticationSettings
 )
 
-@JsonCodec final case class UsageStatisticsReportsSettings(enabled: Boolean)
+@JsonCodec final case class UsageStatisticsReportsSettings(
+    enabled: Boolean,
+    errorReportsEnabled: Boolean,
+    fingerprint: Option[String]
+)
+
+object UsageStatisticsReportsSettings {
+
+  def apply(
+      usageStatisticsReportsConfig: UsageStatisticsReportsConfig,
+      maybeFingerprint: Option[Fingerprint]
+  ): UsageStatisticsReportsSettings =
+    UsageStatisticsReportsSettings(
+      enabled = usageStatisticsReportsConfig.enabled,
+      errorReportsEnabled = usageStatisticsReportsConfig.errorReportsEnabled,
+      fingerprint = maybeFingerprint.map(_.value)
+    )
+
+}

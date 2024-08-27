@@ -64,14 +64,16 @@ class ProcessMetaDataBuilder private[build] (metaData: MetaData) {
 
   def additionalFields(
       description: Option[String] = None,
-      properties: Map[String, String] = Map.empty
+      properties: Map[String, String] = Map.empty,
+      showDescription: Boolean = false
   ): ProcessMetaDataBuilder = {
     val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(
       metaData.copy(
         additionalFields = additionalFields.copy(
           description = description,
-          properties = additionalFields.properties ++ properties
+          properties = additionalFields.properties ++ properties,
+          showDescription = showDescription
         )
       )
     )

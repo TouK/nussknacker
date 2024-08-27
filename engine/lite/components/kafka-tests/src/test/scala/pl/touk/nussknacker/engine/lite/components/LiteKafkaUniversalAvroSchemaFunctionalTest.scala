@@ -453,7 +453,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, List(sampleString)),
-          invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")
+          invalidTypes(s"path 'field[]' actual: '${typedStr.withoutValue.display}' expected: 'Integer | Double'")
         ),
         // FIXME: List[Unknown] (rConfig(sampleInteger, recordIntegerSchema, recordWithArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes(s"path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
         (
@@ -474,7 +474,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, List(sampleString)),
-          invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")
+          invalidTypes(s"path 'field[]' actual: '${typedStr.withoutValue.display}' expected: 'Integer | Double'")
         ),
         // FIXME: List[Unknown] (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes("path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
         (
@@ -496,7 +496,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         // FIXME: List[Unknown]  (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes("path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, List(sampleString)),
-          invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")
+          invalidTypes(s"path 'field[]' actual: '${typedStr.withoutValue.display}' expected: 'Integer | Double'")
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, sampleInteger),
@@ -535,11 +535,13 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
             recordOptionalArrayOfArraysNumbersSchema,
             List(List(sampleString))
           ),
-          invalidTypes(s"path 'field[][]' actual: '${typedStr.display}' expected: 'Integer | Double'")
+          invalidTypes(s"path 'field[][]' actual: '${typedStr.withoutValue.display}' expected: 'Integer | Double'")
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbersSchema, List(sampleInteger)),
-          invalidTypes(s"path 'field[]' actual: '${typedInt.display}' expected: 'Null | List[Integer | Double]'")
+          invalidTypes(
+            s"path 'field[]' actual: '${typedInt.withoutValue.display}' expected: 'Null | List[Integer | Double]'"
+          )
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbersSchema, sampleInteger),
@@ -573,7 +575,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
             recordOptionalArrayOfRecordsSchema,
             List(Map("price" -> sampleString))
           ),
-          invalidTypes(s"path 'field[].price' actual: '${typedStr.display}' expected: 'Null | Double'")
+          invalidTypes(s"path 'field[].price' actual: '${typedStr.withoutValue.display}' expected: 'Null | Double'")
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecordsSchema, sampleInteger),
@@ -584,7 +586,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecordsSchema, List(sampleInteger)),
           invalidTypes(
-            s"""path 'field[]' actual: '${typedInt.display}' expected: 'Null | Record{price: Null | Double}'"""
+            s"""path 'field[]' actual: '${typedInt.withoutValue.display}' expected: 'Null | Record{price: Null | Double}'"""
           )
         ),
       )
@@ -613,7 +615,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordMapOfIntsSchema, Nil),
-          invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Map[String,Null | Integer]'")
+          invalidTypes("path 'field' actual: 'List[Unknown]({})' expected: 'Map[String,Null | Integer]'")
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordMapOfIntsSchema, null),
@@ -633,7 +635,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfIntsSchema, Nil),
-          invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String,Null | Integer]'")
+          invalidTypes("path 'field' actual: 'List[Unknown]({})' expected: 'Null | Map[String,Null | Integer]'")
         ),
         (
           rConfig(
@@ -668,7 +670,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, Nil),
           invalidTypes(
-            "path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String,Null | Map[String,Null | Integer]]'"
+            "path 'field' actual: 'List[Unknown]({})' expected: 'Null | Map[String,Null | Map[String,Null | Integer]]'"
           )
         ),
         (
@@ -716,7 +718,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, Nil),
           invalidTypes(
-            "path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String,Null | Record{price: Null | Double}]'"
+            "path 'field' actual: 'List[Unknown]({})' expected: 'Null | Map[String,Null | Record{price: Null | Double}]'"
           )
         ),
         (
@@ -782,7 +784,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (
           rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, Nil),
           invalidTypes(
-            "path 'field' actual: 'List[Unknown]' expected: 'Null | Record{sub: Null | Record{price: Null | Double}}'"
+            "path 'field' actual: 'List[Unknown]({})' expected: 'Null | Record{sub: Null | Record{price: Null | Double}}'"
           )
         ),
         (
@@ -1101,16 +1103,16 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
   test("should catch runtime errors") {
     val testData = Table(
       "config",
-      // Comparing String -> Enum returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
+      // Comparing String -> Enum returns true, but in runner ToAvroSchemaBasedEncoder tries to encode String (that doesn't meet the requirements) to Enum
       rConfig(sampleStrFixedV, recordStringSchema, recordEnumSchema, Input),
 
-      // FIXME: Comparing EnumV2 -> Enum returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
+      // FIXME: Comparing EnumV2 -> Enum returns true, but in runner ToAvroSchemaBasedEncoder tries to encode String (that doesn't meet the requirements) to Enum
       rConfig(sampleEnumV2, recordEnumSchemaV2, recordEnumSchema, Input),
 
-      // Comparing String -> Fixed returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Fixed
+      // Comparing String -> Fixed returns true, but in runner ToAvroSchemaBasedEncoder tries to encode String (that doesn't meet the requirements) to Fixed
       rConfig(sampleString, recordStringSchema, recordFixedSchema, Input),
 
-      // FIXME: Comparing FixedV2 -> Fixed returns true, but in runner BestEffortAvroEncoder tries to encode value FixedV2 to Fixed
+      // FIXME: Comparing FixedV2 -> Fixed returns true, but in runner ToAvroSchemaBasedEncoder tries to encode value FixedV2 to Fixed
       rConfig(sampleFixedV2, recordFixedSchemaV2, recordFixedSchema, Input),
 
       // Situation when we put String -> UUID, where String isn't valid UUID type...

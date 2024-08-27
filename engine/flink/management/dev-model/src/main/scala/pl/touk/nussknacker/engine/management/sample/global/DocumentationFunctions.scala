@@ -88,7 +88,7 @@ object DocumentationFunctions {
         if (x.keys.exists(y.keys.toSet.contains))
           OtherError("Argument maps have common field").invalidNel
         else
-          TypedObjectTypingResult(x ++ y, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY).validNel
+          Typed.record(x ++ y, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY).validNel
       case _ =>
         ArgumentTypeError.invalidNel
     }

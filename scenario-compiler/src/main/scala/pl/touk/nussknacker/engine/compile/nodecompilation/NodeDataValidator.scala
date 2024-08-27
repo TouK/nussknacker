@@ -121,7 +121,7 @@ class NodeDataValidator(modelData: ModelData) {
       outgoingEdges: List[OutgoingEdge],
       a: FragmentInput,
       fragmentResolver: FragmentResolver
-  )(implicit nodeId: NodeId) = {
+  )(implicit nodeId: NodeId, metaData: MetaData) = {
     fragmentResolver
       .resolveInput(a)
       .map { definition =>

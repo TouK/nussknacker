@@ -1,0 +1,132 @@
+{
+    "metaData": {
+        "id": "First-RecordVariable",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "periodic",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "{}"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "node label goes here",
+            "varName": "myFirstRecordVariable",
+            "fields": [
+                {
+                    "name": "subscriberId",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "1"
+                    }
+                },
+                {
+                    "name": "transactionId",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "11"
+                    }
+                },
+                {
+                    "name": "operation",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "'TRANSFER'"
+                    }
+                },
+                {
+                    "name": "value",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "500.0"
+                    }
+                }
+            ],
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 180
+                }
+            },
+            "type": "VariableBuilder"
+        },
+        {
+            "id": "variable",
+            "varName": "myVariable",
+            "value": {
+                "language": "spel",
+                "expression": "{\"subscriberId\": 1, \"transactionId\": 11, \"operation\": 'TRANSFER', \"value\": 500.0}"
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 360
+                }
+            },
+            "type": "Variable"
+        },
+        {
+            "id": "dead-end",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 540
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": []
+}

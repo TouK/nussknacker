@@ -359,7 +359,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     result.errors shouldBe Nil
     result.outputContext shouldBe ValidationContext(
       Map(
-        VariableConstants.InputVariableName -> TypedObjectTypingResult(
+        VariableConstants.InputVariableName -> Typed.record(
           ListMap(
             "first"  -> AvroStringSettings.stringTypingResult,
             "middle" -> AvroStringSettings.stringTypingResult,

@@ -16,9 +16,15 @@ import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
+import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
+  FetchAllWithUsages,
+  FetchAllWithoutUsages,
+  FetchNonFragmentsWithUsages,
+  FetchNonFragmentsWithoutUsages
+}
 import pl.touk.nussknacker.ui.definition.component.DefaultComponentService.toComponentUsagesInScenario
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -26,7 +32,10 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
-  def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]]
+
+  def getComponentsList(queryOptions: ComponentListQueryOptions)(
+      implicit user: LoggedUser
+  ): Future[List[ComponentListElement]]
 
   def getComponentUsages(designerWideComponentId: DesignerWideComponentId)(
       implicit user: LoggedUser
@@ -70,20 +79,34 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
+  override def getComponentsList(queryOptions: ComponentListQueryOptions)(
+      implicit user: LoggedUser
+  ): Future[List[ComponentListElement]] = {
     for {
       components <- processingTypeDataProvider.all.toList.flatTraverse { case (processingType, processingTypeData) =>
-        extractComponentsFromProcessingType(processingTypeData, processingType)
+        extractComponentsFromProcessingType(processingTypeData, processingType, queryOptions)
       }
       // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
       mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
-      userAccessibleComponentUsages <- getUserAccessibleComponentUsages
-      enrichedWithUsagesComponents = mergedComponents.map(c =>
-        c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
-      )
-      sortedComponents = enrichedWithUsagesComponents.sortBy(ComponentListElement.sortMethod)
-    } yield sortedComponents
+      optionallyEnrichedComponents <- enrichUsagesIfNeeded(mergedComponents, queryOptions)
+    } yield optionallyEnrichedComponents.sortBy(ComponentListElement.sortMethod)
   }
+
+  private def enrichUsagesIfNeeded(
+      components: List[ComponentListElement],
+      queryOptions: ComponentListQueryOptions
+  )(implicit loggedUser: LoggedUser): Future[List[ComponentListElement]] =
+    queryOptions match {
+      case FetchAllWithUsages | FetchNonFragmentsWithUsages =>
+        for {
+          userAccessibleComponentUsages <- getUserAccessibleComponentUsages
+          enrichedWithUsagesComponents = components.map(c =>
+            c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
+          )
+        } yield enrichedWithUsagesComponents
+      case FetchAllWithoutUsages | FetchNonFragmentsWithoutUsages =>
+        Future.successful(components)
+    }
 
   override def getComponentUsages(
       designerWideComponentId: DesignerWideComponentId
@@ -111,16 +134,22 @@ class DefaultComponentService(
 
   private def extractComponentsFromProcessingType(
       processingTypeData: ComponentServiceProcessingTypeData,
-      processingType: ProcessingType
+      processingType: ProcessingType,
+      queryOptions: ComponentListQueryOptions
   )(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
-    fragmentsRepository
-      .fetchLatestFragments(processingType)
-      .map { fragments =>
-        createComponents(
-          definedComponents(processingTypeData, fragments),
-          processingTypeData.category,
-        )
-      }
+    val fragments = queryOptions match {
+      case FetchAllWithUsages | FetchAllWithoutUsages =>
+        fragmentsRepository.fetchLatestFragments(processingType)
+      case FetchNonFragmentsWithUsages | FetchNonFragmentsWithoutUsages =>
+        Future.successful(List.empty)
+    }
+
+    fragments.map { fetchedFragments =>
+      createComponents(
+        definedComponents(processingTypeData, fetchedFragments),
+        processingTypeData.category,
+      )
+    }
   }
 
   private def createComponents(
@@ -222,3 +251,25 @@ case class ComponentServiceProcessingTypeData(
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     category: String
 )
+
+sealed trait ComponentListQueryOptions
+
+object ComponentListQueryOptions {
+
+  case object FetchAllWithUsages extends ComponentListQueryOptions
+
+  case object FetchNonFragmentsWithUsages extends ComponentListQueryOptions
+
+  case object FetchAllWithoutUsages extends ComponentListQueryOptions
+
+  case object FetchNonFragmentsWithoutUsages extends ComponentListQueryOptions
+
+  def from(skipUsages: Boolean, skipFragments: Boolean): ComponentListQueryOptions =
+    (skipUsages, skipFragments) match {
+      case (false, false) => FetchAllWithUsages
+      case (false, true)  => FetchNonFragmentsWithUsages
+      case (true, false)  => FetchAllWithoutUsages
+      case (true, true)   => FetchNonFragmentsWithoutUsages
+    }
+
+}

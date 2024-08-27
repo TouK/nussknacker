@@ -44,7 +44,7 @@ For arrays, we use `items` to define type of elements.
 ## Configuration
 
 Open API enricher is configured under `components` configuration key. Check
-this [configuration file snippet](../installation_configuration_guide/Common.md#configuration-areas) to understand the
+this [configuration file snippet](../configuration/index.mdx#configuration-areas) to understand the
 placement of `components` configuration key in the configuration file.
 
 Sample configuration:
@@ -89,4 +89,4 @@ Enricher level logging can be enabled:
 - in Flink
   TaskManager [configuration](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/advanced/logging/)
 - in Lite
-  runtime [configuration](../installation_configuration_guide/ScenarioDeploymentConfiguration.md#configuring-runtime-logging)
+  runtime [configuration](../configuration/ScenarioDeploymentConfiguration.md#configuring-runtime-logging)

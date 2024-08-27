@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigValueFactory}
 import io.circe.Json
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -11,18 +11,25 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
-import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures, WithConfig}
+
 import java.util.UUID
 import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
 
-class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with VeryPatientScalaFutures {
+class FlinkStreamingProcessTestRunnerSpec
+    extends AnyFlatSpec
+    with Matchers
+    with VeryPatientScalaFutures
+    with WithConfig {
 
   private val classPath: List[String] = ClassPaths.scalaClasspath
 
-  private val config = ConfigWithUnresolvedVersion(
-    ConfigFactory
-      .load()
+  override protected val configFilename: Option[String] = Some("application.conf")
+
+  override def resolveConfig(config: Config): Config = {
+    super
+      .resolveConfig(config)
       .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
       .withValue(
         KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"),
@@ -30,14 +37,15 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
       )
       .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
       .withValue("category", fromAnyRef("Category1"))
-  )
+  }
 
   private val scenarioTestData = ScenarioTestData(
     List(ScenarioTestJsonRecord("startProcess", Json.fromString("terefere")))
   )
 
   it should "run scenario in test mode" in {
-    val deploymentManager = FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(config)
+    val deploymentManager =
+      FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
 
     val processName = ProcessName(UUID.randomUUID().toString)
 
@@ -60,7 +68,8 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
 
-    val deploymentManager = FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(config)
+    val deploymentManager =
+      FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(

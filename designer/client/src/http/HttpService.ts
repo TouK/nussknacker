@@ -241,8 +241,8 @@ class HttpService {
         return api.get(`/processDefinitionData/${processingType}/dicts/${dictId}/entry?label=${labelPattern}`);
     }
 
-    fetchComponents(): Promise<AxiosResponse<ComponentType[]>> {
-        return api.get<ComponentType[]>("/components");
+    fetchComponents(skipUsages: boolean, skipFragments: boolean): Promise<AxiosResponse<ComponentType[]>> {
+        return api.get<ComponentType[]>(`/components?skipUsages=${skipUsages}&skipFragments=${skipFragments}`);
     }
 
     fetchComponentUsages(componentId: string): Promise<AxiosResponse<ComponentUsageType[]>> {
@@ -738,11 +738,11 @@ class HttpService {
             );
     }
 
-    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, { refClazzName }: ReturnedType) {
+    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
                 expectedType: {
-                    value: { type: "TypedClass", refClazzName, params: [] },
+                    value: { type: type, refClazzName, params: [] },
                 },
             })
             .catch((error) =>

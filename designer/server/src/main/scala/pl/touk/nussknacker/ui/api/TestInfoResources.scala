@@ -3,11 +3,12 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.util.Timeout
+import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -23,7 +24,8 @@ class TestInfoResources(
     with FailFastCirceSupport
     with RouteWithUser
     with AuthorizeProcessDirectives
-    with ProcessDirectives {
+    with ProcessDirectives
+    with LazyLogging {
 
   implicit val timeout: Timeout = Timeout(1 minute)
 
@@ -50,8 +52,11 @@ class TestInfoResources(
                   processDetails.isFragment,
                   testSampleSize
                 ) match {
-                  case Left(error)                => HttpResponse(StatusCodes.BadRequest, entity = error)
-                  case Right(rawScenarioTestData) => HttpResponse(entity = rawScenarioTestData.content)
+                  case Left(error) =>
+                    logger.error(s"Error during generation of test data: $error")
+                    HttpResponse(StatusCodes.BadRequest, entity = error)
+                  case Right(rawScenarioTestData) =>
+                    HttpResponse(entity = rawScenarioTestData.content)
                 }
               }
             }

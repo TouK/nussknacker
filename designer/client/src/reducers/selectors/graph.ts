@@ -65,6 +65,7 @@ export const isArchivePossible = createSelector(
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);
+export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
 export const getShowRunProcessDetails = createSelector(
     [getTestResults, getProcessCounts],
@@ -74,5 +75,6 @@ export const getShowRunProcessDetails = createSelector(
 export const getVersions = createSelector(getScenario, (details) => details?.history || []);
 export const hasOneVersion = createSelector(getVersions, (h) => h.length <= 1);
 export const getAdditionalFields = createSelector(getScenarioGraph, (p) => p.properties?.additionalFields);
+export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);

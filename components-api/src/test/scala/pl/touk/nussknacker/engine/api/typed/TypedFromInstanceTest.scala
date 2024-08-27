@@ -4,7 +4,8 @@ import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
+import pl.touk.nussknacker.engine.api.typed.typing.{Unknown, _}
 
 class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
@@ -68,12 +69,20 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
       val typingResult = Typed.fromInstance(obj)
 
       typingResult.canBeSubclassOf(Typed(klass)) shouldBe true
-      typingResult.asInstanceOf[TypedClass].params.loneElement.canBeSubclassOf(paramTypingResult) shouldBe true
+      typingResult.withoutValue
+        .asInstanceOf[TypedClass]
+        .params
+        .loneElement
+        .canBeSubclassOf(paramTypingResult) shouldBe true
     }
 
     def checkNotASubclassOfOtherParamTypingResult(obj: Any, otherParamTypingResult: TypingResult): Unit = {
       val typingResult = Typed.fromInstance(obj)
-      typingResult.asInstanceOf[TypedClass].params.loneElement.canBeSubclassOf(otherParamTypingResult) shouldBe false
+      typingResult.withoutValue
+        .asInstanceOf[TypedClass]
+        .params
+        .loneElement
+        .canBeSubclassOf(otherParamTypingResult) shouldBe false
     }
 
     val listOfSimpleObjects = List[Any](1.1, 2)
@@ -98,12 +107,26 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
     )
   }
 
-  test("should find element type for lists of different elements") {
+  test("should find element type for scala lists of different elements") {
     Typed.fromInstance(List[Any](4L, 6.35, 8.47)) shouldBe Typed.genericTypeClass(
       classOf[List[_]],
       List(Typed.typedClass[Number])
     )
     Typed.fromInstance(List(3, "t")) shouldBe Typed.genericTypeClass(classOf[List[_]], List(Unknown))
+  }
+
+  test("should find element type and keep values for java lists of different elements") {
+    val numberList = List(4L, 6.35, 8.47).asJava
+    Typed.fromInstance(numberList) shouldBe typedListWithElementValues(
+      Typed.typedClass[Double],
+      numberList
+    )
+
+    val anyList = List(3, "t").asJava
+    Typed.fromInstance(anyList) shouldBe typedListWithElementValues(
+      Unknown,
+      anyList
+    )
   }
 
   test("should fallback to object's class") {

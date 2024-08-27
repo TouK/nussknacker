@@ -106,7 +106,7 @@ object CachedTopicsExistenceValidatorConfig {
   val DefaultConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig(
     autoCreateFlagFetchCacheTtl = 5 minutes,
     topicsFetchCacheTtl = 30 seconds,
-    adminClientTimeout = 500 millis
+    adminClientTimeout = 10 seconds
   )
 
 }

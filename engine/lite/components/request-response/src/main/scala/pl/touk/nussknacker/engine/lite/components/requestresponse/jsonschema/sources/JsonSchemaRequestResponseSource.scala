@@ -13,12 +13,12 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
-import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
+import pl.touk.nussknacker.engine.json.swagger.extractor.FromJsonDecoder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
-import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, JsonSchemaUtils}
+import pl.touk.nussknacker.engine.util.json.{JsonSchemaUtils, ToJsonEncoder}
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
@@ -63,9 +63,8 @@ class JsonSchemaRequestResponseSource(
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema).typingResult
   }
 
-  override def testRecordParser: TestRecordParser[Any] = (testRecord: TestRecord) => {
-    validateAndReturnTypedMap(testRecord.json.noSpaces)
-  }
+  override def testRecordParser: TestRecordParser[Any] = (testRecords: List[TestRecord]) =>
+    testRecords.map { testRecord => validateAndReturnTypedMap(testRecord.json.noSpaces) }
 
   override def responseEncoder: Option[ResponseEncoder[Any]] = Option(
     new SchemaResponseEncoder(outputSchema, validationMode)
@@ -92,10 +91,10 @@ class JsonSchemaRequestResponseSource(
         params
           .get(SinkRawValueParamName)
           .map { paramValue =>
-            val json                       = BestEffortJsonEncoder.defaultForTests.encode(paramValue)
+            val json                       = ToJsonEncoder.defaultForTests.encode(paramValue)
             val schema                     = getFirstMatchingSchemaForJson(cs, json)
             val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
-            JsonToNuStruct(json, swaggerTyped)
+            FromJsonDecoder.decode(json, swaggerTyped)
           }
           .getOrElse {
             throw new IllegalArgumentException( // Should never happen since CombinedSchema is created using SinkRawValueParamName but still...
@@ -104,9 +103,9 @@ class JsonSchemaRequestResponseSource(
           }
       }
       case _ =>
-        val json = BestEffortJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
+        val json = ToJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
         val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
-        JsonToNuStruct(json, swaggerTyped)
+        FromJsonDecoder.decode(json, swaggerTyped)
     }
   }
 

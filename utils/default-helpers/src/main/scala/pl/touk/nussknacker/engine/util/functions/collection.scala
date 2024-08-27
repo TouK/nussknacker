@@ -6,7 +6,13 @@ import org.springframework.util.{NumberUtils => SpringNumberUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  Typed,
+  TypedClass,
+  TypedObjectTypingResult,
+  TypedObjectWithValue,
+  Unknown
+}
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import java.util.{Collections, Objects}
@@ -115,6 +121,35 @@ trait CollectionUtils extends HideToString {
     values
   }
 
+  @Documentation(description =
+    "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)"
+  )
+  @GenericType(typingFunction = classOf[RecordCollectionSortingTyping])
+  def sortedAscBy(
+      @ParamName("list") list: java.util.Collection[java.util.Map[String, Any]],
+      @ParamName("fieldName") fieldName: String
+  ): java.util.List[java.util.Map[String, Any]] = {
+    checkIfNotNull(fieldName, "fieldName")
+    list.asScala.toList.sortWith { (firstMap, secondMap) =>
+      (firstMap.get(fieldName), secondMap.get(fieldName)) match {
+        case (a, b) if a != null && b != null && a.getClass == b.getClass && a.isInstanceOf[Comparable[_]] =>
+          a.asInstanceOf[Comparable[Any]].compareTo(b.asInstanceOf[Comparable[Any]]) < 0
+        case (a, b) if a == null && b != null => true
+        case (a, b) if a != null && b == null => false
+        case (a, b) if a == null && b == null => false
+        case _                                => throw new IllegalArgumentException("Elements cannot be compared")
+      }
+    }.asJava
+  }
+
+  @Documentation(description = "Returns a list that contains elements in reversed order from the given list")
+  @GenericType(typingFunction = classOf[ListTyping])
+  def reverse(@ParamName("list") list: java.util.List[_]): java.util.List[_] = {
+    val result = new java.util.ArrayList(list)
+    Collections.reverse(result)
+    result
+  }
+
   @Documentation(description = "Returns a list made of first n elements of the given list")
   @GenericType(typingFunction = classOf[ListTyping])
   def take[T](@ParamName("list") list: java.util.List[T], @ParamName("max") max: Int): java.util.List[T] =
@@ -191,6 +226,11 @@ trait CollectionUtils extends HideToString {
       throw new java.lang.ClassCastException("Provided value is not comparable: " + element)
     }
 
+  private def checkIfNotNull[T](t: T, fieldName: String): Unit =
+    if (t == null) {
+      throw new IllegalArgumentException(s"Provided '$fieldName' cannot be null")
+    }
+
 }
 
 object CollectionUtils {
@@ -204,8 +244,10 @@ object CollectionUtils {
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
       case (f @ TypedClass(`fClass`, element :: Nil)) :: _ => f.copy(params = element.withoutValue :: Nil).validNel
-      case firstArgument :: _                              => firstArgument.validNel
-      case _                                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      case TypedObjectWithValue(f @ TypedClass(`fClass`, element :: Nil), _) :: _ =>
+        f.copy(params = element.withoutValue :: Nil).validNel
+      case firstArgument :: _ => firstArgument.validNel
+      case _                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
   }
@@ -217,8 +259,10 @@ object CollectionUtils {
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
       case TypedClass(`fClass`, componentType :: Nil) :: _ => componentType.withoutValue.validNel
-      case firstArgument :: _                              => firstArgument.withoutValue.validNel
-      case _                                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      case TypedObjectWithValue(TypedClass(`fClass`, componentType :: Nil), _) :: _ =>
+        componentType.withoutValue.validNel
+      case firstArgument :: _ => firstArgument.withoutValue.validNel
+      case _                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
   }
@@ -259,18 +303,38 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case (listType @ TypedClass(`fClass`, firstComponentType :: Nil)) :: TypedClass(
-            `fClass`,
-            secondComponentType :: Nil
-          ) :: Nil =>
+      case (list1 @ TypedClass(`fClass`, _ :: Nil)) ::
+          (list2 @ TypedClass(`fClass`, _ :: Nil)) :: Nil =>
+        concatType(list1, list2)
+
+      case (list1 @ TypedClass(`fClass`, _ :: Nil)) ::
+          TypedObjectWithValue(list2 @ TypedClass(`fClass`, _ :: Nil), _) :: Nil =>
+        concatType(list1, list2)
+
+      case TypedObjectWithValue(list1 @ TypedClass(`fClass`, _ :: Nil), _) ::
+          (list2 @ TypedClass(`fClass`, _ :: Nil)) :: Nil =>
+        concatType(list1, list2)
+
+      case TypedObjectWithValue(list1 @ TypedClass(`fClass`, _ :: Nil), _) ::
+          TypedObjectWithValue(list2 @ TypedClass(`fClass`, _ :: Nil), _) :: Nil =>
+        concatType(list1, list2)
+
+      case _ => Typed.genericTypeClass(fClass, List(Unknown)).validNel
+    }
+
+    private def concatType(list1: TypedClass, list2: TypedClass) = (list1, list2) match {
+      case (
+            listType @ TypedClass(`fClass`, firstComponentType :: Nil),
+            TypedClass(`fClass`, secondComponentType :: Nil)
+          ) =>
         (firstComponentType, secondComponentType) match {
           case (TypedObjectTypingResult(x, _, infoX), TypedObjectTypingResult(y, _, infoY))
               if commonFieldHasTheSameType(x, y) =>
             listType
               .copy(params =
-                TypedObjectTypingResult(
-                  Map.empty ++ x.view.map { case (key, value) => key -> value.withoutValue } ++ y.view.map {
-                    case (key, value) => key -> value.withoutValue
+                Typed.record(
+                  x.view.map { case (key, value) => key -> value.withoutValue } ++ y.view.map { case (key, value) =>
+                    key -> value.withoutValue
                   },
                   Typed.typedClass[java.util.HashMap[_, _]],
                   infoX ++ infoY
@@ -299,7 +363,7 @@ object CollectionUtils {
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
       case TypedObjectTypingResult(x, _, infoX) :: TypedObjectTypingResult(y, _, infoY) :: Nil =>
-        TypedObjectTypingResult(x ++ y, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY).validNel
+        Typed.record(x ++ y, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY).validNel
       case (typedClass: TypedClass) :: _      => typedClass.validNel
       case _ :: (typedClass: TypedClass) :: _ => typedClass.validNel
       case _                                  => unknownMapType.validNel
@@ -314,4 +378,51 @@ object CollectionUtils {
   class ListElementTyping extends CollectionElementTyping[java.util.List]
 
   class ListElementTypingForSum extends CollectionElementTypingForSum[java.util.List]
+
+  class RecordCollectionSortingTyping extends TypingFunction {
+    private val listClass       = classOf[java.util.List[java.util.Map[String, Any]]]
+    private val fieldClass      = classOf[String]
+    private val comparableClass = classOf[Comparable[Any]]
+
+    override def computeResultType(
+        arguments: List[typing.TypingResult]
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
+      arguments match {
+        case (f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil))
+            :: TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
+          listResultType(f, e, fields, fieldName)
+        case TypedObjectWithValue(f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil), _) ::
+            TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
+          listResultType(f, e, fields, fieldName)
+        case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      }
+    }
+
+    private def listResultType(
+        baseTypeClass: TypedClass,
+        parametersTypes: TypedObjectTypingResult,
+        fields: Map[String, typing.TypingResult],
+        fieldName: Any
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
+      fields.get(fieldName.asInstanceOf[String]) match {
+        case Some(TypedClass(klass, _)) if comparableClass.isAssignableFrom(klass) =>
+          baseTypeClass.copy(params = parametersTypes.withoutValue :: Nil).validNel
+        case Some(t @ (TypedClass(_, _) | Unknown)) =>
+          GenericFunctionTypingError
+            .OtherError(
+              s"Field: $fieldName of the type: ${t.display} isn't comparable (doesn't implement the " +
+                s"Comparable interface) and cannot be used for sorting purposes."
+            )
+            .invalidNel
+        case _ =>
+          GenericFunctionTypingError
+            .OtherError(
+              s"Type: ${parametersTypes.display} doesn't contain field: $fieldName."
+            )
+            .invalidNel
+      }
+    }
+
+  }
+
 }

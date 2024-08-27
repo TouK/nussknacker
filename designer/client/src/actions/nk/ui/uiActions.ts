@@ -1,4 +1,4 @@
 import { SwitchToolTipsHighlightAction } from "../tooltips";
-import { LayoutChangedAction, TogglePanelAction } from "./layout";
+import { LayoutChangedAction, PanelActions } from "./layout";
 
-export type UiActions = SwitchToolTipsHighlightAction | TogglePanelAction | LayoutChangedAction;
+export type UiActions = SwitchToolTipsHighlightAction | PanelActions | LayoutChangedAction;

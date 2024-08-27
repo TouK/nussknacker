@@ -15,13 +15,15 @@ object RequestResponseOpenApiSettings {
       Some(emptySchema),
       Some(JsonParameterEditor),
       Some(List(MandatoryParameterValidator, JsonValidator)),
-      Some("Input schema")
+      Some("Input schema"),
+      None
     ),
     OutputSchemaProperty -> ScenarioPropertyConfig(
       Some(emptySchema),
       Some(JsonParameterEditor),
       Some(List(MandatoryParameterValidator, JsonValidator)),
-      Some("Output schema")
+      Some("Output schema"),
+      None
     ),
   )
 

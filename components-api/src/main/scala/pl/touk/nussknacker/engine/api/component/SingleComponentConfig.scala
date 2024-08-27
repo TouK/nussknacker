@@ -73,11 +73,12 @@ object ParameterConfig {
     defaultValue: Option[String],
     editor: Option[SimpleParameterEditor],
     validators: Option[List[ParameterValidator]],
-    label: Option[String]
+    label: Option[String],
+    hintText: Option[String]
 )
 
 object ScenarioPropertyConfig {
-  val empty: ScenarioPropertyConfig = ScenarioPropertyConfig(None, None, None, None)
+  val empty: ScenarioPropertyConfig = ScenarioPropertyConfig(None, None, None, None, None)
 
   implicit val semigroup: Semigroup[ScenarioPropertyConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
@@ -91,7 +92,8 @@ object ScenarioPropertyConfig {
         x.defaultValue |+| y.defaultValue,
         x.editor |+| y.editor,
         x.validators |+| y.validators,
-        x.label |+| y.label
+        x.label |+| y.label,
+        x.hintText |+| y.hintText
       )
     }
   }

@@ -1,7 +1,20 @@
-import { Edge, NodeType, NodeValidationError, PropertiesType } from "../../../types";
+import { cloneDeep, isEqual, set } from "lodash";
 import React, { SetStateAction, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
+import { Edge, NodeType, NodeValidationError, PropertiesType } from "../../../types";
+import NodeUtils from "../NodeUtils";
+import { CustomNode } from "./customNode";
+import { EnricherProcessor } from "./enricherProcessor";
+import { ParamFieldLabel } from "./FieldLabel";
+import { Filter } from "./filter";
+import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
+import { FragmentInputParameter } from "./fragment-input-definition/item";
+import { FragmentInput } from "./fragmentInput";
+import FragmentOutputDefinition from "./FragmentOutputDefinition";
+import { JoinNode } from "./joinNode";
+import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import {
     getDynamicParameterDefinitions,
     getFindAvailableBranchVariables,
@@ -9,47 +22,29 @@ import {
     getProcessName,
     getProcessProperties,
 } from "./NodeDetailsContent/selectors";
-import { adjustParameters } from "./ParametersUtils";
 import { generateUUIDs } from "./nodeUtils";
-import { FieldLabel } from "./FieldLabel";
-import { cloneDeep, isEqual, set } from "lodash";
-import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
-import NodeUtils from "../NodeUtils";
-import { Source } from "./source";
-import { Sink } from "./sink";
-import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
-import FragmentOutputDefinition from "./FragmentOutputDefinition";
-import { Filter } from "./filter";
-import { EnricherProcessor } from "./enricherProcessor";
-import { FragmentInput } from "./fragmentInput";
-import { JoinCustomNode } from "./joinCustomNode";
-import { VariableBuilder } from "./variableBuilder";
-import { Switch } from "./switch";
-import { Split } from "./split";
+import { adjustParameters } from "./ParametersUtils";
 import { Properties } from "./properties";
-import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
+import { Sink } from "./sink";
+import { Source } from "./source";
+import { Split } from "./split";
+import { Switch } from "./switch";
 import Variable from "./Variable";
-import { FragmentInputParameter } from "./fragment-input-definition/item";
+import { VariableBuilder } from "./variableBuilder";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
-interface NodeTypeDetailsContentProps {
+export type NodeTypeDetailsContentProps = {
     node: NodeType;
     edges?: Edge[];
     onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void;
     showValidation?: boolean;
     showSwitch?: boolean;
     errors: NodeValidationError[];
-}
+};
 
-export function NodeTypeDetailsContent({
-    node,
-    edges,
-    onChange,
-    errors,
-    showValidation,
-    showSwitch,
-}: NodeTypeDetailsContentProps): JSX.Element {
+export function useNodeTypeDetailsContentLogic(props: Pick<NodeTypeDetailsContentProps, "onChange" | "node" | "edges" | "showValidation">) {
+    const { onChange, node, edges, showValidation } = props;
     const dispatch = useDispatch();
     const isEditMode = !!onChange;
 
@@ -87,7 +82,7 @@ export function NodeTypeDetailsContent({
 
     const renderFieldLabel = useCallback(
         (paramName: string): JSX.Element => {
-            return <FieldLabel parameterDefinitions={parameterDefinitions} paramName={paramName} />;
+            return <ParamFieldLabel parameterDefinitions={parameterDefinitions} paramName={paramName} />;
         },
         [parameterDefinitions],
     );
@@ -151,6 +146,38 @@ export function NodeTypeDetailsContent({
             return isEqual(adjustedNode, node) ? node : adjustedNode;
         });
     }, [adjustNode, setEditedNode]);
+
+    return {
+        ...props,
+        isEditMode,
+        processDefinitionData,
+        findAvailableVariables,
+        variableTypes,
+        setEditedEdges,
+        parameterDefinitions,
+        renderFieldLabel,
+        removeElement,
+        addElement,
+        setProperty,
+    };
+}
+
+export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTypeDetailsContentProps): JSX.Element {
+    const {
+        isEditMode,
+        processDefinitionData,
+        findAvailableVariables,
+        variableTypes,
+        setEditedEdges,
+        parameterDefinitions,
+        renderFieldLabel,
+        removeElement,
+        addElement,
+        setProperty,
+        node,
+        edges,
+        showValidation,
+    } = useNodeTypeDetailsContentLogic(props);
 
     switch (NodeUtils.nodeType(node)) {
         case "Source":
@@ -256,9 +283,23 @@ export function NodeTypeDetailsContent({
                 />
             );
         case "Join":
+            return (
+                <JoinNode
+                    errors={errors}
+                    findAvailableVariables={findAvailableVariables}
+                    isEditMode={isEditMode}
+                    node={node}
+                    parameterDefinitions={parameterDefinitions}
+                    processDefinitionData={processDefinitionData}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    showSwitch={showSwitch}
+                    showValidation={showValidation}
+                />
+            );
         case "CustomNode":
             return (
-                <JoinCustomNode
+                <CustomNode
                     errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}

@@ -21,7 +21,7 @@ import { TableEditor } from "./Table/TableEditor";
 import { DictParameterEditor } from "./DictParameterEditor";
 
 export type EditorProps = {
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     type?: EditorType;
     editorConfig?: Record<string, unknown>;
     className?: string;
@@ -44,6 +44,8 @@ export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P
     isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
     switchableToHint: () => string;
     notSwitchableToHint: () => string;
+    getExpressionMode?: (expressionObj: ExpressionObj) => ExpressionObj;
+    getBasicMode?: (expressionObj: ExpressionObj) => ExpressionObj;
 };
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
@@ -60,6 +62,7 @@ export enum EditorType {
     BOOL_PARAMETER_EDITOR = "BoolParameterEditor",
     STRING_PARAMETER_EDITOR = "StringParameterEditor",
     FIXED_VALUES_PARAMETER_EDITOR = "FixedValuesParameterEditor",
+    FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR = "FixedValuesWithIconParameterEditor",
     DATE = "DateParameterEditor",
     TIME = "TimeParameterEditor",
     DATE_TIME = "DateTimeParameterEditor",
@@ -83,6 +86,7 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.DUAL_PARAMETER_EDITOR]: DualParameterEditor,
     [EditorType.DURATION_EDITOR]: DurationEditor,
     [EditorType.FIXED_VALUES_PARAMETER_EDITOR]: FixedValuesEditor,
+    [EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR]: FixedValuesEditor,
     [EditorType.JSON_PARAMETER_EDITOR]: JsonEditor,
     [EditorType.PERIOD_EDITOR]: PeriodEditor,
     [EditorType.RAW_PARAMETER_EDITOR]: RawEditor,
@@ -93,4 +97,8 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
     [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
     [EditorType.TABLE_EDITOR]: TableEditor,
+};
+
+export type OnValueChange = {
+    (expression: ExpressionObj | string): void;
 };

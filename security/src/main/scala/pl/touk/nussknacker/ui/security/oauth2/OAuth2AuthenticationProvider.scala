@@ -17,7 +17,7 @@ class OAuth2AuthenticationProvider extends AuthenticationProvider with LazyLoggi
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
     val configuration = OAuth2Configuration.create(config)
     val service       = OAuth2ServiceProvider(configuration, classLoader)
-    new OAuth2AuthenticationResources(name, realm, service, configuration)
+    new OAuth2AuthenticationResources(name, service, configuration)
   }
 
 }

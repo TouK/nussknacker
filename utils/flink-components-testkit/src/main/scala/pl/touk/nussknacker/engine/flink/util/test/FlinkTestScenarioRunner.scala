@@ -1,15 +1,12 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
-import com.typesafe.config.Config
-import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.flink.api.connector.source.Boundedness
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
@@ -20,6 +17,7 @@ import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.Output
 import pl.touk.nussknacker.engine.flink.util.test.testComponents._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.ExecutionMode
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -33,30 +31,30 @@ import scala.util.Using
 
 private object testComponents {
 
-  def testDataSourceComponent[T: ClassTag: TypeInformation](
+  def testDataSourceComponent[T](
       data: List[T],
+      inputType: TypingResult,
       timestampAssigner: Option[TimestampWatermarkHandler[T]],
-      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-      flinkExecutionMode: Option[RuntimeExecutionMode] = None
+      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
   ): ComponentDefinition = ComponentDefinition(
     TestScenarioRunner.testDataSource,
-    SourceFactory.noParamUnboundedStreamFromClassTag[T](
+    SourceFactory.noParamUnboundedStreamFactory(
       new CollectionSource[T](
         list = data,
         timestampAssigner = timestampAssigner,
-        returnType = Typed.apply[T],
-        boundedness = boundedness,
-        flinkRuntimeMode = flinkExecutionMode
-      )
+        returnType = inputType,
+        boundedness = boundedness
+      ),
+      inputType
     )
   )
 
   def noopSourceComponent: ComponentDefinition = {
-    implicit val typeInf: TypeInformation[Any] = TypeInformation.of(classOf[Any])
     ComponentDefinition(
       TestScenarioRunner.noopSource,
-      SourceFactory.noParamUnboundedStreamFromClassTag[Any](
-        new CollectionSource[Any](List.empty, None, typing.Unknown)
+      SourceFactory.noParamUnboundedStreamFactory(
+        new CollectionSource[Any](List.empty, None, Unknown),
+        Unknown
       )
     )
   }
@@ -76,30 +74,32 @@ class FlinkTestScenarioRunner(
 ) extends ClassBasedTestScenarioRunner {
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
-    implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
-    runWithTestSourceComponent(scenario, testDataSourceComponent(data, None))
+    runWithTestSourceComponent(scenario, testDataSourceComponent(data, Typed.typedClass[I], None))
   }
 
   def runWithData[I: ClassTag, R](
       scenario: CanonicalProcess,
       data: List[I],
-      boundedness: Boundedness,
-      flinkExecutionMode: Option[RuntimeExecutionMode]
+      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
+      timestampAssigner: Option[TimestampWatermarkHandler[I]] = None
   ): RunnerListResult[R] = {
-    implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
-    runWithTestSourceComponent(scenario, testDataSourceComponent(data, None, boundedness, flinkExecutionMode))
+    runWithTestSourceComponent(
+      scenario,
+      testDataSourceComponent(data, Typed.typedClass[I], timestampAssigner, boundedness)
+    )
   }
 
-  /**
-   * Can be used to test Flink aggregates where record timestamp is crucial
-   */
-  def runWithDataAndTimestampAssigner[I: ClassTag, R](
+  def runWithDataWithType[I, R](
       scenario: CanonicalProcess,
       data: List[I],
-      timestampAssigner: TimestampWatermarkHandler[I]
+      inputType: TypingResult,
+      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
+      timestampAssigner: Option[TimestampWatermarkHandler[I]] = None
   ): RunnerListResult[R] = {
-    implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
-    runWithTestSourceComponent(scenario, testDataSourceComponent(data, Some(timestampAssigner)))
+    runWithTestSourceComponent(
+      scenario,
+      testDataSourceComponent(data, inputType, timestampAssigner, boundedness)
+    )
   }
 
   private def runWithTestSourceComponent[I: ClassTag, R](
@@ -132,8 +132,7 @@ class FlinkTestScenarioRunner(
    * Can be used to test Flink based sinks.
    */
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResultUnit = {
-    implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
-    val testComponents                       = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
+    val testComponents = testDataSourceComponent(data, Typed.typedClass[I], None) :: noopSourceComponent :: Nil
     Using.resource(
       TestExtensionsHolder.registerTestExtensions(components ++ testComponents, List.empty, globalVariables)
     ) { testComponentHolder =>
@@ -222,10 +221,6 @@ class FlinkTestScenarioRunner(
     }.toList
   }
 
-  private def getTypeInformation[I: ClassTag]: TypeInformation[I] = {
-    TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-  }
-
 }
 
 object FlinkTestScenarioRunner {
@@ -261,6 +256,9 @@ case class FlinkTestScenarioRunnerBuilder(
 
   override def inTestRuntimeMode: FlinkTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
+
+  def withExecutionMode(mode: ExecutionMode): FlinkTestScenarioRunnerBuilder =
+    copy(config = config.withValue("executionMode", ConfigValueFactory.fromAnyRef(mode.toString)))
 
   override def build() =
     new FlinkTestScenarioRunner(

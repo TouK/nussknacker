@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
@@ -52,8 +53,6 @@ class FullOuterJoinTransformer(
     with Serializable {
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.FullOuterJoinTransformer._
-
-  override def canHaveManyInputs: Boolean = true
 
   override type State = Nothing
 
@@ -158,7 +157,7 @@ class FullOuterJoinTransformer(
       val inputType   = Typed.record(optionTypes)
 
       val storedType     = aggregator.computeStoredTypeUnsafe(inputType)
-      val storedTypeInfo = context.typeInformationDetection.forType[AnyRef](storedType)
+      val storedTypeInfo = TypeInformationDetection.instance.forType[AnyRef](storedType)
       val aggregatorFunction = prepareAggregatorFunction(
         aggregator,
         FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS),
@@ -166,8 +165,9 @@ class FullOuterJoinTransformer(
         storedTypeInfo,
         context.convertToEngineRuntimeContext
       )(NodeId(context.nodeId))
-      val outputType     = aggregator.computeOutputTypeUnsafe(inputType)
-      val outputTypeInfo = context.valueWithContextInfo.forCustomContext[AnyRef](ValidationContext(), outputType)
+      val outputType = aggregator.computeOutputTypeUnsafe(inputType)
+      val outputTypeInfo =
+        TypeInformationDetection.instance.forValueWithContext[AnyRef](ValidationContext(), outputType)
 
       val stream = keyedStreams
         .map(_.asInstanceOf[DataStream[ValueWithContext[StringKeyedValue[AnyRef]]]])

@@ -24,12 +24,12 @@ class FingerprintServiceTest
 
   private implicit val runner: DBIOActionRunner = DBIOActionRunner(testDbRef)
   private val repository                        = new FingerprintRepositoryImpl(testDbRef)
-  private val sut                               = new FingerprintService(repository)
+  private val sut                               = new FingerprintService(repository, randomFingerprintFileName)
 
   test("should return a fingerprint from the configuration") {
-    val config = UsageStatisticsReportsConfig(enabled = true, Some("set via config"), None)
+    val config = UsageStatisticsReportsConfig(enabled = true, errorReportsEnabled = true, Some("set via config"), None)
 
-    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
+    val fingerprint = sut.fingerprint(config).futureValue
 
     fingerprint.value.value shouldBe "set via config"
   }
@@ -37,7 +37,7 @@ class FingerprintServiceTest
   test("should generate a random fingerprint if the configured one is blank") {
     runner.run(repository.read()).futureValue shouldBe None
 
-    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue.value
+    val fingerprint = sut.fingerprint(config).futureValue.value
 
     runner.run(repository.read()).futureValue shouldBe Some(fingerprint)
     fingerprint.value should fullyMatch regex "gen-\\w{10}"
@@ -47,7 +47,7 @@ class FingerprintServiceTest
     runner.runInTransaction(repository.readOrSave(new Fingerprint("db stored"))).futureValue
     runner.run(repository.read()).futureValue shouldBe Some(new Fingerprint("db stored"))
 
-    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
+    val fingerprint = sut.fingerprint(config).futureValue
 
     fingerprint.value.value shouldBe "db stored"
   }
@@ -58,13 +58,15 @@ class FingerprintServiceTest
     val fingerprintFile = getTempFileLocation
     writeContentToFile(fingerprintFile, "file stored")
 
-    val fingerprint = sut.fingerprint(config, new FileName(fingerprintFile.getName)).futureValue
+    val fingerprint = new FingerprintService(repository, new FileName(fingerprintFile.getName))
+      .fingerprint(config)
+      .futureValue
 
     fingerprint.value.value shouldBe "file stored"
     runner.run(repository.read()).futureValue shouldBe Some(new Fingerprint("file stored"))
   }
 
-  private val config = UsageStatisticsReportsConfig(enabled = true, None, None)
+  private val config = UsageStatisticsReportsConfig(enabled = true, errorReportsEnabled = true, None, None)
 
   private def getTempFileLocation: File = {
     val file = new File(System.getProperty("java.io.tmpdir"), randomFingerprintFileName.value)

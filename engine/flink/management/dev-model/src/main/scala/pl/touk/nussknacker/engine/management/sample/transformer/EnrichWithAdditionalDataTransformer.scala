@@ -61,8 +61,6 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         }
       )
 
-  override val canHaveManyInputs: Boolean = true
-
   override type State = Nothing
 
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(

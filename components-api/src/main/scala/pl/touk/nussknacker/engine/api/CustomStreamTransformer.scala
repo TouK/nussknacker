@@ -17,12 +17,6 @@ import pl.touk.nussknacker.engine.api.component.{AllProcessingModesComponent, Co
 //from java to scala one and is seems difficult to convert java CustomStreamTransformer, Service etc. into scala ones
 abstract class CustomStreamTransformer extends Component with AllProcessingModesComponent {
 
-  /**
-    * deprecated - use ContextTransformation.join instead
-    */
-  // TODO: remove after full switch to ContextTransformation API
-  def canHaveManyInputs: Boolean = false
-
   // For now it is only supported by Flink streaming runtime
   def canBeEnding: Boolean = false
 

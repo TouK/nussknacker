@@ -17,6 +17,8 @@
     <logger name="slick.jdbc.JdbcBackend.parameter" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
     <logger name="slick.jdbc.StatementInvoker.result" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
     <logger name="DockerTest" level="DEBUG"/>
+    <!-- To not show "The module flink-runtime-web could not be found in the class path" stack trace, even when debug enabled -->
+    <logger name="org.apache.flink.runtime.dispatcher.DispatcherRestEndpoint" level="INFO"/>
     <logger name="pl.touk.nussknacker.engine.process.typeinformation" level="WARN"/>
     <logger name="pl.touk.nussknacker.engine.flink.util.async" level="WARN"/>
     <logger name="pl.touk.nussknacker.engine.process.registrar.DefaultStreamExecutionEnvPreparer" level="ERROR"/>

@@ -8,6 +8,11 @@ describe("Process", () => {
     after(() => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
+
+    beforeEach(() => {
+        cy.mockWindowDate();
+    });
+
     describe("initially clean", () => {
         beforeEach(() => {
             cy.visitNewProcess(seed).as("processName");
@@ -39,8 +44,8 @@ describe("Process", () => {
                 .should("be.enabled")
                 .click();
             cy.get("[data-testid=window]").should("be.visible");
-            cy.get("[data-testid=window]").find("input").first().click().type("-renamed");
-            cy.get("[data-testid=window]").find("textarea").last().click().type("RENAMED");
+            cy.get('[title="Name"]').siblings().first().click().type("-renamed");
+            cy.get('[title="Description"]').siblings().first().type("RENAMED");
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
@@ -55,7 +60,7 @@ describe("Process", () => {
             cy.contains(/^properties/i)
                 .should("be.enabled")
                 .click();
-            cy.get("[data-testid=window]").find("textarea").last().should("contain", "RENAMED");
+            cy.get('[title="Description"]').siblings().first().should("contain", "RENAMED");
         });
 
         it("should allow archive with redirect to list", function () {
@@ -109,11 +114,12 @@ describe("Process", () => {
     describe("with data", () => {
         const screenshotOptions: Cypress.MatchImageOptions = {
             screenshotConfig: {
-                blackout: ["> div > :not(#nk-graph-main)"],
+                blackout: ["> div > :not(#nk-graph-main) > div"],
             },
         };
 
         beforeEach(() => {
+            cy.mockWindowDate();
             cy.visitNewProcess(seed, "testProcess");
         });
 
@@ -162,82 +168,6 @@ describe("Process", () => {
             cy.viewport("macbook-15");
 
             cy.deployScenario(undefined, true);
-        });
-
-        it("should display question mark when renaming a node and updating the count", () => {
-            cy.intercept("GET", "/api/processCounts/*", {
-                boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
-                enricher: { all: 120, errors: 10, fragmentCounts: {} },
-                dynamicService: { all: 40, errors: 0, fragmentCounts: {} },
-                sendSms: { all: 60, errors: 0, fragmentCounts: {} },
-            });
-
-            cy.contains(/^counts$/i).click();
-            cy.get("[data-testid=window]").contains(/^ok$/i).click();
-
-            cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick");
-            cy.get("[model-id=dynamicService]").contains("dynamicService").should("be.visible");
-            cy.get("[data-testid=window]").find("input[type=text]").type("12").click();
-            cy.get("[data-testid=window]")
-                .contains(/^apply$/i)
-                .click();
-
-            cy.intercept("GET", "/api/processCounts/*", {
-                boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
-                enricher: { all: 120, errors: 10, fragmentCounts: {} },
-                dynamicService: { all: 40, errors: 0, fragmentCounts: {} },
-                sendSms: { all: 60, errors: 0, fragmentCounts: {} },
-            });
-
-            cy.contains(/^counts$/i).click();
-
-            cy.get("[data-testid=window]").contains(/^ok$/i).click();
-
-            cy.getNode("enricher")
-                .parent()
-                .matchImage({ screenshotConfig: { padding: 16 } });
-        });
-
-        it("should have counts button and modal", () => {
-            cy.viewport("macbook-15");
-
-            // Collapse toolbar to make counts button visible
-            cy.contains(/^scenario details$/i).click();
-            cy.contains(/^counts$/i).as("button");
-            cy.get("@button").should("be.visible").matchImage();
-            cy.get("@button").click();
-
-            cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
-            cy.contains(/^latest deploy$/i).should("not.exist");
-            cy.get("[data-testid=window]").matchImage();
-            cy.get("[data-testid=window]")
-                .contains(/^cancel$/i)
-                .click();
-
-            cy.deployScenario();
-            cy.get("@button").click();
-            cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
-            cy.contains(/^latest deploy$/i).should("be.visible");
-            cy.get("[data-testid=window]").matchImage();
-            cy.get("[data-testid=window]")
-                .contains(/^cancel$/i)
-                .click();
-            cy.cancelScenario();
-
-            cy.deployScenario();
-            cy.cancelScenario();
-            cy.deployScenario();
-            cy.cancelScenario();
-
-            cy.get("@button").click();
-            cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
-            cy.contains(/^previous deployments...$/i)
-                .should("be.visible")
-                .click();
-            cy.get("[data-testid=window]").matchImage();
-            cy.get("[data-testid=window]")
-                .contains(/^cancel$/i)
-                .click();
         });
 
         it("should display some node details in modal", () => {
@@ -432,7 +362,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.contains("a", "More scenario details").click();
+        cy.contains("a", "More details").click();
         cy.get("[data-testid=window]").matchImage({
             maxDiffThreshold: 0.02,
         });

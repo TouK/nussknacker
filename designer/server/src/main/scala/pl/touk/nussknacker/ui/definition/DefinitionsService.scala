@@ -25,6 +25,7 @@ class DefinitionsService(
     modelData: ModelData,
     staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
@@ -72,9 +73,9 @@ class DefinitionsService(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
-      scenarioPropertiesConfig =
-        (if (forFragment) FragmentPropertiesConfig.properties else finalizedScenarioPropertiesConfig)
-          .mapValuesNow(createUIScenarioPropertyConfig),
+      scenarioPropertiesConfig = (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig
+                                  else finalizedScenarioPropertiesConfig)
+        .mapValuesNow(createUIScenarioPropertyConfig),
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )
@@ -108,6 +109,7 @@ object DefinitionsService {
       processingTypeData.designerModelData.modelData,
       processingTypeData.designerModelData.staticDefinitionForDynamicComponents,
       processingTypeData.deploymentData.scenarioPropertiesConfig,
+      processingTypeData.deploymentData.fragmentPropertiesConfig,
       processingTypeData.deploymentData.validDeploymentManagerOrStub,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
@@ -130,7 +132,7 @@ object DefinitionsService {
 
   def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
-    UiScenarioPropertyConfig(config.defaultValue, editor, config.label)
+    UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
   }
 
 }

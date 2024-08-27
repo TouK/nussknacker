@@ -162,7 +162,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       .withCustom(
         ProcessTestData.otherExistingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
         componentGroupName = None,
         designerWideComponentId =
           Some(DesignerWideComponentId(ProcessTestData.overriddenOtherExistingStreamTransformer))
@@ -170,7 +170,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       .withCustom(
         ProcessTestData.otherExistingStreamTransformer2,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
       )
       .build
 

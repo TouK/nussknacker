@@ -286,10 +286,12 @@ class LiteKafkaUniversalJsonFunctionalTest
       config(Json.obj(), schemaObjStr, schemaEnumStrOrList, output = SpecialSpELElement("{1,2}"), lax.headOption)
     val results = runWithValueResults(cfg)
 
-    results.isValid shouldBe true // it should be invalid, but it's so edge case that we decided to live with it
-    val runtimeError = results.validValue.errors.head
-    runtimeError.nodeId shouldBe Some("my-sink")
-    runtimeError.throwable.asInstanceOf[RuntimeException].getMessage shouldBe "#: [1,2] is not a valid enum value"
+    results.isValid shouldBe false
+    val runtimeError = results.invalidValue.head
+    runtimeError.nodeIds shouldBe Set("my-sink")
+    runtimeError.asInstanceOf[CustomNodeError].message shouldBe
+      """Provided value does not match scenario output - errors:
+        |Incorrect type: actual: 'List[Integer]({1, 2})' expected: 'List[Integer]({1, 2, 3}) | String(A)'.""".stripMargin
   }
 
   test("patternProperties handling") {
@@ -490,7 +492,7 @@ class LiteKafkaUniversalJsonFunctionalTest
           fromFields(List.empty),
           fromFields(List(ObjectFieldName -> fromString("foo")))
         ),
-        // schema evolution on output - it is done by Nussknacker's code - see BestEffortJsonSchemaEncoder
+        // schema evolution on output - it is done by Nussknacker's code - see ToJsonSchemaBasedEncoder
         (
           createObjSchema(required = true, schemaString, schemaNull),
           createObjSchema(required = true, StringSchema.builder().defaultValue("foo").build()),

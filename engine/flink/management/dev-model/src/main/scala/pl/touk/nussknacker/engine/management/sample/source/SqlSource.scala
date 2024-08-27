@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
@@ -13,6 +12,6 @@ object SqlSource extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
   def source(@ParamName("sql") @SimpleEditor(`type` = SimpleEditorType.SQL_EDITOR) sql: String) =
-    new CollectionSource[Any](List.empty, None, Unknown)(TypeInformation.of(classOf[Any]))
+    new CollectionSource[Any](List.empty, None, Unknown)
 
 }

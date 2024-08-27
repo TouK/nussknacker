@@ -9,7 +9,8 @@
                 "numberOfThreads": "1",
                 "spillStateToDisk": "true",
                 "environment": "test",
-                "useAsyncInterpretation": ""
+                "useAsyncInterpretation": "",
+                "componentGroup": "fragments"
             },
             "metaDataType": "FragmentSpecificData"
         }

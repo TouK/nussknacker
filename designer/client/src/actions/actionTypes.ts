@@ -1,7 +1,5 @@
 export type ActionTypes =
     | "LAYOUT_CHANGED"
-    | "TOGGLE_LEFT_PANEL"
-    | "TOGGLE_RIGHT_PANEL"
     | "LAYOUT"
     | "LOGGED_USER"
     | "UI_SETTINGS"
@@ -36,7 +34,6 @@ export type ActionTypes =
     | "CLEAR_PROCESS"
     | "TOGGLE_PROCESS_ACTION_MODAL"
     | "TOGGLE_CUSTOM_ACTION"
-    | "DISPLAY_PROCESS_COUNTS"
     | "HIDE_RUN_PROCESS_DETAILS"
     | "DISPLAY_TEST_RESULTS_DETAILS"
     | "PROCESS_STATE_LOADED"

@@ -27,31 +27,36 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
         defaultValue = None,
         editor = None,
         validators = Some(List(LiteralIntegerValidator, MandatoryParameterValidator)),
-        label = Some(label)
+        label = Some(label),
+        hintText = None
       ),
       regexpFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
         validators = Some(List(LiteralIntegerValidator)),
-        label = Some(label)
+        label = Some(label),
+        hintText = None
       ),
       optionalFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(StringParameterEditor),
         validators = None,
-        label = Some(label)
+        label = Some(label),
+        hintText = None
       ),
       optFixedFieldName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(FixedValuesParameterEditor(possibleValues)),
         validators = Some(List(FixedValuesValidator(possibleValues))),
-        label = Some(label)
+        label = Some(label),
+        hintText = None
       ),
       TestAdditionalUIConfigProvider.scenarioPropertyName -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
         validators = None,
-        label = Some(label)
+        label = Some(label),
+        hintText = None
       )
     ),
     new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify)

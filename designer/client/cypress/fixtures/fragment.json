@@ -3,6 +3,7 @@
         "id": "testfragment",
         "typeSpecificData": {
             "docsUrl": null,
+            "componentGroup": "fragments",
             "type": "FragmentSpecificData"
         },
         "additionalFields": {

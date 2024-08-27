@@ -9,7 +9,6 @@ import sttp.client3.SttpBackend
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthenticationProvider extends NamedServiceProvider {
-  val realm = "nussknacker"
 
   def createAuthenticationResources(config: Config, classLoader: ClassLoader)(
       implicit ec: ExecutionContext,

@@ -1,4 +1,4 @@
-import { DualEditorMode, editors, EditorType, ExtendedEditor, isExtendedEditor, SimpleEditor } from "./Editor";
+import { DualEditorMode, editors, EditorType, ExtendedEditor, isExtendedEditor, OnValueChange, SimpleEditor } from "./Editor";
 import React, { useCallback, useMemo, useState } from "react";
 import { ExpressionObj } from "./types";
 import { RawEditor } from "./RawEditor";
@@ -23,7 +23,7 @@ type Props = {
     fieldErrors: FieldError[];
     isMarked?: boolean;
     showValidation: boolean;
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     className: string;
     variableTypes: VariableTypes;
     showSwitch?: boolean;
@@ -42,9 +42,13 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
         [Editor, editorConfig.simpleEditor, expressionObj],
     );
 
+    const isExpressionEditorVisible = isExtendedEditor(Editor)
+        ? Editor?.getExpressionMode?.(expressionObj).language === expressionObj.language
+        : false;
+
     const initialDisplaySimple = useMemo(
-        () => editorConfig.defaultMode === DualEditorMode.SIMPLE && simpleEditorAllowsSwitch,
-        [editorConfig.defaultMode, simpleEditorAllowsSwitch],
+        () => editorConfig.defaultMode === DualEditorMode.SIMPLE && simpleEditorAllowsSwitch && !isExpressionEditorVisible,
+        [editorConfig.defaultMode, isExpressionEditorVisible, simpleEditorAllowsSwitch],
     );
 
     const [displayRawEditor, setDisplayRawEditor] = useState(!initialDisplaySimple);
@@ -83,6 +87,23 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
         [props, showSwitch, valueClassName],
     );
 
+    const editorExpressionObj = useMemo(() => {
+        if (isExtendedEditor(Editor) && Editor?.getExpressionMode) {
+            if (displayRawEditor) {
+                return Editor?.getExpressionMode?.(props.expressionObj);
+            } else {
+                return Editor?.getBasicMode?.(props.expressionObj);
+            }
+        }
+
+        return props.expressionObj;
+    }, [Editor, displayRawEditor, props.expressionObj]);
+
+    const onValueChangeWithExpressionValue = useCallback(
+        (expression: string) => props.onValueChange({ expression, language: editorExpressionObj.language }),
+        [editorExpressionObj.language, props],
+    );
+
     return (
         <div
             className={css({
@@ -92,7 +113,16 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
             })}
         >
             <ErrorBoundary>
-                {displayRawEditor ? <RawEditor {...editorProps} /> : <Editor {...editorProps} editorConfig={editorConfig.simpleEditor} />}
+                {displayRawEditor ? (
+                    <RawEditor {...editorProps} expressionObj={editorExpressionObj} onValueChange={onValueChangeWithExpressionValue} />
+                ) : (
+                    <Editor
+                        {...editorProps}
+                        editorConfig={editorConfig.simpleEditor}
+                        expressionObj={editorExpressionObj}
+                        onValueChange={onValueChangeWithExpressionValue}
+                    />
+                )}
             </ErrorBoundary>
             {showSwitch ? (
                 <SwitchButton onClick={toggleRawEditor} disabled={disabled} title={hint}>

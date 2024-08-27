@@ -63,7 +63,8 @@ object FlinkStreamingPropertiesConfig {
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
-      label = Some("Parallelism")
+      label = Some("Parallelism"),
+      hintText = None
     )
 
   val spillStatePossibleValues = List(
@@ -83,7 +84,8 @@ object FlinkStreamingPropertiesConfig {
       defaultValue = None,
       editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
       validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
-      label = Some("Spill state to disk")
+      label = Some("Spill state to disk"),
+      hintText = None
     )
 
   val asyncInterpretationConfig: (String, ScenarioPropertyConfig) = StreamMetaData.useAsyncInterpretationName ->
@@ -91,7 +93,8 @@ object FlinkStreamingPropertiesConfig {
       defaultValue = None,
       editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
       validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
-      label = Some("IO mode")
+      label = Some("IO mode"),
+      hintText = None
     )
 
   val checkpointIntervalConfig: (String, ScenarioPropertyConfig) = StreamMetaData.checkpointIntervalName ->
@@ -99,7 +102,8 @@ object FlinkStreamingPropertiesConfig {
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
-      label = Some("Checkpoint interval in seconds")
+      label = Some("Checkpoint interval in seconds"),
+      hintText = None
     )
 
   val properties: Map[String, ScenarioPropertyConfig] =

@@ -5,6 +5,8 @@ export enum ExpressionLang {
     String = "string",
     JSON = "json",
     TabularDataDefinition = "tabularDataDefinition",
+    DictKeyWithLabel = "dictKeyWithLabel",
+    MD = "markdown",
 }
 
 export type ExpressionObj = {

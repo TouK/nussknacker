@@ -68,10 +68,8 @@ class ScenarioTestService(
         (),
         s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}"
       )
-      generatedData <- testInfoProvider
-        .generateTestData(canonical, testSampleSize)
-        .toRight("Test data could not be generated for scenario")
-      rawTestData <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
+      generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize)
+      rawTestData   <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
     } yield rawTestData
   }
 

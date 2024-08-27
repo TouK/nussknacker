@@ -1,13 +1,13 @@
 import React, { ReactNode, useCallback } from "react";
 import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
-import { UnknownFunction } from "../../../../../types/common";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
-import { EditorType } from "./Editor";
+import { EditorType, OnValueChange } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
 import { get } from "lodash";
 import { FieldError } from "../Validators";
+import { ExpressionObj } from "./types";
 
 type Props = {
     fieldName: string;
@@ -44,12 +44,22 @@ function ExpressionField(props: Props): JSX.Element {
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
     const exprTextPath = `${exprPath}.expression`;
+    const exprLanguagePath = `${exprPath}.language`;
     const expressionObj = get(editedNode, exprPath);
     const editor = parameterDefinition?.editor || {};
 
-    const onValueChange = useCallback((newValue) => setNodeDataAt(exprTextPath, newValue), [exprTextPath, setNodeDataAt]);
+    const onValueChange: OnValueChange = useCallback(
+        (value: ExpressionObj | string) => {
+            if (typeof value === "string") {
+                return setNodeDataAt(exprTextPath, value);
+            }
+            setNodeDataAt(exprTextPath, value.expression);
+            setNodeDataAt(exprLanguagePath, value.language);
+        },
+        [exprLanguagePath, exprTextPath, setNodeDataAt],
+    );
 
-    if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR) {
+    if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR || editor.type === EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR) {
         return (
             <EditableEditor
                 fieldLabel={fieldLabel}

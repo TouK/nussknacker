@@ -19,7 +19,7 @@ case object ServiceSpecificData extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.Service
 }
 
-final case class CustomComponentSpecificData(manyInputs: Boolean, canBeEnding: Boolean)
+final case class CustomComponentSpecificData(canHaveManyInputs: Boolean, canBeEnding: Boolean)
     extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.CustomComponent
 }

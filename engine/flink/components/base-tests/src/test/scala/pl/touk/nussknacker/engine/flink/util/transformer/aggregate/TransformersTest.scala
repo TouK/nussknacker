@@ -3,8 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -50,15 +48,11 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default,
       collectingListener: => ResultsCollectingListener[Any] = ResultsCollectingListenerHolder.registerListener
   ): LocalModelData = {
-    val config = ConfigFactory
-      .empty()
-      .withValue("useTypingResultTypeInformation", fromAnyRef(true))
     val sourceComponent = SourceFactory.noParamUnboundedStreamFactory[TestRecord](
-      EmitWatermarkAfterEachElementCollectionSource
-        .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
+      EmitWatermarkAfterEachElementCollectionSource.create[TestRecord](list, _.timestamp, Duration.ofHours(1))
     )
     LocalModelData(
-      config,
+      ConfigFactory.empty(),
       ComponentDefinition("start", sourceComponent) :: FlinkBaseUnboundedComponentProvider.create(
         DocsConfig.Default,
         aggregateWindowsConfig

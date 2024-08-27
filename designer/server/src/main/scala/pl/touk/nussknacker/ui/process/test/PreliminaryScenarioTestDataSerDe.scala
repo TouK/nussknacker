@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.test
 
+import cats.data.NonEmptyList
 import io.circe.parser
 import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord}
 import pl.touk.nussknacker.ui.api.TestDataSettings
@@ -11,6 +12,7 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
 
     val content = scenarioTestData.testRecords
       .map(_.asJson.noSpaces)
+      .toList
       .mkString("\n")
     Either.cond(
       content.length <= testDataSettings.testDataMaxLength,
@@ -25,18 +27,21 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
     import cats.syntax.traverse._
 
     val rawRecords = rawTestData.content.linesIterator.toList
-    val limitedRawRecords = Either.cond(
-      rawRecords.size <= testDataSettings.maxSamplesCount,
-      rawRecords,
-      s"Too many samples: ${rawRecords.size}, limit is: ${testDataSettings.maxSamplesCount}"
-    )
-    val records: Either[String, List[PreliminaryScenarioTestRecord]] = limitedRawRecords.flatMap { rawRecords =>
-      rawRecords.map { rawTestRecord =>
+    for {
+      _ <- Either.cond(
+        rawRecords.size <= testDataSettings.maxSamplesCount,
+        (),
+        s"Too many samples: ${rawRecords.size}, limit is: ${testDataSettings.maxSamplesCount}"
+      )
+      decodedRecords <- rawRecords.map { rawTestRecord =>
         val record = parser.decode[PreliminaryScenarioTestRecord](rawTestRecord)
         record.leftMap(_ => s"Could not parse record: '$rawTestRecord'")
       }.sequence
-    }
-    records.map(PreliminaryScenarioTestData)
+      result <- NonEmptyList
+        .fromList(decodedRecords)
+        .map(nel => Right(PreliminaryScenarioTestData(nel)))
+        .getOrElse(Left("Empty list of records"))
+    } yield result
   }
 
 }

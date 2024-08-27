@@ -32,10 +32,8 @@ class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSuppo
 
       override def run(ctx: SourceContext[CsvRecord]): Unit = {}
     },
-    typeInformation = typeInformation
+    typeInformation = TypeInformation.of(classOf[CsvRecord])
   )
-
-  override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
 
   override def generateTestData(size: Int): TestData = TestData(
     List(
@@ -44,8 +42,10 @@ class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSuppo
     )
   )
 
-  override def testRecordParser: TestRecordParser[CsvRecord] =
-    (testRecord: TestRecord) => CsvRecord(CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|").toList)
+  override def testRecordParser: TestRecordParser[CsvRecord] = (testRecords: List[TestRecord]) =>
+    testRecords.map { testRecord =>
+      CsvRecord(CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|").toList)
+    }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[CsvRecord]] = timestampAssigner
 }

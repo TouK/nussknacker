@@ -5,7 +5,7 @@ import { ExpressionLang } from "../../graph/node-modal/editors/expression/types"
 import { spelFormatters } from "../../graph/node-modal/editors/expression/Formatter";
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { FormControl } from "@mui/material";
-import { FieldLabel } from "../../graph/node-modal/FieldLabel";
+import { ParamFieldLabel } from "../../graph/node-modal/FieldLabel";
 import ErrorBoundary from "../../common/ErrorBoundary";
 import { nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
@@ -38,7 +38,7 @@ export function FormField({ name }: { name: string }) {
     return (
         <NodeTable sx={{ m: 0 }}>
             <FormControl>
-                <FieldLabel parameterDefinitions={parameters} paramName={name} />
+                <ParamFieldLabel parameterDefinitions={parameters} paramName={name} />
                 <ErrorBoundary>
                     <Editor
                         editorConfig={editor}

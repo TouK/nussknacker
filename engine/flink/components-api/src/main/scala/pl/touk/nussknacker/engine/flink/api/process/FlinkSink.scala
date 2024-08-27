@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 /**
   * Implementations of this trait can use LazyParameters
@@ -16,7 +17,8 @@ trait FlinkSink extends Sink with Serializable {
 
   type Value <: AnyRef
 
-  def prepareTestValue(value: Value): AnyRef = value
+  // It has to be function in order to avoid serialization of whole FlinkSink for testing mechanism
+  def prepareTestValueFunction: Value => AnyRef = identity
 
   def prepareValue(
       dataStream: DataStream[Context],
@@ -55,15 +57,14 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
       dataStream
         .map(
           (k: ValueWithContext[Value]) => k.value,
-          flinkNodeContext.typeInformationDetection.forType(typeResult).asInstanceOf[TypeInformation[Value]]
+          TypeInformationDetection.instance.forType(typeResult).asInstanceOf[TypeInformation[Value]]
         )
-        .addSink(toFlinkFunction)
+        .addSink(toFlinkFunction(flinkNodeContext))
     )
 
   def valueFunction(
       helper: FlinkLazyParameterFunctionHelper
   ): FlatMapFunction[Context, ValueWithContext[Value]]
 
-  def toFlinkFunction: SinkFunction[Value]
-
+  def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value]
 }

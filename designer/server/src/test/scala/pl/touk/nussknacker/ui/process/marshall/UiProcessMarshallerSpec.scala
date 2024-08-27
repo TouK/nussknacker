@@ -55,7 +55,8 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
        |         "useAsyncInterpretation" : "",
        |         "checkpointIntervalInSeconds" : ""
        |       },
-       |       "metaDataType": "StreamMetaData"
+       |       "metaDataType": "StreamMetaData",
+       |       "showDescription": false
        |    }
        |  },
        |    "nodes" : [

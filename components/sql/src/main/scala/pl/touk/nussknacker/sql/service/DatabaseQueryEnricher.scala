@@ -241,42 +241,37 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       dependencies: List[NodeDependencyValue],
       finalState: Option[TransformationState]
   ): ServiceInvoker = {
-    val state          = finalState.get
-    val cacheTTLOption = cacheTTLParamDeclaration.extractValue(params)
-
+    val state                   = finalState.get
+    val cacheTTLOption          = cacheTTLParamDeclaration.extractValue(params)
     val query                   = state.query
     val argsCount               = state.argsCount
     val tableDef                = state.tableDef
     val strategy                = state.strategy
-    val outputType              = state.outputType
     val getConnectionCallback   = () => dataSource.getConnection()
     val timeMeasurementCallback = () => timeMeasurement
-
     cacheTTLOption match {
       case Some(cacheTTL) =>
         new DatabaseEnricherInvokerWithCache(
-          query,
-          argsCount,
-          tableDef,
-          strategy,
-          queryArgumentsExtractor,
-          cacheTTL,
-          outputType,
-          getConnectionCallback,
-          timeMeasurementCallback,
-          params
+          query = query,
+          argsCount = argsCount,
+          tableDef = tableDef,
+          strategy = strategy,
+          queryArgumentsExtractor = queryArgumentsExtractor,
+          cacheTTL = cacheTTL,
+          getConnection = getConnectionCallback,
+          getTimeMeasurement = timeMeasurementCallback,
+          params = params,
         )
       case None =>
         new DatabaseEnricherInvoker(
-          query,
-          argsCount,
-          tableDef,
-          strategy,
-          queryArgumentsExtractor,
-          outputType,
-          getConnectionCallback,
-          timeMeasurementCallback,
-          params
+          query = query,
+          argsCount = argsCount,
+          tableDef = tableDef,
+          strategy = strategy,
+          queryArgumentsExtractor = queryArgumentsExtractor,
+          getConnection = getConnectionCallback,
+          getTimeMeasurement = timeMeasurementCallback,
+          params = params
         )
     }
   }

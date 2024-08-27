@@ -171,7 +171,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   }
 
   private def rowDataTypingResult(columnDefinitions: Iterable[Column.Definition]) =
-    TypedObjectTypingResult(
+    Typed.record(
       columnDefinitions.map { columnDef =>
         columnDef.name -> Typed.typedClass(columnDef.aType)
       }.toMap

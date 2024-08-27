@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
 import io.circe.Json
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -23,16 +22,14 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySour
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.process.compiler.StubbedFlinkProcessCompilerDataFactoryTest.mockServiceResultsHolder
-import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 
 class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matchers {
-
-  private implicit val intTypeInformation: TypeInformation[Int] = TypeInformation.of(classOf[Int])
 
   private val scenarioWithSingleSource = ScenarioBuilder
     .streaming("test")
@@ -99,7 +96,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
-    sources should matchPattern { case (_: EmptySource[_]) :: (_: EmptySource[_]) :: (_: EmptySource[_]) :: Nil =>
+    sources should matchPattern { case (_: EmptySource) :: (_: EmptySource) :: (_: EmptySource) :: Nil =>
     }
   }
 
@@ -110,7 +107,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
-    sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _, _, _) :: Nil =>
+    sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _, _) :: Nil =>
     }
   }
 
@@ -131,9 +128,9 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.node.id -> source.obj
     }.toMap
-    sources("left-source") should matchPattern { case CollectionSource(List(11, 12, 13), _, _, _, _) =>
+    sources("left-source") should matchPattern { case CollectionSource(List(11, 12, 13), _, _, _) =>
     }
-    sources("right-source") should matchPattern { case CollectionSource(List(21, 22, 23), _, _, _, _) =>
+    sources("right-source") should matchPattern { case CollectionSource(List(21, 22, 23), _, _, _) =>
     }
     sources("source-no-test-support") should matchPattern { case EmptySource(_) =>
     }
@@ -152,7 +149,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
-    sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _, _, _) :: Nil =>
+    sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _, _) :: Nil =>
     }
   }
 
@@ -177,8 +174,10 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       with TestWithParametersSupport[Int] {
     override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
 
-    override def testRecordParser: TestRecordParser[Int] = (testRecord: TestRecord) =>
-      CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
+    override def testRecordParser: TestRecordParser[Int] = (testRecords: List[TestRecord]) =>
+      testRecords.map { testRecord =>
+        CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
+      }
 
     override def testParametersDefinition: List[Parameter] = List(Parameter(ParameterName("input"), Typed[Int]))
 
@@ -190,8 +189,12 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       extends CollectionSource[Int](List.empty, None, Typed.fromDetailedType[Int])
       with FlinkSourceTestSupport[Int] {
     override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
-    override def testRecordParser: TestRecordParser[Int] = (testRecord: TestRecord) =>
-      CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
+
+    override def testRecordParser: TestRecordParser[Int] = (testRecords: List[TestRecord]) =>
+      testRecords.map { testRecord =>
+        CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
+      }
+
   }
 
 }

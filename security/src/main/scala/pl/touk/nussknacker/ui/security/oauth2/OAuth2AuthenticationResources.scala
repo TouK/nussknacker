@@ -11,6 +11,7 @@ import io.circe.Encoder
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
+import pl.touk.nussknacker.ui.security.api.AuthenticationResources.defaultRealm
 import pl.touk.nussknacker.ui.security.api._
 import sttp.client3.SttpBackend
 import sttp.model.HeaderNames
@@ -23,7 +24,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2AuthenticationResources(
     override val name: String,
-    realm: String,
     service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData],
     override val configuration: OAuth2Configuration
 )(implicit executionContext: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
@@ -80,6 +80,10 @@ class OAuth2AuthenticationResources(
           }
         }
     }
+
+  override def impersonationSupport: ImpersonationSupport = NoImpersonationSupport
+
+  override def getAnonymousRole: Option[String] = configuration.anonymousUserRole
 
   private def completeOAuth2Authenticate(authorizationCode: String, redirectUri: Option[String]) = {
     determineRedirectUri(redirectUri) match {
@@ -172,9 +176,7 @@ class OAuth2AuthenticationResources(
     Mapping.stringPrefixCaseInsensitive(prefix + " ")
   }
 
-  override def impersonationSupport: ImpersonationSupport = NoImpersonationSupport
-
-  override def getAnonymousRole: Option[String] = configuration.anonymousUserRole
+  private def realm = configuration.realm.getOrElse(defaultRealm)
 }
 
 final case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)

@@ -26,8 +26,6 @@ class OAuth2AuthenticationResourcesSpec
 
   private val defaultConfig = ExampleOAuth2ServiceFactory.testConfig
 
-  private val realm = "nussknacker"
-
   private val accessToken = "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm"
 
   private val authorizationCode = "B5FwrdqF9cLxwdhL"
@@ -43,20 +41,18 @@ class OAuth2AuthenticationResourcesSpec
 
     new OAuth2AuthenticationResources(
       defaultConfig.name,
-      realm,
       DefaultOAuth2ServiceFactory.service(defaultConfig),
       defaultConfig
     )
   }
 
-  protected lazy val badAuthenticationResources = {
+  protected lazy val badAuthenticationResources: OAuth2AuthenticationResources = {
     implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(defaultConfig.accessTokenUri)))
       .thenRespond(Response(Option.empty, StatusCode.BadRequest, "Bad Request"))
 
     new OAuth2AuthenticationResources(
       defaultConfig.name,
-      realm,
       DefaultOAuth2ServiceFactory.service(defaultConfig),
       defaultConfig
     )
@@ -71,7 +67,7 @@ class OAuth2AuthenticationResourcesSpec
       .whenRequestMatches(_.uri.equals(Uri(config.profileUri)))
       .thenRespond(""" { "id": "1", "login": "aUser", "email": "some@email.com" } """)
 
-    new OAuth2AuthenticationResources(config.name, realm, DefaultOAuth2ServiceFactory.service(config), config)
+    new OAuth2AuthenticationResources(config.name, DefaultOAuth2ServiceFactory.service(config), config)
   }
 
   private def authenticationOauth2(resource: OAuth2AuthenticationResources, authorizationCode: String) = {

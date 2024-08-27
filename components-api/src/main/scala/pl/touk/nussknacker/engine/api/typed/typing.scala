@@ -8,8 +8,8 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -54,28 +54,37 @@ object typing {
 
   object TypedObjectTypingResult {
 
-    // TODO: deprecated, will be removed - we should also make the default apply private protected
-    def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
-      Typed.record(fields)
-
-    // For backward compatibility, to be removed once downstream projects switch to apply(fields: Map[String, TypingResult])
-    // TODO: remove this after NU-1432 will be done
-    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = Typed.record(fields.toMap)
+    private[typing] def apply(
+        fields: ListMap[String, TypingResult],
+        objType: TypedClass,
+        additionalInfo: Map[String, AdditionalDataValue] = Map.empty
+    ) = new TypedObjectTypingResult(fields, objType, additionalInfo)
 
   }
 
   // TODO: Rename to TypedRecord
-  // TODO: Make the constructor package-protected - inheritance is only use in the InputMeta to override display
-  case class TypedObjectTypingResult(
-      fields: Map[String, TypingResult],
+  // TODO: Make this class final - inheritance is only used in the InputMeta to override display
+  case class TypedObjectTypingResult protected (
+      // Order is important because we base on it in case of Flink's table-api Row serialization, see TypingResultAwareTypeInformationDetection
+      fields: ListMap[String, TypingResult],
       objType: TypedClass,
       additionalInfo: Map[String, AdditionalDataValue] = Map.empty
   ) extends SingleTypingResult {
-    override def valueOpt: Option[Map[String, Any]] =
-      fields.map { case (k, v) => v.valueOpt.map((k, _)) }.toList.sequence.map(Map(_: _*))
+
+    override def valueOpt: Option[java.util.Map[String, Any]] =
+      fields.toList
+        .map { case (k, v) => v.valueOpt.map((k, _)) }
+        .sequence
+        .map(fieldValues => Map(fieldValues: _*).asJava)
 
     override def withoutValue: TypedObjectTypingResult =
-      TypedObjectTypingResult(fields.mapValuesNow(_.withoutValue), objType, additionalInfo)
+      Typed.record(
+        fields.map { case (fieldName, fieldType) =>
+          fieldName -> fieldType.withoutValue
+        },
+        objType,
+        additionalInfo
+      )
 
     override def display: String =
       fields.map { case (name, typ) => s"$name: ${typ.display}" }.toList.sorted.mkString("Record{", ", ", "}")
@@ -116,12 +125,16 @@ object typing {
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
-    override def display: String = {
-      val dataString = value.toString
-      val shortenedDataString =
-        if (dataString.length <= maxDataDisplaySize) dataString
-        else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
-      s"${underlying.display}($shortenedDataString)"
+    override def display: String = s"${underlying.display}($shortenedDataString)"
+
+    private def shortenedDataString = {
+      val dataString = value match {
+        case l: java.util.List[_] => l.asScala.mkString("{", ", ", "}")
+        case _                    => value.toString
+      }
+
+      if (dataString.length <= maxDataDisplaySize) dataString
+      else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
     }
 
   }
@@ -257,6 +270,15 @@ object typing {
       cl
     }
 
+    def typedListWithElementValues[T](
+        elementType: TypingResult,
+        elementValues: java.util.List[T]
+    ): TypedObjectWithValue =
+      TypedObjectWithValue(
+        Typed.genericTypeClass(classOf[java.util.List[_]], List(elementType)),
+        elementValues
+      )
+
     private def toRuntime[T: ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     // parameters - None if you are not in generic aware context, Some - otherwise
@@ -321,19 +343,23 @@ object typing {
           TypedNull
         case map: Map[String @unchecked, _] =>
           val fieldTypes = typeMapFields(map)
-          TypedObjectTypingResult(fieldTypes, mapBasedRecordUnderlyingType[Map[_, _]](fieldTypes))
+          Typed.record(fieldTypes, mapBasedRecordUnderlyingType[Map[_, _]](fieldTypes))
         case javaMap: java.util.Map[String @unchecked, _] =>
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
-          TypedObjectTypingResult(fieldTypes)
+          Typed.record(fieldTypes)
         case list: List[_] =>
           genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          genericTypeClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList)))
+          typedListWithElementValues(
+            supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
+            javaList
+          )
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
+        // TODO: handle more types, for example Set
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>
-              SimpleObjectEncoder.encode(typedClass, other) match {
+              ValueEncoder.encodeValue(other) match {
                 case Valid(_)   => TypedObjectWithValue(typedClass, other)
                 case Invalid(_) => typedClass
               }
@@ -388,20 +414,20 @@ object typing {
       }
     }
 
-    def record(fields: Map[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
+    def record(fields: Iterable[(String, TypingResult)]): TypedObjectTypingResult =
+      TypedObjectTypingResult(ListMap(fields.toSeq: _*), mapBasedRecordUnderlyingType[java.util.Map[_, _]](fields))
 
     def record(
-        fields: Map[String, TypingResult],
+        fields: Iterable[(String, TypingResult)],
         objType: TypedClass,
         additionalInfo: Map[String, AdditionalDataValue] = Map.empty
     ): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, objType, additionalInfo)
+      TypedObjectTypingResult(ListMap(fields.toSeq: _*), objType, additionalInfo)
 
   }
 
-  private[api] def mapBasedRecordUnderlyingType[T: ClassTag](fields: Map[String, TypingResult]): TypedClass = {
-    val valueType = superTypeOfTypes(fields.values)
+  private[api] def mapBasedRecordUnderlyingType[T: ClassTag](fields: Iterable[(String, TypingResult)]): TypedClass = {
+    val valueType = superTypeOfTypes(fields.map(_._2))
     Typed.genericTypeClass[T](List(Typed[String], valueType))
   }
 

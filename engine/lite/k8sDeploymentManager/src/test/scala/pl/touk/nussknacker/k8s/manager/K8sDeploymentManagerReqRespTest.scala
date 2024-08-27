@@ -67,16 +67,17 @@ class K8sDeploymentManagerReqRespTest
       k8sTestUtils.withForwardedProxyPod(s"http://${service.name}:$givenServicePort") { proxyLocalPort =>
         val pingContent = """Nussknacker!"""
         val pingMessage = s"""{"ping":"$pingContent"}"""
-        val instanceIds = (1 to 10).map { _ =>
+        var instanceIds = Set.empty[String]
+        eventually {
           val request      = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
           val response     = request.body(pingMessage).send(backend).futureValue.body.rightValue
           val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
-          jsonResponse.hcursor.downField("instanceId").as[String].rightValue
-        }.toSet
+          instanceIds += jsonResponse.hcursor.downField("instanceId").as[String].rightValue
+          instanceIds should have size 2 // default number of replicas
+        }
 
         instanceIds.map(_.length) should contain only (5) // size of k8s instance id hash
-        instanceIds.size shouldEqual 2                    // default number of replicas
       }
     }
   }

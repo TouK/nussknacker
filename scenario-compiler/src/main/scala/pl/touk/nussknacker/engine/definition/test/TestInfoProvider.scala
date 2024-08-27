@@ -10,7 +10,7 @@ trait TestInfoProvider {
 
   def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]]
 
-  def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData]
+  def generateTestData(scenario: CanonicalProcess, size: Int): Either[String, PreliminaryScenarioTestData]
 
   def prepareTestData(
       preliminaryTestData: PreliminaryScenarioTestData,

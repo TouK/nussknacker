@@ -10,7 +10,6 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
@@ -22,7 +21,6 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
@@ -205,33 +203,6 @@ class ProcessesResources(
                     entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces)
                   )
                 )
-            }
-          }
-        }
-        // TODO: This is the legacy API, it should be removed in 1.15
-      } ~ path("processes" / ProcessNameSegment / Segment) { (processName, category) =>
-        authorize(user.can(category, Permission.Write)) {
-          optionalHeaderValue(RemoteUserName.extractFromHeader) { remoteUserName =>
-            canOverrideUsername(category, remoteUserName)(user) {
-              parameters(Symbol("isFragment") ? false) { isFragment =>
-                post {
-                  complete {
-                    processService
-                      .createProcess(
-                        CreateScenarioCommand(processName, Some(category), None, None, isFragment, remoteUserName)
-                      )
-                      // Currently, we throw error but when we switch to Tapir, we would probably handle such a request validation errors more type-safety
-                      .map(_.valueOr(err => throw err))
-                      .withListenerNotifySideEffect(response => OnSaved(response.id, response.versionId))
-                      .map(response =>
-                        HttpResponse(
-                          status = StatusCodes.Created,
-                          entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces)
-                        )
-                      )
-                  }
-                }
-              }
             }
           }
         }

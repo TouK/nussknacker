@@ -38,7 +38,7 @@ export function DescriptionField({
             showValidation={showValidation}
             readonly={readonly}
             errors={errors}
-            fieldType={FieldType.plainTextarea}
+            fieldType={FieldType.markdown}
             fieldLabel={"Description"}
             fieldName={"additionalFields.description"}
         />

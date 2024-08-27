@@ -133,6 +133,20 @@ paths:
           type:
           - string
           - 'null'
+      - name: skipUsages
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
+      - name: skipFragments
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
       responses:
         '200':
           description: ''
@@ -162,7 +176,9 @@ paths:
                     allowedProcessingModes:
                     - Request-Response
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter skipUsages, Invalid value for: query parameter
+            skipFragments'
           content:
             text/plain:
               schema:
@@ -1173,6 +1189,7 @@ paths:
                         properties:
                           parallelism: ''
                         metaDataType: LiteStreamMetaData
+                        showDescription: false
                     nodes:
                     - id: source
                       ref:
@@ -1473,6 +1490,7 @@ paths:
                     additionalFields:
                       properties: {}
                       metaDataType: ''
+                      showDescription: false
                   variableTypes:
                     existButString:
                       display: String
@@ -1497,6 +1515,7 @@ paths:
                     additionalFields:
                       properties: {}
                       metaDataType: ''
+                      showDescription: false
                   variableTypes:
                     existButString:
                       display: String
@@ -1938,6 +1957,7 @@ paths:
                       environment: test
                       useAsyncInterpretation: ''
                     metaDataType: StreamMetaData
+                    showDescription: false
         required: true
       responses:
         '200':
@@ -2044,6 +2064,7 @@ paths:
                       environment: test
                       useAsyncInterpretation: ''
                     metaDataType: StreamMetaData
+                    showDescription: false
                   name: test
               Example1:
                 summary: Validate wrong 'number of threads' property
@@ -2057,6 +2078,7 @@ paths:
                       environment: test
                       useAsyncInterpretation: ''
                     metaDataType: StreamMetaData
+                    showDescription: false
                   name: test
         required: true
       responses:
@@ -3367,6 +3389,20 @@ components:
           type: string
         label:
           type: string
+    FixedExpressionValueWithIcon:
+      title: FixedExpressionValueWithIcon
+      type: object
+      required:
+      - expression
+      - label
+      - icon
+      properties:
+        expression:
+          type: string
+        label:
+          type: string
+        icon:
+          type: string
     FixedValuesParameterEditor:
       title: FixedValuesParameterEditor
       type: object
@@ -3375,6 +3411,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValue'
+    FixedValuesWithIconParameterEditor:
+      title: FixedValuesWithIconParameterEditor
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValueWithIcon'
     FragmentClazzRef:
       title: FragmentClazzRef
       type: object
@@ -4183,6 +4227,7 @@ components:
       - $ref: '#/components/schemas/DualParameterEditor'
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/RawParameterEditor'
@@ -4313,6 +4358,7 @@ components:
       required:
       - properties
       - metaDataType
+      - showDescription
       properties:
         description:
           type:
@@ -4322,6 +4368,8 @@ components:
           $ref: '#/components/schemas/Map_String'
         metaDataType:
           type: string
+        showDescription:
+          type: boolean
     ProcessProperties:
       title: ProcessProperties
       type: object
@@ -4435,6 +4483,7 @@ components:
       - $ref: '#/components/schemas/DictParameterEditor'
       - $ref: '#/components/schemas/DurationParameterEditor'
       - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesWithIconParameterEditor'
       - $ref: '#/components/schemas/JsonParameterEditor'
       - $ref: '#/components/schemas/PeriodParameterEditor'
       - $ref: '#/components/schemas/SpelTemplateParameterEditor'

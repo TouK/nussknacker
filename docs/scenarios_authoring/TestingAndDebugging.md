@@ -59,7 +59,7 @@ For example, the below records can be used to test if the scenario has exactly o
 The `sourceId` field contains name of the source node as specified in the scenario; the `record` field contains the json representation of the event. 
 
 
-If you want to read more than 20 records from file, you will need to change [testing settings](../installation_configuration_guide/DesignerConfiguration.md#testing).
+If you want to read more than 20 records from file, you will need to change [testing settings](../configuration/DesignerConfiguration.md#testing).
 
 
 ## Debugging node behaviour 
@@ -70,8 +70,8 @@ Almost all nodes use SpEL expressions; sometimes it is not clear what was the re
 
 ## Watching nodes filtering behaviour with counts
 
-Understanding how many events passed through a given node can be very handy during debugging - choose `counts` button to see the counts snapshoot. The number displayed is the number of events which entered a given node. 
+Understanding how many events passed through a given node can be very handy during debugging - choose `counts` button to see the counts snapshot. The number displayed is the number of events which entered a given node. 
 
-In some edge cases, you may need to change algorithm used for counts computations - consult the [counts configuration](../installation_configuration_guide/DesignerConfiguration.md#counts) for details.
+In some edge cases, you may need to change algorithm used for counts computations - consult the [counts configuration](../configuration/DesignerConfiguration.md#counts) for details.
 
 ![alt_text](img/Counts.png "Watching nodes filtering behaviour")

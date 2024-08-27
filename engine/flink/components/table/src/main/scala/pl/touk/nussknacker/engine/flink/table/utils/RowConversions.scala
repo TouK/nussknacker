@@ -1,69 +1,68 @@
 package pl.touk.nussknacker.engine.flink.table.utils
 
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
-import org.apache.flink.table.api.Expressions.$
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{DataTypes, Schema, Table}
-import org.apache.flink.table.types.DataType
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import org.apache.flink.api.java.typeutils.RowTypeInfo
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.flink.table.ColumnDefinition
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object RowConversions {
 
   import scala.jdk.CollectionConverters._
 
-  def rowToMap(row: Row): java.util.Map[String, Any] = {
-    val fieldNames = row.getFieldNames(true).asScala
-    val fields     = fieldNames.map(n => n -> row.getField(n)).toMap
-    new java.util.HashMap[String, Any](fields.asJava)
-  }
-
-  def mapToRowUnsafe(map: java.util.Map[String, Any], columns: List[ColumnDefinition]): Row = {
-    val row = Row.withNames()
-    columns.foreach(c => row.setField(c.columnName, map.get(c.columnName)))
+  def contextToRow(context: Context, validationContext: ValidationContext): Row = {
+    val parentContextAsRow = for {
+      parentValidationContext <- validationContext.parent
+      parentContext           <- context.parentContext
+    } yield contextToRow(parentContext, parentValidationContext)
+    val row          = Row.withPositions(parentContextAsRow.map(_ => 3).getOrElse(2))
+    val variablesRow = encodeVariables(context.variables, validationContext)
+    row.setField(0, context.id)
+    row.setField(1, variablesRow)
+    parentContextAsRow.foreach(row.setField(2, _))
     row
   }
 
-}
-
-object NestedRowConversions {
-
-  import scala.jdk.CollectionConverters._
-
-  /*
-   This "f0" value is name given by flink at conversion of one element stream. For details read:
-   https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
-   */
-  private val NestedRowColumnDefaultFlinkGivenName = "f0"
-
-  final case class ColumnFlinkSchema(columnName: String, flinkDataType: DataType)
-
-  // TODO: avoid this step by mapping DataStream directly without this intermediate table with nested row
-  // TODO: infer schema from row and try to cast types to the desired schema
-  def buildTableFromRowStream(
-      tableEnv: StreamTableEnvironment,
-      streamOfRows: SingleOutputStreamOperator[Row],
-      columnSchema: List[ColumnFlinkSchema]
-  ): Table = {
-    val nestedRowSchema    = columnsToSingleRowFlinkSchema(columnSchema)
-    val tableWithNestedRow = tableEnv.fromDataStream(streamOfRows, nestedRowSchema)
-    val tableWithFlattenedRow = tableWithNestedRow.select(
-      columnSchema.map(c => $(NestedRowColumnDefaultFlinkGivenName).get(c.columnName).as(c.columnName)): _*
-    )
-    tableWithFlattenedRow
+  private def encodeVariables(variables: Map[String, Any], validationContext: ValidationContext): Row = {
+    val row = Row.withNames()
+    variables.foreach { case (variableName, variableValue) =>
+      val encodedValue = validationContext
+        .get(variableName)
+        .map(ToTableTypeEncoder.encode(variableValue, _))
+        .getOrElse(variableValue)
+      row.setField(variableName, encodedValue)
+    }
+    row
   }
 
-  private def columnsToSingleRowFlinkSchema(columns: List[ColumnFlinkSchema]): Schema = {
-    val fields: java.util.List[DataTypes.Field] =
-      columns.map(c => DataTypes.FIELD(c.columnName, c.flinkDataType)).asJava
-    val row = DataTypes.ROW(fields)
-    Schema
-      .newBuilder()
-      .column(
-        NestedRowColumnDefaultFlinkGivenName,
-        row
-      )
-      .build()
+  def rowToContext(row: Row): Context = {
+    def rowToScalaMap(row: Row): Map[String, AnyRef] = {
+      val fieldNames = row.getFieldNames(true).asScala
+      fieldNames.map { fieldName =>
+        fieldName -> row.getField(fieldName)
+      }.toMap
+    }
+    Context(
+      row.getField(0).asInstanceOf[String],
+      rowToScalaMap(row.getField(1).asInstanceOf[Row]),
+      Option(row).filter(_.getArity >= 3).map(_.getField(2).asInstanceOf[Row]).map(rowToContext)
+    )
+  }
+
+  implicit class TypeInformationDetectionExtension(typeInformationDetection: TypeInformationDetection) {
+
+    def contextRowTypeInfo(validationContext: ValidationContext): TypeInformation[_] = {
+      val (fieldNames, typeInfos) =
+        validationContext.localVariables
+          .mapValuesNow(ToTableTypeEncoder.alignTypingResult)
+          .mapValuesNow(typeInformationDetection.forType)
+          .unzip
+      val variablesRow = new RowTypeInfo(typeInfos.toArray[TypeInformation[_]], fieldNames.toArray)
+      Types.ROW(Types.STRING :: variablesRow :: validationContext.parent.map(contextRowTypeInfo).toList: _*)
+    }
+
   }
 
 }

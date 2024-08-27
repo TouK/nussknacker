@@ -41,7 +41,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   )
 
   /**
-    * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
+    * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder} for underlying avro types
     */
   def validate(typingResult: TypingResult, schema: Schema): ValidatedNel[OutputValidatorError, Unit] =
     validateTypingResult(typingResult, schema, None)
@@ -61,6 +61,9 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (typingResult, Type.MAP) =>
         validateMapSchema(typingResult, schema, path)
       case (tc @ TypedClass(cl, _), Type.ARRAY) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
+        validateArraySchema(tc, schema, path)
+      case (TypedObjectWithValue(tc @ TypedClass(cl, _), _), Type.ARRAY)
+          if classOf[java.util.List[_]].isAssignableFrom(cl) =>
         validateArraySchema(tc, schema, path)
       case (TypedNull, _) if !schema.isNullable =>
         invalid(typingResult, schema, path)

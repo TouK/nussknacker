@@ -51,7 +51,8 @@ class JwtTokenAuthenticationSpec
        |    accessTokenIsJwt: true
        |    publicKey: "${Base64.getEncoder.encodeToString(keyPair.getPublic.getEncoded)}"
        |    audience: "$audience"
-       |  }
+       |  },
+       |  realm: "nussknacker-test"
        |}""".stripMargin)
 
   private val validAccessToken =
@@ -117,6 +118,13 @@ class JwtTokenAuthenticationSpec
     Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(noProfileAccessToken)) ~> testRoute ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[(String, Set[String])] shouldEqual ("SomeConfiguredUsername", Set("Admin"))
+    }
+  }
+
+  it("should use custom realm") {
+    Get("/config") ~> testRoute ~> check {
+      status shouldEqual StatusCodes.Unauthorized
+      header("WWW-Authenticate").map(_.value()) shouldEqual Some("Bearer realm=\"nussknacker-test\"")
     }
   }
 

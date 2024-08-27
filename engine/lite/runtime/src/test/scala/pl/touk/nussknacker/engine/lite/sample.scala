@@ -190,10 +190,11 @@ object sample {
       ): SampleInput => ValidatedNel[ErrorType, Context] =
         input => Valid(Context(input.contextId, Map("input" -> input.value), None))
 
-      override def testRecordParser: TestRecordParser[SampleInput] = (testRecord: TestRecord) => {
-        val fields = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
-        SampleInput(fields(0), fields(1).toInt)
-      }
+      override def testRecordParser: TestRecordParser[SampleInput] = (testRecords: List[TestRecord]) =>
+        testRecords.map { testRecord =>
+          val fields = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
+          SampleInput(fields(0), fields(1).toInt)
+        }
 
     }
 

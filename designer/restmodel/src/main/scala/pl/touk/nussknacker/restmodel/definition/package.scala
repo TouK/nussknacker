@@ -124,7 +124,8 @@ package object definition {
       // Right now it's only kept because an external project uses it but it will be removed in the future.
       defaultValue: Option[String],
       editor: ParameterEditor,
-      label: Option[String]
+      label: Option[String],
+      hintText: Option[String]
   )
 
   object UIParameter {

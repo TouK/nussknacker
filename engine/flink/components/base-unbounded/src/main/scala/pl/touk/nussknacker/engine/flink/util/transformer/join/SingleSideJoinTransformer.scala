@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
@@ -40,8 +41,6 @@ class SingleSideJoinTransformer(
     with Serializable {
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer._
-
-  override def canHaveManyInputs: Boolean = true
 
   override type State = Nothing
 
@@ -130,7 +129,7 @@ class SingleSideJoinTransformer(
           .flatMap(new StringKeyedValueMapper(context, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy))
 
         val storedTypeInfo =
-          context.typeInformationDetection.forType[AnyRef](aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
+          TypeInformationDetection.instance.forType[AnyRef](aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
         val aggregatorFunction = prepareAggregatorFunction(
           aggregator,
           FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS),
