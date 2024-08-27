@@ -287,7 +287,7 @@ val flinkCommonsTextV    = "1.10.0"
 val flinkCommonsIOV      = "2.11.0"
 val avroV                = "1.11.3"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV               = "3.6.2"
+val kafkaV               = "3.8.0"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV              = "5.2.23.RELEASE"
 val scalaTestV           = "3.2.18"
