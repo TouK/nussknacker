@@ -63,7 +63,7 @@
   * java.sql.Date -> java.time.LocalDate
   * java.sql.Timestamp -> java.time.Instant
   * java.sql.Clob -> java.lang.String
-* [#6656](https://github.com/TouK/nussknacker/pull/6656) Remove support for passing env as List of strings & add default DB connection name
+* [#6656](https://github.com/TouK/nussknacker/pull/6656) Remove environment variables that are not working & add default DB connection name
 
 1.16.3 (8 August 2024)
 -------------------------
