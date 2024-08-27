@@ -29,7 +29,7 @@ class ScenarioPropertiesValidator(
 
   def validate(scenarioProperties: List[(String, String)]): ValidationResult = {
     val finalizedScenarioPropertiesConfig =
-      scenarioPropertiesConfigFinalizer.finalizeScenarioPropertiesParameters(scenarioPropertiesConfig)
+      scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioPropertiesConfig)
 
     val validated = (
       getConfiguredValidationsResults(finalizedScenarioPropertiesConfig, scenarioProperties),
