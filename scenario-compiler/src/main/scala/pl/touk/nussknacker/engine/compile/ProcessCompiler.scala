@@ -335,7 +335,7 @@ object ProcessValidator {
 
     val globalVariablesPreparer = GlobalVariablesPreparer(modelDefinition.expressionConfig)
     val expressionEvaluator =
-      ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, Seq.empty)
+      ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
 
     val expressionCompiler = ExpressionCompiler.withoutOptimization(
       classLoader,
