@@ -73,9 +73,8 @@ object ExpressionCompiler {
       modelData.designerDictServices.dictRegistry,
       modelData.modelDefinition.expressionConfig,
       modelData.modelDefinitionWithClasses.classDefinitions,
-      ExpressionEvaluator.optimizedEvaluator(
-        GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig),
-        Seq.empty
+      ExpressionEvaluator.unOptimizedEvaluator(
+        GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
       )
     )
   }
@@ -185,7 +184,8 @@ class ExpressionCompiler(
   }
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(
-      implicit nodeId: NodeId, metaData: MetaData
+      implicit nodeId: NodeId,
+      metaData: MetaData
   ) =
     parameterDefinitions
       .map(p => p.name -> p.validators.map { v => compileValidator(v, p.name, p.typ, globalVariables) }.sequence)
