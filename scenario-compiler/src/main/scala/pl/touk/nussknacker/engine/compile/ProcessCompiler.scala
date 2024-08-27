@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, Type
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
@@ -331,11 +332,16 @@ object ProcessValidator {
       classLoader: ClassLoader = getClass.getClassLoader
   ): ProcessValidator = {
     import definitionWithTypes.modelDefinition
+
+    val globalVariablesPreparer = GlobalVariablesPreparer(modelDefinition.expressionConfig)
+    val expressionEvaluator     = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
+
     val expressionCompiler = ExpressionCompiler.withoutOptimization(
       classLoader,
       dictRegistry,
       modelDefinition.expressionConfig,
-      definitionWithTypes.classDefinitions
+      definitionWithTypes.classDefinitions,
+      expressionEvaluator
     )
 
     val nodeCompiler = new NodeCompiler(
@@ -352,7 +358,7 @@ object ProcessValidator {
     new ProcessCompiler(
       classLoader,
       sub,
-      GlobalVariablesPreparer(modelDefinition.expressionConfig),
+      globalVariablesPreparer,
       nodeCompiler,
       customProcessValidator
     )

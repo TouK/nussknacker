@@ -33,7 +33,7 @@ class TestDataPreparer(
   private lazy val validationContext = globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
   private lazy val evaluator: ExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   private lazy val expressionCompiler: ExpressionCompiler =
-    ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, classDefinitionSet)
+    ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, classDefinitionSet, evaluator)
 
   def prepareRecordsForTest[T](source: Source, records: List[ScenarioTestRecord]): List[T] = {
     val (jsonRecordList, parametersRecordList) = records.partition {

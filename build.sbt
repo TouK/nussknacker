@@ -302,7 +302,7 @@ val logbackJsonV            = "0.1.5"
 val betterFilesV            = "3.9.2"
 val circeV                  = "0.14.6"
 val circeGenericExtrasV     = "0.14.3"
-val circeYamlV              = "0.14.2"
+val circeYamlV              = "0.15.2"
 val jwtCirceV               = "10.0.0"
 val jacksonV                = "2.15.4"
 val catsV                   = "2.10.0"
@@ -663,6 +663,19 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     componentsApi        % Provided,
     httpUtils            % Provided,
     testUtils            % Test
+  )
+
+lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
+  .settings(commonSettings)
+  .settings(
+    name                                   := "nussknacker-flink-metrics-deferred-reporter",
+    crossPaths                             := false,
+    Compile / packageDoc / publishArtifact := false,
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided
+      )
+    },
   )
 
 lazy val flinkDevModel = (project in flink("management/dev-model"))
@@ -1988,6 +2001,7 @@ lazy val designer = (project in file("designer/server"))
     deploymentManagerApi,
     restmodel,
     listenerApi,
+    defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
     componentsApi                     % "test->test",
@@ -2117,6 +2131,7 @@ lazy val modules = List[ProjectReference](
   flinkComponentsApi,
   flinkExtensionsApi,
   flinkScalaUtils,
+  flinkMetricsDeferredReporter,
   requestResponseComponentsUtils,
   requestResponseComponentsApi,
   componentsApi,
