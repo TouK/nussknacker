@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -79,9 +78,6 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       list: List[TestRecord] = List(),
       collectingListener: ResultsCollectingListener[Any]
   ): LocalModelData = {
-    val modelConfig = ConfigFactory
-      .empty()
-      .withValue("useTypingResultTypeInformation", fromAnyRef(true))
     val sourceComponent = ComponentDefinition(
       "start",
       SourceFactory.noParamUnboundedStreamFactory[TestRecord](
@@ -89,7 +85,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       )
     )
     LocalModelData(
-      modelConfig,
+      ConfigFactory.empty(),
       sourceComponent :: FlinkBaseComponentProvider.Components,
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )

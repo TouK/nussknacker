@@ -28,17 +28,20 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
+import pl.touk.nussknacker.ui.definition.component.ComponentListQueryOptions.{
+  FetchAllWithUsages,
+  FetchAllWithoutUsages,
+  FetchNonFragmentsWithUsages,
+  FetchNonFragmentsWithoutUsages
+}
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.definition.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.definition.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.{
-  ProcessingTypeData,
-  ProcessingTypeDataProvider,
-  ProcessingTypeDataReader,
-  ScenarioParametersService
-}
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
@@ -551,39 +554,68 @@ class DefaultComponentServiceSpec
       createFragmentEntity(name = category, category = category, processingType = processingType)
     }
 
-  it should "return components for each user" in {
-    val processes        = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
-    val componentService = prepareService(modelDataMap, processes, fragmentFromCategories)
+  private val processes        = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
+  private val componentService = prepareService(modelDataMap, processes, fragmentFromCategories)
 
-    def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
-      prepareComponents(user)
-        .map(c => c -> categories.intersect(c.categories))
-        .filter(seq => seq._2.nonEmpty)
-        .map(seq => seq._1.copy(categories = seq._2))
+  def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
+    prepareComponents(user)
+      .map(c => c -> categories.intersect(c.categories))
+      .filter(seq => seq._2.nonEmpty)
+      .map(seq => seq._1.copy(categories = seq._2))
 
-    val expectedAdminComponents     = prepareComponents(admin)
-    val expectedMarketingComponents = filterUserComponents(marketingUser, List(CategoryMarketing))
-    val expectedFraudComponents     = filterUserComponents(fraudUser, List(CategoryFraud))
+  private val expectedAdminComponents     = prepareComponents(admin)
+  private val expectedMarketingComponents = filterUserComponents(marketingUser, List(CategoryMarketing))
+  private val expectedFraudComponents     = filterUserComponents(fraudUser, List(CategoryFraud))
 
-    val testingData = Table(
-      ("user", "expectedComponents", "possibleCategories"),
-      (marketingUser, expectedMarketingComponents, List(CategoryMarketing)),
-      (fraudUser, expectedFraudComponents, List(CategoryFraud)),
-      (admin, expectedAdminComponents, AllCategories)
+  private val testingData = Table(
+    ("user", "expectedComponents", "possibleCategories"),
+    (marketingUser, expectedMarketingComponents, List(CategoryMarketing)),
+    (fraudUser, expectedFraudComponents, List(CategoryFraud)),
+    (admin, expectedAdminComponents, AllCategories)
+  )
+
+  it should "return expected components for all query options" in {
+    val queryOptionsList = Table(
+      "query options",
+      FetchAllWithUsages,
+      FetchNonFragmentsWithUsages,
+      FetchAllWithoutUsages,
+      FetchNonFragmentsWithoutUsages
     )
+
+    forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], _) =>
+      forAll(queryOptionsList) { (queryOptions: ComponentListQueryOptions) =>
+        val returnedComponents =
+          componentService.getComponentsList(queryOptions)(user).futureValue
+
+        queryOptions match {
+          case FetchNonFragmentsWithUsages | FetchNonFragmentsWithoutUsages =>
+            returnedComponents.size should be < expectedComponents.size
+          case FetchAllWithUsages | FetchAllWithoutUsages =>
+            returnedComponents.size shouldBe expectedComponents.size
+        }
+
+        val filteredExpectedComponents = expectedComponents
+          .filter(component =>
+            queryOptions match {
+              case FetchNonFragmentsWithUsages | FetchNonFragmentsWithoutUsages =>
+                component.componentType != ComponentType.Fragment
+              case FetchAllWithUsages | FetchAllWithoutUsages =>
+                true
+            }
+          )
+
+        returnedComponents.map(_.id) should contain theSameElementsAs filteredExpectedComponents.map(_.id)
+      }
+    }
+  }
+
+  it should "return components with correct counts for each user" in {
 
     forAll(testingData) {
       (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
-        val returnedComponentsWithUsages    = componentService.getComponentsList(skipUsages = false)(user).futureValue
-        val returnedComponentsWithoutUsages = componentService.getComponentsList(skipUsages = true)(user).futureValue
-
-        returnedComponentsWithUsages.map(_.id) shouldBe returnedComponentsWithoutUsages.map(_.id)
-
-        returnedComponentsWithUsages.map(_.id).sortBy(_.value) should contain theSameElementsAs expectedComponents
-          .map(_.id)
-          .sortBy(
-            _.value
-          )
+        val returnedComponentsWithUsages =
+          componentService.getComponentsList(FetchAllWithUsages)(user).futureValue
 
         def counts(list: List[ComponentListElement]) = list.map(el => el.id -> el.usageCount).toMap
         val returnedCounts                           = counts(returnedComponentsWithUsages)
@@ -686,7 +718,7 @@ class DefaultComponentServiceSpec
     )
     inside {
       intercept[TestFailedException] {
-        componentService.getComponentsList(skipUsages = false)(admin).futureValue
+        componentService.getComponentsList(FetchAllWithUsages)(admin).futureValue
       }.cause
     } { case Some(ComponentConfigurationException(_, wrongConfigurations)) =>
       wrongConfigurations.toList should contain theSameElementsAs expectedWrongConfigurations
@@ -816,7 +848,7 @@ class DefaultComponentServiceSpec
     }
 
     ProcessingTypeDataProvider(
-      processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithRestriction),
+      processingTypeDataMap.mapValuesNow(ProcessingTypeDataLoader.toValueWithRestriction),
       ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
     ).mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(

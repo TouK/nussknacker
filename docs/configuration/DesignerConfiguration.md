@@ -4,7 +4,7 @@ sidebar_position: 4
 ---
 # Designer configuration
 
-Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./Common.md#configuration-areas) to understand where Designer configuration should be
+Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./index.mdx#configuration-areas) to understand where Designer configuration should be
 placed in the Nussknacker configuration.
 
 The default Designer configuration can be found in [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf).
@@ -366,6 +366,7 @@ authentication: {
   authorizeUri: ${?OAUTH2_AUTHORIZE_URI}
   clientSecret: ${?OAUTH2_CLIENT_SECRET}
   clientId: ${?OAUTH2_CLIENT_ID}
+  issuer: ${?OAUTH2_ISSUER}
   profileUri: ${?OAUTH2_PROFILE_URI}
   profileFormat: ${?OAUTH2_PROFILE_FORMAT}
   accessTokenUri: ${?OAUTH2_ACCESS_TOKEN_URI}
@@ -389,6 +390,7 @@ authentication: {
     scope: ${?OAUTH2_SCOPE}
     audience: ${?OAUTH2_AUDIENCE}
   }
+  rolesClaims: ${?OAUTH2_ROLES_CLAIMS}
   usernameClaim: ${?OAUTH2_USERNAME_CLAIM}
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}

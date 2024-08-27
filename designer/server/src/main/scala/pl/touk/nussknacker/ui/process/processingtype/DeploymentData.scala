@@ -10,6 +10,7 @@ final case class DeploymentData(
     validDeploymentManager: ValidatedNel[String, DeploymentManager],
     metaDataInitializer: MetaDataInitializer,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
     deploymentManagerType: DeploymentManagerType,
     engineSetupName: EngineSetupName

@@ -6,6 +6,8 @@ import io.circe.Json
 import io.circe.Json.{fromBigDecimal, fromBigInt, fromBoolean, fromDouble, fromFloat, fromInt, fromLong, fromString}
 
 import java.math.BigInteger
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
+import java.time.format.DateTimeFormatter
 import scala.jdk.CollectionConverters._
 
 object ValueEncoder {
@@ -24,6 +26,17 @@ object ValueEncoder {
       fromFloat(value).map(_.validNel).getOrElse(s"Could not encode $value as json.".invalidNel)
     case value: Double =>
       fromDouble(value).map(_.validNel).getOrElse(s"Could not encode $value as json.".invalidNel)
+
+    case value: LocalDateTime =>
+      fromString(value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).validNel
+    case value: LocalDate =>
+      fromString(value.format(DateTimeFormatter.ISO_LOCAL_DATE)).validNel
+    case value: LocalTime =>
+      fromString(value.format(DateTimeFormatter.ISO_LOCAL_TIME)).validNel
+    case value: Duration =>
+      fromString(value.toString).validNel // Duration uses ISO-8601 format by default
+    case value: Period =>
+      fromString(value.toString).validNel // Period uses ISO-8601 format by default
 
     case vals: java.util.Collection[_] =>
       val encodedValues = vals.asScala.map(elem => encodeValue(elem)).toList.sequence

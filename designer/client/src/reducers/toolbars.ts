@@ -2,6 +2,7 @@ import { combineReducers } from "redux";
 import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { Reducer } from "../actions/reduxTypes";
+import { Panels, panels } from "./panel";
 
 export enum ToolbarsSide {
     TopRight = "topRight",
@@ -21,11 +22,6 @@ type Positions = {
 };
 
 type Collapsed = Record<string, boolean>;
-
-interface Panels {
-    left?: boolean;
-    right?: boolean;
-}
 
 export type ToolbarsState = {
     positions: Positions;
@@ -121,29 +117,6 @@ const collapsed: Reducer<Collapsed> = (state = {}, action) => {
     }
 };
 
-const panels: Reducer<Panels> = (state = { left: true, right: true }, action) => {
-    switch (action.type) {
-        case "TOGGLE_LEFT_PANEL": {
-            return {
-                ...state,
-                left: !state.left,
-            };
-        }
-        case "TOGGLE_RIGHT_PANEL": {
-            return {
-                ...state,
-                right: !state.right,
-            };
-        }
-        case "RESET_TOOLBARS": {
-            return { left: true, right: true };
-        }
-
-        default:
-            return state;
-    }
-};
-
 const initData: Reducer<InitData> = (state = [], action) => {
     return action.type === "REGISTER_TOOLBARS" ? action.toolbars : state;
 };
@@ -167,8 +140,7 @@ const reducer: Reducer<ToolbarsStates> = (state = {}, action) => {
         case "MOVE_TOOLBAR":
         case "TOGGLE_TOOLBAR":
         case "TOGGLE_ALL_TOOLBARS":
-        case "TOGGLE_LEFT_PANEL":
-        case "TOGGLE_RIGHT_PANEL":
+        case "TOGGLE_PANEL":
         case "TOGGLE_COMPONENT_GROUP_TOOLBOX": {
             const withReset = resetReducer(state[`#${action.configId}`], action);
             return {

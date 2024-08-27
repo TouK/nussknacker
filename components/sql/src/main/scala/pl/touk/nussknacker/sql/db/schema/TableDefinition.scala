@@ -8,17 +8,14 @@ object TableDefinition {
 
   def apply(resultMeta: ResultSetMetaData): TableDefinition =
     TableDefinition(
-      columnDefs = (1 to resultMeta.getColumnCount).map(ColumnDefinition(_, resultMeta)).toList
+      columnDefs = (1 to resultMeta.getColumnCount)
+        .map(ColumnDefinition(_, resultMeta))
+        .toList
     )
 
-  def applyList(fields: List[(String, TypingResult)]): TableDefinition = {
-    val columnDefinitions = fields
-      .map { typing =>
-        ColumnDefinition(typing)
-      }
-    TableDefinition(
-      columnDefs = columnDefinitions
-    )
+  def applyList(fields: List[(String, String)]): TableDefinition = {
+    val columnDefinitions = fields.map(ColumnDefinition.apply)
+    TableDefinition(columnDefs = columnDefinitions)
   }
 
 }

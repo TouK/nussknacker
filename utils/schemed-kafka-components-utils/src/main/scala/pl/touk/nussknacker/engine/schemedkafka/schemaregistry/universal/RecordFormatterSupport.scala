@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.{AvroMessageFormatter, AvroMessageReader}
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.nio.charset.StandardCharsets
 
@@ -31,7 +31,7 @@ trait RecordFormatterSupport {
 
 object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
   override def formatMessage(data: Any): Json =
-    BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader).encode(data)
+    ToJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader).encode(data)
 
   override def readKeyMessage(
       topic: TopicName.ForSource,

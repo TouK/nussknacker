@@ -36,7 +36,7 @@ import java.time.Instant
 
 trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
   protected val sinkForLongsResultsHolder: () => TestResultsHolder[java.lang.Long]
-  protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[InputMeta[_]]
+  protected val sinkForInputMetaResultsHolder: () => TestResultsHolder[java.util.Map[String @unchecked, _]]
 
   private lazy val creator: ProcessConfigCreator = new DelayedKafkaUniversalProcessConfigCreator(
     sinkForLongsResultsHolder(),
@@ -96,7 +96,7 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
 
 class DelayedKafkaUniversalProcessConfigCreator(
     sinkForLongsResultsHolder: => TestResultsHolder[java.lang.Long],
-    sinkForInputMetaResultsHolder: => TestResultsHolder[InputMeta[_]]
+    sinkForInputMetaResultsHolder: => TestResultsHolder[java.util.Map[String @unchecked, _]]
 ) extends KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
 
   override def sourceFactories(

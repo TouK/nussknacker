@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper
 }
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
+import pl.touk.nussknacker.engine.flink.table.utils.{RowConversions, ToTableTypeEncoder}
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.{TypeInformationDetectionExtension, rowToContext}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -156,6 +156,7 @@ object TableJoinComponent
         mainStream.flatMap(
           new MainBranchToRowFunction(
             KeyParamDeclaration.extractValueUnsafe(params)(mainBranchId),
+            flinkNodeContext.branchValidationContext(mainBranchId),
             flinkNodeContext.lazyParameterHelper
           ),
           mainBranchTypeInfo(
@@ -207,7 +208,8 @@ object TableJoinComponent
 
   private class MainBranchToRowFunction(
       mainKeyLazyParam: LazyParameter[AnyRef],
-      lazyParameterHelper: FlinkLazyParameterFunctionHelper
+      mainBranchValidationContext: ValidationContext,
+      lazyParameterHelper: FlinkLazyParameterFunctionHelper,
   ) extends AbstractLazyParameterInterpreterFunction(lazyParameterHelper)
       with FlatMapFunction[Context, Row] {
 
@@ -216,8 +218,11 @@ object TableJoinComponent
     override def flatMap(context: Context, out: Collector[Row]): Unit = {
       collectHandlingErrors(context, out) {
         val row = Row.withNames()
-        row.setField(contextInternalColumnName, RowConversions.contextToRow(context))
-        row.setField(mainKeyInternalColumnName, evaluateKey(context))
+        row.setField(contextInternalColumnName, RowConversions.contextToRow(context, mainBranchValidationContext))
+        row.setField(
+          mainKeyInternalColumnName,
+          ToTableTypeEncoder.encode(evaluateKey(context), mainKeyLazyParam.returnType)
+        )
         row
       }
     }
@@ -232,7 +237,9 @@ object TableJoinComponent
     Types.ROW_NAMED(
       Array(contextInternalColumnName, mainKeyInternalColumnName),
       flinkNodeContext.typeInformationDetection.contextRowTypeInfo(mainBranchValidationContext),
-      flinkNodeContext.typeInformationDetection.forType(mainKeyLazyParam.returnType)
+      flinkNodeContext.typeInformationDetection.forType(
+        ToTableTypeEncoder.alignTypingResult(mainKeyLazyParam.returnType)
+      )
     )
   }
 
@@ -250,8 +257,14 @@ object TableJoinComponent
     override def flatMap(context: Context, out: Collector[Row]): Unit = {
       collectHandlingErrors(context, out) {
         val row = Row.withNames()
-        row.setField(joinedKeyInternalColumnName, evaluateKey(context))
-        row.setField(outputInternalColumnName, evaluateOutput(context))
+        row.setField(
+          joinedKeyInternalColumnName,
+          ToTableTypeEncoder.encode(evaluateKey(context), joinedKeyLazyParam.returnType)
+        )
+        row.setField(
+          outputInternalColumnName,
+          ToTableTypeEncoder.encode(evaluateOutput(context), outputLazyParam.returnType)
+        )
         row
       }
     }
@@ -265,8 +278,12 @@ object TableJoinComponent
   ) = {
     Types.ROW_NAMED(
       Array(joinedKeyInternalColumnName, outputInternalColumnName),
-      flinkNodeContext.typeInformationDetection.forType(joinedKeyLazyParam.returnType),
-      flinkNodeContext.typeInformationDetection.forType(outputLazyParam.returnType)
+      flinkNodeContext.typeInformationDetection.forType(
+        ToTableTypeEncoder.alignTypingResult(joinedKeyLazyParam.returnType)
+      ),
+      flinkNodeContext.typeInformationDetection.forType(
+        ToTableTypeEncoder.alignTypingResult(outputLazyParam.returnType)
+      )
     )
   }
 

@@ -1,4 +1,4 @@
-const SCROLL_THUMB_SIZE = 8;
+export const SCROLL_THUMB_SIZE = 8;
 
 export const SIDEBAR_WIDTH = 288;
 export const PANEL_WIDTH = SIDEBAR_WIDTH + SCROLL_THUMB_SIZE;

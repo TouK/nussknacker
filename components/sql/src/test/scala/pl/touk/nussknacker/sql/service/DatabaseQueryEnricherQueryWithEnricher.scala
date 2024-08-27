@@ -27,7 +27,7 @@ trait DatabaseQueryEnricherQueryWithEnricher extends BaseDatabaseQueryEnricherTe
     val meta = st.getMetaData
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
-      argsCount = 1,
+      argsCount = parameters.size,
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )

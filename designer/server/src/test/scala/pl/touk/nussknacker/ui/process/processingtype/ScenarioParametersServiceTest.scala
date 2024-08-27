@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import cats.data.Validated.Invalid
+import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelDependencies
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ModelDependencies}
 import pl.touk.nussknacker.engine.api.component.{ComponentProvider, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -15,8 +16,10 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import cats.effect.unsafe.implicits.global
+import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 
 import java.nio.file.Path
 import scala.jdk.CollectionConverters._
@@ -274,24 +277,27 @@ class ScenarioParametersServiceTest
         "SCHEMA_REGISTRY_URL" -> "foo"
       ).asJava
     )
-    val designerConfig =
-      DesignerConfigLoader.load(
-        ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig),
-        getClass.getClassLoader
-      )
+
     val workPath = designerServerModuleDir.resolve("work")
     logDirectoryStructure(workPath)
-    val processingTypeData = ProcessingTypeDataReader.loadProcessingTypeData(
-      designerConfig,
-      processingType =>
-        ModelDependencies(
-          Map.empty,
-          componentId => DesignerWideComponentId(componentId.toString),
-          Some(workPath),
-          shouldIncludeComponentProvider(processingType, _)
-        ),
-      _ => TestFactory.deploymentManagerDependencies,
+    val processingTypeDataReader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(
+      new LoadableConfigBasedNussknackerConfig(IO.pure {
+        ConfigWithUnresolvedVersion(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
+      })
     )
+
+    val processingTypeData = processingTypeDataReader
+      .loadProcessingTypeData(
+        processingType =>
+          ModelDependencies(
+            Map.empty,
+            componentId => DesignerWideComponentId(componentId.toString),
+            Some(workPath),
+            shouldIncludeComponentProvider(processingType, _)
+          ),
+        _ => TestFactory.deploymentManagerDependencies,
+      )
+      .unsafeRunSync()
     val parametersService = processingTypeData.getCombined().parametersService
 
     parametersService.scenarioParametersCombinationsWithWritePermission(TestFactory.adminUser()) shouldEqual List(
@@ -308,6 +314,7 @@ class ScenarioParametersServiceTest
   private def logDirectoryStructure(workPath: Path): Unit = {
     def listFiles(path: Path): Unit =
       logger.info(s"$path files: ${Option(path.toFile.list()).map(_.mkString(", ")).getOrElse("<missing>")}")
+
     List(
       workPath,
       workPath.resolve("components"),

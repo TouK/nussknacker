@@ -47,6 +47,9 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     .withExtraComponents(additionalComponents)
     .build()
 
+  // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
+  // See: https://issues.apache.org/jira/browse/FLINK-15867
+  // See AggFunctionFactory.createFirstValueAggFunction
   test("first value aggregator should be able to aggregate by number types, string and boolean declared in spel") {
     val aggregationParameters =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions).map { expr =>
@@ -69,6 +72,28 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     val result   = runner.runWithSingleRecordBounded(scenario)
     result shouldBe Symbol("valid")
     result.validValue.successes.size shouldBe aggregationParameters.size
+  }
+
+  test("should be able to group by advanced types") {
+    val aggregatingBranches =
+      ("{foo: 1}".spel ::
+        "{{foo: 1, bar: '123'}}".spel :: Nil).zipWithIndex.map { case (expr, branchIndex) =>
+        aggregationTypeTestingBranch(
+          groupByExpr = expr,
+          aggregateByExpr = spelStr,
+          idSuffix = branchIndex.toString
+        )
+      }
+
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .split(
+        "split",
+        aggregatingBranches: _*
+      )
+    val result = runner.runWithoutData(scenario)
+    result shouldBe Symbol("valid")
   }
 
   test("throws exception when using not supported types in aggregate in groupBy") {

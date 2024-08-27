@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCod
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
+import cats.effect.IO
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
@@ -43,12 +44,9 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.processingtype.{
-  CombinedProcessingTypeData,
-  ProcessingTypeData,
-  ProcessingTypeDataProvider,
-  ProcessingTypeDataReader
-}
+import pl.touk.nussknacker.ui.process.processingtype._
+import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
@@ -56,7 +54,8 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
-
+import cats.effect.unsafe.implicits.global
+import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -141,14 +140,16 @@ trait NuResourcesTest
 
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
-  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] =
-    ProcessingTypeDataProvider(
-      ProcessingTypeDataReader.loadProcessingTypeData(
-        ConfigWithUnresolvedVersion(testConfig),
-        _ => modelDependencies,
-        _ => deploymentManagerDependencies,
-      )
+  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
+    val processingTypeDataReader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(
+      new LoadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(testConfig)))
     )
+    ProcessingTypeDataProvider(
+      processingTypeDataReader
+        .loadProcessingTypeData(_ => modelDependencies, _ => deploymentManagerDependencies)
+        .unsafeRunSync()
+    )
+  }
 
   protected val processService: DBProcessService = createDBProcessService(deploymentService)
 

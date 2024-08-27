@@ -1,20 +1,20 @@
 /* eslint-disable i18next/no-literal-string */
-import progressBar from "./progressBar.js";
-import path from "path";
-import webpack, { Configuration } from "webpack";
-import HtmlWebpackPlugin from "html-webpack-plugin";
-import HtmlWebpackHarddiskPlugin from "html-webpack-harddisk-plugin";
-import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
-import MomentLocalesPlugin from "moment-locales-webpack-plugin";
 import ReactRefreshWebpackPlugin from "@pmmmwh/react-refresh-webpack-plugin";
 import PreloadWebpackPlugin from "@vue/preload-webpack-plugin";
-import CopyPlugin from "copy-webpack-plugin";
 import autoprefixer from "autoprefixer";
+import CopyPlugin from "copy-webpack-plugin";
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
+import HtmlWebpackHarddiskPlugin from "html-webpack-harddisk-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import MomentLocalesPlugin from "moment-locales-webpack-plugin";
+import path from "path";
 import postcss_move_props_to_bg_image_query from "postcss-move-props-to-bg-image-query";
+import webpack, { Configuration } from "webpack";
 import { withModuleFederationPlugins } from "./configs/withModuleFederationPlugins";
+import { dependencies } from "./package.json";
+import progressBar from "./progressBar.js";
 import { hash, version } from "./version";
 import "webpack-dev-server";
-import { dependencies } from "./package.json";
 
 const isProd = process.env.NODE_ENV === "production";
 const entry = {
@@ -37,6 +37,8 @@ const outputPath = path.join(process.cwd(), "dist");
 
 const mode = isProd ? "production" : "development";
 const isBundleReport = process.env.NODE_ENV === "bundleReport";
+const PORT = process.env.PORT || 3000;
+
 const config: Configuration = {
     mode: mode,
     performance: {
@@ -80,7 +82,7 @@ const config: Configuration = {
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
             "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
         },
-        port: 3000,
+        port: PORT,
         proxy: {
             "/api": {
                 target: process.env.BACKEND_DOMAIN,
@@ -125,7 +127,7 @@ const config: Configuration = {
                 },
             },
             "/static": {
-                target: "http://localhost:3000",
+                target: `http://localhost:${PORT}`,
                 changeOrigin: true,
                 pathRewrite: {
                     "^/static": "/",
