@@ -32,6 +32,7 @@ export type FeaturesSettings = {
     remoteEnvironment: { targetEnvironmentId: string };
     environmentAlert: EnvironmentTagSettings;
     commentSettings: { substitutionPattern: string; substitutionLink: string };
+    scenarioLabelSettings?: { validationPattern: string }
     deploymentCommentSettings?: { exampleComment: string };
     intervalTimeSettings: { processes: number; healthCheck: number }; // TODO: verify usage
     tabs: DynamicTabData[];

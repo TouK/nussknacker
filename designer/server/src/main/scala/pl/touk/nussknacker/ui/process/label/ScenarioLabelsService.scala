@@ -1,10 +1,15 @@
 package pl.touk.nussknacker.ui.process.label
 
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioLabelsRepository}
+import pl.touk.nussknacker.ui.validation.ScenarioLabelsValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ScenarioLabelsService(scenarioLabelsRepository: ScenarioLabelsRepository, dbioRunner: DBIOActionRunner)(
+class ScenarioLabelsService(
+    scenarioLabelsRepository: ScenarioLabelsRepository,
+    scenarioLabelsValidator: ScenarioLabelsValidator,
+    dbioRunner: DBIOActionRunner
+)(
     implicit ec: ExecutionContext
 ) {
 
@@ -15,5 +20,8 @@ class ScenarioLabelsService(scenarioLabelsRepository: ScenarioLabelsRepository, 
         _.toList.flatMap(_._2).map(_.value).distinct.sorted
       }
   }
+
+  def validatedScenarioLabels(labels: List[String]) =
+    scenarioLabelsValidator.validate(labels.map(ScenarioLabel.apply))
 
 }

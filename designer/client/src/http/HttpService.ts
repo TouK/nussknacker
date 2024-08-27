@@ -29,7 +29,8 @@ import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-
 import { GenericValidationRequest } from "../actions/nk/genericAction";
 import { EventTrackingSelector } from "../containers/event-tracking";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
-import { AvailableScenarioLabels } from "../components/Labels/types";
+import {AvailableScenarioLabels, ScenarioLabelsValidationResponse} from "../components/Labels/types";
+import {ScenarioLabelValidationError} from "../components/toolbars/scenarioDetails/ScenarioLabels";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -283,7 +284,7 @@ class HttpService {
             .get<AvailableScenarioLabels>(`/scenarioLabels`)
             .catch((error) =>
                 Promise.reject(
-                    this.#addError(i18next.t("notification.error.cannotFetchStatusDefinitions", "Cannot fetch scenario labels"), error),
+                    this.#addError(i18next.t("notification.error.cannotFetchScenarioLabels", "Cannot fetch scenario labels"), error),
                 ),
             );
     }
@@ -474,6 +475,18 @@ class HttpService {
             this.#addError(i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"), error, true),
         );
         return promise;
+    }
+
+    validateScenarioLabels(labels: string[]): Promise<AxiosResponse<ScenarioLabelsValidationResponse>> {
+        const data = { labels: labels }
+        return api
+            .post<ScenarioLabelsValidationResponse>(`/scenarioLabels/validation`, data)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotValidateScenarioLabels", "Cannot validate scenario labels"), error),
+                ),
+            );
+
     }
 
     getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {

@@ -11,6 +11,8 @@ import pl.touk.nussknacker.ui.statistics.{Fingerprint, FingerprintService}
 
 import java.net.URL
 import scala.concurrent.ExecutionContext
+import scala.util.Try
+import scala.util.matching.Regex
 
 class SettingsResources(
     config: FeatureTogglesConfig,
@@ -36,7 +38,7 @@ class SettingsResources(
                 environmentAlert = config.environmentAlert,
                 commentSettings = config.commentSettings,
                 deploymentCommentSettings = config.deploymentCommentSettings,
-                scenarioLabelsSettings = config.scenarioLabelSettings,
+                scenarioLabelSettings = config.scenarioLabelSettings,
                 surveySettings = config.surveySettings,
                 tabs = config.tabs,
                 intervalTimeSettings = config.intervalTimeSettings,
@@ -93,22 +95,28 @@ object DeploymentCommentSettings {
 
 final case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
 
-@JsonCodec final case class ScenarioLabelSettings(validationPattern: String)
+@JsonCodec final case class ScenarioLabelSettings(validationPattern: String) {
+
+  def validationRules: List[ScenarioLabelSettings.ValidationRule] = List(
+    ScenarioLabelSettings.ValidationRule(validationPattern.r, message = "TODOMKP")
+  )
+
+}
 
 object ScenarioLabelSettings {
+
+  final case class ValidationRule(validationRegex: Regex, message: String) {
+
+  }
 
   def create(
       validationPattern: String,
   ): Validated[EmptyScenarioLabelSettingsError, ScenarioLabelSettings] = {
     Validated.cond(
-      validationPattern.nonEmpty,
+      validationPattern.nonEmpty && Try(validationPattern.r).isSuccess,
       new ScenarioLabelSettings(validationPattern),
       EmptyScenarioLabelSettingsError("Field validationPattern cannot be empty.")
     )
-  }
-
-  def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
-    new DeploymentCommentSettings(validationPattern, exampleComment)
   }
 
 }
@@ -153,7 +161,7 @@ object TopTabType extends Enumeration {
     environmentAlert: Option[EnvironmentAlert],
     commentSettings: Option[CommentSettings],
     deploymentCommentSettings: Option[DeploymentCommentSettings],
-    scenarioLabelsSettings: Option[ScenarioLabelSettings],
+    scenarioLabelSettings: Option[ScenarioLabelSettings],
     surveySettings: Option[SurveySettings],
     tabs: Option[List[TopTab]],
     intervalTimeSettings: IntervalTimeSettings,

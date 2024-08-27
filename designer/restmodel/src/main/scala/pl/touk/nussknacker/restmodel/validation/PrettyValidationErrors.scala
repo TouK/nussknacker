@@ -47,8 +47,10 @@ object PrettyValidationErrors {
           description = s"Duplicate node ids: ${ids.mkString(", ")}",
           errorType = NodeValidationErrorType.RenderNotAllowed
         )
-      case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
-      case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
+      case EmptyProcess                       => node("Empty scenario", "Scenario is empty, please add some nodes")
+      case ScenarioLabelValidationError(_, d,_) =>
+        node("Invalid scenario labels", d, errorType = NodeValidationErrorType.SaveNotAllowed)
+      case InvalidRootNode(_)                 => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) =>
         node(
           "Scenario must end with a sink, processor or fragment",

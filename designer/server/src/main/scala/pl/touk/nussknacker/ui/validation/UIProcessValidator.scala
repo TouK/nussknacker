@@ -214,7 +214,8 @@ class UIProcessValidator(
                   ScenarioLabelValidationError(
                     s"Bad scenario label format for labels ${notValidLabels
                         .mkString("'", ",", "'")}. Validation pattern: ${settings.validationPattern}",
-                    ""
+                    "",
+                    notValidLabels.map(_.value)
                   )
                 ),
                 List.empty
