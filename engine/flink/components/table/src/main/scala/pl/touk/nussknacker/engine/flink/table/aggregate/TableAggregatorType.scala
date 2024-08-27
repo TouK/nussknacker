@@ -1,30 +1,47 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import enumeratum._
+import org.apache.flink.table.api.DataTypes.RAW
 import org.apache.flink.table.catalog.DataTypeFactory
 import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions, FunctionDefinition}
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.inference.CallContext
+import org.apache.flink.table.types.logical.LogicalTypeRoot.{
+  BIGINT,
+  BOOLEAN,
+  DATE,
+  DECIMAL,
+  DOUBLE,
+  FLOAT,
+  INTEGER,
+  SMALLINT,
+  TIMESTAMP_WITHOUT_TIME_ZONE,
+  TIMESTAMP_WITH_LOCAL_TIME_ZONE,
+  TIME_WITHOUT_TIME_ZONE,
+  TINYINT,
+  VARCHAR
+}
 import org.apache.flink.table.types.logical.{LogicalTypeFamily, LogicalTypeRoot, RawType}
 import org.apache.flink.table.types.utils.TypeInfoDataTypeConverter
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.aggregateByParamName
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregator.{
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregatorType.{
   NuAggregationFunctionCallContext,
   buildError,
-  dataTypeFactory
+  dataTypeFactory,
+  toDataType
 }
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypeFactoryPreparer
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.LogicalTypeExtension
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import java.util
 import java.util.Optional
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.LogicalTypeExtension
 
 /*
    TODO: add remaining aggregations functions:
@@ -38,88 +55,131 @@ import scala.jdk.OptionConverters._
 
    TODO: add distinct parameter - but not for First and Last aggregators
  */
-object TableAggregator extends Enum[TableAggregator] {
+object TableAggregatorType extends Enum[TableAggregatorType] {
   val values = findValues
 
-  case object Average extends TableAggregator {
+  case object Average extends TableAggregatorType {
     override val displayName: String                                = "Average"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.AVG
   }
 
-  case object Count extends TableAggregator {
+  case object Count extends TableAggregatorType {
     override val displayName: String                                = "Count"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.COUNT
   }
 
-  case object Max extends TableAggregator {
+  case object Max extends TableAggregatorType {
     override val displayName: String                                = "Max"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.MAX
+    override val inputParameterRuntimeAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(
+      List(
+        TINYINT,
+        SMALLINT,
+        INTEGER,
+        BIGINT,
+        FLOAT,
+        DOUBLE,
+        BOOLEAN,
+        VARCHAR,
+        DECIMAL,
+        TIME_WITHOUT_TIME_ZONE,
+        DATE,
+        TIMESTAMP_WITHOUT_TIME_ZONE,
+        TIMESTAMP_WITH_LOCAL_TIME_ZONE
+      )
+    )
   }
 
-  case object Min extends TableAggregator {
+  case object Min extends TableAggregatorType {
     override val displayName: String                                = "Min"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.MIN
+    override val inputParameterRuntimeAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(
+      List(
+        TINYINT,
+        SMALLINT,
+        INTEGER,
+        BIGINT,
+        FLOAT,
+        DOUBLE,
+        BOOLEAN,
+        VARCHAR,
+        DECIMAL,
+        TIME_WITHOUT_TIME_ZONE,
+        DATE,
+        TIMESTAMP_WITHOUT_TIME_ZONE,
+        TIMESTAMP_WITH_LOCAL_TIME_ZONE
+      )
+    )
   }
 
   // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
   // See: https://issues.apache.org/jira/browse/FLINK-15867
   // See AggFunctionFactory.createFirstValueAggFunction
-  // TODO: add validation for the above case
-  case object First extends TableAggregator {
+  case object First extends TableAggregatorType {
     override val displayName: String                                = "First"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.FIRST_VALUE
-
-    override def inferOutputType(
-        inputType: TypingResult
-    )(implicit nodeId: NodeId): Either[ProcessCompilationError, TypingResult] = {
-      for {
-        _          <- validateFirstLastInputType(inputType)
-        outputType <- super.inferOutputType(inputType)
-      } yield outputType
-    }
+    override val inputParameterRuntimeAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(
+      List(
+        TINYINT,
+        SMALLINT,
+        INTEGER,
+        BIGINT,
+        FLOAT,
+        DOUBLE,
+        BOOLEAN,
+        VARCHAR,
+        DECIMAL
+      )
+    )
 
   }
 
-  case object Last extends TableAggregator {
+  case object Last extends TableAggregatorType {
     override val displayName: String                                = "Last"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.LAST_VALUE
-
-    override def inferOutputType(
-        inputType: TypingResult
-    )(implicit nodeId: NodeId): Either[ProcessCompilationError, TypingResult] = {
-      validateFirstLastInputType(inputType).flatMap(_ => super.inferOutputType(inputType))
-    }
-
+    override val inputParameterRuntimeAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(
+      List(
+        TINYINT,
+        SMALLINT,
+        INTEGER,
+        BIGINT,
+        FLOAT,
+        DOUBLE,
+        BOOLEAN,
+        VARCHAR,
+        DECIMAL
+      )
+    )
   }
 
-  case object Sum extends TableAggregator {
+  case object Sum extends TableAggregatorType {
     override val displayName: String                                = "Sum"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.SUM
   }
 
-  case object PopulationStandardDeviation extends TableAggregator {
+  case object PopulationStandardDeviation extends TableAggregatorType {
     override val displayName: String                                = "Population standard deviation"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.STDDEV_POP
   }
 
-  case object SampleStandardDeviation extends TableAggregator {
+  case object SampleStandardDeviation extends TableAggregatorType {
     override val displayName: String                                = "Sample standard deviation"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.STDDEV_SAMP
   }
 
-  case object PopulationVariance extends TableAggregator {
+  case object PopulationVariance extends TableAggregatorType {
     override val displayName: String                                = "Population variance"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.VAR_POP
   }
 
-  case object SampleVariance extends TableAggregator {
+  case object SampleVariance extends TableAggregatorType {
     override val displayName: String                                = "Sample variance"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.VAR_SAMP
   }
 
   private val dataTypeFactory = DataTypeFactoryPreparer.prepare()
-  // TODO: TypeInformationDetection.instance after merging of PR #6643
-  private val typeInfoDetection = TypingResultAwareTypeInformationDetection.apply(getClass.getClassLoader)
+
+  private val typeInfoDetection = TypeInformationDetection.instance
 
   private class NuAggregationFunctionCallContext(
       val dataTypeFactory: DataTypeFactory,
@@ -156,32 +216,36 @@ object TableAggregator extends Enum[TableAggregator] {
 
   // TODO: specific type errors per aggregator that communicate the type constraint. Until we have consistent base
   //  validation of types in Table-API components it's going to be misleading.
-  private def buildError(inputType: TypingResult)(implicit nodeId: NodeId) = CustomNodeError(
-    s"Invalid type: ${inputType.withoutValue.display} for selected aggregator",
-    Some(aggregateByParamName)
-  )
-
-  def validateFirstLastInputType(inputType: TypingResult)(implicit nodeId: NodeId) = {
-    val parameterLogicalType = toDataType(inputType).getLogicalType
-    val isTimeRelatedType    = parameterLogicalType.isAnyOf(LogicalTypeFamily.TIME, LogicalTypeFamily.DATETIME)
-    if (isTimeRelatedType) {
-      Left(buildError(inputType))
-    } else {
-      Right(())
+  private def buildError(inputType: TypingResult, aggregator: TableAggregatorType, reason: Option[String])(
+      implicit nodeId: NodeId
+  ) = {
+    val baseErrorMessage =
+      s"Invalid type: '${inputType.withoutValue.display}' for selected aggregator: '${aggregator.displayName}'."
+    val errorMessage = reason match {
+      case Some(reason) => s"$baseErrorMessage $reason"
+      case None         => baseErrorMessage
     }
+    CustomNodeError(
+      errorMessage,
+      Some(aggregateByParamName)
+    )
   }
 
 }
 
 // TODO: remodel aggregators to TableAggregatorType and instantiate Aggregator that will contain information like
 //  output type, Table-API expression
-sealed trait TableAggregator extends EnumEntry {
+sealed trait TableAggregatorType extends EnumEntry {
 
   val displayName: String
 
   def flinkFunctionDefinition: BuiltInFunctionDefinition
 
   val flinkFunctionName: String = flinkFunctionDefinition.getName
+
+  val inputParameterConstraintDescription: Option[String] = None
+
+  val inputParameterRuntimeAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = None
 
   // TODO: handle functions that take no args or more than 1 arg - will require to do context transformation and expect
   //  types defined by the selected aggregator
@@ -195,8 +259,17 @@ sealed trait TableAggregator extends EnumEntry {
         .inferInputTypes(callContext, false)
         .toScala
         .flatMap(_.asScala.headOption) match {
-        case Some(_) => Right(())
-        case None    => Left(buildError(inputType))
+        case Some(_) =>
+          inputParameterRuntimeAllowedTypesConstraint match {
+            case Some(allowedTypes) =>
+              if (toDataType(inputType).getLogicalType.isAnyOf(allowedTypes: _*)) {
+                Right(())
+              } else {
+                Left(buildError(inputType, this, inputParameterConstraintDescription))
+              }
+            case None => Right(())
+          }
+        case None => Left(buildError(inputType, this, inputParameterConstraintDescription))
       }
     }
     def inferOutputType(
@@ -206,17 +279,16 @@ sealed trait TableAggregator extends EnumEntry {
         .getTypeInference(dataTypeFactory)
         .getOutputTypeStrategy
         .inferType(callContext)
-        .toScala
-        .map(value =>
-          value.getLogicalType match {
-            case _: RawType[_] => Left(buildError(inputType))
-            case other         => Right(other.toTypingResult)
-          }
-        )
-        .getOrElse(Left(buildError(inputType)))
+        .toScala match {
+        case Some(value) => Right(value.getLogicalType.toTypingResult)
+        case None        => Left(buildError(inputType, this, inputParameterConstraintDescription))
+      }
     }
     val callContext = NuAggregationFunctionCallContext(inputType, flinkFunctionDefinition)
-    validateInputType(callContext).flatMap(_ => inferOutputType(callContext))
+    for {
+      _          <- validateInputType(callContext)
+      outputType <- inferOutputType(callContext)
+    } yield outputType
   }
 
 }

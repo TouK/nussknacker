@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory._
+import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeEncoder
 
 object TableAggregationFactory {
 
@@ -29,7 +30,7 @@ object TableAggregationFactory {
 
   private val aggregatorFunctionParam = {
     val aggregators =
-      TableAggregator.values.map(a => FixedExpressionValue(s"'${a.displayName}'", a.displayName)).toList
+      TableAggregatorType.values.map(a => FixedExpressionValue(s"'${a.displayName}'", a.displayName)).toList
     ParameterDeclaration
       .mandatory[String](aggregatorFunctionParamName)
       .withCreator(
@@ -44,7 +45,7 @@ class TableAggregationFactory
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
   case class TableAggregationTransformationState(
-      selectedAggregator: TableAggregator,
+      selectedAggregator: TableAggregatorType,
       aggregatorResultType: TypingResult
   )
 
@@ -68,12 +69,12 @@ class TableAggregationFactory
         ) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
 
-      val selectedAggregator = TableAggregator.values
+      val selectedAggregator = TableAggregatorType.values
         .find(_.displayName == aggregatorName)
         .getOrElse(throw new IllegalStateException("Aggregator not found. Should be invalid at parameter level."))
 
       val (aggregatorTypeErrors, aggregatorOutputType) = selectedAggregator
-        .inferOutputType(aggregateByParam.returnType)
+        .inferOutputType(ToTableTypeEncoder.alignTypingResult(aggregateByParam.returnType))
         .fold(
           errors => (errors :: Nil, Unknown),
           outputType => (Nil, outputType)

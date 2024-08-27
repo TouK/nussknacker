@@ -75,9 +75,8 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   }
 
   test("should be able to group by advanced types") {
-    val aggregationParameters =
-      ("{foo: 1}".spel ::
-        "{{foo: 1, bar: '123'}}".spel :: Nil).map { expr => AggregationParameters("'First'".spel, spelStr, expr) }
+    val aggregationParameters = ("{foo: 1}".spel :: "{{foo: 1, bar: '123'}}".spel :: Nil)
+      .map { expr => AggregationParameters("'First'".spel, spelStr, expr) }
     val scenario = buildMultipleAggregationsScenario(aggregationParameters)
     val result   = runner.runWithSingleRecordBounded(scenario)
     result shouldBe Symbol("valid")
