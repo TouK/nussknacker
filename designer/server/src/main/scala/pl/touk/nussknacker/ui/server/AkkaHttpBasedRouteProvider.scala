@@ -490,11 +490,8 @@ class AkkaHttpBasedRouteProvider(
         designerClock
       )
 
-      val statisticUrlConfig = if (usageStatisticsReportsConfig.encryptionEnabled) {
-        StatisticUrlConfig(maybePublicEncryptionKey = Some(PublicEncryptionKey.INSTANCE))
-      } else {
-        StatisticUrlConfig()
-      }
+      val publicKey          = Some(PublicEncryptionKey(resolvedConfig.as[String]("statisticsPublicKey")))
+      val statisticUrlConfig = StatisticUrlConfig(maybePublicEncryptionKey = publicKey)
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authManager,

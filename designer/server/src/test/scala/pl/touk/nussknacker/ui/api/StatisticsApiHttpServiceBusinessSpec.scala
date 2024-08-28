@@ -28,7 +28,7 @@ import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingDesignerConfig,
   WithDesignerConfig
 }
-import pl.touk.nussknacker.test.utils.QueryParamsHelper
+import pl.touk.nussknacker.test.utils.{QueryParamsHelper, StatisticEncryptionSupport}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
@@ -83,7 +83,6 @@ class StatisticsApiHttpServiceBusinessSpec
     .withValue("questDbSettings.instanceId", fromAnyRef(questDbRelativePathString))
     .withValue("questDbSettings.tasksExecutionDelay", fromAnyRef("2 seconds"))
     .withValue("questDbSettings.retentionDelay", fromAnyRef("2 seconds"))
-    .withValue("usageStatisticsReports.encryptionEnabled", fromAnyRef(false))
 
   private val exampleScenario = ScenarioBuilder
     .streaming(UUID.randomUUID().toString)
@@ -99,7 +98,7 @@ class StatisticsApiHttpServiceBusinessSpec
         .get(s"$nuDesignerHttpAddress/api/statistic/usage")
         .Then()
         .statusCode(200)
-        .bodyWithStatisticsURL(
+        .bodyWithDecryptedStatisticsURL(
           (AuthorsCount.name, equalTo("0")),
           (AttachmentsTotal.name, equalTo("0")),
           (AttachmentsAverage.name, equalTo("0")),
@@ -148,7 +147,7 @@ class StatisticsApiHttpServiceBusinessSpec
         .get(s"$nuDesignerHttpAddress/api/statistic/usage")
         .Then()
         .statusCode(200)
-        .bodyWithStatisticsURL(
+        .bodyWithDecryptedStatisticsURL(
           (AuthorsCount.name, equalTo("1")),
           (AttachmentsTotal.name, equalTo("0")),
           (AttachmentsAverage.name, equalTo("0")),
@@ -267,7 +266,7 @@ class StatisticsApiHttpServiceBusinessSpec
         .get(s"$nuDesignerHttpAddress/api/statistic/usage")
         .Then()
         .statusCode(200)
-        .bodyWithStatisticsURL(queryParamPairs: _*)
+        .bodyWithDecryptedStatisticsURL(queryParamPairs: _*)
     }
   }
 
@@ -305,10 +304,17 @@ class StatisticsApiHttpServiceBusinessSpec
 
   implicit class BodyWithStatisticsURL[T <: ValidatableResponse](validatableResponse: T) {
 
-    def bodyWithStatisticsURL[M <: Comparable[M]](expectedQueryParams: (String, Matcher[M])*): ValidatableResponse = {
-      val url             = validatableResponse.extractString("urls[0]")
-      val queryParamsPath = url.replace("https://stats.nussknacker.io/?", "")
-      validatableResponse.body(new MatchQueryParams(queryParamsPath, expectedQueryParams))
+    def bodyWithDecryptedStatisticsURL[M <: Comparable[M]](
+        expectedQueryParams: (String, Matcher[M])*
+    ): ValidatableResponse = {
+      val url                  = validatableResponse.extractString("urls[0]")
+      val queryParamsPath      = url.replace("https://stats.nussknacker.io/?", "")
+      val encryptedParamsAsMap = QueryParamsHelper.extractFromURLString(queryParamsPath)
+      val decodedQueryParamsPath = StatisticEncryptionSupport.decode(
+        encryptedParamsAsMap.getOrElse("encryptionKey", "key"),
+        encryptedParamsAsMap.getOrElse("encryptedParams", "params")
+      )
+      validatableResponse.body(new MatchQueryParams(decodedQueryParamsPath, expectedQueryParams))
     }
 
   }
