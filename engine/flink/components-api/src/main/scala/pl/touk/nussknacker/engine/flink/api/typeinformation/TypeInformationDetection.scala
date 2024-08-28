@@ -29,7 +29,41 @@ trait TypeInformationDetection extends Serializable {
       value: TypeInformation[T]
   ): TypeInformation[ValueWithContext[T]]
 
-  def forType[T](typingResult: TypingResult): TypeInformation[T]
+  final def forType[T](typingResult: TypingResult): TypeInformation[T] = forTypeWithDetails(
+    typingResult
+  ).typeInformation
+
+  def forTypeWithDetails[T](typingResult: TypingResult): TypeInformationWithDetails[T]
+
+}
+
+final case class TypeInformationWithDetails[T](typeInformation: TypeInformation[T], isTableApiCompatible: Boolean) {
+
+  def map[R](f: TypeInformation[T] => TypeInformation[R]): TypeInformationWithDetails[R] =
+    copy(typeInformation = f(typeInformation))
+
+}
+
+object TypeInformationWithDetails {
+
+  def combine[A, B, R](first: TypeInformationWithDetails[A], sec: TypeInformationWithDetails[B])(
+      f: (TypeInformation[A], TypeInformation[B]) => TypeInformation[R]
+  ): TypeInformationWithDetails[R] = {
+    TypeInformationWithDetails(
+      f(first.typeInformation, sec.typeInformation),
+      isTableApiCompatible = first.isTableApiCompatible && sec.isTableApiCompatible
+    )
+  }
+
+  implicit class TypeInformationExtension[T](typeInformation: TypeInformation[T]) {
+
+    def toTableApiCompatibleTypeInformation: TypeInformationWithDetails[T] =
+      TypeInformationWithDetails(typeInformation, isTableApiCompatible = true)
+
+    def toTableApiIncompatibleTypeInformation: TypeInformationWithDetails[T] =
+      TypeInformationWithDetails(typeInformation, isTableApiCompatible = false)
+
+  }
 
 }
 

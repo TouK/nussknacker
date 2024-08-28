@@ -46,6 +46,8 @@ class TableJoinTest
   private val mainBranchId   = "main"
   private val joinedBranchId = "joined"
 
+  private val localPreJoinVariableName = "localPreJoin"
+
   private val joinNodeId = "joined-node-id"
 
   private val someProduct    = OrderOrProduct.createProduct(1, "Foo product")
@@ -183,16 +185,23 @@ class TableJoinTest
   }
 
   test("should allow to use various types in main branch context") {
-    val mainBranchLocalVariableFields = Map(
-      "nestedRecord"  -> "{foo: 1, bar: '123'}".spel,
-      "listOfRecords" -> "{{foo: 1, bar: '123'}}".spel,
-      "instant"       -> SpelValues.spelInstant,
-      // TODO: add support for types not supported in table api
-//      "nullable" -> "null".spel,
-//      "offsetDateTime" -> SpelValues.spelOffsetDateTime,
+    val mainBranchPreJoinLocalVariableFields = Map(
+      "nestedRecord"   -> "{foo: 1, bar: '123'}".spel,
+      "listOfRecords"  -> "{{foo: 1, bar: '123'}}".spel,
+      "instant"        -> SpelValues.spelInstant,
+      "nullable"       -> "null".spel,
+      "offsetDateTime" -> SpelValues.spelOffsetDateTime,
+    )
+    val postJoinLocalVariableFields = Map(
+      "basedOnNullable" -> "#localPreJoin.nullable ? 1 : 0".spel,
+//      "basedOnOffsetDateTime" ->
     )
     val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
-      prepareJoiningScenario(JoinType.INNER, mainBranchLocalVariableFields = mainBranchLocalVariableFields),
+      prepareJoiningScenario(
+        JoinType.INNER,
+        mainBranchPreJoinLocalVariableFields = mainBranchPreJoinLocalVariableFields,
+        postJoinLocalVariableFields = postJoinLocalVariableFields
+      ),
       List(someProduct, orderReferringToExistingProduct),
       OrderOrProduct.`type`,
       Boundedness.BOUNDED
@@ -264,50 +273,58 @@ class TableJoinTest
       productKeyExpression: Expression = "#input.id".spel,
       productOutputExpression: Expression = "#input".spel,
       extractProductField: String => String = "#product?." + _,
-      mainBranchLocalVariableFields: Iterable[(String, Expression)] = Seq.empty
-  ) = ScenarioBuilder
-    .streaming(classOf[TableJoinTest].getSimpleName)
-    .sources(
-      GraphBuilder
-        .source("orders-source", TestScenarioRunner.testDataSource)
-        .filter("orders-filter", "#input.type == 'order'".spel)
-        .buildVariable("example-transformations", "out", mainBranchLocalVariableFields.toSeq: _*)
-        .branchEnd(mainBranchId, joinNodeId),
-      GraphBuilder
-        .source("products-source", TestScenarioRunner.testDataSource)
-        .filter("product-filter", "#input.type == 'product'".spel)
-        .branchEnd(joinedBranchId, joinNodeId),
-      GraphBuilder
-        .join(
-          joinNodeId,
-          "join",
-          Some("product"),
-          List(
-            mainBranchId -> List(
-              "Branch Type" -> s"T(${classOf[BranchType].getName}).${BranchType.MAIN}".spel,
-              "Key"         -> orderKeyExpression
+      mainBranchPreJoinLocalVariableFields: Iterable[(String, Expression)] = Seq.empty,
+      postJoinLocalVariableFields: Iterable[(String, Expression)] = Seq.empty,
+  ) = {
+    ScenarioBuilder
+      .streaming(classOf[TableJoinTest].getSimpleName)
+      .sources(
+        GraphBuilder
+          .source("orders-source", TestScenarioRunner.testDataSource)
+          .filter("orders-filter", "#input.type == 'order'".spel)
+          .buildVariable(
+            "example-pre-join-transformations",
+            localPreJoinVariableName,
+            mainBranchPreJoinLocalVariableFields.toSeq: _*
+          )
+          .branchEnd(mainBranchId, joinNodeId),
+        GraphBuilder
+          .source("products-source", TestScenarioRunner.testDataSource)
+          .filter("product-filter", "#input.type == 'product'".spel)
+          .branchEnd(joinedBranchId, joinNodeId),
+        GraphBuilder
+          .join(
+            joinNodeId,
+            "join",
+            Some("product"),
+            List(
+              mainBranchId -> List(
+                "Branch Type" -> s"T(${classOf[BranchType].getName}).${BranchType.MAIN}".spel,
+                "Key"         -> orderKeyExpression
+              ),
+              joinedBranchId -> List(
+                "Branch Type" -> s"T(${classOf[BranchType].getName}).${BranchType.JOINED}".spel,
+                "Key"         -> productKeyExpression
+              )
             ),
-            joinedBranchId -> List(
-              "Branch Type" -> s"T(${classOf[BranchType].getName}).${BranchType.JOINED}".spel,
-              "Key"         -> productKeyExpression
-            )
-          ),
-          "Join Type" -> s"T(${classOf[JoinType].getName}).$joinType".spel,
-          "Output"    -> productOutputExpression,
-        )
-        .emptySink(
-          "end",
-          TestScenarioRunner.testResultSink,
-          "value" ->
-            s"""{
-               |  orderId: #input.id,
-               |  product: {
-               |   id: ${extractProductField("id")},
-               |   name: ${extractProductField("name")}
-               |  }
-               |}""".stripMargin.spel
-        )
-    )
+            "Join Type" -> s"T(${classOf[JoinType].getName}).$joinType".spel,
+            "Output"    -> productOutputExpression,
+          )
+          .buildVariable("example-post-join-transformations", "localPostJoin", postJoinLocalVariableFields.toSeq: _*)
+          .emptySink(
+            "end",
+            TestScenarioRunner.testResultSink,
+            "value" ->
+              s"""{
+                 |  orderId: #input.id,
+                 |  product: {
+                 |   id: ${extractProductField("id")},
+                 |   name: ${extractProductField("name")}
+                 |  }
+                 |}""".stripMargin.spel
+          )
+      )
+  }
 
 }
 
