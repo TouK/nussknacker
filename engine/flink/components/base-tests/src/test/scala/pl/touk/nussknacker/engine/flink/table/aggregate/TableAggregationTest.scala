@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.connector.source.Boundedness
-import org.apache.flink.table.api.ValidationException
 import org.scalatest.Inside
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
@@ -44,9 +43,6 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     .withExtraComponents(additionalComponents)
     .build()
 
-  // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
-  // See: https://issues.apache.org/jira/browse/FLINK-15867
-  // See AggFunctionFactory.createFirstValueAggFunction
   test("should be able to aggregate by number types, string and boolean declared in spel") {
     val aggregationParameters =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions).map { expr =>
@@ -79,20 +75,19 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     result shouldBe Symbol("valid")
   }
 
-  test("throws exception when using not supported types in aggregate in groupBy") {
+  test("reports error when grouping by a type aligned to RAW") {
     val scenario = buildMultipleAggregationsScenario(
       List(
         AggregationParameters(aggregator = "'First'".spel, aggregateBy = "''".spel, groupBy = "#input".spel)
       )
     )
-    // TODO: add more cases
-    // TODO: change this behavior to validate this at compile time
-    assertThrows[ValidationException] {
-      runner.runWithData(
-        scenario,
-        List(OffsetDateTime.now()),
-        Boundedness.BOUNDED
-      )
+    val result = runner.runWithData(
+      scenario,
+      List(OffsetDateTime.now()),
+      Boundedness.BOUNDED
+    )
+    result.invalidValue.toList.loneElement should matchPattern {
+      case CustomNodeError("agg0", _, Some(ParameterName("groupBy"))) =>
     }
   }
 
@@ -115,19 +110,31 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   }
 
   test("aggregations should aggregate by doubles") {
-    val input = List(1.0, 2.0)
+    val input = List(2.0, 1.0)
     val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
       "Average"                       -> 1.5,
       "Count"                         -> 2,
       "Min"                           -> 1.0,
       "Max"                           -> 2.0,
-      "First"                         -> 1.0,
-      "Last"                          -> 2.0,
+      "First"                         -> 2.0,
+      "Last"                          -> 1.0,
       "Sum"                           -> 3.0,
       "Population standard deviation" -> 0.5,
       "Sample standard deviation"     -> 0.7071067811865476,
       "Population variance"           -> 0.25,
       "Sample variance"               -> 0.5
+    ).map(a => AggregateByInputTestData(a._1, a._2))
+    runMultipleAggregationTest(input, aggregatorWithExpectedResult)
+  }
+
+  test("aggregations should aggregate by strings") {
+    val input = List("def", "abc")
+    val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
+      "Count" -> 2,
+      "Min"   -> "abc",
+      "Max"   -> "def",
+      "First" -> "def",
+      "Last"  -> "abc",
     ).map(a => AggregateByInputTestData(a._1, a._2))
     runMultipleAggregationTest(input, aggregatorWithExpectedResult)
   }
@@ -187,7 +194,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     })
   }
 
-  test("reports error when using not supported types in aggregateBy") {
+  test("reports error when aggregating by type aligned to RAW") {
     val scenario = buildMultipleAggregationsScenario(
       List(
         AggregationParameters(aggregator = "'First'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
@@ -203,6 +210,22 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
         case CustomNodeError("agg0", _, Some(ParameterName("aggregateBy"))) =>
       }
     }
+  }
+
+  // TODO: enable this test when solving the comparison problem for RAW's
+  //  now throws: Data type RAW('java.time.OffsetDateTime', '...') expected but RAW('java.time.OffsetDateTime', '...') passed
+  ignore("count aggregation works when aggregating by type aligned to RAW") {
+    val scenario = buildMultipleAggregationsScenario(
+      List(
+        AggregationParameters(aggregator = "'Count'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
+      )
+    )
+    val result = runner.runWithData(
+      scenario,
+      List(OffsetDateTime.now()),
+      Boundedness.BOUNDED
+    )
+    result shouldBe Symbol("valid")
   }
 
   test("table aggregation should emit groupBy key and aggregated values as separate variables") {

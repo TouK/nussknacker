@@ -11,9 +11,9 @@ import org.apache.flink.table.catalog.{
 
 import scala.util.Using
 
-object DataTypeFactoryPreparer {
+object DataTypeFactoryHolder {
 
-  def prepare(): DataTypeFactory = {
+  val instance: DataTypeFactory = {
     val config      = TableConfig.getDefault
     val envSettings = EnvironmentSettings.newInstance.build
     val classLoader = getClass.getClassLoader
