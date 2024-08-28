@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import httpService, { ActionMetadata, ActivitiesResponse, ActivityMetadata, ActivityMetadataResponse } from "../../http/HttpService";
+import { Box, styled, Typography } from "@mui/material";
+import { formatDateTime } from "../../common/DateUtils";
 
 type Activity = ActivitiesResponse["activities"][number] & { metadata: ActivityMetadata; actions: ActionMetadata[] };
 
@@ -18,6 +20,29 @@ const mergeActivityDataWithMetadata = (
         return { ...activity, metadata, actions };
     });
 };
+
+export const StyledActivityRoot = styled("div")(({ theme }) => ({ padding: `${theme.spacing(2)} ${theme.spacing(1)}` }));
+export const StyledActivityHeader = styled("div")(({ theme }) => ({ paddingBottom: theme.spacing(0.5) }));
+
+const ActivityItem = ({ activity }: { activity: Activity }) => {
+    return (
+        <StyledActivityRoot>
+            <StyledActivityHeader>
+                <Typography variant={"body2"}>{activity.metadata.displayableName}</Typography>
+            </StyledActivityHeader>
+            <Typography component={"p"} variant={"caption"}>
+                {formatDateTime(activity.date)} | {activity.user}
+            </Typography>
+            <Typography component={"p"} variant={"caption"}>
+                Version: {activity.scenarioVersionId}
+            </Typography>
+            <Typography component={"p"} variant={"caption"}>
+                {activity.comment}
+            </Typography>
+        </StyledActivityRoot>
+    );
+};
+
 export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const [data, setData] = useState<Activity[]>([]);
 
@@ -32,9 +57,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     return (
         <ToolbarWrapper {...props} title={"Activities"}>
             {data.map((activity) => (
-                <div key={activity.id}>
-                    {activity.metadata.displayableName} {activity.actions.map((value) => value?.displayableName)}
-                </div>
+                <ActivityItem key={activity.id} activity={activity} />
             ))}
         </ToolbarWrapper>
     );

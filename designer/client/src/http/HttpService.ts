@@ -12,7 +12,7 @@ import {
     ProcessActionType,
     ProcessName,
     ProcessStateType,
-    ProcessVersionId,
+    scenarioVersionId,
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
@@ -179,7 +179,7 @@ export interface ActivitiesResponse {
         type: string;
         user: string;
         date: string;
-        processVersionId: number;
+        scenarioVersionId: number;
         comment?: string;
         overrideDisplayableName?: string;
         overrideSupportedActions?: string[];
@@ -321,7 +321,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "SCENARIO_CREATED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [],
         },
         {
@@ -329,7 +329,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "SCENARIO_ARCHIVED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [],
         },
         {
@@ -337,7 +337,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [],
         },
         {
@@ -345,7 +345,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "SCENARIO_DEPLOYED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             comment: "Deployment of scenario - task JIRA-1234",
             additionalFields: [],
         },
@@ -354,7 +354,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "SCENARIO_CANCELED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
         },
@@ -363,7 +363,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "SCENARIO_MODIFIED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -373,7 +373,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "oldName",
@@ -390,7 +390,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "COMMENT_ADDED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
         },
@@ -399,7 +399,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "COMMENT_ADDED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "deletedByUser",
@@ -413,7 +413,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "ATTACHMENT_ADDED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "attachmentId",
@@ -430,7 +430,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "ATTACHMENT_ADDED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "deletedByUser",
@@ -444,7 +444,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "from",
@@ -461,7 +461,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "INCOMING_MIGRATION",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
                 {
@@ -469,7 +469,7 @@ const activitiesMock: ActivitiesResponse = {
                     value: "preprod",
                 },
                 {
-                    name: "sourceProcessVersionId",
+                    name: "sourcescenarioVersionId",
                     value: "23",
                 },
             ],
@@ -479,7 +479,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "OUTGOING_MIGRATION",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
                 {
@@ -493,7 +493,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
@@ -510,7 +510,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "params",
@@ -531,7 +531,7 @@ const activitiesMock: ActivitiesResponse = {
             type: "AUTOMATIC_UPDATE",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            processVersionId: 1,
+            scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "changes",
@@ -651,7 +651,7 @@ class HttpService {
         return api.get<Scenario[]>("/processes", { params: data });
     }
 
-    fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId) {
+    fetchProcessDetails(processName: ProcessName, versionId?: scenarioVersionId) {
         const id = encodeURIComponent(processName);
         const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`;
         return api.get<Scenario>(url);
@@ -774,7 +774,7 @@ class HttpService {
             .catch((error) => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error));
     }
 
-    addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
+    addAttachment(processName: ProcessName, versionId: scenarioVersionId, file: File) {
         return api
             .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
                 headers: { "Content-Disposition": `attachment; filename="${file.name}"` },
