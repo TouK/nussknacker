@@ -195,7 +195,7 @@ const activitiesMetadataMock: { activities: ActivityMetadata[]; actions: ActionM
         {
             type: "SCENARIO_CREATED",
             displayableName: "Scenario created",
-            icon: "/assets/states/error.svg",
+            icon: "/assets/states/deploy.svg",
             supportedActions: [],
         },
         {
