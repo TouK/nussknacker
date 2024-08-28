@@ -160,6 +160,404 @@ export interface ScenarioParametersCombinations {
 export type ProcessDefinitionDataDictOption = { key: string; label: string };
 type DictOption = { id: string; label: string };
 
+export interface ActivityMetadata {
+    type: string;
+    displayableName: string;
+    icon: string;
+    supportedActions: string[];
+}
+
+export interface ActionMetadata {
+    id: string;
+    displayableName: string;
+    icon: string;
+}
+
+export interface ActivitiesResponse {
+    activities: {
+        id: string;
+        type: string;
+        user: string;
+        date: string;
+        processVersionId: number;
+        comment?: string;
+        overrideDisplayableName?: string;
+        overrideSupportedActions?: string[];
+        additionalFields: { name: string; value: string }[];
+    }[];
+}
+
+export interface ActivityMetadataResponse {
+    activities: ActivityMetadata[];
+    actions: ActionMetadata[];
+}
+
+const activitiesMetadataMock: { activities: ActivityMetadata[]; actions: ActionMetadata[] } = {
+    activities: [
+        {
+            type: "SCENARIO_CREATED",
+            displayableName: "Scenario created",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "SCENARIO_ARCHIVED",
+            displayableName: "Scenario archived",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "SCENARIO_UNARCHIVED",
+            displayableName: "Scenario unarchived",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "SCENARIO_DEPLOYED",
+            displayableName: "Deployment",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "SCENARIO_CANCELED",
+            displayableName: "Cancel",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "SCENARIO_MODIFIED",
+            displayableName: "New version saved",
+            icon: "/assets/states/error.svg",
+            supportedActions: ["compare"],
+        },
+        {
+            type: "SCENARIO_NAME_CHANGED",
+            displayableName: "Scenario name changed",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "COMMENT_ADDED",
+            displayableName: "Comment",
+            icon: "/assets/states/error.svg",
+            supportedActions: ["delete_comment", "edit_comment"],
+        },
+        {
+            type: "ATTACHMENT_ADDED",
+            displayableName: "Attachment",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "CHANGED_PROCESSING_MODE",
+            displayableName: "Processing mode change",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "INCOMING_MIGRATION",
+            displayableName: "Incoming migration",
+            icon: "/assets/states/error.svg",
+            supportedActions: ["compare"],
+        },
+        {
+            type: "OUTGOING_MIGRATION",
+            displayableName: "Outgoing migration",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "PERFORMED_SINGLE_EXECUTION",
+            displayableName: "Processing data",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "PERFORMED_SCHEDULED_EXECUTION",
+            displayableName: "Processing data",
+            icon: "/assets/states/error.svg",
+            supportedActions: [],
+        },
+        {
+            type: "AUTOMATIC_UPDATE",
+            displayableName: "Automatic update",
+            icon: "/assets/states/error.svg",
+            supportedActions: ["compare"],
+        },
+    ],
+    actions: [
+        {
+            id: "compare",
+            displayableName: "Compare",
+            icon: "/assets/states/error.svg",
+        },
+        {
+            id: "delete_comment",
+            displayableName: "Delete",
+            icon: "/assets/states/error.svg",
+        },
+        {
+            id: "edit_comment",
+            displayableName: "Edit",
+            icon: "/assets/states/error.svg",
+        },
+        {
+            id: "download_attachment",
+            displayableName: "Download",
+            icon: "/assets/states/error.svg",
+        },
+        {
+            id: "delete_attachment",
+            displayableName: "Delete",
+            icon: "/assets/states/error.svg",
+        },
+    ],
+};
+
+const activitiesMock: ActivitiesResponse = {
+    activities: [
+        {
+            id: "33e5143e-187d-455e-99ec-56f607729c98",
+            type: "SCENARIO_CREATED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [],
+        },
+        {
+            id: "4677ad89-154a-424d-b1d3-26632b0b6b8a",
+            type: "SCENARIO_ARCHIVED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [],
+        },
+        {
+            id: "aa4b30a8-9051-4a2a-ae6e-7042210ae096",
+            type: "SCENARIO_UNARCHIVED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [],
+        },
+        {
+            id: "10b5f550-eaef-419d-8264-219dca9a84c5",
+            type: "SCENARIO_DEPLOYED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            comment: "Deployment of scenario - task JIRA-1234",
+            additionalFields: [],
+        },
+        {
+            id: "d3381b4d-220e-459e-bedd-71b142c257a7",
+            type: "SCENARIO_CANCELED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            comment: "Canceled because marketing campaign ended",
+            additionalFields: [],
+        },
+        {
+            id: "c21a0472-6bef-4b44-aacc-aae307546d89",
+            type: "SCENARIO_MODIFIED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            comment: "Added new processing step",
+            additionalFields: [],
+            overrideDisplayableName: "Version 1 saved",
+        },
+        {
+            id: "4a6805de-6555-4976-92b2-9baefcccd990",
+            type: "SCENARIO_NAME_CHANGED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [
+                {
+                    name: "oldName",
+                    value: "marketing campaign",
+                },
+                {
+                    name: "newName",
+                    value: "old marketing campaign",
+                },
+            ],
+        },
+        {
+            id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
+            type: "COMMENT_ADDED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            comment: "Now scenario handles errors in datasource better",
+            additionalFields: [],
+        },
+        {
+            id: "552cf846-a330-46d8-a747-5884813ea6a3",
+            type: "COMMENT_ADDED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [
+                {
+                    name: "deletedByUser",
+                    value: "John Doe",
+                },
+            ],
+            overrideSupportedActions: [],
+        },
+        {
+            id: "12540601-f4d4-43ca-a303-a19baee30f8f",
+            type: "ATTACHMENT_ADDED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [
+                {
+                    name: "attachmentId",
+                    value: "10000001",
+                },
+                {
+                    name: "attachmentFilename",
+                    value: "attachment01.png",
+                },
+            ],
+        },
+        {
+            id: "b350c1f4-0dda-4672-a525-23697fd58a2c",
+            type: "ATTACHMENT_ADDED",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [
+                {
+                    name: "deletedByUser",
+                    value: "John Doe",
+                },
+            ],
+            overrideSupportedActions: [],
+        },
+        {
+            id: "4de805c3-498d-4d51-837e-6931ba58f9fb",
+            type: "CHANGED_PROCESSING_MODE",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [
+                {
+                    name: "from",
+                    value: "Request-Response",
+                },
+                {
+                    name: "to",
+                    value: "Request-Response",
+                },
+            ],
+        },
+        {
+            id: "adaa9335-6ca9-4afe-9791-0bb71375f6e8",
+            type: "INCOMING_MIGRATION",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            comment: "Migration from preprod",
+            additionalFields: [
+                {
+                    name: "sourceEnvironment",
+                    value: "preprod",
+                },
+                {
+                    name: "sourceProcessVersionId",
+                    value: "23",
+                },
+            ],
+        },
+        {
+            id: "3dedd8bf-b3da-4d91-a3ea-a424a5248548",
+            type: "OUTGOING_MIGRATION",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            comment: "Migration to preprod",
+            additionalFields: [
+                {
+                    name: "destinationEnvironment",
+                    value: "preprod",
+                },
+            ],
+        },
+        {
+            id: "44a59921-c99b-4dcd-8ec3-06739c0825e3",
+            type: "PERFORMED_SINGLE_EXECUTION",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [
+                {
+                    name: "dateFinished",
+                    value: "2024-01-17T14:21:17Z",
+                },
+                {
+                    name: "status",
+                    value: "Successfully executed",
+                },
+            ],
+        },
+        {
+            id: "f1bd6bc5-f624-4074-aa3d-072fda51331d",
+            type: "PERFORMED_SCHEDULED_EXECUTION",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [
+                {
+                    name: "params",
+                    value: "Batch size=1",
+                },
+                {
+                    name: "dateFinished",
+                    value: "2024-01-17T14:21:17Z",
+                },
+                {
+                    name: "status",
+                    value: "Successfully executed",
+                },
+            ],
+        },
+        {
+            id: "e4f55ffb-e595-417b-8586-2c2eee99d75e",
+            type: "AUTOMATIC_UPDATE",
+            user: "some user",
+            date: "2024-01-17T14:21:17Z",
+            processVersionId: 1,
+            additionalFields: [
+                {
+                    name: "changes",
+                    value: "JIRA-12345, JIRA-32146",
+                },
+                {
+                    name: "dateFinished",
+                    value: "2024-01-17T14:21:17Z",
+                },
+                {
+                    name: "status",
+                    value: "Successful",
+                },
+            ],
+        },
+    ],
+};
+
+function promiseWithTimeout<T = Record<string, unknown>>(promise, ms): Promise<T> {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(promise);
+        }, ms);
+    });
+}
+
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
@@ -761,6 +1159,14 @@ class HttpService {
 
     sendStatistics(statistics: { name: `${EventTrackingType}_${EventTrackingSelectorType}` }[]) {
         return api.post(`/statistic`, { statistics });
+    }
+
+    fetchActivitiesMetadata() {
+        return promiseWithTimeout<ActivityMetadataResponse>(Promise.resolve(activitiesMetadataMock), 1000);
+    }
+
+    fetchActivities() {
+        return promiseWithTimeout<ActivitiesResponse>(Promise.resolve(activitiesMock), 500);
     }
 
     #addInfo(message: string) {
