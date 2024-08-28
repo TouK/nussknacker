@@ -164,8 +164,8 @@ lazy val commonSettings =
   publishSettings ++
     Seq(
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-      crossScalaVersions := supportedScalaVersions,
-      scalaVersion       := defaultScalaV,
+      crossScalaVersions               := supportedScalaVersions,
+      scalaVersion                     := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
       ),
@@ -182,7 +182,7 @@ lazy val commonSettings =
         case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
         case _       => Seq()
       },
-      scalacOptions      := Seq(
+      scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation",
         "-encoding",
@@ -207,7 +207,7 @@ lazy val commonSettings =
             "-Ymacro-annotations"
           )
       },
-      javacOptions       := Seq(
+      Compile / compile / javacOptions := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
         // Using --release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
