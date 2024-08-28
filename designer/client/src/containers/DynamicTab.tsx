@@ -50,14 +50,16 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
 }): JSX.Element => {
     const [urlValue, scope] = useMemo(() => splitUrl(url), [url]);
     return (
-        <ScopedCssBaseline
-            style={{
-                flex: 1,
-                overflow: "hidden",
-            }}
-        >
-            <RemoteComponent url={urlValue} scope={scope} {...componentProps} />
-        </ScopedCssBaseline>
+        <ErrorBoundary FallbackComponent={() => <NotFound />}>
+            <ScopedCssBaseline
+                style={{
+                    flex: 1,
+                    overflow: "hidden",
+                }}
+            >
+                <RemoteComponent url={urlValue} scope={scope} {...componentProps} />
+            </ScopedCssBaseline>
+        </ErrorBoundary>
     );
 };
 
