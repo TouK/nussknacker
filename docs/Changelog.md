@@ -1,5 +1,9 @@
 # Changelog
 
+1.18.0 (Not released yet)
+-------------------------
+* [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
+
 1.16.3 (8 August 2024)
 -------------------------
 * [#6527](https://github.com/TouK/nussknacker/pull/6527) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
