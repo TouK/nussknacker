@@ -25,8 +25,8 @@ const StyledProblemOccurred = styled(ErrorOccurred)({
 export const DialogErrorFallbackComponent = () => (
     <Root>
         <StyledProblemOccurred />
-        <Typography variant={"h5"}>{messages.unexpectedErrorTitle}</Typography>
-        <Typography variant={"body1"}>{messages.unexpectedErrorText}</Typography>
+        <Typography variant={"h5"}>{messages.unexpectedErrorTitle()}</Typography>
+        <Typography variant={"body1"}>{messages.unexpectedErrorText()}</Typography>
         <Button
             onClick={() => {
                 window.location.reload();
