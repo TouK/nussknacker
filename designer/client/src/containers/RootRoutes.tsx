@@ -21,10 +21,10 @@ function DefaultRedirect() {
 }
 
 export default createRoutesFromElements(
-    <Route path="/" element={<NussknackerApp />}>
+    <Route path="/" element={<NussknackerApp />} errorElement={<RouteErrorFallbackComponent />}>
         <Route index element={<DefaultRedirect />} />
         <Route path="/404" element={<NotFound />} />
-        <Route>
+        <Route errorElement={<RouteErrorFallbackComponent />}>
             <Route path={`${VisualizationBasePath}/:processName`} element={<Visualization />} />
 
             {/* overrides scenarios custom tab */}
