@@ -1297,6 +1297,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     )
   }
 
+  test("should allow using list methods on array projection") {
+    parse[Any]("'a,b'.split(',').![#this].isEmpty()", ctx).validExpression
+      .evaluateSync[Boolean](ctx) shouldBe false
+  }
+
+  test("should allow using list methods on array") {
+    parse[Any]("#arr.isEmpty()", ctx).validExpression
+      .evaluateSync[Boolean](ctx) shouldBe false
+  }
+
+  // todo: lbg nested arrays
 }
 
 case class SampleObject(list: java.util.List[SampleValue])

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor, internal}
 
+import java.lang.reflect.Method
 import java.util
 import java.util.Collections
 import scala.jdk.CollectionConverters._
@@ -51,6 +52,14 @@ class EvaluationContextPreparer(
         } else {
           spelExpressionExcludeList.blockExcluded(targetObject, name)
           new OmitAnnotationsMethodExecutor(methodExecutor)
+        }
+      }
+
+      override def getMethods(classType: Class[_]): Array[Method] = {
+        if (classType.isArray) {
+          super.getMethods(classOf[java.util.List[_]])
+        } else {
+          super.getMethods(classType)
         }
       }
     }
