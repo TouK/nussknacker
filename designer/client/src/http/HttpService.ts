@@ -12,6 +12,7 @@ import {
     ProcessActionType,
     ProcessName,
     ProcessStateType,
+    ProcessVersionId,
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
@@ -166,7 +167,7 @@ export interface ActivityMetadata {
 }
 
 export interface ActionMetadata {
-    id: string;
+    id: "compare" | "delete_comment" | "edit_comment" | "download_attachment" | "delete_attachment";
     displayableName: string;
     icon: string;
 }
@@ -648,7 +649,7 @@ class HttpService {
         return api.get<Scenario[]>("/processes", { params: data });
     }
 
-    fetchProcessDetails(processName: ProcessName, versionId?: scenarioVersionId) {
+    fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
         const id = encodeURIComponent(processName);
         const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`;
         return api.get<Scenario>(url);
@@ -771,7 +772,7 @@ class HttpService {
             .catch((error) => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error));
     }
 
-    addAttachment(processName: ProcessName, versionId: scenarioVersionId, file: File) {
+    addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
         return api
             .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
                 headers: { "Content-Disposition": `attachment; filename="${file.name}"` },

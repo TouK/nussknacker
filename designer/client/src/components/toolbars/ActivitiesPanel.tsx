@@ -28,7 +28,7 @@ const mergeActivityDataWithMetadata = (
     });
 };
 
-export const StyledActivityRoot = styled("div")(({ theme }) => ({ margin: theme.spacing(1) }));
+export const StyledActivityRoot = styled("div")(({ theme }) => ({ margin: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(4)}` }));
 export const StyledActivityHeader = styled("div")(({ theme }) => ({
     display: "flex",
     alignItems: "center",
@@ -46,7 +46,33 @@ export const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     marginRight: theme.spacing(1),
 }));
 
+export const StyledHeaderActionIcon = styled(UrlIcon)(({ theme }) => ({
+    width: "16px",
+    height: "16px",
+    marginLeft: "auto",
+    cursor: "pointer",
+}));
+
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
+
+const HeaderActivity = ({ activityAction }: { activityAction: ActionMetadata }) => {
+    switch (activityAction.id) {
+        case "compare": {
+            return (
+                <StyledHeaderActionIcon
+                    onClick={() => {
+                        alert(`action called: ${activityAction.id}`);
+                    }}
+                    key={activityAction.id}
+                    src={activityAction.icon}
+                />
+            );
+        }
+        default: {
+            return null;
+        }
+    }
+};
 
 const ActivityItem = ({ activity }: { activity: Activity }) => {
     const commentSettings = useSelector(getCommentSettings);
@@ -56,6 +82,9 @@ const ActivityItem = ({ activity }: { activity: Activity }) => {
             <StyledActivityHeader>
                 <StyledHeaderIcon src={activity.activities.icon} />
                 <Typography variant={"body2"}>{activity.activities.displayableName}</Typography>
+                {activity.actions.map((activityAction) => (
+                    <HeaderActivity key={activityAction.id} activityAction={activityAction} />
+                ))}
             </StyledActivityHeader>
             <StyledActivityBody>
                 <Typography mt={0.5} component={"p"} variant={"caption"}>
