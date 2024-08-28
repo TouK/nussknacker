@@ -353,6 +353,7 @@ val findBugsV                 = "3.0.2"
 val enumeratumV               = "1.7.3"
 val ujsonV                    = "3.1.2"
 val igniteV                   = "2.10.0"
+val retryV                    = "0.3.6"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion) {
@@ -616,7 +617,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
         "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
-        "com.softwaremill.retry" %% "retry"                      % "0.3.6",
+        "com.softwaremill.retry" %% "retry"                      % retryV,
         "com.github.tomakehurst"  % "wiremock-jre8"              % wireMockV      % Test,
         "org.scalatestplus"      %% "mockito-4-11"               % scalaTestPlusV % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
@@ -995,11 +996,12 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
     name := "nussknacker-kafka-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" %% "kafka"            % kafkaV excludeAll (
+        "org.apache.kafka"       %% "kafka"            % kafkaV excludeAll (
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "org.slf4j"         % "log4j-over-slf4j" % slf4jV
+        "org.slf4j"               % "log4j-over-slf4j" % slf4jV,
+        "com.softwaremill.retry" %% "retry"            % retryV
       )
     }
   )
