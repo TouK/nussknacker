@@ -177,7 +177,7 @@ export interface ActivitiesResponse {
         type: string;
         user: string;
         date: string;
-        scenarioVersionId: number;
+        scenarioVersionId?: number;
         comment?: string;
         overrideDisplayableName?: string;
         overrideSupportedActions?: string[];
@@ -361,7 +361,6 @@ const activitiesMock: ActivitiesResponse = {
             type: "SCENARIO_MODIFIED",
             user: "some user",
             date: "2024-01-17T14:21:17Z",
-            scenarioVersionId: 1,
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",

@@ -40,9 +40,11 @@ const ActivityItem = ({ activity }: { activity: Activity }) => {
             <Typography component={"p"} variant={"caption"}>
                 {formatDateTime(activity.date)} | {activity.user}
             </Typography>
-            <Typography component={"p"} variant={"caption"}>
-                Version: {activity.scenarioVersionId}
-            </Typography>
+            {activity.scenarioVersionId && (
+                <Typography component={"p"} variant={"caption"}>
+                    Version: {activity.scenarioVersionId}
+                </Typography>
+            )}
             {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
         </StyledActivityRoot>
     );
