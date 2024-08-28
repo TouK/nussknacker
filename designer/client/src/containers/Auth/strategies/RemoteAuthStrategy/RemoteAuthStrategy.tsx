@@ -23,9 +23,11 @@ function createAuthWrapper(
 ): FunctionComponent {
     return function Wrapper({ children }: PropsWithChildren<unknown>) {
         return (
-            <RemoteComponent url={url} scope={scope} onInit={onInit}>
-                {children}
-            </RemoteComponent>
+            <ErrorBoundary>
+                <RemoteComponent url={url} scope={scope} onInit={onInit}>
+                    {children}
+                </RemoteComponent>
+            </ErrorBoundary>
         );
     };
 }
