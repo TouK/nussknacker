@@ -15,8 +15,4 @@ const PlaceholderIconWrapper = styled(Box)(({ theme }) => ({
             : blendDarken(theme.palette.background.paper, 0.2),
 }));
 
-export const PlaceholderIconFallbackComponent = () => (
-    <PlaceholderIconWrapper>
-        <PlaceholderIcon />
-    </PlaceholderIconWrapper>
-);
+export const PlaceholderIconFallbackComponent = () => <div>test</div>;
