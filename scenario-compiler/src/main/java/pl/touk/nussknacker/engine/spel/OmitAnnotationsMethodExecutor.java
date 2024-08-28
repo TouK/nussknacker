@@ -9,8 +9,10 @@ import org.springframework.expression.spel.support.ReflectionHelper;
 import org.springframework.expression.spel.support.ReflectiveMethodExecutor;
 import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 
 //this basically changed org.springframework.expression.spel.support.ReflectiveMethodExecutor
 //we want to create TypeDescriptor using SpelEspReflectionHelper.convertArguments
@@ -92,11 +94,19 @@ public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
                 arguments = ReflectionHelper.setupArgumentsForVarargsInvocation(this.method.getParameterTypes(), arguments);
             }
             ReflectionUtils.makeAccessible(this.method);
-            Object value = this.method.invoke(target, arguments);
+            Object value = invokeMethod(target, arguments);
             return new TypedValue(value, new TypeDescriptor(new MethodParameter(this.method, -1)).narrow(value));
         }
         catch (Exception ex) {
             throw new AccessException("Problem invoking method: " + this.method, ex);
+        }
+    }
+
+    private Object invokeMethod(Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
+        if (target != null && target.getClass().isArray() && !this.method.getDeclaringClass().isArray()) {
+            return this.method.invoke(Arrays.asList((Object[]) target), arguments);
+        } else {
+            return this.method.invoke(target, arguments);
         }
     }
 

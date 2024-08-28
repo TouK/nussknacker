@@ -50,6 +50,8 @@ object typing {
     override def withoutValue: SingleTypingResult
 
     def objType: TypedClass
+
+    def hintsObjType: TypedClass = objType
   }
 
   object TypedObjectTypingResult {
@@ -208,14 +210,20 @@ object typing {
     override def withoutValue: TypedClass = this
 
     override def display: String = {
-      val className =
-        if (klass.isArray) "Array"
+      val className = {
+        // todo:lbg
+        if (klass.isArray) "List"
         else ReflectUtils.simpleNameWithoutSuffix(klass)
+      }
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else className
     }
 
     override def objType: TypedClass = this
+
+    override def hintsObjType: TypedClass =
+      if (klass.isArray) TypedClass(classOf[java.util.List[_]], params)
+      else this
 
     def primitiveClass: Class[_] = Option(ClassUtils.wrapperToPrimitive(klass)).getOrElse(klass)
 
