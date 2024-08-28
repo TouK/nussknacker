@@ -22,9 +22,9 @@ const BoxWithIntersectionLines = styled(Box)(({ theme }) => ({
 
 export const ToolbarErrorFallbackComponent = () => (
     <BoxWithIntersectionLines p={2}>
-        <Typography variant={"subtitle1"}>{messages.unexpectedErrorTitle()}</Typography>
+        <Typography variant={"subtitle1"}>{messages.unexpectedErrorTitle}</Typography>
         <Typography variant={"body2"}>
-            {messages.sectionUnavailable()} {messages.unexpectedErrorText()}
+            {messages.sectionUnavailable} {messages.unexpectedErrorText}
         </Typography>
         <Button
             onClick={() => {
