@@ -35,10 +35,7 @@ trait ProcessActionRepository {
       implicit ec: ExecutionContext
   ): DB[List[ProcessAction]]
 
-  def getLastActionPerProcess(
-      actionState: Set[ProcessActionState],
-      actionNamesOpt: Option[Set[ScenarioActionName]]
-  ): DB[Map[ProcessId, ProcessAction]]
+  def getLastFinishedActionsPerProcess: DB[Map[ProcessId, LastFinishedActions]]
 
 }
 
@@ -90,7 +87,15 @@ class DbProcessActionRepository(
   )(implicit user: LoggedUser): DB[Unit] = {
     run(for {
       comment <- saveCommentWhenPassed(processId, processVersion, comment)
-      updated <- updateAction(actionId, ProcessActionState.Finished, Some(performedAt), None, comment.map(_.id))
+      updated <- updateAction(
+        actionName,
+        actionId,
+        ProcessActionState.Finished,
+        processId,
+        Some(performedAt),
+        None,
+        comment.map(_.id)
+      )
       _ <-
         if (updated) {
           DBIOAction.successful(())
@@ -124,7 +129,15 @@ class DbProcessActionRepository(
   )(implicit user: LoggedUser): DB[Unit] = {
     val failureMessageOpt = Option(failureMessage).map(_.take(1022)) // crop to not overflow column size)
     run(for {
-      updated <- updateAction(actionId, ProcessActionState.Failed, Some(performedAt), failureMessageOpt, None)
+      updated <- updateAction(
+        actionName,
+        actionId,
+        ProcessActionState.Failed,
+        processId,
+        Some(performedAt),
+        failureMessageOpt,
+        None
+      )
       _ <-
         if (updated) {
           DBIOAction.successful(())
@@ -224,27 +237,63 @@ class DbProcessActionRepository(
       commentId = commentId,
       buildInfo = buildInfoJsonOpt
     )
-    (processActionsTable += processActionData).map { insertCount =>
+    insertProcessActionAndUpdateLatestActionId(processActionData).map { insertCount =>
       if (insertCount != 1)
         throw new IllegalArgumentException(s"Action with id: $actionId can't be inserted")
       processActionData
     }
   }
 
+  private def insertProcessActionAndUpdateLatestActionId(processActionData: ProcessActionEntityData) =
+    (for {
+      insertCount <- processActionsTable += processActionData
+
+      _ <- updateLatestFinishedActionId(
+        processActionData.actionName,
+        processActionData.state,
+        processActionData.id,
+        processActionData.processId
+      )
+    } yield insertCount).transactionally
+
   private def updateAction(
+      actionName: ScenarioActionName,
       actionId: ProcessActionId,
       state: ProcessActionState,
+      processId: ProcessId,
       performedAt: Option[Instant],
       failure: Option[String],
       commentId: Option[Long]
-  ): DB[Boolean] = {
-    for {
+  ): DB[Boolean] =
+    (for {
       updateCount <- processActionsTable
         .filter(_.id === actionId)
         .map(a => (a.performedAt, a.state, a.failureMessage, a.commentId))
         .update((performedAt.map(Timestamp.from), state, failure, commentId))
-    } yield updateCount == 1
-  }
+
+      _ <- updateLatestFinishedActionId(actionName, state, actionId, processId)
+    } yield updateCount == 1).transactionally
+
+  private def updateLatestFinishedActionId(
+      actionName: ScenarioActionName,
+      actionState: ProcessActionState,
+      actionId: ProcessActionId,
+      processId: ProcessId
+  ) =
+    if (ProcessActionState.FinishedStates.contains(actionState)) {
+      val processQuery = processesTable.filter(_.id === processId)
+      val commonUpdate = processQuery.map(_.latestFinishedActionId).update(Some(actionId))
+
+      val specificUpdate = actionName match {
+        case ScenarioActionName.Deploy => processQuery.map(_.latestFinishedDeployActionId).update(Some(actionId))
+        case ScenarioActionName.Cancel => processQuery.map(_.latestFinishedCancelActionId).update(Some(actionId))
+        case _                         => DBIOAction.successful(())
+      }
+
+      DBIO.seq(commonUpdate, specificUpdate)
+    } else {
+      DBIOAction.successful(())
+    }
 
   // we use "select for update where false" query syntax to lock the table - it is useful if you plan to insert something in a critical section
   def lockActionsTable: DB[Unit] = {
@@ -303,30 +352,31 @@ class DbProcessActionRepository(
     run(processActionsTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
-  override def getLastActionPerProcess(
-      actionState: Set[ProcessActionState],
-      actionNamesOpt: Option[Set[ScenarioActionName]]
-  ): DB[Map[ProcessId, ProcessAction]] = {
-    val queryWithActionNamesFilter = actionNamesOpt
-      .map(actionNames => processActionsTable.filter { action => action.actionName.inSet(actionNames) })
-      .getOrElse(processActionsTable)
-
-    val finalQuery = queryWithActionNamesFilter
-      .filter(_.state.inSet(actionState))
-      .groupBy(_.processId)
-      .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
-      .join(processActionsTable)
-      .on { case ((processId, maxPerformedAt), action) =>
-        action.processId === processId && action.state.inSet(actionState) && action.performedAt === maxPerformedAt
-      } // We fetch exactly this one with max deployment
-      .map { case ((processId, _), action) => processId -> action }
+  override def getLastFinishedActionsPerProcess: DB[Map[ProcessId, LastFinishedActions]] = {
+    val query = processActionsTable
+      .join(processesTable)
+      .on { case (action, process) =>
+        action.processId === process.id && action.state.inSet(ProcessActionState.FinishedStates) &&
+        (action.id === process.latestFinishedActionId || action.id === process.latestFinishedDeployActionId || action.id === process.latestFinishedCancelActionId)
+      }
+      .map { case (action, process) => process.id -> action }
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
       .map { case ((processId, action), comment) => processId -> (action, comment) }
 
-    run(
-      finalQuery.result.map(_.toMap.mapValuesNow(toFinishedProcessAction))
-    )
+    run(query.result.map(_.foldLeft(Map.empty[ProcessId, Seq[ProcessAction]]) {
+      case (map, (processId, (action, comment))) =>
+        val finishedAction = toFinishedProcessAction((action, comment))
+
+        map.get(processId) match {
+          case Some(latestActions) =>
+            map + (processId -> (latestActions :+ finishedAction))
+          case None =>
+            map + (processId -> Seq(finishedAction))
+        }
+    }.mapValuesNow {
+      LastFinishedActions
+    }))
   }
 
   override def getFinishedProcessAction(

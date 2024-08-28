@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object DBFetchingProcessRepository {
 
@@ -70,34 +71,23 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       ec: ExecutionContext
   ): DBIOAction[List[ScenarioWithDetailsEntity[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
-      lastActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository.getLastActionPerProcess(ProcessActionState.FinishedStates, None)
-      )
-      lastStateActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository
-          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ScenarioActionName.StateActions))
-      )
-      // For last deploy action we are interested in Deploys that are Finished (not ExecutionFinished) and that are not Cancelled
-      // so that the presence of such an action means that the process is currently deployed
-      lastDeployedActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository
-          .getLastActionPerProcess(
-            ProcessActionState.FinishedStates,
-            Some(Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel))
-          )
-      ).map(_.filter { case (_, action) =>
-        action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
-      })
+      lastActionsPerProcess <- fetchActionsOrEmpty(actionRepository.getLastFinishedActionsPerProcess)
 
-      latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
+      lastFinishedActionPerProcess       = lastActionsPerProcess.mapValuesNow(_.lastFinishedAction)
+      lastFinishedStateActionPerProcess  = lastActionsPerProcess.mapValuesNow(_.lastFinishedStateAction)
+      lastFinishedDeployActionPerProcess = lastActionsPerProcess.mapValuesNow(_.lastFinishedDeployAction)
+
+      deployedProcesses = lastFinishedDeployActionPerProcess.filter { case (_, deploy) => deploy.isDefined }.keySet
+
+      latestProcesses <- fetchLatestProcessesQuery(query, deployedProcesses, isDeployed).result
     } yield latestProcesses
-      .map { case ((_, processVersion), process) =>
+      .map { case (processVersion, process) =>
         createFullDetails(
           process,
           processVersion,
-          lastActionPerProcess.get(process.id),
-          lastStateActionPerProcess.get(process.id),
-          lastDeployedActionPerProcess.get(process.id),
+          lastFinishedActionPerProcess.get(process.id).flatten,
+          lastFinishedStateActionPerProcess.get(process.id).flatten,
+          lastFinishedDeployActionPerProcess.get(process.id).flatten,
           isLatestVersion = true,
           // For optimisation reasons we don't return history and tags when querying for list of processes
           None,
@@ -107,8 +97,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   }
 
   private def fetchActionsOrEmpty[PS: ScenarioShapeFetchStrategy](
-      doFetch: => DBIO[Map[ProcessId, ProcessAction]]
-  ): DBIO[Map[ProcessId, ProcessAction]] = {
+      doFetch: => DBIO[Map[ProcessId, LastFinishedActions]]
+  ): DBIO[Map[ProcessId, LastFinishedActions]] = {
     implicitly[ScenarioShapeFetchStrategy[PS]] match {
       // For component usages we don't need full process details, so we don't fetch actions
       case ScenarioShapeFetchStrategy.FetchComponentsUsages => DBIO.successful(Map.empty)
