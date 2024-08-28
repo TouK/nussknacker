@@ -4,6 +4,10 @@ import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapp
 import httpService, { ActionMetadata, ActivitiesResponse, ActivityMetadata, ActivityMetadataResponse } from "../../http/HttpService";
 import { Box, styled, Typography } from "@mui/material";
 import { formatDateTime } from "../../common/DateUtils";
+import CommentContent from "../comment/CommentContent";
+import { useSelector } from "react-redux";
+import { createSelector } from "reselect";
+import { getFeatureSettings } from "../../reducers/selectors/settings";
 
 type Activity = ActivitiesResponse["activities"][number] & { metadata: ActivityMetadata; actions: ActionMetadata[] };
 
@@ -23,8 +27,11 @@ const mergeActivityDataWithMetadata = (
 
 export const StyledActivityRoot = styled("div")(({ theme }) => ({ padding: `${theme.spacing(2)} ${theme.spacing(1)}` }));
 export const StyledActivityHeader = styled("div")(({ theme }) => ({ paddingBottom: theme.spacing(0.5) }));
+const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
 
 const ActivityItem = ({ activity }: { activity: Activity }) => {
+    const commentSettings = useSelector(getCommentSettings);
+
     return (
         <StyledActivityRoot>
             <StyledActivityHeader>
@@ -36,9 +43,7 @@ const ActivityItem = ({ activity }: { activity: Activity }) => {
             <Typography component={"p"} variant={"caption"}>
                 Version: {activity.scenarioVersionId}
             </Typography>
-            <Typography component={"p"} variant={"caption"}>
-                {activity.comment}
-            </Typography>
+            {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
         </StyledActivityRoot>
     );
 };

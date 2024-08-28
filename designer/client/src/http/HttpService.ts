@@ -12,13 +12,12 @@ import {
     ProcessActionType,
     ProcessName,
     ProcessStateType,
-    scenarioVersionId,
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -27,8 +26,7 @@ import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInf
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { GenericValidationRequest } from "../actions/nk/genericAction";
-import { EventTrackingSelector } from "../containers/event-tracking";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
+import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -346,7 +344,7 @@ const activitiesMock: ActivitiesResponse = {
             user: "some user",
             date: "2024-01-17T14:21:17Z",
             scenarioVersionId: 1,
-            comment: "Deployment of scenario - task JIRA-1234",
+            comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
         },
         {
