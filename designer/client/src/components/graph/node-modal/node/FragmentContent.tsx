@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import HttpService from "../../../../http/HttpService";
 import { getProcessCounts } from "../../../../reducers/selectors/graph";
 import { FragmentNodeType } from "../../../../types";
-import { ErrorBoundary, DialogErrorFallbackComponent } from "../../../common/error-boundary";
+import ErrorBoundary from "../../../common/ErrorBoundary";
 import NodeUtils from "../../NodeUtils";
 import { FragmentGraphPreview } from "../../fragmentGraph";
 import { correctFetchedDetails } from "../../../../reducers/graph/correctFetchedDetails";
@@ -35,7 +35,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
     const fragmentCounts = (processCounts[nodeToDisplay.id] || {}).fragmentCounts || {};
 
     return (
-        <ErrorBoundary FallbackComponent={DialogErrorFallbackComponent}>
+        <ErrorBoundary>
             {fragmentContent && (
                 <FragmentGraphPreview
                     processCounts={fragmentCounts}

@@ -17,6 +17,7 @@ import { useWindows } from "../windowManager";
 import { useSearchParams } from "react-router-dom";
 import * as VisualizationUrl from "../common/VisualizationUrl";
 import { Graph } from "../components/graph/Graph";
+import { ErrorHandler } from "./ErrorHandler";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
 import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
@@ -28,7 +29,6 @@ import { Scenario } from "../components/Process/types";
 import { useInterval } from "./Interval";
 import { useWindowManager } from "@touk/window-manager";
 import { ScenarioDescription } from "./ScenarioDescription";
-import { useErrorBoundary } from "react-error-boundary";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -92,7 +92,6 @@ function Visualization() {
         processName: string;
     }>();
     const dispatch = useDispatch();
-    const { showBoundary } = useErrorBoundary();
 
     const graphRef = useRef<Graph>();
     const getGraphInstance = useCallback(() => graphRef.current, [graphRef]);
@@ -101,19 +100,10 @@ function Visualization() {
 
     const fetchData = useCallback(
         async (processName: string) => {
-            dispatch(
-                fetchVisualizationData(
-                    processName,
-                    () => {
-                        setDataResolved(true);
-                    },
-                    (error) => {
-                        showBoundary(error);
-                    },
-                ),
-            );
+            await dispatch(fetchVisualizationData(processName));
+            setDataResolved(true);
         },
-        [dispatch, showBoundary],
+        [dispatch],
     );
 
     const { scenarioLoading } = useSelector(getGraph);
@@ -163,22 +153,24 @@ function Visualization() {
     const { windows } = useWindowManager();
 
     return (
-        <DndProvider options={HTML5toTouch}>
-            <GraphPage data-testid="graphPage">
-                <SpinnerWrapper isReady={!graphNotReady}>
-                    {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
-                </SpinnerWrapper>
+        <ErrorHandler>
+            <DndProvider options={HTML5toTouch}>
+                <GraphPage data-testid="graphPage">
+                    <SpinnerWrapper isReady={!graphNotReady}>
+                        {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
+                    </SpinnerWrapper>
 
-                <GraphProvider graph={getGraphInstance}>
-                    <SelectionContextProvider pastePosition={getPastePosition}>
-                        <BindKeyboardShortcuts disabled={windows.length > 0} />
-                        <Toolbars isReady={dataResolved}>
-                            <ScenarioDescription />
-                        </Toolbars>
-                    </SelectionContextProvider>
-                </GraphProvider>
-            </GraphPage>
-        </DndProvider>
+                    <GraphProvider graph={getGraphInstance}>
+                        <SelectionContextProvider pastePosition={getPastePosition}>
+                            <BindKeyboardShortcuts disabled={windows.length > 0} />
+                            <Toolbars isReady={dataResolved}>
+                                <ScenarioDescription />
+                            </Toolbars>
+                        </SelectionContextProvider>
+                    </GraphProvider>
+                </GraphPage>
+            </DndProvider>
+        </ErrorHandler>
     );
 }
 

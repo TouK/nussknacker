@@ -1,8 +1,8 @@
 import * as queryString from "query-string";
 import React, { memo, useMemo } from "react";
-import { ErrorBoundary } from "../components/common/error-boundary";
+import ErrorBoundary from "../components/common/ErrorBoundary";
 import { ModuleUrl, splitUrl } from "@touk/federated-component";
-import { NotFound } from "../components/common/error-boundary/NotFound";
+import { NotFound } from "./errors/NotFound";
 import SystemUtils from "../common/SystemUtils";
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";
 import { useNavigate, useParams } from "react-router-dom";

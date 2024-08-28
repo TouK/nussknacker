@@ -6,6 +6,7 @@ import { spelFormatters } from "../../graph/node-modal/editors/expression/Format
 import { NodeTable } from "../../graph/node-modal/NodeDetailsContent/NodeTable";
 import { FormControl } from "@mui/material";
 import { ParamFieldLabel } from "../../graph/node-modal/FieldLabel";
+import ErrorBoundary from "../../common/ErrorBoundary";
 import { nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
 
@@ -38,20 +39,22 @@ export function FormField({ name }: { name: string }) {
         <NodeTable sx={{ m: 0 }}>
             <FormControl>
                 <ParamFieldLabel parameterDefinitions={parameters} paramName={name} />
-                <Editor
-                    editorConfig={editor}
-                    className={nodeValue}
-                    fieldErrors={getValidationErrorsForField(errors, name)}
-                    formatter={formatter}
-                    expressionInfo={null}
-                    onValueChange={setParam(name)}
-                    expressionObj={value[name]}
-                    readOnly={false}
-                    key={name}
-                    showSwitch={true}
-                    showValidation={true}
-                    variableTypes={variableTypes}
-                />
+                <ErrorBoundary>
+                    <Editor
+                        editorConfig={editor}
+                        className={nodeValue}
+                        fieldErrors={getValidationErrorsForField(errors, name)}
+                        formatter={formatter}
+                        expressionInfo={null}
+                        onValueChange={setParam(name)}
+                        expressionObj={value[name]}
+                        readOnly={false}
+                        key={name}
+                        showSwitch={true}
+                        showValidation={true}
+                        variableTypes={variableTypes}
+                    />
+                </ErrorBoundary>
             </FormControl>
         </NodeTable>
     );

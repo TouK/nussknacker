@@ -330,7 +330,7 @@
 			  stroke-width="0.998405"
 			  stroke-linejoin="round"/>
 		<path d="M881.562 667.923L759.152 596.98L881.562 526.036L1003.97 596.98L881.562 667.923Z"
-			  fill="#EF5350"
+			  fill="#464646"
 			  stroke="white"
 			  stroke-width="0.998405"
 			  stroke-linejoin="round"/>
@@ -772,12 +772,12 @@
 			  stroke-width="0.998405"
 			  stroke-miterlimit="10"/>
 		<path d="M865.251 601.21L856.555 606.247L865.251 611.301L873.965 606.247L865.251 601.21Z"
-			  fill="#EF5350"
+			  fill="#464646"
 			  stroke="white"
 			  stroke-width="0.998405"
 			  stroke-miterlimit="10"/>
 		<path d="M873.973 596.156L882.669 601.211L908.794 586.065L900.097 581.028L873.973 596.156Z"
-			  fill="#EF5350"
+			  fill="#464646"
 			  stroke="white"
 			  stroke-width="0.998405"
 			  stroke-miterlimit="10"/>

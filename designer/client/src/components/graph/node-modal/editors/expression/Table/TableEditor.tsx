@@ -16,6 +16,7 @@ import { Box } from "@mui/material";
 import { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ErrorBoundary from "../../../../../common/ErrorBoundary";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
 import { EditorProps, ExtendedEditor } from "../Editor";
@@ -519,7 +520,9 @@ export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps
     return (
         <Box className={className}>
             <Box display="flex">
-                <Table {...props} />
+                <ErrorBoundary>
+                    <Table {...props} />
+                </ErrorBoundary>
             </Box>
             {props.showValidation && <ValidationLabels fieldErrors={props.fieldErrors} />}
         </Box>

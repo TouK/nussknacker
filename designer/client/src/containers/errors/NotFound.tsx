@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import WarningNotFound from "./images/warning-occurred.svg";
-import { DefaultFullScreenMessage } from "./DefaultFullScreenMessage";
+import { RootErrorPage } from "../../components/common/RootErrorBoundary";
 
 export function NotFound(props: { message?: string }): JSX.Element {
     const { t } = useTranslation();
@@ -13,5 +12,5 @@ export function NotFound(props: { message?: string }): JSX.Element {
             "Maybe try one of the links in the menu or press back to go to the previous page.",
     );
 
-    return <DefaultFullScreenMessage message={message} description={description} Image={WarningNotFound} />;
+    return <RootErrorPage message={message} description={description} />;
 }

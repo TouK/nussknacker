@@ -12,6 +12,7 @@ import { ChangeableValue } from "../ChangeableValue";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
@@ -68,24 +69,25 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                 const editorType = param.editor.type;
                 const Editor: SimpleEditor | ExtendedEditor = editors[editorType];
                 const fieldName = param.name;
-
                 return (
                     <FormControl key={param.name}>
                         <FormLabel title={fieldName}>{fieldName}:</FormLabel>
-                        <Editor
-                            editorConfig={param?.editor}
-                            className={nodeValue}
-                            fieldErrors={getValidationErrorsForField(errors, param.name)}
-                            formatter={null}
-                            expressionInfo={null}
-                            onValueChange={setParam(fieldName)}
-                            expressionObj={{ language: ExpressionLang.String, expression: state[fieldName] }}
-                            readOnly={false}
-                            key={fieldName}
-                            showSwitch={false}
-                            showValidation={true}
-                            variableTypes={{}}
-                        />
+                        <ErrorBoundary>
+                            <Editor
+                                editorConfig={param?.editor}
+                                className={nodeValue}
+                                fieldErrors={getValidationErrorsForField(errors, param.name)}
+                                formatter={null}
+                                expressionInfo={null}
+                                onValueChange={setParam(fieldName)}
+                                expressionObj={{ language: ExpressionLang.String, expression: state[fieldName] }}
+                                readOnly={false}
+                                key={fieldName}
+                                showSwitch={false}
+                                showValidation={true}
+                                variableTypes={{}}
+                            />
+                        </ErrorBoundary>
                     </FormControl>
                 );
             })}

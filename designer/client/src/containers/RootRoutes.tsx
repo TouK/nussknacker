@@ -5,11 +5,11 @@ import * as Paths from "./paths";
 import { MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath } from "./paths";
 import { createRoutesFromElements, Navigate, Route } from "react-router-dom";
 import Metrics from "./Metrics";
-import { NotFound } from "../components/common/error-boundary/NotFound";
+import { NotFound } from "./errors/NotFound";
 import { CustomTab, StarRedirect } from "./CustomTab";
 import { useTabData } from "./CustomTabPage";
 import { NussknackerApp } from "./NussknackerApp";
-import { FullPageErrorBoundaryFallbackComponent } from "../components/common/error-boundary";
+import { ErrorBoundaryFallbackComponent } from "../components/common/ErrorBoundary";
 
 const Visualization = loadable(() => import("./Visualization"), { fallback: <LoaderSpinner show={true} /> });
 const ScenariosTab = loadable(() => import("./ScenariosTab"), { fallback: <LoaderSpinner show={true} /> });
@@ -21,10 +21,10 @@ function DefaultRedirect() {
 }
 
 export default createRoutesFromElements(
-    <Route path="/" element={<NussknackerApp />} errorElement={<FullPageErrorBoundaryFallbackComponent />}>
+    <Route path="/" element={<NussknackerApp />} errorElement={<ErrorBoundaryFallbackComponent />}>
         <Route index element={<DefaultRedirect />} />
         <Route path="/404" element={<NotFound />} />
-        <Route errorElement={<FullPageErrorBoundaryFallbackComponent />}>
+        <Route errorElement={<ErrorBoundaryFallbackComponent />}>
             <Route path={`${VisualizationBasePath}/:processName`} element={<Visualization />} />
 
             {/* overrides scenarios custom tab */}
