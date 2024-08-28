@@ -46,7 +46,9 @@ export interface InlineSvgProps extends DetailedHTMLProps<HTMLAttributes<HTMLDiv
 }
 
 export const InlineSvg = ({ FallbackComponent, src, id, ...rest }: InlineSvgProps): JSX.Element => (
-    <AsyncSvg src={src}>
-        {(__html) => <Flex {...rest} dangerouslySetInnerHTML={{ __html: id ? __html.replace("<svg ", `<svg id="${id}"`) : __html }} />}
-    </AsyncSvg>
+    <ErrorBoundary FallbackComponent={() => <FallbackComponent {...rest} />}>
+        <AsyncSvg src={src}>
+            {(__html) => <Flex {...rest} dangerouslySetInnerHTML={{ __html: id ? __html.replace("<svg ", `<svg id="${id}"`) : __html }} />}
+        </AsyncSvg>
+    </ErrorBoundary>
 );
