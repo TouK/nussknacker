@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthErrorCodes } from "../Auth/AuthErrorCodes";
 import { InitErrorComponentProps } from "../Auth/InitErrorComponent";
-import { RootErrorPage } from "../../components/common/RootErrorBoundary";
+import { DefaultFullScreenMessage } from "../../components/common/error-boundary";
 import { LoadingButton } from "../../windowManager/LoadingButton";
 
 interface ErrorProps {
@@ -55,8 +55,8 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
 
     const { description, button, message } = errorProps;
     return (
-        <RootErrorPage message={message} description={description}>
+        <DefaultFullScreenMessage message={message} description={description}>
             {button && <LoadingButton title={button} action={() => retry()} />}
-        </RootErrorPage>
+        </DefaultFullScreenMessage>
     );
 }

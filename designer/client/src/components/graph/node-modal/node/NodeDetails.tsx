@@ -13,7 +13,6 @@ import { getScenario } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
-import ErrorBoundary from "../../../common/ErrorBoundary";
 import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import { applyIdFromFakeName } from "../IdField";
@@ -153,9 +152,7 @@ function NodeDetails(props: NodeDetailsProps): JSX.Element {
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
         >
-            <ErrorBoundary>
-                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
-            </ErrorBoundary>
+            <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
         </WindowContent>
     );
 }

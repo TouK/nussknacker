@@ -9,7 +9,6 @@ import { ParamType } from "./types";
 import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
 import { FormControl, FormLabel } from "@mui/material";
-import ErrorBoundary from "../../../common/ErrorBoundary";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
@@ -42,17 +41,15 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     );
 
     return (
-        <ErrorBoundary>
-            <Editor
-                {...props}
-                ref={ref}
-                editorConfig={param?.editor}
-                className={`${valueClassName ? valueClassName : nodeValue}`}
-                fieldErrors={fieldErrors}
-                formatter={formatter}
-                expressionInfo={validationLabelInfo}
-            />
-        </ErrorBoundary>
+        <Editor
+            {...props}
+            ref={ref}
+            editorConfig={param?.editor}
+            className={`${valueClassName ? valueClassName : nodeValue}`}
+            fieldErrors={fieldErrors}
+            formatter={formatter}
+            expressionInfo={validationLabelInfo}
+        />
     );
 });
 
