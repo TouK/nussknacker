@@ -88,7 +88,8 @@ import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.io.Source
+import scala.util.{Try, Using}
 import scala.util.control.NonFatal
 
 class AkkaHttpBasedRouteProvider(
@@ -490,8 +491,12 @@ class AkkaHttpBasedRouteProvider(
         designerClock
       )
 
-      val publicKey          = Some(PublicEncryptionKey(resolvedConfig.as[String]("statisticsPublicKey")))
-      val statisticUrlConfig = StatisticUrlConfig(maybePublicEncryptionKey = publicKey)
+      val publicKey =
+        Using(Source.fromURL(getClass.getResource("/encryption.key"))) { read =>
+          read.mkString.trim
+        }.get
+
+      val statisticUrlConfig = StatisticUrlConfig(maybePublicEncryptionKey = Some(PublicEncryptionKey(publicKey)))
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authManager,
