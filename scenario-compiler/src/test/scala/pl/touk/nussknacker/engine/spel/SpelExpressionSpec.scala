@@ -7,6 +7,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.scalacheck.Gen
 import org.scalatest.Inside.inside
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -29,6 +30,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, JavaClas
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
+  IllegalProjectionSelectionError,
   InvalidMethodReference,
   TypeReferenceError
 }
@@ -55,7 +57,7 @@ import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 
-class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with OptionValues {
 
   private implicit class ValidatedExpressionOps[E](validated: Validated[E, TypedExpression]) {
     def validExpression: CompiledExpression = validated.validValue.expression
@@ -1252,18 +1254,21 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     )
   }
 
-  test("should convert array to list via projection") {
-    parse[util.List[String]]("#arr.![#this]", ctx).validExpression
-      .evaluateSync[util.List[String]](ctx) shouldBe List("a", "b").asJava
+  test("should return correct type in array projection") {
+    val parsed            = parse[Any]("#arr.![#this]", ctx)
+    val evaluated         = parsed.validExpression.evaluateSync[Any](ctx)
+    val arrayTypingResult = Typed.genericTypeClass(classOf[Array[String]], List(Typed.typedClass(classOf[String])))
+
+    parsed.validValue.typingInfo.typingResult shouldBe arrayTypingResult
+    evaluated shouldBe Array("a", "b")
   }
 
-  test("should convert array to list via selection") {
-    parse[util.List[String]]("#arr.?[#this == 'a']", ctx).validExpression
-      .evaluateSync[util.List[String]](ctx) shouldBe List("a").asJava
+  test("should return error on String projection") {
+    parse[Any]("'ab'.![#this]", ctx).invalidValue.toList.headOption.value shouldBe a[IllegalProjectionSelectionError]
   }
 
   test("should convert array to list when passing arg which type should be list") {
-    parse[String]("T(java.lang.String).join(',', #arr)", ctx).validExpression
+    parse[Any]("T(java.lang.String).join(',', #arr)", ctx).validExpression
       .evaluateSync[String](ctx) shouldBe "a,b"
   }
 

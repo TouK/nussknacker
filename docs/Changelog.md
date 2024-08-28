@@ -66,10 +66,9 @@
 * [#6656](https://github.com/TouK/nussknacker/pull/6656)
   * Remove not working MODEL_CLASS_PATH environment variable
   * Add default DB connection name
-* [#6614](https://github.com/TouK/nussknacker/pull/6614) Added automatic Array to List conversion in SpEL during:
-  * Selection (`.?`) - e.g. `#array.?[#this == 'some value']`.
-  * Projection (`.!`) - e.g. `#array.![#this]`.
-  * Passing Array as a parameter with type List - e.g. `T(java.lang.String).join(',', #array)`.
+* [#6614](https://github.com/TouK/nussknacker/pull/6614) Array in SpeL improvements:
+  * From now onm it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
+  * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
 
 1.16.3 (8 August 2024)
 -------------------------

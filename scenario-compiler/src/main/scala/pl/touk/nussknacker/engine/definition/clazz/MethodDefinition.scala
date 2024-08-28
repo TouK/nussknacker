@@ -35,7 +35,7 @@ sealed trait MethodDefinition {
         // Allow pass array as List argument because of array to list auto conversion:
         // pl.touk.nussknacker.engine.spel.internal.ArrayToListConverter
         case (tc @ TypedClass(klass, _), Parameter(_, y)) if klass.isArray =>
-          Typed.genericTypeClass[java.util.List[_]](tc.params).canBeSubclassOf(y)
+          tc.canBeSubclassOf(y) || Typed.genericTypeClass[java.util.List[_]](tc.params).canBeSubclassOf(y)
         case (x, Parameter(_, y)) => x.canBeSubclassOf(y)
       }
 

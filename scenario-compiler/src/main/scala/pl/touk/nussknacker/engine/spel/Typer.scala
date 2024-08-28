@@ -53,8 +53,8 @@ import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
-import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
+import scala.annotation.tailrec
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
@@ -425,7 +425,7 @@ private[spel] class Typer(
             case result :: Nil =>
               // Limitation: projection on an iterative type makes it loses it's known value,
               // as properly determining it would require evaluating the projection expression for each element (likely working on the AST)
-              valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
+              projectionResult(iterateType, result)
             case other =>
               invalid(IllegalSelectionTypeError(other))
           }
@@ -518,8 +518,8 @@ private[spel] class Typer(
       parentType match {
         case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
           tc.withoutValue
-        case tc: TypedClass if tc.objType.klass.isArray =>
-          Typed.genericTypeClass[java.util.List[_]](tc.params)
+        case tc: SingleTypingResult if tc.objType.klass.isArray =>
+          tc.withoutValue
         case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
           Typed.record(Map.empty)
         case _ =>
@@ -697,6 +697,12 @@ private[spel] class Typer(
     // FIXME: what if more results are present?
     case _ => valid(Unknown)
   }
+
+  private def projectionResult(iterableType: TypingResult, elementType: TypingResult): TypingR[TypingResult] =
+    iterableType.withoutValue match {
+      case tc: TypedClass if tc.klass.isArray => valid(Typed.genericTypeClass(tc.klass, List(elementType)))
+      case _                                  => valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
+    }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(
       result: TypingResult
