@@ -4,37 +4,34 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.table.api.ValidationException
 import org.scalatest.Inside
+import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.aggregateByParamName
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
-import org.scalatest.LoneElement._
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{
   AggregationParameters,
   TestRecord,
   buildMultipleAggregationsScenario
 }
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
+import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 import java.math.BigInteger
 import java.time.{LocalDate, OffsetDateTime, ZonedDateTime}
-import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters._
-import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
+import scala.reflect.ClassTag
 
 class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks with FlinkSpec with Matchers with Inside {
 
@@ -50,7 +47,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
   // See: https://issues.apache.org/jira/browse/FLINK-15867
   // See AggFunctionFactory.createFirstValueAggFunction
-  test("first value aggregator should be able to aggregate by number types, string and boolean declared in spel") {
+  test("should be able to aggregate by number types, string and boolean declared in spel") {
     val aggregationParameters =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions).map { expr =>
         AggregationParameters(aggregator = "'First'".spel, aggregateBy = expr, groupBy = spelStr)
@@ -61,7 +58,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     result.validValue.successes.size shouldBe aggregationParameters.size
   }
 
-  test("first value aggregator should be able to group by simple types declared in spel") {
+  test("should be able to group by simple types declared in spel") {
     val aggregationParameters =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions ::: tableApiSupportedTimeLiteralExpressions)
         .map { expr =>
@@ -85,7 +82,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   test("throws exception when using not supported types in aggregate in groupBy") {
     val scenario = buildMultipleAggregationsScenario(
       List(
-        AggregationParameters(aggregator = "'Min'".spel, aggregateBy = "''".spel, groupBy = "#input".spel)
+        AggregationParameters(aggregator = "'First'".spel, aggregateBy = "''".spel, groupBy = "#input".spel)
       )
     )
     // TODO: add more cases
@@ -97,56 +94,6 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
         Boundedness.BOUNDED
       )
     }
-  }
-
-  test("throws exception when using not supported types in aggregate in aggregateBy") {
-    val scenario = buildMultipleAggregationsScenario(
-      List(
-        AggregationParameters(aggregator = "'Min'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
-      )
-    )
-    def assertNodeError[T: ClassTag](inputs: List[T]): Unit = {
-      val result = runner.runWithData(
-        scenario,
-        inputs,
-        Boundedness.BOUNDED
-      )
-      result.invalidValue.head should matchPattern {
-        case CustomNodeError(_, _, Some(paramName)) if paramName == aggregateByParamName =>
-      }
-    }
-    assertNodeError(List(ZonedDateTime.now()))
-    assertNodeError(List(OffsetDateTime.now()))
-    assertNodeError(List(BigInteger.ONE))
-  }
-
-  test("reports error when using not supported types in aggregateBy") {
-    val scenario = buildMultipleAggregationsScenario(
-      List(
-        AggregationParameters(aggregator = "'Min'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
-      )
-    )
-    runScenarioAndAssert(
-      scenario,
-      List(ZonedDateTime.now()),
-      CustomNodeError("Invalid type: ZonedDateTime for selected aggregator", Some(ParameterName("aggregateBy")))(
-        NodeId("agg0")
-      )
-    )
-    runScenarioAndAssert(
-      scenario,
-      List(OffsetDateTime.now()),
-      CustomNodeError("Invalid type: OffsetDateTime for selected aggregator", Some(ParameterName("aggregateBy")))(
-        NodeId("agg0")
-      )
-    )
-    runScenarioAndAssert(
-      scenario,
-      List(BigInteger.ONE),
-      CustomNodeError("Invalid type: BigInteger for selected aggregator", Some(ParameterName("aggregateBy")))(
-        NodeId("agg0")
-      )
-    )
   }
 
   test("aggregations should aggregate by integers") {
@@ -185,7 +132,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     runMultipleAggregationTest(input, aggregatorWithExpectedResult)
   }
 
-  test("aggregations should aggregate by big decimals with Flink default scale (18)") {
+  test("aggregations should aggregate by big decimals with Flink and return results in default scale (18)") {
     val input = List(java.math.BigDecimal.valueOf(1), java.math.BigDecimal.valueOf(2))
     val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
       "Average"                       -> java.math.BigDecimal.valueOf(1.5).setScale(18),
@@ -233,14 +180,29 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
       )
     )
     scenarios.foreach(s => {
-      runScenarioAndAssert(
-        s,
-        input,
-        CustomNodeError("Invalid type: LocalDate for selected aggregator", Some(ParameterName("aggregateBy")))(
-          NodeId("agg0")
-        )
-      )
+      val result = runner.runWithData(s, input, Boundedness.BOUNDED)
+      result.invalidValue.toList.loneElement should matchPattern {
+        case CustomNodeError("agg0", _, Some(ParameterName("aggregateBy"))) =>
+      }
     })
+  }
+
+  test("reports error when using not supported types in aggregateBy") {
+    val scenario = buildMultipleAggregationsScenario(
+      List(
+        AggregationParameters(aggregator = "'First'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
+      )
+    )
+    val results = List(
+      runner.runWithData(scenario, List(OffsetDateTime.now()), Boundedness.BOUNDED),
+      runner.runWithData(scenario, List(ZonedDateTime.now()), Boundedness.BOUNDED),
+      runner.runWithData(scenario, List(BigInteger.ONE), Boundedness.BOUNDED)
+    )
+    results.foreach { r =>
+      r.invalidValue.toList.loneElement should matchPattern {
+        case CustomNodeError("agg0", _, Some(ParameterName("aggregateBy"))) =>
+      }
+    }
   }
 
   test("table aggregation should emit groupBy key and aggregated values as separate variables") {
@@ -293,19 +255,6 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
       Boundedness.BOUNDED
     )
     result.validValue.successes.map(r => r.asScala.toMap).toSet shouldBe expectedResults.toSet
-  }
-
-  def runScenarioAndAssert[T: ClassTag](
-      scenario: CanonicalProcess,
-      inputs: List[T],
-      expectedLoneError: ProcessCompilationError
-  ): Unit = {
-    val result = runner.runWithData(
-      scenario,
-      inputs,
-      Boundedness.BOUNDED
-    )
-    result.invalidValue.toList.loneElement shouldBe expectedLoneError
   }
 
 }

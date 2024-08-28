@@ -69,6 +69,8 @@ class TableAggregationFactory
         ) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
 
+      // TODO: add validaiton for groupBy - dont allow RAW's
+
       val selectedAggregator = TableAggregatorType.values
         .find(_.displayName == aggregatorName)
         .getOrElse(throw new IllegalStateException("Aggregator not found. Should be invalid at parameter level."))
