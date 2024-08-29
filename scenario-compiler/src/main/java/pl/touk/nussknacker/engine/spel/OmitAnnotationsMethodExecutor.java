@@ -9,14 +9,19 @@ import org.springframework.expression.spel.support.ReflectionHelper;
 import org.springframework.expression.spel.support.ReflectiveMethodExecutor;
 import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 //this basically changed org.springframework.expression.spel.support.ReflectiveMethodExecutor
 //we want to create TypeDescriptor using SpelEspReflectionHelper.convertArguments
 //which should work faster
+// As an additional feature we allow to invoke list methods on arrays and
+// in the point of the method invocation we convert an array to a list
 public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
 
     private final Method method;
@@ -94,6 +99,7 @@ public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
                 arguments = ReflectionHelper.setupArgumentsForVarargsInvocation(this.method.getParameterTypes(), arguments);
             }
             ReflectionUtils.makeAccessible(this.method);
+            //Nussknacker: if target class is array we convert it to list
             Object value = invokeMethod(target, arguments);
             return new TypedValue(value, new TypeDescriptor(new MethodParameter(this.method, -1)).narrow(value));
         }
@@ -103,11 +109,24 @@ public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
     }
 
     private Object invokeMethod(Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
-        if (target != null && target.getClass().isArray() && !this.method.getDeclaringClass().isArray()) {
-            return this.method.invoke(Arrays.asList((Object[]) target), arguments);
+        if (target != null && target.getClass().isArray() && this.method.getDeclaringClass().isAssignableFrom(List.class)) {
+            return this.method.invoke(convertToList(target), arguments);
         } else {
             return this.method.invoke(target, arguments);
         }
+    }
+
+    private static List<Object> convertToList(Object target) {
+        if (target.getClass().getComponentType().isPrimitive()) {
+            int length = Array.getLength(target);
+            List<Object> result = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) {
+                Object sourceElement = Array.get(target, i);
+                result.add(sourceElement);
+            }
+            return result;
+        }
+        return Arrays.asList((Object[]) target);
     }
 
 }

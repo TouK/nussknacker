@@ -215,11 +215,7 @@ object typing {
     override def withoutValue: TypedClass = this
 
     override def display: String = {
-      val className = {
-        // todo:lbg
-        if (klass.isArray) "List"
-        else ReflectUtils.simpleNameWithoutSuffix(klass)
-      }
+      val className = ReflectUtils.simpleNameWithoutSuffix(hintsObjType.klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else className
     }
