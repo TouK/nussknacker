@@ -1,21 +1,17 @@
 package pl.touk.nussknacker.engine.process.util
 
-import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
-import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
+import com.esotericsoftware.kryo.{Kryo, Serializer}
+import pl.touk.nussknacker.engine.flink.api.serialization.{ClassBasedKryoSerializerRegistrar, SerializerRegistrar}
 
 import java.util
-import scala.jdk.CollectionConverters._
 
 //By default SpEL list (i.e "{'a', 'b'}") is represented as java.util.Collections.UnmodifiableCollection, which
 //Kryo won't serialize properly since Kry uses java.util.Collection.add() method which in case of UnmodifiableCollection
 //throws an exception. That's why we need out own serialization of java.util.List
 //The same applies to Map
 @SerialVersionUID(885416578972888366L)
-object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, true) with Serializable {
-
-  // It is loaded by loadClass because UnmodifiableCollection has private-package access
-  override def clazz: Class[_] = getClass.getClassLoader.loadClass("java.util.Collections$UnmodifiableCollection")
+class SpelHack extends Serializer[java.util.List[_]](false, true) with Serializable {
 
   override def write(kryo: Kryo, out: Output, obj: java.util.List[_]): Unit = {
     // Write the size:
@@ -42,11 +38,20 @@ object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, t
 
 }
 
-@SerialVersionUID(20042018L)
-object SpelMapHack extends SerializerWithSpecifiedClass[java.util.Map[_, _]](false, true) with Serializable {
+object SpelHack {
 
-  // It is loaded by loadClass because UnmodifiableCollection has private-package access
-  override def clazz: Class[_] = getClass.getClassLoader.loadClass("java.util.Collections$UnmodifiableMap")
+  implicit val registrar: SerializerRegistrar[SpelHack] = {
+    // It is loaded by loadClass because UnmodifiableCollection has private-package access
+    val unmodifiableCollectionClass = getClass.getClassLoader
+      .loadClass("java.util.Collections$UnmodifiableCollection")
+      .asInstanceOf[Class[java.util.List[_]]]
+    new ClassBasedKryoSerializerRegistrar(classOf[SpelHack], unmodifiableCollectionClass)
+  }
+
+}
+
+@SerialVersionUID(20042018L)
+class SpelMapHack extends Serializer[java.util.Map[_, _]](false, true) with Serializable {
 
   override def write(kryo: Kryo, out: Output, obj: java.util.Map[_, _]): Unit = {
     // Write the size:
@@ -73,6 +78,18 @@ object SpelMapHack extends SerializerWithSpecifiedClass[java.util.Map[_, _]](fal
       idx += 1
     }
     map
+  }
+
+}
+
+object SpelMapHack {
+
+  implicit val registrar: SerializerRegistrar[SpelMapHack] = {
+    // It is loaded by loadClass because UnmodifiableCollection has private-package access
+    val unmodifiableMapClass = getClass.getClassLoader
+      .loadClass("java.util.Collections$UnmodifiableMap")
+      .asInstanceOf[Class[java.util.Map[_, _]]]
+    new ClassBasedKryoSerializerRegistrar(classOf[SpelMapHack], unmodifiableMapClass)
   }
 
 }

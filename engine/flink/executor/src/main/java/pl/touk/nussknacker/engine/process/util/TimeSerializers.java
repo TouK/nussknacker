@@ -23,6 +23,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
@@ -38,6 +39,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+
 import org.apache.flink.api.common.ExecutionConfig;
 
 /**
@@ -74,12 +76,12 @@ public class TimeSerializers {
      */
     private static final long globalVersionUID = 20220222162000L;
 
+    @SuppressWarnings("unchecked")
     private static <T, Y extends Serializer<T> & Serializable> void addSerializer(ExecutionConfig config, Class<T> klass, Y serializer) {
-      config.getRegisteredTypesWithKryoSerializers().put(klass, new ExecutionConfig.SerializableSerializer<>(serializer));
-      config.getDefaultKryoSerializers().put(klass, new ExecutionConfig.SerializableSerializer<>(serializer));
+        config.addDefaultKryoSerializer(klass, (Class<? extends Serializer<?>>) serializer.getClass());
     }
 
-    private static class DurationSerializer extends Serializer<Duration> implements Serializable {
+    public static class DurationSerializer extends Serializer<Duration> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
 
         {
@@ -98,7 +100,7 @@ public class TimeSerializers {
         }
     }
 
-    private static class InstantSerializer extends Serializer<Instant> implements Serializable {
+    public static class InstantSerializer extends Serializer<Instant> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
 
         {
@@ -117,8 +119,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class LocalDateSerializer extends Serializer<LocalDate> implements Serializable {
+    public static class LocalDateSerializer extends Serializer<LocalDate> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -145,8 +148,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class LocalDateTimeSerializer extends Serializer<LocalDateTime> implements Serializable {
+    public static class LocalDateTimeSerializer extends Serializer<LocalDateTime> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -163,8 +167,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class LocalTimeSerializer extends Serializer<LocalTime> implements Serializable {
+    public static class LocalTimeSerializer extends Serializer<LocalTime> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -223,8 +228,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class ZoneOffsetSerializer extends Serializer<ZoneOffset> implements Serializable {
+    public static class ZoneOffsetSerializer extends Serializer<ZoneOffset> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -252,8 +258,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class ZoneIdSerializer extends Serializer<ZoneId> implements Serializable  {
+    public static class ZoneIdSerializer extends Serializer<ZoneId> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -276,8 +283,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class OffsetTimeSerializer extends Serializer<OffsetTime> implements Serializable  {
+    public static class OffsetTimeSerializer extends Serializer<OffsetTime> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -294,8 +302,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class OffsetDateTimeSerializer extends Serializer<OffsetDateTime> implements Serializable  {
+    public static class OffsetDateTimeSerializer extends Serializer<OffsetDateTime> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -314,8 +323,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class ZonedDateTimeSerializer extends Serializer<ZonedDateTime> implements Serializable  {
+    public static class ZonedDateTimeSerializer extends Serializer<ZonedDateTime> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -334,8 +344,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class YearSerializer extends Serializer<Year> implements Serializable  {
+    public static class YearSerializer extends Serializer<Year> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -349,8 +360,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class YearMonthSerializer extends Serializer<YearMonth> implements Serializable  {
+    public static class YearMonthSerializer extends Serializer<YearMonth> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -367,8 +379,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class MonthDaySerializer extends Serializer<MonthDay> implements Serializable  {
+    public static class MonthDaySerializer extends Serializer<MonthDay> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }
@@ -385,8 +398,9 @@ public class TimeSerializers {
         }
     }
 
-    private static class PeriodSerializer extends Serializer<Period> implements Serializable  {
+    public static class PeriodSerializer extends Serializer<Period> implements Serializable {
         private static final long serialVersionUID = globalVersionUID;
+
         {
             setImmutable(true);
         }

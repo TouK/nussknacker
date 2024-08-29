@@ -1,12 +1,16 @@
 package pl.touk.nussknacker.engine.process.util
 
-import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
-import pl.touk.nussknacker.engine.flink.api.serialization.{SerializerWithSpecifiedClass, SerializersRegistrar}
+import pl.touk.nussknacker.engine.flink.api.serialization.{
+  ClassBasedKryoSerializerRegistrar,
+  SerializerRegistrar,
+  SerializersRegistrar
+}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.{Failure, Try}
@@ -21,7 +25,9 @@ import scala.util.{Failure, Try}
 object Serializers extends LazyLogging {
 
   def registerSerializers(modelData: ModelData, config: ExecutionConfig): Unit = {
-    (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(_.registerIn(config))
+    (implicitly[SerializerRegistrar[CaseClassSerializer]] ::
+      implicitly[SerializerRegistrar[SpelHack]] ::
+      implicitly[SerializerRegistrar[SpelMapHack]] :: Nil).foreach(_.registerIn(config))
     ScalaServiceLoader
       .load[SerializersRegistrar](getClass.getClassLoader)
       .foreach(_.register(modelData.modelConfig, config))
@@ -30,9 +36,7 @@ object Serializers extends LazyLogging {
 
   @SerialVersionUID(4481573264636646884L)
   // this is not so great, but is OK for now
-  object CaseClassSerializer extends SerializerWithSpecifiedClass[Product](false, true) with Serializable {
-
-    override def clazz: Class[_] = classOf[Product]
+  class CaseClassSerializer extends Serializer[Product](false, true) with Serializable {
 
     override def write(kryo: Kryo, output: Output, obj: Product): Unit = {
       // this method handles case classes with implicit parameters and also inner classes.
@@ -92,6 +96,12 @@ object Serializers extends LazyLogging {
     }
 
     override def copy(kryo: Kryo, original: Product): Product = original
+  }
+
+  object CaseClassSerializer {
+
+    implicit val registrar: SerializerRegistrar[CaseClassSerializer] =
+      new ClassBasedKryoSerializerRegistrar(classOf[CaseClassSerializer], classOf[Product])
   }
 
 }

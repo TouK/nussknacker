@@ -210,9 +210,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     }
   }
 
-  // TODO: enable this test when solving the comparison problem for RAW's
-  //  now throws: Data type RAW('java.time.OffsetDateTime', '...') expected but RAW('java.time.OffsetDateTime', '...') passed
-  ignore("count aggregation works when aggregating by type aligned to RAW") {
+  test("count aggregation works when aggregating by type aligned to RAW") {
     val scenario = buildMultipleAggregationsScenario(
       List(
         AggregationParameters(aggregator = "'Count'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
