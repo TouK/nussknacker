@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.utils.QueryParamsHelper
+import pl.touk.nussknacker.test.utils.{QueryParamsHelper, StatisticEncryptionSupport}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.{
@@ -94,7 +94,7 @@ class UsageStatisticsReportsSettingsServiceTest
     RequestIdStat,
   ).map(_.name)
 
-  private val cfg = StatisticUrlConfig(maybePublicEncryptionKey = None)
+  private val cfg = StatisticUrlConfig(publicEncryptionKey = StatisticEncryptionSupport.publicKey)
 
   test("should determine query params with version and source") {
     val urls = new UsageStatisticsReportsSettingsService(
@@ -111,9 +111,10 @@ class UsageStatisticsReportsSettingsServiceTest
       .value
       .prepareURLs(cfg)
       .value
+      .map(url => StatisticEncryptionSupport.decodeToString(url.toString))
 
     urls.length shouldEqual 1
-    val urlString = urls.head.toString
+    val urlString = urls.head
     urlString should include(s"fingerprint=$sampleFingerprint")
     urlString should include regex s"$RequestIdStat=$uuidRegex"
     urlString should include("source=sources")
@@ -136,7 +137,7 @@ class UsageStatisticsReportsSettingsServiceTest
       .value
       .prepareURLs(cfg)
       .value
-      .map(_.toString)
+      .map(url => StatisticEncryptionSupport.decodeToString(url.toString))
       .head
 
     url should include("c_srvcccntsrvc=5")
@@ -159,7 +160,7 @@ class UsageStatisticsReportsSettingsServiceTest
       .value
       .prepareURLs(cfg)
       .value
-      .map(_.toString)
+      .map(url => StatisticEncryptionSupport.decodeToString(url.toString))
       .head
     val queryParams = QueryParamsHelper.extractFromURLString(url)
 
@@ -216,7 +217,7 @@ class UsageStatisticsReportsSettingsServiceTest
       .value
       .prepareURLs(cfg)
       .value
-      .map(_.toString)
+      .map(url => StatisticEncryptionSupport.decodeToString(url.toString))
       .head
     val queryParamsKeys = QueryParamsHelper.extractFromURLString(url).keySet
 
@@ -259,6 +260,7 @@ class UsageStatisticsReportsSettingsServiceTest
       .value
       .prepareURLs(cfg)
       .map(_.map(_.toString).reduce(_ ++ _))
+      .map(url => StatisticEncryptionSupport.decodeToString(url))
       .value
 
     List(

@@ -89,7 +89,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
-import scala.util.{Try, Using}
+import scala.util.Try
 import scala.util.control.NonFatal
 
 class AkkaHttpBasedRouteProvider(
@@ -497,7 +497,7 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val statisticUrlConfig =
-        StatisticUrlConfig(maybePublicEncryptionKey = Some(PublicEncryptionKey(statisticsPublicKey.mkString.trim)))
+        StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(statisticsPublicKey.mkString.trim))
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authManager,
