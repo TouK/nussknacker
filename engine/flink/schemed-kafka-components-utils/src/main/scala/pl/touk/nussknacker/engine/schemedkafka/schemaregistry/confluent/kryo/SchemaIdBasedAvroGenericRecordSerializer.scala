@@ -32,6 +32,7 @@ object SchemaIdBasedAvroGenericRecordSerializer {
 
 }
 
+// FIXME: ensure that it works after changing the way how serializers are added
 @SerialVersionUID(42553325228495L)
 class SchemaIdBasedAvroGenericRecordSerializer(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,

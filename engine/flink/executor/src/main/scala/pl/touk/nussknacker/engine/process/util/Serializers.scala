@@ -21,16 +21,16 @@ import scala.util.{Failure, Try}
 object Serializers extends LazyLogging {
 
   def registerSerializers(modelData: ModelData, config: ExecutionConfig): Unit = {
-//    (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(_.registerIn(config))
-//    ScalaServiceLoader
-//      .load[SerializersRegistrar](getClass.getClassLoader)
-//      .foreach(_.register(modelData.modelConfig, config))
-//    TimeSerializers.addDefaultSerializers(config)
+    (new CaseClassSerializer :: new SpelHack :: new SpelMapHack :: Nil).foreach(_.registerIn(config))
+    ScalaServiceLoader
+      .load[SerializersRegistrar](getClass.getClassLoader)
+      .foreach(_.register(modelData.modelConfig, config))
+    TimeSerializers.addDefaultSerializers(config)
   }
 
   @SerialVersionUID(4481573264636646884L)
   // this is not so great, but is OK for now
-  object CaseClassSerializer extends SerializerWithSpecifiedClass[Product](false, true) with Serializable {
+  class CaseClassSerializer extends SerializerWithSpecifiedClass[Product](false, true) with Serializable {
 
     override def clazz: Class[_] = classOf[Product]
 

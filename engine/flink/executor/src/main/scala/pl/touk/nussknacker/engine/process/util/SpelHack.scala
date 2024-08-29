@@ -12,7 +12,7 @@ import scala.jdk.CollectionConverters._
 //throws an exception. That's why we need out own serialization of java.util.List
 //The same applies to Map
 @SerialVersionUID(885416578972888366L)
-object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, true) with Serializable {
+class SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, true) with Serializable {
 
   // It is loaded by loadClass because UnmodifiableCollection has private-package access
   override def clazz: Class[_] = getClass.getClassLoader.loadClass("java.util.Collections$UnmodifiableCollection")
@@ -43,7 +43,7 @@ object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, t
 }
 
 @SerialVersionUID(20042018L)
-object SpelMapHack extends SerializerWithSpecifiedClass[java.util.Map[_, _]](false, true) with Serializable {
+class SpelMapHack extends SerializerWithSpecifiedClass[java.util.Map[_, _]](false, true) with Serializable {
 
   // It is loaded by loadClass because UnmodifiableCollection has private-package access
   override def clazz: Class[_] = getClass.getClassLoader.loadClass("java.util.Collections$UnmodifiableMap")

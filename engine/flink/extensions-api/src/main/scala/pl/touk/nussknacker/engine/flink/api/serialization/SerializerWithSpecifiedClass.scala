@@ -9,9 +9,11 @@ abstract class SerializerWithSpecifiedClass[T](acceptsNull: Boolean, immutable: 
 
   def clazz: Class[_]
 
-  def registerIn(config: ExecutionConfig) = {
-    config.getRegisteredTypesWithKryoSerializers.put(clazz, new ExecutionConfig.SerializableSerializer(this))
-    config.getDefaultKryoSerializers.put(clazz, new ExecutionConfig.SerializableSerializer(this))
+  def registerIn(config: ExecutionConfig): Unit = {
+    // FIXME: replace with external class adding serializer class
+//    config.getRegisteredTypesWithKryoSerializers.put(clazz, new ExecutionConfig.SerializableSerializer(this))
+//    config.getDefaultKryoSerializers.put(clazz, new ExecutionConfig.SerializableSerializer(this))
+    config.addDefaultKryoSerializer(clazz, getClass)
   }
 
 }
