@@ -4,6 +4,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.18.0 (Not released yet)
 
+### Code API changes
+
+* [#6680](https://github.com/TouK/nussknacker/pull/6680) Added `displayObjType` to `SingleTypingResult` and
+  it is used as a type which is visible on the UI.
+
 ### Other changes
 
 * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
