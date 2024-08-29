@@ -62,13 +62,6 @@ final case class PublicEncryptionKey(key: PublicKey)
 
 object PublicEncryptionKey {
 
-  lazy val INSTANCE: PublicEncryptionKey = PublicEncryptionKey(
-    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjdvfEFH8jBF56UZmtQv" +
-      "UH1gUCnRkHTke/jnOEIjdSmSqoyWGJ9UKC/PgLYyqLqNRKq2eEmLr26tQRaIoOHLcdGlGZXIrRkWHAPH8QTGrDt4Qm/COB8BPS7oV2tATsUN7z" +
-      "JNWfVRNDzcunzDwAtZKs4SDTsFLAPrZ5CKMt5JK9Q7Xrzekl5PunzJEuIOmlWusFanIqCgs0d245NVRKhbkqq/JkoseEB4sDXFwNyO7sO51aLg" +
-      "DST+P/G+tPveQpMusbGBK48Syce93R6bTf0Bd8KGaJQWvJPjD6rbX+K3vSQHqgb+NjIyUAWWNHuFvRt2NQ5iHsuaBU0B/61W8y6oMxQIDAQAB"
-  )
-
   def apply(plainPublicEncryptionKey: String): PublicEncryptionKey =
     setupPublicKey(plainPublicEncryptionKey)
       .transform(
