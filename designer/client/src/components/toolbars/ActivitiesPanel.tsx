@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import httpService, { ActionMetadata, ActivitiesResponse, ActivityMetadata, ActivityMetadataResponse } from "../../http/HttpService";
@@ -11,6 +11,8 @@ import { getFeatureSettings } from "../../reducers/selectors/settings";
 import UrlIcon from "../UrlIcon";
 import { getBorderColor } from "../../containers/theme/helpers";
 import { blend } from "@mui/system";
+import { FixedSizeList, VariableSizeList, VariableSizeListProps } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 type Activity = ActivitiesResponse["activities"][number] & { activities: ActivityMetadata; actions: ActionMetadata[] };
 
@@ -28,7 +30,9 @@ const mergeActivityDataWithMetadata = (
     });
 };
 
-export const StyledActivityRoot = styled("div")(({ theme }) => ({ margin: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(4)}` }));
+export const StyledActivityRoot = styled("div")(({ theme }) => ({
+    padding: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(4)}`,
+}));
 export const StyledActivityHeader = styled("div")(({ theme }) => ({
     display: "flex",
     alignItems: "center",
@@ -102,6 +106,21 @@ const ActivityItem = ({ activity }: { activity: Activity }) => {
 };
 
 export const ActivitiesPanel = (props: ToolbarPanelProps) => {
+    const listRef = useRef<VariableSizeList>(null);
+    const rowHeights = useRef({});
+
+    const setRowHeight = useCallback((index, size) => {
+        if (listRef.current) {
+            listRef.current.resetAfterIndex(index);
+        }
+
+        rowHeights.current = { ...rowHeights.current, [index]: size };
+    }, []);
+
+    const getRowHeight = useCallback((index: number) => {
+        return rowHeights.current[index];
+    }, []);
+
     const [data, setData] = useState<Activity[]>([]);
 
     useEffect(() => {
@@ -112,11 +131,40 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
 
     if (!data.length) return;
 
+    const Row = ({ index, style }) => {
+        const rowRef = useRef<HTMLDivElement>(null);
+        const activity = useMemo(() => data[index], [index]);
+        useEffect(() => {
+            if (rowRef.current) {
+                setRowHeight(index, rowRef.current.clientHeight);
+            }
+        }, [index, rowRef]);
+
+        return (
+            <div key={activity.id} ref={rowRef} style={style}>
+                <ActivityItem activity={activity} />
+            </div>
+        );
+    };
+
     return (
         <ToolbarWrapper {...props} title={"Activities"}>
-            {data.map((activity) => (
-                <ActivityItem key={activity.id} activity={activity} />
-            ))}
+            <div style={{ width: "100%", height: "500px" }}>
+                <AutoSizer>
+                    {({ width, height }) => (
+                        <VariableSizeList
+                            ref={listRef}
+                            itemCount={data.length}
+                            estimatedItemSize={100}
+                            itemSize={getRowHeight}
+                            height={height}
+                            width={width}
+                        >
+                            {Row}
+                        </VariableSizeList>
+                    )}
+                </AutoSizer>
+            </div>
         </ToolbarWrapper>
     );
 };
