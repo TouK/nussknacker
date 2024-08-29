@@ -4,14 +4,38 @@ import { getScenario, getSelectionState } from "../../../reducers/selectors/grap
 import { MenuItem, MenuList } from "@mui/material";
 import { FoundNode } from "./FoundNode";
 import React, { useCallback, useEffect, useState } from "react";
-import { useFilteredNodes } from "./utils";
+import { resolveSearchOption, useFilteredNodes } from "./utils";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { resetSelection } from "../../../actions/nk";
 import { useWindows } from "../../../windowManager";
 
-export function SearchResults({ filterValues = [] }: { filter?: string; filterValues?: string[] }) {
-    const nodes = useFilteredNodes(filterValues);
+export enum SearchType {
+    SIMPLE,
+    ADVANCED,
+}
+
+export type SimpleSearch = {
+    searchType: SearchType.SIMPLE;
+    query: string;
+};
+
+export type AdvancedSearch = {
+    searchType: SearchType.ADVANCED;
+    id?: string[];
+    description?: string[];
+    type?: string[];
+    paramName?: string[];
+    paramValue?: string[];
+    outputValue?: string[];
+    edgeExpression?: string[];
+};
+
+export type SearchOption = SimpleSearch | AdvancedSearch;
+
+export function SearchResults({ filterRawText }: { filterRawText?: string }) {
+    const searchOption: SearchOption = resolveSearchOption(filterRawText);
+    const nodes = useFilteredNodes(searchOption);
 
     const [hasFocus, setHasFocus] = useState(false);
     const [hoveredNodes, setHoveredNodes] = useState<string[]>([]);
@@ -83,7 +107,11 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
                     disableGutters
                     divider
                 >
-                    <FoundNode node={node} highlights={filterValues} fields={groups} />
+                    <FoundNode
+                        node={node}
+                        highlights={searchOption.searchType === SearchType.SIMPLE ? [searchOption.query] : searchOption.id}
+                        fields={groups}
+                    />
                 </MenuItem>
             ))}
         </MenuList>
