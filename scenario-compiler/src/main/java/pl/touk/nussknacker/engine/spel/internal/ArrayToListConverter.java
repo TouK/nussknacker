@@ -5,6 +5,8 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
 import org.springframework.lang.Nullable;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -48,6 +50,15 @@ final class ArrayToListConverter implements ConditionalGenericConverter {
 		if (source == null) {
 			return null;
 		}
+        if (source.getClass().getComponentType().isPrimitive()) {
+            int length = Array.getLength(source);
+            List<Object> result = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) {
+                Object sourceElement = Array.get(source, i);
+                result.add(sourceElement);
+            }
+            return result;
+        }
         return Arrays.asList((Object[]) source);
 	}
 
