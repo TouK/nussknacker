@@ -50,10 +50,9 @@ object ColumnDefinition {
   }
 
   private def mapValueToSupportedType(className: String): (TypingResult, Any => Any) = className match {
-    case `sqlArrayClassName` =>
-      (Typed.typedClass(classOf[Array[Any]]), v => readArray(v.asInstanceOf[sql.Array]).toArray)
-    case `sqlTimeClassName`      => (Typed.typedClass(classOf[LocalTime]), v => v.asInstanceOf[sql.Time].toLocalTime)
-    case `sqlDateClassName`      => (Typed.typedClass(classOf[LocalDate]), v => v.asInstanceOf[sql.Date].toLocalDate)
+    case `sqlArrayClassName` => (Typed.typedClass(classOf[util.List[Any]]), v => readArray(v.asInstanceOf[sql.Array]))
+    case `sqlTimeClassName`  => (Typed.typedClass(classOf[LocalTime]), v => v.asInstanceOf[sql.Time].toLocalTime)
+    case `sqlDateClassName`  => (Typed.typedClass(classOf[LocalDate]), v => v.asInstanceOf[sql.Date].toLocalDate)
     case `sqlTimestampClassName` => (Typed.typedClass(classOf[Instant]), v => v.asInstanceOf[sql.Timestamp].toInstant)
     case `sqlClobClassName`      => (Typed.typedClass(classOf[String]), v => readClob(v.asInstanceOf[sql.Clob]))
     case _                       => (Typed.typedClass(Class.forName(className)), identity)

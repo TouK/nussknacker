@@ -425,7 +425,7 @@ private[spel] class Typer(
             case result :: Nil =>
               // Limitation: projection on an iterative type makes it loses it's known value,
               // as properly determining it would require evaluating the projection expression for each element (likely working on the AST)
-              projectionResult(iterateType, result)
+              valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
             case other =>
               invalid(IllegalSelectionTypeError(other))
           }
@@ -516,11 +516,9 @@ private[spel] class Typer(
       // Limitation: selection from an iterative type makes it loses it's known value,
       // as properly determining it would require evaluating the selection expression for each element (likely working on the AST)
       parentType match {
-        case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+        case tc: SingleTypingResult if tc.hintsObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
           tc.withoutValue
-        case tc: SingleTypingResult if tc.objType.klass.isArray =>
-          tc.withoutValue
-        case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+        case tc: SingleTypingResult if tc.hintsObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
           Typed.record(Map.empty)
         case _ =>
           parentType
@@ -653,7 +651,7 @@ private[spel] class Typer(
   private def extractSingleProperty(e: PropertyOrFieldReference)(t: SingleTypingResult): TypingR[TypingResult] = {
     t match {
       case typedObjectWithData: TypedObjectWithData =>
-        extractSingleProperty(e)(typedObjectWithData.objType)
+        extractSingleProperty(e)(typedObjectWithData.hintsObjType)
       case typedClass: TypedClass =>
         propertyTypeBasedOnMethod(typedClass, typedClass, e)
           .orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
@@ -679,30 +677,22 @@ private[spel] class Typer(
   }
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
-      valid(tc.objType.params.headOption.getOrElse(Unknown))
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+    case tc: SingleTypingResult if tc.hintsObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+      valid(tc.hintsObjType.params.headOption.getOrElse(Unknown))
+    case tc: SingleTypingResult if tc.hintsObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
       valid(
         Typed.record(
           Map(
-            "key"   -> tc.objType.params.headOption.getOrElse(Unknown),
-            "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown)
+            "key"   -> tc.hintsObjType.params.headOption.getOrElse(Unknown),
+            "value" -> tc.hintsObjType.params.drop(1).headOption.getOrElse(Unknown)
           )
         )
       )
-    case tc: SingleTypingResult if tc.objType.klass.isArray =>
-      valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult =>
       invalid(IllegalProjectionSelectionError(tc))
     // FIXME: what if more results are present?
     case _ => valid(Unknown)
   }
-
-  private def projectionResult(iterableType: TypingResult, elementType: TypingResult): TypingR[TypingResult] =
-    iterableType.withoutValue match {
-      case tc: TypedClass if tc.klass.isArray => valid(Typed.genericTypeClass(tc.klass, List(elementType)))
-      case _                                  => valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
-    }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(
       result: TypingResult

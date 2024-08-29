@@ -173,7 +173,7 @@ class SpelExpressionSuggester(
                 ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil)
               }
             val suggestionsFromClass = clssDefinitions
-              .get(to.objType.klass)
+              .get(to.hintsObjType.klass)
               .map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = true))
               .getOrElse(Nil)
             val applicableSuggestions = if (collectSuggestionsFromClass) {
@@ -185,7 +185,7 @@ class SpelExpressionSuggester(
           case TypingResultWithContext(tu: TypedUnion, staticContext) =>
             Future.successful(
               tu.possibleTypes
-                .map(_.objType.klass)
+                .map(_.hintsObjType.klass)
                 .toList
                 .flatMap(klass =>
                   clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
@@ -367,17 +367,15 @@ class SpelExpressionSuggester(
 
   private def determineIterableElementTypingResult(parent: TypingResult): TypingResult = {
     parent match {
-      case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
-        tc.objType.params.headOption.getOrElse(Unknown)
-      case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+      case tc: SingleTypingResult if tc.hintsObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+        tc.hintsObjType.params.headOption.getOrElse(Unknown)
+      case tc: SingleTypingResult if tc.hintsObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
         Typed.record(
           Map(
-            "key"   -> tc.objType.params.headOption.getOrElse(Unknown),
-            "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown)
+            "key"   -> tc.hintsObjType.params.headOption.getOrElse(Unknown),
+            "value" -> tc.hintsObjType.params.drop(1).headOption.getOrElse(Unknown)
           )
         )
-      case tc: SingleTypingResult if tc.objType.klass.isArray =>
-        tc.objType.params.headOption.getOrElse(Unknown)
       case _ => Unknown
     }
   }
