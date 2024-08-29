@@ -141,6 +141,11 @@ class AkkaHttpBasedRouteProvider(
           scheduler
         }
       )
+      statisticsPublicKey <- Resource.fromAutoCloseable(
+        IO {
+          Source.fromURL(getClass.getResource("/encryption.key"))
+        }
+      )
     } yield {
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
@@ -491,12 +496,8 @@ class AkkaHttpBasedRouteProvider(
         designerClock
       )
 
-      val publicKey =
-        Using(Source.fromURL(getClass.getResource("/encryption.key"))) { read =>
-          read.mkString.trim
-        }.get
-
-      val statisticUrlConfig = StatisticUrlConfig(maybePublicEncryptionKey = Some(PublicEncryptionKey(publicKey)))
+      val statisticUrlConfig =
+        StatisticUrlConfig(maybePublicEncryptionKey = Some(PublicEncryptionKey(statisticsPublicKey.mkString.trim)))
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authManager,
