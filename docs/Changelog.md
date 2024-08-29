@@ -3,6 +3,8 @@
 1.18.0 (Not released yet)
 -------------------------
 * [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
+* [#6552](https://github.com/TouK/nussknacker/pull/6552) Added aggregation functions to Batch aggregation component
+  (`Average`, `Count`, `Max`, `Min`, `Population standard deviation`, `Sample standard deviation`, `Population variance`, `Sample variance`)
 
 1.17.0 (Not released yet)
 -------------------------
