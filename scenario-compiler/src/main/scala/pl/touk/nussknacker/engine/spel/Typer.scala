@@ -425,7 +425,7 @@ private[spel] class Typer(
             case result :: Nil =>
               // Limitation: projection on an iterative type makes it loses it's known value,
               // as properly determining it would require evaluating the projection expression for each element (likely working on the AST)
-              valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
+              projectionResult(iterateType, result)
             case other =>
               invalid(IllegalSelectionTypeError(other))
           }
@@ -697,6 +697,12 @@ private[spel] class Typer(
     // FIXME: what if more results are present?
     case _ => valid(Unknown)
   }
+
+  private def projectionResult(iterableType: TypingResult, elementType: TypingResult): TypingR[TypingResult] =
+    iterableType.withoutValue match {
+      case tc: TypedClass if tc.klass.isArray => valid(Typed.genericTypeClass(tc.klass, List(elementType)))
+      case _                                  => valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
+    }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(
       result: TypingResult
