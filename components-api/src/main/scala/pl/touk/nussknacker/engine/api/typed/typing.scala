@@ -49,9 +49,14 @@ object typing {
   sealed trait SingleTypingResult extends KnownTypingResult {
     override def withoutValue: SingleTypingResult
 
+    // This type should be 'runtime type'
     def objType: TypedClass
 
-    def hintsObjType: TypedClass = objType
+    // This type should be used only in typer for type hints
+    def hintsObjType: TypedClass =
+      if (objType.klass.isArray) TypedClass(classOf[java.util.List[_]], objType.params)
+      else objType
+
   }
 
   object TypedObjectTypingResult {
@@ -220,10 +225,6 @@ object typing {
     }
 
     override def objType: TypedClass = this
-
-    override def hintsObjType: TypedClass =
-      if (klass.isArray) TypedClass(classOf[java.util.List[_]], params)
-      else this
 
     def primitiveClass: Class[_] = Option(ClassUtils.wrapperToPrimitive(klass)).getOrElse(klass)
 

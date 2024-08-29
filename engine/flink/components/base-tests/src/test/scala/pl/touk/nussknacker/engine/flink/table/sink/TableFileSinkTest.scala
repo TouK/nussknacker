@@ -640,7 +640,7 @@ class TableFileSinkTest
 
     val expectedMessage =
       """Provided value does not match scenario output - errors:
-        |Incorrect type: actual: 'Record{arrayOfInts: List[Double]({1.23, 2.34}), map: Record{foo: Double(1.23)}}' expected: 'Record{arrayOfInts: Array[Integer], map: Map[String,Integer]}'.""".stripMargin
+        |Incorrect type: actual: 'Record{arrayOfInts: List[Double]({1.23, 2.34}), map: Record{foo: Double(1.23)}}' expected: 'Record{arrayOfInts: List[Integer], map: Map[String,Integer]}'.""".stripMargin
     result.invalidValue.toList should matchPattern {
       case CustomNodeError(
             "end",
