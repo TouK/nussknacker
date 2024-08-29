@@ -11,7 +11,7 @@ import { getFeatureSettings } from "../../reducers/selectors/settings";
 import UrlIcon from "../UrlIcon";
 import { getBorderColor } from "../../containers/theme/helpers";
 import { blend } from "@mui/system";
-import { FixedSizeList, VariableSizeList, VariableSizeListProps } from "react-window";
+import { VariableSizeList } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 
 type Activity = ActivitiesResponse["activities"][number] & { activities: ActivityMetadata; actions: ActionMetadata[] };
@@ -100,6 +100,11 @@ const ActivityItem = ({ activity }: { activity: Activity }) => {
                     </Typography>
                 )}
                 {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
+                {activity.additionalFields.map((additionalField, index) => (
+                    <Typography key={index} component={"p"} variant={"caption"}>
+                        {additionalField.name}: {additionalField.value}
+                    </Typography>
+                ))}
             </StyledActivityBody>
         </StyledActivityRoot>
     );
