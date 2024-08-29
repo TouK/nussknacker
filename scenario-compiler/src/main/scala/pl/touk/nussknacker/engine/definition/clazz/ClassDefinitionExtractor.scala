@@ -94,7 +94,7 @@ object ClassDefinitionExtractor extends LazyLogging {
   )(implicit settings: ClassExtractionSettings): Map[String, List[MethodDefinition]] = {
     def typeResultVisible(t: TypingResult): Boolean = t match {
       case str: SingleTypingResult =>
-        !settings.isHidden(str.objType.klass) && str.objType.params.forall(typeResultVisible)
+        !settings.isHidden(str.hintsObjType.klass) && str.hintsObjType.params.forall(typeResultVisible)
       case union: TypedUnion => union.possibleTypes.forall(typeResultVisible)
       case TypedNull         => true
       case Unknown           => true
