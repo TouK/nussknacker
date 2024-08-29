@@ -24,7 +24,9 @@ function ImageWithFallback({ src, FallbackComponent, ...props }: ImageWithFallba
 
 export type UrlIconProps = InlineSvgProps & ImageWithFallbackProps;
 
-export default function UrlIcon({ FallbackComponent, ...props }: UrlIconProps): JSX.Element {
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+export default function UrlIcon({ FallbackComponent = () => PlaceholderIconFallbackComponent, ...props }: UrlIconProps): JSX.Element {
     switch (true) {
         case /\.svg$/i.test(props.src):
             return <InlineSvg {...props} FallbackComponent={FallbackComponent} />;
