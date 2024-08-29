@@ -21,11 +21,11 @@ import scala.util.{Failure, Try}
 object Serializers extends LazyLogging {
 
   def registerSerializers(modelData: ModelData, config: ExecutionConfig): Unit = {
-    (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(_.registerIn(config))
-    ScalaServiceLoader
-      .load[SerializersRegistrar](getClass.getClassLoader)
-      .foreach(_.register(modelData.modelConfig, config))
-    TimeSerializers.addDefaultSerializers(config)
+//    (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(_.registerIn(config))
+//    ScalaServiceLoader
+//      .load[SerializersRegistrar](getClass.getClassLoader)
+//      .foreach(_.register(modelData.modelConfig, config))
+//    TimeSerializers.addDefaultSerializers(config)
   }
 
   @SerialVersionUID(4481573264636646884L)
