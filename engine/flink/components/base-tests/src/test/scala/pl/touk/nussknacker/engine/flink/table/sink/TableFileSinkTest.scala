@@ -388,7 +388,6 @@ class TableFileSinkTest
       )
 
     val result = runner.runWithSingleRecordBounded(scenario)
-    result shouldBe Symbol("valid")
     result.validValue.errors shouldBe empty
 
     getLinesOfSingleFileInDirectoryEventually(oneColumnOutputDirectory).loneElement shouldBe "123"
@@ -493,7 +492,6 @@ class TableFileSinkTest
       )
 
     val result = runner.runWithSingleRecordBounded(scenario)
-    result shouldBe Symbol("valid")
     result.validValue.errors shouldBe empty
 
     val expectedNestedRecord = Json.fromFields(
@@ -603,7 +601,6 @@ class TableFileSinkTest
       .noSpaces
 
     val result = runner.runWithSingleRecordBounded(scenario)
-    result shouldBe Symbol("valid")
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimeExpressionOutputDirectory)
@@ -661,8 +658,7 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithSingleRecordBounded(scenario)
-
+    val result  = runner.runWithSingleRecordBounded(scenario)
     val intType = DataTypes.INT().getLogicalType
     result.validValue.errors should matchPattern {
       case ExceptionResult(_, Some("end"), NotConvertibleResultOfAlignmentException("ala", "ala", `intType`)) :: Nil =>
