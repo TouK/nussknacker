@@ -34,7 +34,7 @@ object TableAggregationFactory {
 
   private val aggregatorFunctionParam = {
     val aggregators =
-      TableAggregatorType.values.map(a => FixedExpressionValue(s"'${a.displayName}'", a.displayName)).toList
+      TableAggregator.values.map(a => FixedExpressionValue(s"'${a.displayName}'", a.displayName)).toList
     ParameterDeclaration
       .mandatory[String](aggregatorFunctionParamName)
       .withCreator(
@@ -49,7 +49,7 @@ class TableAggregationFactory
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
   case class TableAggregationTransformationState(
-      selectedAggregator: TableAggregatorType,
+      selectedAggregator: TableAggregator,
       aggregatorResultType: TypingResult
   )
 
@@ -85,7 +85,7 @@ class TableAggregationFactory
           None
         }
 
-      val selectedAggregator = TableAggregatorType.values
+      val selectedAggregator = TableAggregator.values
         .find(_.displayName == aggregatorName)
         .getOrElse(throw new IllegalStateException("Aggregator not found. Should be invalid at parameter level."))
 

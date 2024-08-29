@@ -35,7 +35,7 @@ object TableAggregation {
 class TableAggregation(
     groupByLazyParam: LazyParameter[AnyRef],
     aggregateByLazyParam: LazyParameter[AnyRef],
-    selectedAggregator: TableAggregatorType,
+    selectedAggregator: TableAggregator,
     aggregationResultType: TypingResult,
     nodeId: NodeId
 ) extends FlinkCustomStreamTransformation

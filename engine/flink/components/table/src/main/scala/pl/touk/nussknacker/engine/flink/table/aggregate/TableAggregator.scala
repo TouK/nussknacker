@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.aggregateByParamName
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregatorType.NuAggregationFunctionCallContext
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregator.NuAggregationFunctionCallContext
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypeFactoryHolder
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.{LogicalTypeExtension, TypingResultExtension}
 
@@ -32,70 +32,70 @@ import scala.jdk.OptionConverters._
 
    TODO: add distinct parameter - but not for First and Last aggregators
  */
-object TableAggregatorType extends Enum[TableAggregatorType] {
+object TableAggregator extends Enum[TableAggregator] {
   val values = findValues
 
-  case object Average extends TableAggregatorType {
+  case object Average extends TableAggregator {
     override val displayName: String                                        = "Average"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.AVG
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
   }
 
-  case object Count extends TableAggregatorType {
+  case object Count extends TableAggregator {
     override val displayName: String                                        = "Count"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.COUNT
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = None
   }
 
-  case object Max extends TableAggregatorType {
+  case object Max extends TableAggregator {
     override val displayName: String                                        = "Max"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.MAX
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(minMaxAllowedTypes)
   }
 
-  case object Min extends TableAggregatorType {
+  case object Min extends TableAggregator {
     override val displayName: String                                        = "Min"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.MIN
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(minMaxAllowedTypes)
   }
 
-  case object First extends TableAggregatorType {
+  case object First extends TableAggregator {
     override val displayName: String                                        = "First"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.FIRST_VALUE
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(firstLastAllowedTypes)
   }
 
-  case object Last extends TableAggregatorType {
+  case object Last extends TableAggregator {
     override val displayName: String                                        = "Last"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.LAST_VALUE
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(firstLastAllowedTypes)
   }
 
-  case object Sum extends TableAggregatorType {
+  case object Sum extends TableAggregator {
     override val displayName: String                                        = "Sum"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.SUM
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
   }
 
-  case object PopulationStandardDeviation extends TableAggregatorType {
+  case object PopulationStandardDeviation extends TableAggregator {
     override val displayName: String                                        = "Population standard deviation"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.STDDEV_POP
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
   }
 
-  case object SampleStandardDeviation extends TableAggregatorType {
+  case object SampleStandardDeviation extends TableAggregator {
     override val displayName: String                                        = "Sample standard deviation"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.STDDEV_SAMP
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
   }
 
-  case object PopulationVariance extends TableAggregatorType {
+  case object PopulationVariance extends TableAggregator {
     override val displayName: String                                        = "Population variance"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.VAR_POP
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
   }
 
-  case object SampleVariance extends TableAggregatorType {
+  case object SampleVariance extends TableAggregator {
     override val displayName: String                                        = "Sample variance"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.VAR_SAMP
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
@@ -172,7 +172,7 @@ object TableAggregatorType extends Enum[TableAggregatorType] {
 
 }
 
-sealed trait TableAggregatorType extends EnumEntry {
+sealed trait TableAggregator extends EnumEntry {
 
   val displayName: String
 
