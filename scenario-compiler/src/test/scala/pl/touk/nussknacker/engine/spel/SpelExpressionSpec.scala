@@ -74,7 +74,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
 
   private val ctx = Context("abc").withVariables(
-    Map("obj" -> testValue, "strVal" -> "", "mapValue" -> Map("foo" -> "bar").asJava, "arr" -> Array("a", "b"))
+    Map(
+      "obj"         -> testValue,
+      "strVal"      -> "",
+      "mapValue"    -> Map("foo" -> "bar").asJava,
+      "array"       -> Array("a", "b"),
+      "intArray"    -> Array(1, 2, 3),
+      "nestedArray" -> Array(Array(1, 2), Array(3, 4))
+    )
   )
 
   private val ctxWithGlobal: Context = ctx
@@ -1255,9 +1262,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should return correct type in array projection") {
-    val parsed           = parse[Any]("#arr.![#this]", ctx)
+    val parsed           = parse[Any]("#array.![#this]", ctx)
     val evaluated        = parsed.validExpression.evaluateSync[Any](ctx)
-    val listTypingResult = Typed.genericTypeClass(classOf[List[String]], List(Typed.typedClass(classOf[String])))
+    val listTypingResult = Typed.genericTypeClass(classOf[util.List[String]], List(Typed.typedClass(classOf[String])))
 
     parsed.validValue.typingInfo.typingResult shouldBe listTypingResult
     evaluated shouldBe Array("a", "b")
@@ -1268,7 +1275,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should convert array to list when passing arg which type should be list") {
-    parse[Any]("T(java.lang.String).join(',', #arr)", ctx).validExpression
+    parse[Any]("T(java.lang.String).join(',', #array)", ctx).validExpression
       .evaluateSync[String](ctx) shouldBe "a,b"
   }
 
@@ -1278,11 +1285,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should allow using list methods on array") {
-    parse[Any]("#arr.isEmpty()", ctx).validExpression
-      .evaluateSync[Boolean](ctx) shouldBe false
+    parse[Any]("#array.isEmpty()", ctx).validExpression.evaluateSync[Boolean](ctx) shouldBe false
+    parse[Any]("#intArray.isEmpty()", ctx).validExpression.evaluateSync[Boolean](ctx) shouldBe false
   }
 
-  // todo: lbg nested arrays
+  test("should allow using list methods on nested arrays") {
+    parse[Any]("#nestedArray.![#this.isEmpty()]", ctx).validExpression
+      .evaluateSync[Any](ctx) shouldBe Array(false, false)
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
