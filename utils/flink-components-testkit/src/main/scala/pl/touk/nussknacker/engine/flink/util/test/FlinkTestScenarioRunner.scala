@@ -35,7 +35,7 @@ private object testComponents {
       data: List[T],
       inputType: TypingResult,
       timestampAssigner: Option[TimestampWatermarkHandler[T]],
-      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
+      boundedness: Boundedness
   ): ComponentDefinition = ComponentDefinition(
     TestScenarioRunner.testDataSource,
     SourceFactory.noParamUnboundedStreamFactory(
@@ -74,13 +74,13 @@ class FlinkTestScenarioRunner(
 ) extends ClassBasedTestScenarioRunner {
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
-    runWithTestSourceComponent(scenario, testDataSourceComponent(data, Typed.typedClass[I], None))
+    runWithTestSourceComponent(scenario, testDataSourceComponent(data, Typed.typedClass[I], None, Boundedness.BOUNDED))
   }
 
   def runWithData[I: ClassTag, R](
       scenario: CanonicalProcess,
       data: List[I],
-      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
+      boundedness: Boundedness = Boundedness.BOUNDED,
       timestampAssigner: Option[TimestampWatermarkHandler[I]] = None
   ): RunnerListResult[R] = {
     runWithTestSourceComponent(
@@ -93,7 +93,7 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       data: List[I],
       inputType: TypingResult,
-      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
+      boundedness: Boundedness = Boundedness.BOUNDED,
       timestampAssigner: Option[TimestampWatermarkHandler[I]] = None
   ): RunnerListResult[R] = {
     runWithTestSourceComponent(
@@ -132,7 +132,8 @@ class FlinkTestScenarioRunner(
    * Can be used to test Flink based sinks.
    */
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResultUnit = {
-    val testComponents = testDataSourceComponent(data, Typed.typedClass[I], None) :: noopSourceComponent :: Nil
+    val testComponents =
+      testDataSourceComponent(data, Typed.typedClass[I], None, Boundedness.BOUNDED) :: noopSourceComponent :: Nil
     Using.resource(
       TestExtensionsHolder.registerTestExtensions(components ++ testComponents, List.empty, globalVariables)
     ) { testComponentHolder =>
