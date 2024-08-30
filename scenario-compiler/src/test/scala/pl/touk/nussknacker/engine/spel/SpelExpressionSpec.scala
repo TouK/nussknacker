@@ -1272,6 +1272,31 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .evaluateSync[String](ctx) shouldBe "a,b"
   }
 
+  test("should calculate correct type of list after projection on list") {
+    val parsed = parse[Any]("{1, 2, 3}.![{a: #this}]", ctx).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass[java.util.List[_]](
+      List(
+        Typed.record(
+          List("a" -> Typed.typedClass[Integer])
+        )
+      )
+    )
+  }
+
+  test("should calculate correct type of list after projection on map") {
+    val parsed = parse[Any]("{a: 100}.![#this]", ctx).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass[java.util.List[_]](
+      List(
+        Typed.record(
+          List(
+            "key"   -> Typed.typedClass[String],
+            "value" -> TypedObjectWithValue(Typed.typedClass[Integer], 100)
+          )
+        )
+      )
+    )
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
