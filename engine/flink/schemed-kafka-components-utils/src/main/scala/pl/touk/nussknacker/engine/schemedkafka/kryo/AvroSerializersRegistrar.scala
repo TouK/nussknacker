@@ -19,7 +19,10 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
 
   override def register(modelConfig: Config, executionConfig: ExecutionConfig): Unit = {
     logger.debug("Registering default avro serializers")
-    AvroUtils.getAvroUtils.addAvroSerializersIfRequired(executionConfig, classOf[GenericData.Record])
+    AvroUtils.getAvroUtils.addAvroSerializersIfRequired(
+      executionConfig.getSerializerConfig,
+      classOf[GenericData.Record]
+    )
     val resolvedKafkaConfig = resolveConfig(modelConfig)
     registerGenericRecordSchemaIdSerializationForGlobalKafkaConfigIfNeed(resolvedKafkaConfig, executionConfig)
   }

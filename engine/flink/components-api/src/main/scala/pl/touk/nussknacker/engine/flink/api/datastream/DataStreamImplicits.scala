@@ -13,7 +13,7 @@ object DataStreamImplicits {
     def mapWithState[R: TypeInformation, S: TypeInformation](fun: (T, Option[S]) => (R, Option[S])): DataStream[R] = {
       val cleanFun                          = stream.getExecutionEnvironment.clean(fun)
       val stateTypeInfo: TypeInformation[S] = implicitly[TypeInformation[S]]
-      val serializer: TypeSerializer[S]     = stateTypeInfo.createSerializer(stream.getExecutionConfig)
+      val serializer: TypeSerializer[S] = stateTypeInfo.createSerializer(stream.getExecutionConfig.getSerializerConfig)
 
       val mapper = new RichMapFunction[T, R] with StatefulFunction[T, R, S] {
 

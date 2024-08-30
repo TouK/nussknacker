@@ -117,7 +117,8 @@ object transformers {
             new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
           val offsetMillis = windowOffset.getOrElse(Duration.Zero).toMillis
           val windowDefinition =
-            TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis), Time.milliseconds(offsetMillis))
+            TumblingEventTimeWindows
+              .of(java.time.Duration.ofMillis(windowLength.toMillis), java.time.Duration.ofMillis(offsetMillis))
 
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
@@ -185,7 +186,7 @@ object transformers {
             .groupByWithValue(groupBy, groupByValue)
           val aggregatingFunction =
             new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1)
-          val windowDefinition = EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis))
+          val windowDefinition = EventTimeSessionWindows.withGap(java.time.Duration.ofMillis(sessionTimeout.toMillis))
 
           (sessionWindowTrigger match {
             case SessionWindowTrigger.OnEvent =>

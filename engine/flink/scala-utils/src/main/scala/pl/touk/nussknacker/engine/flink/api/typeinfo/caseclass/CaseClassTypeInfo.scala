@@ -250,7 +250,7 @@ abstract class CaseClassTypeInfo[T <: Product](
       new CaseClassComparator[T](
         logicalKeyFields.toArray,
         fieldComparators.toArray,
-        types.take(maxIndex + 1).map(_.createSerializer(config))
+        types.take(maxIndex + 1).map(_.createSerializer(config.getSerializerConfig))
       )
     }
 

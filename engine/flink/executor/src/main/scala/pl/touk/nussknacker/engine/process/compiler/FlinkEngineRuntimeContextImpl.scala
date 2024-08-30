@@ -15,7 +15,9 @@ case class FlinkEngineRuntimeContextImpl(
 ) extends FlinkEngineRuntimeContext {
 
   override def contextIdGenerator(nodeId: String): ContextIdGenerator =
-    new IncContextIdGenerator(jobData.metaData.name.value + "-" + nodeId + "-" + runtimeContext.getIndexOfThisSubtask)
+    new IncContextIdGenerator(
+      jobData.metaData.name.value + "-" + nodeId + "-" + runtimeContext.getTaskInfo.getIndexOfThisSubtask
+    )
 
 }
 

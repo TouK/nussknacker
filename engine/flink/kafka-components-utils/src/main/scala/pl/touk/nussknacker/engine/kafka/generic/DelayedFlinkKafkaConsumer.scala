@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.configuration.PipelineOptions
 import org.apache.flink.metrics.MetricGroup
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext
@@ -122,14 +123,17 @@ class DelayedFlinkKafkaConsumer[T](
       properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
     }
 
+    // TODO Flink bump: check this
+    val autoWatermarkInterval = runtimeContext.getJobConfiguration.get(PipelineOptions.AUTO_WATERMARK_INTERVAL).toMillis
+
     new DelayedKafkaFetcher(
       sourceContext,
       assignedPartitionsWithInitialOffsets,
       watermarkStrategy,
       runtimeContext.getProcessingTimeService,
-      runtimeContext.getExecutionConfig.getAutoWatermarkInterval,
+      autoWatermarkInterval,
       runtimeContext.getUserCodeClassLoader,
-      runtimeContext.getTaskNameWithSubtasks,
+      runtimeContext.getTaskInfo.getTaskNameWithSubtasks,
       runtimeContext.getMetricGroup,
       consumerMetricGroup,
       deserializer,
