@@ -23,7 +23,7 @@ case class InterpretationResultMapTypeInfo(ctx: Map[String, TypeInformation[Inte
   override def isKeyType: Boolean = false
 
   override def createSerializer(config: ExecutionConfig): TypeSerializer[InterpretationResult] =
-    InterpretationResultMapTypeSerializer(ctx.mapValuesNow(_.createSerializer(config)))
+    InterpretationResultMapTypeSerializer(ctx.mapValuesNow(_.createSerializer(config.getSerializerConfig)))
 
   override def canEqual(obj: Any): Boolean = obj.isInstanceOf[InterpretationResultMapTypeInfo]
 }

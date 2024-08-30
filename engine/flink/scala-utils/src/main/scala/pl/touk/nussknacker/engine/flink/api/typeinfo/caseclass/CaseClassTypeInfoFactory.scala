@@ -23,8 +23,10 @@ abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfo
     new CaseClassTypeInfo[T](classType, Array.empty, fieldTypes.toIndexedSeq, fieldNames) {
       override def createSerializer(config: ExecutionConfig): TypeSerializer[T] = {
         new ScalaCaseClassSerializer[T](
-          classType,
-          fieldTypes.map(typeInfo => NullableSerializer.wrap(typeInfo.createSerializer(config), true)).toArray
+          clazz = classType,
+          scalaFieldSerializers = fieldTypes
+            .map(typeInfo => NullableSerializer.wrap(typeInfo.createSerializer(config.getSerializerConfig), true))
+            .toArray
         )
       }
     }

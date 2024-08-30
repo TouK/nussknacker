@@ -67,11 +67,11 @@ class OnEventTriggerWindowOperator[A](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
       stream.getKeySelector,
-      stream.getKeyType.createSerializer(stream.getExecutionConfig),
+      stream.getKeyType.createSerializer(stream.getExecutionConfig.getSerializerConfig),
       new AggregatingStateDescriptor(
         stateDescriptorName,
         aggregateFunction,
-        types.storedTypeInfo.createSerializer(stream.getExecutionConfig)
+        types.storedTypeInfo.createSerializer(stream.getExecutionConfig.getSerializerConfig)
       ),
       new InternalSingleValueProcessWindowFunction(
         new ValueEmittingWindowFunction(fctx.convertToEngineRuntimeContext, fctx.nodeId)

@@ -64,7 +64,7 @@ class OptionTypeInfo[A, T <: Option[A]](private val elemTypeInfo: TypeInformatio
       // this happens when the type of a DataSet is None, i.e. DataSet[None]
       new OptionSerializer(new NothingSerializer).asInstanceOf[TypeSerializer[T]]
     } else {
-      new OptionSerializer(elemTypeInfo.createSerializer(executionConfig))
+      new OptionSerializer(elemTypeInfo.createSerializer(executionConfig.getSerializerConfig))
         .asInstanceOf[TypeSerializer[T]]
     }
   }
