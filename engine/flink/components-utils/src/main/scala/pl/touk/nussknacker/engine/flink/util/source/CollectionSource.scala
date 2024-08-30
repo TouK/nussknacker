@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -22,7 +21,7 @@ case class CollectionSource[T](
     list: List[T],
     override val timestampAssigner: Option[TimestampWatermarkHandler[T]],
     override val returnType: TypingResult,
-    boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED
+    boundedness: Boundedness = Boundedness.BOUNDED
 ) extends StandardFlinkSource[T]
     with ReturningType {
 
