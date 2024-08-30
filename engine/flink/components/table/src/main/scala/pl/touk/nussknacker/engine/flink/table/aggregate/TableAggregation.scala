@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import org.apache.flink.api.common.functions.{FlatMapFunction, RuntimeContext}
-import org.apache.flink.api.common.typeinfo.Types
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
   FlinkCustomNodeContext,
@@ -35,6 +36,7 @@ class TableAggregation(
     groupByLazyParam: LazyParameter[AnyRef],
     aggregateByLazyParam: LazyParameter[AnyRef],
     selectedAggregator: TableAggregator,
+    aggregationResultType: TypingResult,
     nodeId: NodeId
 ) extends FlinkCustomStreamTransformation
     with Serializable {
@@ -48,7 +50,7 @@ class TableAggregation(
 
     val streamOfRows = start.flatMap(
       new GroupByInputPreparingFunction(groupByLazyParam, aggregateByLazyParam, context),
-      groupByInputTypeInfo(context)
+      GroupByInputPreparingFunction.outputTypeInfo
     )
 
     val inputParametersTable = tableEnv.fromDataStream(streamOfRows)
@@ -65,7 +67,7 @@ class TableAggregation(
     groupedStream
       .process(
         new AggregateResultContextFunction(context.convertToEngineRuntimeContext),
-        aggregateResultTypeInfo(context)
+        AggregateResultContextFunction.outputTypeInfo
       )
   }
 
@@ -94,8 +96,9 @@ class TableAggregation(
 
   }
 
-  private def groupByInputTypeInfo(context: FlinkCustomNodeContext) = {
-    Types.ROW_NAMED(
+  private object GroupByInputPreparingFunction {
+
+    val outputTypeInfo: TypeInformation[Row] = Types.ROW_NAMED(
       Array(groupByInternalColumnName, aggregateByInternalColumnName),
       TypeInformationDetection.instance.forType(
         ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)
@@ -104,6 +107,7 @@ class TableAggregation(
         ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
       )
     )
+
   }
 
   private class AggregateResultContextFunction(convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
@@ -130,12 +134,15 @@ class TableAggregation(
 
   }
 
-  private def aggregateResultTypeInfo(context: FlinkCustomNodeContext) = {
-    TypeInformationDetection.instance.forValueWithContext[AnyRef](
-      ValidationContext.empty
-        .withVariableUnsafe(KeyVariableName, ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)),
-      ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
-    )
+  private object AggregateResultContextFunction {
+
+    val outputTypeInfo: TypeInformation[ValueWithContext[AnyRef]] =
+      TypeInformationDetection.instance.forValueWithContext[AnyRef](
+        validationContext = ValidationContext.empty
+          .withVariableUnsafe(KeyVariableName, ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)),
+        value = ToTableTypeEncoder.alignTypingResult(aggregationResultType)
+      )
+
   }
 
 }
