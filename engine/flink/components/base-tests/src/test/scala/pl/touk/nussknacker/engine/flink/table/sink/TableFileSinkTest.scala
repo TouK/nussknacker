@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.table.sink
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import org.apache.commons.io.FileUtils
+import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.table.api.DataTypes
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
@@ -360,7 +361,7 @@ class TableFileSinkTest
         "Value"      -> basicTypesExpression
       )
 
-    val result = runner.runWithSingleRecordBounded(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result shouldBe Symbol("valid")
 
     getLinesOfSingleFileInDirectoryEventually(
@@ -387,7 +388,7 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithSingleRecordBounded(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     getLinesOfSingleFileInDirectoryEventually(oneColumnOutputDirectory).loneElement shouldBe "123"
@@ -455,7 +456,7 @@ class TableFileSinkTest
       .noSpaces
 
     Files.writeString(advancedPingPongInputDirectory.resolve("file.json"), inputContent, StandardCharsets.UTF_8)
-    val result = runner.runWithoutData(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(advancedPingPongOutputDirectory)
@@ -491,7 +492,7 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithSingleRecordBounded(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     val expectedNestedRecord = Json.fromFields(
@@ -565,7 +566,7 @@ class TableFileSinkTest
       .noSpaces
 
     Files.writeString(datetimePingPongInputDirectory.resolve("file.json"), inputContent, StandardCharsets.UTF_8)
-    val result = runner.runWithoutData(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimePingPongOutputDirectory)
@@ -600,7 +601,7 @@ class TableFileSinkTest
       )
       .noSpaces
 
-    val result = runner.runWithSingleRecordBounded(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimeExpressionOutputDirectory)
@@ -627,7 +628,7 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithSingleRecordBounded(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
 
     val expectedMessage =
       """Provided value does not match scenario output - errors:
@@ -658,7 +659,7 @@ class TableFileSinkTest
         "Value"      -> valueExpression
       )
 
-    val result  = runner.runWithSingleRecordBounded(scenario)
+    val result  = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     val intType = DataTypes.INT().getLogicalType
     result.validValue.errors should matchPattern {
       case ExceptionResult(_, Some("end"), NotConvertibleResultOfAlignmentException("ala", "ala", `intType`)) :: Nil =>

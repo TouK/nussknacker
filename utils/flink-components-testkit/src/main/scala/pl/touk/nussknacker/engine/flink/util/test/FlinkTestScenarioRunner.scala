@@ -142,17 +142,6 @@ class FlinkTestScenarioRunner(
     }
   }
 
-  /**
-   * Can be used to test Batch scenarios based on expressions where input doesn't matter. In such case, the input should
-   * be treated only as a single trigger of the flow of data.
-   */
-  def runWithSingleRecordBounded[R](scenario: CanonicalProcess): RunnerListResult[R] =
-    runWithData(
-      scenario = scenario,
-      data = List(1),
-      boundedness = Boundedness.BOUNDED
-    )
-
   private def run[OUTPUT](
       scenario: CanonicalProcess,
       testExtensionsHolder: TestExtensionsHolder

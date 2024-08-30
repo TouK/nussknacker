@@ -49,7 +49,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
         AggregationParameters(aggregator = "'First'".spel, aggregateBy = expr, groupBy = spelStr)
       }
     val scenario = buildMultipleAggregationsScenario(aggregationParameters)
-    val result   = runner.runWithSingleRecordBounded(scenario)
+    val result   = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.successes.size shouldBe aggregationParameters.size
   }
 
@@ -61,7 +61,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
         }
 
     val scenario = buildMultipleAggregationsScenario(aggregationParameters)
-    val result   = runner.runWithSingleRecordBounded(scenario)
+    val result   = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.successes.size shouldBe aggregationParameters.size
   }
 
@@ -69,7 +69,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     val aggregationParameters = ("{foo: 1}".spel :: "{{foo: 1, bar: '123'}}".spel :: Nil)
       .map { expr => AggregationParameters("'First'".spel, spelStr, expr) }
     val scenario = buildMultipleAggregationsScenario(aggregationParameters)
-    val result   = runner.runWithSingleRecordBounded(scenario)
+    val result   = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result shouldBe Symbol("valid")
   }
 
