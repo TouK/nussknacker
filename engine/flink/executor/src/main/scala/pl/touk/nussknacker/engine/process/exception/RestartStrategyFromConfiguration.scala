@@ -56,7 +56,7 @@ object RestartStrategyFromConfiguration {
 
   // We convert HOCON to Flink configuration, so that we can use Flink parsing mechanisms
   // https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/dev/execution/task_failure_recovery/
-  @silent("depreacted")
+  @silent("deprecated")
   private def readFromConfig(config: Config): RestartStrategyConfiguration = {
     val flinkConfig = new Configuration
     // restart-strategy.fixed-delay.attempts
