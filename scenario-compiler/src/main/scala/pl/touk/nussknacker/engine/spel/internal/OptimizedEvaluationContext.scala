@@ -6,7 +6,7 @@ import org.springframework.expression.{EvaluationContext, MethodExecutor, Method
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor, internal}
+import pl.touk.nussknacker.engine.spel.{NuReflectiveMethodExecutor, internal}
 
 import java.lang.reflect.Method
 import java.util
@@ -39,6 +39,8 @@ class EvaluationContextPreparer(
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
+      private val conversionAwareMethodsDiscovery = new ArrayToListConversionHandler.ConversionAwareMethodsDiscovery()
+
       override def resolve(
           context: EvaluationContext,
           targetObject: Object,
@@ -51,17 +53,12 @@ class EvaluationContextPreparer(
           null
         } else {
           spelExpressionExcludeList.blockExcluded(targetObject, name)
-          new OmitAnnotationsMethodExecutor(methodExecutor)
+          new NuReflectiveMethodExecutor(methodExecutor)
         }
       }
 
-      override def getMethods(classType: Class[_]): Array[Method] = {
-        if (classType.isArray) {
-          super.getMethods(classOf[java.util.List[_]])
-        } else {
-          super.getMethods(classType)
-        }
-      }
+      override def getMethods(classType: Class[_]): Array[Method] =
+        conversionAwareMethodsDiscovery.discover(classType)
     }
     Collections.singletonList(mr)
   }

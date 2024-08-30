@@ -1262,11 +1262,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should return correct type in array projection") {
-    val parsed           = parse[Any]("#array.![#this]", ctx)
-    val evaluated        = parsed.validExpression.evaluateSync[Any](ctx)
-    val listTypingResult = Typed.genericTypeClass(classOf[util.List[String]], List(Typed.typedClass(classOf[String])))
+    val parsed              = parse[Any]("#array.![#this]", ctx)
+    val evaluated           = parsed.validExpression.evaluateSync[Any](ctx)
+    val expectedRuntimeType = Typed.genericTypeClass(classOf[Array[String]], List(Typed.typedClass(classOf[String])))
 
-    parsed.validValue.typingInfo.typingResult shouldBe listTypingResult
+    parsed.validValue.returnType shouldBe expectedRuntimeType
     evaluated shouldBe Array("a", "b")
   }
 
