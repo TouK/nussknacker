@@ -58,7 +58,7 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
     case TypedObjectTypingResult(fields, clazz, _) =>
       typesFromTypedClass(clazz) ++ fields.values.flatMap(typesFromTypingResult)
     case typedObjectWithData: SingleTypingResult =>
-      typesFromTypedClass(typedObjectWithData.hintsObjType)
+      typesFromTypedClass(typedObjectWithData.displayObjType)
     case union: TypedUnion =>
       union.possibleTypes.toList.toSet.flatMap(typesFromTypingResult)
     case TypedNull =>
