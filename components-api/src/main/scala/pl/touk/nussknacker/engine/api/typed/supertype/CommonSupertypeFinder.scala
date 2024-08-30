@@ -59,7 +59,7 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
   private def singleCommonSupertype(left: SingleTypingResult, right: SingleTypingResult): Option[TypingResult] = {
     def fallback = classResolutionStrategy match {
       case SupertypeClassResolutionStrategy.LooseWithFallbackToObjectType =>
-        classCommonSupertype(left.objType, right.objType)
+        classCommonSupertype(left.runtimeObjType, right.runtimeObjType)
       case SupertypeClassResolutionStrategy.Intersection => None
     }
     (left, right) match {
@@ -71,7 +71,7 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
         // In most cases we compare java.util.Map or GenericRecord, the only difference can be on generic params, but
         // still we'll got a class here, so this getOrElse should occur in the rare situations
         looseFinder
-          .classCommonSupertypeReturningTypedClass(l.objType, r.objType)
+          .classCommonSupertypeReturningTypedClass(l.runtimeObjType, r.runtimeObjType)
           .map { commonSupertype =>
             val fields = prepareFields(l, r)
             // We don't return None in case when fields are empty, because we can't be sure the intention of the user
@@ -80,8 +80,8 @@ class CommonSupertypeFinder private (classResolutionStrategy: SupertypeClassReso
             Typed.record(fields, commonSupertype)
           }
           .orElse(fallback)
-      case (l: TypedObjectTypingResult, r) => singleCommonSupertype(l.objType, r)
-      case (l, r: TypedObjectTypingResult) => singleCommonSupertype(l, r.objType)
+      case (l: TypedObjectTypingResult, r) => singleCommonSupertype(l.runtimeObjType, r)
+      case (l, r: TypedObjectTypingResult) => singleCommonSupertype(l, r.runtimeObjType)
       case (TypedTaggedValue(leftType, leftTag), TypedTaggedValue(rightType, rightTag)) if leftTag == rightTag =>
         singleCommonSupertype(leftType, rightType).map {
           case single: SingleTypingResult => TypedTaggedValue(single, leftTag)

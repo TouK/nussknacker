@@ -69,10 +69,10 @@ class TypingResultSpec
           "bar" -> Typed.record(Map.empty[String, TypingResult])
         )
       )
-      .objType
+      .runtimeObjType
       .params(1) shouldEqual Unknown
 
-    Typed.record(Map.empty[String, TypingResult]).objType.params(1) shouldEqual Unknown
+    Typed.record(Map.empty[String, TypingResult]).runtimeObjType.params(1) shouldEqual Unknown
   }
 
   test("determine if can be subclass for typed unions") {

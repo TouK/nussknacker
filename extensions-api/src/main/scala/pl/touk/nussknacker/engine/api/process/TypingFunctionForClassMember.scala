@@ -43,7 +43,7 @@ object TypingFunctionForClassMember {
     }
 
     private def extractParameters(invocationTargetClass: SingleTypingResult): List[TypingResult] = {
-      invocationTargetClass.displayObjType.params
+      invocationTargetClass.typeHintsObjType.params
     }
 
     protected def resultTypeBasedOnGenericParam(
