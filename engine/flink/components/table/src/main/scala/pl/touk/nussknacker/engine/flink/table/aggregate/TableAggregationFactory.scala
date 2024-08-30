@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
-import org.apache.flink.table.api.DataTypes.RAW
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory._
 import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeEncoder
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.TypingResultExtension
+import pl.touk.nussknacker.engine.flink.table.utils.simulateddatatype.ToSimulatedDataTypeConverter
 
 object TableAggregationFactory {
 
@@ -73,17 +72,7 @@ class TableAggregationFactory
         ) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
 
-      // RAW's in groupBy cause a InvalidProgramException with mesage "Table program cannot be compiled"
-      val groupByError =
-        if (ToTableTypeEncoder
-            .alignTypingResult(groupByParam.returnType)
-            .toDataType
-            .getLogicalType
-            .is(LogicalTypeRoot.RAW)) {
-          Some(CustomNodeError(s"Invalid type: ${groupByParam.returnType}", Some(groupByParamName)))
-        } else {
-          None
-        }
+      val groupByError = validateGroupBy(groupByParam.returnType)
 
       val selectedAggregator = TableAggregator.values
         .find(_.displayName == aggregatorName)
@@ -111,6 +100,17 @@ class TableAggregationFactory
             )
           )
       )
+  }
+
+  // RAW's in groupBy cause a InvalidProgramException with mesage "Table program cannot be compiled"
+  private def validateGroupBy(groupByParamType: TypingResult)(implicit nodeId: NodeId) = {
+    val alignedType = ToTableTypeEncoder.alignTypingResult(groupByParamType)
+    val dataType    = ToSimulatedDataTypeConverter.toDataType(alignedType)
+    if (dataType.getLogicalType.is(LogicalTypeRoot.RAW)) {
+      Some(CustomNodeError(s"Invalid type: $groupByParam", Some(groupByParamName)))
+    } else {
+      None
+    }
   }
 
   override def implementation(

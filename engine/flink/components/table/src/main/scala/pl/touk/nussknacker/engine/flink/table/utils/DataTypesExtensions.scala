@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.engine.flink.table.utils
 
 import org.apache.flink.table.types.DataType
-import org.apache.flink.table.types.logical.{ArrayType, LogicalType, MapType, MultisetType, RowType}
-import org.apache.flink.table.types.utils.TypeInfoDataTypeConverter
+import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import scala.jdk.CollectionConverters._
 
@@ -49,15 +47,6 @@ object DataTypesExtensions {
         field.getName -> field.getType.toTypingResult
       }
       Typed.record(fieldsTypes, Typed.typedClass[Row])
-    }
-
-  }
-
-  implicit class TypingResultExtension(typingResult: TypingResult) {
-
-    def toDataType: DataType = {
-      val typeInfo = TypeInformationDetection.instance.forType(typingResult)
-      TypeInfoDataTypeConverter.toDataType(DataTypeFactoryHolder.instance, typeInfo)
     }
 
   }

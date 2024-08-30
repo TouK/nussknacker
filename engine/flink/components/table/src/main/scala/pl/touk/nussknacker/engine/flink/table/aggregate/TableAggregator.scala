@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import enumeratum._
-import org.apache.flink.table.catalog.DataTypeFactory
-import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions, FunctionDefinition}
-import org.apache.flink.table.types.DataType
-import org.apache.flink.table.types.inference.CallContext
+import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions}
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.flink.table.types.logical.LogicalTypeRoot._
 import pl.touk.nussknacker.engine.api.NodeId
@@ -12,14 +9,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.aggregateByParamName
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregator.NuAggregationFunctionCallContext
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypeFactoryHolder
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions.{LogicalTypeExtension, TypingResultExtension}
-
-import java.util
-import java.util.Optional
-import scala.jdk.CollectionConverters._
-import scala.jdk.OptionConverters._
+import pl.touk.nussknacker.engine.flink.table.utils.simulateddatatype.{
+  SimulatedCallContext,
+  ToSimulatedDataTypeConverter
+}
 
 /*
    TODO: add remaining aggregations functions:
@@ -101,34 +94,6 @@ object TableAggregator extends Enum[TableAggregator] {
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
   }
 
-  private class NuAggregationFunctionCallContext(
-      val dataTypeFactory: DataTypeFactory,
-      val functionDefinition: FunctionDefinition,
-      val argument: DataType
-  ) extends CallContext {
-    override def getDataTypeFactory: DataTypeFactory                         = dataTypeFactory
-    override def getFunctionDefinition: FunctionDefinition                   = functionDefinition
-    override def isArgumentLiteral(pos: Int): Boolean                        = false
-    override def isArgumentNull(pos: Int): Boolean                           = false
-    override def getArgumentValue[T](pos: Int, clazz: Class[T]): Optional[T] = None.toJava
-    override def getName: String                                             = "NuAggregationFunction"
-    override def getArgumentDataTypes: util.List[DataType]                   = List(argument).asJava
-    override def getOutputDataType: Optional[DataType]                       = None.toJava
-    override def isGroupedAggregation: Boolean                               = true
-  }
-
-  private object NuAggregationFunctionCallContext {
-
-    def apply(
-        parameterType: TypingResult,
-        function: BuiltInFunctionDefinition
-    ): NuAggregationFunctionCallContext = {
-      val parameterDataType = parameterType.toDataType
-      new NuAggregationFunctionCallContext(DataTypeFactoryHolder.instance, function, parameterDataType)
-    }
-
-  }
-
   private val minMaxAllowedTypes = List(
     TINYINT,
     SMALLINT,
@@ -185,50 +150,28 @@ sealed trait TableAggregator extends EnumEntry {
   def inferOutputType(inputType: TypingResult)(
       implicit nodeId: NodeId
   ): Either[ProcessCompilationError, TypingResult] = {
-    def buildError()(implicit nodeId: NodeId) = CustomNodeError(
-      s"Invalid type: '${inputType.withoutValue.display}' for selected aggregator: '$displayName'.",
-      Some(aggregateByParamName)
-    )
-    def validateUsingInputTypeStrategy(callContext: NuAggregationFunctionCallContext) = {
-      flinkFunctionDefinition
-        .getTypeInference(DataTypeFactoryHolder.instance)
-        .getInputTypeStrategy
-        .inferInputTypes(callContext, false)
-        .toScala
-        .flatMap(_.asScala.headOption) match {
-        case Some(_) => Right(())
-        case None    => Left(buildError())
+    def validateUsingAllowedTypesConstraint() = inputAllowedTypesConstraint
+      .map { allowedTypes =>
+        if (ToSimulatedDataTypeConverter.toDataType(inputType).getLogicalType.isAnyOf(allowedTypes: _*)) Right(())
+        else Left(())
       }
-    }
-    def validateUsingAllowedTypesConstraint() = {
-      this.inputAllowedTypesConstraint match {
-        case Some(allowedTypes) =>
-          if (inputType.toDataType.getLogicalType.isAnyOf(allowedTypes: _*)) {
-            Right(())
-          } else {
-            Left(buildError())
-          }
-        case None => Right(())
-      }
-    }
-    def inferOutputType(
-        callContext: NuAggregationFunctionCallContext
-    ) = {
-      flinkFunctionDefinition
-        .getTypeInference(DataTypeFactoryHolder.instance)
-        .getOutputTypeStrategy
-        .inferType(callContext)
-        .toScala match {
-        case Some(value) => Right(value.getLogicalType.toTypingResult)
-        case None        => Left(buildError())
-      }
-    }
-    val callContext = NuAggregationFunctionCallContext(inputType, flinkFunctionDefinition)
-    for {
-      _          <- validateUsingInputTypeStrategy(callContext)
+      .getOrElse(Right(()))
+
+    val result = for {
       _          <- validateUsingAllowedTypesConstraint()
-      outputType <- inferOutputType(callContext)
+      outputType <- SimulatedCallContext.validateAgainstFlinkFunctionDefinition(flinkFunctionDefinition, inputType)
     } yield outputType
+
+    result.fold(
+      _ =>
+        Left(
+          CustomNodeError(
+            s"Invalid type: '${inputType.withoutValue.display}' for selected aggregator: '$displayName'.",
+            Some(aggregateByParamName)
+          )
+        ),
+      Right(_)
+    )
   }
 
 }
