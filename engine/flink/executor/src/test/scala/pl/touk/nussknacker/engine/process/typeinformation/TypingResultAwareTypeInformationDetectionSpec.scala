@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.typeinformation
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -28,6 +29,8 @@ import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.Custom
 
 import scala.jdk.CollectionConverters._
 
+// TODO: Flink bump: registerTypeWithKryoSerializer
+@silent("deprecated")
 class TypingResultAwareTypeInformationDetectionSpec
     extends AnyFunSuite
     with Matchers
@@ -56,7 +59,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     serializeRoundTrip(map + ("unknown" -> "???"), typeInfo)(map)
 
     assertMapSerializers(
-      typeInfo.createSerializer(executionConfigWithoutKryo),
+      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig),
       ("fixedLong", new LongSerializer),
       ("intF", new IntSerializer),
       ("longF", new LongSerializer),
@@ -76,7 +79,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     serializeRoundTrip(map, typeInfo, executionConfigWithKryo)()
 
     assertMapSerializers(
-      typeInfo.createSerializer(executionConfigWithKryo),
+      typeInfo.createSerializer(executionConfigWithKryo.getSerializerConfig),
       ("obj", new KryoSerializer(classOf[SomeTestClass], executionConfigWithKryo))
     )
   }
@@ -112,7 +115,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     checkContextAreSame(valueWithContextAfterRoundTrip.context, ctx)
 
     assertSerializersInContext(
-      typeInfo.createSerializer(executionConfigWithoutKryo),
+      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig),
       ("arrayOfInts", _ shouldBe new GenericArraySerializer(classOf[Integer], new IntSerializer)),
       ("arrayOfStrings", _ shouldBe new StringArraySerializer),
       ("one", _ shouldBe new IntSerializer),
@@ -133,7 +136,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     intercept[ClassCastException](serializeRoundTrip(ctx, typeInfo)())
 
     assertSerializersInContext(
-      typeInfo.createSerializer(executionConfigWithoutKryo),
+      typeInfo.createSerializer(executionConfigWithoutKryo.getSerializerConfig),
       ("longField", _ shouldBe new LongSerializer)
     )
   }
@@ -149,21 +152,25 @@ class TypingResultAwareTypeInformationDetectionSpec
       Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
 
     val oldSerializer =
-      detection.forType(typingResult).createSerializer(executionConfigWithoutKryo)
+      detection.forType(typingResult).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
 
     val compatibleSerializer =
       detection
         .forType(compatibleTypingResult)
-        .createSerializer(executionConfigWithoutKryo)
+        .createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     val incompatibleSerializer =
       detection
         .forType(incompatibleTypingResult)
-        .createSerializer(executionConfigWithoutKryo)
+        .createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
-    oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializer).isCompatibleAsIs shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(compatibleSerializer).isCompatibleAfterMigration shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(incompatibleSerializer).isIncompatible shouldBe true
+    oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializerSnapshot).isCompatibleAsIs shouldBe true
+    oldSerializerSnapshot
+      .resolveSchemaCompatibility(compatibleSerializer.snapshotConfiguration())
+      .isCompatibleAfterMigration shouldBe true
+    oldSerializerSnapshot
+      .resolveSchemaCompatibility(incompatibleSerializer.snapshotConfiguration())
+      .isIncompatible shouldBe true
   }
 
   test("serialization compatibility with reconfigured serializer") {
@@ -173,7 +180,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     val oldSerializer =
       detection
         .forType[Map[String, Any]](typingResult)
-        .createSerializer(executionConfigWithKryo)
+        .createSerializer(executionConfigWithKryo.getSerializerConfig)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
     // we prepare ExecutionConfig with different Kryo config, it causes need to reconfigure kryo serializer, used for SomeTestClass
@@ -183,8 +190,8 @@ class TypingResultAwareTypeInformationDetectionSpec
     val newSerializer =
       detection
         .forType[Map[String, Any]](typingResult)
-        .createSerializer(newExecutionConfig)
-    val compatibility = oldSerializerSnapshot.resolveSchemaCompatibility(newSerializer)
+        .createSerializer(newExecutionConfig.getSerializerConfig)
+    val compatibility = oldSerializerSnapshot.resolveSchemaCompatibility(newSerializer.snapshotConfiguration())
 
     compatibility.isCompatibleWithReconfiguredSerializer shouldBe true
     val reconfigured = compatibility.getReconfiguredSerializer
@@ -202,16 +209,20 @@ class TypingResultAwareTypeInformationDetectionSpec
     )()
 
     val oldSerializer =
-      detection.forType(typingResult).createSerializer(executionConfigWithoutKryo)
+      detection.forType(typingResult).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     val addFieldSerializer =
-      detection.forType(addField).createSerializer(executionConfigWithoutKryo)
+      detection.forType(addField).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     val removeFieldSerializer =
-      detection.forType(removeField).createSerializer(executionConfigWithoutKryo)
+      detection.forType(removeField).createSerializer(executionConfigWithoutKryo.getSerializerConfig)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
-    oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializer).isCompatibleAsIs shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(addFieldSerializer).isCompatibleAfterMigration shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(removeFieldSerializer).isCompatibleAfterMigration shouldBe true
+    oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializerSnapshot).isCompatibleAsIs shouldBe true
+    oldSerializerSnapshot
+      .resolveSchemaCompatibility(addFieldSerializer.snapshotConfiguration())
+      .isCompatibleAfterMigration shouldBe true
+    oldSerializerSnapshot
+      .resolveSchemaCompatibility(removeFieldSerializer.snapshotConfiguration())
+      .isCompatibleAfterMigration shouldBe true
   }
 
   // We have to compare it this way because context can contains arrays

@@ -46,7 +46,7 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
 
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
     createSerializer(serializers = informations.map { case (k, v) =>
-      (k, v.createSerializer(config))
+      (k, v.createSerializer(config.getSerializerConfig))
     })
 
   override def canEqual(obj: Any): Boolean = obj.asInstanceOf[AnyRef].isInstanceOf[TypedObjectBasedTypeInformation[T]]
@@ -171,7 +171,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val snapshotsToUse      = serializersSnapshots.filter(k => commons.contains(k._1))
 
       val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
-        newSerializersToUse.map(_._2),
+        newSerializersToUse.map(_._2.snapshotConfiguration()),
         snapshotsToUse.map(_._2)
       )
 
@@ -181,7 +181,9 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
         .map { case ((name, serializer), (_, snapshot)) =>
           s"$name compatibility is ${snapshot
               .asInstanceOf[TypeSerializerSnapshot[AnyRef]]
-              .resolveSchemaCompatibility(serializer.asInstanceOf[TypeSerializer[AnyRef]])}"
+              .resolveSchemaCompatibility(
+                serializer.snapshotConfiguration().asInstanceOf[TypeSerializerSnapshot[AnyRef]]
+              )}"
         }
         .mkString(", ")
 

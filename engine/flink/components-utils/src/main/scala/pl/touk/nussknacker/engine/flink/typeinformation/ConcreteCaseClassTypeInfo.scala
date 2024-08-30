@@ -11,7 +11,7 @@ class ConcreteCaseClassTypeInfo[T <: Product](cls: Class[T], fields: List[(Strin
     extends CaseClassTypeInfo[T](cls, Array.empty, fields.map(_._2), fields.map(_._1)) {
 
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] = {
-    new ScalaCaseClassSerializer[T](cls, fields.map(_._2.createSerializer(config)).toArray)
+    new ScalaCaseClassSerializer[T](cls, fields.map(_._2.createSerializer(config.getSerializerConfig)).toArray)
   }
 
 }
