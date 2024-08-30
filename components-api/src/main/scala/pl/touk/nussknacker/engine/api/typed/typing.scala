@@ -53,7 +53,7 @@ object typing {
     def objType: TypedClass
 
     // This type should be used only in typer for type hints
-    def hintsObjType: TypedClass =
+    def displayObjType: TypedClass =
       if (objType.klass.isArray) TypedClass(classOf[java.util.List[_]], objType.params)
       else objType
 
@@ -215,7 +215,7 @@ object typing {
     override def withoutValue: TypedClass = this
 
     override def display: String = {
-      val className = ReflectUtils.simpleNameWithoutSuffix(hintsObjType.klass)
+      val className = ReflectUtils.simpleNameWithoutSuffix(displayObjType.klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else className
     }

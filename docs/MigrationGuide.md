@@ -6,7 +6,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#6680](https://github.com/TouK/nussknacker/pull/6680) Added `displayObjType` to `SingleTypingResult` and 
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) Added `displayObjType` to `SingleTypingResult` and 
   it is used as a type which is visible on the UI.
 
 ## In version 1.17.0 (Not released yet)
