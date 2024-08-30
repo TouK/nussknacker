@@ -91,7 +91,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (typingResult: TypedObjectTypingResult, s: ObjectSchema) =>
         validateRecordInputType(typingResult, s, rootSchema, path)
       case (typed: TypedObjectWithValue, s: NumberSchema)
-          if ClassUtils.isAssignable(typed.underlying.objType.primitiveClass, classOf[Number], true) =>
+          if ClassUtils.isAssignable(typed.underlying.runtimeObjType.primitiveClass, classOf[Number], true) =>
         validateValueAgainstNumberSchema(s, typed, path)
       case (_, _) => canBeAssignedTo(typingResult, schema, rootSchema, path)
     }

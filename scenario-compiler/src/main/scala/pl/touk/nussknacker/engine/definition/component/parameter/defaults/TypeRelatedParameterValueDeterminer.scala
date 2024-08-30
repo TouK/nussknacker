@@ -10,7 +10,7 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] = {
     val klass = parameters.parameterData.typing match {
       case s: SingleTypingResult =>
-        Some(s.objType.klass)
+        Some(s.runtimeObjType.klass)
       case _ =>
         None
     }

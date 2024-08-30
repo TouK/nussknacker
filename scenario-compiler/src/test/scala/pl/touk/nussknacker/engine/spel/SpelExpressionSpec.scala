@@ -200,7 +200,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         case single: SingleTypingResult => Seq(single)
         case union: TypedUnion          => union.possibleTypes.toList
       })
-      .map(_.objType.klass)
+      .map(_.runtimeObjType.klass)
     val customClasses = Seq(
       classOf[String],
       classOf[java.text.NumberFormat],

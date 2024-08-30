@@ -49,7 +49,7 @@ trait CanBeSubclassDeterminer {
       givenType: SingleTypingResult,
       superclassCandidate: SingleTypingResult
   ): ValidatedNel[String, Unit] = {
-    val objTypeRestriction = classCanBeSubclassOf(givenType, superclassCandidate.objType)
+    val objTypeRestriction = classCanBeSubclassOf(givenType, superclassCandidate.runtimeObjType)
     val typedObjectRestrictions = (_: Unit) =>
       superclassCandidate match {
         case superclass: TypedObjectTypingResult =>
@@ -127,7 +127,7 @@ trait CanBeSubclassDeterminer {
       givenType: SingleTypingResult,
       superclassCandidate: TypedClass
   ): ValidatedNel[String, Unit] = {
-    val givenClass = givenType.objType
+    val givenClass = givenType.runtimeObjType
 
     val equalClassesOrCanAssign =
       condNel(
@@ -202,7 +202,7 @@ trait CanBeSubclassDeterminer {
       givenType: SingleTypingResult,
       superclassCandidate: TypedClass
   ): ValidatedNel[String, Unit] = {
-    val errMsgPrefix = s"${givenType.objType.display} cannot be converted to ${superclassCandidate.display}"
+    val errMsgPrefix = s"${givenType.runtimeObjType.display} cannot be converted to ${superclassCandidate.display}"
     condNel(TypeConversionHandler.canBeConvertedTo(givenType, superclassCandidate), (), errMsgPrefix)
   }
 

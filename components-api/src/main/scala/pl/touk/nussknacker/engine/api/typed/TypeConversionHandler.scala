@@ -64,7 +64,7 @@ object TypeConversionHandler {
   )
 
   def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
-    handleNumberConversions(givenType.objType, superclassCandidate) ||
+    handleNumberConversions(givenType.runtimeObjType, superclassCandidate) ||
     handleStringToValueClassConversions(givenType, superclassCandidate)
   }
 
