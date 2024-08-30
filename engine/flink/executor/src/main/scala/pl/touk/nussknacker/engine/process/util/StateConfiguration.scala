@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.util
 
-import org.apache.flink.contrib.streaming.state.{EmbeddedRocksDBStateBackend, PredefinedOptions, RocksDBStateBackend}
+import org.apache.flink.contrib.streaming.state.{EmbeddedRocksDBStateBackend, PredefinedOptions}
 import org.apache.flink.runtime.state.AbstractStateBackend
 
 object StateConfiguration {

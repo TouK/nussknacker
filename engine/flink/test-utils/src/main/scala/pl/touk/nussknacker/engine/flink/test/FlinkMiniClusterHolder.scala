@@ -87,21 +87,17 @@ object FlinkMiniClusterHolder {
       userFlinkClusterConfig: Configuration,
       envConfig: AdditionalEnvironmentConfig = AdditionalEnvironmentConfig()
   ): FlinkMiniClusterHolder = {
-    userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
+    userFlinkClusterConfig.set[java.lang.Boolean](CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
     val resource = prepareMiniClusterResource(userFlinkClusterConfig)
     new FlinkMiniClusterHolderImpl(resource, userFlinkClusterConfig, envConfig)
   }
 
   def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterWithClientResource = {
-    val taskManagerNumber = ConfigOptions
-      .key(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER)
-      .intType()
-      .defaultValue(ConfigConstants.DEFAULT_LOCAL_NUMBER_JOB_MANAGER)
     val clusterConfig: MiniClusterResourceConfiguration = new MiniClusterResourceConfiguration.Builder()
-      .setNumberTaskManagers(userFlinkClusterConfig.get(taskManagerNumber))
+      .setNumberTaskManagers(userFlinkClusterConfig.get(TaskManagerOptions.MINI_CLUSTER_NUM_TASK_MANAGERS))
       .setNumberSlotsPerTaskManager(
         userFlinkClusterConfig
-          .getInteger(TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue())
+          .get[Integer](TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue())
       )
       .setConfiguration(userFlinkClusterConfig)
       .build

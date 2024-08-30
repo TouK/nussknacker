@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
+import com.github.ghik.silencer.silent
 import com.typesafe.config.ConfigFactory
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 
 import java.util.concurrent.TimeUnit
 
+@silent("deprecated")
 @State(Scope.Thread)
 class AvroBenchmark {
 

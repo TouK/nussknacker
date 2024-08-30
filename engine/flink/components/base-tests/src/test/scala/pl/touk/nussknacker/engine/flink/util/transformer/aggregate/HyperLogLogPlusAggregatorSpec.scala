@@ -12,7 +12,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.util.Random
@@ -71,10 +70,12 @@ class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
         serializerAssertion: TypeSerializer[_] => Assertion
     ) = {
       val typeInfo   = rawTypeInfo.asInstanceOf[TypeInformation[CardinalityWrapper]]
-      val serializer = typeInfo.createSerializer(ex)
+      val serializer = typeInfo.createSerializer(ex.getSerializerConfig)
 
       val compatibility =
-        serializer.snapshotConfiguration().resolveSchemaCompatibility(typeInfo.createSerializer(ex))
+        serializer
+          .snapshotConfiguration()
+          .resolveSchemaCompatibility(typeInfo.createSerializer(ex.getSerializerConfig).snapshotConfiguration())
       compatibility.isCompatibleAsIs shouldBe true
 
       val data = new ByteArrayOutputStream(1024)

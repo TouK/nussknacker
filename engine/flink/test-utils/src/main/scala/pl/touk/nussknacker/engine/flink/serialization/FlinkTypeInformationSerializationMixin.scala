@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.serialization
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
+import org.apache.flink.configuration.{Configuration, PipelineOptions}
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
@@ -11,12 +12,13 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 trait FlinkTypeInformationSerializationMixin extends Matchers {
 
-  protected val executionConfigWithoutKryo: ExecutionConfig = new ExecutionConfig {
-    disableGenericTypes()
-  }
+  protected val executionConfigWithoutKryo: ExecutionConfig = createExecutionConfig(useKryo = false)
+  protected val executionConfigWithKryo: ExecutionConfig    = createExecutionConfig(useKryo = true)
 
-  protected val executionConfigWithKryo: ExecutionConfig = new ExecutionConfig {
-    enableGenericTypes()
+  private def createExecutionConfig(useKryo: Boolean): ExecutionConfig = {
+    val config = new Configuration()
+    config.set[java.lang.Boolean](PipelineOptions.GENERIC_TYPES, useKryo)
+    new ExecutionConfig(config)
   }
 
   protected def getSerializeRoundTrip[T](
@@ -24,7 +26,7 @@ trait FlinkTypeInformationSerializationMixin extends Matchers {
       typeInfo: TypeInformation[T],
       executionConfig: ExecutionConfig = executionConfigWithoutKryo
   ): T = {
-    val serializer = typeInfo.createSerializer(executionConfig)
+    val serializer = typeInfo.createSerializer(executionConfig.getSerializerConfig)
     getSerializeRoundTripWithSerializers(record, serializer, serializer)
   }
 

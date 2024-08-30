@@ -49,7 +49,9 @@ class CaseClassSerializationTest extends AnyFunSuite with Matchers {
   }
 
   private def getSerializer[T: ClassTag] =
-    TypeExtractor.getForClass(classTag[T].runtimeClass.asInstanceOf[Class[T]]).createSerializer(executionConfig)
+    TypeExtractor
+      .getForClass(classTag[T].runtimeClass.asInstanceOf[Class[T]])
+      .createSerializer(executionConfig.getSerializerConfig)
 
   private def serializeAndDeserialize[T](serializer: TypeSerializer[T], in: T): T = {
     val outStream  = new ByteArrayOutputStream(bufferSize)

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.runtime.state.StateBackend
@@ -50,6 +51,8 @@ class DefaultStreamExecutionEnvPreparer(
 ) extends StreamExecutionEnvPreparer
     with LazyLogging {
 
+  // TODO Flink bump: RestartStrategy -> RestartStrategyOptions
+  @silent("deprecated")
   override def preRegistration(
       env: StreamExecutionEnvironment,
       compilerData: FlinkProcessCompilerData,
@@ -88,6 +91,7 @@ class DefaultStreamExecutionEnvPreparer(
     }
   }
 
+  @silent("deprecated")
   protected def configureRocksDBBackend(env: StreamExecutionEnvironment, config: RocksDBStateBackendConfig): Unit = {
     env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }
