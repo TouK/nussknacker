@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
-import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
@@ -43,8 +42,8 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
 
-  override def scenarioPropertiesConfig(config: Config): ScenarioProperties =
-    ScenarioProperties.fromParameterMap(FlinkStreamingPropertiesConfig.properties)
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
+    FlinkStreamingPropertiesConfig.properties
 
   override def defaultEngineSetupName: EngineSetupName = EngineSetupName("Flink")
 

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.definition
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 
 class ScenarioPropertiesConfigFinalizer(
     additionalUIConfigProvider: AdditionalUIConfigProvider,
@@ -11,15 +10,9 @@ class ScenarioPropertiesConfigFinalizer(
 ) {
 
   def finalizeScenarioProperties(
-      parametersConfig: Map[String, ScenarioPropertyConfig],
+      scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
   ): Map[String, ScenarioPropertyConfig] = {
-    additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| parametersConfig
-  }
-
-  def finalizePropertiesConfig(scenarioPropertiesConfig: ScenarioProperties): ScenarioProperties = {
-    scenarioPropertiesConfig.copy(scenarioPropertiesConfig =
-      finalizeScenarioProperties(scenarioPropertiesConfig.scenarioPropertiesConfig)
-    )
+    additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| scenarioPropertiesConfig
   }
 
 }

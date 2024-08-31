@@ -40,9 +40,9 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
-import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioAdditionalFieldConfig
+import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
+import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -260,7 +260,7 @@ class BaseFlowTest
     val properties       = Decoder[UiScenarioProperties].decodeJson(settingsJson).toOption.get
     val additionalFields = properties.propertiesConfig
     val streamingDefaultPropertyConfig =
-      FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioAdditionalFieldConfig(p._2))
+      FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioPropertyConfig(p._2))
 
     val underTest = Map(
       "environment" -> UiScenarioPropertyConfig(
@@ -281,7 +281,7 @@ class BaseFlowTest
         label = Some("Number of threads"),
         hintText = None
       ),
-      TestAdditionalUIConfigProvider.scenarioPropertyName -> createUIScenarioAdditionalFieldConfig(
+      TestAdditionalUIConfigProvider.scenarioPropertyName -> createUIScenarioPropertyConfig(
         TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride(
           TestAdditionalUIConfigProvider.scenarioPropertyName
         )

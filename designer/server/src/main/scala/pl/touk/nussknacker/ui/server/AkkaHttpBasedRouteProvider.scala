@@ -165,7 +165,7 @@ class AkkaHttpBasedRouteProvider(
         val validator = new UIProcessValidator(
           processingTypeData.name,
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
-          processingTypeData.deploymentData.scenarioPropertiesConfig.scenarioPropertiesConfig,
+          processingTypeData.deploymentData.scenarioPropertiesConfig,
           new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
           processingTypeData.deploymentData.additionalValidators,
           fragmentResolver
@@ -243,7 +243,7 @@ class AkkaHttpBasedRouteProvider(
       val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
         new NewProcessPreparer(
           processingTypeData.deploymentData.metaDataInitializer,
-          processingTypeData.deploymentData.scenarioPropertiesConfig.scenarioPropertiesConfig,
+          processingTypeData.deploymentData.scenarioPropertiesConfig,
           new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
         )
       }
@@ -342,16 +342,10 @@ class AkkaHttpBasedRouteProvider(
           new NodeValidator(v.designerModelData.modelData, fragmentRepository)
         ),
         processingTypeToExpressionSuggester = processingTypeDataProvider.mapValues(v =>
-          ExpressionSuggester(
-            v.designerModelData.modelData,
-            v.deploymentData.scenarioPropertiesConfig.scenarioPropertiesConfig.keys
-          )
+          ExpressionSuggester(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
         processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
-          new ParametersValidator(
-            v.designerModelData.modelData,
-            v.deploymentData.scenarioPropertiesConfig.scenarioPropertiesConfig.keys
-          )
+          new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
         scenarioService = processService
       )

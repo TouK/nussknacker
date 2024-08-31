@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.{
@@ -89,8 +88,8 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
 
-  override def scenarioPropertiesConfig(config: Config): ScenarioProperties =
-    ScenarioProperties.fromParameterMap(FlinkStreamingPropertiesConfig.properties)
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
+    FlinkStreamingPropertiesConfig.properties
 
 }
 
@@ -138,15 +137,14 @@ object FlinkStreamingPropertiesConfig {
         hintText = None
       )
 
-  private val checkpointIntervalConfig: (String, ScenarioPropertyConfig) =
-    StreamMetaData.checkpointIntervalName ->
-      ScenarioPropertyConfig(
-        defaultValue = None,
-        editor = Some(StringParameterEditor),
-        validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
-        label = Some("Checkpoint interval in seconds"),
-        hintText = None
-      )
+  private val checkpointIntervalConfig: (String, ScenarioPropertyConfig) = StreamMetaData.checkpointIntervalName ->
+    ScenarioPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      label = Some("Checkpoint interval in seconds"),
+      hintText = None
+    )
 
   val properties: Map[String, ScenarioPropertyConfig] =
     Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)

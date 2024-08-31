@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
@@ -99,29 +97,16 @@ object ProcessingTypeData {
         deploymentConfig,
         scenarioStateCacheTTL
       )
-
-    val modelScenarioPropsMap = modelData.modelConfig
-      .getOrElse[Map[String, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
-    val modelScenarioPropsDocsUrl = modelData.modelConfig.getOrElse[Option[String]]("docsUrl", None)
-
-    val modelScenarioProps = ScenarioProperties(modelScenarioPropsMap, modelScenarioPropsDocsUrl)
-
-    def mergeConfigs = {
-      modelScenarioProps.copy(
-        modelScenarioProps.scenarioPropertiesConfig ++ deploymentManagerProvider
-          .scenarioPropertiesConfig(deploymentConfig)
-          .scenarioPropertiesConfig
-      )
-    }
-    val runtimeScenarioProps: ScenarioProperties = mergeConfigs
-
+    val scenarioProperties =
+      deploymentManagerProvider.scenarioPropertiesConfig(deploymentConfig) ++ modelData.modelConfig
+        .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
     val fragmentProperties = modelData.modelConfig
       .getOrElse[Map[ProcessingType, ScenarioPropertyConfig]]("fragmentPropertiesConfig", Map.empty)
 
     DeploymentData(
       validDeploymentManager,
       metaDataInitializer,
-      runtimeScenarioProps,
+      scenarioProperties,
       fragmentProperties,
       deploymentManagerProvider.additionalValidators(deploymentConfig),
       DeploymentManagerType(deploymentManagerProvider.name),

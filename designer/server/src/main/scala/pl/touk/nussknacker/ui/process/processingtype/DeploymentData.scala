@@ -4,13 +4,12 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 
 final case class DeploymentData(
     validDeploymentManager: ValidatedNel[String, DeploymentManager],
     metaDataInitializer: MetaDataInitializer,
-    scenarioPropertiesConfig: ScenarioProperties,
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
     deploymentManagerType: DeploymentManagerType,

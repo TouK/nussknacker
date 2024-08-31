@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
-import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
@@ -19,12 +18,13 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.restmodel.definition.UIDefinitions
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioAdditionalFieldConfig
+import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.security.api.AdminUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -258,13 +258,13 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
-    val definitions = prepareDefinitions(model, List.empty)
+    val uiDefinitions = prepareDefinitions(model, List.empty)
 
-    definitions.scenarioProperties.propertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
-      .mapValuesNow(createUIScenarioAdditionalFieldConfig)
+    uiDefinitions.scenarioProperties.propertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
+      .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
-  private def prepareDefinitions(model: ModelData, fragmentScenarios: List[CanonicalProcess]) = {
+  private def prepareDefinitions(model: ModelData, fragmentScenarios: List[CanonicalProcess]): UIDefinitions = {
     val processingType = Streaming
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
@@ -282,7 +282,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       modelData = model,
       staticDefinitionForDynamicComponents = Map.empty,
       fragmentPropertiesConfig = Map.empty,
-      scenarioProperties = ScenarioProperties.empty(),
+      scenarioPropertiesConfig = Map.empty,
       deploymentManager = new MockDeploymentManager,
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =

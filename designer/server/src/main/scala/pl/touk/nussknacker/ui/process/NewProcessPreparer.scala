@@ -31,8 +31,7 @@ class NewProcessPreparer(
 ) {
 
   def prepareEmptyProcess(processName: ProcessName, isFragment: Boolean): CanonicalProcess = {
-    val finalizedScenarioProperties =
-      scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioProperties)
+    val finalizedScenarioProperties = scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioProperties)
 
     val initialProperties = finalizedScenarioProperties.map { case (key, config) =>
       (key, config.defaultValue.getOrElse(""))

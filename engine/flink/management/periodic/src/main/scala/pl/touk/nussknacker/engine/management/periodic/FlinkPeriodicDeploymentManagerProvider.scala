@@ -6,7 +6,6 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkStreamingDeploymentManagerProvider}
@@ -69,10 +68,8 @@ class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider w
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     delegate.metaDataInitializer(config)
 
-  override def scenarioPropertiesConfig(config: Config): ScenarioProperties = {
-    val props = delegate.scenarioPropertiesConfig(config)
-    props.copy(props.scenarioPropertiesConfig ++ Map(cronConfig))
-  }
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
+    Map(cronConfig) ++ delegate.scenarioPropertiesConfig(config)
 
   override def defaultEngineSetupName: EngineSetupName =
     delegate.defaultEngineSetupName

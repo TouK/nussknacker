@@ -9,9 +9,8 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.properties.ScenarioProperties
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioAdditionalFieldConfig}
+import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioPropertyConfig}
 import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
@@ -25,7 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class DefinitionsService(
     modelData: ModelData,
     staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
-    scenarioProperties: ScenarioProperties,
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
@@ -55,12 +54,16 @@ class DefinitionsService(
       }
 
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
-        .finalizePropertiesConfig(scenarioProperties)
+        .finalizeScenarioProperties(scenarioPropertiesConfig)
+
+      import net.ceedubs.ficus.Ficus._
+      val propertiesDocsUrl = modelData.modelConfig.getAs[String]("propertiesDocsUrl")
 
       prepareUIDefinitions(
         withStaticDefinition,
         forFragment,
-        finalizedScenarioPropertiesConfig
+        finalizedScenarioPropertiesConfig,
+        propertiesDocsUrl
       )
     }
   }
@@ -68,18 +71,18 @@ class DefinitionsService(
   private def prepareUIDefinitions(
       components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
-      finalizedScenarioPropertiesConfig: ScenarioProperties
+      finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+      propertiesDocsUrl: Option[String]
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioProperties = {
-        val (props, url) =
-          if (forFragment) (FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, None)
-          else (finalizedScenarioPropertiesConfig.scenarioPropertiesConfig, finalizedScenarioPropertiesConfig.docsUrl)
-        val transformedProps = props.mapValuesNow(createUIScenarioAdditionalFieldConfig)
-        UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = url)
+        val transformedProps = (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig
+                                else finalizedScenarioPropertiesConfig)
+          .mapValuesNow(createUIScenarioPropertyConfig)
+        UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = propertiesDocsUrl)
       },
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
@@ -135,9 +138,7 @@ object DefinitionsService {
     )
   }
 
-  def createUIScenarioAdditionalFieldConfig(
-      config: ScenarioPropertyConfig
-  ): UiScenarioPropertyConfig = {
+  def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
     UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
   }
