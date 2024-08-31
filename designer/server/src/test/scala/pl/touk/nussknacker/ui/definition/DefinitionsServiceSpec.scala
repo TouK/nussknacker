@@ -122,7 +122,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
             "hiddenEnricher" -> WithCategories
               .anyCategory(TestService)
               .withComponentConfig(
-                SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenComponentGroup")))
+                ComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenComponentGroup")))
               )
           )
       }
@@ -148,7 +148,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
             "someGenericNode" -> WithCategories
               .anyCategory(TestService)
               .withComponentConfig(
-                SingleComponentConfig.zero.copy(componentGroup = Some(targetGroupName))
+                ComponentConfig.zero.copy(componentGroup = Some(targetGroupName))
               )
           )
         }

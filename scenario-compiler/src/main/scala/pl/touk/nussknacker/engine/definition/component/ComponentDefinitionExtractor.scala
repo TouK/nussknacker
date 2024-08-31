@@ -34,7 +34,7 @@ object ComponentDefinitionExtractor {
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): Option[ComponentDefinitionWithImplementation] = {
-    val configBasedOnDefinition = SingleComponentConfig.zero
+    val configBasedOnDefinition = ComponentConfig.zero
       .copy(
         docsUrl = inputComponentDefinition.docsUrl,
         icon = inputComponentDefinition.icon,
@@ -54,7 +54,7 @@ object ComponentDefinitionExtractor {
   def extract(
       componentName: String,
       component: Component,
-      configFromDefinition: SingleComponentConfig,
+      configFromDefinition: ComponentConfig,
       additionalConfigs: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
@@ -80,8 +80,8 @@ object ComponentDefinitionExtractor {
 
       additionalConfigsFromProvider
         .get(designerWideId)
-        .map(ComponentAdditionalConfigConverter.toSingleComponentConfig)
-        .getOrElse(SingleComponentConfig.zero)
+        .map(ComponentAdditionalConfigConverter.toComponentConfig)
+        .getOrElse(ComponentConfig.zero)
         .copy(
           componentId = Some(designerWideId)
         )
@@ -205,11 +205,11 @@ object ComponentDefinitionExtractor {
   }
 
   def filterOutDisabledAndComputeFinalUiDefinition(
-      finalCombinedConfig: SingleComponentConfig,
+      finalCombinedConfig: ComponentConfig,
       translateGroupName: ComponentGroupName => Option[ComponentGroupName]
   ): Option[(ComponentUiDefinition, Map[ParameterName, ParameterConfig])] = {
     // At this stage, after combining all properties with default config, we are sure that some properties are defined
-    def getDefinedProperty[T](propertyName: String, getProperty: SingleComponentConfig => Option[T]) =
+    def getDefinedProperty[T](propertyName: String, getProperty: ComponentConfig => Option[T]) =
       getProperty(finalCombinedConfig).getOrElse(
         throw new IllegalStateException(s"Component's $propertyName not defined in $finalCombinedConfig")
       )

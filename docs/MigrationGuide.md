@@ -27,6 +27,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
 * Component's API changes
+  * [#6578](https://github.com/TouK/nussknacker/pull/6578) `SingleComponentConfig` changed to `ComponentConfig` for better domain naming.
+    Associated functions and objects also changed to `...ComponentConfig...`.
   * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
     Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
   * [#6462](https://github.com/TouK/nussknacker/pull/6462) `CustomStreamTransformer.canHaveManyInputs` field was
