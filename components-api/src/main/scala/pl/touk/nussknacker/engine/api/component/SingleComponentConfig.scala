@@ -6,7 +6,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
-case class ComponentConfig(
+case class SingleComponentConfig(
     params: Option[Map[ParameterName, ParameterConfig]],
     icon: Option[String],
     docsUrl: Option[String],
@@ -19,11 +19,11 @@ case class ComponentConfig(
     disabled: Boolean = false
 )
 
-object ComponentConfig {
+object SingleComponentConfig {
 
-  val zero: ComponentConfig = ComponentConfig(None, None, None, None, None)
+  val zero: SingleComponentConfig = SingleComponentConfig(None, None, None, None, None)
 
-  implicit val semigroup: Semigroup[ComponentConfig] = {
+  implicit val semigroup: Semigroup[SingleComponentConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
       case (None, None)    => None
       case (None, Some(x)) => Some(x)
@@ -44,8 +44,8 @@ object ComponentConfig {
       case (Some(x), Some(y)) => Some(x |+| y)
     }
 
-    Semigroup.instance[ComponentConfig] { (x, y) =>
-      ComponentConfig(
+    Semigroup.instance[SingleComponentConfig] { (x, y) =>
+      SingleComponentConfig(
         x.params |+| y.params,
         x.icon |+| y.icon,
         x.docsUrl |+| y.docsUrl,
