@@ -1,89 +1,151 @@
-import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
-import { Graph } from "./Graph";
 import { Grow, Paper, PopoverProps, Popper } from "@mui/material";
-import { dia, g } from "jointjs";
-import { NodeType } from "../../types";
-import { Events } from "./types";
+import { dia } from "jointjs";
+import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Graph } from "./Graph";
 import { MarkdownStyled } from "./node-modal/MarkdownStyled";
 
-function getDomRectFromBBox(paper: dia.Paper, bBox: g.Rect) {
-    return DOMRect.fromRect(paper.localToPageRect(paper.paperToLocalRect(bBox)));
-}
+const useTimeout = <A extends Array<unknown>>(
+    callback: (...args: A) => void,
+    time: number,
+): {
+    start: (...args: A) => () => void;
+    stop: () => void;
+} => {
+    const timer = useRef<NodeJS.Timeout>();
 
-function getBoundingClientRectFromView(view: dia.CellView) {
-    const bBox = view.getBBox({ useModelGeometry: true });
-    const paper = view.paper;
-    return getDomRectFromBBox(paper, bBox);
-}
-
-// TODO: show rendered description somehow on touch screens
-export function NodeDescriptionPopover(props: { graphRef: MutableRefObject<Graph>; leaveTimeout?: number; enterTimeout?: number }) {
-    const { graphRef, enterTimeout = 750, leaveTimeout = 250 } = props;
-
-    const [open, setOpen] = useState(false);
-    const [description, setDescription] = useState<string>();
-    const [anchorEl, setAnchorEl] = useState<PopoverProps["anchorEl"]>(null);
-
-    const hideDescription = useCallback(() => {
-        setOpen(false);
+    const stop = useCallback(() => {
+        if (timer.current) {
+            clearTimeout(timer.current);
+            timer.current = null;
+        }
     }, []);
 
-    const showDescription = useCallback((view: dia.CellView) => {
-        if (!view.model.isElement()) return;
-
-        setDescription(() => {
-            const nodeData: NodeType = view.model.get("nodeData");
-            return nodeData?.additionalFields?.description;
-        });
-        setAnchorEl({
-            getBoundingClientRect: () => getBoundingClientRectFromView(view),
-            nodeType: Node["ELEMENT_NODE"],
-        });
-        setOpen(true);
-    }, []);
-
-    const leaveTimeoutRef = useRef<NodeJS.Timeout>();
-    const enterTimeoutRef = useRef<NodeJS.Timeout>();
-
-    const stopLeaveTimer = useCallback(() => {
-        clearTimeout(leaveTimeoutRef.current);
-    }, []);
-
-    const stopEnterTimer = useCallback(() => {
-        clearTimeout(enterTimeoutRef.current);
-    }, []);
-
-    const startLeaveTimer = useCallback(() => {
-        stopEnterTimer();
-        stopLeaveTimer();
-        leaveTimeoutRef.current = setTimeout(() => {
-            hideDescription();
-        }, leaveTimeout);
-    }, [hideDescription, leaveTimeout, stopEnterTimer, stopLeaveTimer]);
-
-    const startEnterTimer = useCallback(
-        (view: dia.CellView) => {
-            stopEnterTimer();
-            enterTimeoutRef.current = setTimeout(() => {
-                stopLeaveTimer();
-                showDescription(view);
-            }, enterTimeout);
-
-            view.once(Events.CELL_MOUSELEAVE, () => {
-                startLeaveTimer();
-                stopEnterTimer();
-            });
+    const start = useCallback(
+        (...args: A) => {
+            stop();
+            timer.current = setTimeout(() => {
+                callback(...args);
+            }, time);
+            return stop;
         },
-        [enterTimeout, showDescription, startLeaveTimer, stopEnterTimer, stopLeaveTimer],
+        [callback, stop, time],
     );
+
+    return { start, stop };
+};
+
+const useEnterLeaveEvents = (
+    graphRef: React.MutableRefObject<Graph | undefined>,
+    {
+        onEnter,
+        onLeave,
+        innerSelector,
+        outerSelector,
+    }: {
+        onEnter: (view: dia.CellView, el?: Element) => void;
+        onLeave: (view: dia.CellView, el?: Element) => void;
+        innerSelector: string;
+        outerSelector: string;
+    },
+) => {
+    const lastView = useRef<dia.CellView>();
+    const lastEl = useRef<Element | null>();
 
     useEffect(() => {
         const graph = graphRef.current;
-        graph.processGraphPaper.on(Events.CELL_MOUSEENTER, startEnterTimer);
-        return () => {
-            graph.processGraphPaper.off(Events.CELL_MOUSEENTER, startEnterTimer);
+
+        const withView =
+            <E extends JQuery.TriggeredEvent<HTMLElement>>(callback: (view: dia.CellView, event: E) => void) =>
+            (event: E) => {
+                const view = graph.processGraphPaper.findView(event.target);
+                callback(view, event);
+            };
+
+        const withEl =
+            <T extends Element, E extends JQuery.TriggeredEvent<T>>(callback: (view: dia.CellView, el?: T) => void, inner?: boolean) =>
+            (view: dia.CellView, event: E) => {
+                callback(view, inner ? event.target : undefined);
+            };
+
+        const getEvents = (inner?: boolean): JQuery.TypeEventHandlers<HTMLElement, undefined, any, any> => {
+            return {
+                mouseover: withView(
+                    withEl((view: dia.CellView, el?: Element) => {
+                        if (lastView.current === view || lastEl.current === el) return;
+
+                        onEnter(view, el);
+                        lastEl.current = el;
+                        lastView.current = view;
+                    }, inner),
+                ),
+                mouseout: withView(
+                    withEl((view: dia.CellView, el?: Element) => {
+                        if (lastView.current !== view && lastEl.current !== el) return;
+
+                        onLeave(view, el);
+                        lastEl.current = null;
+                        lastView.current = null;
+                    }, inner),
+                ),
+            };
         };
-    }, [startEnterTimer, graphRef]);
+
+        const eventsInner = getEvents(true);
+        const eventsOuter = getEvents();
+        graph.processGraphPaper.$el.on(eventsInner, innerSelector);
+        graph.processGraphPaper.$el.on(eventsOuter, outerSelector);
+        return () => {
+            graph.processGraphPaper.$el.off(eventsInner, innerSelector);
+            graph.processGraphPaper.$el.off(eventsOuter, outerSelector);
+        };
+    }, [onEnter, graphRef, innerSelector, outerSelector]);
+};
+
+type NodeDescriptionPopoverProps = {
+    graphRef: MutableRefObject<Graph>;
+    leaveTimeout?: number;
+    enterTimeout?: number;
+};
+
+// TODO: show rendered description somehow on touch screens
+export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
+    const { t } = useTranslation();
+    const { graphRef, enterTimeout = 800, leaveTimeout = 200 } = props;
+
+    const [open, setOpen] = useState(false);
+    const [[description, anchorEl], setData] = useState<[string, PopoverProps["anchorEl"]]>([null, null]);
+    const lastTarget = useRef<Element | null>(null);
+
+    const enterTimer = useTimeout((view: dia.CellView, el: Element) => {
+        setData(
+            el
+                ? [t("graph.node.counts.title", "number of messages that passed downstream"), el]
+                : [view.model.get("nodeData")?.additionalFields?.description, view.el],
+        );
+        setOpen(true);
+        lastTarget.current = el || view.el;
+    }, enterTimeout);
+    const leaveTimer = useTimeout(() => {
+        setOpen(false);
+        enterTimer.stop();
+        lastTarget.current = null;
+    }, leaveTimeout);
+
+    useEnterLeaveEvents(graphRef, {
+        onEnter: (view, el) => {
+            if (lastTarget.current !== (el || view.el)) {
+                setOpen(false);
+            }
+            leaveTimer.stop();
+            enterTimer.start(view, el);
+        },
+        onLeave: () => {
+            leaveTimer.start();
+        },
+        innerSelector: "[joint-selector=testResultsGroup]",
+        outerSelector: "[model-id]",
+    });
 
     return (
         <Popper
@@ -96,7 +158,7 @@ export function NodeDescriptionPopover(props: { graphRef: MutableRefObject<Graph
         >
             {({ TransitionProps }) => (
                 <Grow {...TransitionProps} in={TransitionProps.in && !!description}>
-                    <Paper elevation={5} onMouseLeave={startLeaveTimer} onMouseEnter={stopLeaveTimer}>
+                    <Paper elevation={5} onMouseLeave={() => leaveTimer.start()} onMouseEnter={() => leaveTimer.stop()}>
                         <MarkdownStyled
                             sx={{
                                 maxWidth: (t) => t.breakpoints.values.sm,
