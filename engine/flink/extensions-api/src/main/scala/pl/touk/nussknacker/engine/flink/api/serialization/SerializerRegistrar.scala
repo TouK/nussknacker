@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.serialization
 
 import com.esotericsoftware.kryo.Serializer
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 
 trait SerializerRegistrar[S <: Serializer[_]] {
@@ -21,6 +22,7 @@ class InstanceBasedKryoSerializerRegistrar[T, S <: Serializer[T] with Serializab
     clazz: Class[T]
 ) extends SerializerRegistrar[S] {
 
+  @silent("deprecated")
   override def registerIn(config: ExecutionConfig): Unit = {
     val serializableSerializer = new ExecutionConfig.SerializableSerializer(serializerInstance)
     config.getRegisteredTypesWithKryoSerializers.put(clazz, serializableSerializer)
@@ -29,6 +31,7 @@ class InstanceBasedKryoSerializerRegistrar[T, S <: Serializer[T] with Serializab
 
 }
 
+@silent("deprecated")
 class ClassBasedKryoSerializerRegistrar[T, S <: Serializer[T]](serializerClass: Class[S], clazz: Class[T])
     extends SerializerRegistrar[S] {
 
