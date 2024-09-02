@@ -63,6 +63,6 @@
     <!-- skuber by default logs all requests to k8s on INFO -->
     <logger name="skuber" level="${SKUBER_LOG_LEVEL:-WARN}"/>
     <logger name="com.azure" level="INFO"/>
-    <logger name="org.testcontainers" level="DEBUG"/>
+    <logger name="org.testcontainers" level="INFO"/>
 
 </configuration>
