@@ -57,13 +57,13 @@ class DefinitionsService(
         .finalizeScenarioProperties(scenarioPropertiesConfig)
 
       import net.ceedubs.ficus.Ficus._
-      val propertiesDocsUrl = modelData.modelConfig.getAs[String]("propertiesDocsUrl")
+      val scenarioPropertiesDocsUrl = modelData.modelConfig.getAs[String]("scenarioPropertiesDocsUrl")
 
       prepareUIDefinitions(
         withStaticDefinition,
         forFragment,
         finalizedScenarioPropertiesConfig,
-        propertiesDocsUrl
+        scenarioPropertiesDocsUrl
       )
     }
   }
@@ -72,7 +72,7 @@ class DefinitionsService(
       components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
       finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-      propertiesDocsUrl: Option[String]
+      scenarioPropertiesDocsUrl: Option[String]
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
@@ -82,7 +82,7 @@ class DefinitionsService(
         val transformedProps = (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig
                                 else finalizedScenarioPropertiesConfig)
           .mapValuesNow(createUIScenarioPropertyConfig)
-        UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = propertiesDocsUrl)
+        UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = scenarioPropertiesDocsUrl)
       },
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
