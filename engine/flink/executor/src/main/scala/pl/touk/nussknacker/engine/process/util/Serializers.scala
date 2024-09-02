@@ -19,8 +19,8 @@ import scala.util.{Failure, Try}
   * Watch out, serializers are also serialized. Incompatible SerializationUID on serializer class can lead process state loss (unable to continue from old snapshot).
   * This is why we set SerialVersionUID explicit.
   *
-  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil#writeSerializersAndConfigsWithResilience]]
-  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil#readSerializersAndConfigsWithResilience]]
+  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSnapshotSerializationUtil#writeSerializersAndConfigsWithResilience]]
+  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSnapshotSerializationUtil#readSerializersAndConfigsWithResilience]]
   */
 object Serializers extends LazyLogging {
 
@@ -34,14 +34,13 @@ object Serializers extends LazyLogging {
     TimeSerializers.addDefaultSerializers(config)
   }
 
-  @SerialVersionUID(4481573264636646884L)
   // this is not so great, but is OK for now
-  class CaseClassSerializer extends Serializer[Product](false, true) with Serializable {
+  class CaseClassSerializer extends Serializer[Product](false, true) {
 
     override def write(kryo: Kryo, output: Output, obj: Product): Unit = {
       // this method handles case classes with implicit parameters and also inner classes.
       // their constructor takes different parameters than usual case class constructor
-      def handleObjWithDifferentParamsCountConstructor(constructorParamsCount: Int) = {
+      def handleObjWithDifferentParamsCountConstructor(constructorParamsCount: Int): Unit = {
         output.writeInt(constructorParamsCount)
 
         // in inner classes definition, '$outer' field is at the end, but in constructor it is the first parameter

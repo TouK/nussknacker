@@ -10,8 +10,7 @@ import java.util
 //Kryo won't serialize properly since Kry uses java.util.Collection.add() method which in case of UnmodifiableCollection
 //throws an exception. That's why we need out own serialization of java.util.List
 //The same applies to Map
-@SerialVersionUID(885416578972888366L)
-class SpelHack extends Serializer[java.util.List[_]](false, true) with Serializable {
+class SpelHack extends Serializer[java.util.List[_]](false, true) {
 
   override def write(kryo: Kryo, out: Output, obj: java.util.List[_]): Unit = {
     // Write the size:
@@ -50,8 +49,7 @@ object SpelHack {
 
 }
 
-@SerialVersionUID(20042018L)
-class SpelMapHack extends Serializer[java.util.Map[_, _]](false, true) with Serializable {
+class SpelMapHack extends Serializer[java.util.Map[_, _]](false, true) {
 
   override def write(kryo: Kryo, out: Output, obj: java.util.Map[_, _]): Unit = {
     // Write the size:
