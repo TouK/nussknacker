@@ -4,24 +4,13 @@ import { getScenario, getSelectionState } from "../../../reducers/selectors/grap
 import { MenuItem, MenuList } from "@mui/material";
 import { FoundNode } from "./FoundNode";
 import React, { useCallback, useEffect, useState } from "react";
-import { resolveSearchOption, useFilteredNodes } from "./utils";
+import { resolveSearchQuery, useFilteredNodes } from "./utils";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { resetSelection } from "../../../actions/nk";
 import { useWindows } from "../../../windowManager";
 
-export enum SearchType {
-    SIMPLE,
-    ADVANCED,
-}
-
-export type SimpleSearch = {
-    searchType: SearchType.SIMPLE;
-    query: string;
-};
-
-export type AdvancedSearch = {
-    searchType: SearchType.ADVANCED;
+export type SearchQuery = {
     id?: string[];
     description?: string[];
     type?: string[];
@@ -29,13 +18,12 @@ export type AdvancedSearch = {
     paramValue?: string[];
     outputValue?: string[];
     edgeExpression?: string[];
+    plainQuery?: string;
 };
 
-export type SearchOption = SimpleSearch | AdvancedSearch;
-
 export function SearchResults({ filterRawText }: { filterRawText?: string }) {
-    const searchOption: SearchOption = resolveSearchOption(filterRawText);
-    const nodes = useFilteredNodes(searchOption);
+    const searchQuery: SearchQuery = resolveSearchQuery(filterRawText);
+    const nodes = useFilteredNodes(searchQuery);
 
     const [hasFocus, setHasFocus] = useState(false);
     const [hoveredNodes, setHoveredNodes] = useState<string[]>([]);
@@ -107,11 +95,7 @@ export function SearchResults({ filterRawText }: { filterRawText?: string }) {
                     disableGutters
                     divider
                 >
-                    <FoundNode
-                        node={node}
-                        highlights={searchOption.searchType === SearchType.SIMPLE ? [searchOption.query] : searchOption.id}
-                        fields={groups}
-                    />
+                    <FoundNode node={node} highlights={[searchQuery.plainQuery]} fields={groups} />
                 </MenuItem>
             ))}
         </MenuList>

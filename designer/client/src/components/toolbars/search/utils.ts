@@ -1,12 +1,13 @@
 import { Edge, NodeType } from "../../../types";
-import { uniq } from "lodash";
+import { concat, keys, uniq } from "lodash";
 import { useSelector } from "react-redux";
+import { isEqual } from "lodash";
 import { getScenario } from "../../../reducers/selectors/graph";
 import NodeUtils from "../../graph/NodeUtils";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ensureArray } from "../../../common/arrayUtils";
-import { AdvancedSearch, SearchOption, SearchType, SimpleSearch } from "./SearchResults";
+import { SearchQuery } from "./SearchResults";
 
 type SelectorResult = { expression: string } | string;
 type Selector = (node: NodeType) => SelectorResult | SelectorResult[];
@@ -78,23 +79,18 @@ const findFieldsUsingSelectorWithName = (selectorName: string, filterValues: str
     );
 };
 
-function arraysEqual(arr1: string[], arr2: string[]): boolean {
-    if (arr1.length !== arr2.length) {
-        return false;
-    }
-    return arr1.slice().sort().join() === arr2.slice().sort().join();
-}
-
-export function useFilteredNodes(searchOption: SearchOption): {
+export function useFilteredNodes(searchQuery: SearchQuery): {
     groups: string[];
     node: NodeType;
     edges: Edge[];
 }[] {
-    console.log(searchOption);
     const { t } = useTranslation();
     const { scenarioGraph } = useSelector(getScenario);
     const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
     const allEdges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
+
+    const searchKeys = Object.keys(searchQuery).filter((key) => searchQuery[key as keyof SearchQuery] !== undefined);
+    const isSimpleSearch = searchKeys.length === 1 && searchKeys[0] === "plainQuery";
 
     const displayNames = useMemo(
         () => ({
@@ -116,89 +112,89 @@ export function useFilteredNodes(searchOption: SearchOption): {
                     let edges: Edge[] = [];
                     let groups: string[] = [];
 
-                    switch (searchOption.searchType) {
-                        case SearchType.SIMPLE: {
-                            edges = allEdges
-                                .filter((e) => e.from === node.id)
-                                .filter((e) => matchFilters(e.edgeType?.condition, [searchOption.query]));
+                    if (isSimpleSearch) {
+                        edges = allEdges
+                            .filter((e) => e.from === node.id)
+                            .filter((e) => matchFilters(e.edgeType?.condition, [searchQuery.plainQuery]));
 
-                            groups = findFields([searchOption.query], node)
-                                .concat(edges.length ? "edgeExpression" : null)
-                                .map((name) => displayNames[name])
-                                .filter(Boolean);
+                        groups = findFields([searchQuery.plainQuery], node)
+                            .concat(edges.length ? "edgeExpression" : null)
+                            .map((name) => displayNames[name])
+                            .filter(Boolean);
 
-                            console.log(groups);
+                        return { node, edges, groups };
+                    } else {
+                        const edgesAux = allEdges
+                            .filter((e) => e.from === node.id)
+                            .filter((e) => matchFilters(e.edgeType?.condition, [searchQuery.plainQuery]));
 
-                            return { node, edges, groups };
+                        const groupsAux: string[] = findFields([searchQuery.plainQuery], node)
+                            .concat(edgesAux.length ? "edgeExpression" : null)
+                            .map((name) => displayNames[name])
+                            .filter(Boolean);
+
+                        edges =
+                            "edgeExpression" in searchQuery
+                                ? allEdges
+                                      .filter((e) => e.from === node.id)
+                                      .filter((e) => matchFilters(e.edgeType?.condition, searchQuery.edgeExpression))
+                                : [];
+
+                        const keyNamesRelevantForFiltering = Object.keys(searchQuery).filter(
+                            (key) => key !== "searchType" && key !== "plainQuery",
+                        );
+
+                        const displayKeyNamesRelevantForFiltering: string[] = keyNamesRelevantForFiltering.map(
+                            (name) => displayNames[name],
+                        );
+
+                        groups = keyNamesRelevantForFiltering
+                            .map((key) => findFieldsUsingSelectorWithName(key, searchQuery[key], node))
+                            .flat()
+                            .concat(edges.length ? "edgeExpression" : null)
+                            .map((name) => displayNames[name])
+                            .filter(Boolean);
+
+                        const allChecksPassed = isEqual(groups, displayKeyNamesRelevantForFiltering);
+
+                        if (!allChecksPassed || groupsAux.length === 0) {
+                            edges = [];
+                            groups = [];
                         }
-                        case SearchType.ADVANCED: {
-                            edges =
-                                "edgeExpression" in searchOption
-                                    ? allEdges
-                                          .filter((e) => e.from === node.id)
-                                          .filter((e) => matchFilters(e.edgeType?.condition, searchOption.edgeExpression))
-                                    : [];
 
-                            const keyNamesRelevantForFiltering = Object.keys(searchOption).filter((key) => key !== "searchType");
-
-                            const displayKeyNamesRelevantForFiltering: string[] = keyNamesRelevantForFiltering.map(
-                                (name) => displayNames[name],
-                            );
-
-                            groups = keyNamesRelevantForFiltering
-                                .map((key) => findFieldsUsingSelectorWithName(key, searchOption[key], node))
-                                .flat()
-                                .concat(edges.length ? "edgeExpression" : null)
-                                .map((name) => displayNames[name])
-                                .filter(Boolean);
-
-                            const allChecksPassed = arraysEqual(groups, displayKeyNamesRelevantForFiltering);
-
-                            if (!allChecksPassed) {
-                                edges = [];
-                                groups = [];
-                            }
-
-                            return { node, edges, groups };
-                        }
+                        return { node, edges, groups };
                     }
                 })
                 .filter(({ groups }) => groups.length),
-        [displayNames, allEdges, searchOption, allNodes],
+        [displayNames, allEdges, searchQuery, allNodes],
     );
 }
 
-export function resolveSearchOption(filterRawText: string): SearchOption {
-    const advancedFilterKeyNames: string[] = [
-        "id:(",
-        "description:(",
-        "type:(",
-        "paramName:(",
-        "paramValue:(",
-        "outputValue:(",
-        "edgeExpression:(",
-    ]; //heuristic, but sufficient
-    const isAdvancedSearchOption = advancedFilterKeyNames.some((advancedKeyName) => filterRawText.includes(advancedKeyName));
-
-    if (isAdvancedSearchOption) {
-        return parseRawTextToAdvancedSearch(filterRawText);
-    } else {
-        return { searchType: SearchType.SIMPLE, query: filterRawText } as SimpleSearch;
-    }
+export function resolveSearchQuery(filterRawText: string): SearchQuery {
+    return parseRawTextToSearchQuery(filterRawText);
 }
 
-function parseRawTextToAdvancedSearch(text: string): AdvancedSearch {
-    const result: AdvancedSearch = { searchType: SearchType.ADVANCED };
+function splitString(input: string): string[] {
+    //split string by comma respecting quoted elements
+    //"a,b,c" -> ["a", "b", "c"]
+    //"a,\"b,c\",d" -> ["a", "b,c", "d"]
+    return input.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+}
+
+function parseRawTextToSearchQuery(text: string): SearchQuery {
+    const result: SearchQuery = {};
     const regex = /(\w+):\(([^)]*)\)/g;
     let match: RegExpExecArray | null;
+    let lastIndex = 0;
 
     while ((match = regex.exec(text)) !== null) {
-        const key = match[1] as keyof Exclude<keyof AdvancedSearch, "searchType">;
-        console.log(key);
+        const key = match[1] as keyof Omit<SearchQuery, "plainQuery">;
         const values = match[2].split(",").map((value) => value.trim().replace(/"/g, ""));
-
-        result[key] = values.length > 0 ? values : undefined;
+        result[key] = values.length > 0 ? values : [];
+        lastIndex = regex.lastIndex;
     }
+
+    result.plainQuery = text.slice(lastIndex).trim();
 
     return result;
 }
