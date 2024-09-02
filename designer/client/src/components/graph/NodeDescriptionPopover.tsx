@@ -4,6 +4,7 @@ import React, { MutableRefObject, useCallback, useEffect, useRef, useState } fro
 import { useTranslation } from "react-i18next";
 import { Graph } from "./Graph";
 import { MarkdownStyled } from "./node-modal/MarkdownStyled";
+import { Events } from "./types";
 
 const useTimeout = <A extends Array<unknown>>(
     callback: (...args: A) => void,
@@ -99,7 +100,7 @@ const useEnterLeaveEvents = (
             graph.processGraphPaper.$el.off(eventsInner, innerSelector);
             graph.processGraphPaper.$el.off(eventsOuter, outerSelector);
         };
-    }, [onEnter, graphRef, innerSelector, outerSelector]);
+    }, [onEnter, graphRef, innerSelector, outerSelector, onLeave]);
 };
 
 type NodeDescriptionPopoverProps = {
@@ -146,6 +147,15 @@ export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
         innerSelector: "[joint-selector=testResultsGroup]",
         outerSelector: "[model-id]",
     });
+
+    useEffect(() => {
+        const graph = graphRef.current;
+        const callback = () => setOpen(false);
+        graph.processGraphPaper.on(Events.CELL_POINTERDOWN, callback);
+        return () => {
+            graph.processGraphPaper.off(Events.CELL_POINTERDOWN, callback);
+        };
+    }, [graphRef]);
 
     return (
         <Popper
