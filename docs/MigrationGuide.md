@@ -6,8 +6,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#6695](https://github.com/TouK/nussknacker/pull/6695) Added `displayObjType` to `SingleTypingResult` and 
-  it is used as a type which is visible on the UI.
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
+  * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
+  * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
 
 ### Other changes
 
