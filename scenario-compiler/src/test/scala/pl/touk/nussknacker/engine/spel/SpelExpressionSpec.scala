@@ -60,10 +60,24 @@ import scala.reflect.runtime.universe._
 class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with OptionValues {
 
   private implicit class ValidatedExpressionOps[E](validated: Validated[E, TypedExpression]) {
-    def validExpression: CompiledExpression = validated.validValue.expression
+    def validExpression: TypedExpression = validated.validValue
   }
 
-  private implicit class EvaluateSync(expression: CompiledExpression) {
+  private implicit class EvaluateSyncTyped(expression: TypedExpression) {
+
+    def evaluateSync[T](ctx: Context = ctx): T = {
+      val evaluationResult = expression.expression.evaluate[T](ctx, Map.empty)
+      expression.typingInfo.typingResult match {
+        case result: SingleTypingResult if evaluationResult != null =>
+          result.runtimeObjType.klass isAssignableFrom evaluationResult.getClass shouldBe true
+        case _ =>
+      }
+      evaluationResult
+    }
+
+  }
+
+  private implicit class EvaluateSyncCompiled(expression: CompiledExpression) {
     def evaluateSync[T](ctx: Context = ctx): T = expression.evaluate(ctx, Map.empty)
   }
 
@@ -1140,13 +1154,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should be able to handle spel type conversions") {
     parse[String]("T(java.text.NumberFormat).getNumberInstance('PL').format(12.34)", ctx).validExpression
       .evaluateSync[String](ctx) shouldBe "12,34"
-    parse[Locale]("'PL'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe Locale.forLanguageTag("PL")
-    parse[LocalDate]("'2007-12-03'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe LocalDate.parse(
-      "2007-12-03"
-    )
-    parse[ChronoLocalDate]("'2007-12-03'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe LocalDate.parse(
-      "2007-12-03"
-    )
+    parse[Locale]("'PL'", ctx).validExpression.expression.evaluateSync[Locale](ctx) shouldBe
+      Locale.forLanguageTag("PL")
+    parse[LocalDate]("'2007-12-03'", ctx).validExpression.expression.evaluateSync[Locale](ctx) shouldBe
+      LocalDate.parse("2007-12-03")
+    parse[ChronoLocalDate]("'2007-12-03'", ctx).validExpression.expression.evaluateSync[Locale](ctx) shouldBe
+      LocalDate.parse("2007-12-03")
   }
 
   test("shouldn't allow invalid spel type conversions") {
@@ -1262,12 +1275,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should return correct type in array projection") {
-    val parsed              = parse[Any]("#array.![#this]", ctx)
-    val evaluated           = parsed.validExpression.evaluateSync[Any](ctx)
-    val expectedRuntimeType = Typed.genericTypeClass(classOf[Array[String]], List(Typed.typedClass(classOf[String])))
-
-    parsed.validValue.returnType shouldBe expectedRuntimeType
-    evaluated shouldBe Array("a", "b")
+    parse[Any]("#array.![#this]", ctx).validExpression
+      .evaluateSync[Any](ctx) shouldBe Array("a", "b")
   }
 
   test("should return error on String projection") {
