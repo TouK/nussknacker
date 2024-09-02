@@ -9,9 +9,9 @@ import { NodeType, ProcessDefinitionData } from "../../../types";
 export function alignFragmentWithSchema(processDefinitionData: ProcessDefinitionData, fragmentNode: NodeType) {
     const fragmentId = fragmentNode.ref.id;
     const fragmentSchema = processDefinitionData.componentGroups
-        // It's a workaround, We cannot looking for fragment schema only in the fragments group,
-        // because, fragmentInput can be moved to the different group
-        // and in this case, there was an error, that's why we need to iterate all groups
+        // This is a workaround. We cannot look for the fragment schema only in the fragments group,
+        // because fragmentInput can be moved to a different group.
+        // In this case, there was an error, which is why we need to iterate through all groups.
         .flatMap((componentGroups) => componentGroups.components)
         .find((obj) => obj?.node?.ref?.id === fragmentId);
     const fragmentSchemaParameters = fragmentSchema.node.ref.parameters;
