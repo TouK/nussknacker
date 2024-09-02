@@ -176,7 +176,7 @@ class AkkaHttpBasedRouteProvider(
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
           processingTypeData.deploymentData.scenarioPropertiesConfig,
           new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
-          featureTogglesConfig.scenarioLabelSettings,
+          new ScenarioLabelsValidator(featureTogglesConfig.scenarioLabelConfig),
           processingTypeData.deploymentData.additionalValidators,
           fragmentResolver
         )
@@ -343,7 +343,7 @@ class AkkaHttpBasedRouteProvider(
         authManager = authManager,
         service = new ScenarioLabelsService(
           scenarioLabelsRepository,
-          new ScenarioLabelsValidator(featureTogglesConfig.scenarioLabelSettings),
+          new ScenarioLabelsValidator(featureTogglesConfig.scenarioLabelConfig),
           dbioRunner
         )
       )

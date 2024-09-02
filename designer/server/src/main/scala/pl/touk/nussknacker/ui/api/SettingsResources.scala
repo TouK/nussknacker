@@ -11,8 +11,6 @@ import pl.touk.nussknacker.ui.statistics.{Fingerprint, FingerprintService}
 
 import java.net.URL
 import scala.concurrent.ExecutionContext
-import scala.util.Try
-import scala.util.matching.Regex
 
 class SettingsResources(
     config: FeatureTogglesConfig,
@@ -38,7 +36,6 @@ class SettingsResources(
                 environmentAlert = config.environmentAlert,
                 commentSettings = config.commentSettings,
                 deploymentCommentSettings = config.deploymentCommentSettings,
-                scenarioLabelSettings = config.scenarioLabelSettings,
                 surveySettings = config.surveySettings,
                 tabs = config.tabs,
                 intervalTimeSettings = config.intervalTimeSettings,
@@ -70,9 +67,9 @@ class SettingsResources(
 
 @JsonCodec final case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-@JsonCodec final case class SurveySettings(key: String, text: String, link: URL)
-
 @JsonCodec final case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
+
+@JsonCodec final case class SurveySettings(key: String, text: String, link: URL)
 
 object DeploymentCommentSettings {
 
@@ -94,34 +91,6 @@ object DeploymentCommentSettings {
 }
 
 final case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
-
-@JsonCodec final case class ScenarioLabelSettings(validationPattern: String) {
-
-  def validationRules: List[ScenarioLabelSettings.ValidationRule] = List(
-    ScenarioLabelSettings.ValidationRule(validationPattern.r, message = "TODOMKP")
-  )
-
-}
-
-object ScenarioLabelSettings {
-
-  final case class ValidationRule(validationRegex: Regex, message: String) {
-
-  }
-
-  def create(
-      validationPattern: String,
-  ): Validated[EmptyScenarioLabelSettingsError, ScenarioLabelSettings] = {
-    Validated.cond(
-      validationPattern.nonEmpty && Try(validationPattern.r).isSuccess,
-      new ScenarioLabelSettings(validationPattern),
-      EmptyScenarioLabelSettingsError("Field validationPattern cannot be empty.")
-    )
-  }
-
-}
-
-final case class EmptyScenarioLabelSettingsError(message: String) extends Exception(message)
 
 @JsonCodec final case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
@@ -161,7 +130,6 @@ object TopTabType extends Enumeration {
     environmentAlert: Option[EnvironmentAlert],
     commentSettings: Option[CommentSettings],
     deploymentCommentSettings: Option[DeploymentCommentSettings],
-    scenarioLabelSettings: Option[ScenarioLabelSettings],
     surveySettings: Option[SurveySettings],
     tabs: Option[List[TopTab]],
     intervalTimeSettings: IntervalTimeSettings,

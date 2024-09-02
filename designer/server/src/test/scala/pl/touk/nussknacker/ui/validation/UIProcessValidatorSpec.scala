@@ -72,6 +72,7 @@ import pl.touk.nussknacker.test.mock.{
 }
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.config.ScenarioLabelConfig
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
@@ -312,9 +313,84 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
+  test("validate scenario labels") {
+    val scenario   = validScenarioGraphWithFields(Map.empty)
+    val isFragment = false
+
+    def createValidator(config: Option[ScenarioLabelConfig]) = {
+      ProcessTestData.testProcessValidator(
+        scenarioLabelsValidator = new ScenarioLabelsValidator(config),
+        scenarioProperties = FlinkStreamingPropertiesConfig.properties
+      )
+    }
+
+    def validate(processValidator: UIProcessValidator, labels: List[String]) = {
+      processValidator.validate(
+        scenario,
+        ProcessTestData.sampleProcessName,
+        isFragment = false,
+        labels = labels.map(ScenarioLabel.apply)
+      )
+    }
+
+    val v1 = createValidator(None)
+
+    validate(v1, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(v1, List("tag1", "tag2")) shouldBe withoutErrorsAndWarnings
+
+    val v2 = createValidator(Some(ScenarioLabelConfig(validationRules = List.empty)))
+
+    validate(v2, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(v2, List("tag1", "tag2")) shouldBe withoutErrorsAndWarnings
+
+    val v3 = createValidator(
+      Some(
+        ScenarioLabelConfig(
+          validationRules = List(
+            ScenarioLabelConfig.ValidationRule("[a-zA-z0-9].*".r, "Only alphanumeric characters allowed"),
+            ScenarioLabelConfig.ValidationRule(".{1,}$$".r, "Label could not be empty"),
+            ScenarioLabelConfig.ValidationRule(".{0,5}$$".r, "Label cannot have more than 5 characters"),
+          )
+        )
+      )
+    )
+
+    validate(v3, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(v3, List("tag1", "tag2")) shouldBe withoutErrorsAndWarnings
+    val r1 = validate(v3, List("tag100", "tag2"))
+    r1.errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario labels: tag100",
+          description = "Please check scenario labels",
+          fieldName = None,
+          errorType = NodeValidationErrorType.SaveNotAllowed,
+          details = None
+        ),
+        List.empty
+      )
+    )
+
+    val r2 = validate(v3, List("tag 1", "tag2"))
+    r2.errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario labels: tag100",
+          description = "Please check scenario labels",
+          fieldName = None,
+          errorType = NodeValidationErrorType.SaveNotAllowed,
+          details = None
+        ),
+        List.empty
+      )
+    )
+  }
+
   test("validate missing required scenario properties") {
-    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      Map(
+    val processValidator = ProcessTestData.testProcessValidator(
+      scenarioProperties = Map(
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
@@ -376,7 +452,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("validate scenario properties according to validators from additional config provider") {
     val processValidator =
-      TestFactory.processValidator.withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
+      ProcessTestData.testProcessValidator(scenarioProperties = FlinkStreamingPropertiesConfig.properties)
 
     def validate(scenarioGraph: ScenarioGraph) =
       processValidator.validate(
@@ -413,8 +489,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("don't validate properties on fragment") {
-    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      Map(
+    val processValidator = ProcessTestData.testProcessValidator(
+      scenarioProperties = Map(
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
@@ -443,8 +519,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("validate type scenario field") {
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
-    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      Map(
+    val processValidator = ProcessTestData.testProcessValidator(
+      scenarioProperties = Map(
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = Some(FixedValuesParameterEditor(possibleValues)),
@@ -479,8 +555,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("handle unknown properties validation") {
-    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      Map(
+    val processValidator = ProcessTestData.testProcessValidator(
+      scenarioProperties = Map(
         "field2" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
@@ -1363,7 +1439,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-      scenarioLabelSettings = None,
+      scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
@@ -1421,7 +1497,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-      scenarioLabelSettings = None,
+      scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
@@ -2119,8 +2195,8 @@ private object UIProcessValidatorSpec {
       c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
     )
 
-  private val configuredValidator: UIProcessValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-    Map(
+  private val configuredValidator: UIProcessValidator = ProcessTestData.testProcessValidator(
+    scenarioProperties = Map(
       "requiredStringProperty" -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(StringParameterEditor),
@@ -2377,7 +2453,7 @@ private object UIProcessValidatorSpec {
     scenarioProperties = Map.empty,
     scenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-    scenarioLabelSettings = None,
+    scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
@@ -2410,7 +2486,7 @@ private object UIProcessValidatorSpec {
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, "Streaming"),
-      scenarioLabelSettings = None,
+      scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List(SampleCustomProcessValidator),
       fragmentResolver = new FragmentResolver(
         new StubFragmentRepository(
@@ -2436,8 +2512,8 @@ private object UIProcessValidatorSpec {
     override def apply(left: ValidationResult): MatchResult = {
       MatchResult(
         !left.hasErrors && !left.hasWarnings,
-        "ValidationResult should has neither errors nor warnings",
-        "ValidationResult should has either errors or warnings"
+        s"ValidationResult should has neither errors nor warnings ${left}",
+        s"ValidationResult should has either errors or warnings ${left}"
       )
     }
 

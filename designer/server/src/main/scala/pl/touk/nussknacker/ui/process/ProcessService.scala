@@ -414,7 +414,7 @@ class DBProcessService(
         processId = processIdWithName.id,
         canonicalProcess = substituted,
         comment = action.comment,
-        labels = scenarioLabels, // action.scenarioLabels,
+        labels = scenarioLabels,
         increaseVersionWhenJsonNotChanged = false,
         forwardedUserName = action.forwardedUserName
       )

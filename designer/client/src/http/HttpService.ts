@@ -29,8 +29,7 @@ import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-
 import { GenericValidationRequest } from "../actions/nk/genericAction";
 import { EventTrackingSelector } from "../containers/event-tracking";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
-import {AvailableScenarioLabels, ScenarioLabelsValidationResponse} from "../components/Labels/types";
-import {ScenarioLabelValidationError} from "../components/toolbars/scenarioDetails/ScenarioLabels";
+import { AvailableScenarioLabels, ScenarioLabelsValidationResponse, ScenarioLabelValidationError } from "../components/Labels/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -478,7 +477,7 @@ class HttpService {
     }
 
     validateScenarioLabels(labels: string[]): Promise<AxiosResponse<ScenarioLabelsValidationResponse>> {
-        const data = { labels: labels }
+        const data = { labels: labels };
         return api
             .post<ScenarioLabelsValidationResponse>(`/scenarioLabels/validation`, data)
             .catch((error) =>
@@ -486,7 +485,6 @@ class HttpService {
                     this.#addError(i18next.t("notification.error.cannotValidateScenarioLabels", "Cannot validate scenario labels"), error),
                 ),
             );
-
     }
 
     getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {

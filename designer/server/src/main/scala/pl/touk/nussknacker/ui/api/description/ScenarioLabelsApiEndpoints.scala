@@ -87,7 +87,7 @@ object ScenarioLabelsApiEndpoints {
     final case class ScenarioLabelsValidationResponseDto(validationErrors: List[ValidationError])
 
     @derive(encoder, decoder, schema)
-    final case class ValidationError(label: String, message: String)
+    final case class ValidationError(label: String, messages: List[String])
   }
 
 }

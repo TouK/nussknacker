@@ -19,10 +19,9 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
-import pl.touk.nussknacker.ui.api.ScenarioLabelSettings
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.process.label.{ScenarioLabel, ValidatedScenarioLabel}
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -31,7 +30,7 @@ class UIProcessValidator(
     validator: ProcessValidator,
     scenarioProperties: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
-    scenarioLabelSettings: Option[ScenarioLabelSettings],
+    scenarioLabelsValidator: ScenarioLabelsValidator,
     additionalValidators: List[CustomProcessValidator],
     fragmentResolver: FragmentResolver,
 ) {
@@ -47,7 +46,7 @@ class UIProcessValidator(
       validator,
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
-      scenarioLabelSettings,
+      scenarioLabelsValidator,
       additionalValidators,
       fragmentResolver
     )
@@ -58,19 +57,7 @@ class UIProcessValidator(
       transform(validator),
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
-      scenarioLabelSettings,
-      additionalValidators,
-      fragmentResolver
-    )
-
-  // TODO: It is used only in tests, remove it from the prodcution code
-  def withScenarioPropertiesConfig(scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]) =
-    new UIProcessValidator(
-      processingType,
-      validator,
-      scenarioPropertiesConfig,
-      scenarioPropertiesConfigFinalizer,
-      scenarioLabelSettings,
+      scenarioLabelsValidator,
       additionalValidators,
       fragmentResolver
     )
@@ -201,32 +188,19 @@ class UIProcessValidator(
   }
 
   private def validateScenarioLabels(labels: List[ScenarioLabel]): ValidationResult = {
-    scenarioLabelSettings match {
-      case Some(settings) =>
-        val notValidLabels = labels
-          .filter(label => !label.value.matches(settings.validationPattern))
-
-        if (notValidLabels.nonEmpty) {
-          ValidationResult.globalErrors(
-            List(
-              UIGlobalError(
-                PrettyValidationErrors.formatErrorMessage(
-                  ScenarioLabelValidationError(
-                    s"Bad scenario label format for labels ${notValidLabels
-                        .mkString("'", ",", "'")}. Validation pattern: ${settings.validationPattern}",
-                    "",
-                    notValidLabels.map(_.value)
-                  )
-                ),
-                List.empty
-              )
-            ),
-          )
-        } else {
-          ValidationResult.success
-        }
-      case None =>
+    scenarioLabelsValidator.validate(labels) match {
+      case Valid(()) =>
         ValidationResult.success
+      case Invalid(errors) =>
+        ValidationResult.globalErrors(
+          errors
+            .map(ve =>
+              ScenarioLabelValidationError(label = ve.label, description = ve.validationMessages.toList.mkString(","))
+            )
+            .map(PrettyValidationErrors.formatErrorMessage)
+            .map(UIGlobalError(_, nodeIds = List.empty))
+            .toList
+        )
     }
   }
 

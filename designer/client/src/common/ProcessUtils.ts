@@ -16,6 +16,7 @@ import {
 import { RootState } from "../reducers";
 import { isProcessRenamed } from "../reducers/selectors/graph";
 import { Scenario } from "src/components/Process/types";
+import { ScenarioLabelValidationError } from "../components/Labels/types";
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
@@ -87,6 +88,12 @@ class ProcessUtils {
 
     hasNoPropertiesErrors = (scenario: Scenario) => {
         return isEmpty(this.getValidationErrors(scenario)?.processPropertiesErrors);
+    };
+
+    getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
+        return this.getValidationResult(scenario)
+            .errors.globalErrors.filter((e) => e.error.typ == "ScenarioLabelValidationError")
+            .map((e) => <ScenarioLabelValidationError>{ label: e.error.fieldName, messages: [e.error.description] });
     };
 
     getValidationErrors(scenario: Scenario): ValidationErrors {

@@ -30,6 +30,7 @@ export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToS
 export const hasError = createSelector(getScenario, (p) => !ProcessUtils.hasNoErrors(p));
 export const hasWarnings = createSelector(getScenario, (p) => !ProcessUtils.hasNoWarnings(p));
 export const hasPropertiesErrors = createSelector(getScenario, (p) => !ProcessUtils.hasNoPropertiesErrors(p));
+export const getScenarioLabelsErrors = createSelector(getScenario, (p) => ProcessUtils.getLabelsErrors(p));
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getScenarioGraph, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));

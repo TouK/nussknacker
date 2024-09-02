@@ -19,7 +19,7 @@ final case class FeatureTogglesConfig(
     environmentAlert: Option[EnvironmentAlert],
     commentSettings: Option[CommentSettings],
     deploymentCommentSettings: Option[DeploymentCommentSettings],
-    scenarioLabelSettings: Option[ScenarioLabelSettings],
+    scenarioLabelConfig: Option[ScenarioLabelConfig],
     scenarioStateTimeout: Option[FiniteDuration],
     surveySettings: Option[SurveySettings],
     tabs: Option[List[TopTab]],
@@ -46,7 +46,7 @@ object FeatureTogglesConfig extends LazyLogging {
     val remoteEnvironment         = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val commentSettings           = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploymentCommentSettings = parseDeploymentCommentSettings(config)
-    val scenarioLabelSettings     = parseScenarioLabelSettings(config)
+    val scenarioLabelSettings     = ScenarioLabelConfig.create(config)
     val scenarioStateTimeout      = parseOptionalConfig[FiniteDuration](config, "scenarioStateTimeout")
     val surveySettings            = parseOptionalConfig[SurveySettings](config, "surveySettings")
 
@@ -63,7 +63,7 @@ object FeatureTogglesConfig extends LazyLogging {
       counts = counts,
       commentSettings = commentSettings,
       deploymentCommentSettings = deploymentCommentSettings,
-      scenarioLabelSettings = scenarioLabelSettings,
+      scenarioLabelConfig = scenarioLabelSettings,
       scenarioStateTimeout = scenarioStateTimeout,
       surveySettings = surveySettings,
       tabs = tabs,
@@ -82,20 +82,6 @@ object FeatureTogglesConfig extends LazyLogging {
       val validationPattern = settingConfig.as[String](s"validationPattern")
       val exampleComment    = settingConfig.getAs[String](s"exampleComment")
       DeploymentCommentSettings.create(validationPattern, exampleComment) match {
-        case Valid(settings) => Some(settings)
-        case Invalid(e)      => throw e
-      }
-    } else {
-      None
-    }
-  }
-
-  private def parseScenarioLabelSettings(config: Config): Option[ScenarioLabelSettings] = {
-    val rootPath = "scenarioLabelSettings"
-    if (config.hasPath(rootPath)) {
-      val settingConfig     = config.getConfig(rootPath)
-      val validationPattern = settingConfig.as[String](s"validationPattern")
-      ScenarioLabelSettings.create(validationPattern) match {
         case Valid(settings) => Some(settings)
         case Invalid(e)      => throw e
       }

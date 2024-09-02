@@ -4,9 +4,9 @@ export type AvailableScenarioLabels = {
 
 export type ScenarioLabelValidationError = {
     label: string;
-    message: string;
-}
+    messages: string[];
+};
 
 export type ScenarioLabelsValidationResponse = {
-    errors: ScenarioLabelValidationError[];
-}
+    validationErrors: ScenarioLabelValidationError[];
+};

@@ -47,7 +47,7 @@ class ScenarioLabelsApiHttpServiceBusinessSpec
     .emptySink("sinkId", "barSink")
 
   "The scenario labels endpoint when" - {
-    "return empty labels for existing process without them" in {
+    "return no labels for existing process without them" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -85,6 +85,96 @@ class ScenarioLabelsApiHttpServiceBusinessSpec
              |}
              |""".stripMargin
         )
+    }
+  }
+
+  "The scenario labels validation endpoint when" - {
+    "return no errors when" - {
+      "no labels passed" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .body(
+            s"""
+               |{
+               |  "labels": []
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""
+               |{
+               |  "validationErrors": []
+               |}
+               |""".stripMargin
+          )
+      }
+      "all labels are passing validation" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .body(
+            s"""
+               |{
+               |  "labels": ["tag1", "tag2", "tag3"]
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""
+               |{
+               |  "validationErrors": []
+               |}
+               |""".stripMargin
+          )
+      }
+    }
+    "return validation errors when" - {
+      "some labels are not matching validation rules" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .body(
+            s"""
+               |{
+               |  "labels": ["tooLongTag", "tag 1", "tag 12345"]
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""
+               |{
+               |  "validationErrors": [
+               |    {
+               |      "label": "tooLongTag",
+               |      "messages": [
+               |          "Scenario label can contain up to 5 characters"
+               |      ]
+               |    },
+               |    {
+               |      "label": "tag 1",
+               |      "messages": [
+               |          "Scenario label can contain only alphanumeric characters"
+               |      ]
+               |    },
+               |    {
+               |      "label": "tag 12345",
+               |      "messages": [
+               |          "Scenario label can contain only alphanumeric characters",
+               |          "Scenario label can contain up to 5 characters"
+               |      ]
+               |    }
+               |  ]
+               |}
+               |""".stripMargin
+          )
+      }
     }
   }
 

@@ -423,7 +423,7 @@ object ProcessCompilationError {
       extends ProcessCompilationError
       with ScenarioPropertiesError
 
-  final case class ScenarioLabelValidationError(message: String, description: String, labels: List[String])
+  final case class ScenarioLabelValidationError(label: String, description: String)
       extends ProcessCompilationError
       with ScenarioPropertiesError
 

@@ -39,7 +39,7 @@ class ScenarioLabelsApiHttpService(
             .swap
             .map { errors =>
               ScenarioLabelsValidationResponseDto(validationErrors =
-                errors.map(e => ValidationError(label = e.label, message = e.validationMessage)).toList
+                errors.map(e => ValidationError(label = e.label, messages = e.validationMessages.toList)).toList
               )
             }
             .getOrElse(ScenarioLabelsValidationResponseDto(validationErrors = List.empty))

@@ -66,11 +66,12 @@ object TestFactory {
 
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
 
-  val processValidator: UIProcessValidator = ProcessTestData.processValidator.withFragmentResolver(sampleResolver)
+  val processValidator: UIProcessValidator = ProcessTestData.testProcessValidator(fragmentResolver = sampleResolver)
 
-  val flinkProcessValidator: UIProcessValidator = ProcessTestData.processValidator
-    .withFragmentResolver(sampleResolver)
-    .withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
+  val flinkProcessValidator: UIProcessValidator = ProcessTestData.testProcessValidator(
+    fragmentResolver = sampleResolver,
+    scenarioProperties = FlinkStreamingPropertiesConfig.properties
+  )
 
   val processValidatorByProcessingType: ProcessingTypeDataProvider[UIProcessValidator, _] =
     mapProcessingTypeDataProvider(Streaming.stringify -> flinkProcessValidator)
