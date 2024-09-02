@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.util.functions
 
 import cats.data.ValidatedNel
-import cats.implicits.catsSyntaxValidatedId
+import cats.implicits._
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeNumbersOperation
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{
   TypedClass,
   TypedObjectTypingResult,
   TypedObjectWithValue,
+  TypingResult,
   Unknown
 }
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
@@ -362,11 +363,76 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case TypedObjectTypingResult(x, _, infoX) :: TypedObjectTypingResult(y, _, infoY) :: Nil =>
-        Typed.record(x ++ y, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY).validNel
+      case TypedObjectTypingResult(x, firstType, infoX) :: TypedObjectTypingResult(y, secondType, infoY) :: Nil =>
+        determineTypeWithGenerics(firstType, secondType) match {
+          case tc: TypedClass => Typed.record(x ++ y, tc, infoX ++ infoY).validNel
+          case _              => unknownMapType.validNel
+        }
       case (typedClass: TypedClass) :: _      => typedClass.validNel
       case _ :: (typedClass: TypedClass) :: _ => typedClass.validNel
       case _                                  => unknownMapType.validNel
+    }
+
+    private def determineTypeWithGenerics(firstType: TypedClass, secondType: TypedClass): TypingResult = {
+      (firstType.params.map(_.withoutValue), secondType.params.map(_.withoutValue)) match {
+        case ((k1: TypedClass) :: (v1: TypedClass) :: _, (k2: TypedClass) :: (v2: TypedClass) :: _) =>
+          val params = List(
+            determineType(k1, k2, determineGenerics(k1.params, k2.params)),
+            determineType(v1, v2, determineGenerics(v1.params, v2.params))
+          )
+          determineType(firstType, secondType, params)
+        case ((k1: TypedClass) :: _, (k2: TypedClass) :: _) =>
+          val params = List(determineType(k1, k2, determineGenerics(k1.params, k2.params)))
+          determineType(firstType, secondType, params)
+        case _ => determineType(firstType, secondType, Nil)
+      }
+    }
+
+    private def determineType(
+        firstType: TypedClass,
+        secondType: TypedClass,
+        genericTypes: List[TypingResult]
+    ): TypingResult =
+      if (firstType.klass.isAssignableFrom(secondType.klass) && genericTypes.nonEmpty) {
+        val params = fillParamsWithUnknownToRequiredSize(firstType, genericTypes)
+        Typed.genericTypeClass(firstType.klass, params)
+      } else if (secondType.klass.isAssignableFrom(firstType.klass) && genericTypes.nonEmpty) {
+        val params = fillParamsWithUnknownToRequiredSize(secondType, genericTypes)
+        Typed.genericTypeClass(secondType.klass, params)
+      } else if (firstType.klass.isAssignableFrom(secondType.klass) && genericTypes.isEmpty) {
+        Typed.typedClass(firstType.klass)
+      } else if (secondType.klass.isAssignableFrom(firstType.klass) && genericTypes.isEmpty) {
+        Typed.typedClass(secondType.klass)
+      } else {
+        Unknown
+      }
+
+    private def fillParamsWithUnknownToRequiredSize(
+        tc: TypedClass,
+        genericTypes: List[TypingResult]
+    ): List[TypingResult] =
+      genericTypes ++ List.fill(tc.klass.getTypeParameters.size - genericTypes.size)(Unknown)
+
+    private def determineGenerics(
+        firstParams: List[TypingResult],
+        secondParams: List[TypingResult]
+    ): List[TypingResult] = {
+      val firstParamsWithoutValue  = firstParams.map(_.withoutValue)
+      val secondParamsWithoutValue = secondParams.map(_.withoutValue)
+      if (firstParamsWithoutValue == secondParamsWithoutValue) {
+        firstParamsWithoutValue
+      } else if (firstParams.size == secondParams.size) {
+        firstParamsWithoutValue
+          .zip(secondParamsWithoutValue)
+          .map {
+            case (tc1: TypedClass, tc2: TypedClass) => Some(determineTypeWithGenerics(tc1, tc2))
+            case _                                  => None
+          }
+          .sequence
+          .getOrElse(Nil)
+      } else {
+        Nil
+      }
     }
 
   }

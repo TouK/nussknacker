@@ -2,6 +2,14 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.18.0 (Not released yet)
+
+### Other changes
+
+* [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
+  are registered based on class of Serializer instead of instance of Serializer. If you have values that were
+  serialized by these Serializers in some state, the state won't be restored after upgrade.
+
 ## In version 1.17.0 (Not released yet)
 
 ### Code API changes
