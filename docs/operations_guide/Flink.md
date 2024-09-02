@@ -16,7 +16,7 @@ In order to understand various metrics dealing with the concept of time (e.g. de
 Flink reference [documentation on time concepts](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
  is a good starting point.
 
-Pay special attention to the concept of event time and watermarks, see also [documentation](../scenarios_authoring/Intro.md#notion-of-time) to understand how Nussknacker deals with them.
+Pay special attention to the concept of event time and watermarks, see also [documentation](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only) to understand how Nussknacker deals with them.
 
 
 ### Integration with Apache Kafka
@@ -73,7 +73,7 @@ In order to achieve End-to-end Exactly-once event processing, you need to check 
     Default value for the interval is 10 minutes which is not acceptable for Exactly-once.
     Therefore, it needs to be configured to appropriate value.
     - Interval can be configured globally for all scenarios via: 
-      [Flink model configuration](../configuration/model/Flink.md#flink-specific-model-configuration).
+      [Flink model configuration](../configuration/model/Flink.md).
     - You can override global interval in a scenario by setting `Checkpoint interval in seconds` in a scenario 
       properties on UI.
   - Configure Flink Kafka producer `transaction.timeout.ms` to be equal to: "maximum checkpoint duration + maximum
@@ -271,7 +271,7 @@ Diagnosing most of the problems below requires access to:
 | Checkpoints are failing                                                                     | Check jobmanager logs and/or Flink console                                                                                                                                                              |
 | Redeploy of scenario times out                                                              | Check jobmanager logs and/or Flink console                                                                                                                                                              |
 | `State is incompatible, please stop process and start again with clean state` during deploy | <ul><li>Check if Nussknacker has access to savepoints</li><li>Analyze if new state was added - if this is the case probably cancel before deploy is needed (to get rid of incompatible state)</li></ul> |
-| Aggregate events are not emitted by aggregate in time windows nodes                         | Idle source (Kafka topic) or idle Kafka partition confuse Flink's watermark mechanism. To avoid this problem ensure that each Kafka source partition continually gets events. Alternatively change [idleTimeout](../integration/KafkaIntegration.md/#configuration-for-flink-engine) configuration to ensure that idle source emits watermarks at acceptable intervals.  |
+| Aggregate events are not emitted by aggregate in time windows nodes                         | Idle source (Kafka topic) or idle Kafka partition confuse Flink's watermark mechanism. To avoid this problem ensure that each Kafka source partition continually gets events. Alternatively change [idleTimeout](../integration/KafkaIntegration.md#configuration-for-flink-engine) configuration to ensure that idle source emits watermarks at acceptable intervals.  |
 ### Nussknacker metrics
 
 One of the crucial aspects of running production streaming jobs is monitoring. In this section we'll explain how the Nussknacker scenario running on the Flink cluster gives rise to certain metrics, how to process them and display them in Grafana.

@@ -7,7 +7,7 @@ All the **Nussknacker** code available on [GitHub](https://github.com/TouK/nussk
 
 ### Enterprise edition
 
-The [Nussknacker Enterprise](about/NussknackerEnterprise) version is subject to different license terms. Contact info@nussknacker.io for more information. 
+The [Nussknacker Enterprise](./about/NussknackerEnterprise.md) version is subject to different license terms. Contact info@nussknacker.io for more information. 
 
 Additionally, the ML Enricher enterprise component uses [JPMML-Evaluator](https://github.com/jpmml/jpmml-evaluator) library licensed under the BSD 3-Clause License reproduced below:
 

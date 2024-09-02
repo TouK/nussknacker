@@ -10,22 +10,22 @@ The Docker image and the binary distribution contain minimal working [configurat
 additional configuration files. Check [Conventions section](#conventions) for more details how to amend and override the minimal configuration file.
 This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker), which prepares its own config file.
 
-The location and name of the configuration files is defined by the `CONFIG_FILE` environment variable. Consult [Basic environment variables](../configuration/Common.mdx#basic-environment-variables) for information on how this variable is resolved.
+The location and name of the configuration files is defined by the `CONFIG_FILE` environment variable. Consult [Basic environment variables](#basic-environment-variables) for information on how this variable is resolved.
 
 Details of K8s based configuration can be found in  [Nussknacker Helm chart documentation](https://artifacthub.io/packages/helm/touk/nussknacker).
 ## Configuration areas
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
 
-* [Designer](../about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
+* [Designer](../about/GLOSSARY.md#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
 * Scenario Types configuration, comprising of:
-  * [Model](./model/ModelConfiguration.mdx) configuration.
+  * [Model](model/ModelConfiguration.mdx) configuration.
   * [Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration,
-  * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
+  * [Category](./DesignerConfiguration.md#scenario-type-categories) configuration
 
-[Model](../about/GLOSSARY#model) configuration defines which components and which [Processing Mode](../about/ProcessingModes) will be available for the user.
-[Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration defines how scenario using these components will be deployed on the [Engine](../about/engine).
-[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given combination of [Model](../about/GLOSSARY#model) and [Scenario Deployment](./ScenarioDeploymentConfiguration.md).
+[Model](../about/GLOSSARY.md#model) configuration defines which components and which [Processing Mode](../about/ProcessingModes.md) will be available for the user.
+[Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration defines how scenario using these components will be deployed on the [Engine](../about/engines/Engines.md).
+[Category](./DesignerConfiguration.md#scenario-type-categories) defines who has access to the given combination of [Model](../about/GLOSSARY.md#model) and [Scenario Deployment](./ScenarioDeploymentConfiguration.md).
 
 The Scenario Type is a convenient umbrella term that groups all these things. Diagram below presents main relationships between configuration areas.
 
@@ -69,7 +69,7 @@ scenarioTypes {"{"}  <br/>
 It is worth noting that one Nussknacker Designer may be used to work with multiple Scenario Types and allow user:
 
 * To use different set of components depending on the category
-* To deploy scenarios on different [Engines](../about/engines)
+* To deploy scenarios on different [Engines](../about/engines/Engines.md)
 
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.
 
@@ -96,8 +96,8 @@ Because we use [HOCON](#conventions), you can set (or override) any configuratio
 | LOGS_DIR                      | string          | $WORKING_DIR/logs                                                                                                                             | Location of logs                                                                                                                                                                                                                                          |
 | HTTP_INTERFACE                | string          | 0.0.0.0                                                                                                                                       | Network address Nussknacker binds to                                                                                                                                                                                                                      |
 | HTTP_PORT                     | string          | 8080                                                                                                                                          | HTTP port used by Nussknacker                                                                                                                                                                                                                             |
-| HTTP_PUBLIC_PATH              | string          |                                                                                                                                               | Public HTTP path prefix the Designer UI is served at, e.g. using external proxy like [nginx](#configuring-the-designer-with-nginx-http-public-path)                                                                                                       |
-| DB_URL                        | string          | jdbc:hsqldb:file:$\{STORAGE_DIR}/db;sql.syntax_ora=true                                                                                        | [See also](../configuration/DesignerConfiguration.md#database-configuration) for more information                                                                                                                           |
+| HTTP_PUBLIC_PATH              | string          |                                                                                                                                               | Public HTTP path prefix the Designer UI is served at, e.g. using external proxy like [nginx](../installation/Binaries.md#configuring-the-designer-with-nginx-http-public-path)                                                                                                       |
+| DB_URL                        | string          | jdbc:hsqldb:file:$\{STORAGE_DIR}/db;sql.syntax_ora=true                                                                                        | [See also](./DesignerConfiguration.md#database-configuration) for more information                                                                                                                           |
 | DB_DRIVER                     | string          | org.hsqldb.jdbc.JDBCDriver                                                                                                                    | Database driver class name                                                                                                                                                                                                                                |
 | DB_USER                       | string          | SA                                                                                                                                            | User used for connection to database                                                                                                                                                                                                                      |
 | DB_PASSWORD                   | string          |                                                                                                                                               | Password used for connection to database                                                                                                                                                                                                                  |
@@ -151,7 +151,7 @@ Because we use [HOCON](#conventions), you can set (or override) any configuratio
   * [file with configuration override](https://github.com/TouK/nussknacker-installation-example/blob/master/designer/application-customizations.conf)
 * If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker Docker image.
 
-It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](./model/ModelConfiguration.mdx) for the details.
+It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](model/ModelConfiguration.mdx) for the details.
 
 ## What is next?
-Most likely you will want to configure enrichers - they are configured under the `modelConfig.components` configuration key - see the [configuration file](#configuration-file). The details of enrichers configuration are in the [Integration chapter](../integration/) of the documentation.
+Most likely you will want to configure enrichers - they are configured under the `modelConfig.components` configuration key - see the [configuration file](#configuration-file). The details of enrichers configuration are in the [Integration chapter](../integration/index.mdx) of the documentation.
