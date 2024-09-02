@@ -187,6 +187,13 @@ export function resolveSearchOption(filterRawText: string): SearchOption {
     }
 }
 
+function splitString(input: string): string[] {
+    //split string by comma respecting quoted elements
+    //"a,b,c" -> ["a", "b", "c"]
+    //"a,\"b,c\",d" -> ["a", "b,c", "d"]
+    return input.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+}
+
 function parseRawTextToAdvancedSearch(text: string): AdvancedSearch {
     const result: AdvancedSearch = { searchType: SearchType.ADVANCED };
     const regex = /(\w+):\(([^)]*)\)/g;
@@ -194,10 +201,11 @@ function parseRawTextToAdvancedSearch(text: string): AdvancedSearch {
 
     while ((match = regex.exec(text)) !== null) {
         const key = match[1] as keyof Exclude<keyof AdvancedSearch, "searchType">;
-        console.log(key);
-        const values = match[2].split(",").map((value) => value.trim().replace(/"/g, ""));
+        console.log(match[2]);
+        const values = splitString(match[2]).map((value) => value.trim().replace(/"/g, ""));
+        //const values = match[2].split(",").map((value) => value.trim().replace(/"/g, ""));
 
-        result[key] = values.length > 0 ? values : undefined;
+        result[key] = values.length > 0 ? values : "";
     }
 
     return result;
