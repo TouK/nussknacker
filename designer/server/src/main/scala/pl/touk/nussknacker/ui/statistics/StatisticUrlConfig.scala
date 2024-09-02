@@ -9,5 +9,5 @@ final case class StatisticUrlConfig(
     nuStatsUrl: String = "https://stats.nussknacker.io/?",
     queryParamsSeparator: String = "&",
     emptyString: String = "",
-    maybePublicEncryptionKey: Option[PublicEncryptionKey] = None
+    publicEncryptionKey: PublicEncryptionKey
 )

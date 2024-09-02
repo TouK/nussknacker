@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test.utils
 
-import pl.touk.nussknacker.ui.statistics.EncryptionType
+import pl.touk.nussknacker.ui.statistics.{EncryptionType, PublicEncryptionKey}
 
 import java.nio.charset.StandardCharsets
 import java.security.{Key, KeyFactory}
@@ -11,7 +11,7 @@ import javax.crypto.spec.SecretKeySpec
 
 object StatisticEncryptionSupport {
 
-  val privateKeyForTest =
+  private val privateKeyForTest =
     "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDBxZLtcp68Jpw3ExiD3RwSMSZot2E6afCMYnY+EMzle3NdK+lwg/cSUoaetKJT" +
       "i0IZFShug4ehCNND0mAKf1F2+QbLC+GXrvTh0xVfQAzDruLJMjCSeXK9n2DIvxWcNdU1dkKi+VR7dafKM1oibPsD9sQhAWKfahcRq9TdfeEfVj" +
       "pMQmiPubgsZ+orzW4jAtCdJqpDW+bJwJpbGXtLokGanAWRqsGKH8uMyADMn29PmvTL9CLaBQbEA/4FNI8TRmYZtPMvjbZZ4zku0yug/5viG6F8" +
@@ -30,11 +30,13 @@ object StatisticEncryptionSupport {
 
   private lazy val privateKey = setupPrivateKey(privateKeyForTest)
 
-  val publicKeyForTest =
+  private val publicKeyForTest =
     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwcWS7XKevCacNxMYg90cEjEmaLdhOmnwjGJ2PhDM5XtzXSvpcIP3ElKGnrSiU4tCGRUo" +
       "boOHoQjTQ9JgCn9RdvkGywvhl6704dMVX0AMw67iyTIwknlyvZ9gyL8VnDXVNXZCovlUe3WnyjNaImz7A/bEIQFin2oXEavU3X3hH1Y6TEJoj7" +
       "m4LGfqK81uIwLQnSaqQ1vmycCaWxl7S6JBmpwFkarBih/LjMgAzJ9vT5r0y/Qi2gUGxAP+BTSPE0ZmGbTzL422WeM5LtMroP+b4huhfFEa3cKl" +
       "EnnKoCjeTxLABPJhTxbLpl8lKsnkTiHCdnCC6vqUEO4vbbXGFb/WuQIDAQAB"
+
+  lazy val publicKey: PublicEncryptionKey = PublicEncryptionKey(publicKeyForTest)
 
   def decode(urlString: String): Map[String, String] = {
     val queryParams = QueryParamsHelper.extractFromURLString(urlString)
@@ -52,6 +54,16 @@ object StatisticEncryptionSupport {
     val symmetricKey        = new SecretKeySpec(decodedSymmetricKey, "AES")
     val decodedQueryParams  = decode(queryParamsToDecode, symmetricKey, EncryptionType.AES)
     new String(decodedQueryParams, StandardCharsets.UTF_8)
+  }
+
+  def decodeToString(urlString: String): String = {
+    val queryParams = QueryParamsHelper.extractFromURLString(urlString)
+    (queryParams.get("encryptionKey"), queryParams.get("encryptedParams")) match {
+      case (Some(encodedSymmetricKey), Some(encodedQueryParams)) =>
+        decode(encodedSymmetricKey, encodedQueryParams)
+      case _ =>
+        throw new IllegalArgumentException("Cannot decode query params")
+    }
   }
 
   private def decode(toDecode: String, key: Key, encryptionType: EncryptionType.Value): Array[Byte] = {
