@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractor
+import pl.touk.nussknacker.engine.flink.table.extractor.TablesDefinitionDiscovery
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.tableNameParamName
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
@@ -29,7 +29,7 @@ class TableSourceFactory(
 
   @transient
   private lazy val tableDefinitions =
-    TablesExtractor.prepareExtractorUnsafe(sqlStatements).extractTablesFromFlinkRuntime
+    TablesDefinitionDiscovery.prepareDiscoveryUnsafe(sqlStatements).listTables
 
   override type State = TableDefinition
 

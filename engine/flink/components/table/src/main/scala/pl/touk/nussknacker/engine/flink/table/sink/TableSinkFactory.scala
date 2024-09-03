@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractor
+import pl.touk.nussknacker.engine.flink.table.extractor.TablesDefinitionDiscovery
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
@@ -62,7 +62,7 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
 
   @transient
   private lazy val tableDefinitions =
-    TablesExtractor.prepareExtractorUnsafe(sqlStatements).extractTablesFromFlinkRuntime
+    TablesDefinitionDiscovery.prepareDiscoveryUnsafe(sqlStatements).listTables
 
   override type State = TransformationState
 

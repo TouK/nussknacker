@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
-import pl.touk.nussknacker.engine.flink.table.extractor.{SqlStatementReader, TablesExtractor}
+import pl.touk.nussknacker.engine.flink.table.extractor.{SqlStatementReader, TablesDefinitionDiscovery}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
@@ -18,8 +18,10 @@ class TableSourceDataGenerationTest
 
   private val statements = SqlStatementReader.readSql(SimpleTable.sqlStatement)
 
+  private val discovery = TablesDefinitionDiscovery.prepareDiscovery(statements).validValue
+
   private val tableSource = new TableSource(
-    tableDefinition = TablesExtractor.prepareExtractor(statements).validValue.extractTablesFromFlinkRuntime.loneElement,
+    tableDefinition = discovery.listTables.loneElement,
     sqlStatements = statements,
     testDataGenerationMode = TestDataGenerationMode.Random
   )

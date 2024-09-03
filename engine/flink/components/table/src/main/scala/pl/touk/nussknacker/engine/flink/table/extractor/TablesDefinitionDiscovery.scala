@@ -1,46 +1,46 @@
 package pl.touk.nussknacker.engine.flink.table.extractor
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import org.apache.flink.table.catalog.ObjectIdentifier
-import pl.touk.nussknacker.engine.flink.table.{TableDefinition, extractor}
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementNotExecutedError.statementNotExecutedErrorDescription
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.{TableDefinition, extractor}
 
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.{Failure, Success, Try}
 
 // TODO: Make this extractor more memory/cpu efficient and ensure closing of resources. For more details see
 // https://github.com/TouK/nussknacker/pull/5627#discussion_r1512881038
-class TablesExtractor(tableEnv: TableEnvironment) extends LazyLogging {
+class TablesDefinitionDiscovery(tableEnv: TableEnvironment) extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
 
-  def extractTablesFromFlinkRuntime: List[TableDefinition] = {
+  def listTables: List[TableDefinition] = {
     for {
       catalogName  <- tableEnv.listCatalogs().toList
       catalog      <- tableEnv.getCatalog(catalogName).toScala.toList
       databaseName <- catalog.listDatabases.asScala.toList
       tableName    <- tableEnv.listTables(catalogName, databaseName).toList
-      // table path may be different for some catalog-managed tables - for example JDBC catalog adds a schema name to
-      // table name when listing tables, but querying using tablePath with catalog.database.schema.tableName throws
-      // exception
       tableId = ObjectIdentifier.of(catalogName, databaseName, tableName)
-      table = Try(tableEnv.from(tableId.toString))
-        .getOrElse(
-          throw new IllegalStateException(s"Table extractor could not locate a created table with path: $tableId")
-        )
-    } yield TableDefinition(tableName, table.getResolvedSchema)
+    } yield extractTableDefinition(tableId)
+  }
+
+  private def extractTableDefinition(tableId: ObjectIdentifier) = {
+    val table = Try(tableEnv.from(tableId.toString)).getOrElse(
+      throw new IllegalStateException(s"Table extractor could not locate a created table with path: $tableId")
+    )
+    TableDefinition(tableId.getObjectName, table.getResolvedSchema)
   }
 
 }
 
-object TablesExtractor {
+object TablesDefinitionDiscovery {
 
-  def prepareExtractorUnsafe(sqlStatements: List[SqlStatement]): TablesExtractor = {
-    prepareExtractor(sqlStatements).valueOr { errors =>
+  def prepareDiscoveryUnsafe(sqlStatements: List[SqlStatement]): TablesDefinitionDiscovery = {
+    prepareDiscovery(sqlStatements).valueOr { errors =>
       throw new IllegalStateException(
         errors.toList
           .map(_.message)
@@ -50,9 +50,9 @@ object TablesExtractor {
 
   }
 
-  def prepareExtractor(
+  def prepareDiscovery(
       sqlStatements: List[SqlStatement]
-  ): ValidatedNel[SqlStatementNotExecutedError, TablesExtractor] = {
+  ): ValidatedNel[SqlStatementNotExecutedError, TablesDefinitionDiscovery] = {
     val settings = EnvironmentSettings
       .newInstance()
       .build()
@@ -66,8 +66,8 @@ object TablesExtractor {
     )
     NonEmptyList
       .fromList(sqlErrors)
-      .map(_.invalid[TablesExtractor])
-      .getOrElse(new extractor.TablesExtractor(tableEnv).valid)
+      .map(_.invalid[TablesDefinitionDiscovery])
+      .getOrElse(new extractor.TablesDefinitionDiscovery(tableEnv).valid)
   }
 
 }
