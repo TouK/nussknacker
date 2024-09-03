@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider.config
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
+import pl.touk.nussknacker.engine.flink.table.extractor.{DataDefinitionRegistrar, SqlStatementReader}
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinComponent
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
@@ -37,17 +37,18 @@ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     val parsedConfig                    = TableComponentProviderConfig.parse(config)
     val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
-    val sqlStatements                   = readSqlFromFile(Paths.get(parsedConfig.tableDefinitionFilePath))
+    val sqlStatements                   = parsedConfig.tableDefinitionFilePath.map(Paths.get(_)).map(readSqlFromFile)
+    val dataDefinitionRegistrar         = DataDefinitionRegistrar(sqlStatements)
 
     ComponentDefinition(
       tableComponentName,
       new TableSourceFactory(
-        sqlStatements,
+        dataDefinitionRegistrar,
         testDataGenerationModeOrDefault
       )
     ) :: ComponentDefinition(
       tableComponentName,
-      new TableSinkFactory(sqlStatements)
+      new TableSinkFactory(dataDefinitionRegistrar)
     ) :: configIndependentComponents
   }
 
@@ -83,7 +84,8 @@ object FlinkTableComponentProvider {
 }
 
 final case class TableComponentProviderConfig(
-    tableDefinitionFilePath: String,
+    tableDefinitionFilePath: Option[String],
+    catalogConfiguration: Option[Map[String, String]],
     testDataGenerationMode: Option[TestDataGenerationMode]
 )
 

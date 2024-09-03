@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlSt
 import pl.touk.nussknacker.engine.flink.table.{TableDefinition, extractor}
 
 import scala.jdk.OptionConverters.RichOptional
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 // TODO: Make this extractor more memory/cpu efficient and ensure closing of resources. For more details see
 // https://github.com/TouK/nussknacker/pull/5627#discussion_r1512881038
@@ -39,55 +39,14 @@ class TablesDefinitionDiscovery(tableEnv: TableEnvironment) extends LazyLogging 
 
 object TablesDefinitionDiscovery {
 
-  def prepareDiscoveryUnsafe(sqlStatements: List[SqlStatement]): TablesDefinitionDiscovery = {
-    prepareDiscovery(sqlStatements).valueOr { errors =>
-      throw new IllegalStateException(
-        errors.toList
-          .map(_.message)
-          .mkString("Errors occurred when parsing sql component configuration file: ", ", ", "")
-      )
-    }
-
-  }
-
   def prepareDiscovery(
-      sqlStatements: List[SqlStatement]
+      dataDefinitionRegistrar: DataDefinitionRegistrar
   ): ValidatedNel[SqlStatementNotExecutedError, TablesDefinitionDiscovery] = {
     val settings = EnvironmentSettings
       .newInstance()
       .build()
     val tableEnv = TableEnvironment.create(settings)
-
-    val sqlErrors = sqlStatements.flatMap(s =>
-      Try(tableEnv.executeSql(s)) match {
-        case Failure(exception) => Some(SqlStatementNotExecutedError(s, exception))
-        case Success(_)         => None
-      }
-    )
-    NonEmptyList
-      .fromList(sqlErrors)
-      .map(_.invalid[TablesDefinitionDiscovery])
-      .getOrElse(new extractor.TablesDefinitionDiscovery(tableEnv).valid)
+    dataDefinitionRegistrar.registerIn(tableEnv).map(_ => new TablesDefinitionDiscovery(tableEnv))
   }
-
-}
-
-final case class SqlStatementNotExecutedError(
-    statement: SqlStatement,
-    exception: Throwable,
-) {
-
-  val message: String = {
-    val baseErrorMessage    = s"$statementNotExecutedErrorDescription"
-    val sqlStatementMessage = s"Sql statement: $statement"
-    val exceptionMessage    = s"Caused by: $exception"
-    s"$baseErrorMessage\n$sqlStatementMessage\n$exceptionMessage."
-  }
-
-}
-
-object SqlStatementNotExecutedError {
-
-  private val statementNotExecutedErrorDescription = "Could not execute sql statement. The statement may be malformed."
 
 }
