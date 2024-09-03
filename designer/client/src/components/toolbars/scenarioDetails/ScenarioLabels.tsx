@@ -61,9 +61,12 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
     const [input, setInput] = useState("");
     const [options, setOptions] = useState<string[]>([]);
 
-    const initialLabelErrors = useSelector(getScenarioLabelsErrors);
+    const initialLabelErrors = useSelector(getScenarioLabelsErrors).filter((e) => scenarioLabels.includes(e.label));
+    console.log(`Initial label errors: ${JSON.stringify(initialLabelErrors)}`);
     const [labelsTyping, setLabelTyping] = useState(false);
     const [labelsErrors, setLabelsErrors] = useState<ScenarioLabelValidationError[]>(initialLabelErrors);
+
+    console.log(`Label errors: ${JSON.stringify(labelsErrors)}`);
 
     const handleAddLabelClick = () => {
         setShowLabelsEditor(true);
@@ -73,7 +76,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
     const inputHelperText = () => {
         if (labelsTyping && !isOpen) {
             return "Typing...";
-        } else if (labelsErrors.length != 0) {
+        } else if (labelsErrors.filter((x) => scenarioLabels.includes(x.label)).length != 0) {
             return labelsErrors
                 .map((e) => `Incorrect value '${e.label}': ${e.messages.join(",")}`)
                 .map((message) => (
@@ -99,7 +102,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
 
             setLabelTyping(false);
         }, 1);
-    }, []);
+    }, [scenarioLabels]);
 
     const fetchLabels = useCallback(async () => {
         setIsFetching(true);
@@ -141,7 +144,6 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                     onChange={(e, labels) => {
                         console.log("On change");
                         setLabels(labels);
-                        validateLabels(input);
                     }}
                     onClose={() => {
                         setIsOpen(false);
