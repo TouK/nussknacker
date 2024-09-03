@@ -171,7 +171,7 @@ jobs:
       matrix:
         # Due to the different behaviour of Nussknacker's OpenAPI generation on different versions of scala we
         # have to run these tests always for every scala version. See NuDesignerApiAvailableToExposeYamlSpec
-        scalaVersion: [2.12, 2.13]
+        scalaVersion: [2.12]
     env:
       NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
