@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
-import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{DataTypes, Schema, TableEnvironment}
+import org.apache.flink.table.api.{DataTypes, Schema}
 import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
@@ -27,7 +25,8 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar
+import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar._
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._
@@ -36,7 +35,7 @@ import scala.jdk.CollectionConverters._
 
 class TableSource(
     tableDefinition: TableDefinition,
-    sqlStatements: List[SqlStatement],
+    dataDefinitionRegistrar: DataDefinitionRegistrar,
     testDataGenerationMode: TestDataGenerationMode
 ) extends StandardFlinkSource[Row]
     with TestWithParametersSupport[Row]
@@ -48,8 +47,8 @@ class TableSource(
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Row] = {
     val tableEnv = StreamTableEnvironment.create(env)
+    dataDefinitionRegistrar.registerIn(tableEnv).orFail
 
-    executeSqlDDL(sqlStatements, tableEnv)
     val selectQuery = tableEnv.from(s"`${tableDefinition.tableName}`")
 
     val finalQuery = flinkNodeContext.nodeDeploymentData
@@ -114,7 +113,7 @@ class TableSource(
         FlinkMiniClusterTableOperations.generateLiveTestData(
           limit = size,
           schema = generateDataSchema,
-          sqlStatements = sqlStatements,
+          dataDefinitionRegistrar = dataDefinitionRegistrar,
           tableName = tableDefinition.tableName
         )
     }
@@ -128,10 +127,4 @@ class TableSource(
 
 object TableSource {
   private val filteringInternalViewName = "filteringView"
-
-  private[source] def executeSqlDDL(
-      sqlStatements: List[SqlStatement],
-      tableEnv: TableEnvironment
-  ): Unit = sqlStatements.foreach(tableEnv.executeSql)
-
 }

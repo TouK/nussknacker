@@ -22,8 +22,8 @@ class TablesDefinitionDiscoveryTest
     with TableDrivenPropertyChecks {
 
   test("extracts configuration from valid sql statement") {
-    val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
-    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(statements).validValue
+    val registrar         = DataDefinitionRegistrar(Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)))
+    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(registrar).validValue
     val tablesDefinitions = discovery.listTables
     val tableDefinition   = tablesDefinitions.loneElement
     val sourceRowType     = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
@@ -64,8 +64,8 @@ class TablesDefinitionDiscoveryTest
        |      'connector' = 'datagen'
        |);""".stripMargin
 
-    val statements        = SqlStatementReader.readSql(statementsStr)
-    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(statements).validValue
+    val registrar         = DataDefinitionRegistrar(Some(SqlStatementReader.readSql(statementsStr)))
+    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(registrar).validValue
     val tablesDefinitions = discovery.listTables
 
     tablesDefinitions.loneElement shouldBe TableDefinition(
@@ -76,8 +76,8 @@ class TablesDefinitionDiscoveryTest
 
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
-      val parsedStatement             = SqlStatementReader.readSql(invalidStatement)
-      val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(parsedStatement).invalidValue
+      val registrar                   = DataDefinitionRegistrar(Some(SqlStatementReader.readSql(invalidStatement)))
+      val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(registrar).invalidValue
 
       sqlStatementExecutionErrors.size shouldBe 1
     }
