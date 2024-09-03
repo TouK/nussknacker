@@ -63,7 +63,7 @@ please consult their documentation.
 
 You can set up Nussknacker as a systemd service using our example unit file.
 
-1. Download distribution as described in [Binary package installation](.)
+1. Download distribution from [GitHub](https://github.com/TouK/nussknacker/releases)
 2. Unzip it to `/opt/nussknacker`
 3. `sudo touch /lib/systemd/system/nussknacker.service`
 4. edit `/lib/systemd/system/nussknacker.service` file and add write content
