@@ -7,11 +7,11 @@ import { StoreProvider } from "./store/provider";
 import rootRoutes from "./containers/RootRoutes";
 import { BASE_PATH } from "./config";
 import { css } from "@emotion/css";
-import RootErrorBoundary from "./components/common/RootErrorBoundary";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
 import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
 import { createRoot } from "react-dom/client";
 import { BuildInfoProvider } from "./containers/BuildInfoProvider";
+import { ErrorBoundary } from "./components/common/error-boundary";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -29,7 +29,7 @@ const Root = () => {
     return (
         <>
             <NuThemeProvider>
-                <RootErrorBoundary>
+                <ErrorBoundary>
                     <StoreProvider>
                         <SettingsProvider>
                             <NussknackerInitializer>
@@ -39,7 +39,7 @@ const Root = () => {
                             </NussknackerInitializer>
                         </SettingsProvider>
                     </StoreProvider>
-                </RootErrorBoundary>
+                </ErrorBoundary>
             </NuThemeProvider>
             <GlideGridPortal />
         </>
