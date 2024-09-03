@@ -557,7 +557,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4583](https://github.com/TouK/nussknacker/pull/4583) `DeploymentManager` has new variants of method `cancel` and `stop`
   taking `DeployomentId` next to `ProcessName`. They will be used with batch processing mechanism (periodic DM) so it is necessary
   to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
-* [#4685]((https://github.com/TouK/nussknacker/pull/4685)) In `AuthenticationResources` trait it was added two new
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) In `AuthenticationResources` trait it was added two new
   methods that have to be implemented in the child classes: `def authenticationMethod(): Auth[AuthCredentials, _]` and
   `def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]`. The first one tells what
   authentication method will be used (it's for Tapir-based API purposes) and the latter one is the authentication
