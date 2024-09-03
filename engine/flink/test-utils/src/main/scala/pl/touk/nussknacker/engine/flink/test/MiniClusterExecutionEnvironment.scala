@@ -101,14 +101,35 @@ class MiniClusterExecutionEnvironment(
       // would be misleading
       assertJobInitialized(executionGraph)
       additionalChecks
-      val executionVertices  = executionGraph.getAllExecutionVertices.asScala
-      val notInExpectedState = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
-      assert(
-        notInExpectedState.isEmpty,
-        notInExpectedState
-          .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")
-          .mkString(s"Some vertices of $name are not in expected (${expectedState.mkString(", ")}) state): ", ", ", "")
-      )
+      executionGraph.getAllVertices
+      val executionVertices  = executionGraph.getAllExecutionVertices.asScala.toList
+      val notInExpectedState = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState)).toList
+      println("=== IN CHECK ===")
+      println(s"$executionVertices");
+      println(s"$notInExpectedState")
+      if (notInExpectedState.isEmpty) {
+        println(s"All vertices: ${executionVertices.map(_.getTaskNameWithSubtaskIndex)} are in expected state")
+      } else {
+        println(s"Vertices ${executionVertices.map(_.getTaskNameWithSubtaskIndex)} are not in expected state")
+      }
+      // TODO Flink bump - remove this: hypothesis testing
+      expectedState.toList match {
+        case ExecutionState.FINISHED :: Nil => {
+          assert(executionGraph.getState.equals(JobStatus.FINISHED))
+        }
+        case _ =>
+          assert(
+            notInExpectedState.isEmpty,
+            notInExpectedState
+              .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")
+              .mkString(
+                s"Some vertices of $name are not in expected (${expectedState.mkString(", ")}) state): ",
+                ", ",
+                ""
+              )
+          )
+      }
+
     }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
   }
 
