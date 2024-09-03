@@ -70,22 +70,22 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
         new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](keyType), forType[AnyRef](valueType))
       case TypedMultiset(elementType) =>
         new MultisetTypeInfo[AnyRef](forType[AnyRef](elementType))
-      case a: TypedObjectTypingResult if a.objType.klass == classOf[Row] =>
+      case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Row] =>
         val (fieldNames, typeInfos) = a.fields.unzip
         // Warning: RowTypeInfo is fields order sensitive
         new RowTypeInfo(typeInfos.map(forType).toArray[TypeInformation[_]], fieldNames.toArray)
       // TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult
-          if classOf[java.util.Map[String @unchecked, _]].isAssignableFrom(a.objType.klass) =>
+          if classOf[java.util.Map[String @unchecked, _]].isAssignableFrom(a.runtimeObjType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
       // We generally don't use scala Maps in our runtime, but it is useful for some internal type infos: TODO move it somewhere else
-      case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
+      case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Map[String, _]] =>
         TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
-      case a: SingleTypingResult if registeredTypeInfos.contains(a.objType) =>
-        registeredTypeInfos(a.objType)
+      case a: SingleTypingResult if registeredTypeInfos.contains(a.runtimeObjType) =>
+        registeredTypeInfos(a.runtimeObjType)
       // TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
-      case a: SingleTypingResult if a.objType.params.isEmpty =>
-        TypeInformation.of(a.objType.klass)
+      case a: SingleTypingResult if a.runtimeObjType.params.isEmpty =>
+        TypeInformation.of(a.runtimeObjType.klass)
       // TODO: how can we handle union - at least of some types?
       case TypedObjectWithValue(tc: TypedClass, _) =>
         forType(tc)

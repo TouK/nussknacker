@@ -10,11 +10,11 @@ import scala.language.implicitConversions
 class TypedClassDisplaySpec extends AnyFunSuite with Matchers {
 
   test("parsing array display") {
-    Typed.typedClass(classOf[Array[String]]).display should equal("Array[String]")
+    Typed.typedClass(classOf[Array[String]]).display should equal("List[String]")
   }
 
   test("parsing nested arrays display") {
-    Typed.typedClass(classOf[Array[Array[String]]]).display should equal("Array[Array[String]]")
+    Typed.typedClass(classOf[Array[Array[String]]]).display should equal("List[List[String]]")
   }
 
   test("parsing nested class display") {

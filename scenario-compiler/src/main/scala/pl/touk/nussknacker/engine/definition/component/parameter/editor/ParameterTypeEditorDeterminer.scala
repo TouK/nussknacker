@@ -10,7 +10,7 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
   override def determine(): Option[ParameterEditor] = {
     Option(typ)
       .collect { case s: SingleTypingResult =>
-        s.objType
+        s.runtimeObjType
       }
       .map(_.klass)
       .collect {

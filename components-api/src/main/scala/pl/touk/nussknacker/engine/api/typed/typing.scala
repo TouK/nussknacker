@@ -49,7 +49,13 @@ object typing {
   sealed trait SingleTypingResult extends KnownTypingResult {
     override def withoutValue: SingleTypingResult
 
-    def objType: TypedClass
+    def runtimeObjType: TypedClass
+
+    // This type should be used only for: type hints, suggester and validation
+    def typeHintsObjType: TypedClass =
+      if (runtimeObjType.klass.isArray) TypedClass(classOf[java.util.List[_]], runtimeObjType.params)
+      else runtimeObjType
+
   }
 
   object TypedObjectTypingResult {
@@ -67,7 +73,7 @@ object typing {
   case class TypedObjectTypingResult protected (
       // Order is important because we base on it in case of Flink's table-api Row serialization, see TypingResultAwareTypeInformationDetection
       fields: ListMap[String, TypingResult],
-      objType: TypedClass,
+      runtimeObjType: TypedClass,
       additionalInfo: Map[String, AdditionalDataValue] = Map.empty
   ) extends SingleTypingResult {
 
@@ -82,7 +88,7 @@ object typing {
         fields.map { case (fieldName, fieldType) =>
           fieldName -> fieldType.withoutValue
         },
-        objType,
+        runtimeObjType,
         additionalInfo
       )
 
@@ -92,7 +98,7 @@ object typing {
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
 
-    override def objType: TypedClass = valueType.objType
+    override def runtimeObjType: TypedClass = valueType.runtimeObjType
 
     override def valueOpt: Option[Any] = valueType.valueOpt
 
@@ -106,7 +112,7 @@ object typing {
   sealed trait TypedObjectWithData extends SingleTypingResult {
     def underlying: SingleTypingResult
 
-    override def objType: TypedClass = underlying.objType
+    override def runtimeObjType: TypedClass = underlying.runtimeObjType
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
@@ -208,14 +214,12 @@ object typing {
     override def withoutValue: TypedClass = this
 
     override def display: String = {
-      val className =
-        if (klass.isArray) "Array"
-        else ReflectUtils.simpleNameWithoutSuffix(klass)
+      val className = ReflectUtils.simpleNameWithoutSuffix(typeHintsObjType.klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else className
     }
 
-    override def objType: TypedClass = this
+    override def runtimeObjType: TypedClass = this
 
     def primitiveClass: Class[_] = Option(ClassUtils.wrapperToPrimitive(klass)).getOrElse(klass)
 
