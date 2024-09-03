@@ -64,7 +64,7 @@ class TypingResultBasedSerializationBenchmark {
 
   private val typingResultScalaMapSetup = new SerializationBenchmarkSetup(
     determiner
-      .forType(mapToSerializeType.copy(objType = Typed.typedClass[Map[String, Any]])),
+      .forType(mapToSerializeType.copy(runtimeObjType = Typed.typedClass[Map[String, Any]])),
     mapToSerialize.asScala.toMap
   )
 

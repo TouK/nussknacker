@@ -64,8 +64,10 @@
   * java.sql.Timestamp -> java.time.Instant
   * java.sql.Clob -> java.lang.String
 * [#6614](https://github.com/TouK/nussknacker/pull/6614) Array in SpeL improvements:
-    * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
-    * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
+  * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
+  * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
+* [#6695](https://github.com/TouK/nussknacker/pull/6680) From now on, arrays on UI are visible as lists but on a
+    background they are stored as it is and SpeL converts them to lists in a runtime.
 
 1.16.3 (8 August 2024)
 -------------------------

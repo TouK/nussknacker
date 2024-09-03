@@ -8,6 +8,7 @@ import org.springframework.expression.TypedValue;
 import org.springframework.expression.spel.support.ReflectionHelper;
 import org.springframework.expression.spel.support.ReflectiveMethodExecutor;
 import org.springframework.util.ReflectionUtils;
+import pl.touk.nussknacker.engine.spel.internal.ArrayToListConversionHandler;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -15,7 +16,11 @@ import java.lang.reflect.Modifier;
 //this basically changed org.springframework.expression.spel.support.ReflectiveMethodExecutor
 //we want to create TypeDescriptor using SpelEspReflectionHelper.convertArguments
 //which should work faster
-public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
+// As an additional feature we allow to invoke list methods on arrays and
+// in the point of the method invocation we convert an array to a list
+public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
+    private static final ArrayToListConversionHandler.ConversionAwareMethodInvoker methodInvoker =
+        new ArrayToListConversionHandler.ConversionAwareMethodInvoker();
 
     private final Method method;
 
@@ -27,7 +32,7 @@ public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
 
     private boolean argumentConversionOccurred = false;
 
-    public OmitAnnotationsMethodExecutor(ReflectiveMethodExecutor original) {
+    public NuReflectiveMethodExecutor(ReflectiveMethodExecutor original) {
         super(original.getMethod());
         this.method = original.getMethod();
         if (method.isVarArgs()) {
@@ -92,7 +97,8 @@ public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
                 arguments = ReflectionHelper.setupArgumentsForVarargsInvocation(this.method.getParameterTypes(), arguments);
             }
             ReflectionUtils.makeAccessible(this.method);
-            Object value = this.method.invoke(target, arguments);
+            //Nussknacker: we use custom method invoker which is aware of array conversion
+            Object value = methodInvoker.invoke(this.method, target, arguments);
             return new TypedValue(value, new TypeDescriptor(new MethodParameter(this.method, -1)).narrow(value));
         }
         catch (Exception ex) {

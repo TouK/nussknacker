@@ -68,6 +68,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * java.sql.Date -> java.time.LocalDate
     * java.sql.Timestamp -> java.time.Instant
     * java.sql.Clob -> java.lang.String
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
+    * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
+    * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
 
 ### REST API changes
 
