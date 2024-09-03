@@ -157,7 +157,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       query: String
   )(implicit nodeId: NodeId): TransformationStepResult = {
     try {
-      val queryMetaData  = dbMetaDataProvider.getQueryMetaData(query)
+      val queryMetaData  = dbMetaDataProvider.getQueryMetaData(query, strategyName)
       val queryArgParams = toParameters(queryMetaData.dbParameterMetaData)
       val strategy       = QueryResultStrategy(strategyName).get
       tableDefinitionForStrategyOrError(queryMetaData.tableDefinition, strategy) match {
