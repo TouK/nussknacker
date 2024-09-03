@@ -54,7 +54,7 @@ class TypingResultGen private (features: EnabledTypedFeatures) {
 
   private lazy val typingResultWithoutValueGen = typingResultWithValueGen.map(_.withoutValue)
 
-  private lazy val typedClassFromStandardTypeGen = toSingleTypingResult(typingResultWithValueGen).map(_.objType)
+  private lazy val typedClassFromStandardTypeGen = toSingleTypingResult(typingResultWithValueGen).map(_.runtimeObjType)
 
   private lazy val typedFromCustomClass = Gen.oneOf(
     List(
