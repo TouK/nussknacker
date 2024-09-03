@@ -4,8 +4,7 @@
   "properties": {
     "clientId": { "type": "string" },
     "amount": { "type": "integer" },
-    "isLast": { "type": "boolean", "default": false },
-    "eventDate": { "type": "integer" }
+    "isLast": { "type": "boolean", "default": false }
   },
   "required": ["clientId", "amount"],
   "additionalProperties": false

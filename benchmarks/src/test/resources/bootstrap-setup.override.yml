@@ -1,7 +1,7 @@
 services:
 
   bootstrap-setup:
-    image: touk/nussknacker-example-scenarios-library:latest # todo: bump
+    image: touk/nussknacker-example-scenarios-library:0.3.0-SNAPSHOT # todo: bump
     depends_on:
       nginx:
         condition: service_healthy
@@ -13,6 +13,7 @@ services:
         condition: service_healthy
     environment:
       DISABLE_EMBEDDED_EXAMPLES: true
+      BENCHMARK_FLINK_DEPLOY: false
       NU_DESIGNER_ADDRESS: "nginx:8080"
       NU_REQUEST_RESPONSE_OPEN_API_SERVICE_ADDRESS: "nginx:8181"
       KAFKA_ADDRESS: "kafka:9092"
@@ -24,3 +25,7 @@ services:
         limits:
           memory: 256M
           cpus: '0.5'
+
+  designer:
+    environment:
+      KAFKA_AUTO_OFFSET_RESET: "earliest"
