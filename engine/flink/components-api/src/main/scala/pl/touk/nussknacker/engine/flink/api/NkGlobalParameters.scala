@@ -136,7 +136,7 @@ object NkGlobalParameters {
 
     val namespaceTags = NamespaceMetricsTags(
       tags = map.view
-        .filterKeys(_.startsWith("namespaceTags."))
+        .filter { case (k, _) => k.startsWith("namespaceTags.") }
         .map { case (key, value) =>
           key.stripPrefix("namespaceTags.") -> value
         }
@@ -144,7 +144,7 @@ object NkGlobalParameters {
     )
 
     val additionalInformation = map.view
-      .filterKeys(_.startsWith("additionalInformation."))
+      .filter { case (k, _) => k.startsWith("additionalInformation.") }
       .map { case (key, value) =>
         key.stripPrefix("additionalInformation.") -> value
       }
