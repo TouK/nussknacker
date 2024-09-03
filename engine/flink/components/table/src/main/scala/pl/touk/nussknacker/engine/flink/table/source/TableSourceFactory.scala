@@ -8,15 +8,18 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.extractor.TablesDefinitionDiscovery
-import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.tableNameParamName
+import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.{
+  AvailableTables,
+  SelectedTable,
+  TableSourceFactoryState
+}
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
 
@@ -28,28 +31,30 @@ class TableSourceFactory(
     with BoundedStreamComponent {
 
   @transient
-  private lazy val tableDefinitions =
-    TablesDefinitionDiscovery.prepareDiscoveryUnsafe(sqlStatements).listTables
+  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscoveryUnsafe(sqlStatements)
 
-  override type State = TableDefinition
-
-  private val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
+  override type State = TableSourceFactoryState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): this.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
+      val tableDefinitions          = tablesDiscovery.listTables
+      val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
       NextParameters(
         parameters = tableNameParamDeclaration.createParameter() :: Nil,
         errors = List.empty,
-        state = None
+        state = Some(AvailableTables(tableDefinitions))
       )
-    case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
+    case TransformationStep(
+          (`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil,
+          Some(AvailableTables(tableDefinitions))
+        ) =>
       val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
       val initializer = new BasicContextInitializer(
         selectedTable.schema.toSourceRowDataType.getLogicalType.toTypingResult
       )
-      FinalResults.forValidation(context, Nil, Some(selectedTable))(initializer.validationContext)
+      FinalResults.forValidation(context, Nil, Some(SelectedTable(selectedTable)))(initializer.validationContext)
   }
 
   override def implementation(
@@ -57,9 +62,13 @@ class TableSourceFactory(
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
   ): Source = {
-    val selectedTable = finalStateOpt.getOrElse(
-      throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
-    )
+    val selectedTable = finalStateOpt match {
+      case Some(SelectedTable(table)) => table
+      case _ =>
+        throw new IllegalStateException(
+          s"Unexpected final state determined during parameters validation: $finalStateOpt"
+        )
+    }
     new TableSource(selectedTable, sqlStatements, testDataGenerationMode)
   }
 
@@ -68,5 +77,11 @@ class TableSourceFactory(
 }
 
 object TableSourceFactory {
-  val tableNameParamName: ParameterName = ParameterName("Table")
+
+  sealed trait TableSourceFactoryState
+
+  private case class AvailableTables(tableDefinitions: List[TableDefinition]) extends TableSourceFactoryState
+
+  private case class SelectedTable(tableDefinition: TableDefinition) extends TableSourceFactoryState
+
 }
