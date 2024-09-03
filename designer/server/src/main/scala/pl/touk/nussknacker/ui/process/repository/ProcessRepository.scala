@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import akka.http.scaladsl.model.HttpHeader
-import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
@@ -13,7 +12,7 @@ import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntity
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,

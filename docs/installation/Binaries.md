@@ -45,9 +45,9 @@ We provide following scripts:
 | $NUSSKNACKER_DIR/conf/logback.xml        | Configured by LOGBACK_FILE property in standalone setup | Location of logging configuration. Can be overwritten to specify other logger logging levels                                                 |
 | $NUSSKNACKER_DIR/conf/docker-logback.xml | Configured by LOGBACK_FILE property in docker setup     | Location of logging configuration. Can be overwritten to specify other logger logging levels                                                 |
 | $NUSSKNACKER_DIR/conf/users.conf         | Configured by AUTHENTICATION_USERS_FILE property        | Location of Nussknacker Component Providers                                                                                                  |
-| $NUSSKNACKER_DIR/model/defaultModel.jar  | Used in MODEL_CLASS_PATH property                       | JAR with generic model (base components library)                                                                                             |
-| $NUSSKNACKER_DIR/model/flinkExecutor.jar | Used in MODEL_CLASS_PATH property                       | JAR with Flink executor, used by scenarios running on Flink                                                                                  |
-| $NUSSKNACKER_DIR/components              | Can be used in MODEL_CLASS_PATH property                | Directory with Nussknacker Component Provider JARS                                                                                           |
+| $NUSSKNACKER_DIR/model/defaultModel.jar  |                                                         | JAR with generic model (base components library)                                                                                             |
+| $NUSSKNACKER_DIR/model/flinkExecutor.jar |                                                         | JAR with Flink executor, used by scenarios running on Flink                                                                                  |
+| $NUSSKNACKER_DIR/components              |                                                         | Directory with Nussknacker Component Provider JARS                                                                                           |
 | $NUSSKNACKER_DIR/lib                     |                                                         | Directory with Nussknacker base libraries                                                                                                    |
 | $NUSSKNACKER_DIR/managers                |                                                         | Directory with Nussknacker Deployment Managers                                                                                               |
 
@@ -63,7 +63,7 @@ please consult their documentation.
 
 You can set up Nussknacker as a systemd service using our example unit file.
 
-1. Download distribution as described in [Binary package installation](#binary-package-installation)
+1. Download distribution from [GitHub](https://github.com/TouK/nussknacker/releases)
 2. Unzip it to `/opt/nussknacker`
 3. `sudo touch /lib/systemd/system/nussknacker.service`
 4. edit `/lib/systemd/system/nussknacker.service` file and add write content

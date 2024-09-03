@@ -150,7 +150,9 @@ class NodeCompiler(
         // For default case, we creates source that support test with parameters
         case None =>
           val validatorsCompilationResult = parameterDefinitions.value.flatMap { paramDef =>
-            paramDef.validators.map(v => expressionCompiler.compileValidator(v, paramDef.name, paramDef.typ))
+            paramDef.validators.map(v =>
+              expressionCompiler.compileValidator(v, paramDef.name, paramDef.typ, validationContext.globalVariables)
+            )
           }.sequence
 
           NodeCompilationResult(
@@ -265,7 +267,8 @@ class NodeCompiler(
   }
 
   def compileFragmentInput(fragmentInput: FragmentInput, ctx: ValidationContext)(
-      implicit nodeId: NodeId
+      implicit nodeId: NodeId,
+      metaData: MetaData
   ): NodeCompilationResult[List[CompiledParameter]] = {
 
     val ref            = fragmentInput.ref

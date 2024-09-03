@@ -35,7 +35,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
         val allCombinations = for {
           l <- lSet
           r <- rSet
-        } yield promoteClasses(l.objType.klass, r.objType.klass)
+        } yield promoteClasses(l.runtimeObjType.klass, r.runtimeObjType.klass)
         Typed(allCombinations)
     }
   }

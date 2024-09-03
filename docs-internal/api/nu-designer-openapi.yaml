@@ -140,6 +140,13 @@ paths:
           type:
           - boolean
           - 'null'
+      - name: skipFragments
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
       responses:
         '200':
           description: ''
@@ -170,7 +177,8 @@ paths:
                     - Request-Response
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: query parameter skipUsages'
+            value for: query parameter skipUsages, Invalid value for: query parameter
+            skipFragments'
           content:
             text/plain:
               schema:

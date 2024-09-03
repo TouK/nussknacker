@@ -4,29 +4,28 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.base.array.{IntPrimitiveArraySerializer, StringArraySerializer}
-import org.apache.flink.api.common.typeutils.base.{IntSerializer, LongSerializer, StringSerializer}
-import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
+import org.apache.flink.api.common.typeutils.TypeSerializer
+import org.apache.flink.api.common.typeutils.base.array.StringArraySerializer
+import org.apache.flink.api.common.typeutils.base.{
+  GenericArraySerializer,
+  IntSerializer,
+  LongSerializer,
+  StringSerializer
+}
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.scalatest.Inside.inside
 import org.scalatest.Inspectors.forAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, OptionValues}
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
-import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.{
-  CustomObjectTypeInformation,
-  CustomTypedObject
-}
-import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.CustomTypedObject
 
-import java.util.Collections
 import scala.jdk.CollectionConverters._
 
 class TypingResultAwareTypeInformationDetectionSpec
@@ -35,11 +34,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     with FlinkTypeInformationSerializationMixin
     with OptionValues {
 
-  private val informationDetection =
-    new TypingResultAwareTypeInformationDetection((originalDetection: TypeInformationDetection) => {
-      case e: TypedObjectTypingResult if e.objType == Typed.typedClass[CustomTypedObject] =>
-        CustomObjectTypeInformation(e.fields.mapValuesNow(originalDetection.forType))
-    })
+  private val detection = new TypingResultAwareTypeInformationDetection
 
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")
@@ -54,7 +49,7 @@ class TypingResultAwareTypeInformationDetectionSpec
       Typed.typedClass[Map[String, Any]]
     )
 
-    val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
+    val typeInfo: TypeInformation[Map[String, Any]] = detection.forType(typingResult)
 
     serializeRoundTrip(map, typeInfo)()
     serializeRoundTrip(map - "longF", typeInfo)(map + ("longF" -> null))
@@ -75,7 +70,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     val map          = Map("obj" -> SomeTestClass("name"))
     val typingResult = Typed.record(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
-    val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
+    val typeInfo: TypeInformation[Map[String, Any]] = detection.forType(typingResult)
 
     an[UnsupportedOperationException] shouldBe thrownBy(serializeRoundTrip(map, typeInfo)())
     serializeRoundTrip(map, typeInfo, executionConfigWithKryo)()
@@ -93,7 +88,7 @@ class TypingResultAwareTypeInformationDetectionSpec
         "two"            -> "ala",
         "three"          -> Map("key" -> "value"),
         "arrayOfStrings" -> Array("foo", "bar", "baz"),
-        "arrayOfInts"    -> Array(1, 2, 3),
+        "arrayOfInts"    -> Array[Integer](1, 2, 3),
       )
     )
     val vCtx = ValidationContext(
@@ -106,11 +101,11 @@ class TypingResultAwareTypeInformationDetectionSpec
       )
     )
 
-    val typeInfo          = informationDetection.forContext(vCtx)
+    val typeInfo          = detection.forContext(vCtx)
     val ctxAfterRoundTrip = getSerializeRoundTrip(ctx, typeInfo)
     checkContextAreSame(ctxAfterRoundTrip, ctx)
 
-    val valueTypeInfo                  = informationDetection.forValueWithContext[String](vCtx, Typed[String])
+    val valueTypeInfo                  = detection.forValueWithContext[String](vCtx, Typed[String])
     val givenValue                     = "qwerty"
     val valueWithContextAfterRoundTrip = getSerializeRoundTrip(ValueWithContext[String](givenValue, ctx), valueTypeInfo)
     valueWithContextAfterRoundTrip.value shouldEqual givenValue
@@ -118,7 +113,7 @@ class TypingResultAwareTypeInformationDetectionSpec
 
     assertSerializersInContext(
       typeInfo.createSerializer(executionConfigWithoutKryo),
-      ("arrayOfInts", _ shouldBe new IntPrimitiveArraySerializer),
+      ("arrayOfInts", _ shouldBe new GenericArraySerializer(classOf[Integer], new IntSerializer)),
       ("arrayOfStrings", _ shouldBe new StringArraySerializer),
       ("one", _ shouldBe new IntSerializer),
       ("three", assertMapSerializers(_, ("key", new StringSerializer))),
@@ -134,7 +129,7 @@ class TypingResultAwareTypeInformationDetectionSpec
       Map("longField" -> 11)
     ) // but we put Int in runtime (which e.g. in spel wouldn't be a problem...)!
 
-    val typeInfo = informationDetection.forContext(vCtx)
+    val typeInfo = detection.forContext(vCtx)
     intercept[ClassCastException](serializeRoundTrip(ctx, typeInfo)())
 
     assertSerializersInContext(
@@ -153,12 +148,17 @@ class TypingResultAwareTypeInformationDetectionSpec
     val incompatibleTypingResult =
       Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
 
-    val oldSerializer = informationDetection.forType(typingResult).createSerializer(executionConfigWithoutKryo)
+    val oldSerializer =
+      detection.forType(typingResult).createSerializer(executionConfigWithoutKryo)
 
     val compatibleSerializer =
-      informationDetection.forType(compatibleTypingResult).createSerializer(executionConfigWithoutKryo)
+      detection
+        .forType(compatibleTypingResult)
+        .createSerializer(executionConfigWithoutKryo)
     val incompatibleSerializer =
-      informationDetection.forType(incompatibleTypingResult).createSerializer(executionConfigWithoutKryo)
+      detection
+        .forType(incompatibleTypingResult)
+        .createSerializer(executionConfigWithoutKryo)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
     oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializer).isCompatibleAsIs shouldBe true
@@ -167,12 +167,13 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   test("serialization compatibility with reconfigured serializer") {
-
     val map          = Map("obj" -> SomeTestClass("name"))
     val typingResult = Typed.record(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
     val oldSerializer =
-      informationDetection.forType[Map[String, Any]](typingResult).createSerializer(executionConfigWithKryo)
+      detection
+        .forType[Map[String, Any]](typingResult)
+        .createSerializer(executionConfigWithKryo)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
     // we prepare ExecutionConfig with different Kryo config, it causes need to reconfigure kryo serializer, used for SomeTestClass
@@ -180,7 +181,9 @@ class TypingResultAwareTypeInformationDetectionSpec
       registerTypeWithKryoSerializer(classOf[CustomTypedObject], classOf[DummySerializer])
     }
     val newSerializer =
-      informationDetection.forType[Map[String, Any]](typingResult).createSerializer(newExecutionConfig)
+      detection
+        .forType[Map[String, Any]](typingResult)
+        .createSerializer(newExecutionConfig)
     val compatibility = oldSerializerSnapshot.resolveSchemaCompatibility(newSerializer)
 
     compatibility.isCompatibleWithReconfiguredSerializer shouldBe true
@@ -189,27 +192,26 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   test("serialization compatibility with custom flag config") {
-    val typingResult =
-      Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[String]), Typed.typedClass[CustomTypedObject])
-    val addField = Typed.record(
-      Map("intF" -> Typed[Int], "strF" -> Typed[String], "longF" -> Typed[Long]),
-      Typed.typedClass[CustomTypedObject]
-    )
-    val removeField = Typed.record(Map("intF" -> Typed[Int]), Typed.typedClass[CustomTypedObject])
+    val typingResult = Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[String]))
+    val addField     = Typed.record(Map("intF" -> Typed[Int], "strF" -> Typed[String], "longF" -> Typed[Long]))
+    val removeField  = Typed.record(Map("intF" -> Typed[Int]))
 
     serializeRoundTrip(
-      CustomTypedObject(Map[String, AnyRef]("intF" -> (5: java.lang.Integer), "strF" -> "").asJava),
-      informationDetection.forType(typingResult)
+      Map[String, AnyRef]("intF" -> (5: java.lang.Integer), "strF" -> "").asJava,
+      detection.forType(typingResult)
     )()
 
-    val oldSerializer         = informationDetection.forType(typingResult).createSerializer(executionConfigWithoutKryo)
-    val addFieldSerializer    = informationDetection.forType(addField).createSerializer(executionConfigWithoutKryo)
-    val removeFieldSerializer = informationDetection.forType(removeField).createSerializer(executionConfigWithoutKryo)
+    val oldSerializer =
+      detection.forType(typingResult).createSerializer(executionConfigWithoutKryo)
+    val addFieldSerializer =
+      detection.forType(addField).createSerializer(executionConfigWithoutKryo)
+    val removeFieldSerializer =
+      detection.forType(removeField).createSerializer(executionConfigWithoutKryo)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
     oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializer).isCompatibleAsIs shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(addFieldSerializer).isIncompatible shouldBe true
-    oldSerializerSnapshot.resolveSchemaCompatibility(removeFieldSerializer).isIncompatible shouldBe true
+    oldSerializerSnapshot.resolveSchemaCompatibility(addFieldSerializer).isCompatibleAfterMigration shouldBe true
+    oldSerializerSnapshot.resolveSchemaCompatibility(removeFieldSerializer).isCompatibleAfterMigration shouldBe true
   }
 
   // We have to compare it this way because context can contains arrays
@@ -266,41 +268,5 @@ class DummySerializer extends Serializer[CustomTypedObject] {
 object testTypedObject {
 
   case class CustomTypedObject(map: java.util.Map[String, AnyRef]) extends java.util.HashMap[String, AnyRef](map)
-
-  case class CustomObjectTypeInformation(fields: Map[String, TypeInformation[_]])
-      extends TypedObjectBasedTypeInformation[CustomTypedObject](fields) {
-    override def createSerializer(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[CustomTypedObject] =
-      CustomObjectTypeSerializer(serializers)
-  }
-
-  case class CustomObjectTypeSerializer(override val serializers: Array[(String, TypeSerializer[_])])
-      extends TypedObjectBasedTypeSerializer[CustomTypedObject](serializers)
-      with BaseJavaMapBasedSerializer[AnyRef, CustomTypedObject] {
-
-    override def snapshotConfiguration(
-        snapshots: Array[(String, TypeSerializerSnapshot[_])]
-    ): TypeSerializerSnapshot[CustomTypedObject] = new CustomObjectSerializerSnapshot(snapshots)
-
-    override def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[CustomTypedObject] =
-      CustomObjectTypeSerializer(serializers)
-
-    override def createInstance(): CustomTypedObject = CustomTypedObject(Collections.emptyMap())
-
-  }
-
-  class CustomObjectSerializerSnapshot extends TypedObjectBasedSerializerSnapshot[CustomTypedObject] {
-
-    def this(serializers: Array[(String, TypeSerializerSnapshot[_])]) = {
-      this()
-      this.serializersSnapshots = serializers
-    }
-
-    override protected def compatibilityRequiresSameKeys: Boolean = true
-
-    override protected def restoreSerializer(
-        restored: Array[(String, TypeSerializer[_])]
-    ): TypeSerializer[CustomTypedObject] = CustomObjectTypeSerializer(restored)
-
-  }
 
 }

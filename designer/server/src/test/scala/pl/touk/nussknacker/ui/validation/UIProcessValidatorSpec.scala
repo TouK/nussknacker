@@ -22,7 +22,15 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{
+  ComponentUseCase,
+  EmptyProcessConfigCreator,
+  ExpressionConfig,
+  ProcessName,
+  ProcessObjectDependencies,
+  ProcessingType,
+  WithCategories
+}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -49,6 +57,7 @@ import pl.touk.nussknacker.engine.testing.{LocalModelData, ModelDefinitionBuilde
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.util.functions.collection
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
   SaveAllowed,
@@ -79,6 +88,7 @@ import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
@@ -96,6 +106,17 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
   private val validationExpressionForList = Expression.spel(s"#value.size() == 2 && #value[0] == 'foo'")
+
+  private val validationExpressionForListWithGlobalHelper =
+    Expression.spel(s"#COLLECTION.max(#value.![#this.length()]) > 2")
+
+  private val validationExpressionForListWithMetadata =
+    Expression.spel(s"#value[0] == #meta.processName.toLowerCase")
+
+  private val validationExpressionForLocalDateTime =
+    Expression.spel(
+      s"""#${ValidationExpressionParameterValidator.variableName}.dayOfWeek.name == 'FRIDAY'"""
+    )
 
   test("check for not unique edge types") {
     val process = createGraph(
@@ -1421,6 +1442,160 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
+  test(
+    "validate List service parameter based on additional config from provider - ValidationExpressionParameterValidator with global helper"
+  ) {
+    val process = processWithService(
+      ListParameterService.serviceId,
+      List(
+        NodeParameter(
+          ParameterName("listParam1"),
+          "{'fo', 'bar', 'ba'}".spel
+        ),
+        NodeParameter(
+          ParameterName("listParam2"),
+          "{'ba'}".spel
+        ),
+      )
+    )
+
+    val validator = validatorWithComponentsAndConfig(
+      List(ComponentDefinition(ListParameterService.serviceId, ListParameterService)),
+      Map(
+        DesignerWideComponentId(s"streaming-service-${ListParameterService.serviceId}") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            ParameterName("listParam1") -> paramConfigWithValidationExpression(
+              validationExpressionForListWithGlobalHelper
+            ),
+            ParameterName("listParam2") -> paramConfigWithValidationExpression(
+              validationExpressionForListWithGlobalHelper
+            )
+          )
+        )
+      )
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                "Please provide value that satisfies the validation expression '#COLLECTION.max(#value.![#this.length()]) > 2'",
+                Some("listParam2"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test(
+    "validate List service parameter based on additional config from provider - ValidationExpressionParameterValidator with #meta variable"
+  ) {
+    val process = processWithService(
+      ListParameterService.serviceId,
+      List(
+        NodeParameter(
+          ParameterName("listParam1"),
+          "{'fooprocess'}".spel
+        ),
+        NodeParameter(
+          ParameterName("listParam2"),
+          "{'foobar'}".spel
+        ),
+      )
+    )
+
+    val validator = validatorWithComponentsAndConfig(
+      List(ComponentDefinition(ListParameterService.serviceId, ListParameterService)),
+      Map(
+        DesignerWideComponentId(s"streaming-service-${ListParameterService.serviceId}") -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            ParameterName("listParam1") -> paramConfigWithValidationExpression(
+              validationExpressionForListWithMetadata
+            ),
+            ParameterName("listParam2") -> paramConfigWithValidationExpression(
+              validationExpressionForListWithMetadata
+            )
+          )
+        )
+      )
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                "Please provide value that satisfies the validation expression '#value[0] == #meta.processName.toLowerCase'",
+                Some("listParam2"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test(
+    "ValidationExpressionParameterValidator fails if expression value is not compile-time evaluable"
+  ) {
+    val process = processWithService(
+      LocalDateTimeParameterService.serviceId,
+      List(
+        NodeParameter(
+          ParameterName("localDateTimeParam"),
+          Expression.spel("T(java.time.LocalDateTime).now")
+        ),
+      )
+    )
+
+    val validator = validatorWithComponentsAndConfig(
+      List(ComponentDefinition(LocalDateTimeParameterService.serviceId, LocalDateTimeParameterService)),
+      Map(
+        DesignerWideComponentId(
+          s"streaming-service-${LocalDateTimeParameterService.serviceId}"
+        ) -> ComponentAdditionalConfig(
+          parameterConfigs = Map(
+            ParameterName("localDateTimeParam") -> paramConfigWithValidationExpression(
+              validationExpressionForLocalDateTime
+            ),
+          )
+        )
+      )
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CompileTimeEvaluableParameterNotEvaluated",
+                "This field's value has to be evaluable at deployment time",
+                "Please provide a value that is evaluable at deployment time",
+                Some("localDateTimeParam"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
   test("validate service parameter based on input config - MandatoryParameterValidator") {
     val validator = new UIProcessValidator(
       processingType = "Streaming",
@@ -2330,6 +2505,18 @@ private object UIProcessValidatorSpec {
 
   }
 
+  object LocalDateTimeParameterService extends Service {
+
+    val serviceId = "localDateTimeParameterService"
+
+    @MethodToInvoke
+    def method(
+        @ParamName("localDateTimeParam")
+        localDateTimeParam: Option[LocalDateTime]
+    ): Future[String] = ???
+
+  }
+
   object EagerServiceWithDynamicComponent extends EagerServiceWithStaticParametersAndReturnType {
 
     override def parameters: List[Parameter] = List(
@@ -2447,7 +2634,17 @@ private object UIProcessValidatorSpec {
       LocalModelData(
         ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
         components,
-        additionalConfigsFromProvider = additionalConfigsFromProvider
+        additionalConfigsFromProvider = additionalConfigsFromProvider,
+        configCreator = new EmptyProcessConfigCreator {
+
+          override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig =
+            super
+              .expressionConfig(modelDependencies)
+              .copy(
+                globalProcessVariables = Map("COLLECTION" -> WithCategories.anyCategory(collection))
+              )
+
+        }
       )
     ),
     scenarioProperties = Map.empty,

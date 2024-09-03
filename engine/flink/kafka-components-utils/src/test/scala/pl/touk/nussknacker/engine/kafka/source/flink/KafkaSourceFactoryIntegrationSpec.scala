@@ -133,7 +133,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     run(process) {
       eventually {
         KafkaSourceFactoryIntegrationSpec.resultsHolders.sinkForInputMetaResultsHolder.results
-          .map(_.topic)
+          .map(_.get(InputMeta.topicParameterName))
           .toSet shouldEqual Set(topicOne, topicTwo)
       }
     }

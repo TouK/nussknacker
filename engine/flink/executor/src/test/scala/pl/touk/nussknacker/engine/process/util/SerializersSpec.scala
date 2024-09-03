@@ -61,10 +61,11 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
   }
 
   def serializeAndDeserialize(caseClass: Product): Product = {
-    val kryo = new Kryo()
-    val out  = new Output(1024)
-    CaseClassSerializer.write(kryo, out, caseClass)
-    CaseClassSerializer.read(kryo, new Input(out.toBytes), caseClass.getClass.asInstanceOf[Class[Product]])
+    val kryo       = new Kryo()
+    val out        = new Output(1024)
+    val serializer = new CaseClassSerializer()
+    serializer.write(kryo, out, caseClass)
+    serializer.read(kryo, new Input(out.toBytes), caseClass.getClass.asInstanceOf[Class[Product]])
   }
 
 }

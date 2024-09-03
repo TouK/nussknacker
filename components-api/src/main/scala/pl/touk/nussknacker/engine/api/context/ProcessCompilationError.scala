@@ -203,6 +203,13 @@ object ProcessCompilationError {
       nodeId: String
   ) extends ParameterValidationError
 
+  final case class CompileTimeEvaluableParameterNotEvaluated(
+      message: String,
+      description: String,
+      paramName: ParameterName,
+      nodeId: String
+  ) extends ParameterValidationError
+
   final case class InvalidIntegerLiteralParameter(
       message: String,
       description: String,

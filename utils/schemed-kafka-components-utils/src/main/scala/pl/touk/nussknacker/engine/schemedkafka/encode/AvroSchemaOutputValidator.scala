@@ -41,7 +41,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   )
 
   /**
-    * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
+    * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder} for underlying avro types
     */
   def validate(typingResult: TypingResult, schema: Schema): ValidatedNel[OutputValidatorError, Unit] =
     validateTypingResult(typingResult, schema, None)
@@ -295,7 +295,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     val clazz: Class[_]     = implicitly[ClassTag[T]].runtimeClass
 
     (schemaAsTypedResult, typingResult) match {
-      case (_, typing: SingleTypingResult) if clazz == typing.objType.klass => valid
+      case (_, typing: SingleTypingResult) if clazz == typing.runtimeObjType.klass => valid
       case _ => canBeSubclassOf(typingResult, schema, path)
     }
   }
@@ -308,7 +308,11 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     (schemaAsTypedResult, typingResult) match {
       case (schemaType: SingleTypingResult, typing: SingleTypingResult)
-          if ClassUtils.isAssignable(typing.objType.primitiveClass, schemaType.objType.primitiveClass, false) =>
+          if ClassUtils.isAssignable(
+            typing.runtimeObjType.primitiveClass,
+            schemaType.runtimeObjType.primitiveClass,
+            false
+          ) =>
         valid
       case _ => invalid(typingResult, schema, path)
     }

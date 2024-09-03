@@ -242,8 +242,8 @@ class HttpService {
         return api.get(`/processDefinitionData/${processingType}/dicts/${dictId}/entry?label=${labelPattern}`);
     }
 
-    fetchComponents(skipUsages: boolean): Promise<AxiosResponse<ComponentType[]>> {
-        return api.get<ComponentType[]>(`/components?skipUsages=${skipUsages}`);
+    fetchComponents(skipUsages: boolean, skipFragments: boolean): Promise<AxiosResponse<ComponentType[]>> {
+        return api.get<ComponentType[]>(`/components?skipUsages=${skipUsages}&skipFragments=${skipFragments}`);
     }
 
     fetchComponentUsages(componentId: string): Promise<AxiosResponse<ComponentUsageType[]>> {

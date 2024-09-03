@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.io.{PrintWriter, StringWriter}
 import java.lang
@@ -47,7 +47,7 @@ class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: 
 
 object KafkaExceptionInfo {
 
-  private val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
+  private val encoder = ToJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
   // TODO: better hostname (e.g. from some Flink config)
   private lazy val hostName = InetAddress.getLocalHost.getHostName

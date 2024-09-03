@@ -1103,16 +1103,16 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
   test("should catch runtime errors") {
     val testData = Table(
       "config",
-      // Comparing String -> Enum returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
+      // Comparing String -> Enum returns true, but in runner ToAvroSchemaBasedEncoder tries to encode String (that doesn't meet the requirements) to Enum
       rConfig(sampleStrFixedV, recordStringSchema, recordEnumSchema, Input),
 
-      // FIXME: Comparing EnumV2 -> Enum returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
+      // FIXME: Comparing EnumV2 -> Enum returns true, but in runner ToAvroSchemaBasedEncoder tries to encode String (that doesn't meet the requirements) to Enum
       rConfig(sampleEnumV2, recordEnumSchemaV2, recordEnumSchema, Input),
 
-      // Comparing String -> Fixed returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Fixed
+      // Comparing String -> Fixed returns true, but in runner ToAvroSchemaBasedEncoder tries to encode String (that doesn't meet the requirements) to Fixed
       rConfig(sampleString, recordStringSchema, recordFixedSchema, Input),
 
-      // FIXME: Comparing FixedV2 -> Fixed returns true, but in runner BestEffortAvroEncoder tries to encode value FixedV2 to Fixed
+      // FIXME: Comparing FixedV2 -> Fixed returns true, but in runner ToAvroSchemaBasedEncoder tries to encode value FixedV2 to Fixed
       rConfig(sampleFixedV2, recordFixedSchemaV2, recordFixedSchema, Input),
 
       // Situation when we put String -> UUID, where String isn't valid UUID type...

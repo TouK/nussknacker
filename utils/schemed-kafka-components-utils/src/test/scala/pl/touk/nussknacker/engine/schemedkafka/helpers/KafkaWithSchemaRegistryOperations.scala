@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaRecordUtils, Unspecia
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.AbstractConfluentKafkaAvroSerializer
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.nio.charset.StandardCharsets
 
@@ -206,5 +206,5 @@ object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
 object SimpleKafkaJsonSerializer extends Serializer[Any] {
 
   override def serialize(topic: String, data: Any): Array[Byte] =
-    BestEffortJsonEncoder.defaultForTests.encode(data).spaces2.getBytes(StandardCharsets.UTF_8)
+    ToJsonEncoder.defaultForTests.encode(data).spaces2.getBytes(StandardCharsets.UTF_8)
 }

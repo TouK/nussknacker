@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import org.apache.flink.api.common.functions.{FlatMapFunction, RuntimeContext}
-import org.apache.flink.api.common.typeinfo.Types
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -12,17 +12,20 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation
 }
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation.{
   aggregateByInternalColumnName,
   groupByInternalColumnName
 }
+import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeEncoder
 
 object TableAggregation {
   private val aggregateByInternalColumnName = "aggregateByInternalColumn"
@@ -33,6 +36,7 @@ class TableAggregation(
     groupByLazyParam: LazyParameter[AnyRef],
     aggregateByLazyParam: LazyParameter[AnyRef],
     selectedAggregator: TableAggregator,
+    aggregationResultType: TypingResult,
     nodeId: NodeId
 ) extends FlinkCustomStreamTransformation
     with Serializable {
@@ -45,12 +49,8 @@ class TableAggregation(
     val tableEnv = StreamTableEnvironment.create(env)
 
     val streamOfRows = start.flatMap(
-      new LazyInterpreterFunction(groupByLazyParam, aggregateByLazyParam, context),
-      Types.ROW_NAMED(
-        Array(groupByInternalColumnName, aggregateByInternalColumnName),
-        context.typeInformationDetection.forType(groupByLazyParam.returnType),
-        context.typeInformationDetection.forType(aggregateByLazyParam.returnType)
-      )
+      new GroupByInputPreparingFunction(groupByLazyParam, aggregateByLazyParam, context),
+      GroupByInputPreparingFunction.outputTypeInfo
     )
 
     val inputParametersTable = tableEnv.fromDataStream(streamOfRows)
@@ -67,16 +67,51 @@ class TableAggregation(
     groupedStream
       .process(
         new AggregateResultContextFunction(context.convertToEngineRuntimeContext),
-        context.typeInformationDetection.forValueWithContext(
-          ValidationContext.empty.withVariableUnsafe(KeyVariableName, groupByLazyParam.returnType),
-          aggregateByLazyParam.returnType
-        )
+        AggregateResultContextFunction.outputTypeInfo
       )
   }
 
-  private class AggregateResultContextFunction(
-      convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-  ) extends ProcessFunction[Row, ValueWithContext[AnyRef]] {
+  private class GroupByInputPreparingFunction(
+      groupByParam: LazyParameter[AnyRef],
+      aggregateByParam: LazyParameter[AnyRef],
+      customNodeContext: FlinkCustomNodeContext
+  ) extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper)
+      with FlatMapFunction[Context, Row] {
+
+    private lazy val evaluateGroupBy          = toEvaluateFunctionConverter.toEvaluateFunction(groupByParam)
+    private lazy val evaluateAggregateByParam = toEvaluateFunctionConverter.toEvaluateFunction(aggregateByParam)
+
+    override def flatMap(context: Context, out: Collector[Row]): Unit = {
+      collectHandlingErrors(context, out) {
+        val evaluatedGroupBy = ToTableTypeEncoder.encode(evaluateGroupBy(context), groupByParam.returnType)
+        val evaluatedAggregateBy =
+          ToTableTypeEncoder.encode(evaluateAggregateByParam(context), aggregateByParam.returnType)
+
+        val row = Row.withNames()
+        row.setField(groupByInternalColumnName, evaluatedGroupBy)
+        row.setField(aggregateByInternalColumnName, evaluatedAggregateBy)
+        row
+      }
+    }
+
+  }
+
+  private object GroupByInputPreparingFunction {
+
+    val outputTypeInfo: TypeInformation[Row] = Types.ROW_NAMED(
+      Array(groupByInternalColumnName, aggregateByInternalColumnName),
+      TypeInformationDetection.instance.forType(
+        ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)
+      ),
+      TypeInformationDetection.instance.forType(
+        ToTableTypeEncoder.alignTypingResult(aggregateByLazyParam.returnType)
+      )
+    )
+
+  }
+
+  private class AggregateResultContextFunction(convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
+      extends ProcessFunction[Row, ValueWithContext[AnyRef]] {
 
     @transient
     private var contextIdGenerator: ContextIdGenerator = _
@@ -99,27 +134,14 @@ class TableAggregation(
 
   }
 
-  private class LazyInterpreterFunction(
-      groupByParam: LazyParameter[AnyRef],
-      aggregateByParam: LazyParameter[AnyRef],
-      customNodeContext: FlinkCustomNodeContext
-  ) extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper)
-      with FlatMapFunction[Context, Row] {
+  private object AggregateResultContextFunction {
 
-    private lazy val evaluateGroupBy          = toEvaluateFunctionConverter.toEvaluateFunction(groupByParam)
-    private lazy val evaluateAggregateByParam = toEvaluateFunctionConverter.toEvaluateFunction(aggregateByParam)
-
-    override def flatMap(context: Context, out: Collector[Row]): Unit = {
-      collectHandlingErrors(context, out) {
-        val evaluatedGroupBy     = evaluateGroupBy(context)
-        val evaluatedAggregateBy = evaluateAggregateByParam(context)
-
-        val row = Row.withNames()
-        row.setField(groupByInternalColumnName, evaluatedGroupBy)
-        row.setField(aggregateByInternalColumnName, evaluatedAggregateBy)
-        row
-      }
-    }
+    val outputTypeInfo: TypeInformation[ValueWithContext[AnyRef]] =
+      TypeInformationDetection.instance.forValueWithContext[AnyRef](
+        validationContext = ValidationContext.empty
+          .withVariableUnsafe(KeyVariableName, ToTableTypeEncoder.alignTypingResult(groupByLazyParam.returnType)),
+        value = ToTableTypeEncoder.alignTypingResult(aggregationResultType)
+      )
 
   }
 
