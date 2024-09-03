@@ -7,6 +7,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 
 import _root_.java.util
 import scala.jdk.CollectionConverters._
@@ -25,16 +26,45 @@ case class NkGlobalParameters(
   // NOTE: some of the information is used in FlinkRestManager - any changes here should be reflected there
   override def toMap: util.Map[String, String] = {
 
+    // TODO Flink bump: what to do about this? this make all the params visible in Flinks web UI. but there doesnt
+    //  seem to be a way to pass this as a case class like previously - its stored as a map built from toMap...
     val baseProperties = Map[String, String](
       "buildInfo"    -> buildInfo,
       "versionId"    -> processVersion.versionId.value.toString,
       "processId"    -> processVersion.processId.value.toString,
       "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
-      "user"         -> processVersion.user
+      "user"         -> processVersion.user,
+      "processName"  -> processVersion.processName.value
     )
-    val configMap = baseProperties ++ additionalInformation
+
+    val configMap = configParameters
+      .map { config =>
+        Map(
+          "configParameters.explicitUidInStatefulOperators" -> config.explicitUidInStatefulOperators
+            .map(_.toString)
+            .orNull,
+          "configParameters.useIOMonadInInterpreter" -> config.useIOMonadInInterpreter.map(_.toString).orNull,
+          "configParameters.forceSyncInterpretationForSyncScenarioPart" -> config.forceSyncInterpretationForSyncScenarioPart
+            .map(_.toString)
+            .orNull
+        )
+      }
+      .getOrElse(Map.empty)
+
+    val namespaceTagsMap = namespaceParameters
+      .map(_.tags.map { case (k, v) =>
+        s"namespaceTags$k" -> v
+      })
+      .getOrElse(Map.empty)
+
+    val additionalInformationMap = additionalInformation.map { case (k, v) =>
+      s"additionalInformation.$k" -> v
+    }
+
+    val combinedMap = baseProperties ++ additionalInformationMap ++ configMap ++ namespaceTagsMap
+
     // we wrap in HashMap because .asJava creates not-serializable map in 2.11
-    new util.HashMap(configMap.filterNot(_._2 == null).asJava)
+    new util.HashMap(combinedMap.filterNot(_._2 == null).asJava)
   }
 
 }
@@ -84,8 +114,43 @@ object NkGlobalParameters {
     ec.setGlobalJobParameters(globalParameters)
   }
 
-  def readFromContext(ec: ExecutionConfig): Option[NkGlobalParameters] = Option(ec.getGlobalJobParameters).collect {
-    case a: NkGlobalParameters => a
+  def readFromContext(ec: ExecutionConfig): Option[NkGlobalParameters] = Some(fromMap(ec.getGlobalJobParameters.toMap))
+
+  def fromMap(jMap: util.Map[String, String]): NkGlobalParameters = {
+    val map = jMap.asScala.toMap
+
+    val buildInfo      = map("buildInfo")
+    val versionId      = VersionId(map("versionId").toLong)
+    val processId      = ProcessId(map("processId").toLong)
+    val modelVersion   = map.get("modelVersion").map(_.toInt)
+    val processName    = ProcessName("processName")
+    val user           = map("user")
+    val processVersion = ProcessVersion(versionId, processName, processId, user, modelVersion)
+
+    val configParameters = ConfigGlobalParameters(
+      explicitUidInStatefulOperators = map.get("configParameters.explicitUidInStatefulOperators").map(_.toBoolean),
+      useIOMonadInInterpreter = map.get("configParameters.useIOMonadInInterpreter").map(_.toBoolean),
+      forceSyncInterpretationForSyncScenarioPart =
+        map.get("configParameters.forceSyncInterpretationForSyncScenarioPart").map(_.toBoolean)
+    )
+
+    val namespaceTags = NamespaceMetricsTags(
+      tags = map.view
+        .filterKeys(_.startsWith("namespaceTags."))
+        .map { case (key, value) =>
+          key.stripPrefix("namespaceTags.") -> value
+        }
+        .toMap
+    )
+
+    val additionalInformation = map.view
+      .filterKeys(_.startsWith("additionalInformation."))
+      .map { case (key, value) =>
+        key.stripPrefix("additionalInformation.") -> value
+      }
+      .toMap
+
+    NkGlobalParameters(buildInfo, processVersion, Some(configParameters), Some(namespaceTags), additionalInformation)
   }
 
 }
