@@ -10,7 +10,7 @@
   * [#6552](https://github.com/TouK/nussknacker/pull/6552) Added aggregation functions to Batch aggregation component
     (`Average`, `Count`, `Max`, `Min`, `Population standard deviation`, `Sample standard deviation`, `Population variance`, `Sample variance`)
 * [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
-* [#6680](https://github.com/TouK/nussknacker/pull/6680) From now on, arrays on UI are visible as lists but on a 
+* [#6695](https://github.com/TouK/nussknacker/pull/6680) From now on, arrays on UI are visible as lists but on a 
   background they are stored as it is and SpeL converts them to lists in a runtime.
 
 1.17.0 (Not released yet)
