@@ -5,8 +5,8 @@ sidebar_position: 3
 
 # Scenario Deployment configuration
 
-Deployment of a scenario onto the [Engine](../about/engines) is managed by the Designer's extension called [Deployment Manager](../about/GLOSSARY#deployment-manager).
-To enable a given [Deployment Manager](../about/GLOSSARY#deployment-manager) its jar package has to be placed in the Designer's classpath. Nussknacker is distributed with three default [Deployment Managers](../about/GLOSSARY#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers` directory. 
+Deployment of a scenario onto the [Engine](../about/engines/Engines.md) is managed by the Designer's extension called [Deployment Manager](../about/GLOSSARY.md#deployment-manager).
+To enable a given [Deployment Manager](../about/GLOSSARY.md#deployment-manager) its jar package has to be placed in the Designer's classpath. Nussknacker is distributed with three default [Deployment Managers](../about/GLOSSARY.md#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers` directory.
 
 Deployment specific configuration is provided in the `deploymentConfig` section of the configuration file - check [configuration areas](./Common.mdx#configuration-areas) to understand the structure of the configuration file.
 
@@ -23,12 +23,12 @@ deploymentConfig {
 ```
 
 Parameters:
-- `type` parameter determines the type of the [Deployment Manager](../about/GLOSSARY#deployment-manager). Possible options are: `flinkStreaming`, `lite-k8s`, `lite-embedded`
-- `engineSetupName` parameter is optional. It specifies how the engine will be displayed in the GUI. If not specified, default name will be used instead (e.g. `Flink` for `flinkStreaming` Deployment Manager).   
+- `type` parameter determines the type of the [Deployment Manager](../about/GLOSSARY.md#deployment-manager). Possible options are: `flinkStreaming`, `lite-k8s`, `lite-embedded`
+- `engineSetupName` parameter is optional. It specifies how the engine will be displayed in the GUI. If not specified, default name will be used instead (e.g. `Flink` for `flinkStreaming` Deployment Manager).
 
 ## Kubernetes native Lite engine configuration
 
-Please check high level [Lite engine description](https://nussknacker.io/documentation/docs/about/engines/LiteArchitecture/#scenario-deployment) before proceeding to configuration details.
+Please check high level [Lite engine description](../about/engines/LiteArchitecture.md#scenario-deployment) before proceeding to configuration details.
 
 Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you have to configure `.kube/config` properly.
 

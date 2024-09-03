@@ -1,6 +1,6 @@
 # Overview
 
-Please make sure you know common [Glossary](../about/GLOSSARY) and [SpEL](../scenarios_authoring/Spel.md) (especially the Data types section) before proceeding further. 
+Please make sure you know common [Glossary](../about/GLOSSARY.md) and [SpEL](../scenarios_authoring/Spel.md) (especially the Data types section) before proceeding further.
 
 This part of the documentation describes various ways of customizing Nussknacker - from adding own Components to adding listeners for various Designer actions. 
 The main way of adding customizations to Nussknacker is [ServiceLoader](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ServiceLoader.html) 
@@ -8,7 +8,7 @@ The main way of adding customizations to Nussknacker is [ServiceLoader](https://
 **Please make sure to put jars with custom code on right classpath**
 - Customizations of model (in particular `ComponentProviders`) can be loaded by adding libs/classes to dedicated `components/common/extra`, 
   `components/lite/extra` or `components/flink/extra` directory. For advanced usages, you can configure `modelConfig.classPath` 
-  in [Model config](../configuration/model/ModelConfiguration.md).
+  in [Model config](../configuration/model/ModelConfiguration.mdx).
 - Code of Designer customizations should go to the main Designer classpath (e.g. put the jars in the `lib` folder)
  
 ## Types
@@ -21,7 +21,7 @@ We also handle union types (again, similar to [Typescript](https://www.typescrip
       
 ## Components and ComponentProviders
 
-[Components](../about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
+[Components](../about/GLOSSARY.md#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances.
 There are following types of components:
 - `SourceFactory`
 - `SinkFactory`
