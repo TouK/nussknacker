@@ -16,13 +16,13 @@ import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExc
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar
+import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeSchemaBasedEncoder
 
 class TableSink(
     tableDefinition: TableDefinition,
-    dataDefinitionRegistrar: DataDefinitionRegistrar,
+    flinkDataDefinition: FlinkDataDefinition,
     value: LazyParameter[AnyRef]
 ) extends FlinkSink {
 
@@ -44,7 +44,7 @@ class TableSink(
   ): DataStreamSink[_] = {
     val env      = dataStream.getExecutionEnvironment
     val tableEnv = StreamTableEnvironment.create(env)
-    dataDefinitionRegistrar.registerIn(tableEnv)
+    flinkDataDefinition.registerIn(tableEnv)
 
     /*
       DataStream to Table transformation:

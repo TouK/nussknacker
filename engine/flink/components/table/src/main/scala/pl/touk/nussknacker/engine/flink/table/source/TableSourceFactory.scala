@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, 
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.{DataDefinitionRegistrar, TablesDefinitionDiscovery}
-import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar._
+import pl.touk.nussknacker.engine.flink.table.extractor.{FlinkDataDefinition, TablesDefinitionDiscovery}
+import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.{
   AvailableTables,
   SelectedTable,
@@ -24,14 +24,14 @@ import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
 
 class TableSourceFactory(
-    dataDefinitionRegistrar: DataDefinitionRegistrar,
+    flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode
 ) extends SingleInputDynamicComponent[Source]
     with SourceFactory
     with BoundedStreamComponent {
 
   @transient
-  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(dataDefinitionRegistrar).orFail
+  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).orFail
 
   override type State = TableSourceFactoryState
 
@@ -69,7 +69,7 @@ class TableSourceFactory(
           s"Unexpected final state determined during parameters validation: $finalStateOpt"
         )
     }
-    new TableSource(selectedTable, dataDefinitionRegistrar, testDataGenerationMode)
+    new TableSource(selectedTable, flinkDataDefinition, testDataGenerationMode)
   }
 
   override def nodeDependencies: List[NodeDependency] = List.empty
