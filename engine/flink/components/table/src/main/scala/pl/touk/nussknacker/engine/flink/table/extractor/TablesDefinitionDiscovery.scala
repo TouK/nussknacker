@@ -26,10 +26,11 @@ class TablesDefinitionDiscovery(tableEnv: TableEnvironment) extends LazyLogging 
   }
 
   private def extractTableDefinition(tableId: ObjectIdentifier) = {
-    val table = Try(tableEnv.from(tableId.toString)).getOrElse(
-      throw new IllegalStateException(s"Table extractor could not locate a created table with path: $tableId")
+    val table = Try(tableEnv.from(tableId.toString)).fold(
+      ex => throw new IllegalStateException(s"Table extractor could not locate a created table with id: $tableId", ex),
+      identity
     )
-    TableDefinition(tableId.getObjectName, table.getResolvedSchema)
+    TableDefinition(tableId, table.getResolvedSchema)
   }
 
 }
@@ -39,10 +40,17 @@ object TablesDefinitionDiscovery {
   def prepareDiscovery(
       flinkDataDefinition: FlinkDataDefinition
   ): ValidatedNel[DataDefinitionRegistrationError, TablesDefinitionDiscovery] = {
-    val settings = EnvironmentSettings
+    val environmentSettings = EnvironmentSettings
       .newInstance()
       .build()
-    val tableEnv = TableEnvironment.create(settings)
+    prepareDiscovery(flinkDataDefinition, environmentSettings)
+  }
+
+  private[extractor] def prepareDiscovery(
+      flinkDataDefinition: FlinkDataDefinition,
+      environmentSettings: EnvironmentSettings
+  ): ValidatedNel[DataDefinitionRegistrationError, TablesDefinitionDiscovery] = {
+    val tableEnv = TableEnvironment.create(environmentSettings)
     flinkDataDefinition.registerIn(tableEnv).map(_ => new TablesDefinitionDiscovery(tableEnv))
   }
 

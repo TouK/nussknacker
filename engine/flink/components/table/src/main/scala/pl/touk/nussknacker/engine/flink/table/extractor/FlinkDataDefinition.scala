@@ -5,6 +5,7 @@ import cats.implicits.{toFunctorOps, toTraverseOps}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.catalog.CatalogDescriptor
+import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition.internalCatalogName
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 
 import scala.util.Try
@@ -14,8 +15,6 @@ class FlinkDataDefinition private (
     catalogConfigurationOpt: Option[Configuration],
     defaultDbName: Option[String]
 ) extends Serializable {
-
-  private val internalCatalogName = "$nuCatalog"
 
   def registerIn(tableEnvironment: TableEnvironment): ValidatedNel[DataDefinitionRegistrationError, Unit] = {
     val sqlStatementsExecutionResults = sqlStatements.toList.flatten
@@ -49,6 +48,8 @@ class FlinkDataDefinition private (
 }
 
 object FlinkDataDefinition {
+
+  private[extractor] val internalCatalogName = "$nuCatalog"
 
   def create(
       sqlStatements: Option[List[String]],
