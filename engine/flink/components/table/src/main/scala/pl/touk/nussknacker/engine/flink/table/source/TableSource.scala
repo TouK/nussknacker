@@ -25,8 +25,8 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar
-import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar._
+import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition
+import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._
@@ -35,7 +35,7 @@ import scala.jdk.CollectionConverters._
 
 class TableSource(
     tableDefinition: TableDefinition,
-    dataDefinitionRegistrar: DataDefinitionRegistrar,
+    flinkDataDefinition: FlinkDataDefinition,
     testDataGenerationMode: TestDataGenerationMode
 ) extends StandardFlinkSource[Row]
     with TestWithParametersSupport[Row]
@@ -47,7 +47,7 @@ class TableSource(
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Row] = {
     val tableEnv = StreamTableEnvironment.create(env)
-    dataDefinitionRegistrar.registerIn(tableEnv).orFail
+    flinkDataDefinition.registerIn(tableEnv).orFail
 
     val selectQuery = tableEnv.from(s"`${tableDefinition.tableName}`")
 
@@ -113,7 +113,7 @@ class TableSource(
         FlinkMiniClusterTableOperations.generateLiveTestData(
           limit = size,
           schema = generateDataSchema,
-          dataDefinitionRegistrar = dataDefinitionRegistrar,
+          flinkDataDefinition = flinkDataDefinition,
           tableName = tableDefinition.tableName
         )
     }

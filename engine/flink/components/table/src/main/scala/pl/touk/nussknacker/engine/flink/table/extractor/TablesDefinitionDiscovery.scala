@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.flink.table.extractor
 
-import cats.data.{NonEmptyList, ValidatedNel}
-import cats.implicits.catsSyntaxValidatedId
+import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import org.apache.flink.table.catalog.ObjectIdentifier
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementNotExecutedError.statementNotExecutedErrorDescription
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.{TableDefinition, extractor}
+import pl.touk.nussknacker.engine.flink.table.TableDefinition
 
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.Try
@@ -40,13 +37,13 @@ class TablesDefinitionDiscovery(tableEnv: TableEnvironment) extends LazyLogging 
 object TablesDefinitionDiscovery {
 
   def prepareDiscovery(
-      dataDefinitionRegistrar: DataDefinitionRegistrar
-  ): ValidatedNel[SqlStatementNotExecutedError, TablesDefinitionDiscovery] = {
+      flinkDataDefinition: FlinkDataDefinition
+  ): ValidatedNel[DataDefinitionRegistrationError, TablesDefinitionDiscovery] = {
     val settings = EnvironmentSettings
       .newInstance()
       .build()
     val tableEnv = TableEnvironment.create(settings)
-    dataDefinitionRegistrar.registerIn(tableEnv).map(_ => new TablesDefinitionDiscovery(tableEnv))
+    flinkDataDefinition.registerIn(tableEnv).map(_ => new TablesDefinitionDiscovery(tableEnv))
   }
 
 }

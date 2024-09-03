@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.extractor
 
+import cats.data.Validated.Invalid
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.catalog.{Column, ResolvedSchema}
 import org.scalatest.LoneElement
@@ -21,9 +23,24 @@ class TablesDefinitionDiscoveryTest
     with ValidatedValuesDetailedMessage
     with TableDrivenPropertyChecks {
 
+  test("return error for empty flink data definition") {
+    FlinkDataDefinition.create(
+      sqlStatements = None,
+      catalogConfigurationOpt = None,
+      defaultDbName = None
+    ) should matchPattern { case Invalid(EmptyDataDefinition) =>
+    }
+  }
+
   test("extracts configuration from valid sql statement") {
-    val registrar         = DataDefinitionRegistrar(Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)))
-    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(registrar).validValue
+    val flinkDataDefinition = FlinkDataDefinition
+      .create(
+        sqlStatements = Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)),
+        catalogConfigurationOpt = None,
+        defaultDbName = None
+      )
+      .validValue
+    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
     val tablesDefinitions = discovery.listTables
     val tableDefinition   = tablesDefinitions.loneElement
     val sourceRowType     = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
@@ -64,8 +81,14 @@ class TablesDefinitionDiscoveryTest
        |      'connector' = 'datagen'
        |);""".stripMargin
 
-    val registrar         = DataDefinitionRegistrar(Some(SqlStatementReader.readSql(statementsStr)))
-    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(registrar).validValue
+    val flinkDataDefinition = FlinkDataDefinition
+      .create(
+        sqlStatements = Some(SqlStatementReader.readSql(statementsStr)),
+        catalogConfigurationOpt = None,
+        defaultDbName = None
+      )
+      .validValue
+    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
     val tablesDefinitions = discovery.listTables
 
     tablesDefinitions.loneElement shouldBe TableDefinition(
@@ -76,11 +99,29 @@ class TablesDefinitionDiscoveryTest
 
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
-      val registrar                   = DataDefinitionRegistrar(Some(SqlStatementReader.readSql(invalidStatement)))
-      val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(registrar).invalidValue
+      val flinkDataDefinition = FlinkDataDefinition
+        .create(
+          sqlStatements = Some(SqlStatementReader.readSql(invalidStatement)),
+          catalogConfigurationOpt = None,
+          defaultDbName = None
+        )
+        .validValue
+      val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).invalidValue
 
       sqlStatementExecutionErrors.size shouldBe 1
     }
+  }
+
+  ignore("use catalog configuration in data definition") {
+    val catalogConfiguration = Configuration.fromMap(Map("" -> "").asJava)
+    val flinkDataDefinition  = FlinkDataDefinition.create(None, Some(catalogConfiguration), None).validValue
+
+    val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
+
+    discovery.listTables.loneElement shouldBe TableDefinition(
+      "fooTable",
+      ResolvedSchema.of(Column.physical("fooColumn", DataTypes.STRING()))
+    )
   }
 
 }

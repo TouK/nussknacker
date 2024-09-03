@@ -2,19 +2,21 @@ package pl.touk.nussknacker.engine.flink.table
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider.configIndependentComponents
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
-import pl.touk.nussknacker.engine.flink.table.extractor.{DataDefinitionRegistrar, SqlStatementReader}
+import pl.touk.nussknacker.engine.flink.table.extractor.{FlinkDataDefinition, SqlStatementReader}
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinComponent
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.util.ResourceLoader
 
 import java.nio.file.{Path, Paths}
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -38,17 +40,25 @@ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
     val parsedConfig                    = TableComponentProviderConfig.parse(config)
     val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
     val sqlStatements                   = parsedConfig.tableDefinitionFilePath.map(Paths.get(_)).map(readSqlFromFile)
-    val dataDefinitionRegistrar         = DataDefinitionRegistrar(sqlStatements)
+    val catalogConfigurationOpt         = parsedConfig.catalogConfiguration.map(_.asJava).map(Configuration.fromMap)
+    val flinkDataDefinition =
+      FlinkDataDefinition
+        .create(sqlStatements, catalogConfigurationOpt, parsedConfig.defaultDbName)
+        .valueOr(_ =>
+          throw new IllegalArgumentException(
+            "Empty data definition configuration. At least one of either tableDefinitionFilePath or catalogConfiguration should be configured"
+          )
+        )
 
     ComponentDefinition(
       tableComponentName,
       new TableSourceFactory(
-        dataDefinitionRegistrar,
+        flinkDataDefinition,
         testDataGenerationModeOrDefault
       )
     ) :: ComponentDefinition(
       tableComponentName,
-      new TableSinkFactory(dataDefinitionRegistrar)
+      new TableSinkFactory(flinkDataDefinition)
     ) :: configIndependentComponents
   }
 
@@ -86,6 +96,7 @@ object FlinkTableComponentProvider {
 final case class TableComponentProviderConfig(
     tableDefinitionFilePath: Option[String],
     catalogConfiguration: Option[Map[String, String]],
+    defaultDbName: Option[String],
     testDataGenerationMode: Option[TestDataGenerationMode]
 )
 

@@ -11,8 +11,8 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api._
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
-import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar
-import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar._
+import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition
+import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.nio.charset.StandardCharsets
@@ -39,12 +39,12 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   def generateLiveTestData(
       limit: Int,
       schema: Schema,
-      dataDefinitionRegistrar: DataDefinitionRegistrar,
+      flinkDataDefinition: FlinkDataDefinition,
       tableName: TableName
   ): TestData = generateTestData(
     limit = limit,
     schema = schema,
-    buildSourceTable = createLiveDataGeneratorTable(dataDefinitionRegistrar, tableName, schema)
+    buildSourceTable = createLiveDataGeneratorTable(flinkDataDefinition, tableName, schema)
   )
 
   def generateRandomTestData(amount: Int, schema: Schema): TestData = generateTestData(
@@ -120,11 +120,11 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   }
 
   private def createLiveDataGeneratorTable(
-      dataDefinitionRegistrar: DataDefinitionRegistrar,
+      flinkDataDefinition: FlinkDataDefinition,
       tableName: TableName,
       schema: Schema
   )(env: TableEnvironment): Table = {
-    dataDefinitionRegistrar.registerIn(env).orFail
+    flinkDataDefinition.registerIn(env).orFail
     env.from(s"`$tableName`").select(schema.getColumns.asScala.map(_.getName).map($).toList: _*)
   }
 

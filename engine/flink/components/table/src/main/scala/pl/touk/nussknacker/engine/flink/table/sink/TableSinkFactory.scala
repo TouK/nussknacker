@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.DataDefinitionRegistrar._
-import pl.touk.nussknacker.engine.flink.table.extractor.{DataDefinitionRegistrar, TablesDefinitionDiscovery}
+import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition._
+import pl.touk.nussknacker.engine.flink.table.extractor.{FlinkDataDefinition, TablesDefinitionDiscovery}
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
@@ -33,13 +33,13 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
-class TableSinkFactory(dataDefinitionRegistrar: DataDefinitionRegistrar)
+class TableSinkFactory(flinkDataDefinition: FlinkDataDefinition)
     extends SingleInputDynamicComponent[Sink]
     with SinkFactory
     with BoundedStreamComponent {
 
   @transient
-  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(dataDefinitionRegistrar).orFail
+  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).orFail
 
   override type State = TableSinkFactoryState
 
@@ -179,7 +179,7 @@ class TableSinkFactory(dataDefinitionRegistrar: DataDefinitionRegistrar)
 
     new TableSink(
       tableDefinition = finalState.tableDefinition,
-      dataDefinitionRegistrar = dataDefinitionRegistrar,
+      flinkDataDefinition = flinkDataDefinition,
       value = lazyValueParam
     )
   }
