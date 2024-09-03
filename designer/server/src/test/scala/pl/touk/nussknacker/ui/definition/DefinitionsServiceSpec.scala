@@ -287,7 +287,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType.stringify),
-      fragmentRepository = new StubFragmentRepository(Map(processingType.stringify -> fragmentScenarios))
+      fragmentRepository = new StubFragmentRepository(Map(processingType.stringify -> fragmentScenarios)),
+      fragmentPropertiesDocsUrl = None
     ).prepareUIDefinitions(processingType.stringify, forFragment = false)(AdminUser("admin", "admin")).futureValue
   }
 

@@ -29,7 +29,8 @@ class DefinitionsService(
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
-    fragmentRepository: FragmentRepository
+    fragmentRepository: FragmentRepository,
+    fragmentPropertiesDocsUrl: Option[String]
 )(implicit ec: ExecutionContext) {
 
   def prepareUIDefinitions(processingType: ProcessingType, forFragment: Boolean)(
@@ -79,14 +80,20 @@ class DefinitionsService(
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioProperties = {
-        val transformedProps = (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig
-                                else finalizedScenarioPropertiesConfig)
-          .mapValuesNow(createUIScenarioPropertyConfig)
-        UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = scenarioPropertiesDocsUrl)
+        if (forFragment) {
+          createUIProperties(FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, fragmentPropertiesDocsUrl)
+        } else {
+          createUIProperties(finalizedScenarioPropertiesConfig, scenarioPropertiesDocsUrl)
+        }
       },
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )
+  }
+
+  private def createUIProperties(finalizedProperties: Map[String, ScenarioPropertyConfig], docsUrl: Option[String]) = {
+    val transformedProps = finalizedProperties.mapValuesNow(createUIScenarioPropertyConfig)
+    UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = docsUrl)
   }
 
   private def createUIComponentDefinition(
@@ -111,7 +118,8 @@ object DefinitionsService {
       processingTypeData: ProcessingTypeData,
       alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
-      fragmentRepository: FragmentRepository
+      fragmentRepository: FragmentRepository,
+      fragmentPropertiesDocsUrl: Option[String]
   )(implicit ec: ExecutionContext) =
     new DefinitionsService(
       processingTypeData.designerModelData.modelData,
@@ -121,7 +129,8 @@ object DefinitionsService {
       processingTypeData.deploymentData.validDeploymentManagerOrStub,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
-      fragmentRepository
+      fragmentRepository,
+      fragmentPropertiesDocsUrl
     )
 
   def createUIParameter(parameter: Parameter): UIParameter = {
