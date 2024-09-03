@@ -61,7 +61,8 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
     with BoundedStreamComponent {
 
   @transient
-  private lazy val tableDefinitions = TablesExtractor.extractTablesFromFlinkRuntimeUnsafe(sqlStatements)
+  private lazy val tableDefinitions =
+    TablesExtractor.prepareExtractorUnsafe(sqlStatements).extractTablesFromFlinkRuntime
 
   override type State = TransformationState
 

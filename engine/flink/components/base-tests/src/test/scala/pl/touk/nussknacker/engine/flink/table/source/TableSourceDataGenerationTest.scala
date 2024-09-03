@@ -19,7 +19,7 @@ class TableSourceDataGenerationTest
   private val statements = SqlStatementReader.readSql(SimpleTable.sqlStatement)
 
   private val tableSource = new TableSource(
-    tableDefinition = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue.loneElement,
+    tableDefinition = TablesExtractor.prepareExtractor(statements).validValue.extractTablesFromFlinkRuntime.loneElement,
     sqlStatements = statements,
     testDataGenerationMode = TestDataGenerationMode.Random
   )

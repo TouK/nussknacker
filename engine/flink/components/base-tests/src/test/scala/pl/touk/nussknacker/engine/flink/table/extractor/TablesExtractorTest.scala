@@ -23,7 +23,7 @@ class TablesExtractorTest
 
   test("extracts configuration from valid sql statement") {
     val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
-    val tablesDefinitions = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue
+    val tablesDefinitions = TablesExtractor.prepareExtractor(statements).validValue.extractTablesFromFlinkRuntime
     val tableDefinition   = tablesDefinitions.loneElement
     val sourceRowType     = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
     sourceRowType.getFieldNames.asScala shouldBe List(
@@ -64,7 +64,7 @@ class TablesExtractorTest
        |);""".stripMargin
 
     val statements        = SqlStatementReader.readSql(statementsStr)
-    val tablesDefinitions = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue
+    val tablesDefinitions = TablesExtractor.prepareExtractor(statements).validValue.extractTablesFromFlinkRuntime
 
     tablesDefinitions.loneElement shouldBe TableDefinition(
       tableName,
@@ -75,7 +75,7 @@ class TablesExtractorTest
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
       val parsedStatement             = SqlStatementReader.readSql(invalidStatement)
-      val sqlStatementExecutionErrors = TablesExtractor.extractTablesFromFlinkRuntime(parsedStatement).invalidValue
+      val sqlStatementExecutionErrors = TablesExtractor.prepareExtractor(parsedStatement).invalidValue
 
       sqlStatementExecutionErrors.size shouldBe 1
     }
