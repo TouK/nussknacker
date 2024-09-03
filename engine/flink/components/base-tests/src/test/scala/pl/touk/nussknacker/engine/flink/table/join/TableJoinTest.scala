@@ -184,12 +184,11 @@ class TableJoinTest
 
   test("should allow to use various types in main branch context") {
     val mainBranchLocalVariableFields = Map(
-      "nestedRecord"  -> "{foo: 1, bar: '123'}".spel,
-      "listOfRecords" -> "{{foo: 1, bar: '123'}}".spel,
-      "instant"       -> SpelValues.spelInstant,
-      // TODO: add support for types not supported in table api
-//      "nullable" -> "null".spel,
-//      "offsetDateTime" -> SpelValues.spelOffsetDateTime,
+      "nestedRecord"   -> "{foo: 1, bar: '123'}".spel,
+      "listOfRecords"  -> "{{foo: 1, bar: '123'}}".spel,
+      "instant"        -> SpelValues.spelInstant,
+      "nullable"       -> "null".spel,
+      "offsetDateTime" -> SpelValues.spelOffsetDateTime,
     )
     val enrichedOrders = runner.runWithDataWithType[OrderOrProduct, java.util.Map[String, AnyRef]](
       prepareJoiningScenario(JoinType.INNER, mainBranchLocalVariableFields = mainBranchLocalVariableFields),

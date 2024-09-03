@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkLazyParameterFunctionHelper
 }
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.utils.{RowConversions, ToTableTypeEncoder}
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.{TypeInformationDetectionExtension, rowToContext}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
@@ -236,8 +237,8 @@ object TableJoinComponent
   ) = {
     Types.ROW_NAMED(
       Array(contextInternalColumnName, mainKeyInternalColumnName),
-      flinkNodeContext.typeInformationDetection.contextRowTypeInfo(mainBranchValidationContext),
-      flinkNodeContext.typeInformationDetection.forType(
+      TypeInformationDetection.instance.contextRowTypeInfo(mainBranchValidationContext),
+      TypeInformationDetection.instance.forType(
         ToTableTypeEncoder.alignTypingResult(mainKeyLazyParam.returnType)
       )
     )
@@ -278,10 +279,10 @@ object TableJoinComponent
   ) = {
     Types.ROW_NAMED(
       Array(joinedKeyInternalColumnName, outputInternalColumnName),
-      flinkNodeContext.typeInformationDetection.forType(
+      TypeInformationDetection.instance.forType(
         ToTableTypeEncoder.alignTypingResult(joinedKeyLazyParam.returnType)
       ),
-      flinkNodeContext.typeInformationDetection.forType(
+      TypeInformationDetection.instance.forType(
         ToTableTypeEncoder.alignTypingResult(outputLazyParam.returnType)
       )
     )

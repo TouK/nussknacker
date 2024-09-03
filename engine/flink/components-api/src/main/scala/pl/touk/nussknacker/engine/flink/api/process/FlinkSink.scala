@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 /**
   * Implementations of this trait can use LazyParameters
@@ -56,7 +57,7 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
       dataStream
         .map(
           (k: ValueWithContext[Value]) => k.value,
-          flinkNodeContext.typeInformationDetection.forType(typeResult).asInstanceOf[TypeInformation[Value]]
+          TypeInformationDetection.instance.forType(typeResult).asInstanceOf[TypeInformation[Value]]
         )
         .addSink(toFlinkFunction(flinkNodeContext))
     )

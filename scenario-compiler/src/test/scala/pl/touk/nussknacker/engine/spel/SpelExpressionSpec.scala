@@ -7,6 +7,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.scalacheck.Gen
 import org.scalatest.Inside.inside
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -29,6 +30,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, JavaClas
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
+  IllegalProjectionSelectionError,
   InvalidMethodReference,
   TypeReferenceError
 }
@@ -55,7 +57,7 @@ import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 
-class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with OptionValues {
 
   private implicit class ValidatedExpressionOps[E](validated: Validated[E, TypedExpression]) {
     def validExpression: CompiledExpression = validated.validValue.expression
@@ -72,7 +74,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
 
   private val ctx = Context("abc").withVariables(
-    Map("obj" -> testValue, "strVal" -> "", "mapValue" -> Map("foo" -> "bar").asJava)
+    Map("obj" -> testValue, "strVal" -> "", "mapValue" -> Map("foo" -> "bar").asJava, "arr" -> Array("a", "b"))
   )
 
   private val ctxWithGlobal: Context = ctx
@@ -1249,6 +1251,49 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should not validate array constructor") {
     List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
       illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
+    )
+  }
+
+  test("should return correct type in array projection") {
+    val parsed            = parse[Any]("#arr.![#this]", ctx)
+    val evaluated         = parsed.validExpression.evaluateSync[Any](ctx)
+    val arrayTypingResult = Typed.genericTypeClass(classOf[Array[String]], List(Typed.typedClass(classOf[String])))
+
+    parsed.validValue.typingInfo.typingResult shouldBe arrayTypingResult
+    evaluated shouldBe Array("a", "b")
+  }
+
+  test("should return error on String projection") {
+    parse[Any]("'ab'.![#this]", ctx).invalidValue.toList.headOption.value shouldBe a[IllegalProjectionSelectionError]
+  }
+
+  test("should convert array to list when passing arg which type should be list") {
+    parse[Any]("T(java.lang.String).join(',', #arr)", ctx).validExpression
+      .evaluateSync[String](ctx) shouldBe "a,b"
+  }
+
+  test("should calculate correct type of list after projection on list") {
+    val parsed = parse[Any]("{1, 2, 3}.![{a: #this}]", ctx).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass[java.util.List[_]](
+      List(
+        Typed.record(
+          List("a" -> Typed.typedClass[Integer])
+        )
+      )
+    )
+  }
+
+  test("should calculate correct type of list after projection on map") {
+    val parsed = parse[Any]("{a: 100}.![#this]", ctx).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass[java.util.List[_]](
+      List(
+        Typed.record(
+          List(
+            "key"   -> Typed.typedClass[String],
+            "value" -> TypedObjectWithValue(Typed.typedClass[Integer], 100)
+          )
+        )
+      )
     )
   }
 

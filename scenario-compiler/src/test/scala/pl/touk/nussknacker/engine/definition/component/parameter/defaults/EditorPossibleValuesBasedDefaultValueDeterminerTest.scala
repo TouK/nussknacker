@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite with Matchers {
 
@@ -38,6 +39,12 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite wi
     )
 
     determine(fixedValuesEditor) shouldBe Some(Expression.spel("expr1"))
+  }
+
+  test("determine default param value for dictionary parameter editor") {
+    val dictParam = Some(DictParameterEditor("someDictId"))
+
+    determine(dictParam) shouldBe Some(Expression(Language.DictKeyWithLabel, ""))
   }
 
   test("not determine default param value from editors without possible values") {

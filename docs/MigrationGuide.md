@@ -2,6 +2,14 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.18.0 (Not released yet)
+
+### Other changes
+
+* [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
+  are registered based on class of Serializer instead of instance of Serializer. If you have values that were
+  serialized by these Serializers in some state, the state won't be restored after upgrade.
+
 ## In version 1.17.0 (Not released yet)
 
 ### Code API changes
@@ -56,7 +64,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   configure it under `modelConfig.executionMode` or for test purposes through `FlinkTestScenarioRunnerBuilder.withExecutionMode` method.
 * [#6610](https://github.com/TouK/nussknacker/pull/6610) Add flink node context as parameter to BasicFlinkSink.
   Now one can use `FlinkCustomNodeContext` in order to build sink in `BasicFlinkSink#toFlinkFunction` method.
-* [#6635](https://github.com/TouK/nussknacker/pull/6635) `TypingResultTypeInformation` can't be loaded via SPI mechanism anymore
+* [#6635](https://github.com/TouK/nussknacker/pull/6635) [#6643](https://github.com/TouK/nussknacker/pull/6643) `TypingResultTypeInformation` related changes
+  * `TypingResultAwareTypeInformationCustomisation` API was removed
+  * `FlinkCustomNodeContext.typeInformationDetection` is deprecated - use `TypeInformationDetection.instance` instead
+  * `FlinkCustomNodeContext.valueWithContextInfo.forCustomContext` is is deprecated - use `TypeInformationDetection.instance.forValueWithContext` instead
 * [#6640](https://github.com/TouK/nussknacker/pull/6640) `BestEffort*Encoder` naming changes:
   * All `BestEffort*Encoder` classes renamed to fit `To<TargetFormat>(SchemaBased)Encoder` naming schema
   * `JsonToNuStruct` renamed to `FromJsonDecoder` (to fit `From<SourceFormat>Decoder` naming schema)

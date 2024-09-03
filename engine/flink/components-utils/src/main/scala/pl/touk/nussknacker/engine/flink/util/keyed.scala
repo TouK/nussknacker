@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkLazyParameterFunctionHelper,
   LazyParameterInterpreterFunction
 }
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.util.KeyedValue
 
@@ -34,9 +35,11 @@ object keyed {
       key: LazyParameter[K],
       value: LazyParameter[V]
   ): TypeInformation[ValueWithContext[KeyedValue[K, V]]] = {
-    val detection = flinkNodeContext.typeInformationDetection
     flinkNodeContext.valueWithContextInfo.forType(
-      KeyedValueType.info(detection.forType[K](key.returnType), detection.forType[V](value.returnType))
+      KeyedValueType.info(
+        TypeInformationDetection.instance.forType[K](key.returnType),
+        TypeInformationDetection.instance.forType[V](value.returnType)
+      )
     )
   }
 

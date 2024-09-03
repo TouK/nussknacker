@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSource
 }
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import java.time.Duration
@@ -74,7 +75,7 @@ class BlockingQueueSource[T](returnType: TypingResult, timestampAssigner: Assign
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
     env
-      .addSource(flinkSourceFunction, flinkNodeContext.typeInformationDetection.forType[T](returnType))
+      .addSource(flinkSourceFunction, TypeInformationDetection.instance.forType[T](returnType))
       .name(s"${flinkNodeContext.metaData.name}-${flinkNodeContext.nodeId}-source")
       .map(
         new FlinkContextInitializingFunction(
