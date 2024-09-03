@@ -16,7 +16,7 @@ In order to understand various metrics dealing with the concept of time (e.g. de
 Flink reference [documentation on time concepts](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
  is a good starting point.
 
-Pay special attention to the concept of event time and watermarks, see also [documentation](../scenarios_authoring/Intro.md#notion-of-time) to understand how Nussknacker deals with them.
+Pay special attention to the concept of event time and watermarks, see also [documentation](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only) to understand how Nussknacker deals with them.
 
 
 ### Integration with Apache Kafka

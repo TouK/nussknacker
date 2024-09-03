@@ -199,7 +199,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5641](https://github.com/TouK/nussknacker/pull/5641) `PeriodicProcessDeployment`/`DeploymentWithJarData`/`PeriodicProcess` now takes type parameter `CanonicalProcess` or `Unit` to point out whether it contains scenario json.
 * [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String`
 * [#5707](https://github.com/TouK/nussknacker/pull/5707) `ParameterName` data class was introduced. It replaces `String` in whole places where it's used as a parameter name
-* [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
+* [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600](https://github.com/TouK/nussknacker/commit/0d9b600)
     * Classes `ResultsCollectingListener`, `TestResults`, `ExpressionInvocationResult`, `ExternalInvocationResult` depend on `T`
     * Classes `TestResults.nodeResults` uses `ResultContext` instead of `Context`
     * Classes `TestResults.exceptions` uses `ExceptionResult` instead of `NuExceptionInfo`
@@ -404,7 +404,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4583](https://github.com/TouK/nussknacker/pull/4583) `DeploymentManager` has new variants of method `cancel` and `stop`
   taking `DeployomentId` next to `ProcessName`. They will be used with batch processing mechanism (periodic DM) so it is necessary
   to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
-* [#4685]((https://github.com/TouK/nussknacker/pull/4685)) In `AuthenticationResources` trait it was added two new
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) In `AuthenticationResources` trait it was added two new
   methods that have to be implemented in the child classes: `def authenticationMethod(): Auth[AuthCredentials, _]` and
   `def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]`. The first one tells what
   authentication method will be used (it's for Tapir-based API purposes) and the latter one is the authentication

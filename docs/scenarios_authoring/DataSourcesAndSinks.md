@@ -8,7 +8,7 @@ sidebar_position: 3
 This page covers topics specific to the Streaming processing mode. Please read the [common introduction](Intro.md) before proceeding. The components which implement aggregates in the time windows (Flink engine only) are covered [here](AggregatesInTimeWindows.md).
 
 
-In the Streaming processing mode the scenario processes events. They are read from Kafka topics and processed by the [engine](../about/engines/) of choice: Flink or Lite. At the end of the scenario, events which represent results or decisions are written to Kafka topic(s).
+In the Streaming processing mode the scenario processes events. They are read from Kafka topics and processed by the [engine](../about/engines/Engines.md) of choice: Flink or Lite. At the end of the scenario, events which represent results or decisions are written to Kafka topic(s).
 
 &nbsp;
 ## Prerequisites

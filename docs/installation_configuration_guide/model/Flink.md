@@ -29,7 +29,7 @@ description: Flink specific model configuration
 ### KAFKA
 -->
 
-## Configuring exception handling 
+## Configuring exception handling
 
 Exception handling can be customized using provided `EspExceptionConsumer`. By default, there are two available:
 - `BrieflyLogging`

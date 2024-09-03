@@ -68,8 +68,6 @@ Almost all nodes use SpEL expressions; sometimes it is not clear what was the re
 
 ![alt_text](img/nodeDebugging.png "Debugging a node") 
 
-You can also watch [this video](/quickstart/flink#correcting-errors) to see debugging functionality in action.
-
 
 ## Watching nodes filtering behaviour with counts
 

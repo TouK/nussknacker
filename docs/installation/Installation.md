@@ -140,7 +140,7 @@ need configured Kubernetes cluster to actually run scenarios in this mode - we r
 We assume that `java` (recommended version is JDK 11) is on path.
 
 Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka and Schema registry are
-running on `localhost` with their default ports configured. See [environment variables](#environment-variables) section
+running on `localhost` with their default ports configured. See [environment variables](#configuration-with-environment-variables) section
 for the details. Also, `GRAFANA_URL` is set to `/grafana`, which assumes that reverse proxy
 like [NGINX](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/nginx) is used to access both Designer and
 Grafana. For other setups you should change this value to absolute Grafana URL.
@@ -186,11 +186,11 @@ please consult their documentation.
 
 You can set up Nussknacker as a systemd service using our example unit file.
 
-1. Download distribution as described in [Binary package installation](Installation.md#Binary package installation)
+1. Download distribution from [GitHub](https://github.com/TouK/nussknacker/releases)
 2. Unzip it to `/opt/nussknacker`
 3. `sudo touch /lib/systemd/system/nussknacker.service`
 4. edit `/lib/systemd/system/nussknacker.service` file and add write content
-   of [Systemd unit file](Installation.md#systemd-unit-file)
+   of [Systemd unit file](#sample-systemd-unit-file)
 5. `sudo systemctl daemon-reload`
 6. `sudo systemctl enable nussknacker.service`
 7. `sudo systemctl start nussknacker.service`
