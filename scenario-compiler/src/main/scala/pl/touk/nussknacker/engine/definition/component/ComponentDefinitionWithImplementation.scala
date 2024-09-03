@@ -94,7 +94,7 @@ object ComponentDefinitionWithImplementation {
       .extract(
         name,
         component,
-        ComponentConfig.zero,
+        SingleComponentConfig.zero,
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
         Map.empty

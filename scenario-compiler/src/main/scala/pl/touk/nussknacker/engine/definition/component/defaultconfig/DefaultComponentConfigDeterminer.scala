@@ -10,7 +10,7 @@ object DefaultComponentConfigDeterminer {
       componentType: ComponentType,
       hasReturn: Boolean,
       customCanBeEnding: Option[Boolean]
-  ): ComponentConfig = {
+  ): SingleComponentConfig = {
     // TODO: use convention icon = componentGroup instead of code
     val configData = componentType match {
       case ComponentType.Source =>
@@ -33,7 +33,7 @@ object DefaultComponentConfigDeterminer {
           s"DefaultComponentConfigDeterminer used with built-in component"
         )
     }
-    ComponentConfig(
+    SingleComponentConfig(
       params = None,
       icon = Some(configData.icon),
       docsUrl = None,
@@ -42,13 +42,13 @@ object DefaultComponentConfigDeterminer {
     )
   }
 
-  def forBuiltInComponent(id: ComponentId): ComponentConfig = {
+  def forBuiltInComponent(id: ComponentId): SingleComponentConfig = {
     val componentGroup = if (BuiltInComponentId.FragmentDefinitionComponents.contains(id)) {
       DefaultsComponentGroupName.FragmentsDefinitionGroupName
     } else {
       DefaultsComponentGroupName.BaseGroupName
     }
-    ComponentConfig(
+    SingleComponentConfig(
       params = None,
       icon = Some(DefaultsComponentIcon.forBuiltInComponent(id)),
       // TODO: move from defaultModelConfig.conf to here + convention instead of code

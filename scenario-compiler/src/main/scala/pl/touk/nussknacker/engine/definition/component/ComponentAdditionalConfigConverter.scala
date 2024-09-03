@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
-  ComponentConfig,
   ParameterAdditionalUIConfig,
-  ParameterConfig
+  ParameterConfig,
+  SingleComponentConfig
 }
 import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.ValueEditorValidator
 
 object ComponentAdditionalConfigConverter {
 
-  def toComponentConfig(componentAdditionalConfig: ComponentAdditionalConfig): ComponentConfig =
-    ComponentConfig(
+  def toSingleComponentConfig(componentAdditionalConfig: ComponentAdditionalConfig): SingleComponentConfig =
+    SingleComponentConfig(
       params = Some(componentAdditionalConfig.parameterConfigs.map { case (name, p) =>
         name -> toParameterConfig(p, name)
       }),
