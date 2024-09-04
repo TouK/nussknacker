@@ -33,12 +33,12 @@ trait CollectionUtils extends HideToString {
   @GenericType(typingFunction = classOf[ListAdditionTyping])
   @varargs
   def concat[T](
-      @ParamName("list1") list1: java.util.List[T],
-      @ParamName("list2") list2: java.util.List[T]*
+      @ParamName("list") list: java.util.List[T],
+      @ParamName("lists") lists: java.util.List[T]*
   ): java.util.List[T] = {
-    val result = new java.util.ArrayList[T](list1.size() + list2.map(_.size()).sum)
-    result.addAll(list1)
-    list2.foreach(result.addAll)
+    val result = new java.util.ArrayList[T](list.size() + lists.map(_.size()).sum)
+    result.addAll(list)
+    lists.foreach(result.addAll)
     result
   }
 
@@ -48,12 +48,12 @@ trait CollectionUtils extends HideToString {
   @GenericType(typingFunction = classOf[VarargsMapMergeTyping])
   @varargs
   def merge[K, V](
-      @ParamName("map1") map1: java.util.Map[K, V],
-      @ParamName("map2") map2: java.util.Map[K, V]*
+      @ParamName("map") map: java.util.Map[K, V],
+      @ParamName("maps") maps: java.util.Map[K, V]*
   ): java.util.Map[K, V] = {
-    val merged = new java.util.HashMap[K, V](map1.size() + map2.map(_.size()).sum)
-    merged.putAll(map1)
-    map2.foreach(merged.putAll)
+    val merged = new java.util.HashMap[K, V](map.size() + maps.map(_.size()).sum)
+    merged.putAll(map)
+    maps.foreach(merged.putAll)
     merged
   }
 

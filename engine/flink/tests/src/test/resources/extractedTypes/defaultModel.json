@@ -12799,7 +12799,7 @@
             {
               "noVarArgs": [
                 {
-                  "name": "list1",
+                  "name": "list",
                   "refClazz": {
                     "params": [
                       {
@@ -12825,7 +12825,7 @@
                 "refClazzName": "java.util.List"
               },
               "varArg": {
-                "name": "list2",
+                "name": "lists",
                 "refClazz": {
                   "params": [
                     {
@@ -13096,7 +13096,7 @@
             {
               "noVarArgs": [
                 {
-                  "name": "map1",
+                  "name": "map",
                   "refClazz": {
                     "params": [
                       {
@@ -13134,7 +13134,7 @@
                 "refClazzName": "java.util.Map"
               },
               "varArg": {
-                "name": "map2",
+                "name": "maps",
                 "refClazz": {
                   "params": [
                     {
