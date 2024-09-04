@@ -36,6 +36,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -143,7 +144,7 @@ object TestFactory {
   def newDummyDBIOActionRunner(): DBIOActionRunner =
     newDBIOActionRunner(dummyDbRef)
 
-  def newCommentRepository(dbRef: DbRef) = new CommentRepository(dbRef)
+  def newScenarioActivityRepository(dbRef: DbRef) = new DbScenarioActivityRepository(dbRef)
 
   def newFutureFetchingScenarioRepository(dbRef: DbRef) =
     new DBFetchingProcessRepository[Future](dbRef, newActionProcessRepository(dbRef)) with BasicRepository
@@ -154,8 +155,8 @@ object TestFactory {
   def newWriteProcessRepository(dbRef: DbRef, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(
       dbRef,
-      newCommentRepository(dbRef),
-      mapProcessingTypeDataProvider(modelVersions.map(Streaming.stringify -> _).toList: _*)
+      newScenarioActivityRepository(dbRef),
+      mapProcessingTypeDataProvider(modelVersions.map(Streaming.stringify -> _).toList: _*),
     )
 
   def newDummyWriteProcessRepository(): DBProcessRepository =
@@ -176,14 +177,11 @@ object TestFactory {
   def newActionProcessRepository(dbRef: DbRef) =
     new DbProcessActionRepository(
       dbRef,
-      newCommentRepository(dbRef),
       mapProcessingTypeDataProvider(Streaming.stringify -> buildInfo)
     ) with DbioRepository
 
   def newDummyActionRepository(): DbProcessActionRepository =
     newActionProcessRepository(dummyDbRef)
-
-  def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef, newCommentRepository(dbRef))
 
   def newScenarioMetadataRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)
 

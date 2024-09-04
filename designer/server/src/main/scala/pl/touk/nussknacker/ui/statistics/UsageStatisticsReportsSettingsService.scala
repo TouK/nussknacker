@@ -14,7 +14,8 @@ import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStati
 import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
@@ -29,11 +30,12 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       // TODO: Instead of passing deploymentManagerTypes next to processService, we should split domain ScenarioWithDetails from DTOs - see comment in ScenarioWithDetails
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
       fingerprintService: FingerprintService,
-      scenarioActivityRepository: ProcessActivityRepository,
+      scenarioActivityRepository: ScenarioActivityRepository,
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
       componentList: List[ComponentDefinitionWithImplementation],
-      designerClock: Clock
+      designerClock: Clock,
+      dbioRunner: DBIOActionRunner,
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
     implicit val user: LoggedUser            = NussknackerInternalUser.instance
@@ -67,7 +69,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
           )
         }
     }
-    def fetchActivity(): Future[Map[String, Int]] = {
+    def fetchActivity(): Future[Map[String, Int]] = dbioRunner.run {
       scenarioActivityRepository.getActivityStats
     }
 

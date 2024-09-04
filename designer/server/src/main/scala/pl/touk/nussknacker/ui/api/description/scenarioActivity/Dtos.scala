@@ -7,15 +7,11 @@ import enumeratum.{Enum, EnumEntry}
 import io.circe
 import io.circe.generic.extras.Configuration
 import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity.AdditionalField
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
-  Attachment => DbAttachment,
-  Comment => DbComment,
-  ProcessActivity => DbProcessActivity
-}
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import sttp.model.MediaType
 import sttp.tapir._
@@ -488,7 +484,7 @@ object Dtos {
       comment = comment,
       additionalFields = List(
         AdditionalField("from", from),
-        AdditionalField("to", from),
+        AdditionalField("to", to),
       )
     )
 
@@ -613,16 +609,6 @@ object Dtos {
   @derive(encoder, decoder, schema)
   final case class ScenarioCommentsAndAttachments private (comments: List[Comment], attachments: List[Attachment])
 
-  object ScenarioCommentsAndAttachments {
-
-    def apply(activity: DbProcessActivity): ScenarioCommentsAndAttachments =
-      new ScenarioCommentsAndAttachments(
-        comments = activity.comments.map(Comment.apply),
-        attachments = activity.attachments.map(Attachment.apply)
-      )
-
-  }
-
   @derive(encoder, decoder, schema)
   final case class Comment private (
       id: Long,
@@ -631,19 +617,6 @@ object Dtos {
       user: String,
       createDate: Instant
   )
-
-  object Comment {
-
-    def apply(comment: DbComment): Comment =
-      new Comment(
-        id = comment.id,
-        scenarioVersion = comment.processVersionId.value,
-        content = comment.content,
-        user = comment.user,
-        createDate = comment.createDate
-      )
-
-  }
 
   @derive(encoder, decoder, schema)
   final case class Attachment private (
@@ -654,24 +627,15 @@ object Dtos {
       createDate: Instant
   )
 
-  object Attachment {
-
-    def apply(attachment: DbAttachment): Attachment =
-      new Attachment(
-        id = attachment.id,
-        scenarioVersion = attachment.processVersionId.value,
-        fileName = attachment.fileName,
-        user = attachment.user,
-        createDate = attachment.createDate
-      )
-
-  }
-
   final case class AddCommentRequest(scenarioName: ProcessName, versionId: VersionId, commentContent: String)
 
-  final case class EditCommentRequest(scenarioName: ProcessName, commentId: Long, commentContent: String)
+  final case class EditCommentRequest(
+      scenarioName: ProcessName,
+      scenarioActivityId: ScenarioActivityId,
+      commentContent: String
+  )
 
-  final case class DeleteCommentRequest(scenarioName: ProcessName, commentId: Long)
+  final case class DeleteCommentRequest(scenarioName: ProcessName, scenarioActivityId: ScenarioActivityId)
 
   final case class AddAttachmentRequest(
       scenarioName: ProcessName,
@@ -694,14 +658,14 @@ object Dtos {
   object ScenarioActivityError {
     final case class NoScenario(scenarioName: ProcessName) extends ScenarioActivityError
     final case object NoPermission                         extends ScenarioActivityError with CustomAuthorizationError
-    final case class NoComment(commentId: Long)            extends ScenarioActivityError
+    final case class NoComment(scenarioActivityId: String) extends ScenarioActivityError
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
 
     implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoComment](e =>
-        s"Unable to delete comment with id: ${e.commentId}"
+        s"Unable to delete comment for activity with id: ${e.scenarioActivityId}"
       )
 
   }

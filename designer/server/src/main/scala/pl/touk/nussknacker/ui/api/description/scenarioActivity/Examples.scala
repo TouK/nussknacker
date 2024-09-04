@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{NoComment, NoScenario}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
@@ -221,7 +222,7 @@ object Examples {
 
   val commentNotFoundError: Example[NoComment] = Example.of(
     summary = Some("Unable to edit comment with id: {commentId}"),
-    value = NoComment(1L)
+    value = NoComment("a76d6eba-9b6c-4d97-aaa1-984a23f88019")
   )
 
 }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.TapirCodecs
@@ -143,7 +144,11 @@ object Endpoints extends BaseEndpointDefinitions {
       .summary("Edit process comment service")
       .tag("Comments")
       .put
-      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[Long]("commentId"))
+      .in(
+        "processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[ScenarioActivityId](
+          "commentId"
+        )
+      )
       .in(stringBody)
       .mapInTo[EditCommentRequest]
       .out(statusCode(Ok))
@@ -159,7 +164,11 @@ object Endpoints extends BaseEndpointDefinitions {
       .summary("Delete process comment service")
       .tag("Comments")
       .delete
-      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[Long]("commentId"))
+      .in(
+        "processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[ScenarioActivityId](
+          "commentId"
+        )
+      )
       .mapInTo[DeleteCommentRequest]
       .out(statusCode(Ok))
       .errorOut(

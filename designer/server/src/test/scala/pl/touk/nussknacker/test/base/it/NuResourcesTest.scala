@@ -51,6 +51,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
@@ -92,7 +93,7 @@ trait NuResourcesTest
 
   protected val actionRepository: DbProcessActionRepository = newActionProcessRepository(testDbRef)
 
-  protected val processActivityRepository: DbProcessActivityRepository = newProcessActivityRepository(testDbRef)
+  protected val scenarioActivityRepository: ScenarioActivityRepository = newScenarioActivityRepository(testDbRef)
 
   protected val processChangeListener = new TestProcessChangeListener()
 
@@ -169,7 +170,7 @@ trait NuResourcesTest
   )
 
   protected val processActivityRoute =
-    new TestResource.ProcessActivityResource(processActivityRepository, processService, processAuthorizer)
+    new TestResource.ProcessActivityResource(scenarioActivityRepository, processService, processAuthorizer, dbioRunner)
 
   protected val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
 
@@ -654,9 +655,10 @@ object TestResource {
   //  The tests are still using akka based testing and it is not easy to integrate tapir route with this kind of tests.
   // should be replaced with rest call: GET /api/process/{scenarioName}/activity
   class ProcessActivityResource(
-      processActivityRepository: ProcessActivityRepository,
+      scenarioActivityRepository: ScenarioActivityRepository,
       protected val processService: ProcessService,
-      val processAuthorizer: AuthorizeProcess
+      val processAuthorizer: AuthorizeProcess,
+      dbioActionRunner: DBIOActionRunner,
   )(implicit val ec: ExecutionContext)
       extends Directives
       with FailFastCirceSupport
@@ -669,7 +671,7 @@ object TestResource {
       path("processes" / ProcessNameSegment / "activity") { processName =>
         (get & processId(processName)) { processId =>
           complete {
-            processActivityRepository.findActivity(processId.id)
+            dbioActionRunner.run(scenarioActivityRepository.findActivity(processId.id))
           }
         }
       }

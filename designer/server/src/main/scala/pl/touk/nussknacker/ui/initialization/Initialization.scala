@@ -5,7 +5,6 @@ import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
@@ -13,6 +12,7 @@ import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
@@ -28,10 +28,10 @@ object Initialization {
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
       db: DbRef,
       fetchingRepository: DBFetchingProcessRepository[DB],
-      commentRepository: CommentRepository,
-      environment: String
+      scenarioActivityRepository: ScenarioActivityRepository,
+      environment: String,
   )(implicit ec: ExecutionContext): Unit = {
-    val processRepository = new DBProcessRepository(db, commentRepository, migrations.mapValues(_.version))
+    val processRepository = new DBProcessRepository(db, scenarioActivityRepository, migrations.mapValues(_.version))
 
     val operations: List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),
