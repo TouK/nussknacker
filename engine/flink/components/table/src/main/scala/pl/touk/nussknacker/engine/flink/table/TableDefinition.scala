@@ -8,9 +8,6 @@ import org.apache.flink.table.types.DataType
 // After expression resolution, the type is determined.
 final case class TableDefinition(tableId: ObjectIdentifier, schema: ResolvedSchema) {
 
-  // FIXME: Check places of usage and replace with tableId
-  def tableName: String = tableId.getObjectName
-
   lazy val sourceRowDataType: DataType = schema.toSourceRowDataType
 
   lazy val sinkRowDataType: DataType = schema.toSinkRowDataType

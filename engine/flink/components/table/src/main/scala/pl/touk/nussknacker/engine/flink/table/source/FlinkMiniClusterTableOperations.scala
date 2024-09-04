@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api._
+import org.apache.flink.table.catalog.ObjectIdentifier
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition
@@ -40,11 +41,11 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
       limit: Int,
       schema: Schema,
       flinkDataDefinition: FlinkDataDefinition,
-      tableName: TableName
+      tableId: ObjectIdentifier
   ): TestData = generateTestData(
     limit = limit,
     schema = schema,
-    buildSourceTable = createLiveDataGeneratorTable(flinkDataDefinition, tableName, schema)
+    buildSourceTable = createLiveDataGeneratorTable(flinkDataDefinition, tableId, schema)
   )
 
   def generateRandomTestData(amount: Int, schema: Schema): TestData = generateTestData(
@@ -121,11 +122,11 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
 
   private def createLiveDataGeneratorTable(
       flinkDataDefinition: FlinkDataDefinition,
-      tableName: TableName,
+      tableId: ObjectIdentifier,
       schema: Schema
   )(env: TableEnvironment): Table = {
     flinkDataDefinition.registerIn(env).orFail
-    env.from(s"`$tableName`").select(schema.getColumns.asScala.map(_.getName).map($).toList: _*)
+    env.from(tableId.toString).select(schema.getColumns.asScala.map(_.getName).map($).toList: _*)
   }
 
   private def createTempFileTable(flinkTableSchema: Schema)(implicit env: TableEnvironment): (Path, TableName) = {

@@ -59,7 +59,7 @@ class TableSink(
     val inputValueTable = tableEnv.fromDataStream(streamOfRows)
 
     val statementSet = tableEnv.createStatementSet()
-    statementSet.add(inputValueTable.insertInto(s"`${tableDefinition.tableName}`"))
+    statementSet.add(inputValueTable.insertInto(tableDefinition.tableId.toString))
     statementSet.attachAsDataStream()
 
     /*

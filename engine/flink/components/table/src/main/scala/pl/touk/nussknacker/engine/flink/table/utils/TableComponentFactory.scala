@@ -11,7 +11,9 @@ object TableComponentFactory {
   def buildTableNameParam(
       defs: List[TableDefinition]
   ): ParameterExtractor[String] with ParameterCreatorWithNoDependency = {
-    val possibleTableParamValues = defs.map(c => FixedExpressionValue(s"'${c.tableName}'", c.tableName))
+    // TODO: We should print tableName only when table is defined inside the default catalog and the default database
+    //       For other cases, we should show database and catalog
+    val possibleTableParamValues = defs.map(c => FixedExpressionValue(s"'${c.tableId}'", c.tableId.getObjectName))
     ParameterDeclaration
       .mandatory[String](tableNameParamName)
       .withCreator(
@@ -22,11 +24,12 @@ object TableComponentFactory {
   }
 
   def getSelectedTableUnsafe(
-      tableName: String,
+      // There is no easy way to create ObjectIdentifier from String and we don't want to add this type to Nu supported types so we pass String instead
+      tableIdString: String,
       configs: List[TableDefinition]
   ): TableDefinition =
     configs
-      .find(_.tableName == tableName)
+      .find(_.tableId.toString == tableIdString)
       .getOrElse(throw new IllegalStateException("Table with selected name not found."))
 
 }

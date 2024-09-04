@@ -49,12 +49,12 @@ class TableSource(
     val tableEnv = StreamTableEnvironment.create(env)
     flinkDataDefinition.registerIn(tableEnv).orFail
 
-    val selectQuery = tableEnv.from(s"`${tableDefinition.tableName}`")
+    val selectQuery = tableEnv.from(tableDefinition.tableId.toString)
 
     val finalQuery = flinkNodeContext.nodeDeploymentData
       .map { case SqlFilteringExpression(sqlExpression) =>
         tableEnv.executeSql(
-          s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM `${tableDefinition.tableName}` WHERE $sqlExpression"
+          s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM ${tableDefinition.tableId} WHERE $sqlExpression"
         )
         tableEnv
           .from(filteringInternalViewName)
@@ -114,7 +114,7 @@ class TableSource(
           limit = size,
           schema = generateDataSchema,
           flinkDataDefinition = flinkDataDefinition,
-          tableName = tableDefinition.tableName
+          tableId = tableDefinition.tableId
         )
     }
   }
