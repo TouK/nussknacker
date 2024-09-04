@@ -139,6 +139,7 @@ class TestFlinkExceptionHandler(
     listeners: Seq[ProcessListener],
     classLoader: ClassLoader
 ) extends FlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader) {
+
   @silent("deprecated")
   override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 

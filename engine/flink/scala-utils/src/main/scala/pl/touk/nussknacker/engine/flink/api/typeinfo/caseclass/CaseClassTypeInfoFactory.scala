@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation}
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -13,6 +14,7 @@ import scala.reflect.runtime.universe._
 // Generic class factory for creating CaseClassTypeInfo
 abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfoFactory[T] with Serializable {
 
+  @silent("deprecated")
   override def createTypeInfo(
       t: Type,
       genericParameters: java.util.Map[String, TypeInformation[_]]
@@ -25,7 +27,7 @@ abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfo
         new ScalaCaseClassSerializer[T](
           clazz = classType,
           scalaFieldSerializers = fieldTypes
-            .map(typeInfo => NullableSerializer.wrap(typeInfo.createSerializer(config.getSerializerConfig), true))
+            .map(typeInfo => NullableSerializer.wrap(typeInfo.createSerializer(config), true))
             .toArray
         )
       }

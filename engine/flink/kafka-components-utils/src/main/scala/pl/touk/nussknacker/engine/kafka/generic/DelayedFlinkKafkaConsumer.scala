@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import cats.data.NonEmptyList
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.configuration.PipelineOptions
 import org.apache.flink.metrics.MetricGroup
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext
@@ -109,6 +109,7 @@ class DelayedFlinkKafkaConsumer[T](
       nodeId
     ) {
 
+  @silent("deprecated")
   override def createFetcher(
       sourceContext: SourceFunction.SourceContext[T],
       assignedPartitionsWithInitialOffsets: util.Map[KafkaTopicPartition, lang.Long],
@@ -123,17 +124,14 @@ class DelayedFlinkKafkaConsumer[T](
       properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
     }
 
-    // TODO Flink bump: check this
-    val autoWatermarkInterval = runtimeContext.getJobConfiguration.get(PipelineOptions.AUTO_WATERMARK_INTERVAL).toMillis
-
     new DelayedKafkaFetcher(
       sourceContext,
       assignedPartitionsWithInitialOffsets,
       watermarkStrategy,
       runtimeContext.getProcessingTimeService,
-      autoWatermarkInterval,
+      runtimeContext.getExecutionConfig.getAutoWatermarkInterval,
       runtimeContext.getUserCodeClassLoader,
-      runtimeContext.getTaskInfo.getTaskNameWithSubtasks,
+      runtimeContext.getTaskNameWithSubtasks,
       runtimeContext.getMetricGroup,
       consumerMetricGroup,
       deserializer,

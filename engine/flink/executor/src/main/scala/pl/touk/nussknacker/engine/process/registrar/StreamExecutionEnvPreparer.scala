@@ -51,7 +51,6 @@ class DefaultStreamExecutionEnvPreparer(
 ) extends StreamExecutionEnvPreparer
     with LazyLogging {
 
-  // TODO Flink bump: RestartStrategy -> RestartStrategyOptions
   @silent("deprecated")
   override def preRegistration(
       env: StreamExecutionEnvironment,

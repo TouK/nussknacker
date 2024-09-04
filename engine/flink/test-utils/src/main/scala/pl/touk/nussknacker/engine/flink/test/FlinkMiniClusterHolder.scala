@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import java.util.concurrent.CompletableFuture
+import com.github.ghik.silencer.silent
 
+import java.util.concurrent.CompletableFuture
 import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.client.program.ClusterClient
 import org.apache.flink.configuration._
@@ -92,12 +93,17 @@ object FlinkMiniClusterHolder {
     new FlinkMiniClusterHolderImpl(resource, userFlinkClusterConfig, envConfig)
   }
 
+  @silent("deprecated")
   def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterWithClientResource = {
+    val taskManagerNumber = ConfigOptions
+      .key(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER)
+      .intType()
+      .defaultValue(ConfigConstants.DEFAULT_LOCAL_NUMBER_JOB_MANAGER)
     val clusterConfig: MiniClusterResourceConfiguration = new MiniClusterResourceConfiguration.Builder()
-      .setNumberTaskManagers(userFlinkClusterConfig.get(TaskManagerOptions.MINI_CLUSTER_NUM_TASK_MANAGERS))
+      .setNumberTaskManagers(userFlinkClusterConfig.get(taskManagerNumber))
       .setNumberSlotsPerTaskManager(
         userFlinkClusterConfig
-          .get[Integer](TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue())
+          .getInteger(TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue())
       )
       .setConfiguration(userFlinkClusterConfig)
       .build
