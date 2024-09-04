@@ -21,7 +21,7 @@ type WindowContentProps = Omit<DefaultContentProps, "buttons"> &
         closeWithEsc?: boolean;
     }>;
 
-export function WindowContent({ children, icon, subheader, buttons, closeWithEsc, ...props }: WindowContentProps): JSX.Element {
+export function WindowContent({ children, icon, subheader, buttons = [], closeWithEsc, ...props }: WindowContentProps): JSX.Element {
     const classnames = useMemo(
         () => ({
             footer: css({
