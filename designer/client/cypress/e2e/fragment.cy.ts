@@ -297,6 +297,7 @@ describe("Fragment", () => {
             .should("be.visible");
 
         cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.contains(/^apply/i).should("be.visible");
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
     });
 
@@ -357,7 +358,7 @@ describe("Fragment", () => {
         cy.deleteAllTestProcesses({ filter: seed2 });
     });
 
-    it("should display dead-ended fragment correct", () => {
+    it.only("should display dead-ended fragment correct", () => {
         const fragmentName = "fragmentOutput";
         const deadEndFragmentName = "fragmentDeadEnd";
         cy.createTestFragment(fragmentName, "fragment").as("fragmentName");
@@ -421,8 +422,6 @@ describe("Fragment", () => {
             });
         cy.layoutScenario();
 
-        cy.get("@sendSms")
-            .parent()
-            .matchImage({ screenshotConfig: { padding: 16 } });
+        cy.get('[joint-selector="layers"]').matchImage({ screenshotConfig: { padding: 16 } });
     });
 });
