@@ -1,6 +1,5 @@
 taskmanager.numberOfTaskSlots: 8
-
-state.backend: filesystem
+state.backend.type: filesystem
 state.checkpoints.dir: file:///opt/flink/data/checkpoints
 state.savepoints.dir: file:///opt/flink/data/savepoints
 
@@ -21,8 +20,8 @@ metrics.reporter.influxdb_reporter.port: 8087
 metrics.reporter.influxdb_reporter.db: nussknacker_metrics
 metrics.reporter.influxdb_reporter.scope.variables.excludes: tm_id;job_id;task_id;task_attempt_id;operator_id;task_attempt_num;task_name
 metrics.scope.jm: local.<host>.jobmanagerGlobal
-metrics.scope.jm.job: local.<host>.jobmanagerJob.<job_name>
+metrics.scope.jm-job: local.<host>.jobmanagerJob.<job_name>
 metrics.scope.tm: local.<host>.taskmanagerGlobal.<tm_id>
-metrics.scope.tm.job: local.<host>.taskmanagerJob.<tm_id>.<job_name>
+metrics.scope.tm-job: local.<host>.taskmanagerJob.<tm_id>.<job_name>
 metrics.scope.task: local.<host>.taskmanagerTask.<tm_id>.<job_name>.<task_name>.<subtask_index>
 metrics.scope.operator: local.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator_name>.<subtask_index>
