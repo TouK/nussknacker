@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import cats.data.Validated.Valid
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetec
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.util.Random
 
+@silent("deprecated")
 class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
 
   // the aim of this test is to be able to test different parameters easily
@@ -70,12 +72,11 @@ class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
         serializerAssertion: TypeSerializer[_] => Assertion
     ) = {
       val typeInfo   = rawTypeInfo.asInstanceOf[TypeInformation[CardinalityWrapper]]
-      val serializer = typeInfo.createSerializer(ex.getSerializerConfig)
+      val serializer = typeInfo.createSerializer(ex)
 
-      val compatibility =
-        serializer
-          .snapshotConfiguration()
-          .resolveSchemaCompatibility(typeInfo.createSerializer(ex.getSerializerConfig).snapshotConfiguration())
+      val compatibility = serializer
+        .snapshotConfiguration()
+        .resolveSchemaCompatibility(typeInfo.createSerializer(ex))
       compatibility.isCompatibleAsIs shouldBe true
 
       val data = new ByteArrayOutputStream(1024)

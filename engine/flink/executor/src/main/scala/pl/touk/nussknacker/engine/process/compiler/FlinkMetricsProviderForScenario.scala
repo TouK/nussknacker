@@ -53,7 +53,6 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
     ??? // Shouldn't be needed because Flink jobs are recreated "from scratch" and no cleanup of metrics during cancel is needed
   }
 
-  // TODO Flink bump: rebuild NkGlobalParameters from Map from `runtimeContext.getGlobalJobParameters`
   @silent("deprecated")
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
     val namespaceTags = extractTags(NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig))
