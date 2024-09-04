@@ -12476,7 +12476,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger"}
           }
@@ -12600,7 +12600,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger"}
           }
@@ -12715,7 +12715,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType"}
           }
@@ -12793,27 +12793,13 @@
     "methods": {
       "concat": [
         {
-          "description": "Concatenates two lists",
+          "description": "Concatenates lists",
           "name": "concat",
           "signatures": [
             {
               "noVarArgs": [
                 {
                   "name": "list1",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.List"
-                  }
-                },
-                {
-                  "name": "list2",
                   "refClazz": {
                     "params": [
                       {
@@ -12837,6 +12823,20 @@
                   }
                 ],
                 "refClazzName": "java.util.List"
+              },
+              "varArg": {
+                "name": "list2",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.List"
+                }
               }
             }
           ]
@@ -13090,33 +13090,13 @@
       ],
       "merge": [
         {
-          "description": "Merges two maps. Values in the first map will be overwritten with values from the second map if keys are the same",
+          "description": "Merges maps. Values in the first map will be overwritten with values from the other one if keys are the same",
           "name": "merge",
           "signatures": [
             {
               "noVarArgs": [
                 {
                   "name": "map1",
-                  "refClazz": {
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      },
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.util.Map"
-                  }
-                },
-                {
-                  "name": "map2",
                   "refClazz": {
                     "params": [
                       {
@@ -13152,6 +13132,26 @@
                   }
                 ],
                 "refClazzName": "java.util.Map"
+              },
+              "varArg": {
+                "name": "map2",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    },
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.Map"
+                }
               }
             }
           ]
