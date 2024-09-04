@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -26,6 +25,7 @@ import scala.jdk.CollectionConverters._
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import scala.jdk.CollectionConverters._
 
 class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures {
 
@@ -102,7 +102,7 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
     .withExecutionMode(ExecutionMode.Batch)
-    .withExtraComponents(singleRecordBatchTable :: tableComponents)
+    .withExtraComponents(tableComponents)
     .build()
 
   override protected def afterAll(): Unit = {
@@ -121,7 +121,7 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
         "Table"      -> s"'$outputTableName'".spel,
         "Raw editor" -> "false".spel,
         "client_id"  -> "''".spel,
-        "amount"     -> "T(java.math.BigDecimal).ONE".spel,
+        "amount"     -> "1".spel,
       )
 
     val result = runner.runWithoutData(scenario)

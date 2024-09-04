@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -68,9 +67,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       CollectionSource[Record](list, None, Typed.fromDetailedType[List[Record]])
     )
     LocalModelData(
-      ConfigFactory
-        .empty()
-        .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
+      ConfigFactory.empty(),
       ComponentDefinition(
         "start",
         sourceComponent

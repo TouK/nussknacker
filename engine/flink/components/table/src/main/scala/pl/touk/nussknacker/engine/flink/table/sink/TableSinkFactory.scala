@@ -15,12 +15,12 @@ import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDepen
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractor
+import pl.touk.nussknacker.engine.flink.table.extractor.TablesDefinitionDiscovery
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
-import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory.getSelectedTableUnsafe
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -34,38 +34,15 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
-object TableSinkFactory {
-  private val valueParameterName: ParameterName = ParameterName("Value")
-  private val rawValueParameterDeclaration =
-    ParameterDeclaration.lazyMandatory[AnyRef](valueParameterName).withCreator()
-
-  private val tableNameParameterName              = TableSourceFactory.tableNameParamName
-  private val rawModeParameterName: ParameterName = ParameterName("Raw editor")
-
-  private val rawModeParameterDeclaration = ParameterDeclaration
-    .mandatory[Boolean](rawModeParameterName)
-    .withCreator(c => c.copy(defaultValue = Some(Expression.spel("false")), editor = Some(BoolParameterEditor)))
-
-  private val restrictedParamNamesForNonRawMode: Set[ParameterName] = Set(
-    tableNameParameterName,
-    rawModeParameterName
-  )
-
-}
-
-final case class TransformationState(table: TableDefinition, valueParam: SchemaBasedParameter)
-
 class TableSinkFactory(sqlStatements: List[SqlStatement])
     extends SingleInputDynamicComponent[Sink]
     with SinkFactory
     with BoundedStreamComponent {
 
   @transient
-  private lazy val tableDefinitions = TablesExtractor.extractTablesFromFlinkRuntimeUnsafe(sqlStatements)
+  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscoveryUnsafe(sqlStatements)
 
-  override type State = TransformationState
-
-  private val tableNameParameterDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
+  override type State = TableSinkFactoryState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -77,69 +54,53 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
       nonRawModeValidateValueParametersFinalStep(context)
   }
 
-  override def implementation(
-      params: Params,
-      dependencies: List[NodeDependencyValue],
-      finalStateOpt: Option[State]
-  ): Sink = {
-    val finalState = finalStateOpt.getOrElse(
-      throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
-    )
-    val lazyValueParam = SinkValue.applyUnsafe(finalState.valueParam, params).toLazyParameter
-
-    new TableSink(
-      tableDefinition = finalState.table,
-      sqlStatements = sqlStatements,
-      value = lazyValueParam
-    )
-  }
-
   override def nodeDependencies: List[NodeDependency] = List.empty
 
   private lazy val prepareInitialParameters: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
+    val tableDefinitions          = tablesDiscovery.listTables
+    val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
     NextParameters(
-      parameters =
-        tableNameParameterDeclaration.createParameter() :: rawModeParameterDeclaration.createParameter() :: Nil,
+      parameters = tableNameParamDeclaration.createParameter() :: rawModeParameterDeclaration.createParameter() :: Nil,
       errors = List.empty,
-      state = None
+      state = Some(AvailableTables(tableDefinitions))
     )
   }
 
   private lazy val rawModePrepareValueParameter: ContextTransformationDefinition = {
     case TransformationStep(
-          (`tableNameParameterName`, _) ::
+          (`tableNameParamName`, _) ::
           (`rawModeParameterName`, DefinedEagerParameter(true, _)) :: Nil,
-          _
+          state
         ) =>
-      NextParameters(rawValueParameterDeclaration.createParameter() :: Nil)
+      NextParameters(rawValueParameterDeclaration.createParameter() :: Nil, state = state)
   }
 
   private def rawModeFinalStep(ctx: ValidationContext)(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
-          (`tableNameParameterName`, DefinedEagerParameter(tableName: String, _)) ::
+          (`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) ::
           (`rawModeParameterName`, DefinedEagerParameter(true, _)) ::
           (`valueParameterName`, rawValueParamValue) :: Nil,
-          _
+          Some(AvailableTables(tableDefinitions))
         ) =>
       val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
 
       val valueParameter = SingleSchemaBasedParameter(
         rawValueParameterDeclaration.createParameter(),
-        TypingResultOutputValidator.validate(_, selectedTable.sinkRowDataType.getLogicalType.toTypingResult)
+        TableTypeOutputValidator.validate(_, selectedTable.sinkRowDataType.getLogicalType)
       )
       val valueParameterTypeErrors =
         valueParameter.validateParams(Map(valueParameterName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
 
-      FinalResults(ctx, valueParameterTypeErrors, Some(TransformationState(selectedTable, valueParameter)))
+      FinalResults(ctx, valueParameterTypeErrors, Some(SelectedTableWithValueParam(selectedTable, valueParameter)))
   }
 
   private def nonRawModePrepareValueParameters(
       ctx: ValidationContext
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
-          (`tableNameParameterName`, DefinedEagerParameter(tableName: String, _)) ::
+          (`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) ::
           (`rawModeParameterName`, DefinedEagerParameter(false, _)) :: Nil,
-          _
+          Some(AvailableTables(tableDefinitions))
         ) => {
       val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
 
@@ -150,7 +111,7 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
           NextParameters(
             valueParam.toParameters,
             Nil,
-            Some(TransformationState(selectedTable, valueParam))
+            Some(SelectedTableWithValueParam(selectedTable, valueParam))
           )
         case Validated.Invalid(errors) => {
           FinalResults(
@@ -167,14 +128,14 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
       ctx: ValidationContext
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
-          (`tableNameParameterName`, DefinedEagerParameter(_, _)) ::
+          (`tableNameParamName`, DefinedEagerParameter(_, _)) ::
           (`rawModeParameterName`, DefinedEagerParameter(false, _)) ::
           valueParams,
-          Some(tState)
+          state @ Some(SelectedTableWithValueParam(_, valueParam))
         ) =>
-      val errors = tState.valueParam.validateParams(valueParams.toMap).fold(err => err.toList, _ => Nil)
+      val errors = valueParam.validateParams(valueParams.toMap).fold(err => err.toList, _ => Nil)
 
-      FinalResults(ctx, errors, Some(tState))
+      FinalResults(ctx, errors, state)
   }
 
   private def buildNonRawValueParameter(
@@ -195,12 +156,59 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
         } else {
           val param: SchemaBasedParameter = SingleSchemaBasedParameter(
             value = Parameter(ParameterName(field.getName), field.getType.toTypingResult).copy(isLazyParameter = true),
-            validator = TypingResultOutputValidator.validate(_, field.getType.toTypingResult)
+            validator = TableTypeOutputValidator.validate(_, field.getType)
           )
           valid(field.getName -> param)
         }
       })
     tableColumnValueParams.sequence.map(params => SchemaBasedRecordParameter(ListMap(params: _*)))
   }
+
+  override def implementation(
+      params: Params,
+      dependencies: List[NodeDependencyValue],
+      finalStateOpt: Option[State]
+  ): Sink = {
+    val finalState = finalStateOpt match {
+      case Some(selectedTableWithValueParam: SelectedTableWithValueParam) => selectedTableWithValueParam
+      case _ =>
+        throw new IllegalStateException(
+          s"Unexpected final state determined during parameters validation: $finalStateOpt"
+        )
+    }
+    val lazyValueParam = SinkValue.applyUnsafe(finalState.valueParam, params).toLazyParameter
+
+    new TableSink(
+      tableDefinition = finalState.tableDefinition,
+      sqlStatements = sqlStatements,
+      value = lazyValueParam
+    )
+  }
+
+}
+
+object TableSinkFactory {
+
+  private val valueParameterName: ParameterName = ParameterName("Value")
+  private val rawValueParameterDeclaration =
+    ParameterDeclaration.lazyMandatory[AnyRef](valueParameterName).withCreator()
+
+  private val rawModeParameterName: ParameterName = ParameterName("Raw editor")
+
+  private val rawModeParameterDeclaration = ParameterDeclaration
+    .mandatory[Boolean](rawModeParameterName)
+    .withCreator(c => c.copy(defaultValue = Some(Expression.spel("false")), editor = Some(BoolParameterEditor)))
+
+  private val restrictedParamNamesForNonRawMode: Set[ParameterName] = Set(
+    tableNameParamName,
+    rawModeParameterName
+  )
+
+  sealed trait TableSinkFactoryState
+
+  private case class AvailableTables(tableDefinitions: List[TableDefinition]) extends TableSinkFactoryState
+
+  private case class SelectedTableWithValueParam(tableDefinition: TableDefinition, valueParam: SchemaBasedParameter)
+      extends TableSinkFactoryState
 
 }

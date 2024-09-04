@@ -19,7 +19,7 @@ class AvroSchemaTypeDefinitionExtractor(recordUnderlyingType: TypedClass) {
   val dictIdProperty = "nkDictId"
 
   /**
-    * See {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
+    * See {@link pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder} for underlying avro types
     *
     * !When applying changes keep in mind that this Schema.Type pattern matching is duplicated in {@link pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer},
     * and is used at {@link  pl.touk.nussknacker.engine.schemedkafka.encode.AvroSchemaOutputValidator}

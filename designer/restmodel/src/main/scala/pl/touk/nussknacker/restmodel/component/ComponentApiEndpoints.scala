@@ -40,7 +40,8 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
 
   import ComponentApiEndpoints.ComponentCodec._
 
-  val componentsListEndpoint: SecuredEndpoint[Option[Boolean], Unit, List[ComponentListElement], Any] =
+  val componentsListEndpoint
+      : SecuredEndpoint[(Option[Boolean], Option[Boolean]), Unit, List[ComponentListElement], Any] =
     baseNuApiEndpoint
       .summary("Listing components")
       .tag("Components")
@@ -48,6 +49,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .get
       .in("components")
       .in(query[Option[Boolean]]("skipUsages"))
+      .in(query[Option[Boolean]]("skipFragments"))
       .out(
         statusCode(Ok).and(
           jsonBody[List[ComponentListElement]]

@@ -5,7 +5,11 @@ import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyParameterFunctionHelper}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  BasicFlinkSink,
+  FlinkCustomNodeContext,
+  FlinkLazyParameterFunctionHelper
+}
 import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.TestResultSink
 import pl.touk.nussknacker.engine.testmode.TestRunId
 
@@ -45,21 +49,22 @@ object TestResultSinkFactory {
     ): FlatMapFunction[Context, ValueWithContext[Value]] =
       helper.lazyMapFunction(value)
 
-    override val toFlinkFunction: SinkFunction[Value] = new SinkFunction[Value] {
+    override def toFlinkFunction(flinkNodeContext: FlinkCustomNodeContext): SinkFunction[Value] =
+      new SinkFunction[Value] {
 
-      override def invoke(value: Value, context: SinkFunction.Context): Unit = {
-        sinksOutputs.compute(
-          runId,
-          (_: TestRunId, output: NonEmptyList[AnyRef]) => {
-            Option(output) match {
-              case Some(o) => o :+ value
-              case None    => NonEmptyList.one(value)
+        override def invoke(value: Value, context: SinkFunction.Context): Unit = {
+          sinksOutputs.compute(
+            runId,
+            (_: TestRunId, output: NonEmptyList[AnyRef]) => {
+              Option(output) match {
+                case Some(o) => o :+ value
+                case None    => NonEmptyList.one(value)
+              }
             }
-          }
-        )
-      }
+          )
+        }
 
-    }
+      }
 
   }
 

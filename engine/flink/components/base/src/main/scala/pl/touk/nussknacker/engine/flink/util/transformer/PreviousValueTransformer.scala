@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 
 case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
@@ -22,7 +23,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
       @ParamName("value") value: LazyParameter[Value]
   ): FlinkCustomStreamTransformation with ReturningType = FlinkCustomStreamTransformation(
     (start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
-      val valueTypeInfo = ctx.typeInformationDetection.forType[AnyRef](value.returnType)
+      val valueTypeInfo = TypeInformationDetection.instance.forType[AnyRef](value.returnType)
       setUidToNodeIdIfNeed(
         ctx,
         start

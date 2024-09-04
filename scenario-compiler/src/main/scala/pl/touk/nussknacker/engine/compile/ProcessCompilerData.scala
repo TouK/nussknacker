@@ -37,11 +37,16 @@ object ProcessCompilerData {
     val servicesDefs = definitionWithTypes.modelDefinition.components
       .filter(_.componentType == ComponentType.Service)
 
+    val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
+    val expressionEvaluator =
+      ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
+
     val expressionCompiler = ExpressionCompiler.withOptimization(
       userCodeClassLoader,
       dictRegistry,
       definitionWithTypes.modelDefinition.expressionConfig,
-      definitionWithTypes.classDefinitions
+      definitionWithTypes.classDefinitions,
+      expressionEvaluator
     )
 
     // for testing environment it's important to take classloader from user jar
@@ -55,8 +60,7 @@ object ProcessCompilerData {
       componentUseCase,
       nonServicesLazyParamStrategy
     )
-    val subCompiler             = new PartSubGraphCompiler(nodeCompiler)
-    val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
+    val subCompiler = new PartSubGraphCompiler(nodeCompiler)
     val processCompiler = new ProcessCompiler(
       userCodeClassLoader,
       subCompiler,
@@ -64,8 +68,6 @@ object ProcessCompilerData {
       nodeCompiler,
       customProcessValidator
     )
-    val expressionEvaluator =
-      ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
 
     val interpreter = Interpreter(listeners, expressionEvaluator, componentUseCase)
 

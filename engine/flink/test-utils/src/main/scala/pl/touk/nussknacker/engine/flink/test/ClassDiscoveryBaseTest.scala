@@ -28,6 +28,8 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
+import scala.util.Properties
+
 trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside {
 
   protected def model: ModelData
@@ -65,7 +67,8 @@ trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside {
   test("check extracted class for model") {
     val types = model.modelDefinitionWithClasses.classDefinitions.all
     if (Option(System.getenv("CLASS_EXTRACTION_PRINT")).exists(_.toBoolean)) {
-      FileUtils.write(new File(s"/tmp/${getClass.getSimpleName}-result.json"), encode(types), StandardCharsets.UTF_8)
+      val fileName = s"${Properties.tmpDir}/${getClass.getSimpleName}-result.json"
+      FileUtils.write(new File(fileName), encode(types), StandardCharsets.UTF_8)
     }
     val parsed  = parse(ResourceLoader.load(outputResource)).toOption.get
     val decoded = decode(parsed)

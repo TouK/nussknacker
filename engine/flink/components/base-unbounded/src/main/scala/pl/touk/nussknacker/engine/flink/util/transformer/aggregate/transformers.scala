@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.OnEventOperatorKeyedStream
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
@@ -214,8 +215,6 @@ object transformers {
       aggregateBy: LazyParameter[AnyRef]
   ) {
 
-    private val detection = ctx.typeInformationDetection
-
     private val returnType = aggregator
       .computeOutputType(aggregateBy.returnType)
       .valueOr(e => throw new IllegalArgumentException(s"Validation error should have happened, got $e"))
@@ -224,8 +223,8 @@ object transformers {
       .computeStoredType(aggregateBy.returnType)
       .valueOr(e => throw new IllegalArgumentException(s"Validation error should have happened, got $e"))
 
-    lazy val storedTypeInfo: TypeInformation[AnyRef] = detection.forType(storedType)
-    lazy val returnTypeInfo: TypeInformation[AnyRef] = detection.forType(returnType)
+    lazy val storedTypeInfo: TypeInformation[AnyRef] = TypeInformationDetection.instance.forType(storedType)
+    lazy val returnTypeInfo: TypeInformation[AnyRef] = TypeInformationDetection.instance.forType(returnType)
 
     lazy val returnedValueTypeInfo: TypeInformation[ValueWithContext[AnyRef]] =
       ctx.valueWithContextInfo.forType(returnType)

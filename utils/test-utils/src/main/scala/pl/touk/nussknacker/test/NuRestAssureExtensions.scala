@@ -7,6 +7,7 @@ import org.hamcrest.core.IsEqual
 import pl.touk.nussknacker.test.NuRestAssureMatchers.equalsJson
 
 import java.nio.charset.StandardCharsets
+import scala.jdk.CollectionConverters._
 
 trait NuRestAssureExtensions {
 
@@ -128,6 +129,15 @@ trait NuRestAssureExtensions {
         .extract()
         .jsonPath()
         .getString(jsonPath)
+    }
+
+    def extractList(jsonPath: String): List[String] = {
+      validatableResponse
+        .extract()
+        .jsonPath()
+        .getList[String](jsonPath)
+        .asScala
+        .toList
     }
 
   }

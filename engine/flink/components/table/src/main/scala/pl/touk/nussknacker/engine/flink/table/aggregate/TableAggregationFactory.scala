@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
+import org.apache.flink.table.types.logical.LogicalTypeRoot
 import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -11,9 +12,11 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory._
+import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeEncoder
+import pl.touk.nussknacker.engine.flink.table.utils.simulateddatatype.ToSimulatedDataTypeConverter
 
 object TableAggregationFactory {
 
@@ -29,7 +32,8 @@ object TableAggregationFactory {
     ParameterDeclaration.lazyMandatory[AnyRef](aggregateByParamName).withCreator()
 
   private val aggregatorFunctionParam = {
-    val aggregators = TableAggregator.values.map(a => FixedExpressionValue(s"'${a.name}'", a.name)).toList
+    val aggregators =
+      TableAggregator.values.map(a => FixedExpressionValue(s"'${a.displayName}'", a.displayName)).toList
     ParameterDeclaration
       .mandatory[String](aggregatorFunctionParamName)
       .withCreator(
@@ -43,7 +47,12 @@ class TableAggregationFactory
     extends CustomStreamTransformer
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
-  override type State = Nothing
+  case class TableAggregationTransformationState(
+      selectedAggregator: TableAggregator,
+      aggregatorResultType: TypingResult
+  )
+
+  override type State = TableAggregationTransformationState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -63,31 +72,24 @@ class TableAggregationFactory
         ) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
 
+      val groupByError = validateGroupBy(groupByParam.returnType)
+
       val selectedAggregator = TableAggregator.values
-        .find(_.name == aggregatorName)
+        .find(_.displayName == aggregatorName)
         .getOrElse(throw new IllegalStateException("Aggregator not found. Should be invalid at parameter level."))
 
-      val aggregatorOutputType = selectedAggregator.outputType(aggregateByParam.returnType)
+      val (aggregatorTypeErrors, aggregatorOutputType) = selectedAggregator
+        .inferOutputType(ToTableTypeEncoder.alignTypingResult(aggregateByParam.returnType))
+        .fold(
+          errors => (errors :: Nil, Unknown),
+          outputType => (Nil, outputType)
+        )
 
-      val aggregateByTypeErrors = selectedAggregator.inputTypeConstraint match {
-        case Some(typeConstraint) =>
-          if (!aggregateByParam.returnType.canBeSubclassOf(typeConstraint)) {
-            List(
-              // TODO: this is a different message from other aggregators - choose one and make it consistent for all
-              CustomNodeError(
-                aggregateByTypeMismatchErrorMessage(
-                  aggregateByParam.returnType,
-                  typeConstraint,
-                  selectedAggregator.name
-                ),
-                Some(aggregateByParamName)
-              )
-            )
-          } else List.empty
-        case None => List.empty
-      }
-
-      FinalResults.forValidation(context, errors = aggregateByTypeErrors)(ctx =>
+      FinalResults.forValidation(
+        context,
+        errors = aggregatorTypeErrors ++ groupByError.toList,
+        state = Some(TableAggregationTransformationState(selectedAggregator, aggregatorOutputType))
+      )(ctx =>
         ctx.clearVariables
           .withVariable(outName, value = aggregatorOutputType, paramName = Some(outputVarParamName))
           .andThen(
@@ -100,13 +102,16 @@ class TableAggregationFactory
       )
   }
 
-  private def aggregateByTypeMismatchErrorMessage(
-      aggregateByType: TypingResult,
-      aggregatorFunctionTypeConstraint: TypingResult,
-      aggregatorName: String,
-  ): String =
-    s"""Invalid type: ${aggregateByType.withoutValue.display}" for selected aggregator.
-      |"$aggregatorName" aggregator requires type: "${aggregatorFunctionTypeConstraint.display}".""".stripMargin
+  // RAW's in groupBy cause a InvalidProgramException with mesage "Table program cannot be compiled"
+  private def validateGroupBy(groupByParamType: TypingResult)(implicit nodeId: NodeId) = {
+    val alignedType = ToTableTypeEncoder.alignTypingResult(groupByParamType)
+    val dataType    = ToSimulatedDataTypeConverter.toDataType(alignedType)
+    if (dataType.getLogicalType.is(LogicalTypeRoot.RAW)) {
+      Some(CustomNodeError(s"Invalid type: $groupByParam", Some(groupByParamName)))
+    } else {
+      None
+    }
+  }
 
   override def implementation(
       params: Params,
@@ -116,12 +121,11 @@ class TableAggregationFactory
 
     val groupByLazyParam     = groupByParam.extractValueUnsafe(params)
     val aggregateByLazyParam = aggregateByParam.extractValueUnsafe(params)
-    val aggregatorVal        = aggregatorFunctionParam.extractValueUnsafe(params)
-
-    val aggregator = TableAggregator.values
-      .find(_.name == aggregatorVal)
+    val TableAggregationTransformationState(selectedAggregator, aggregatorOutputType) = finalState
       .getOrElse(
-        throw new IllegalStateException("Specified aggregator not found. Should be invalid at parameter level.")
+        throw new IllegalStateException(
+          "Context transformation state was not properly passed to component's implementation."
+        )
       )
 
     val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
@@ -129,7 +133,8 @@ class TableAggregationFactory
     new TableAggregation(
       groupByLazyParam = groupByLazyParam,
       aggregateByLazyParam = aggregateByLazyParam,
-      selectedAggregator = aggregator,
+      selectedAggregator = selectedAggregator,
+      aggregationResultType = aggregatorOutputType,
       nodeId = nodeId
     )
   }

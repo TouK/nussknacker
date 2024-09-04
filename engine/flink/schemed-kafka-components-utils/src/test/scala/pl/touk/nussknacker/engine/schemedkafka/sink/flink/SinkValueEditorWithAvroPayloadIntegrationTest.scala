@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.expression
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
-import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.schemedkafka.encode.ToAvroSchemaBasedEncoder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.TestSchemaWithRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
@@ -85,8 +85,8 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
 
 object SinkValueEditorWithAvroPayloadIntegrationTest {
 
-  private val sinkForInputMetaResultsHolder      = new TestResultsHolder[InputMeta[_]]
-  private val avroEncoder: BestEffortAvroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  private val sinkForInputMetaResultsHolder         = new TestResultsHolder[java.util.Map[String @unchecked, _]]
+  private val avroEncoder: ToAvroSchemaBasedEncoder = ToAvroSchemaBasedEncoder(ValidationMode.strict)
 
   private def encode(a: Any, schema: Schema): AnyRef =
     avroEncoder

@@ -1,24 +1,21 @@
 package pl.touk.nussknacker.sql.utils
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import org.hsqldb.jdbcDriver
 import org.scalatest.BeforeAndAfterAll
 import org.testcontainers.utility.DockerImageName
-import scala.jdk.CollectionConverters._
 
 import java.sql.{Connection, DriverManager}
-import java.util.UUID
+import scala.jdk.CollectionConverters._
 
 trait WithPostgresqlDB {
   self: BeforeAndAfterAll with ForAllTestContainer =>
 
   var conn: Connection = _
 
-  override val container: PostgreSQLContainer =
-    PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
-
-  {
+  override val container: PostgreSQLContainer = {
+    val container = PostgreSQLContainer(DockerImageName.parse("postgres:13"))
     container.container.setPortBindings(List("5432:5432").asJava)
+    container
   }
 
   private val driverClassName = "org.postgresql.Driver"

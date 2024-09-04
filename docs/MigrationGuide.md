@@ -2,6 +2,20 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.18.0 (Not released yet)
+
+### Code API changes
+
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
+  * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
+  * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
+
+### Other changes
+
+* [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
+  are registered based on class of Serializer instead of instance of Serializer. If you have values that were
+  serialized by these Serializers in some state, the state won't be restored after upgrade.
+
 ## In version 1.17.0 (Not released yet)
 
 ### Code API changes
@@ -13,6 +27,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
 * Component's API changes
+  * [#6711](https://github.com/TouK/nussknacker/pull/6711) `SingleComponentConfig` changed to `ComponentConfig` for better domain naming.
+    Associated functions and objects also changed to `...ComponentConfig...`.
   * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
     Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
   * [#6462](https://github.com/TouK/nussknacker/pull/6462) `CustomStreamTransformer.canHaveManyInputs` field was
@@ -24,7 +40,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     single `TestRecord` and returns a list of results instead of a single result.
   * [#6520](https://github.com/TouK/nussknacker/pull/6520) `ExplicitTypeInformationSource` trait was removed - now
     `TypeInformation` produced by `SourceFunction` passed to `StreamExecutionEnvironment.addSource` is detected based
-    on `TypingResult` (thanks to `GenericTypeInformationDetection`)
+    on `TypingResult` (thanks to `TypeInformationDetection`)
     * `BlockingQueueSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
     * `EmitWatermarkAfterEachElementCollectionSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
     * `CollectionSource`'s `TypeInformation` implicit parameter was removed
@@ -54,6 +70,23 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6567](https://github.com/TouK/nussknacker/pull/6567) Removed ability to set Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode) 
   in sources: `TableSource`, `CollectionSource` and in `FlinkTestScenarioRunner.runWithData` method. Now you can
   configure it under `modelConfig.executionMode` or for test purposes through `FlinkTestScenarioRunnerBuilder.withExecutionMode` method.
+* [#6610](https://github.com/TouK/nussknacker/pull/6610) Add flink node context as parameter to BasicFlinkSink.
+  Now one can use `FlinkCustomNodeContext` in order to build sink in `BasicFlinkSink#toFlinkFunction` method.
+* [#6635](https://github.com/TouK/nussknacker/pull/6635) [#6643](https://github.com/TouK/nussknacker/pull/6643) `TypingResultTypeInformation` related changes
+  * `TypingResultAwareTypeInformationCustomisation` API was removed
+  * `FlinkCustomNodeContext.typeInformationDetection` is deprecated - use `TypeInformationDetection.instance` instead
+  * `FlinkCustomNodeContext.valueWithContextInfo.forCustomContext` is is deprecated - use `TypeInformationDetection.instance.forValueWithContext` instead
+* [#6640](https://github.com/TouK/nussknacker/pull/6640) `BestEffort*Encoder` naming changes:
+  * All `BestEffort*Encoder` classes renamed to fit `To<TargetFormat>(SchemaBased)Encoder` naming schema
+  * `JsonToNuStruct` renamed to `FromJsonDecoder` (to fit `From<SourceFormat>Decoder` naming schema)
+  * `ToJsonEncoder` renamed to `ToJsonEncoderCustomisation`
+  * `ToJsonBasedOnSchemaEncoder` renamed to `ToJsonSchemaBasedEncoderCustomisation`
+* [#6586](https://github.com/TouK/nussknacker/pull/6586) For now on, the SQL enricher automatically converts types as shown below:
+    * java.sql.Array -> java.util.List
+    * java.sql.Time -> java.time.LocalTime
+    * java.sql.Date -> java.time.LocalDate
+    * java.sql.Timestamp -> java.time.Instant
+    * java.sql.Clob -> java.lang.String
 
 ### REST API changes
 
@@ -62,6 +95,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6213](https://github.com/TouK/nussknacker/pull/6213) Improvement: Load resource config only in test context
   * `WithConfig` from `test-utils` modules behaviour changes: now it only parses given config, 
     without resolving reference configs, system env variables etc.
+
+### Configuration changes
+* [#6635](https://github.com/TouK/nussknacker/pull/6635) `globalParameters.useTypingResultTypeInformation` parameter was removed.
+  Now we always use TypingResultTypeInformation
 
 ## In version 1.16.3
 
@@ -520,7 +557,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4583](https://github.com/TouK/nussknacker/pull/4583) `DeploymentManager` has new variants of method `cancel` and `stop`
   taking `DeployomentId` next to `ProcessName`. They will be used with batch processing mechanism (periodic DM) so it is necessary
   to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
-* [#4685]((https://github.com/TouK/nussknacker/pull/4685)) In `AuthenticationResources` trait it was added two new
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) In `AuthenticationResources` trait it was added two new
   methods that have to be implemented in the child classes: `def authenticationMethod(): Auth[AuthCredentials, _]` and
   `def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]`. The first one tells what
   authentication method will be used (it's for Tapir-based API purposes) and the latter one is the authentication

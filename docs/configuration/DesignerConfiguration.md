@@ -390,7 +390,6 @@ authentication: {
     scope: ${?OAUTH2_SCOPE}
     audience: ${?OAUTH2_AUDIENCE}
   }
-  rolesClaims: ${?OAUTH2_ROLES_CLAIMS}
   usernameClaim: ${?OAUTH2_USERNAME_CLAIM}
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}
@@ -763,7 +762,7 @@ You can configure `secondaryEnvironment` to allow for
 ## Scenario type, categories
 
 Every scenario has to belong to a group called `category`. Category defines the business area around which you can organize 
-[users permissions](/configuration/DesignerConfiguration/#users-roles-and-permissions).
+[users permissions](#users-roles-and-permissions).
 
 For example, in one Nussknacker installation you can have scenarios detecting frauds, and those implementing marketing campaigns. Then, the configuration will look like:
 
