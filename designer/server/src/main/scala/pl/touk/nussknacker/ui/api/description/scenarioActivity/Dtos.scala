@@ -163,9 +163,6 @@ object Dtos {
   @derive(encoder, decoder, schema)
   final case class ScenarioActivities(activities: List[ScenarioActivity])
 
-  implicit val configuration: Configuration =
-    Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
-
   @derive(schema)
   final case class ScenarioActivity(
       id: String,
