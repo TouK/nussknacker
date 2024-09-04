@@ -58,8 +58,14 @@ export function useNodeState(data: NodeDetailsMeta): NodeState {
         try {
             //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
             mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-            dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
+
+            // Webpack yield that awaits is unnecessary,
+            // but in fact without this await,
+            // we don't wait to editNode finish and the dialog is closed before resolve of the call,
+            // which causes a bug with a form update
+            await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
         } catch (e) {
+            console.error(e);
             //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
             mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
         }
