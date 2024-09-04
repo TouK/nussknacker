@@ -6,16 +6,12 @@ import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{Enum, EnumEntry}
 import io.circe
 import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivity.AdditionalField
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
-  Attachment => DbAttachment,
-  Comment => DbComment,
-  ProcessActivity => DbProcessActivity
-}
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import sttp.model.MediaType
 import sttp.tapir._
@@ -23,64 +19,10 @@ import sttp.tapir.derevo.schema
 
 import java.io.InputStream
 import java.time.Instant
+import java.util.UUID
 import scala.collection.immutable
 
 object Dtos {
-
-  final case class PaginationContext(
-      pageSize: Long,
-      pageNumber: Long,
-  )
-
-  @derive(encoder, decoder, schema)
-  final case class ScenarioActivitiesCount(fullCount: Long)
-
-  @derive(encoder, decoder, schema)
-  final case class ScenarioActivitiesSearchResult(foundActivities: List[FoundActivity])
-
-  @derive(encoder, decoder, schema)
-  final case class FoundActivity(id: String, index: Int)
-
-  @derive(encoder, decoder, schema)
-  final case class ScenarioActivitiesMetadata(
-      activities: List[ScenarioActivityMetadata],
-      actions: List[ScenarioActivityActionMetadata],
-  )
-
-  object ScenarioActivitiesMetadata {
-
-    val default: ScenarioActivitiesMetadata = ScenarioActivitiesMetadata(
-      activities = ScenarioActivityType.values.map(ScenarioActivityMetadata.from).toList,
-      actions = List(
-        ScenarioActivityActionMetadata(
-          id = "compare",
-          displayableName = "Compare",
-          icon = "/assets/states/error.svg"
-        ),
-        ScenarioActivityActionMetadata(
-          id = "delete_comment",
-          displayableName = "Delete",
-          icon = "/assets/states/error.svg"
-        ),
-        ScenarioActivityActionMetadata(
-          id = "edit_comment",
-          displayableName = "Edit",
-          icon = "/assets/states/error.svg"
-        ),
-        ScenarioActivityActionMetadata(
-          id = "download_attachment",
-          displayableName = "Download",
-          icon = "/assets/states/error.svg"
-        ),
-        ScenarioActivityActionMetadata(
-          id = "delete_attachment",
-          displayableName = "Delete",
-          icon = "/assets/states/error.svg"
-        ),
-      )
-    )
-
-  }
 
   sealed trait ScenarioActivityType extends EnumEntry with UpperSnakecase {
     def displayableName: String
@@ -182,30 +124,30 @@ object Dtos {
 
     override def values: immutable.IndexedSeq[ScenarioActivityType] = findValues
 
+    implicit def scenarioActivityTypeSchema: Schema[ScenarioActivityType] =
+      enumSchema[ScenarioActivityType](
+        ScenarioActivityType.values.toList,
+        _.entryName,
+      )
+
+    implicit def scenarioActivityTypeCodec: circe.Codec[ScenarioActivityType] = circe.Codec.from(
+      Decoder.decodeString.emap(str =>
+        ScenarioActivityType.withNameEither(str).left.map(_ => s"Invalid scenario action type [$str]")
+      ),
+      Encoder.encodeString.contramap(_.entryName),
+    )
+
+    implicit def scenarioActivityTypeTextCodec: Codec[String, ScenarioActivityType, CodecFormat.TextPlain] =
+      Codec.string.map(
+        Mapping.fromDecode[String, ScenarioActivityType] {
+          ScenarioActivityType.withNameOption(_) match {
+            case Some(value) => DecodeResult.Value(value)
+            case None        => DecodeResult.InvalidValue(Nil)
+          }
+        }(_.entryName)
+      )
+
   }
-
-  implicit def scenarioActivityTypeSchema: Schema[ScenarioActivityType] =
-    enumSchema[ScenarioActivityType](
-      ScenarioActivityType.values.toList,
-      _.entryName,
-    )
-
-  implicit def scenarioActivityTypeCodec: circe.Codec[ScenarioActivityType] = circe.Codec.from(
-    Decoder.decodeString.emap(str =>
-      ScenarioActivityType.withNameEither(str).left.map(_ => s"Invalid scenario action type [$str]")
-    ),
-    Encoder.encodeString.contramap(_.entryName),
-  )
-
-  implicit def scenarioActivityTypeTextCodec: Codec[String, ScenarioActivityType, CodecFormat.TextPlain] =
-    Codec.string.map(
-      Mapping.fromDecode[String, ScenarioActivityType] {
-        ScenarioActivityType.withNameOption(_) match {
-          case Some(value) => DecodeResult.Value(value)
-          case None        => DecodeResult.InvalidValue(Nil)
-        }
-      }(_.entryName)
-    )
 
   def enumSchema[T](
       items: List[T],
@@ -219,45 +161,18 @@ object Dtos {
     )
 
   @derive(encoder, decoder, schema)
-  final case class ScenarioActivityMetadata(
-      `type`: String,
-      displayableName: String,
-      icon: String,
-      supportedActions: List[String],
-  )
-
-  object ScenarioActivityMetadata {
-
-    def from(scenarioActivityType: ScenarioActivityType): ScenarioActivityMetadata =
-      ScenarioActivityMetadata(
-        `type` = scenarioActivityType.entryName,
-        displayableName = scenarioActivityType.displayableName,
-        icon = scenarioActivityType.icon,
-        supportedActions = scenarioActivityType.supportedActions,
-      )
-
-  }
-
-  @derive(encoder, decoder, schema)
-  final case class ScenarioActivityActionMetadata(
-      id: String,
-      displayableName: String,
-      icon: String,
-  )
-
-  @derive(encoder, decoder, schema)
   final case class ScenarioActivities(activities: List[ScenarioActivity])
 
   implicit val configuration: Configuration =
     Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
 
-  @derive(encoder, decoder, schema)
+  @derive(schema)
   final case class ScenarioActivity(
       id: String,
       `type`: ScenarioActivityType,
       user: String,
       date: Instant,
-      scenarioVersion: Long,
+      scenarioVersion: Option[Long],
       comment: Option[String],
       additionalFields: List[AdditionalField],
       overrideDisplayableName: Option[String] = None,
@@ -265,6 +180,12 @@ object Dtos {
   )
 
   object ScenarioActivity {
+
+    implicit val scenarioActivityCodec: circe.Codec[ScenarioActivity] = {
+      implicit val configuration: Configuration =
+        Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
+      deriveConfiguredCodec
+    }
 
     @derive(encoder, decoder, schema)
     final case class AdditionalField(
@@ -283,7 +204,7 @@ object Dtos {
       `type` = ScenarioActivityType.ScenarioCreated,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List.empty,
     )
@@ -299,7 +220,7 @@ object Dtos {
       `type` = ScenarioActivityType.ScenarioArchived,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List.empty,
     )
@@ -315,7 +236,7 @@ object Dtos {
       `type` = ScenarioActivityType.ScenarioUnarchived,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List.empty,
     )
@@ -333,7 +254,7 @@ object Dtos {
       `type` = ScenarioActivityType.ScenarioDeployed,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List.empty,
     )
@@ -349,7 +270,7 @@ object Dtos {
       `type` = ScenarioActivityType.ScenarioCanceled,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List.empty,
     )
@@ -367,7 +288,7 @@ object Dtos {
       `type` = ScenarioActivityType.ScenarioModified,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List.empty,
       overrideDisplayableName = Some(s"Version $scenarioVersion saved"),
@@ -386,7 +307,7 @@ object Dtos {
       `type` = ScenarioActivityType.ScenarioNameChanged,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("oldName", oldName),
@@ -405,7 +326,7 @@ object Dtos {
       `type` = ScenarioActivityType.CommentAdded,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List.empty,
     )
@@ -422,7 +343,7 @@ object Dtos {
       `type` = ScenarioActivityType.CommentAdded,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("deletedByUser", deletedByUser),
@@ -430,7 +351,7 @@ object Dtos {
       overrideSupportedActions = Some(List.empty)
     )
 
-    def forAttachmentAdded(
+    def forAttachmentPresent(
         id: String,
         user: String,
         date: Instant,
@@ -443,7 +364,7 @@ object Dtos {
       `type` = ScenarioActivityType.AttachmentAdded,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("attachmentId", attachmentId),
@@ -451,7 +372,7 @@ object Dtos {
       )
     )
 
-    def forAttachmentAddedAndDeleted(
+    def forAttachmentDeleted(
         id: String,
         user: String,
         date: Instant,
@@ -463,7 +384,7 @@ object Dtos {
       `type` = ScenarioActivityType.AttachmentAdded,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("deletedByUser", deletedByUser),
@@ -484,11 +405,11 @@ object Dtos {
       `type` = ScenarioActivityType.ChangedProcessingMode,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("from", from),
-        AdditionalField("to", from),
+        AdditionalField("to", to),
       )
     )
 
@@ -507,7 +428,7 @@ object Dtos {
       `type` = ScenarioActivityType.IncomingMigration,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("sourceEnvironment", sourceEnvironment),
@@ -527,7 +448,7 @@ object Dtos {
       `type` = ScenarioActivityType.OutgoingMigration,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("destinationEnvironment", destinationEnvironment),
@@ -549,7 +470,7 @@ object Dtos {
       `type` = ScenarioActivityType.PerformedSingleExecution,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("dateFinished", dateFinished),
@@ -571,7 +492,7 @@ object Dtos {
       `type` = ScenarioActivityType.PerformedScheduledExecution,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("params", params),
@@ -596,7 +517,7 @@ object Dtos {
       `type` = ScenarioActivityType.AutomaticUpdate,
       user = user,
       date = date,
-      scenarioVersion = scenarioVersion,
+      scenarioVersion = Some(scenarioVersion),
       comment = comment,
       additionalFields = List(
         AdditionalField("changes", changes),
@@ -611,19 +532,6 @@ object Dtos {
   final case class ScenarioAttachments(attachments: List[Attachment])
 
   @derive(encoder, decoder, schema)
-  final case class ScenarioCommentsAndAttachments private (comments: List[Comment], attachments: List[Attachment])
-
-  object ScenarioCommentsAndAttachments {
-
-    def apply(activity: DbProcessActivity): ScenarioCommentsAndAttachments =
-      new ScenarioCommentsAndAttachments(
-        comments = activity.comments.map(Comment.apply),
-        attachments = activity.attachments.map(Attachment.apply)
-      )
-
-  }
-
-  @derive(encoder, decoder, schema)
   final case class Comment private (
       id: Long,
       scenarioVersion: Long,
@@ -631,19 +539,6 @@ object Dtos {
       user: String,
       createDate: Instant
   )
-
-  object Comment {
-
-    def apply(comment: DbComment): Comment =
-      new Comment(
-        id = comment.id,
-        scenarioVersion = comment.processVersionId.value,
-        content = comment.content,
-        user = comment.user,
-        createDate = comment.createDate
-      )
-
-  }
 
   @derive(encoder, decoder, schema)
   final case class Attachment private (
@@ -654,24 +549,15 @@ object Dtos {
       createDate: Instant
   )
 
-  object Attachment {
-
-    def apply(attachment: DbAttachment): Attachment =
-      new Attachment(
-        id = attachment.id,
-        scenarioVersion = attachment.processVersionId.value,
-        fileName = attachment.fileName,
-        user = attachment.user,
-        createDate = attachment.createDate
-      )
-
-  }
-
   final case class AddCommentRequest(scenarioName: ProcessName, versionId: VersionId, commentContent: String)
 
-  final case class EditCommentRequest(scenarioName: ProcessName, commentId: Long, commentContent: String)
+  final case class EditCommentRequest(
+      scenarioName: ProcessName,
+      scenarioActivityId: UUID,
+      commentContent: String
+  )
 
-  final case class DeleteCommentRequest(scenarioName: ProcessName, commentId: Long)
+  final case class DeleteCommentRequest(scenarioName: ProcessName, scenarioActivityId: UUID)
 
   final case class AddAttachmentRequest(
       scenarioName: ProcessName,
@@ -694,14 +580,14 @@ object Dtos {
   object ScenarioActivityError {
     final case class NoScenario(scenarioName: ProcessName) extends ScenarioActivityError
     final case object NoPermission                         extends ScenarioActivityError with CustomAuthorizationError
-    final case class NoComment(commentId: Long)            extends ScenarioActivityError
+    final case class NoComment(scenarioActivityId: String) extends ScenarioActivityError
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
 
     implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoComment](e =>
-        s"Unable to delete comment with id: ${e.commentId}"
+        s"Unable to delete comment for activity with id: ${e.scenarioActivityId}"
       )
 
   }

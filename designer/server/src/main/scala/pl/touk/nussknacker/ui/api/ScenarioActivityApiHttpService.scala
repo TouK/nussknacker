@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
@@ -23,6 +22,7 @@ import sttp.model.MediaType
 import java.io.ByteArrayInputStream
 import java.net.URLConnection
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Random
 
 class ScenarioActivityApiHttpService(
     authManager: AuthManager,
@@ -33,31 +33,14 @@ class ScenarioActivityApiHttpService(
     streamEndpointProvider: TapirStreamEndpointProvider
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
-    with BaseEndpointDefinitions
     with LazyLogging {
-
-  implicit val streamEndpointProviderImpl: TapirStreamEndpointProvider = streamEndpointProvider
 
   private val securityInput = authManager.authenticationEndpointInput()
 
-  Endpoints.swaggerEndpoints.foreach(expose)
+  private val endpoints = new Endpoints(securityInput, streamEndpointProvider)
 
   expose {
-    Endpoints.scenarioActivityEndpoint
-      .withSecurity(securityInput)
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
-        for {
-          scenarioId       <- getScenarioIdByName(scenarioName)
-          _                <- isAuthorized(scenarioId, Permission.Read)
-          scenarioActivity <- EitherT.right(scenarioActivityRepository.findActivity(scenarioId))
-        } yield ScenarioCommentsAndAttachments(scenarioActivity)
-      }
-  }
-
-  expose {
-    Endpoints.addCommentEndpoint
-      .withSecurity(securityInput)
+    endpoints.addCommentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: AddCommentRequest =>
         for {
@@ -69,8 +52,7 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    Endpoints.deleteCommentEndpoint
-      .withSecurity(securityInput)
+    endpoints.deleteCommentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: DeleteCommentRequest =>
         for {
@@ -82,8 +64,7 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    Endpoints.addAttachmentEndpoint
-      .withSecurity(securityInput)
+    endpoints.addAttachmentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: AddAttachmentRequest =>
         for {
@@ -95,8 +76,7 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    Endpoints.downloadAttachmentEndpoint
-      .withSecurity(securityInput)
+    endpoints.downloadAttachmentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
         for {
@@ -136,8 +116,9 @@ class ScenarioActivityApiHttpService(
 
   private def deleteComment(request: DeleteCommentRequest): EitherT[Future, ScenarioActivityError, Unit] =
     EitherT(
-      scenarioActivityRepository.deleteComment(request.commentId)
-    ).leftMap(_ => NoComment(request.commentId))
+      // todo NU-1772 only API contract in this MR, BE not adjusted yet
+      scenarioActivityRepository.deleteComment(Random.nextLong())
+    ).leftMap(_ => NoComment(request.scenarioActivityId.toString))
 
   private def saveAttachment(request: AddAttachmentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser

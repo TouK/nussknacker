@@ -1,15 +1,11 @@
 package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.NoScenario
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
-  PaginationContext,
-  ScenarioActivityError,
-  ScenarioActivityType
-}
 import sttp.model.StatusCode.NotFound
 import sttp.tapir.EndpointIO.Example
-import sttp.tapir.{EndpointInput, EndpointOutput, oneOf, oneOfVariantFromMatchType, plainBody, query}
+import sttp.tapir.{EndpointOutput, oneOf, oneOfVariantFromMatchType, plainBody}
 
 object InputOutput {
 
@@ -26,16 +22,5 @@ object InputOutput {
           )
       )
     )
-
-  val paginationContextInput: EndpointInput[PaginationContext] =
-    query[Long]("pageSize")
-      .and(query[Long]("pageNumber"))
-      .map(PaginationContext.tupled.apply(_))(ctx => (ctx.pageSize, ctx.pageNumber))
-
-  val searchTextInput: EndpointInput[String] =
-    query[String]("searchText")
-
-  val activityTypeFilterInput: EndpointInput[List[ScenarioActivityType]] =
-    query[List[ScenarioActivityType]]("activityType")
 
 }

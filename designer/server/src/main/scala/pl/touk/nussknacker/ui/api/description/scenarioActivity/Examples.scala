@@ -4,13 +4,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{NoComment, NoScenario}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
   Attachment,
-  Comment,
-  FoundActivity,
   ScenarioActivities,
-  ScenarioActivitiesSearchResult,
   ScenarioActivity,
-  ScenarioAttachments,
-  ScenarioCommentsAndAttachments
+  ScenarioAttachments
 }
 import sttp.tapir.EndpointIO.Example
 
@@ -18,30 +14,6 @@ import java.time.Instant
 import java.util.UUID
 
 object Examples {
-
-  val scenarioCommentsAndAttachments: Example[ScenarioCommentsAndAttachments] = Example.of(
-    summary = Some("Display scenario activity"),
-    value = ScenarioCommentsAndAttachments(
-      comments = List(
-        Comment(
-          id = 1L,
-          scenarioVersion = 1L,
-          content = "some comment",
-          user = "test",
-          createDate = Instant.parse("2024-01-17T14:21:17Z")
-        )
-      ),
-      attachments = List(
-        Attachment(
-          id = 1L,
-          scenarioVersion = 1L,
-          fileName = "some_file.txt",
-          user = "test",
-          createDate = Instant.parse("2024-01-17T14:21:17Z")
-        )
-      )
-    )
-  )
 
   val scenarioActivities: Example[ScenarioActivities] = Example.of(
     summary = Some("Display scenario actions"),
@@ -113,7 +85,7 @@ object Examples {
           comment = None,
           deletedByUser = "John Doe",
         ),
-        ScenarioActivity.forAttachmentAdded(
+        ScenarioActivity.forAttachmentPresent(
           id = UUID.randomUUID().toString,
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
@@ -122,7 +94,7 @@ object Examples {
           attachmentId = "10000001",
           attachmentFilename = "attachment01.png"
         ),
-        ScenarioActivity.forAttachmentAddedAndDeleted(
+        ScenarioActivity.forAttachmentDeleted(
           id = UUID.randomUUID().toString,
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
@@ -189,16 +161,6 @@ object Examples {
     )
   )
 
-  val scenarioActivitiesSearchResult: Example[ScenarioActivitiesSearchResult] = Example.of(
-    summary = Some("Result of activities full-text search"),
-    value = ScenarioActivitiesSearchResult(
-      foundActivities = List(
-        FoundActivity(id = UUID.randomUUID().toString, index = 101),
-        FoundActivity(id = UUID.randomUUID().toString, index = 498)
-      )
-    )
-  )
-
   val scenarioAttachments: Example[ScenarioAttachments] = Example.of(
     summary = Some("Display scenario activity"),
     value = ScenarioAttachments(
@@ -221,7 +183,7 @@ object Examples {
 
   val commentNotFoundError: Example[NoComment] = Example.of(
     summary = Some("Unable to edit comment with id: {commentId}"),
-    value = NoComment(1L)
+    value = NoComment("a76d6eba-9b6c-4d97-aaa1-984a23f88019")
   )
 
 }
