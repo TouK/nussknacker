@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -44,9 +45,10 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
 
   override def isKeyType: Boolean = false
 
+  @silent("deprecated")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
     createSerializer(serializers = informations.map { case (k, v) =>
-      (k, v.createSerializer(config.getSerializerConfig))
+      (k, v.createSerializer(config))
     })
 
   override def canEqual(obj: Any): Boolean = obj.asInstanceOf[AnyRef].isInstanceOf[TypedObjectBasedTypeInformation[T]]
@@ -157,6 +159,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
     if nonEqualKeysCompatible == false we require keys in new and old serializer are the same
 
    */
+  @silent("deprecated")
   override def resolveSchemaCompatibility(newSerializer: TypeSerializer[T]): TypeSerializerSchemaCompatibility[T] = {
     if (newSerializer.snapshotConfiguration().getClass != getClass) {
       TypeSerializerSchemaCompatibility.incompatible()
@@ -181,9 +184,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
         .map { case ((name, serializer), (_, snapshot)) =>
           s"$name compatibility is ${snapshot
               .asInstanceOf[TypeSerializerSnapshot[AnyRef]]
-              .resolveSchemaCompatibility(
-                serializer.snapshotConfiguration().asInstanceOf[TypeSerializerSnapshot[AnyRef]]
-              )}"
+              .resolveSchemaCompatibility(serializer.asInstanceOf[TypeSerializer[AnyRef]])}"
         }
         .mkString(", ")
 

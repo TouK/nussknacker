@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import com.github.ghik.silencer.silent
 import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -406,7 +407,6 @@ object SampleNodes {
             val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
             output.collect(outputResult)
           }
-          // TODO Flink bump: conflicting implementations in AbstractStreamOperator and Input
           override def processRecordAttributes(recordAttributes: RecordAttributes): Unit =
             super.processRecordAttributes(recordAttributes)
         }
@@ -485,6 +485,7 @@ object SampleNodes {
 
   object TransformerWithTime extends CustomStreamTransformer with Serializable {
 
+    @silent("deprecated")
     @MethodToInvoke
     def execute(@OutputVariableName outputVarName: String, @ParamName("seconds") seconds: Int)(
         implicit nodeId: NodeId
@@ -496,7 +497,7 @@ object SampleNodes {
             start
               .map(_ => 1: java.lang.Integer)
               .keyBy((_: java.lang.Integer) => "")
-              .window(TumblingEventTimeWindows.of(java.time.Duration.ofSeconds(seconds)))
+              .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
               .map(
                 (i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)),

@@ -4,6 +4,7 @@ import com.github.ghik.silencer.silent
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
+import org.apache.flink.api.common.time.Time
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -29,7 +30,7 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
         "restartStrategy.default.strategy" -> "fixed-delay",
         "restartStrategy.default.attempts" -> 10
       ),
-      RestartStrategies.fixedDelayRestart(10, java.time.Duration.ofSeconds(1))
+      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
     )
 
     testStrategy(
@@ -38,7 +39,7 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
         "restartStrategy.default.strategy" -> "fixed-delay",
         "restartStrategy.default.attempts" -> 10
       ),
-      RestartStrategies.fixedDelayRestart(10, java.time.Duration.ofSeconds(1))
+      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
     )
 
     testStrategy(
@@ -58,7 +59,7 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
         "restartStrategy.default.attempts"     -> 10,
         "restartStrategy.oneStrategy.strategy" -> "disable"
       ),
-      RestartStrategies.fixedDelayRestart(10, java.time.Duration.ofSeconds(1))
+      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
     )
   }
 

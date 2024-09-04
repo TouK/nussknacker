@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{AggregateFunction, RuntimeContext}
 import org.apache.flink.api.common.state.AggregatingStateDescriptor
 import org.apache.flink.configuration.Configuration
@@ -56,6 +57,7 @@ object OnEventTriggerWindowOperator {
 
 }
 
+@silent("deprecated")
 class OnEventTriggerWindowOperator[A](
     stream: KeyedStream[Input[A], String],
     fctx: FlinkCustomNodeContext,
@@ -67,11 +69,11 @@ class OnEventTriggerWindowOperator[A](
       assigner,
       assigner.getWindowSerializer(stream.getExecutionConfig),
       stream.getKeySelector,
-      stream.getKeyType.createSerializer(stream.getExecutionConfig.getSerializerConfig),
+      stream.getKeyType.createSerializer(stream.getExecutionConfig),
       new AggregatingStateDescriptor(
         stateDescriptorName,
         aggregateFunction,
-        types.storedTypeInfo.createSerializer(stream.getExecutionConfig.getSerializerConfig)
+        types.storedTypeInfo.createSerializer(stream.getExecutionConfig)
       ),
       new InternalSingleValueProcessWindowFunction(
         new ValueEmittingWindowFunction(fctx.convertToEngineRuntimeContext, fctx.nodeId)
