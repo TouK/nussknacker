@@ -27,7 +27,6 @@ class TablesDefinitionDiscoveryTest
     FlinkDataDefinition.create(
       sqlStatements = None,
       catalogConfigurationOpt = None,
-      defaultDbName = None
     ) should matchPattern { case Invalid(EmptyDataDefinition) =>
     }
   }
@@ -37,7 +36,6 @@ class TablesDefinitionDiscoveryTest
       .create(
         sqlStatements = Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)),
         catalogConfigurationOpt = None,
-        defaultDbName = None
       )
       .validValue
     val discovery         = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
@@ -85,7 +83,6 @@ class TablesDefinitionDiscoveryTest
       .create(
         sqlStatements = Some(SqlStatementReader.readSql(statementsStr)),
         catalogConfigurationOpt = None,
-        defaultDbName = None
       )
       .validValue
     val discovery        = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
@@ -101,7 +98,6 @@ class TablesDefinitionDiscoveryTest
         .create(
           sqlStatements = Some(SqlStatementReader.readSql(invalidStatement)),
           catalogConfigurationOpt = None,
-          defaultDbName = None
         )
         .validValue
       val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).invalidValue
@@ -120,38 +116,13 @@ class TablesDefinitionDiscoveryTest
     )
     MockableCatalogFactory.resetCatalog()
     MockableCatalogFactory.catalog.createTable(ObjectPath.fromString("default.fooTable"), catalogTable, false)
-    val flinkDataDefinition = FlinkDataDefinition.create(None, Some(catalogConfiguration), None).validValue
+    val flinkDataDefinition = FlinkDataDefinition.create(None, Some(catalogConfiguration)).validValue
 
     val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
 
     val tableDefinition = discovery.listTables.loneElement
 
     tableDefinition.tableId.toString shouldBe s"`${FlinkDataDefinition.internalCatalogName}`.`default`.`fooTable`"
-    tableDefinition.schema shouldBe ResolvedSchema.of(Column.physical("fooColumn", DataTypes.STRING()))
-  }
-
-  // FIXME: check that default db is used in source / sink / test generation - everywhere where we use tableName
-  test("use default database configuration in data definition") {
-    val catalogConfiguration = Configuration.fromMap(Map("type" -> "mockable").asJava)
-    val catalogTable = CatalogTable.of(
-      Schema.newBuilder().column("fooColumn", DataTypes.STRING()).build(),
-      null,
-      List.empty[String].asJava,
-      Map.empty[String, String].asJava
-    )
-    MockableCatalogFactory.resetCatalog()
-    MockableCatalogFactory.catalog.createDatabase(
-      "fooDb",
-      new CatalogDatabaseImpl(Map.empty[String, String].asJava, null),
-      false
-    )
-    MockableCatalogFactory.catalog.createTable(ObjectPath.fromString("fooDb.fooTable"), catalogTable, false)
-    val flinkDataDefinition = FlinkDataDefinition.create(None, Some(catalogConfiguration), None).validValue
-
-    val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
-
-    val tableDefinition = discovery.listTables.loneElement
-    tableDefinition.tableId.toString shouldBe s"`${FlinkDataDefinition.internalCatalogName}`.`fooDb`.`fooTable`"
     tableDefinition.schema shouldBe ResolvedSchema.of(Column.physical("fooColumn", DataTypes.STRING()))
   }
 

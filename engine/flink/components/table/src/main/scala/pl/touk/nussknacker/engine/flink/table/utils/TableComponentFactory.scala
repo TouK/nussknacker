@@ -11,8 +11,8 @@ object TableComponentFactory {
   def buildTableNameParam(
       defs: List[TableDefinition]
   ): ParameterExtractor[String] with ParameterCreatorWithNoDependency = {
-    // TODO: We should print tableName only when table is defined inside the default catalog and the default database
-    //       For other cases, we should show database and catalog
+    // TODO: We should use objectName in label only when a table is defined inside the default catalog and the default database
+    //       For other cases, we should use qualified paths
     val possibleTableParamValues = defs.map(c => FixedExpressionValue(s"'${c.tableId}'", c.tableId.getObjectName))
     ParameterDeclaration
       .mandatory[String](tableNameParamName)

@@ -12,8 +12,7 @@ import scala.util.Try
 
 class FlinkDataDefinition private (
     sqlStatements: Option[List[String]],
-    catalogConfigurationOpt: Option[Configuration],
-    defaultDbName: Option[String]
+    catalogConfigurationOpt: Option[Configuration]
 ) extends Serializable {
 
   def registerIn(tableEnvironment: TableEnvironment): ValidatedNel[DataDefinitionRegistrationError, Unit] = {
@@ -36,13 +35,7 @@ class FlinkDataDefinition private (
         .leftMap(CatalogRegistrationError(catalogConfiguration, _): DataDefinitionRegistrationError)
         .toValidatedNel
     }
-    val databaseUsageError = defaultDbName.map { dbName =>
-      Validated
-        .fromTry(Try(tableEnvironment.useDatabase(dbName)))
-        .leftMap(DefaultDatabaseSetupError(dbName, _): DataDefinitionRegistrationError)
-        .toValidatedNel
-    }
-    (sqlStatementsExecutionResults ::: catalogRegistrationResult.toList ::: databaseUsageError.toList).sequence.void
+    (sqlStatementsExecutionResults ::: catalogRegistrationResult.toList).sequence.void
   }
 
 }
@@ -53,12 +46,11 @@ object FlinkDataDefinition {
 
   def create(
       sqlStatements: Option[List[String]],
-      catalogConfigurationOpt: Option[Configuration],
-      defaultDbName: Option[String]
+      catalogConfigurationOpt: Option[Configuration]
   ): Validated[EmptyDataDefinition.type, FlinkDataDefinition] = {
     Validated.cond(
       sqlStatements.isDefined || catalogConfigurationOpt.isDefined,
-      new FlinkDataDefinition(sqlStatements, catalogConfigurationOpt, defaultDbName),
+      new FlinkDataDefinition(sqlStatements, catalogConfigurationOpt),
       EmptyDataDefinition
     )
   }

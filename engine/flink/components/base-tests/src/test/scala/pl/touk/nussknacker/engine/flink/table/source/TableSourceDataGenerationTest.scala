@@ -24,7 +24,6 @@ class TableSourceDataGenerationTest
     .create(
       sqlStatements = Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)),
       catalogConfigurationOpt = None,
-      defaultDbName = None
     )
     .validValue
 

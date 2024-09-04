@@ -43,7 +43,7 @@ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
     val catalogConfigurationOpt         = parsedConfig.catalogConfiguration.map(_.asJava).map(Configuration.fromMap)
     val flinkDataDefinition =
       FlinkDataDefinition
-        .create(sqlStatements, catalogConfigurationOpt, parsedConfig.defaultDbName)
+        .create(sqlStatements, catalogConfigurationOpt)
         .valueOr(_ =>
           throw new IllegalArgumentException(
             "Empty data definition configuration. At least one of either tableDefinitionFilePath or catalogConfiguration should be configured"
@@ -96,7 +96,6 @@ object FlinkTableComponentProvider {
 final case class TableComponentProviderConfig(
     tableDefinitionFilePath: Option[String],
     catalogConfiguration: Option[Map[String, String]],
-    defaultDbName: Option[String],
     testDataGenerationMode: Option[TestDataGenerationMode]
 )
 
