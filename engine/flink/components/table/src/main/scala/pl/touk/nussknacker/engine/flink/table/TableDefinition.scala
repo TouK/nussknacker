@@ -9,7 +9,7 @@ import org.apache.flink.table.types.DataType
 final case class TableDefinition(tableId: ObjectIdentifier, schema: ResolvedSchema) {
 
   // FIXME: Check places of usage and replace with tableId
-  def tableName: String = tableId.toString
+  def tableName: String = tableId.getObjectName
 
   lazy val sourceRowDataType: DataType = schema.toSourceRowDataType
 
