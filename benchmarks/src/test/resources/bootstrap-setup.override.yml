@@ -29,3 +29,9 @@ services:
   designer:
     environment:
       KAFKA_AUTO_OFFSET_RESET: "earliest"
+
+  kafka:
+    deploy:
+      resources:
+        limits:
+          memory: 2048M

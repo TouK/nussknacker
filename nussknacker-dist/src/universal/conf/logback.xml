@@ -55,5 +55,6 @@
     <logger name="ch.qos.logback" level="WARN"/>
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
     <logger name="org.apache.flink.api.java.typeutils.TypeExtractor" level="WARN" />
+    <logger name="io.confluent.kafka.serializers.KafkaAvroSerializerConfig" level="WARN" />
 
 </configuration>
