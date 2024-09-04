@@ -420,7 +420,7 @@ class DbProcessActionRepository(
       state = activityEntity.state
         .getOrElse(throw new AssertionError(s"State not available for finished action: $activityEntity")),
       failureMessage = activityEntity.errorMessage,
-      commentId = None, // todomgw
+      commentId = None, // todo NU-1772 in progress - pass the entire comment?
       comment = activityEntity.comment.map(_.value),
       buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )
