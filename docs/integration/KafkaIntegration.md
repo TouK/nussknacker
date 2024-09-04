@@ -165,7 +165,7 @@ Below you can find a quick comparison of how given schema registry types are han
 ## Configuration details
 
 ### Common part
-The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key. You can find the high level structure of the configuration file [here](/docs/installation_configuration_guide/#configuration-areas)
+The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key. You can find the high level structure of the configuration file [here](../installation_configuration_guide/Common.mdx#configuration-areas)
 
 Both streaming Engines (Lite and Flink) share some common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at).
 
@@ -216,7 +216,7 @@ Errors can be sent to specified Kafka topic in following json format (see below 
 }
 ```
 
-Following properties can be configured (please look at correct engine page : [Lite](/docs/installation_configuration_guide/model/Lite#exception-handling) or [Flink](/docs/installation_configuration_guide/model/Flink#configuring-exception-handling), 
+Following properties can be configured (please look at correct engine page : [Lite](../installation_configuration_guide/model/Lite.md#exception-handling) or [Flink](../installation_configuration_guide/model/Flink.md#configuring-exception-handling), 
 to see where they should be set):
 
 | Name                   | Default value | Description                                                                                                                                                                                                                                                                                                                |

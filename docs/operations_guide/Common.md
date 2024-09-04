@@ -9,7 +9,7 @@ The parts describing scenario management and tuning should be accessible also fo
 
 To better understand the documentation below one needs to grasp some concepts of metrics, etc. We won’t go into much detail here, only give references to worthy resources.
 
-Some of them are external, but it also helps to read about important Nussknacker concepts in [glossary](../about/GLOSSARY) and [scenario authoring](../scenarios_authoring/Intro.md).
+Some of them are external, but it also helps to read about important Nussknacker concepts in [glossary](../about/GLOSSARY.md) and [scenario authoring](../scenarios_authoring/Intro.md).
 
 ### Integration with Apache Kafka
 

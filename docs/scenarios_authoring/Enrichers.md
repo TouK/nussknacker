@@ -11,10 +11,10 @@ Usually not all required data are in the data record - some data may reside in a
 
 ## Concepts
 
-Please check [Glossary](../about/GLOSSARY) to understand difference between component and the node (and between configuration of a component and configuration of a node). Understanding the role of [SpEL](/docs/scenarios_authoring/Intro#spel) will greatly accelerate your first steps with Nussknacker. 
+Please check [Glossary](../about/GLOSSARY.md) to understand difference between component and the node (and between configuration of a component and configuration of a node). Understanding the role of [SpEL](../scenarios_authoring/Intro.md#spel) will greatly accelerate your first steps with Nussknacker. 
 
 
-Enricher components need to be added to the Model configuration first; once they are added they will become available in the Designer's components toolbox. Check [configuration areas](/docs/installation_configuration_guide/ModelConfiguration/#components-configuration) for the overview of the configuration and [configuration of extra components](../integration/OpenAPI.md) for details of how to configure enricher components.
+Enricher components need to be added to the Model configuration first; once they are added they will become available in the Designer's components toolbox. Check [configuration areas](../installation_configuration_guide/model/ModelConfiguration.md#components-configuration) for the overview of the configuration and [configuration of extra components](../integration/OpenAPI.md) for details of how to configure enricher components.
 
 
 ## SQL enricher

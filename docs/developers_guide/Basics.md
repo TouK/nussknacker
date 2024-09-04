@@ -1,6 +1,6 @@
 # Overview
 
-Please make sure you know common [Glossary](../about/GLOSSARY) and [SpEL](../scenarios_authoring/Spel.md) (especially the Data types section) before proceeding further. 
+Please make sure you know common [Glossary](../about/GLOSSARY.md) and [SpEL](../scenarios_authoring/Spel.md) (especially the Data types section) before proceeding further. 
 
 This part of the documentation describes various ways of customizing Nussknacker - from adding own Components to adding listeners for various Designer actions. 
 The main way of adding customizations to Nussknacker is [ServiceLoader](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ServiceLoader.html) 
@@ -21,7 +21,7 @@ We also handle union types (again, similar to [Typescript](https://www.typescrip
       
 ## Components and ComponentProviders
 
-[Components](../about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
+[Components](../about/GLOSSARY.md#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
 There are following types of components:
 - `SourceFactory`
 - `SinkFactory`

@@ -72,7 +72,7 @@ also in some context `Collection` can be met (it's Java API for handling lists, 
 
 ### Date/Time
 
-See [Handling data/time](#handling-datetime) for detailed description of how to deal with date and time in Nussknacker.
+See [Handling data/time](#datetime-data-types) for detailed description of how to deal with date and time in Nussknacker.
 
 
 # SpEL syntax
@@ -262,7 +262,7 @@ You can also use explicit conversions that are available in utility classes and 
 | `'' + 42`                                                       | '42'                      | String         |
 
 
-# Built-in helpers
+## Built-in helpers
 
 Nussknacker comes with the following helpers:
 
@@ -278,7 +278,7 @@ Nussknacker comes with the following helpers:
 | `UTIL`        | Various utilities (e.g. identifier generation) |
 
 
-# Handling date/time.
+# Handling date/time
 
 ## Date/time data types
 

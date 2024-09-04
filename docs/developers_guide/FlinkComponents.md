@@ -34,7 +34,7 @@ To enable testing functionality in scenarios using your source implementation, y
 - Test data generation - `TestDataGenerator`
 - Ad hoc test support - `TestWithParametersSupport`
 
-Read more about testing functionality in [this section](../scenarios_authoring/TestingAndDebugging.md).
+Read more about testing functionality in [this section](../scenarios_authoring/TestingAndDebugging.mdx).
 
 ### Specification
 Your Nussknacker source component specification should be a [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/Source.scala)
