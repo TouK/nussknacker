@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
-import pl.touk.nussknacker.engine.flink.table.extractor.{
+import pl.touk.nussknacker.engine.flink.table.definition.{
   FlinkDataDefinition,
   SqlStatementReader,
   TablesDefinitionDiscovery

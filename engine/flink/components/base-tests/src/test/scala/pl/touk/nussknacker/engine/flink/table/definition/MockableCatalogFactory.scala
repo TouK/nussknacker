@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.table.extractor
+package pl.touk.nussknacker.engine.flink.table.definition
 
 import org.apache.flink.table.catalog.{Catalog, GenericInMemoryCatalog}
 import org.apache.flink.table.factories.CatalogFactory

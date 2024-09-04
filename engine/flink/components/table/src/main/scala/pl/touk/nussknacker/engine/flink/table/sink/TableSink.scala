@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExc
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeSchemaBasedEncoder
 

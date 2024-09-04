@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, 
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.{FlinkDataDefinition, TablesDefinitionDiscovery}
-import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition._
+import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.{
   AvailableTables,
   SelectedTable,

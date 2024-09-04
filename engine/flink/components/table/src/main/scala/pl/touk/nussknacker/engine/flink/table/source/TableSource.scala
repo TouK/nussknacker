@@ -25,8 +25,8 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition._
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._

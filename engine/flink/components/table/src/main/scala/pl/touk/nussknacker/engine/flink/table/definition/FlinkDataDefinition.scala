@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.flink.table.extractor
+package pl.touk.nussknacker.engine.flink.table.definition
 
 import cats.data.{Validated, ValidatedNel}
 import cats.implicits.{toFunctorOps, toTraverseOps}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.catalog.CatalogDescriptor
-import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition.internalCatalogName
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition.internalCatalogName
+import pl.touk.nussknacker.engine.flink.table.definition.SqlStatementReader.SqlStatement
 
 import scala.util.Try
 
@@ -42,7 +42,7 @@ class FlinkDataDefinition private (
 
 object FlinkDataDefinition {
 
-  private[extractor] val internalCatalogName = "$nuCatalog"
+  private[definition] val internalCatalogName = "$nuCatalog"
 
   def create(
       sqlStatements: Option[List[String]],

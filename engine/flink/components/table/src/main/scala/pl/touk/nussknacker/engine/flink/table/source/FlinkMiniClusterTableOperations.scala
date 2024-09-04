@@ -12,8 +12,8 @@ import org.apache.flink.table.api._
 import org.apache.flink.table.catalog.ObjectIdentifier
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
-import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.FlinkDataDefinition._
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.nio.charset.StandardCharsets

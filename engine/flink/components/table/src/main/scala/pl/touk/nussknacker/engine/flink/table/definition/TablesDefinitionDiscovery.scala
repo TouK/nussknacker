@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.table.extractor
+package pl.touk.nussknacker.engine.flink.table.definition
 
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
@@ -46,7 +46,7 @@ object TablesDefinitionDiscovery {
     prepareDiscovery(flinkDataDefinition, environmentSettings)
   }
 
-  private[extractor] def prepareDiscovery(
+  private[definition] def prepareDiscovery(
       flinkDataDefinition: FlinkDataDefinition,
       environmentSettings: EnvironmentSettings
   ): ValidatedNel[DataDefinitionRegistrationError, TablesDefinitionDiscovery] = {

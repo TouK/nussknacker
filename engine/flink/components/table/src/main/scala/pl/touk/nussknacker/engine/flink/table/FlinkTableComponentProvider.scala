@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider.config
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
-import pl.touk.nussknacker.engine.flink.table.extractor.{FlinkDataDefinition, SqlStatementReader}
+import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, SqlStatementReader}
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinComponent
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
