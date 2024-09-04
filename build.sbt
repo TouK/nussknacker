@@ -852,6 +852,13 @@ lazy val benchmarks = (project in file("benchmarks"))
     Jmh / dependencyClasspath            := (Test / dependencyClasspath).value,
     Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
   )
+  .settings {
+    // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
+    forScalaVersion(defaultScalaV) {
+      case (2, 12) => doExecuteMainFromTestSources
+      case (2, 13) => executeMainFromTestSourcesNotSupported
+    }
+  }
   .dependsOn(
     designer,
     extensionsApi,
@@ -862,6 +869,20 @@ lazy val benchmarks = (project in file("benchmarks"))
     flinkBaseUnboundedComponents,
     testUtils % Test
   )
+
+lazy val doExecuteMainFromTestSources = Seq(
+  (Test / runMain) := (Test / runMain)
+    .dependsOn(distribution / Docker / publishLocal)
+    .evaluated
+)
+
+lazy val executeMainFromTestSourcesNotSupported = Seq(
+  (Test / runMain) := {
+    streams.value.log.info(
+      "E2E benchmarks are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12"
+    )
+  }
+)
 
 lazy val kafkaUtils = (project in utils("kafka-utils"))
   .settings(commonSettings)

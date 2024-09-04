@@ -1,16 +1,20 @@
 package pl.touk.nussknacker.engine.benchmarks.e2e
 
-import better.files.Resource
 import com.dimafeng.testcontainers.{DockerComposeContainer, ServiceLogConsumer, WaitingForService}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.io.IOUtils
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
 import pl.touk.nussknacker.engine.benchmarks.e2e.BaseE2EBenchmark.{JSON, singletonContainer}
+import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.containers.ContainerExt.toContainerExt
 import ujson.Value
 
-import java.io.{File => JFile}
+import java.io.{File => JFile, FileOutputStream, InputStream}
 
+// Before running benchmarks in this module, a fresh docker image should be built from sources and placed in the local
+// registry. If you run tests based on this trait in Intellij Idea and the images is not built, you can do it manually:
+// `bash -c "export NUSSKNACKER_SCALA_VERSION=2.12 && sbt dist/Docker/publishLocal"`
 trait BaseE2EBenchmark {
 
   private val bootstrapSetupService = unsafeContainerByServiceName("bootstrap-setup")
@@ -53,10 +57,10 @@ object BaseE2EBenchmark extends LazyLogging {
   val singletonContainer: DockerComposeContainer = new DockerComposeContainer(
     composeFiles = Seq(
       new JFile("examples/installation/docker-compose.yml"),
-      new JFile(Resource.getUrl("bootstrap-setup.override.yml").toURI)
+      fileFromResourceStream(getClass.getResourceAsStream("/bootstrap-setup.override.yml"))
     ),
     env = Map(
-      "NUSSKNACKER_VERSION" -> "1.17.0-RC1" // todo: BuildInfo.version
+      "NUSSKNACKER_VERSION" -> BuildInfo.version
     ),
     logConsumers = Seq(
       ServiceLogConsumer("bootstrap-setup", new Slf4jLogConsumer(logger.underlying))
@@ -69,4 +73,13 @@ object BaseE2EBenchmark extends LazyLogging {
   )
 
   singletonContainer.start()
+
+  private def fileFromResourceStream(in: InputStream): JFile = {
+    val tempFile = JFile.createTempFile("Nu", null)
+    tempFile.deleteOnExit()
+    val out = new FileOutputStream(tempFile);
+    IOUtils.copy(in, out);
+    tempFile
+  }
+
 }

@@ -1,10 +1,10 @@
-name: Benchmarks
+name: Benchmarks JMH
 on:
   schedule:
     - cron: '0 23 * * *'
 jobs:
   benchmarks:
-    name: Benchmarks
+    name: Benchmarks JMH
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
