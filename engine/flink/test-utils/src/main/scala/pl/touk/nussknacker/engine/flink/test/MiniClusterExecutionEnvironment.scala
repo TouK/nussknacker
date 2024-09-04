@@ -65,7 +65,9 @@ class MiniClusterExecutionEnvironment(
       jobName: String
   )(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
     val res = execute(jobName)
-    waitForJobStateWithNotFailingCheck(res.getJobID, jobName, ExecutionState.FINISHED)(patience)
+    waitForJobStatusWithAdditionalCheck(res.getJobID, jobName, assertJobNotFailing(res.getJobID), JobStatus.FINISHED)(
+      patience
+    )
     res
   }
 
@@ -87,6 +89,25 @@ class MiniClusterExecutionEnvironment(
     waitForJobStateWithAdditionalCheck(jobID, name, {}, expectedState: _*)(patience)
   }
 
+  def waitForJobStatusWithAdditionalCheck(
+      jobID: JobID,
+      name: String,
+      additionalChecks: => Unit,
+      expectedJobStatus: JobStatus
+  )(
+      patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
+  ): Unit = {
+    Eventually.eventually {
+      val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
+      additionalChecks
+      executionGraph.getState.equals(expectedJobStatus)
+      assert(
+        executionGraph.getState.equals(expectedJobStatus),
+        s"Job $name does not have expected status: $expectedJobStatus"
+      )
+    }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
+  }
+
   def waitForJobStateWithAdditionalCheck(
       jobID: JobID,
       name: String,
@@ -101,35 +122,14 @@ class MiniClusterExecutionEnvironment(
       // would be misleading
       assertJobInitialized(executionGraph)
       additionalChecks
-      executionGraph.getAllVertices
-      val executionVertices  = executionGraph.getAllExecutionVertices.asScala.toList
-      val notInExpectedState = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState)).toList
-      println("=== IN CHECK ===")
-      println(s"$executionVertices");
-      println(s"$notInExpectedState")
-      if (notInExpectedState.isEmpty) {
-        println(s"All vertices: ${executionVertices.map(_.getTaskNameWithSubtaskIndex)} are in expected state")
-      } else {
-        println(s"Vertices ${executionVertices.map(_.getTaskNameWithSubtaskIndex)} are not in expected state")
-      }
-      // TODO Flink bump - remove this: hypothesis testing
-      expectedState.toList match {
-        case ExecutionState.FINISHED :: Nil => {
-          assert(executionGraph.getState.equals(JobStatus.FINISHED))
-        }
-        case _ =>
-          assert(
-            notInExpectedState.isEmpty,
-            notInExpectedState
-              .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")
-              .mkString(
-                s"Some vertices of $name are not in expected (${expectedState.mkString(", ")}) state): ",
-                ", ",
-                ""
-              )
-          )
-      }
-
+      val executionVertices  = executionGraph.getAllExecutionVertices.asScala
+      val notInExpectedState = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
+      assert(
+        notInExpectedState.isEmpty,
+        notInExpectedState
+          .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")
+          .mkString(s"Some vertices of $name are not in expected (${expectedState.mkString(", ")}) state): ", ", ", "")
+      )
     }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
   }
 
