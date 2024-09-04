@@ -100,9 +100,6 @@ class DBProcessRepository(
   // FIXME: It's temporary way.. After merge and refactor process repositories we can remove it.
   override def run[R]: DB[R] => DB[R] = identity
 
-  /**
-   * These action should be done on transaction - move it to ProcessService.createProcess
-   */
   def saveNewProcess(
       action: CreateProcessAction
   )(implicit loggedUser: LoggedUser): DB[Option[ProcessCreated]] = {
@@ -119,7 +116,11 @@ class DBProcessRepository(
       createdAt = Timestamp.from(now),
       createdBy = userName,
       impersonatedByIdentity = loggedUser.impersonatingUserId,
-      impersonatedByUsername = loggedUser.impersonatingUserName
+      impersonatedByUsername = loggedUser.impersonatingUserName,
+      latestVersionId = None,
+      latestFinishedActionId = None,
+      latestFinishedCancelActionId = None,
+      latestFinishedDeployActionId = None
     )
 
     val insertNew =
@@ -210,13 +211,25 @@ class DBProcessRepository(
         ScenarioShapeFetchStrategy.FetchScenarioGraph
       ).result.headOption
       newProcessVersionOpt = versionToInsert(latestProcessVersion, process.processingType)
-      _ <- newProcessVersionOpt.map(processVersionsTable += _).getOrElse(dbMonad.pure(0))
+      _ <- newProcessVersionOpt
+        .map(insertProcessVersionAndUpdateLatestVersionId)
+        .getOrElse(dbMonad.pure((0, 0)))
     } yield ProcessUpdated(
       process.id,
       oldVersion = latestProcessVersion.map(_.id),
       newVersion = newProcessVersionOpt.map(_.id)
     )
   }
+
+  private def insertProcessVersionAndUpdateLatestVersionId(newProcessVersionOpt: ProcessVersionEntityData) =
+    (for {
+      insertCount <- processVersionsTable += newProcessVersionOpt
+
+      updateLatestVersionIdCount <- processesTable
+        .filter(_.id === newProcessVersionOpt.processId)
+        .map(_.latestVersionId)
+        .update(Some(newProcessVersionOpt.id))
+    } yield (insertCount, updateLatestVersionIdCount)).transactionally
 
   def deleteProcess(processId: ProcessIdWithName): DB[Unit] =
     processesTable.filter(_.id === processId.id).delete.map {
@@ -297,7 +310,7 @@ class DBProcessRepository(
   protected def now: Instant = Instant.now()
 
   // We use it only on tests..
-  def changeVersionId(processId: ProcessId, versionId: VersionId, versionIdToUpdate: VersionId) =
+  def changeVersionId(processId: ProcessId, versionId: VersionId, versionIdToUpdate: VersionId) = // FIXME
     processVersionsTableWithUnit
       .filter(v => v.id === versionId && v.processId === processId)
       .map(_.id)

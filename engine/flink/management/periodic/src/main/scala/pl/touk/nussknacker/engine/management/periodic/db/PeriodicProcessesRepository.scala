@@ -367,9 +367,9 @@ class SlickPeriodicProcessesRepository(
       periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
       deploymentsPerScheduleMaxCount: Int
   ): Action[Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]] = {
-    // It is debug instead of warn to not bloast logs when e.g. for some reasons is used hsql under the hood
+    // It is debug instead of warn to not bloat logs when e.g. for some reasons hsql is used under the hood
     logger.debug(
-      "WARN: Using not optimized version of getLatestDeploymentsForEachSchedule that not uses window functions"
+      "WARN: Using not optimized version of getLatestDeploymentsForEachSchedule that doesn't use window functions"
     )
     for {
       processes <- periodicProcessesQuery.result

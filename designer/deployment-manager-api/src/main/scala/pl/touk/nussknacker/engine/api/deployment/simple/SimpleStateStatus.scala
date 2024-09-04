@@ -102,7 +102,7 @@ object SimpleStateStatus {
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.DuringDeploy => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     case SimpleStateStatus.Running =>
-      List(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
+      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
     case SimpleStateStatus.Canceled =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.Restarting => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)

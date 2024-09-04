@@ -349,7 +349,6 @@ class DBProcessService(
         .runInTransaction(processRepository.deleteProcess(processIdWithName))
     }
 
-  // FIXME: Create process should create two inserts (process, processVersion) in transactional way, but right we do all in process repository..
   override def createProcess(
       command: CreateScenarioCommand
   )(implicit user: LoggedUser): Future[Validated[NuDesignerError, ProcessResponse]] = {

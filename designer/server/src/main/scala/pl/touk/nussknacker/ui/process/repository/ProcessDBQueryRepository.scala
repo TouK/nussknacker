@@ -42,23 +42,14 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       deployedProcesses: Set[ProcessId],
       isDeployed: Option[Boolean]
   )(implicit fetchShape: ScenarioShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
-    (
-        ((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity),
-        ProcessEntityFactory#ProcessEntity
-    ),
-    (((ProcessId, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData),
+    (ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessEntityFactory#ProcessEntity),
+    (ProcessVersionEntityData, ProcessEntityData),
     Seq
   ] =
-    processVersionsTableWithUnit
-      .groupBy(_.processId)
-      .map { case (n, group) => (n, group.map(_.createDate).max) }
-      .join(processVersionsTableQuery)
-      .on { case (((processId, latestVersionDate)), processVersion) =>
-        processVersion.processId === processId && processVersion.createDate === latestVersionDate
-      }
+    processVersionsTableQuery
       .join(processTableFilteredByUser.filter(query))
-      .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
-      .filter { case ((_, _), process) =>
+      .on { case (version, process) => version.processId === process.id && version.id === process.latestVersionId }
+      .filter { case (_, process) =>
         isDeployed match {
           case None      => true: Rep[Boolean]
           case Some(dep) => process.id.inSet(deployedProcesses) === dep
