@@ -15,7 +15,7 @@
         "@mui/lab": "5.0.0-alpha.165",
         "@mui/material": "5.15.7",
         "@touk/federated-component": "1.0.0",
-        "@touk/window-manager": "1.9.0-beta.8",
+        "@touk/window-manager": "1.9.0-beta.9",
         "ace-builds": "1.34.2",
         "axios": "1.7.4",
         "d3-transition": "3.0.1",
