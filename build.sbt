@@ -852,13 +852,13 @@ lazy val benchmarks = (project in file("benchmarks"))
     Jmh / dependencyClasspath            := (Test / dependencyClasspath).value,
     Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
   )
-//  .settings {
-//    // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
-//    forScalaVersion(defaultScalaV) {
-//      case (2, 12) => doExecuteMainFromTestSources
-//      case (2, 13) => executeMainFromTestSourcesNotSupported
-//    }
-//  }
+  .settings {
+    // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
+    forScalaVersion(defaultScalaV) {
+      case (2, 12) => doExecuteMainFromTestSources
+      case (2, 13) => executeMainFromTestSourcesNotSupported
+    }
+  }
   .dependsOn(
     designer,
     extensionsApi,
