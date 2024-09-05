@@ -8,6 +8,7 @@ import org.apache.avro.reflect.ReflectDatumWriter
 import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
+import java.util.concurrent.ConcurrentHashMap
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
@@ -21,12 +22,24 @@ trait DatumReaderWriterMixin {
     */
   protected val primitives: mutable.Map[String, Schema] = AvroSchemaUtils.getPrimitiveSchemas.asScala
 
-  def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] =
-    record match {
-      case _: SpecificRecord        => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
-      case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
-      case _                        => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
-    }
+  @transient private lazy val datumReaderCache =
+    new ConcurrentHashMap[(Schema, Schema, Boolean, Boolean), DatumReader[AnyRef]]()
+
+  @transient private lazy val datumWriterCache =
+    new ConcurrentHashMap[(Any, Schema, Boolean), GenericDatumWriter[Any]]()
+
+  def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = {
+    datumWriterCache.computeIfAbsent(
+      (record, schema, useSchemaReflection),
+      _ => {
+        record match {
+          case _: SpecificRecord        => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
+          case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
+          case _                        => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
+        }
+      }
+    )
+  }
 
   def createDatumReader(
       writerSchema: Schema,
@@ -34,15 +47,21 @@ trait DatumReaderWriterMixin {
       useSchemaReflection: Boolean,
       useSpecificAvroReader: Boolean
   ): DatumReader[AnyRef] = {
-    val writerSchemaIsPrimitive = primitives.values.exists(_.equals(readerSchema))
+    datumReaderCache.computeIfAbsent(
+      (writerSchema, readerSchema, useSchemaReflection, useSpecificAvroReader),
+      _ => {
+        val writerSchemaIsPrimitive = primitives.values.exists(_.equals(readerSchema))
 
-    if (useSchemaReflection && !writerSchemaIsPrimitive) {
-      StringForcingDatumReaderProvider.reflectDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.reflectData)
-    } else if (useSpecificAvroReader && !writerSchemaIsPrimitive) {
-      StringForcingDatumReaderProvider.specificDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.specificData)
-    } else {
-      StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData)
-    }
+        if (useSchemaReflection && !writerSchemaIsPrimitive) {
+          StringForcingDatumReaderProvider.reflectDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.reflectData)
+        } else if (useSpecificAvroReader && !writerSchemaIsPrimitive) {
+          StringForcingDatumReaderProvider
+            .specificDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.specificData)
+        } else {
+          StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData)
+        }
+      }
+    )
   }
 
 }

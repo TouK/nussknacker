@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
-import org.apache.avro.io.{DatumReader, DecoderFactory}
+import org.apache.avro.io.DecoderFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 
 import java.nio.ByteBuffer
-import java.util.concurrent.ConcurrentHashMap
 
 trait UniversalSchemaPayloadDeserializer {
 
@@ -38,8 +37,6 @@ class AvroPayloadDeserializer(
 ) extends DatumReaderWriterMixin
     with UniversalSchemaPayloadDeserializer {
 
-  @transient private lazy val readerCache = new ConcurrentHashMap[ReaderKey, DatumReader[AnyRef]]()
-
   private val recordDeserializer = new AvroRecordDeserializer(decoderFactory)
 
   override def deserialize(
@@ -50,25 +47,16 @@ class AvroPayloadDeserializer(
     val avroExpectedSchemaData = expectedSchemaData.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]
     val avroWriterSchemaData   = writerSchemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
     val readerSchemaData       = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
-
-    // Creating a datum reader is very expensive operation, therefore we cache it
-    val reader = readerCache.computeIfAbsent(
-      ReaderKey(readerSchemaData.schema, avroWriterSchemaData.schema),
-      (key: ReaderKey) => {
-        createDatumReader(
-          key.writerSchema.rawSchema(),
-          key.readerSchema.rawSchema(),
-          useSchemaReflection,
-          useSpecificAvroReader
-        )
-      }
+    val reader = createDatumReader(
+      avroWriterSchemaData.schema.rawSchema(),
+      readerSchemaData.schema.rawSchema(),
+      useSchemaReflection,
+      useSpecificAvroReader
     )
-
     val result = recordDeserializer.deserializeRecord(readerSchemaData.schema.rawSchema(), reader, buffer)
     genericRecordSchemaIdSerializationSupport.wrapWithRecordWithSchemaIdIfNeeded(result, readerSchemaData)
   }
 
-  private case class ReaderKey(readerSchema: AvroSchema, writerSchema: AvroSchema)
 }
 
 object JsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
