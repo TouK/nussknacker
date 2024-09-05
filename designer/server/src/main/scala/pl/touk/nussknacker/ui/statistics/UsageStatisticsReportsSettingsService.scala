@@ -13,7 +13,8 @@ import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStatisticsRepository}
 import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}

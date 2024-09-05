@@ -3,7 +3,7 @@ package pl.touk.nussknacker.openapi.extractor
 import io.circe
 import io.circe.Json
 import pl.touk.nussknacker.engine.json.swagger.{SwaggerObject, SwaggerString}
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 import pl.touk.nussknacker.openapi._
 import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
 import sttp.client3._
@@ -52,7 +52,7 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
   }
 
   def apply: SwaggerRequestType = {
-    val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
+    val encoder = ToJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
     // FIXME: lepsza obsluga (rozpoznawanie multi headers, itp...)
     val headers: List[Header] = swaggerService.parameters.collect { case paramDef @ HeaderParameter(value, _) =>

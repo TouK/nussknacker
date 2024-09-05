@@ -164,8 +164,8 @@ lazy val commonSettings =
   publishSettings ++
     Seq(
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-      crossScalaVersions := supportedScalaVersions,
-      scalaVersion       := defaultScalaV,
+      crossScalaVersions               := supportedScalaVersions,
+      scalaVersion                     := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
       ),
@@ -182,7 +182,7 @@ lazy val commonSettings =
         case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
         case _       => Seq()
       },
-      scalacOptions      := Seq(
+      scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation",
         "-encoding",
@@ -207,7 +207,7 @@ lazy val commonSettings =
             "-Ymacro-annotations"
           )
       },
-      javacOptions       := Seq(
+      Compile / compile / javacOptions := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
         // Using --release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
@@ -302,7 +302,7 @@ val logbackJsonV            = "0.1.5"
 val betterFilesV            = "3.9.2"
 val circeV                  = "0.14.6"
 val circeGenericExtrasV     = "0.14.3"
-val circeYamlV              = "0.14.2"
+val circeYamlV              = "0.15.2"
 val jwtCirceV               = "10.0.0"
 val jacksonV                = "2.15.4"
 val catsV                   = "2.10.0"
@@ -663,6 +663,18 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     componentsApi        % Provided,
     httpUtils            % Provided,
     testUtils            % Test
+  )
+
+lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
+  .settings(commonSettings)
+  .settings(
+    name       := "nussknacker-flink-metrics-deferred-reporter",
+    crossPaths := false,
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided
+      )
+    },
   )
 
 lazy val flinkDevModel = (project in flink("management/dev-model"))
@@ -1603,7 +1615,6 @@ lazy val flinkComponentsApi = (project in flink("components-api"))
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
-        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
       )
     }
   )
@@ -1816,6 +1827,7 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     componentsUtils      % Provided,
     flinkComponentsUtils % Provided,
     jsonUtils            % Provided,
+    testUtils            % Test,
   )
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
@@ -1867,7 +1879,6 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
   .enablePlugins(GenerateDesignerOpenApiPlugin)
-  .enablePlugins(GenerateScenarioActivityOpenApiPlugin)
   .settings(slowTestsSettings)
   .settings(commonSettings)
   .settings(
@@ -1989,6 +2000,7 @@ lazy val designer = (project in file("designer/server"))
     deploymentManagerApi,
     restmodel,
     listenerApi,
+    defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
     componentsApi                     % "test->test",
@@ -2118,6 +2130,7 @@ lazy val modules = List[ProjectReference](
   flinkComponentsApi,
   flinkExtensionsApi,
   flinkScalaUtils,
+  flinkMetricsDeferredReporter,
   requestResponseComponentsUtils,
   requestResponseComponentsApi,
   componentsApi,

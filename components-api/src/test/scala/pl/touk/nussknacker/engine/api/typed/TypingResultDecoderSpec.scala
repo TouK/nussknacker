@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementVal
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
+import java.time.LocalDateTime
 import scala.jdk.CollectionConverters._
 
 class TypingResultDecoderSpec
@@ -36,6 +37,7 @@ class TypingResultDecoderSpec
       TypedObjectWithValue(Typed.typedClass[Double], 23.547d),
       TypedObjectWithValue(Typed.typedClass[Boolean], false),
       Typed.fromInstance(Float.NaN),
+      Typed.fromInstance(LocalDateTime.MAX),
       Typed.taggedDictValue(Typed.typedClass[String], "alamakota"),
       Typed(Typed.typedClass[String], Typed.typedClass[java.lang.Long]),
       // this wont' work, handling primitives should be done with more sophisticated classloading

@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   RunDeploymentCommand,
   ScenarioResolver
 }
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,

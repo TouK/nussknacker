@@ -85,12 +85,13 @@ case object CompileTimeEvaluableValueValidator extends ParameterValidator {
     }
   }
 
-  private def error(paramName: ParameterName, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
-    message = "This field is required and value has to be evaluable at compile time",
-    description = "Please fill field for this parameter",
-    paramName = paramName,
-    nodeId = nodeId
-  )
+  private def error(paramName: ParameterName, nodeId: String): CompileTimeEvaluableParameterNotEvaluated =
+    CompileTimeEvaluableParameterNotEvaluated(
+      message = "This field's value has to be evaluable at deployment time",
+      description = "Please provide a value that is evaluable at deployment time",
+      paramName = paramName,
+      nodeId = nodeId
+    )
 
 }
 

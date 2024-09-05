@@ -1,33 +1,41 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.connector.source.Boundedness
-import org.apache.flink.table.api.ValidationException
 import org.scalatest.Inside
+import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
-import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.TestRecord
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{
+  AggregationParameters,
+  TestRecord,
+  buildMultipleAggregationsScenario
+}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
-class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
+import java.math.BigInteger
+import java.time.{LocalDate, OffsetDateTime, ZonedDateTime}
+import scala.jdk.CollectionConverters._
+import scala.reflect.ClassTag
 
-  import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
-  import pl.touk.nussknacker.engine.spel.SpelExtension._
-
-  import scala.jdk.CollectionConverters._
+class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks with FlinkSpec with Matchers with Inside {
 
   private lazy val additionalComponents: List[ComponentDefinition] =
-    singleRecordBatchTable :: FlinkTableComponentProvider.configIndependentComponents ::: Nil
+    FlinkTableComponentProvider.configIndependentComponents
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
@@ -35,97 +43,185 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
     .withExtraComponents(additionalComponents)
     .build()
 
-  // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
-  // See: https://issues.apache.org/jira/browse/FLINK-15867
-  // See AggFunctionFactory.createFirstValueAggFunction
-  test("should be able to aggregate by number types, string and boolean") {
-    val aggregatingBranches =
-      (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions).zipWithIndex.map {
-        case (expr, branchIndex) =>
-          aggregationTypeTestingBranch(
-            groupByExpr = spelStr.spel,
-            aggregateByExpr = expr.spel,
-            idSuffix = branchIndex.toString
-          )
+  test("should be able to aggregate by number types, string and boolean declared in spel") {
+    val aggregationParameters =
+      (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions).map { expr =>
+        AggregationParameters(aggregator = "'First'".spel, aggregateBy = expr, groupBy = spelStr)
       }
+    val scenario = buildMultipleAggregationsScenario(aggregationParameters)
+    val result   = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
+    result.validValue.successes.size shouldBe aggregationParameters.size
+  }
 
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .split(
-        "split",
-        aggregatingBranches: _*
-      )
+  test("should be able to group by simple types declared in spel") {
+    val aggregationParameters =
+      (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions ::: tableApiSupportedTimeLiteralExpressions)
+        .map { expr =>
+          AggregationParameters("'First'".spel, spelStr, expr)
+        }
 
-    val result = runner.runWithoutData(scenario)
+    val scenario = buildMultipleAggregationsScenario(aggregationParameters)
+    val result   = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
+    result.validValue.successes.size shouldBe aggregationParameters.size
+  }
+
+  test("should be able to group by advanced types") {
+    val aggregationParameters = ("{foo: 1}".spel :: "{{foo: 1, bar: '123'}}".spel :: Nil)
+      .map { expr => AggregationParameters("'First'".spel, spelStr, expr) }
+    val scenario = buildMultipleAggregationsScenario(aggregationParameters)
+    val result   = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result shouldBe Symbol("valid")
   }
 
-  // TODO: make this test check output value
-  test("should be able to group by simple types") {
-    val aggregatingBranches =
-      (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions ::: tableApiSupportedTimeLiteralExpressions).zipWithIndex
-        .map { case (expr, branchIndex) =>
-          aggregationTypeTestingBranch(
-            groupByExpr = expr.spel,
-            aggregateByExpr = spelStr.spel,
-            idSuffix = branchIndex.toString
-          )
-        }
-
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .split(
-        "split",
-        aggregatingBranches: _*
+  test("reports error when grouping by a type aligned to RAW") {
+    val scenario = buildMultipleAggregationsScenario(
+      List(
+        AggregationParameters(aggregator = "'First'".spel, aggregateBy = "''".spel, groupBy = "#input".spel)
       )
-
-    val result = runner.runWithoutData(scenario)
-    result.isValid shouldBe true
-  }
-
-  // TODO: remove when Flink Table API adds support for OffsetDateTime
-  test("throws exception when using not supported OffsetDateTime in aggregate") {
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .to(
-        aggregationTypeTestingBranch(
-          groupByExpr = spelOffsetDateTime.spel,
-          aggregateByExpr = spelStr.spel,
-          idSuffix = ""
-        )
-      )
-
-    assertThrows[ValidationException] {
-      runner.runWithoutData(scenario)
+    )
+    val result = runner.runWithData(
+      scenario,
+      List(OffsetDateTime.now()),
+      Boundedness.BOUNDED
+    )
+    result.invalidValue.toList.loneElement should matchPattern {
+      case CustomNodeError("agg0", _, Some(ParameterName("groupBy"))) =>
     }
   }
 
-  test("should use Flink default scale (18) for big decimal") {
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", TestScenarioRunner.testDataSource)
-      .customNode(
-        id = "aggregate",
-        outputVar = "agg",
-        customNodeRef = "aggregate",
-        "groupBy"     -> "'strKey'".spel,
-        "aggregateBy" -> "#input".spel,
-        "aggregator"  -> "'First'".spel,
-      )
-      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg".spel)
+  test("aggregations should aggregate by integers") {
+    val input = List(1, 2)
+    val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
+      "Average"                       -> 1,
+      "Count"                         -> 2,
+      "Min"                           -> 1,
+      "Max"                           -> 2,
+      "First"                         -> 1,
+      "Last"                          -> 2,
+      "Sum"                           -> 3,
+      "Population standard deviation" -> 0,
+      "Sample standard deviation"     -> 1,
+      "Population variance"           -> 0,
+      "Sample variance"               -> 1,
+    ).map(a => AggregateByInputTestData(a._1, a._2))
+    runMultipleAggregationTest(input, aggregatorWithExpectedResult)
+  }
 
-    val decimal = java.math.BigDecimal.valueOf(0.123456789)
+  test("aggregations should aggregate by doubles") {
+    val input = List(2.0, 1.0)
+    val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
+      "Average"                       -> 1.5,
+      "Count"                         -> 2,
+      "Min"                           -> 1.0,
+      "Max"                           -> 2.0,
+      "First"                         -> 2.0,
+      "Last"                          -> 1.0,
+      "Sum"                           -> 3.0,
+      "Population standard deviation" -> 0.5,
+      "Sample standard deviation"     -> 0.7071067811865476,
+      "Population variance"           -> 0.25,
+      "Sample variance"               -> 0.5
+    ).map(a => AggregateByInputTestData(a._1, a._2))
+    runMultipleAggregationTest(input, aggregatorWithExpectedResult)
+  }
+
+  test("aggregations should aggregate by strings") {
+    val input = List("def", "abc")
+    val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
+      "Count" -> 2,
+      "Min"   -> "abc",
+      "Max"   -> "def",
+      "First" -> "def",
+      "Last"  -> "abc",
+    ).map(a => AggregateByInputTestData(a._1, a._2))
+    runMultipleAggregationTest(input, aggregatorWithExpectedResult)
+  }
+
+  test("aggregations should aggregate by big decimals with Flink and return results in default scale (18)") {
+    val input = List(java.math.BigDecimal.valueOf(1), java.math.BigDecimal.valueOf(2))
+    val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
+      "Average"                       -> java.math.BigDecimal.valueOf(1.5).setScale(18),
+      "Count"                         -> 2,
+      "Min"                           -> java.math.BigDecimal.valueOf(1.0).setScale(18),
+      "Max"                           -> java.math.BigDecimal.valueOf(2.0).setScale(18),
+      "First"                         -> java.math.BigDecimal.valueOf(1.0).setScale(18),
+      "Last"                          -> java.math.BigDecimal.valueOf(2.0).setScale(18),
+      "Sum"                           -> java.math.BigDecimal.valueOf(3.0).setScale(18),
+      "Population standard deviation" -> java.math.BigDecimal.valueOf(0.5).setScale(18),
+      "Sample standard deviation"     -> java.math.BigDecimal.valueOf(0.7071067811865476).setScale(18),
+      "Population variance"           -> java.math.BigDecimal.valueOf(0.25).setScale(18),
+      "Sample variance"               -> java.math.BigDecimal.valueOf(0.5).setScale(18)
+    ).map(a => AggregateByInputTestData(a._1, a._2))
+    runMultipleAggregationTest(input, aggregatorWithExpectedResult)
+  }
+
+  test("max, min and count aggregations should aggregate by date types") {
+    val input = List(LocalDate.parse("2000-01-01"), LocalDate.parse("2000-01-02"))
+    val aggregatorWithExpectedResult = List(
+      "Count" -> 2,
+      "Min"   -> LocalDate.parse("2000-01-01"),
+      "Max"   -> LocalDate.parse("2000-01-02"),
+    ).map(a => AggregateByInputTestData(a._1, a._2))
+    runMultipleAggregationTest(input, aggregatorWithExpectedResult)
+  }
+
+  test("reports error when using LocalDate in aggregateBy for aggregators that don't support time types") {
+    val input = List(LocalDate.parse("2000-01-01"), LocalDate.parse("2000-01-02"))
+    val aggregatorsWithoutTimeTypesSupport = List(
+      "Average",
+      "First",
+      "Last",
+      "Sum",
+      "Population standard deviation",
+      "Sample standard deviation",
+      "Population variance",
+      "Sample variance",
+    )
+    val scenarios = aggregatorsWithoutTimeTypesSupport.map(a =>
+      buildMultipleAggregationsScenario(
+        List(
+          AggregationParameters(aggregator = s"'$a'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
+        )
+      )
+    )
+    scenarios.foreach(s => {
+      val result = runner.runWithData(s, input, Boundedness.BOUNDED)
+      result.invalidValue.toList.loneElement should matchPattern {
+        case CustomNodeError("agg0", _, Some(ParameterName("aggregateBy"))) =>
+      }
+    })
+  }
+
+  test("reports error when aggregating by type aligned to RAW") {
+    val scenario = buildMultipleAggregationsScenario(
+      List(
+        AggregationParameters(aggregator = "'First'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
+      )
+    )
+    val results = List(
+      runner.runWithData(scenario, List(OffsetDateTime.now()), Boundedness.BOUNDED),
+      runner.runWithData(scenario, List(ZonedDateTime.now()), Boundedness.BOUNDED),
+      runner.runWithData(scenario, List(BigInteger.ONE), Boundedness.BOUNDED)
+    )
+    results.foreach { r =>
+      r.invalidValue.toList.loneElement should matchPattern {
+        case CustomNodeError("agg0", _, Some(ParameterName("aggregateBy"))) =>
+      }
+    }
+  }
+
+  test("count aggregation works when aggregating by type aligned to RAW") {
+    val scenario = buildMultipleAggregationsScenario(
+      List(
+        AggregationParameters(aggregator = "'Count'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
+      )
+    )
     val result = runner.runWithData(
       scenario,
-      List(decimal),
+      List(OffsetDateTime.now()),
       Boundedness.BOUNDED
     )
-
-    val decimalWithAlignedScale = java.math.BigDecimal.valueOf(0.123456789).setScale(18)
-    result.validValue.successes shouldBe decimalWithAlignedScale :: Nil
+    result shouldBe Symbol("valid")
   }
 
   test("table aggregation should emit groupBy key and aggregated values as separate variables") {
@@ -159,20 +255,59 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
     )
   }
 
-  private def aggregationTypeTestingBranch(groupByExpr: Expression, aggregateByExpr: Expression, idSuffix: String) =
-    GraphBuilder
-      .customNode(
-        id = s"aggregate$idSuffix",
-        outputVar = s"agg$idSuffix",
-        customNodeRef = "aggregate",
-        "groupBy"     -> groupByExpr,
-        "aggregateBy" -> aggregateByExpr,
-        "aggregator"  -> "'First'".spel,
-      )
-      .emptySink(s"end$idSuffix", "dead-end")
+  case class AggregateByInputTestData(aggregator: String, expectedResult: Any)
+
+  private def runMultipleAggregationTest[T: ClassTag](
+      input: List[T],
+      aggregatorWithExpectedResult: List[AggregateByInputTestData]
+  ) = {
+    val aggregationsParams = aggregatorWithExpectedResult.map(a => {
+      val aggregatorName = s"'${a.aggregator}'".spel
+      AggregationParameters(aggregator = aggregatorName, aggregateBy = "#input".spel, groupBy = aggregatorName)
+    })
+    val expectedResults =
+      aggregatorWithExpectedResult.map(a => Map("key" -> a.aggregator, "result" -> a.expectedResult))
+    val scenario = buildMultipleAggregationsScenario(aggregationsParams)
+    val result = runner.runWithData[T, java.util.LinkedHashMap[String, AnyRef]](
+      scenario,
+      input,
+      Boundedness.BOUNDED
+    )
+    result.validValue.successes.map(r => r.asScala.toMap).toSet shouldBe expectedResults.toSet
+  }
 
 }
 
-object TableAggregationTest {
+object TableAggregationTest extends AnyFunSuite {
   case class TestRecord(someKey: String, someAmount: Int)
+
+  case class AggregationParameters(aggregator: Expression, aggregateBy: Expression, groupBy: Expression)
+
+  private def buildMultipleAggregationsScenario(
+      aggregationParameters: List[AggregationParameters]
+  ): CanonicalProcess = {
+    val aggregationsBranches = aggregationParameters.zipWithIndex.map { case (params, i) =>
+      GraphBuilder
+        .customNode(
+          id = s"agg$i",
+          outputVar = "agg",
+          customNodeRef = "aggregate",
+          "groupBy"     -> params.groupBy,
+          "aggregateBy" -> params.aggregateBy,
+          "aggregator"  -> params.aggregator
+        )
+        .emptySink(s"end$i", TestScenarioRunner.testResultSink, "value" -> "{key: #key, result: #agg}".spel)
+    }
+    ScenarioBuilder
+      .streaming("test")
+      .sources(
+        GraphBuilder
+          .source("source", TestScenarioRunner.testDataSource)
+          .split(
+            "split",
+            aggregationsBranches: _*
+          )
+      )
+  }
+
 }

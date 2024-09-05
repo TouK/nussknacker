@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInf
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.time.Instant
 import scala.jdk.CollectionConverters._
@@ -18,7 +18,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
   private val mockProducer =
     new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
 
-  private val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
+  private val encoder = ToJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
   private val metaData = MetaData("test", StreamMetaData())
 

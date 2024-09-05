@@ -7,7 +7,6 @@ import { css } from "@emotion/css";
 import { RawEditorIcon, SimpleEditorIcon, SwitchButton } from "./SwitchButton";
 import { useTranslation } from "react-i18next";
 import { FieldError } from "../Validators";
-import ErrorBoundary from "../../../../common/ErrorBoundary";
 import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
 
 type Props = {
@@ -112,18 +111,16 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
                 gap: 5,
             })}
         >
-            <ErrorBoundary>
-                {displayRawEditor ? (
-                    <RawEditor {...editorProps} expressionObj={editorExpressionObj} onValueChange={onValueChangeWithExpressionValue} />
-                ) : (
-                    <Editor
-                        {...editorProps}
-                        editorConfig={editorConfig.simpleEditor}
-                        expressionObj={editorExpressionObj}
-                        onValueChange={onValueChangeWithExpressionValue}
-                    />
-                )}
-            </ErrorBoundary>
+            {displayRawEditor ? (
+                <RawEditor {...editorProps} expressionObj={editorExpressionObj} onValueChange={onValueChangeWithExpressionValue} />
+            ) : (
+                <Editor
+                    {...editorProps}
+                    editorConfig={editorConfig.simpleEditor}
+                    expressionObj={editorExpressionObj}
+                    onValueChange={onValueChangeWithExpressionValue}
+                />
+            )}
             {showSwitch ? (
                 <SwitchButton onClick={toggleRawEditor} disabled={disabled} title={hint}>
                     {displayRawEditor ? <SimpleEditorIcon type={editorConfig.simpleEditor.type} /> : <RawEditorIcon />}

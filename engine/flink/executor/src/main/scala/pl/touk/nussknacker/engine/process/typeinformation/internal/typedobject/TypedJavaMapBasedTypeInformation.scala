@@ -36,8 +36,6 @@ class TypedJavaMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot[
     this.serializersSnapshots = serializers
   }
 
-  override protected def compatibilityRequiresSameKeys: Boolean = false
-
   override protected def restoreSerializer(
       restored: Array[(String, TypeSerializer[_])]
   ): TypeSerializer[jutil.Map[String, AnyRef]] = TypedJavaMapSerializer(restored)

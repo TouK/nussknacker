@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
 import pl.touk.nussknacker.engine.api.definition.{
+  DictParameterEditor,
   DualParameterEditor,
   FixedValuesParameterEditor,
   TabularTypedDataEditor
 }
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{Expression, TabularTypedData}
 
 protected object EditorPossibleValuesBasedDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
@@ -19,7 +21,8 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
           Some(Expression.spel(firstValue.expression))
         case TabularTypedDataEditor =>
           Some(Expression.tabularDataDefinition(TabularTypedData.empty.stringify))
-        case _ => None
+        case DictParameterEditor(_) => Some(Expression(Language.DictKeyWithLabel, ""))
+        case _                      => None
       }
   }
 

@@ -1,7 +1,7 @@
 import React from "react";
 import loadable from "@loadable/component";
 import { styled } from "@mui/material";
-import { CrackedNut } from "./CrackedNut";
+import { PlaceholderIconFallbackComponent } from "./PlaceholderIconFallbackComponent";
 
 // This retry mechanism was introduced as sometimes dynamic import would fail.
 const Icon = loadable(() =>
@@ -11,7 +11,7 @@ const Icon = loadable(() =>
             return await import("nussknackerUi/Icon");
         } catch (e) {
             console.error("Import retry failed", e);
-            return { default: () => <CrackedNut /> };
+            return { default: () => <PlaceholderIconFallbackComponent /> };
         }
     }),
 );

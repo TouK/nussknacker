@@ -26,7 +26,6 @@ class DatabaseEnricherInvokerWithCache(
     strategy: QueryResultStrategy,
     queryArgumentsExtractor: (Int, Params, Context) => QueryArguments,
     cacheTTL: Duration,
-    override val returnType: typing.TypingResult,
     override val getConnection: () => Connection,
     override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
     params: Params
@@ -36,7 +35,6 @@ class DatabaseEnricherInvokerWithCache(
       tableDef,
       strategy,
       queryArgumentsExtractor,
-      returnType,
       getConnection,
       getTimeMeasurement,
       params

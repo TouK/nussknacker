@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.modelconfig
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.component.{
+  ComponentConfig,
   ComponentGroupName,
   ComponentId,
   DesignerWideComponentId,
-  ParameterConfig,
-  SingleComponentConfig
+  ParameterConfig
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
@@ -42,7 +42,7 @@ object ComponentsUiConfigParser {
   private val MappingNamespace = "componentsGroupMapping"
 
   def parse(config: Config): ComponentsUiConfig = {
-    val componentsConfig = config.getOrElse[Map[String, SingleComponentConfig]](ComponentsUiConfigPath, Map.empty)
+    val componentsConfig = config.getOrElse[Map[String, ComponentConfig]](ComponentsUiConfigPath, Map.empty)
     val groupNameMapping =
       config.getOrElse[Map[ComponentGroupName, Option[ComponentGroupName]]](MappingNamespace, Map.empty)
     new ComponentsUiConfig(componentsConfig, groupNameMapping)
@@ -51,16 +51,16 @@ object ComponentsUiConfigParser {
 }
 
 class ComponentsUiConfig(
-    componentsConfig: Map[String, SingleComponentConfig],
+    componentsConfig: Map[String, ComponentConfig],
     groupNameMapping: Map[ComponentGroupName, Option[ComponentGroupName]]
 ) {
 
-  def getConfig(id: ComponentId): SingleComponentConfig = {
+  def getConfig(id: ComponentId): ComponentConfig = {
     componentsConfig
       .get(id.toString)
       // Should we still support lookup by name?
       .orElse(componentsConfig.get(id.name))
-      .getOrElse(SingleComponentConfig.zero)
+      .getOrElse(ComponentConfig.zero)
   }
 
   // None mean, special "null" group name which hides components

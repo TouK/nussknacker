@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{AdditionalProperties, ScenarioActivityEntityData, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 

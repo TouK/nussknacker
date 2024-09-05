@@ -3,34 +3,35 @@ package pl.touk.nussknacker.ui.factory
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import cats.effect.{IO, Resource}
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.{LoadableDesignerConfigBasedNussknackerConfig, NussknackerConfig}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
+import pl.touk.nussknacker.ui.process.processingtype.loader._
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 
 import java.time.Clock
 
-class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataStateFactory) extends LazyLogging {
+object NussknackerAppFactory
 
-  def this() = {
-    this(
-      ProcessingTypeDataReaderBasedProcessingTypeDataStateFactory
-    )
+class NussknackerAppFactory(nussknackerConfig: NussknackerConfig, processingTypeDataLoader: ProcessingTypeDataLoader)
+    extends LazyLogging {
+
+  def this(nussknackerConfig: NussknackerConfig) = {
+    this(nussknackerConfig, new ProcessingTypesConfigBasedProcessingTypeDataLoader(nussknackerConfig))
   }
 
-  def createApp(
-      baseUnresolvedConfig: Config = ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader),
-      clock: Clock = Clock.systemUTC()
-  ): Resource[IO, Unit] = {
+  def this(classLoader: ClassLoader) = {
+    this(new LoadableDesignerConfigBasedNussknackerConfig(classLoader))
+  }
+
+  def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
-      config <- designerConfigFrom(baseUnresolvedConfig)
+      config <- Resource.eval(nussknackerConfig.loadApplicationConfig())
       system <- createActorSystem(config)
       materializer = Materializer(system)
       _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))
@@ -42,7 +43,7 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
         new AkkaHttpBasedRouteProvider(
           db,
           metricsRegistry,
-          processingTypeDataStateFactory,
+          processingTypeDataLoader,
           feStatisticsRepository,
           clock
         )(
@@ -55,10 +56,6 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()
-  }
-
-  private def designerConfigFrom(baseUnresolvedConfig: Config) = {
-    Resource.eval(IO(DesignerConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)))
   }
 
   private def createActorSystem(config: ConfigWithUnresolvedVersion) = {

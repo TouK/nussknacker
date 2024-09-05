@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.spel.Typer.SpelCompilationException
 
+import java.text.ParseException
 import scala.jdk.CollectionConverters._
 
 class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
@@ -72,6 +73,16 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       ("#COLLECTION.merge(#stringMap,{a:'5'})", "Map[String,Unknown]"),
       ("#COLLECTION.merge(#typedMap,{a:'5'})", "Record{a: String(5), key: Integer(20)}"),
       ("#COLLECTION.merge({b:'50'}, #typedMap)", "Record{b: String(50), key: Integer(20)}"),
+      ("#COLLECTION.merge({a: 100}, {b: 200}).![#this]", "List[Record{key: String, value: Integer}]"),
+      ("#COLLECTION.merge({a: {1, 2}}, {b: {'a', 'b'}}).![#this]", "List[Record{key: String, value: List[Unknown]}]"),
+      (
+        "#COLLECTION.merge({a: {'c', 'd'}}, {b: {'a', 'b'}}).![#this]",
+        "List[Record{key: String, value: List[String]}]"
+      ),
+      (
+        "#COLLECTION.merge({a: {{c: {1, 2}, d: {'a', 'b'}}}}, {b: {'a', 'b'}})",
+        "Record{a: List[Record{c: List[Integer], d: List[String]}]({{c=[1, 2], ...), b: List[String]({a, b})}"
+      ),
     ).forEvery { (expression, expected) =>
       evaluateType(expression, types = types) shouldBe expected.valid
     }
@@ -319,6 +330,45 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       "List[Record{a: Integer, b: Integer, c: Integer, d: Integer}]".valid
   }
 
+  test("sort by field") {
+    evaluateAny(
+      "#COLLECTION.sortedAscBy(#list, 'k')",
+      Map(
+        "list" -> List(
+          Map("k" -> "v3").asJava,
+          Map("k" -> "v1").asJava,
+          Map("k" -> null).asJava,
+          Map("k" -> "v2").asJava,
+          Map("k" -> null).asJava,
+        ).asJava,
+      )
+    ) shouldBe List(
+      Map("k" -> null).asJava,
+      Map("k" -> null).asJava,
+      Map("k" -> "v1").asJava,
+      Map("k" -> "v2").asJava,
+      Map("k" -> "v3").asJava,
+    ).asJava
+
+    evaluateAny("#COLLECTION.sortedAscBy({{k: 'v2'}, {k: 'v1'}}, 'k')") shouldBe List(
+      Map("k" -> "v1").asJava,
+      Map("k" -> "v2").asJava,
+    ).asJava
+
+    evaluateAny("#COLLECTION.sortedAscBy({{k: 'v2'}, {k: 'v1'}}, #fieldName)", Map("fieldName" -> "k")) shouldBe List(
+      Map("k" -> "v1").asJava,
+      Map("k" -> "v2").asJava,
+    ).asJava
+  }
+
+  test("reverse") {
+    evaluateAny("#COLLECTION.reverse({'k1', 'k2'})") shouldBe List("k2", "k1").asJava
+    evaluateAny("#COLLECTION.reverse({{k: 'v1'}, {k: 'v2'}})") shouldBe List(
+      Map("k" -> "v2").asJava,
+      Map("k" -> "v1").asJava,
+    ).asJava
+  }
+
   test("should throw if elements are not comparable") {
     val variables = Map(
       "list" -> List(new NonComparable).asJava,
@@ -368,6 +418,31 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
         evaluateAny(expression, variables)
       }
       caught.message should include("cannot be cast to class")
+    }
+  }
+
+  test("should throw if sorted records does not contain a required field") {
+    Table(
+      ("expression", "errorMessage"),
+      (
+        "#COLLECTION.sortedAscBy({{a: 'a'}, {a: 'b'}}, 'missing_field')",
+        "Type: Record{a: String} doesn't contain field: missing_field."
+      ),
+      (
+        "#COLLECTION.sortedAscBy({{a: 'a'}, {a: #NUMERIC.toNumber('42')}}, 'a')",
+        "Field: a of the type: Unknown isn't comparable (doesn't implement the Comparable interface) and cannot " +
+          "be used for sorting purposes."
+      ),
+      (
+        "#COLLECTION.sortedAscBy({{k: 'a'}, {k: 'b'}}, null)",
+        "Mismatch parameter types. Found: sortedAscBy(List[Record{k: String}]({{k=a}, {k=b}}), Null). " +
+          "Required: sortedAscBy(Collection[Map[String,Unknown]], String)"
+      ),
+    ).forEvery { case (expression, errorMessage) =>
+      val caught = intercept[ParseException] {
+        evaluateAny(expression)
+      }
+      caught.getMessage should be(errorMessage)
     }
   }
 

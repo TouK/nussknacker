@@ -13282,6 +13282,43 @@
           }
         }
       ],
+      "reverse": [
+        {
+          "description": "Returns a list that contains elements in reversed order from the given list",
+          "name": "reverse",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
       "shuffle": [
         {
           "description": "Returns a copy of the list with its elements shuffled",
@@ -13387,6 +13424,70 @@
                     "params": [],
                     "refClazzName": "java.lang.Object",
                     "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "sortedAscBy": [
+        {
+          "description": "Returns a list of all elements sorted by record field in ascending order (elements must be comparable)",
+          "name": "sortedAscBy",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Map[String,Unknown]",
+                        "params": [
+                          {
+                            "display": "String",
+                            "params": [],
+                            "refClazzName": "java.lang.String",
+                            "type": "TypedClass"
+                          },
+                          {
+                            "display": "Unknown",
+                            "params": [],
+                            "refClazzName": "java.lang.Object",
+                            "type": "Unknown"
+                          }
+                        ],
+                        "refClazzName": "java.util.Map",
+                        "type": "TypedClass"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                },
+                {"name": "fieldName", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Map[String,Unknown]",
+                    "params": [
+                      {
+                        "display": "String",
+                        "params": [],
+                        "refClazzName": "java.lang.String",
+                        "type": "TypedClass"
+                      },
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Map",
+                    "type": "TypedClass"
                   }
                 ],
                 "refClazzName": "java.util.List"

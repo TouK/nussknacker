@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.benchmarks.serialization.typedinfo
 
-import java.util.concurrent.TimeUnit
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.api.Context
@@ -9,8 +8,8 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection.CompositeCustomisation
 
+import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
 /*
@@ -32,6 +31,8 @@ import scala.jdk.CollectionConverters._
 @State(Scope.Thread)
 class TypingResultBasedSerializationBenchmark {
 
+  private val detection = new TypingResultAwareTypeInformationDetection
+
   // we use TypedMap here to have TypedObjectTypingResult in Typed.fromInstance
   private val mapToSerialize = TypedMap(
     Map("field1" -> "strValue", "field2" -> 333L, "field3" -> 555, "field4" -> 555.3)
@@ -42,13 +43,11 @@ class TypingResultBasedSerializationBenchmark {
   private val contextToSerialize =
     Context("id").copy(variables = Map("var1" -> "11", "var2" -> 11L, "map" -> mapToSerialize))
 
-  private val determiner = new TypingResultAwareTypeInformationDetection(new CompositeCustomisation(Nil))
-
   private val genericContextSetup =
     new SerializationBenchmarkSetup(TypeInformation.of(classOf[Context]), contextToSerialize)
 
   private val typingResultContextSetup = new SerializationBenchmarkSetup(
-    determiner.forContext(
+    detection.forContext(
       ValidationContext(Map("var1" -> Typed[String], "var2" -> Typed[Long], "map" -> mapToSerializeType))
     ),
     contextToSerialize
@@ -58,14 +57,16 @@ class TypingResultBasedSerializationBenchmark {
     new SerializationBenchmarkSetup(TypeInformation.of(classOf[TypedMap]), mapToSerialize)
 
   private val typingResultTypedMapSetup =
-    new SerializationBenchmarkSetup(determiner.forType(mapToSerializeType), mapToSerialize)
+    new SerializationBenchmarkSetup(
+      detection.forType(mapToSerializeType),
+      mapToSerialize
+    )
 
   private val genericScalaMapSetup =
     new SerializationBenchmarkSetup(TypeInformation.of(classOf[Map[String, Any]]), mapToSerialize.asScala.toMap)
 
   private val typingResultScalaMapSetup = new SerializationBenchmarkSetup(
-    determiner
-      .forType(mapToSerializeType.copy(objType = Typed.typedClass[Map[String, Any]])),
+    detection.forType(mapToSerializeType.copy(runtimeObjType = Typed.typedClass[Map[String, Any]])),
     mapToSerialize.asScala.toMap
   )
 

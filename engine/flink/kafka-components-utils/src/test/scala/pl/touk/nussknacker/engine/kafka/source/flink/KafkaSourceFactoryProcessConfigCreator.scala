@@ -47,7 +47,7 @@ class KafkaSourceFactoryProcessConfigCreator(resultsHolders: () => ResultsHolder
     Map(
       "sinkForStrings" -> defaultCategory(SinkForStrings(resultsHolders().sinkForStringsResultsHolder)),
       "sinkForInputMeta" -> defaultCategory(
-        SinkForType[InputMeta[Any]](resultsHolders().sinkForInputMetaResultsHolder)
+        SinkForType[java.util.Map[String, _]](resultsHolders().sinkForInputMetaResultsHolder)
       ),
       "sinkForSimpleJsonRecord" -> defaultCategory(
         SinkForType[SampleValue](resultsHolders().sinkForSimpleJsonRecordResultsHolder)
@@ -68,8 +68,9 @@ class KafkaSourceFactoryProcessConfigCreator(resultsHolders: () => ResultsHolder
 object KafkaSourceFactoryProcessConfigCreator {
 
   class ResultsHolders {
-    val sinkForStringsResultsHolder: TestResultsHolder[String]               = new TestResultsHolder[String]
-    val sinkForInputMetaResultsHolder: TestResultsHolder[InputMeta[Any]]     = new TestResultsHolder[InputMeta[Any]]
+    val sinkForStringsResultsHolder: TestResultsHolder[String] = new TestResultsHolder[String]
+    val sinkForInputMetaResultsHolder: TestResultsHolder[java.util.Map[String @unchecked, _]] =
+      new TestResultsHolder[java.util.Map[String @unchecked, _]]
     val sinkForSimpleJsonRecordResultsHolder: TestResultsHolder[SampleValue] = new TestResultsHolder[SampleValue]
 
     def clear(): Unit = {
