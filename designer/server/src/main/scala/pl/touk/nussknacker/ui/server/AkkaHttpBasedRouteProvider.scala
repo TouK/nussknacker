@@ -467,7 +467,8 @@ class AkkaHttpBasedRouteProvider(
                   processingTypeData,
                   prepareAlignedComponentsDefinitionProvider(processingTypeData),
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
-                  fragmentRepository
+                  fragmentRepository,
+                  resolvedConfig.getAs[String]("fragmentPropertiesDocsUrl")
                 )
               )
             }

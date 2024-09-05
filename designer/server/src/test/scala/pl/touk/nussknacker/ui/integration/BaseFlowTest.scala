@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentO
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.restmodel.definition.UiScenarioPropertyConfig
+import pl.touk.nussknacker.restmodel.definition.{UiScenarioProperties, UiScenarioPropertyConfig}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -254,10 +254,11 @@ class BaseFlowTest
     )
     response.code shouldEqual StatusCode.Ok
 
-    val settingsJson        = response.extractFieldJsonValue("scenarioPropertiesConfig")
+    val settingsJson        = response.extractFieldJsonValue("scenarioProperties")
     val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-    val settings = Decoder[Map[String, UiScenarioPropertyConfig]].decodeJson(settingsJson).toOption.get
+    val properties       = Decoder[UiScenarioProperties].decodeJson(settingsJson).toOption.get
+    val additionalFields = properties.propertiesConfig
     val streamingDefaultPropertyConfig =
       FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioPropertyConfig(p._2))
 
@@ -287,7 +288,7 @@ class BaseFlowTest
       )
     ) ++ streamingDefaultPropertyConfig
 
-    settings shouldBe underTest
+    additionalFields shouldBe underTest
   }
 
   test("validate process scenario properties") {

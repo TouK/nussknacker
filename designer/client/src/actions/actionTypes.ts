@@ -7,7 +7,6 @@ export type ActionTypes =
     | "SWITCH_TOOL_TIPS_HIGHLIGHT"
     | "ZOOM_IN"
     | "ZOOM_OUT"
-    | "HANDLE_HTTP_ERROR"
     | "DELETE_NODES"
     | "NODES_CONNECTED"
     | "NODES_DISCONNECTED"
