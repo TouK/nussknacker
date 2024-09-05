@@ -47,6 +47,8 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
       jobStatuses.map(_.status) shouldBe List(SimpleStateStatus.Restarting)
     }
 
+    // We have to recreate kafka server because after shutdown it is unusable anymore
+    kafkaServer.recreateKafkaServer()
     kafkaServer.kafkaServer.startup()
 
     eventually {

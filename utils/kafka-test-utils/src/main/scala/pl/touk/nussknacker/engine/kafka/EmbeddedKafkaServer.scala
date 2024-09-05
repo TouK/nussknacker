@@ -25,18 +25,21 @@ object EmbeddedKafkaServer {
 
   // In Kafka 3.2.0 doesn't work create topic and describe topic instantly after it - it doesn't return newly created topic
   // Also there is erro "maybeBalancePartitionLeaders: unable to start processing because of TimeoutException" in log
-  val kRaftEnabled: Boolean = false
+  // We should consider switching to KafkaClusterTestKit (https://github.com/apache/kafka/blob/3.6/core/src/test/java/kafka/testkit/KafkaClusterTestKit.java),
+  // it's used by spring-kafka (https://github.com/spring-projects/spring-kafka/blob/3.1.x/spring-kafka-test/src/main/java/org/springframework/kafka/test/EmbeddedKafkaKraftBroker.java).
+  val kRaftEnabled: Boolean = true
 
   val localhost: String = "127.0.0.1"
 
   def run(brokerPort: Int, controllerPort: Int, kafkaBrokerConfig: Map[String, String]): EmbeddedKafkaServer = {
     val tempDir     = Files.createTempDirectory("embeddedKafka").toFile
-    val kafkaConfig = prepareServerConfig(brokerPort, controllerPort, tempDir, kafkaBrokerConfig)
+    val clusterId   = Uuid.randomUuid()
+    val kafkaConfig = prepareServerConfig(brokerPort, controllerPort, tempDir, kafkaBrokerConfig, clusterId)
     val server = if (kRaftEnabled) {
-      prepareRaftStorage(tempDir, kafkaConfig)
+      prepareRaftStorage(tempDir, kafkaConfig, clusterId)
       new EmbeddedKafkaServer(
         None,
-        new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM),
+        () => new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM),
         s"$localhost:$brokerPort",
         tempDir
       )
@@ -44,7 +47,7 @@ object EmbeddedKafkaServer {
       val zk = createZookeeperServer(controllerPort)
       new EmbeddedKafkaServer(
         Some(zk),
-        new KafkaServer(kafkaConfig, time = Time.SYSTEM),
+        () => new KafkaServer(kafkaConfig, time = Time.SYSTEM),
         s"$localhost:$brokerPort",
         tempDir
       )
@@ -57,21 +60,26 @@ object EmbeddedKafkaServer {
       brokerPort: Int,
       controllerPort: Int,
       logDir: File,
-      kafkaBrokerConfig: Map[String, String]
+      kafkaBrokerConfig: Map[String, String],
+      clusterId: Uuid
   ) = {
     val properties = new Properties()
-    properties.setProperty("broker.id", "0")
     if (kRaftEnabled) {
+      properties.setProperty("node.id", "0")
       properties.setProperty("process.roles", "broker,controller")
       properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort,CONTROLLER://$localhost:$controllerPort")
       properties.setProperty("listener.security.protocol.map", s"PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT")
       properties.setProperty("controller.listener.names", s"CONTROLLER")
+      properties.setProperty("inter.broker.listener.name", "PLAINTEXT")
       properties.setProperty("controller.quorum.voters", s"0@$localhost:$controllerPort")
+      properties.setProperty("cluster.id", clusterId.toString)
     } else {
+      properties.setProperty("broker.id", "0")
       properties.setProperty("zookeeper.connect", s"$localhost:$controllerPort")
       properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort")
     }
     properties.setProperty("num.partitions", "1")
+    properties.setProperty("group.initial.rebalance.delay.ms", "0")
     properties.setProperty("offsets.topic.num.partitions", "1")
     properties.setProperty("offsets.topic.replication.factor", "1")
     properties.setProperty(
@@ -88,13 +96,12 @@ object EmbeddedKafkaServer {
     new server.KafkaConfig(properties)
   }
 
-  private def prepareRaftStorage(logDir: File, kafkaConfig: server.KafkaConfig) = {
-    val uuid = Uuid.randomUuid()
+  private def prepareRaftStorage(logDir: File, kafkaConfig: server.KafkaConfig, clusterId: Uuid) = {
     StorageTool.formatCommand(
       new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM),
       Seq(logDir.getAbsolutePath),
-      StorageTool.buildMetadataProperties(uuid.toString, kafkaConfig),
-      MetadataVersion.IBP_3_3_IV3,
+      StorageTool.buildMetadataProperties(clusterId.toString, kafkaConfig),
+      MetadataVersion.LATEST_PRODUCTION,
       ignoreFormatted = false
     )
   }
@@ -111,10 +118,16 @@ object EmbeddedKafkaServer {
 
 class EmbeddedKafkaServer(
     zooKeeperServerOpt: Option[(NIOServerCnxnFactory, ZooKeeperServer, File)],
-    val kafkaServer: Server,
+    createKafkaServer: () => Server,
     val kafkaAddress: String,
     tempDir: File
 ) extends LazyLogging {
+
+  var kafkaServer: Server = createKafkaServer()
+
+  def recreateKafkaServer(): Unit = {
+    kafkaServer = createKafkaServer()
+  }
 
   def startup(): Unit = {
     zooKeeperServerOpt.foreach(t => t._1.startup(t._2))
