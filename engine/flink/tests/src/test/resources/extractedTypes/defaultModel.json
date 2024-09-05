@@ -12476,7 +12476,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger"}
           }
@@ -12600,7 +12600,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger"}
           }
@@ -12715,7 +12715,7 @@
           "name": "valueOf",
           "signature": {
             "noVarArgs": [
-              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+              {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType"}
           }
