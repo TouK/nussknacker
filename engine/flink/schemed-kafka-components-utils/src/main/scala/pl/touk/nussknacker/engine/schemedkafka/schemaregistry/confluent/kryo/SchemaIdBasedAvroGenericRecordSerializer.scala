@@ -44,7 +44,7 @@ class SchemaIdBasedAvroGenericRecordSerializer(
 
   @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig)
 
-  @transient private val readerCache = new ConcurrentHashMap[Schema, DatumReader[AnyRef]]()
+  @transient private lazy val readerCache = new ConcurrentHashMap[Schema, DatumReader[AnyRef]]()
 
   @transient protected lazy val encoderFactory: EncoderFactory = EncoderFactory.get
 

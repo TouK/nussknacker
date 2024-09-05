@@ -38,7 +38,7 @@ class AvroPayloadDeserializer(
 ) extends DatumReaderWriterMixin
     with UniversalSchemaPayloadDeserializer {
 
-  @transient private val readerCache = new ConcurrentHashMap[ReaderKey, DatumReader[AnyRef]]()
+  @transient private lazy val readerCache = new ConcurrentHashMap[ReaderKey, DatumReader[AnyRef]]()
 
   private val recordDeserializer = new AvroRecordDeserializer(decoderFactory)
 
@@ -51,13 +51,13 @@ class AvroPayloadDeserializer(
     val avroWriterSchemaData   = writerSchemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
     val readerSchemaData       = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
 
-    // Creating a datum reader is highly expensive operation, therefore we cache it
+    // Creating a datum reader is very expensive operation, therefore we cache it
     val reader = readerCache.computeIfAbsent(
-      ReaderKey(readerSchemaData, avroWriterSchemaData),
+      ReaderKey(readerSchemaData.schema, avroWriterSchemaData.schema),
       (key: ReaderKey) => {
         createDatumReader(
-          key.writerSchema.schema.rawSchema(),
-          key.readerSchema.schema.rawSchema(),
+          key.writerSchema.rawSchema(),
+          key.readerSchema.rawSchema(),
           useSchemaReflection,
           useSpecificAvroReader
         )
@@ -68,7 +68,7 @@ class AvroPayloadDeserializer(
     genericRecordSchemaIdSerializationSupport.wrapWithRecordWithSchemaIdIfNeeded(result, readerSchemaData)
   }
 
-  private case class ReaderKey(readerSchema: RuntimeSchemaData[AvroSchema], writerSchema: RuntimeSchemaData[AvroSchema])
+  private case class ReaderKey(readerSchema: AvroSchema, writerSchema: AvroSchema)
 }
 
 object JsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
