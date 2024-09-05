@@ -2,7 +2,6 @@
 
 1.18.0 (Not released yet)
 -------------------------
-* [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
 * Batch processing mode related improvements:
   * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc. 
     are registered based on class of Serializer instead of instance of Serializer. Thanks to this change, it is possible to use `RAW<>`
@@ -85,6 +84,7 @@
 * [#6614](https://github.com/TouK/nussknacker/pull/6614) Array in SpeL improvements:
   * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
   * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
+* [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
 
 1.16.3 (8 August 2024)
 -------------------------
