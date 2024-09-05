@@ -142,7 +142,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                                 (f === ScenariosFiltersModelType.FRAGMENTS && row.isFragment),
                         ),
                 CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
-                LABEL: (row, value) => !value?.length || [].concat(value).some((f) => row["tags"] === f),
+                LABEL: (row, value) => !value?.length || [].concat(value).some((f) => row["labels"] === f),
                 CREATED_BY: (row, value) =>
                     !value?.length ||
                     [].concat(value).some((f) =>

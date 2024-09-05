@@ -137,8 +137,8 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
 
     const validateLabels = useMemo(() => {
         return debounce(async (labels: LabelOption[]) => {
-            const l = labels.map(toLabelValue);
-            const response = await HttpService.validateScenarioLabels(l);
+            const values = labels.map(toLabelValue);
+            const response = await HttpService.validateScenarioLabels(values);
 
             if (response.status === 200) {
                 const validationError = response.data.validationErrors;
@@ -189,7 +189,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
 
                         const { inputValue } = params;
 
-                        const isExisting = options.some((option) => inputValue === option.value);
+                        const isExisting = options.some((option) => (typeof option === "string" ? false : inputValue === option.value));
                         if (inputValue !== "" && !isExisting && !inputTyping && inputErrors.length === 0) {
                             filtered.push({
                                 inputValue,
@@ -242,7 +242,6 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                         setIsOpen(false);
                     }}
                     onFocus={() => {
-                        console.log("on focus");
                         setIsEdited(true);
                     }}
                     onInputChange={(_, newInputValue: string, reason: AutocompleteInputChangeReason) => {
@@ -287,23 +286,25 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                             </Box>
                         );
                     }}
-                    renderTags={(value: readonly LabelOption[], getTagProps) => {
-                        return value.map((option: LabelOption, index: number) => {
-                            const { key, ...tagProps } = getTagProps({ index });
-                            const props = isEdited ? { ...tagProps } : {};
-                            const labelError = labelsErrors.find((error) => error.label == toLabelValue(option));
-                            return (
-                                <Chip
-                                    key={key}
-                                    color={labelError ? "error" : "default"}
-                                    size="small"
-                                    variant="outlined"
-                                    disabled={readOnly}
-                                    label={option.title}
-                                    {...props}
-                                />
-                            );
-                        });
+                    renderTags={(value: (string | LabelOption)[], getTagProps) => {
+                        return value
+                            .filter((v) => typeof v !== "string")
+                            .map((option: LabelOption, index: number) => {
+                                const { key, ...tagProps } = getTagProps({ index });
+                                const props = isEdited ? { ...tagProps } : {};
+                                const labelError = labelsErrors.find((error) => error.label == toLabelValue(option));
+                                return (
+                                    <Chip
+                                        key={key}
+                                        color={labelError ? "error" : "default"}
+                                        size="small"
+                                        variant="outlined"
+                                        disabled={readOnly}
+                                        label={option.title}
+                                        {...props}
+                                    />
+                                );
+                            });
                     }}
                     size="small"
                     value={scenarioLabels}

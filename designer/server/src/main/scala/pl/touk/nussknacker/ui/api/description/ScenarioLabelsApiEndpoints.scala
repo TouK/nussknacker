@@ -42,7 +42,7 @@ class ScenarioLabelsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends B
   lazy val validateScenarioLabelsEndpoint
       : SecuredEndpoint[ScenarioLabelsValidationRequestDto, Unit, ScenarioLabelsValidationResponseDto, Any] =
     baseNuApiEndpoint
-      .summary("Service providing scenario labels")
+      .summary("Service providing scenario labels validation")
       .tag("Scenario labels")
       .post
       .in("scenarioLabels" / "validation")

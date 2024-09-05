@@ -68,8 +68,17 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
       }
     }
     "no credentials were passed should" - {
-      "authenticate as anonymous and no parameters combination because of no write access" in {
+      "authenticate as anonymous and return no labels for no write access" in {
+        val scenario1 = exampleScenario("s1")
+        val scenario2 = exampleScenario("s2")
+
         given()
+          .applicationState {
+            createSavedScenario(scenario1, category = Category1)
+            updateScenarioLabels(scenario1, List("tag2", "tag3"))
+            createSavedScenario(scenario2, category = Category1)
+            updateScenarioLabels(scenario2, List("tag1", "tag4"))
+          }
           .when()
           .noAuth()
           .get(s"$nuDesignerHttpAddress/api/scenarioLabels")
@@ -130,7 +139,7 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
           .body(
             s"""
                |{
-               |  "labels": ["tag1", "tag2"]
+               |  "labels": ["tag100", "tag2"]
                |}""".stripMargin
           )
           .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
@@ -162,7 +171,7 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
       }
     }
     "no credentials were passed should" - {
-      "authenticate as anonymous and no parameters combination because of no write access" in {
+      "authenticate as anonymous and return no validation errors" in {
         given()
           .when()
           .noAuth()

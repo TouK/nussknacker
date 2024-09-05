@@ -342,7 +342,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           Variable(id = "var1", varName = "var1", value = "#meta.processLabels".spel),
           Sink("out", SinkRef(ProcessTestData.existingSinkFactory, List()))
         ),
-        List(Edge("in", "out", None)),
+        List(Edge("in", "var1", None), Edge("var1", "out", None)),
       )
     }
 
@@ -423,6 +423,31 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           message = "Invalid scenario label: tag 100",
           description = "Only alphanumeric characters allowed,Label 'tag 100' cannot have more than 5 characters",
           fieldName = Some("tag 100"),
+          errorType = NodeValidationErrorType.SaveNotAllowed,
+          details = None
+        ),
+        List.empty
+      )
+    )
+
+    validate(validator, List("tag 100", "tag 200", "tag2")).errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario label: tag 100",
+          description = "Only alphanumeric characters allowed,Label 'tag 100' cannot have more than 5 characters",
+          fieldName = Some("tag 100"),
+          errorType = NodeValidationErrorType.SaveNotAllowed,
+          details = None
+        ),
+        List.empty
+      ),
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario label: tag 200",
+          description = "Only alphanumeric characters allowed,Label 'tag 200' cannot have more than 5 characters",
+          fieldName = Some("tag 200"),
           errorType = NodeValidationErrorType.SaveNotAllowed,
           details = None
         ),
@@ -2731,8 +2756,8 @@ private object UIProcessValidatorSpec {
     override def apply(left: ValidationResult): MatchResult = {
       MatchResult(
         !left.hasErrors && !left.hasWarnings,
-        s"ValidationResult should has neither errors nor warnings ${left}",
-        s"ValidationResult should has either errors or warnings ${left}"
+        s"ValidationResult should has neither errors nor warnings but was: ${left}",
+        s"ValidationResult should has either errors or warnings but was:${left}"
       )
     }
 

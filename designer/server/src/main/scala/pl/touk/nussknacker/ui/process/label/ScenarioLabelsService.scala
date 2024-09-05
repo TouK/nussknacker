@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.label
 
+import cats.data.ValidatedNel
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioLabelsRepository}
 import pl.touk.nussknacker.ui.validation.ScenarioLabelsValidator
 
@@ -21,7 +22,7 @@ class ScenarioLabelsService(
       }
   }
 
-  def validatedScenarioLabels(labels: List[String]) =
+  def validatedScenarioLabels(labels: List[String]): ValidatedNel[ScenarioLabelsValidator.ValidationError, Unit] =
     scenarioLabelsValidator.validate(labels.map(ScenarioLabel.apply))
 
 }

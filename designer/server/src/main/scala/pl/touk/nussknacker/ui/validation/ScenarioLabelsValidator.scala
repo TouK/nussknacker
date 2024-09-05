@@ -46,7 +46,8 @@ class ScenarioLabelsValidator(config: Option[ScenarioLabelConfig]) {
   private def validate(label: ScenarioLabel, rule: ScenarioLabelConfig.ValidationRule) = {
     Validated
       .cond(
-        rule.validationRegex.matches(label.value),
+        // in scala 2.13 we can use `matches`, but there is no such method in scala 2.12
+        rule.validationRegex.unapplySeq(label.value).isDefined,
         (),
         rule.messageWithLabel(label.value)
       )

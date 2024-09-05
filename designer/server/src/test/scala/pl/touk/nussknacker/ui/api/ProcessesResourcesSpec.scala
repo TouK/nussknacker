@@ -602,7 +602,7 @@ class ProcessesResourcesSpec
     )
     val scenarioGraph = ScenarioGraph(
       properties = properties,
-      nodes = List(Variable("x", "y", Expression.spel("#meta.dupa"))),
+      nodes = List(Variable("x", "y", Expression.spel("#meta.processLabels"))),
       edges = List.empty
     )
     val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")), None)
