@@ -7,6 +7,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.metrics.MetricGroup
 import org.apache.flink.streaming.api.functions.source.SourceFunction
+import org.apache.flink.configuration.PipelineOptions
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext
 import org.apache.flink.streaming.connectors.kafka
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumerBase
