@@ -45,6 +45,18 @@ class ScenarioActivityApiHttpService(
   expose {
     endpoints.addCommentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: AddCommentRequest =>
+        for {
+          scenarioId <- getScenarioIdByName(request.scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- addNewComment(request, scenarioId)
+        } yield ()
+      }
+  }
+
+  expose {
+    endpoints.editCommentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: EditCommentRequest =>
         for {
           scenarioId <- getScenarioIdByName(request.scenarioName)
@@ -123,15 +135,17 @@ class ScenarioActivityApiHttpService(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, ScenarioActivityError, Unit] =
     EitherT(
-      dbioActionRunner.run(scenarioActivityRepository.editComment(request.scenarioActivityId, request.commentContent))
-    ).leftMap(_ => NoComment(request.scenarioActivityId.value.toString))
+      dbioActionRunner.run(
+        scenarioActivityRepository.editComment(ScenarioActivityId(request.scenarioActivityId), request.commentContent)
+      )
+    ).leftMap(_ => NoComment(request.scenarioActivityId.toString))
 
   private def deleteComment(request: DeleteCommentRequest)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, ScenarioActivityError, Unit] =
     EitherT(
-      dbioActionRunner.run(scenarioActivityRepository.deleteComment(request.scenarioActivityId))
-    ).leftMap(_ => NoComment(request.scenarioActivityId.value.toString))
+      dbioActionRunner.run(scenarioActivityRepository.deleteComment(ScenarioActivityId(request.scenarioActivityId)))
+    ).leftMap(_ => NoComment(request.scenarioActivityId.toString))
 
   private def saveAttachment(request: AddAttachmentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
