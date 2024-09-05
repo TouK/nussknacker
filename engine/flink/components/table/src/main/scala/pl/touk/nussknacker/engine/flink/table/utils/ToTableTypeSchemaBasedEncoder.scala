@@ -85,7 +85,7 @@ object ToTableTypeSchemaBasedEncoder {
           if typ.canBeSubclassOf(Typed[Number]) && typ.canBeSubclassOf(targetType.toTypingResult) =>
         targetType.toTypingResult
       case (recordType: TypedObjectTypingResult, rowType: RowType)
-          if Set[Class[_]](javaMapClass, rowClass).contains(recordType.objType.klass) =>
+          if Set[Class[_]](javaMapClass, rowClass).contains(recordType.runtimeObjType.klass) =>
         val fields = rowType.getFields.asScala.map { field =>
           val alignedFieldType = {
             recordType.fields

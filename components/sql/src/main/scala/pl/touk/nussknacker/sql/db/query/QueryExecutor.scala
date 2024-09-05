@@ -12,11 +12,9 @@ trait QueryExecutor {
 
   def execute(statement: PreparedStatement): QueryResult
 
-  protected def toTypedMap(tableDef: TableDefinition, resultSet: ResultSet): TypedMap = {
+  protected def toTypedMap(tableDef: TableDefinition, resultSet: ResultSet): java.util.Map[String, Any] = {
     val fields = tableDef.columnDefs.map { columnDef =>
-      // we could here use method resultSet.getObject(Int) and pass column number as argument
-      // but in case of ignite db it is not certain which column index corresponds to which column.
-      columnDef.name -> resultSet.getObject(columnDef.name)
+      columnDef.name -> columnDef.extractValue(resultSet)
     }.toMap
     TypedMap(fields)
   }
@@ -35,7 +33,7 @@ class UpdateQueryExecutor extends QueryExecutor {
 
 class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
 
-  override type QueryResult = TypedMap
+  override type QueryResult = java.util.Map[String, Any]
 
   def execute(statement: PreparedStatement): QueryResult = {
     val resultSet = statement.executeQuery()
@@ -49,11 +47,11 @@ class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor
 
 class ResultSetQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
 
-  override type QueryResult = java.util.List[TypedMap]
+  override type QueryResult = java.util.List[java.util.Map[String, Any]]
 
   override def execute(statement: PreparedStatement): QueryResult = {
     val resultSet = statement.executeQuery()
-    val results   = new util.ArrayList[TypedMap]()
+    val results   = new util.ArrayList[java.util.Map[String, Any]]()
     while (resultSet.next()) {
       results add toTypedMap(tableDef, resultSet)
     }

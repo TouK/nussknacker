@@ -10,6 +10,7 @@ import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
+import java.time.LocalDate
 import scala.concurrent.Await
 
 class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
@@ -18,8 +19,8 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
   import scala.concurrent.duration._
 
   override val prepareHsqlDDLs: List[String] = List(
-    "CREATE TABLE persons (id INT, name VARCHAR(40));",
-    "INSERT INTO persons (id, name) VALUES (1, 'John')"
+    "CREATE TABLE persons (id INT, name VARCHAR(40), birth_date DATE);",
+    "INSERT INTO persons (id, name, birth_date) VALUES (1, 'John', '1990-08-12')"
   )
 
   private val notExistingDbUrl = s"jdbc:hsqldb:mem:dummy"
@@ -52,12 +53,12 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       dependencies = Nil,
       finalState = Some(state)
     )
-    returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
+    returnType(service, state).display shouldBe "List[Record{BIRTH_DATE: LocalDate, ID: Integer, NAME: String}]"
     val resultF =
       implementation.invoke(Context.withInitialId)
     val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "John"))
+      TypedMap(Map("ID" -> 1, "NAME" -> "John", "BIRTH_DATE" -> LocalDate.parse("1990-08-12")))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
@@ -65,7 +66,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       implementation.invoke(Context.withInitialId)
     val result2 = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
+      TypedMap(Map("ID" -> 1, "NAME" -> "Alex", "BIRTH_DATE" -> LocalDate.parse("1990-08-12")))
     )
   }
 

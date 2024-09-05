@@ -17,11 +17,6 @@ export const reducer: Reducer<ErrorState> = (state = initialState, action) => {
         case "CLEAR_PROCESS": {
             return initialState;
         }
-        case "HANDLE_HTTP_ERROR": {
-            return {
-                error: action.error,
-            };
-        }
         default:
             return state;
     }

@@ -1,7 +1,24 @@
 # Changelog
 
+1.18.0 (Not released yet)
+-------------------------
+* [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
+* Batch processing mode related improvements:
+  * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc. 
+    are registered based on class of Serializer instead of instance of Serializer. Thanks to this change, it is possible to use `RAW<>`
+    data type in Table API components
+  * [#6552](https://github.com/TouK/nussknacker/pull/6552) Added aggregation functions to Batch aggregation component
+    (`Average`, `Count`, `Max`, `Min`, `Population standard deviation`, `Sample standard deviation`, `Population variance`, `Sample variance`)
+  * [#6734](https://github.com/TouK/nussknacker/pull/6734) Tables from external catalogs are now refreshed automatically 
+    when entering into node form. Please be aware that changes in `tableDefinition.sql` are not refreshed. 
+    To do this, use `/app/processingtype/reload` API
+* [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
+* [#6695](https://github.com/TouK/nussknacker/pull/6680) From now on, arrays on UI are visible as lists but on a 
+  background they are stored as it is and SpeL converts them to lists in a runtime.
+
 1.17.0 (Not released yet)
 -------------------------
+* [#6658](https://github.com/TouK/nussknacker/pull/6658) Bump up circe-yaml lib to 0.15.2
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
 * [#6282](https://github.com/TouK/nussknacker/pull/6184) From now on, the existence of Kafka topics used in Sources and/or 
   Sinks will always be validated. (`topicsExistenceValidationConfig.enabled` default was changed from `false` to `true`)
@@ -54,8 +71,20 @@
 * [#6570](https://github.com/TouK/nussknacker/pull/6570) Generic parameters of collection types are better typed now: e.g. `List[Integer]` can be passed to `List[Number]` but not the other way
 * [#6615](https://github.com/TouK/nussknacker/pull/6615) Add encode/decode support for typed SpEL values of types: `java.time.LocalDateTime`, `java.time.LocalDate`, `java.time.LocalTime`, `java.time.Duration`, `java.time.Period`
 * [#6591](https://github.com/TouK/nussknacker/pull/6591) The whole model can be reloaded with `POST /api/app/processingtype/reload` now - you can use this endpoint to reconfigure Nu processing types without need to restart the app
-* [#6623](https://github.com/TouK/nussknacker/pull/6623) Added `sortedAscBy` and `reverse` functions to `#COLLECTION`
-  helper.
+* [#6623](https://github.com/TouK/nussknacker/pull/6623) Added `sortedAscBy` and `reverse` functions to `#COLLECTION` helper
+* [#6650](https://github.com/TouK/nussknacker/pull/6650) Added a workaround for situations when an updated scenario with Kafka source started reading from the earliest offsets
+* [#6586](https://github.com/TouK/nussknacker/pull/6586) For now on, the SQL enricher automatically converts types as shown below:
+  * java.sql.Array -> java.util.List
+  * java.sql.Time -> java.time.LocalTime 
+  * java.sql.Date -> java.time.LocalDate
+  * java.sql.Timestamp -> java.time.Instant
+  * java.sql.Clob -> java.lang.String
+* [#6656](https://github.com/TouK/nussknacker/pull/6656)
+  * Remove not working MODEL_CLASS_PATH environment variable
+  * Add default DB connection name
+* [#6614](https://github.com/TouK/nussknacker/pull/6614) Array in SpeL improvements:
+  * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
+  * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
 
 1.16.3 (8 August 2024)
 -------------------------

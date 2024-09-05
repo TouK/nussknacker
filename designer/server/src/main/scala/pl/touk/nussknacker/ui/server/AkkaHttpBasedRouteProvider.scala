@@ -88,6 +88,7 @@ import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -138,6 +139,11 @@ class AkkaHttpBasedRouteProvider(
           )
           scheduler.start()
           scheduler
+        }
+      )
+      statisticsPublicKey <- Resource.fromAutoCloseable(
+        IO {
+          Source.fromURL(getClass.getResource("/encryption.key"))
         }
       )
     } yield {
@@ -433,7 +439,8 @@ class AkkaHttpBasedRouteProvider(
                   processingTypeData,
                   prepareAlignedComponentsDefinitionProvider(processingTypeData),
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
-                  fragmentRepository
+                  fragmentRepository,
+                  resolvedConfig.getAs[String]("fragmentPropertiesDocsUrl")
                 )
               )
             }
@@ -490,11 +497,8 @@ class AkkaHttpBasedRouteProvider(
         designerClock
       )
 
-      val statisticUrlConfig = if (usageStatisticsReportsConfig.encryptionEnabled) {
-        StatisticUrlConfig(maybePublicEncryptionKey = Some(PublicEncryptionKey.INSTANCE))
-      } else {
-        StatisticUrlConfig()
-      }
+      val statisticUrlConfig =
+        StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(statisticsPublicKey.mkString.trim))
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authManager,

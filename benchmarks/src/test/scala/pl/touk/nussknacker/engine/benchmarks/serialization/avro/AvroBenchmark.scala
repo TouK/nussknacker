@@ -34,13 +34,11 @@ class AvroBenchmark {
       val parsedSchema             = ConfluentUtils.convertToAvroSchema(AvroSamples.sampleSchema, Some(1))
       schemaRegistryMockClient.register("foo-value", parsedSchema, 1, AvroSamples.sampleSchemaId.asInt)
       val factory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-      val serializer = SchemaIdBasedAvroGenericRecordSerializer(
+      val registrar = SchemaIdBasedAvroGenericRecordSerializer.registrar(
         factory,
         KafkaConfig(Some(Map("bootstrap.servers" -> "fooKafkaAddress")), None)
       )
-      config.getRegisteredTypesWithKryoSerializers
-        .put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
-      config.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
+      registrar.registerIn(config)
     }
   )
 

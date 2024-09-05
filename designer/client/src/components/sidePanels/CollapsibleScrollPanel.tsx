@@ -1,7 +1,7 @@
 import React, { forwardRef, PropsWithChildren, useCallback, useState } from "react";
 import { CollapsiblePanel } from "./CollapsiblePanel";
 import { ScrollbarsExtended } from "./ScrollbarsExtended";
-import ErrorBoundary from "../common/ErrorBoundary";
+import { ErrorBoundary, ToolbarErrorFallbackComponent } from "../common/error-boundary";
 import { ScrollPanelContent } from "./SidePanelStyled";
 import { styled } from "@mui/material";
 import { DRAGGABLE_CLASSNAME, DRAGGABLE_LIST_CLASSNAME } from "../toolbarComponents/ToolbarsContainer";
@@ -37,7 +37,7 @@ const CollapsibleScrollPanel = forwardRef<HTMLDivElement, CollapsibleScrollPanel
             scrollVisible={scrollVisible}
         >
             <ScrollbarsExtended onScrollToggle={scrollToggle} side={side}>
-                <ErrorBoundary>
+                <ErrorBoundary FallbackComponent={ToolbarErrorFallbackComponent}>
                     <ScrollPanelContent side={side}>{children}</ScrollPanelContent>
                 </ErrorBoundary>
             </ScrollbarsExtended>
