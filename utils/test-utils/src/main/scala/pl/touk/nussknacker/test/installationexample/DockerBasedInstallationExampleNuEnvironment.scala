@@ -82,7 +82,10 @@ class DockerBasedInstallationExampleClient(env: DockerBasedInstallationExampleNu
     bootstrapSetupService
       .executeBashAndReadStdout(s"""/app/utils/kafka/read-from-topic.sh "$topic" """)
       .split("\n")
-      .flatMap(str => Option.when(str.nonEmpty)(str))
+      .flatMap {
+        case ""  => None
+        case str => Option(str)
+      }
       .toList
       .map(ujson.read(_))
   }
