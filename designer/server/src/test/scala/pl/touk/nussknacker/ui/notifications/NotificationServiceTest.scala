@@ -62,12 +62,10 @@ class NotificationServiceTest
   private val clock: Clock            = clockForInstant(() => currentInstant)
   private val processRepository       = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef)
-  private val commentRepository       = TestFactory.newCommentRepository(testDbRef)
 
   private val actionRepository =
     new DbProcessActionRepository(
       testDbRef,
-      commentRepository,
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )
 

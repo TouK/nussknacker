@@ -6,8 +6,8 @@ import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.base.db.{DbTesting, WithHsqlDbTesting, WithPostgresDbTesting, WithTestDb}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
@@ -34,7 +34,7 @@ abstract class InitializationOnDbItSpec
 
   private val migrations = mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2))
 
-  private lazy val commentRepository = TestFactory.newCommentRepository(testDbRef)
+  private lazy val scenarioActivityRepository = TestFactory.newScenarioActivityRepository(testDbRef)
 
   private lazy val scenarioRepository = TestFactory.newFetchingProcessRepository(testDbRef)
 
@@ -47,7 +47,7 @@ abstract class InitializationOnDbItSpec
   it should "migrate processes" in {
     saveSampleProcess()
 
-    Initialization.init(migrations, testDbRef, scenarioRepository, commentRepository, "env1")
+    Initialization.init(migrations, testDbRef, scenarioRepository, scenarioActivityRepository, "env1")
 
     dbioRunner
       .runInTransaction(
@@ -66,7 +66,7 @@ abstract class InitializationOnDbItSpec
       saveSampleProcess(ProcessName(s"id$id"))
     }
 
-    Initialization.init(migrations, testDbRef, scenarioRepository, commentRepository, "env1")
+    Initialization.init(migrations, testDbRef, scenarioRepository, scenarioActivityRepository, "env1")
 
     dbioRunner
       .runInTransaction(
@@ -85,7 +85,7 @@ abstract class InitializationOnDbItSpec
         mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2, 5)),
         testDbRef,
         scenarioRepository,
-        commentRepository,
+        scenarioActivityRepository,
         "env1"
       )
     )

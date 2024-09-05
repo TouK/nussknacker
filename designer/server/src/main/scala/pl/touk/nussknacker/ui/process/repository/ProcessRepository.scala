@@ -5,6 +5,7 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioVersion, _}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
@@ -19,11 +20,12 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
@@ -43,10 +45,10 @@ object ProcessRepository {
 
   def create(
       dbRef: DbRef,
-      commentRepository: CommentRepository,
-      migrations: ProcessingTypeDataProvider[ProcessMigrations, _]
+      scenarioActivityRepository: ScenarioActivityRepository,
+      migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
   ): DBProcessRepository =
-    new DBProcessRepository(dbRef, commentRepository, migrations.mapValues(_.version))
+    new DBProcessRepository(dbRef, scenarioActivityRepository, migrations.mapValues(_.version))
 
   final case class CreateProcessAction(
       processName: ProcessName,
@@ -88,8 +90,8 @@ trait ProcessRepository[F[_]] {
 
 class DBProcessRepository(
     protected val dbRef: DbRef,
-    commentRepository: CommentRepository,
-    modelVersion: ProcessingTypeDataProvider[Int, _]
+    scenarioActivityRepository: ScenarioActivityRepository,
+    modelVersion: ProcessingTypeDataProvider[Int, _],
 ) extends ProcessRepository[DB]
     with NuTables
     with LazyLogging
@@ -153,9 +155,28 @@ class DBProcessRepository(
     val userName = updateProcessAction.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
 
     def addNewCommentToVersion(scenarioId: ProcessId, scenarioGraphVersionId: VersionId) = {
-      updateProcessAction.comment
-        .map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, loggedUser, _))
-        .sequence
+      updateProcessAction.comment.map { comment =>
+        run(
+          scenarioActivityRepository.addActivity(
+            ScenarioActivity.ScenarioModified(
+              scenarioId = ScenarioId(scenarioId.value),
+              scenarioActivityId = ScenarioActivityId.random,
+              user = User(
+                id = UserId(loggedUser.id),
+                name = UserName(loggedUser.username),
+                impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
+                impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
+              ),
+              date = Instant.now(),
+              scenarioVersion = Some(ScenarioVersion(scenarioGraphVersionId.value)),
+              comment = ScenarioComment.Available(
+                comment = comment.value,
+                lastModifiedByUserName = UserName(loggedUser.username),
+              )
+            )
+          )
+        )
+      }.sequence
     }
 
     updateProcessInternal(
@@ -268,11 +289,23 @@ class DBProcessRepository(
       .headOption
       .flatMap {
         case Some(version) =>
-          commentRepository.saveComment(
-            process.id,
-            version.id,
-            loggedUser,
-            UpdateProcessComment(s"Rename: [${process.name}] -> [$newName]")
+          scenarioActivityRepository.addActivity(
+            ScenarioActivity.ScenarioNameChanged(
+              scenarioId = ScenarioId(process.id.value),
+              scenarioActivityId = ScenarioActivityId.random,
+              user = User(
+                id = UserId(loggedUser.id),
+                name = UserName(loggedUser.username),
+                impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
+                impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
+              ),
+              date = Instant.now(),
+              scenarioVersion = Some(ScenarioVersion(version.id.value)),
+              // todo NU-1772 in progress
+              comment = ScenarioComment.Available("todomgw", UserName(loggedUser.username)),
+              oldName = process.name.value,
+              newName = newName.value
+            )
           )
         case None => DBIO.successful(())
       }

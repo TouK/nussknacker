@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
-import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
 
 import java.net.URL
 
@@ -132,5 +132,16 @@ object TapirCodecs {
   object ClassCodec {
     implicit val classSchema: Schema[Class[_]] = Schema.string[Class[_]]
   }
+
+  def enumSchema[T](
+      items: List[T],
+      encoder: T => String,
+  ): Schema[T] =
+    Schema.string.validate(
+      Validator.enumeration(
+        items,
+        (i: T) => Some(encoder(i)),
+      ),
+    )
 
 }
