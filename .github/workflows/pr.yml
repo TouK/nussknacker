@@ -68,6 +68,14 @@ jobs:
           else
             echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
           fi
+      - name: Debug
+        id: debug
+        shell: bash
+        run: |
+          echo "GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GIT_SOURCE_BRANCH: $GIT_SOURCE_BRANCH"
+          echo "NK_SNAPSHOT_VERSION: $NK_SNAPSHOT_VERSION"
 
   build:
     name: Build
