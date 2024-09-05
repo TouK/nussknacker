@@ -55,21 +55,22 @@ object FragmentParameterValidator {
       refClazz: FragmentClazzRef,
       paramName: ParameterName,
       nodeIds: Set[String]
-  ): ValidatedNel[PartSubGraphCompilationError, Unit] =
-    valueEditor match {
-      case ValueInputWithFixedValuesProvided(_, _) =>
-        if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(refClazz))
-          Valid(())
-        else
+  ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+    val permittedTypesForEditors = List(
+      FragmentClazzRef[java.lang.Boolean],
+      FragmentClazzRef[String],
+      FragmentClazzRef[java.lang.Long]
+    )
+    if (permittedTypesForEditors.contains(refClazz))
+      Valid(())
+    else
+      valueEditor match {
+        case ValueInputWithFixedValuesProvided(_, _) =>
           invalidNel(UnsupportedFixedValuesType(paramName, refClazz.refClazzName, nodeIds))
-      case ValueInputWithDictEditor(_, _) =>
-        if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String], FragmentClazzRef[java.lang.Long])
-            .contains(refClazz)) {
-          Valid(())
-        } else {
+        case ValueInputWithDictEditor(_, _) =>
           invalidNel(UnsupportedDictParameterEditorType(paramName, refClazz.refClazzName, nodeIds))
-        }
-    }
+      }
+  }
 
   def validateFixedExpressionValues(
       fragmentParameter: FragmentParameter,
