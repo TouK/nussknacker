@@ -335,8 +335,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("validate scenario labels") {
-    val scenario   = validScenarioGraphWithFields(Map.empty)
-    val isFragment = false
+    val scenario = {
+      createGraph(
+        List(
+          Source("in", SourceRef(ProcessTestData.existingSourceFactory, List())),
+          Variable(id = "var1", varName = "var1", value = "#meta.processLabels".spel),
+          Sink("out", SinkRef(ProcessTestData.existingSinkFactory, List()))
+        ),
+        List(Edge("in", "out", None)),
+      )
+    }
 
     def createValidator(config: Option[ScenarioLabelConfig]) = {
       ProcessTestData.testProcessValidator(
@@ -354,38 +362,39 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     }
 
-    val v1 = createValidator(None)
+    val validatorWithoutConfig = createValidator(None)
 
-    validate(v1, List.empty) shouldBe withoutErrorsAndWarnings
-    validate(v1, List("tag1", "tag2")) shouldBe withoutErrorsAndWarnings
+    validate(validatorWithoutConfig, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(validatorWithoutConfig, List("tag1", "tag2", "tag100", "tag 100")) shouldBe withoutErrorsAndWarnings
 
-    val v2 = createValidator(Some(ScenarioLabelConfig(validationRules = List.empty)))
+    val validatorWithNoValidationRules = createValidator(Some(ScenarioLabelConfig(validationRules = List.empty)))
 
-    validate(v2, List.empty) shouldBe withoutErrorsAndWarnings
-    validate(v2, List("tag1", "tag2")) shouldBe withoutErrorsAndWarnings
+    validate(validatorWithNoValidationRules, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(
+      validatorWithNoValidationRules,
+      List("tag1", "tag2", "tag100", "tag 100")
+    ) shouldBe withoutErrorsAndWarnings
 
-    val v3 = createValidator(
+    val validator = createValidator(
       Some(
         ScenarioLabelConfig(
           validationRules = List(
-            ScenarioLabelConfig.ValidationRule("[a-zA-z0-9].*".r, "Only alphanumeric characters allowed"),
-            ScenarioLabelConfig.ValidationRule(".{1,}$$".r, "Label could not be empty"),
-            ScenarioLabelConfig.ValidationRule(".{0,5}$$".r, "Label cannot have more than 5 characters"),
+            ScenarioLabelConfig.ValidationRule("^[a-zA-z0-9]*$".r, "Only alphanumeric characters allowed"),
+            ScenarioLabelConfig.ValidationRule(".{0,5}$$".r, "Label '{label}' cannot have more than 5 characters"),
           )
         )
       )
     )
 
-    validate(v3, List.empty) shouldBe withoutErrorsAndWarnings
-    validate(v3, List("tag1", "tag2")) shouldBe withoutErrorsAndWarnings
-    val r1 = validate(v3, List("tag100", "tag2"))
-    r1.errors.globalErrors shouldBe List(
+    validate(validator, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(validator, List("tag1", "tag2")) shouldBe withoutErrorsAndWarnings
+    validate(validator, List("tag100", "tag2")).errors.globalErrors shouldBe List(
       UIGlobalError(
         NodeValidationError(
           typ = "ScenarioLabelValidationError",
-          message = "Invalid scenario labels: tag100",
-          description = "Please check scenario labels",
-          fieldName = None,
+          message = "Invalid scenario label: tag100",
+          description = "Label 'tag100' cannot have more than 5 characters",
+          fieldName = Some("tag100"),
           errorType = NodeValidationErrorType.SaveNotAllowed,
           details = None
         ),
@@ -393,14 +402,27 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val r2 = validate(v3, List("tag 1", "tag2"))
-    r2.errors.globalErrors shouldBe List(
+    validate(validator, List("tag 1", "tag2")).errors.globalErrors shouldBe List(
       UIGlobalError(
         NodeValidationError(
           typ = "ScenarioLabelValidationError",
-          message = "Invalid scenario labels: tag100",
-          description = "Please check scenario labels",
-          fieldName = None,
+          message = "Invalid scenario label: tag 1",
+          description = "Only alphanumeric characters allowed",
+          fieldName = Some("tag 1"),
+          errorType = NodeValidationErrorType.SaveNotAllowed,
+          details = None
+        ),
+        List.empty
+      )
+    )
+
+    validate(validator, List("tag 100", "tag2")).errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario label: tag 100",
+          description = "Only alphanumeric characters allowed,Label 'tag 100' cannot have more than 5 characters",
+          fieldName = Some("tag 100"),
           errorType = NodeValidationErrorType.SaveNotAllowed,
           details = None
         ),

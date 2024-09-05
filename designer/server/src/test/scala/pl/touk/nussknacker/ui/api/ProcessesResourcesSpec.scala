@@ -21,6 +21,8 @@ import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.Variable
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -600,7 +602,7 @@ class ProcessesResourcesSpec
     )
     val scenarioGraph = ScenarioGraph(
       properties = properties,
-      nodes = List.empty,
+      nodes = List(Variable("x", "y", Expression.spel("#meta.dupa"))),
       edges = List.empty
     )
     val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")), None)

@@ -19,14 +19,15 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository) {
 
-  def validate(scenarioName: ProcessName, labels: List[String], nodeData: NodeValidationRequest)(
+  def validate(scenarioName: ProcessName, labels: List[ScenarioLabel], nodeData: NodeValidationRequest)(
       implicit loggedUser: LoggedUser
   ): NodeValidationResult = {
-    implicit val metaData: MetaData = nodeData.processProperties.toMetaData(scenarioName, labels)
+    implicit val metaData: MetaData = nodeData.processProperties.toMetaData(scenarioName, labels.map(_.value))
 
     val nodeDataValidator = new NodeDataValidator(modelData)
 

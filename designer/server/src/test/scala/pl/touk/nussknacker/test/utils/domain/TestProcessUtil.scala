@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
-import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity

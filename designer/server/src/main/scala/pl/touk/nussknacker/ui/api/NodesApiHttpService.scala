@@ -37,7 +37,6 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -109,7 +108,7 @@ class NodesApiHttpService(
             additionalInfo <- EitherT.right(
               additionalInfoProviders
                 .prepareAdditionalInfoForProperties(
-                  scenarioProperties.toMetaData(scenarioName, scenario.tags.getOrElse(List.empty)),
+                  scenarioProperties.toMetaData(scenarioName, scenario.scenarioLabels.map(_.value)),
                   scenario.processingType
                 )
             )
@@ -205,7 +204,7 @@ class NodesApiHttpService(
   ): EitherT[Future, NodesError, NodeValidationResult] =
     EitherT.fromEither(
       try {
-        Right(nodeValidator.validate(scenario.name, scenario.tags.getOrElse(List.empty), nodeData))
+        Right(nodeValidator.validate(scenario.name, scenario.scenarioLabels, nodeData))
       } catch {
         case e: ProcessNotFoundError =>
           Left(NoScenario(ProcessName(e.name.value)))

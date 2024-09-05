@@ -29,7 +29,7 @@ import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-
 import { GenericValidationRequest } from "../actions/nk/genericAction";
 import { EventTrackingSelector } from "../containers/event-tracking";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
-import { AvailableScenarioLabels, ScenarioLabelsValidationResponse, ScenarioLabelValidationError } from "../components/Labels/types";
+import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;

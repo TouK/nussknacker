@@ -13,9 +13,9 @@ export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
         () =>
             globalErrors.map((error, index) =>
                 isEmpty(error.nodeIds) ? (
-                    <span key={index} title={error.error.description}>
+                    <div key={index} title={error.error.description}>
                         {error.error.message}
-                    </span>
+                    </div>
                 ) : (
                     <NodeErrorsLinkSection
                         key={index}

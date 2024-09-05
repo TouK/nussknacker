@@ -47,14 +47,7 @@ object PrettyValidationErrors {
           description = s"Duplicate node ids: ${ids.mkString(", ")}",
           errorType = NodeValidationErrorType.RenderNotAllowed
         )
-      case EmptyProcess => node("Empty scenario", "Scenario is empty, please add some nodes")
-      case ScenarioLabelValidationError(label, description) =>
-        node(
-          message = s"Invalid scenario label: $label",
-          description = description,
-          errorType = NodeValidationErrorType.SaveNotAllowed,
-          paramName = Some(ParameterName(label)),
-        )
+      case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) =>
         node(
@@ -162,6 +155,13 @@ object PrettyValidationErrors {
         node(s"Cannot disable fragment with multiple outputs", "Please check fragment definition")
       case DisablingNoOutputsFragment(_) =>
         node(s"Cannot disable fragment with no outputs", "Please check fragment definition")
+      case ScenarioLabelValidationError(label, description) =>
+        node(
+          message = s"Invalid scenario label: $label",
+          description = description,
+          errorType = NodeValidationErrorType.SaveNotAllowed,
+          paramName = Some(ParameterName(label)),
+        )
       case MissingRequiredProperty(paramName, label, _) => missingRequiredProperty(typ, paramName.value, label)
       case UnknownProperty(paramName, _)                => unknownProperty(typ, paramName.value)
       case InvalidPropertyFixedValue(paramName, label, value, values, _) =>

@@ -15,7 +15,7 @@ object ScenarioLabelConfig {
 
   final case class ValidationRule(validationRegex: Regex, message: String) {
     def messageWithLabel(label: String): String =
-      message.replace("{label}", label)
+      message.replaceAll(s"""\\{label\\}""", label)
   }
 
   def create(rules: List[ScenarioLabelConfig.ValidationRule]): ScenarioLabelConfig = new ScenarioLabelConfig(rules)
@@ -38,7 +38,7 @@ object ScenarioLabelConfig {
 
   private def createValidationRules(settingConfig: Config) = {
     settingConfig
-      .getConfigList(s"validationRules")
+      .getConfigList("validationRules")
       .asScala
       .map(createRule)
       .toList

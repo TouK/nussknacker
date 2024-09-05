@@ -52,20 +52,6 @@ export const selectStyled = (theme: Theme) => {
         }
     `;
 
-    const labelsInput = (base: CSSObjectWithLabel, isDisabled: boolean) => css`
-        ${base};
-        ${commonNodeInput("0px")};
-        display: flex;
-        margin-top: 0px;
-        margin-bottom: 0px;
-        border-radius: 6px;
-        outline: none;
-        &:hover {
-            color: ${!isDisabled && "inherit"};
-            border-color: ${!isDisabled && theme.palette.action.hover};
-        }
-    `;
-
     const input = (base: CSSObjectWithLabel) => css`
         ${base};
         ${commonNodeInput("10px")}; //TODO input hides partially due to padding...
@@ -140,7 +126,6 @@ export const selectStyled = (theme: Theme) => {
         menuList,
         menuOption,
         menuPortal,
-        labelsInput,
         input,
         singleValue,
         valueContainer,
