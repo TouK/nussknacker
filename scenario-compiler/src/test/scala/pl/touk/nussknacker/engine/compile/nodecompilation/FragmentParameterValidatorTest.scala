@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidatorTestData.permittedTypesForEditors
+import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.permittedTypesForEditors
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentClazzRef
 
 class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
@@ -83,15 +83,5 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     )
     result shouldBe invalidNel(UnsupportedFixedValuesType(paramName, invalidParameterType.refClazzName, nodeIds))
   }
-
-}
-
-object FragmentParameterValidatorTestData {
-
-  val permittedTypesForEditors: List[FragmentClazzRef] = List(
-    FragmentClazzRef[java.lang.Boolean],
-    FragmentClazzRef[String],
-    FragmentClazzRef[java.lang.Long]
-  )
 
 }

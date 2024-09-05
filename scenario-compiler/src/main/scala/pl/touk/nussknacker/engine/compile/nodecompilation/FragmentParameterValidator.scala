@@ -31,6 +31,12 @@ import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpress
 
 object FragmentParameterValidator {
 
+  val permittedTypesForEditors: List[FragmentClazzRef] = List(
+    FragmentClazzRef[java.lang.Boolean],
+    FragmentClazzRef[String],
+    FragmentClazzRef[java.lang.Long]
+  )
+
   // This method doesn't fully validate valueEditor (see ValueEditorValidator.validateAndGetEditor comments)
   def validateAgainstClazzRefAndGetEditor(
       valueEditor: ParameterValueInput,
@@ -56,11 +62,6 @@ object FragmentParameterValidator {
       paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    val permittedTypesForEditors = List(
-      FragmentClazzRef[java.lang.Boolean],
-      FragmentClazzRef[String],
-      FragmentClazzRef[java.lang.Long]
-    )
     if (permittedTypesForEditors.contains(refClazz))
       Valid(())
     else
