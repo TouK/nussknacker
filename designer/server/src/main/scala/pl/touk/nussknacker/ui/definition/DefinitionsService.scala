@@ -29,7 +29,8 @@ class DefinitionsService(
     deploymentManager: DeploymentManager,
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
-    fragmentRepository: FragmentRepository
+    fragmentRepository: FragmentRepository,
+    fragmentPropertiesDocsUrl: Option[String]
 )(implicit ec: ExecutionContext) {
 
   def prepareUIDefinitions(processingType: ProcessingType, forFragment: Boolean)(
@@ -56,10 +57,14 @@ class DefinitionsService(
       val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
         .finalizeScenarioProperties(scenarioPropertiesConfig)
 
+      import net.ceedubs.ficus.Ficus._
+      val scenarioPropertiesDocsUrl = modelData.modelConfig.getAs[String]("scenarioPropertiesDocsUrl")
+
       prepareUIDefinitions(
         withStaticDefinition,
         forFragment,
-        finalizedScenarioPropertiesConfig
+        finalizedScenarioPropertiesConfig,
+        scenarioPropertiesDocsUrl
       )
     }
   }
@@ -67,18 +72,28 @@ class DefinitionsService(
   private def prepareUIDefinitions(
       components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
-      finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
+      finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+      scenarioPropertiesDocsUrl: Option[String]
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
-      scenarioPropertiesConfig = (if (forFragment) FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig
-                                  else finalizedScenarioPropertiesConfig)
-        .mapValuesNow(createUIScenarioPropertyConfig),
+      scenarioProperties = {
+        if (forFragment) {
+          createUIProperties(FragmentPropertiesConfig.properties ++ fragmentPropertiesConfig, fragmentPropertiesDocsUrl)
+        } else {
+          createUIProperties(finalizedScenarioPropertiesConfig, scenarioPropertiesDocsUrl)
+        }
+      },
       edgesForNodes = EdgeTypesPreparer.prepareEdgeTypes(components.map(_.component)),
       customActions = deploymentManager.customActionsDefinitions.map(UICustomAction(_))
     )
+  }
+
+  private def createUIProperties(finalizedProperties: Map[String, ScenarioPropertyConfig], docsUrl: Option[String]) = {
+    val transformedProps = finalizedProperties.mapValuesNow(createUIScenarioPropertyConfig)
+    UiScenarioProperties(propertiesConfig = transformedProps, docsUrl = docsUrl)
   }
 
   private def createUIComponentDefinition(
@@ -103,7 +118,8 @@ object DefinitionsService {
       processingTypeData: ProcessingTypeData,
       alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
-      fragmentRepository: FragmentRepository
+      fragmentRepository: FragmentRepository,
+      fragmentPropertiesDocsUrl: Option[String]
   )(implicit ec: ExecutionContext) =
     new DefinitionsService(
       processingTypeData.designerModelData.modelData,
@@ -113,7 +129,8 @@ object DefinitionsService {
       processingTypeData.deploymentData.validDeploymentManagerOrStub,
       alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer,
-      fragmentRepository
+      fragmentRepository,
+      fragmentPropertiesDocsUrl
     )
 
   def createUIParameter(parameter: Parameter): UIParameter = {

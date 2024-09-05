@@ -2,14 +2,19 @@
 
 1.18.0 (Not released yet)
 -------------------------
-* [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
 * Batch processing mode related improvements:
   * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc. 
     are registered based on class of Serializer instead of instance of Serializer. Thanks to this change, it is possible to use `RAW<>`
     data type in Table API components
   * [#6552](https://github.com/TouK/nussknacker/pull/6552) Added aggregation functions to Batch aggregation component
     (`Average`, `Count`, `Max`, `Min`, `Population standard deviation`, `Sample standard deviation`, `Population variance`, `Sample variance`)
-  * [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
+  * [#6734](https://github.com/TouK/nussknacker/pull/6734) Tables from external catalogs are now refreshed automatically 
+    when entering into node form. Please be aware that changes in `tableDefinition.sql` are not refreshed. 
+    To do this, use `/app/processingtype/reload` API
+* [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
+* [#6695](https://github.com/TouK/nussknacker/pull/6680) From now on, arrays on UI are visible as lists but on a 
+  background they are stored as it is and SpeL converts them to lists in a runtime.
+* [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`. 
 
 1.17.0 (Not released yet)
 -------------------------
@@ -80,6 +85,7 @@
 * [#6614](https://github.com/TouK/nussknacker/pull/6614) Array in SpeL improvements:
   * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
   * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
+* [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
 
 1.16.3 (8 August 2024)
 -------------------------

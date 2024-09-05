@@ -36,7 +36,7 @@ object ToTableTypeEncoder {
       case recordType @ TypedObjectTypingResult(fields, TypedClass(`javaMapClass`, _), _) =>
         recordType.copy(
           fields = ListMap(fields.toList.map { case (name, value) => name -> alignTypingResult(value) }: _*),
-          objType = Typed.typedClass[Row]
+          runtimeObjType = Typed.typedClass[Row]
         )
       case listType @ TypedClass(`listClass`, elementType :: Nil) =>
         listType.copy(params = alignTypingResult(elementType) :: Nil)

@@ -21,11 +21,10 @@ package object definition {
 
   // This class contains various views on definitions, used in a different FE contexts
   @JsonCodec(encodeOnly = true) final case class UIDefinitions(
-      // This is dedicated view for the components toolbox panel
       componentGroups: List[UIComponentGroup],
       components: Map[ComponentId, UIComponentDefinition],
       classes: List[TypingResult],
-      scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
+      scenarioProperties: UiScenarioProperties,
       edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
   )
@@ -117,6 +116,11 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UIComponentGroup(
       name: ComponentGroupName,
       components: List[UIComponentNodeTemplate]
+  )
+
+  @JsonCodec final case class UiScenarioProperties(
+      propertiesConfig: Map[String, UiScenarioPropertyConfig],
+      docsUrl: Option[String]
   )
 
   @JsonCodec final case class UiScenarioPropertyConfig(

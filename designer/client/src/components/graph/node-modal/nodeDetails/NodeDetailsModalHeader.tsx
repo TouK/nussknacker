@@ -51,9 +51,14 @@ export const getNodeDetailsModalTitle = (node: NodeType): string => {
 };
 
 export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactElement => {
-    const { components = {} } = useSelector(getProcessDefinitionData);
+    const { components = {}, scenarioProperties } = useSelector(getProcessDefinitionData);
 
-    const docsUrl = useMemo(() => ProcessUtils.extractComponentDefinition(node, components)?.docsUrl, [components, node]);
+    const docsUrl = useMemo(() => {
+        return NodeUtils.nodeIsProperties(node)
+            ? scenarioProperties?.docsUrl
+            : ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
+    }, [components, node, scenarioProperties]);
+
     const nodeClass = findNodeClass(node);
 
     return <NodeDocs name={nodeClass} href={docsUrl} />;

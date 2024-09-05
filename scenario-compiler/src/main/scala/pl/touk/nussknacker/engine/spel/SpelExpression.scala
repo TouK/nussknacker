@@ -95,7 +95,7 @@ class SpelExpression(
   private val expectedClass =
     expectedReturnType match {
       case r: SingleTypingResult =>
-        r.objType.klass
+        r.runtimeObjType.klass
       case _ =>
         // TODO: what should happen here?
         classOf[Any]

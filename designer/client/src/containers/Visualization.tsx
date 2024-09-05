@@ -29,6 +29,7 @@ import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
 import { GraphPage } from "./Page";
 import { ScenarioDescription } from "./ScenarioDescription";
+import { useErrorBoundary } from "react-error-boundary";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -92,6 +93,7 @@ function Visualization() {
         processName: string;
     }>();
     const dispatch = useDispatch();
+    const { showBoundary } = useErrorBoundary();
 
     const graphRef = useRef<Graph>();
     const getGraphInstance = useCallback(() => graphRef.current, [graphRef]);
@@ -100,10 +102,19 @@ function Visualization() {
 
     const fetchData = useCallback(
         async (processName: string) => {
-            await dispatch(fetchVisualizationData(processName));
-            setDataResolved(true);
+            dispatch(
+                fetchVisualizationData(
+                    processName,
+                    () => {
+                        setDataResolved(true);
+                    },
+                    (error) => {
+                        showBoundary(error);
+                    },
+                ),
+            );
         },
-        [dispatch],
+        [dispatch, showBoundary],
     );
 
     const { scenarioLoading } = useSelector(getGraph);
@@ -153,24 +164,22 @@ function Visualization() {
     const { windows } = useWindowManager();
 
     return (
-        <ErrorHandler>
-            <DndProvider options={HTML5toTouch}>
-                <GraphPage data-testid="graphPage">
-                    <SpinnerWrapper isReady={!graphNotReady}>
-                        {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
-                    </SpinnerWrapper>
+        <DndProvider options={HTML5toTouch}>
+            <GraphPage data-testid="graphPage">
+                <SpinnerWrapper isReady={!graphNotReady}>
+                    {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
+                </SpinnerWrapper>
 
-                    <GraphProvider graph={getGraphInstance}>
-                        <SelectionContextProvider pastePosition={getPastePosition}>
-                            <BindKeyboardShortcuts disabled={windows.length > 0} />
-                            <Toolbars isReady={dataResolved}>
-                                <ScenarioDescription />
-                            </Toolbars>
-                        </SelectionContextProvider>
-                    </GraphProvider>
-                </GraphPage>
-            </DndProvider>
-        </ErrorHandler>
+                <GraphProvider graph={getGraphInstance}>
+                    <SelectionContextProvider pastePosition={getPastePosition}>
+                        <BindKeyboardShortcuts disabled={windows.length > 0} />
+                        <Toolbars isReady={dataResolved}>
+                            <ScenarioDescription />
+                        </Toolbars>
+                    </SelectionContextProvider>
+                </GraphProvider>
+            </GraphPage>
+        </DndProvider>
     );
 }
 

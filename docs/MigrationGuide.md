@@ -4,6 +4,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.18.0 (Not released yet)
 
+### Code API changes
+
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
+  * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
+  * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
+
 ### Other changes
 
 * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
@@ -21,6 +27,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
 * Component's API changes
+  * [#6711](https://github.com/TouK/nussknacker/pull/6711) `SingleComponentConfig` changed to `ComponentConfig` for better domain naming.
+    Associated functions and objects also changed to `...ComponentConfig...`.
   * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
     Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
   * [#6462](https://github.com/TouK/nussknacker/pull/6462) `CustomStreamTransformer.canHaveManyInputs` field was
@@ -549,7 +557,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4583](https://github.com/TouK/nussknacker/pull/4583) `DeploymentManager` has new variants of method `cancel` and `stop`
   taking `DeployomentId` next to `ProcessName`. They will be used with batch processing mechanism (periodic DM) so it is necessary
   to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
-* [#4685]((https://github.com/TouK/nussknacker/pull/4685)) In `AuthenticationResources` trait it was added two new
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) In `AuthenticationResources` trait it was added two new
   methods that have to be implemented in the child classes: `def authenticationMethod(): Auth[AuthCredentials, _]` and
   `def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]`. The first one tells what
   authentication method will be used (it's for Tapir-based API purposes) and the latter one is the authentication

@@ -6,7 +6,7 @@ import { RootState } from "../../../reducers";
 import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { SIDEBAR_WIDTH } from "../../../stylesheets/variables";
 import { useDragHandler } from "../../common/dndItems/DragHandle";
-import ErrorBoundary from "../../common/ErrorBoundary";
+import { ErrorBoundary, ToolbarErrorFallbackComponent } from "../../common/error-boundary";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
@@ -115,7 +115,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                     onCollapse?.();
                 }}
             >
-                <ErrorBoundary>{children}</ErrorBoundary>
+                <ErrorBoundary FallbackComponent={ToolbarErrorFallbackComponent}>{children}</ErrorBoundary>
             </CollapsiblePanelContent>
         </Panel>
     ) : null;
