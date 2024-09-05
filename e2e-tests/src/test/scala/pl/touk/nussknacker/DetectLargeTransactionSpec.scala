@@ -19,7 +19,7 @@ class DetectLargeTransactionSpec extends AnyFreeSpecLike with BaseE2eSpec with M
     )
 
     (smallAmountTransactions ::: largeAmountTransactions).foreach { transaction =>
-      xclient.sendMessageToKafka("Transactions", transaction)
+      client.sendMessageToKafka("Transactions", transaction)
     }
 
     eventually {
