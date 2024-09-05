@@ -2,13 +2,11 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
+import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   GenericRecordWithSchemaId,
@@ -19,7 +17,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 }
 
 import java.io.ByteArrayOutputStream
-import java.util.concurrent.ConcurrentHashMap
 
 object SchemaIdBasedAvroGenericRecordSerializer {
 
@@ -43,8 +40,6 @@ class SchemaIdBasedAvroGenericRecordSerializer(
     with DatumReaderWriterMixin {
 
   @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig)
-
-  @transient private lazy val readerCache = new ConcurrentHashMap[Schema, DatumReader[AnyRef]]()
 
   @transient protected lazy val encoderFactory: EncoderFactory = EncoderFactory.get
 
@@ -95,23 +90,11 @@ class SchemaIdBasedAvroGenericRecordSerializer(
     new GenericRecordWithSchemaId(recordWithoutSchemaId, schemaId, false)
   }
 
-  private def readRecord(lengthOfData: Int, schemaId: SchemaId, dataBuffer: Array[Byte]): GenericData.Record = {
+  private def readRecord(lengthOfData: Int, schemaId: SchemaId, dataBuffer: Array[Byte]) = {
     val parsedSchema = schemaRegistry.getSchemaById(schemaId).schema
     val writerSchema = AvroUtils.extractSchema(parsedSchema)
-
-    // Creating a datum reader is highly expensive operation, therefore we cache it
-    val reader = readerCache.computeIfAbsent(
-      writerSchema,
-      (writerSchema: Schema) => {
-        createDatumReader(
-          writerSchema,
-          writerSchema,
-          useSchemaReflection = false,
-          useSpecificAvroReader = false
-        )
-      }
-    )
-
+    val reader =
+      createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
     val binaryDecoder = decoderFactory.binaryDecoder(dataBuffer, 0, lengthOfData, null)
     reader.read(null, binaryDecoder).asInstanceOf[GenericData.Record]
   }
