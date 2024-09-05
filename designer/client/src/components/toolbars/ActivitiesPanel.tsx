@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { ForwardedRef, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import httpService, { ActionMetadata, ActivitiesResponse, ActivityMetadata, ActivityMetadataResponse } from "../../http/HttpService";
@@ -16,6 +16,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 
 type Activity = ActivitiesResponse["activities"][number] & { activities: ActivityMetadata; actions: ActionMetadata[] };
 
+const estimatedItemSize = 150;
 const mergeActivityDataWithMetadata = (
     activities: ActivitiesResponse["activities"],
     activitiesMetadata: ActivityMetadataResponse,
@@ -78,11 +79,11 @@ const HeaderActivity = ({ activityAction }: { activityAction: ActionMetadata }) 
     }
 };
 
-const ActivityItem = ({ activity }: { activity: Activity }) => {
+const ActivityItem = forwardRef(({ activity }: { activity: Activity }, ref: ForwardedRef<HTMLDivElement>) => {
     const commentSettings = useSelector(getCommentSettings);
 
     return (
-        <StyledActivityRoot>
+        <StyledActivityRoot ref={ref}>
             <StyledActivityHeader>
                 <StyledHeaderIcon src={activity.activities.icon} />
                 <Typography variant={"body2"}>{activity.activities.displayableName}</Typography>
@@ -108,7 +109,9 @@ const ActivityItem = ({ activity }: { activity: Activity }) => {
             </StyledActivityBody>
         </StyledActivityRoot>
     );
-};
+});
+
+ActivityItem.displayName = "ActivityItem";
 
 export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const listRef = useRef<VariableSizeList>(null);
@@ -116,14 +119,14 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
 
     const setRowHeight = useCallback((index, size) => {
         if (listRef.current) {
-            listRef.current.resetAfterIndex(index);
+            listRef.current.resetAfterIndex(0);
         }
 
         rowHeights.current = { ...rowHeights.current, [index]: size };
     }, []);
 
     const getRowHeight = useCallback((index: number) => {
-        return rowHeights.current[index];
+        return rowHeights.current[index] || estimatedItemSize;
     }, []);
 
     const [data, setData] = useState<Activity[]>([]);
@@ -146,8 +149,8 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         }, [index, rowRef]);
 
         return (
-            <div key={activity.id} ref={rowRef} style={style}>
-                <ActivityItem activity={activity} />
+            <div style={style}>
+                <ActivityItem activity={activity} ref={rowRef} />
             </div>
         );
     };
@@ -160,10 +163,10 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                         <VariableSizeList
                             ref={listRef}
                             itemCount={data.length}
-                            estimatedItemSize={100}
                             itemSize={getRowHeight}
                             height={height}
                             width={width}
+                            estimatedItemSize={estimatedItemSize}
                         >
                             {Row}
                         </VariableSizeList>
