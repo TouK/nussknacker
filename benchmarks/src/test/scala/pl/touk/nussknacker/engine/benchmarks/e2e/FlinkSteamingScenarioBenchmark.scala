@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import java.time.{Duration, Instant}
 import scala.concurrent.duration._
-import scala.util.Random
+import scala.util.{Random, Try}
 
 object FlinkSteamingScenarioBenchmark extends IOApp with BaseE2EBenchmark with LazyLogging {
 
@@ -32,10 +32,8 @@ object FlinkSteamingScenarioBenchmark extends IOApp with BaseE2EBenchmark with L
   private def readBenchmarkMessagesCount(args: List[String]) = IO.delay {
     args.headOption match {
       case Some(arg) =>
-        arg.toIntOption match {
-          case Some(count) => count
-          case None => throw new IllegalArgumentException("Invalid number format. Please provide a valid integer.")
-        }
+        Try(arg.toInt)
+          .getOrElse(throw new IllegalArgumentException("Invalid number format. Please provide a valid integer."))
       case None =>
         throw new IllegalArgumentException("No arguments provided. Please provide an integer argument.")
     }
@@ -49,16 +47,17 @@ object FlinkSteamingScenarioBenchmark extends IOApp with BaseE2EBenchmark with L
         if (batchId % 10 == 0) logger.info(s"Generated ${"%.2f".format(batchId * 100.0 / noOfBatches)}% of messages...")
         sendTestMessages(batchId, batch)
       }
-    sendMessageToKafka("transactions", generateMessage(s"${messagesCount + 1}", last = true))
+    client.sendMessageToKafka("transactions", generateMessage(s"${messagesCount + 1}", last = true))
   }
 
   private def runScenarioAndStartProcessing() = IO.delay {
-    deployAndWaitForRunningState("DetectLargeTransactions")
+    client.deployAndWaitForRunningState("DetectLargeTransactions")
   }
 
   private def waitForProcessingFinish(): IO[Unit] = {
     def foundLastRequest(): IO[Boolean] = IO.delay {
-      readAllMessagesFromKafka("alerts")
+      client
+        .readAllMessagesFromKafka("alerts")
         .exists(json => json.obj.get("message").exists(_.str == "Last request"))
     }
 
@@ -98,7 +97,7 @@ object FlinkSteamingScenarioBenchmark extends IOApp with BaseE2EBenchmark with L
   }
 
   private def sendTestMessages(batchId: Int, batchSize: Int): Unit = {
-    sendMessagesToKafka(
+    client.sendMessagesToKafka(
       "transactions",
       (0 until batchSize).map { id => generateMessage(s"${batchId + id}", last = false) }
     )

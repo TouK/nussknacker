@@ -1,7 +1,7 @@
 services:
 
   bootstrap-setup:
-    image: touk/nussknacker-example-scenarios-library:0.3.0-SNAPSHOT # todo: bump
+    image: touk/nussknacker-example-scenarios-library:0.3.0-SNAPSHOT # todo: set after release
     depends_on:
       nginx:
         condition: service_healthy
@@ -17,9 +17,6 @@ services:
       NU_REQUEST_RESPONSE_OPEN_API_SERVICE_ADDRESS: "nginx:8181"
       KAFKA_ADDRESS: "kafka:9092"
       SCHEMA_REGISTRY_ADDRESS: "schema-registry:8081"
-    volumes:
-      - ../../e2e-tests/src/test/resources/detect-large-transactions:/scenario-examples/detect-large-transactions
-      - ../../e2e-tests/src/test/resources/determine-offered-plan:/scenario-examples/determine-offered-plan
     deploy:
       resources:
         limits:
