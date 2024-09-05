@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
-import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.{DatumReader, DecoderFactory}
-import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
@@ -40,7 +38,7 @@ class AvroPayloadDeserializer(
 ) extends DatumReaderWriterMixin
     with UniversalSchemaPayloadDeserializer {
 
-  private val readerCache = new ConcurrentHashMap[ReaderKey, DatumReader[AnyRef]]()
+  @transient private val readerCache = new ConcurrentHashMap[ReaderKey, DatumReader[AnyRef]]()
 
   private val recordDeserializer = new AvroRecordDeserializer(decoderFactory)
 
