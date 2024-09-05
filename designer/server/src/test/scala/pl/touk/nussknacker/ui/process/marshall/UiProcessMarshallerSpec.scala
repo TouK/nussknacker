@@ -44,19 +44,20 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   def processWithFullAdditionalFields(name: ProcessName): Json = parse(s"""
        |{
        |    "metaData" : {
-       |    "id" : "$name",
-       |    "additionalFields" : {
-       |       "description": "$someProcessDescription",
-       |       "properties" : {
-       |         "someProperty1": "",
-       |         "someProperty2": "someValue2",
-       |         "parallelism" : "1",
-       |         "spillStateToDisk" : "true",
-       |         "useAsyncInterpretation" : "",
-       |         "checkpointIntervalInSeconds" : ""
-       |       },
-       |       "metaDataType": "StreamMetaData",
-       |       "showDescription": false
+       |      "id" : "$name",
+       |      "labels": [],
+       |      "additionalFields" : {
+       |         "description": "$someProcessDescription",
+       |         "properties" : {
+       |           "someProperty1": "",
+       |           "someProperty2": "someValue2",
+       |           "parallelism" : "1",
+       |           "spillStateToDisk" : "true",
+       |           "useAsyncInterpretation" : "",
+       |           "checkpointIntervalInSeconds" : ""
+       |         },
+       |         "metaDataType": "StreamMetaData",
+       |         "showDescription": false
        |    }
        |  },
        |    "nodes" : [
@@ -90,7 +91,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
     val processAfterMarshallAndUnmarshall = canonical.asJson.printWith(humanReadablePrinter)
 
-    parse(processAfterMarshallAndUnmarshall).toOption.get shouldBe baseProcess
+    parse(processAfterMarshallAndUnmarshall) shouldBe Right(baseProcess)
   }
 
 }

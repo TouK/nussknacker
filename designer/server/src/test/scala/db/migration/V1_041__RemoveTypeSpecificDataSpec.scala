@@ -36,6 +36,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
   private val updatedFlinkScenarioNoFields = wrapEmptyScenario {
     """{
        |  "id": "testId",
+       |  "labels": [],
        |  "additionalFields": {
        |    "description": null,
        |    "properties": {
@@ -71,6 +72,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
   private val updatedFlinkScenarioWithDescriptionNoProperties = wrapEmptyScenario {
     """{
       |  "id": "testId",
+      |  "labels": [],
       |  "additionalFields": {
       |    "description": "someDescription",
       |    "properties": {
@@ -110,6 +112,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
   private val updatedFlinkScenarioWithScenarioProperties = wrapEmptyScenario {
     """{
       |  "id": "testId",
+      |  "labels": [],
       |  "additionalFields": {
       |    "description": "someDescription",
       |    "properties": {
@@ -141,6 +144,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
   private val updatedLiteStreamScenario = wrapEmptyScenario {
     """{
       |  "id": "testId",
+      |  "labels": [],
       |  "additionalFields": {
       |    "description": null,
       |    "properties": {
@@ -167,6 +171,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
   private val updatedLiteRequestResponseScenario = wrapEmptyScenario {
     """{
       |  "id": "testId",
+      |  "labels": [],
       |  "additionalFields": {
       |    "description": null,
       |    "properties": {
@@ -193,6 +198,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
   private val updatedFragment = wrapEmptyScenario {
     """{
       |  "id": "testId",
+      |  "labels": [],
       |  "additionalFields": {
       |    "description": null,
       |    "properties": {

@@ -532,7 +532,7 @@ object ProcessJson extends OptionValues {
       state = state.map(StateJson(_)),
       processCategory = process.hcursor.downField("processCategory").as[String].toOption.value,
       isArchived = process.hcursor.downField("isArchived").as[Boolean].toOption.value,
-      scenarioLabels = process.hcursor.downField("tags").as[Option[List[String]]].toOption.value,
+      labels = process.hcursor.downField("labels").as[Option[List[String]]].toOption.value,
       history = process.hcursor
         .downField("history")
         .as[Option[List[Json]]]
@@ -551,7 +551,7 @@ final case class ProcessJson(
     state: Option[StateJson],
     processCategory: String,
     isArchived: Boolean,
-    scenarioLabels: Option[List[String]],
+    labels: Option[List[String]],
     // Process on list doesn't contain history
     history: Option[List[ProcessVersionJson]]
 ) {

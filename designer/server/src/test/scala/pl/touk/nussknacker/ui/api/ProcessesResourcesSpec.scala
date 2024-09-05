@@ -602,7 +602,7 @@ class ProcessesResourcesSpec
     )
     val scenarioGraph = ScenarioGraph(
       properties = properties,
-      nodes = List(Variable("x", "y", Expression.spel("#meta.processLabels"))),
+      nodes = List.empty,
       edges = List.empty
     )
     val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")), None)
@@ -610,11 +610,11 @@ class ProcessesResourcesSpec
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
       forScenarioReturned(processName) { scenario =>
-        scenario.scenarioLabels shouldBe Some(List.empty[String])
+        scenario.labels shouldBe Some(List.empty[String])
       }
       doUpdateProcess(command, processName) {
         forScenarioReturned(processName) { scenario =>
-          scenario.scenarioLabels shouldBe Some(List("tag1", "tag2"))
+          scenario.labels shouldBe Some(List("tag1", "tag2"))
         }
         status shouldEqual StatusCodes.OK
       }
@@ -638,7 +638,7 @@ class ProcessesResourcesSpec
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
       forScenarioReturned(processName) { scenario =>
-        scenario.scenarioLabels shouldBe Some(List.empty[String])
+        scenario.labels shouldBe Some(List.empty[String])
       }
       val command1 = UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
@@ -648,7 +648,7 @@ class ProcessesResourcesSpec
       )
       doUpdateProcess(command1, processName) {
         forScenarioReturned(processName) { scenario =>
-          scenario.scenarioLabels shouldBe Some(List("tag1", "tag2"))
+          scenario.labels shouldBe Some(List("tag1", "tag2"))
         }
         status shouldEqual StatusCodes.OK
       }
@@ -660,7 +660,7 @@ class ProcessesResourcesSpec
       )
       doUpdateProcess(command2, processName) {
         forScenarioReturned(processName) { scenario =>
-          scenario.scenarioLabels shouldBe Some(List("tag1", "tag3", "tag4"))
+          scenario.labels shouldBe Some(List("tag1", "tag3", "tag4"))
         }
         status shouldEqual StatusCodes.OK
       }
@@ -672,7 +672,7 @@ class ProcessesResourcesSpec
       )
       doUpdateProcess(command3, processName) {
         forScenarioReturned(processName) { scenario =>
-          scenario.scenarioLabels shouldBe Some(List("tag3"))
+          scenario.labels shouldBe Some(List("tag3"))
         }
         status shouldEqual StatusCodes.OK
       }
