@@ -189,6 +189,7 @@ describe("Fragment", () => {
 
         cy.wait("@fragmentInputValidation");
         cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.contains(/^apply/i).should("be.visible");
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
 
         cy.get("[data-testid=window]").find("section").scrollTo("bottom");
