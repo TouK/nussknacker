@@ -8,7 +8,6 @@ import { useSelector } from "react-redux";
 import { NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
-import ErrorBoundary from "../../../common/ErrorBoundary";
 import { Scenario } from "../../../Process/types";
 import { DescriptionOnlyContent } from "../DescriptionOnlyContent";
 import { useNodeDetailsButtons, useNodeState } from "./NodeDetails";
@@ -103,9 +102,7 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
             }}
             components={componentsOverride}
         >
-            <ErrorBoundary>
-                <DescriptionOnlyContent fieldPath={fieldPath} node={editedNode} onChange={!readOnly && onChange} preview={previewMode} />
-            </ErrorBoundary>
+            <DescriptionOnlyContent fieldPath={fieldPath} node={editedNode} onChange={!readOnly && onChange} preview={previewMode} />
         </WindowContent>
     );
 }

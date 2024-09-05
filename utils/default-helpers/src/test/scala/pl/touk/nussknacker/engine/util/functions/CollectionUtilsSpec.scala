@@ -73,6 +73,16 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       ("#COLLECTION.merge(#stringMap,{a:'5'})", "Map[String,Unknown]"),
       ("#COLLECTION.merge(#typedMap,{a:'5'})", "Record{a: String(5), key: Integer(20)}"),
       ("#COLLECTION.merge({b:'50'}, #typedMap)", "Record{b: String(50), key: Integer(20)}"),
+      ("#COLLECTION.merge({a: 100}, {b: 200}).![#this]", "List[Record{key: String, value: Integer}]"),
+      ("#COLLECTION.merge({a: {1, 2}}, {b: {'a', 'b'}}).![#this]", "List[Record{key: String, value: List[Unknown]}]"),
+      (
+        "#COLLECTION.merge({a: {'c', 'd'}}, {b: {'a', 'b'}}).![#this]",
+        "List[Record{key: String, value: List[String]}]"
+      ),
+      (
+        "#COLLECTION.merge({a: {{c: {1, 2}, d: {'a', 'b'}}}}, {b: {'a', 'b'}})",
+        "Record{a: List[Record{c: List[Integer], d: List[String]}]({{c=[1, 2], ...), b: List[String]({a, b})}"
+      ),
     ).forEvery { (expression, expected) =>
       evaluateType(expression, types = types) shouldBe expected.valid
     }

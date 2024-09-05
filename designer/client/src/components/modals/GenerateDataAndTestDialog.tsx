@@ -14,13 +14,15 @@ import {
     maximalNumberValidator,
     minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators";
-import { NodeInput } from "../FormElements";
 import ValidationLabels from "./ValidationLabels";
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 import { isEmpty } from "lodash";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
+import { NodeInput } from "../FormElements";
 
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
@@ -52,18 +54,18 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
 
     return (
         <PromptContent {...props} buttons={buttons}>
-            <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
-                <Typography variant={"h3"}>{t("generate-and-test.title", "Generate scenario test data and run tests")}</Typography>
-                <NodeInput
-                    value={testSampleSize}
-                    onChange={(event) => setState({ testSampleSize: event.target.value })}
-                    className={css({
-                        minWidth: "100%",
-                    })}
-                    autoFocus
-                />
+            <NodeTable className={cx("modalContentDark", css({ minWidth: 400 }))}>
+                <Typography variant={"h6"}>{t("generate-and-test.title", "Generate scenario test data and run tests")}</Typography>
+                <div className={nodeValue}>
+                    <NodeInput
+                        value={testSampleSize}
+                        onChange={(event) => setState({ testSampleSize: event.target.value })}
+                        className={nodeInput}
+                        autoFocus
+                    />
+                </div>
                 <ValidationLabels fieldErrors={getValidationErrorsForField(errors, "testData")} />
-            </div>
+            </NodeTable>
         </PromptContent>
     );
 }

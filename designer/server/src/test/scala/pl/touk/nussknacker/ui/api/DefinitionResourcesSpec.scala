@@ -49,7 +49,8 @@ class DefinitionResourcesSpec
           processingTypeData,
           modelDefinitionEnricher,
           new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
-          fragmentRepository
+          fragmentRepository,
+          None
         )
       )
     }

@@ -9,12 +9,12 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
 import pl.touk.nussknacker.engine.flink.table._
-import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractorTest.invalidSqlStatements
+import pl.touk.nussknacker.engine.flink.table.extractor.TablesDefinitionDiscoveryTest.invalidSqlStatements
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
 
-class TablesExtractorTest
+class TablesDefinitionDiscoveryTest
     extends AnyFunSuite
     with Matchers
     with LoneElement
@@ -23,7 +23,8 @@ class TablesExtractorTest
 
   test("extracts configuration from valid sql statement") {
     val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
-    val tablesDefinitions = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue
+    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(statements).validValue
+    val tablesDefinitions = discovery.listTables
     val tableDefinition   = tablesDefinitions.loneElement
     val sourceRowType     = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
     sourceRowType.getFieldNames.asScala shouldBe List(
@@ -64,7 +65,8 @@ class TablesExtractorTest
        |);""".stripMargin
 
     val statements        = SqlStatementReader.readSql(statementsStr)
-    val tablesDefinitions = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue
+    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(statements).validValue
+    val tablesDefinitions = discovery.listTables
 
     tablesDefinitions.loneElement shouldBe TableDefinition(
       tableName,
@@ -75,7 +77,7 @@ class TablesExtractorTest
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
       val parsedStatement             = SqlStatementReader.readSql(invalidStatement)
-      val sqlStatementExecutionErrors = TablesExtractor.extractTablesFromFlinkRuntime(parsedStatement).invalidValue
+      val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(parsedStatement).invalidValue
 
       sqlStatementExecutionErrors.size shouldBe 1
     }
@@ -83,7 +85,7 @@ class TablesExtractorTest
 
 }
 
-object TablesExtractorTest {
+object TablesDefinitionDiscoveryTest {
 
   private val invalidSqlStatements: List[String] = List(
     """|CREATE TABLE testTable

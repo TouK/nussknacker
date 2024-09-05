@@ -33,5 +33,5 @@ first one is returned, while if no response is generated (e.g. after filtering) 
 
 For Request-Response only [Lite engine](engines/LiteArchitecture.md) is available.
 
-For Streaming mode you can [choose](engines/) between [Flink](engines/FlinkArchitecture.md) and
+For Streaming mode you can [choose](engines/Engines.md) between [Flink](engines/FlinkArchitecture.md) and
 [Lite](engines/LiteArchitecture.md) engines.

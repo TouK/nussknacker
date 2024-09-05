@@ -60,10 +60,24 @@ import scala.reflect.runtime.universe._
 class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with OptionValues {
 
   private implicit class ValidatedExpressionOps[E](validated: Validated[E, TypedExpression]) {
-    def validExpression: CompiledExpression = validated.validValue.expression
+    def validExpression: TypedExpression = validated.validValue
   }
 
-  private implicit class EvaluateSync(expression: CompiledExpression) {
+  private implicit class EvaluateSyncTyped(expression: TypedExpression) {
+
+    def evaluateSync[T](ctx: Context = ctx): T = {
+      val evaluationResult = expression.expression.evaluate[T](ctx, Map.empty)
+      expression.typingInfo.typingResult match {
+        case result: SingleTypingResult if evaluationResult != null =>
+          result.runtimeObjType.klass isAssignableFrom evaluationResult.getClass shouldBe true
+        case _ =>
+      }
+      evaluationResult
+    }
+
+  }
+
+  private implicit class EvaluateSyncCompiled(expression: CompiledExpression) {
     def evaluateSync[T](ctx: Context = ctx): T = expression.evaluate(ctx, Map.empty)
   }
 
@@ -74,7 +88,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
 
   private val ctx = Context("abc").withVariables(
-    Map("obj" -> testValue, "strVal" -> "", "mapValue" -> Map("foo" -> "bar").asJava, "arr" -> Array("a", "b"))
+    Map(
+      "obj"         -> testValue,
+      "strVal"      -> "",
+      "mapValue"    -> Map("foo" -> "bar").asJava,
+      "array"       -> Array("a", "b"),
+      "intArray"    -> Array(1, 2, 3),
+      "nestedArray" -> Array(Array(1, 2), Array(3, 4))
+    )
   )
 
   private val ctxWithGlobal: Context = ctx
@@ -193,7 +214,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         case single: SingleTypingResult => Seq(single)
         case union: TypedUnion          => union.possibleTypes.toList
       })
-      .map(_.objType.klass)
+      .map(_.runtimeObjType.klass)
     val customClasses = Seq(
       classOf[String],
       classOf[java.text.NumberFormat],
@@ -1133,13 +1154,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should be able to handle spel type conversions") {
     parse[String]("T(java.text.NumberFormat).getNumberInstance('PL').format(12.34)", ctx).validExpression
       .evaluateSync[String](ctx) shouldBe "12,34"
-    parse[Locale]("'PL'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe Locale.forLanguageTag("PL")
-    parse[LocalDate]("'2007-12-03'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe LocalDate.parse(
-      "2007-12-03"
-    )
-    parse[ChronoLocalDate]("'2007-12-03'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe LocalDate.parse(
-      "2007-12-03"
-    )
+    parse[Locale]("'PL'", ctx).validExpression.expression.evaluateSync[Locale](ctx) shouldBe
+      Locale.forLanguageTag("PL")
+    parse[LocalDate]("'2007-12-03'", ctx).validExpression.expression.evaluateSync[Locale](ctx) shouldBe
+      LocalDate.parse("2007-12-03")
+    parse[ChronoLocalDate]("'2007-12-03'", ctx).validExpression.expression.evaluateSync[Locale](ctx) shouldBe
+      LocalDate.parse("2007-12-03")
   }
 
   test("shouldn't allow invalid spel type conversions") {
@@ -1255,12 +1275,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should return correct type in array projection") {
-    val parsed            = parse[Any]("#arr.![#this]", ctx)
-    val evaluated         = parsed.validExpression.evaluateSync[Any](ctx)
-    val arrayTypingResult = Typed.genericTypeClass(classOf[Array[String]], List(Typed.typedClass(classOf[String])))
-
-    parsed.validValue.typingInfo.typingResult shouldBe arrayTypingResult
-    evaluated shouldBe Array("a", "b")
+    parse[Any]("#array.![#this]", ctx).validExpression
+      .evaluateSync[Any](ctx) shouldBe Array("a", "b")
   }
 
   test("should return error on String projection") {
@@ -1268,8 +1284,48 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should convert array to list when passing arg which type should be list") {
-    parse[Any]("T(java.lang.String).join(',', #arr)", ctx).validExpression
+    parse[Any]("T(java.lang.String).join(',', #array)", ctx).validExpression
       .evaluateSync[String](ctx) shouldBe "a,b"
+  }
+
+  test("should calculate correct type of list after projection on list") {
+    val parsed = parse[Any]("{1, 2, 3}.![{a: #this}]", ctx).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass[java.util.List[_]](
+      List(
+        Typed.record(
+          List("a" -> Typed.typedClass[Integer])
+        )
+      )
+    )
+  }
+
+  test("should calculate correct type of list after projection on map") {
+    val parsed = parse[Any]("{a: 100}.![#this]", ctx).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass[java.util.List[_]](
+      List(
+        Typed.record(
+          List(
+            "key"   -> Typed.typedClass[String],
+            "value" -> TypedObjectWithValue(Typed.typedClass[Integer], 100)
+          )
+        )
+      )
+    )
+  }
+
+  test("should allow using list methods on array projection") {
+    parse[Any]("'a,b'.split(',').![#this].isEmpty()", ctx).validExpression
+      .evaluateSync[Boolean](ctx) shouldBe false
+  }
+
+  test("should allow using list methods on array") {
+    parse[Any]("#array.isEmpty()", ctx).validExpression.evaluateSync[Boolean](ctx) shouldBe false
+    parse[Any]("#intArray.isEmpty()", ctx).validExpression.evaluateSync[Boolean](ctx) shouldBe false
+  }
+
+  test("should allow using list methods on nested arrays") {
+    parse[Any]("#nestedArray.![#this.isEmpty()]", ctx).validExpression
+      .evaluateSync[Any](ctx) shouldBe Array(false, false)
   }
 
 }
