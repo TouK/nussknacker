@@ -3,6 +3,7 @@ import { isEmpty } from "lodash";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DndProvider } from "react-dnd-multi-backend";
+import { useErrorBoundary } from "react-error-boundary";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
@@ -24,12 +25,10 @@ import { getCapabilities } from "../reducers/selectors/other";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { useWindows } from "../windowManager";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
-import { ErrorHandler } from "./ErrorHandler";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
 import { GraphPage } from "./Page";
 import { ScenarioDescription } from "./ScenarioDescription";
-import { useErrorBoundary } from "react-error-boundary";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
