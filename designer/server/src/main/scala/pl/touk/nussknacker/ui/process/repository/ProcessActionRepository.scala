@@ -6,6 +6,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
+import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{AdditionalProperties, ScenarioActivityEntityData, ScenarioActivityType}
@@ -234,8 +235,10 @@ class DbProcessActionRepository(
         ScenarioActivityType.ScenarioPaused
       case ScenarioActionName.Rename =>
         ScenarioActivityType.ScenarioNameChanged
-      case other =>
-        throw new IllegalArgumentException(s"Action with id: $other can't be inserted")
+      case InstantBatchCustomAction.name =>
+        ScenarioActivityType.PerformedSingleExecution
+      case otherCustomName =>
+        ScenarioActivityType.CustomAction(otherCustomName.value)
     }
     val entity = ScenarioActivityEntityData(
       id = -1,
@@ -402,7 +405,7 @@ class DbProcessActionRepository(
     )
   }
 
-  private def toFinishedProcessAction(activityEntity: ScenarioActivityEntityData): ProcessAction =
+  private def toFinishedProcessAction(activityEntity: ScenarioActivityEntityData): ProcessAction = {
     ProcessAction(
       id = ProcessActionId(activityEntity.activityId.value),
       processId = ProcessId(activityEntity.scenarioId.value),
@@ -424,6 +427,7 @@ class DbProcessActionRepository(
       comment = activityEntity.comment.map(_.value),
       buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )
+  }
 
   private def activityId(actionId: ProcessActionId) =
     ScenarioActivityId(actionId.value)
@@ -462,6 +466,8 @@ class DbProcessActionRepository(
         None
       case ScenarioActivityType.AutomaticUpdate =>
         None
+      case ScenarioActivityType.CustomAction(name) =>
+        Some(ScenarioActionName(name))
     }
   }
 

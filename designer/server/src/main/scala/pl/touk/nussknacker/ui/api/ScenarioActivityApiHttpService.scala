@@ -48,6 +48,18 @@ class ScenarioActivityApiHttpService(
   private val endpoints = new Endpoints(securityInput, streamEndpointProvider)
 
   expose {
+    endpoints.deprecatedScenarioActivityEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
+        for {
+          scenarioId      <- getScenarioIdByName(scenarioName)
+          _               <- isAuthorized(scenarioId, Permission.Read)
+          processActivity <- fetchProcessActivity(scenarioId)
+        } yield processActivity
+      }
+  }
+
+  expose {
     endpoints.scenarioActivitiesEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
@@ -139,13 +151,23 @@ class ScenarioActivityApiHttpService(
         }
     )
 
-  private def fetchActivities(scenarioId: ProcessId)(
-      implicit loggedUser: LoggedUser
+  private def fetchProcessActivity(
+      scenarioId: ProcessId
+  ): EitherT[Future, ScenarioActivityError, Legacy.ProcessActivity] =
+    EitherT
+      .right(
+        dbioActionRunner.run(
+          scenarioActivityRepository.findActivity(scenarioId)
+        )
+      )
+
+  private def fetchActivities(
+      scenarioId: ProcessId
   ): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] =
     EitherT
       .right(
         dbioActionRunner.run(
-          scenarioActivityRepository.fetchActivities(scenarioId)
+          scenarioActivityRepository.findActivities(scenarioId)
         )
       )
       .map(_.map(toDto).toList)
@@ -241,13 +263,12 @@ class ScenarioActivityApiHttpService(
           scenarioVersion = scenarioVersion.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioNameChanged(_, id, user, date, version, comment, oldName, newName) =>
+      case ScenarioActivity.ScenarioNameChanged(_, id, user, date, version, oldName, newName) =>
         Dtos.ScenarioActivity.ScenarioNameChanged(
           id = id.value,
           user = user.name.value,
           date = date,
           scenarioVersion = version.map(_.value),
-          comment = toDto(comment),
           oldName = oldName,
           newName = newName,
         )
@@ -362,6 +383,14 @@ class ScenarioActivityApiHttpService(
           dateFinished = dateFinished,
           changes = changes,
           errorMessage = errorMessage,
+        )
+      case ScenarioActivity.CustomAction(_, scenarioActivityId, user, date, scenarioVersion, actionName) =>
+        Dtos.ScenarioActivity.CustomAction(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          actionName = actionName,
         )
     }
   }

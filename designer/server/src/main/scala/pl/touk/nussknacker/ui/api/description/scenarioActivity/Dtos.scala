@@ -8,7 +8,6 @@ import io.circe
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.deployment.ScenarioVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
@@ -242,7 +241,6 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersion: Option[Long],
-        comment: ScenarioActivityComment,
         oldName: String,
         newName: String,
     ) extends ScenarioActivity
@@ -322,6 +320,14 @@ object Dtos {
         dateFinished: Instant,
         changes: String,
         errorMessage: Option[String],
+    ) extends ScenarioActivity
+
+    final case class CustomAction(
+        id: UUID,
+        user: String,
+        date: Instant,
+        scenarioVersion: Option[Long],
+        actionName: String,
     ) extends ScenarioActivity
 
   }
@@ -746,6 +752,31 @@ object Dtos {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoComment](e =>
         s"Unable to delete comment for activity with id: ${e.scenarioActivityId}"
       )
+
+  }
+
+  object Legacy {
+
+    @derive(encoder, decoder, schema)
+    final case class ProcessActivity private (comments: List[Comment], attachments: List[Attachment])
+
+    @derive(encoder, decoder, schema)
+    final case class Comment(
+        id: Long,
+        processVersionId: Long,
+        content: String,
+        user: String,
+        createDate: Instant
+    )
+
+    @derive(encoder, decoder, schema)
+    final case class Attachment(
+        id: Long,
+        processVersionId: Long,
+        fileName: String,
+        user: String,
+        createDate: Instant
+    )
 
   }
 

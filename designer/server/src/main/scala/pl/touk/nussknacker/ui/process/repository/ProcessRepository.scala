@@ -301,8 +301,6 @@ class DBProcessRepository(
               ),
               date = Instant.now(),
               scenarioVersion = Some(ScenarioVersion(version.id.value)),
-              // todo NU-1772 in progress
-              comment = ScenarioComment.Available("todomgw", UserName(loggedUser.username)),
               oldName = process.name.value,
               newName = newName.value
             )

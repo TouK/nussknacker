@@ -13,6 +13,7 @@ import slick.sql.SqlProfile.ColumnOption.NotNull
 import java.sql.Timestamp
 import java.util.UUID
 import scala.collection.immutable
+import scala.util.matching.Regex
 
 trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
@@ -87,7 +88,13 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
   }
 
   implicit def scenarioActivityTypeMapper: BaseColumnType[ScenarioActivityType] =
-    MappedColumnType.base[ScenarioActivityType, String](_.entryName, ScenarioActivityType.withName)
+    MappedColumnType.base[ScenarioActivityType, String](
+      _.entryName,
+      name =>
+        ScenarioActivityType
+          .withEntryNameOption(name)
+          .getOrElse(throw new IllegalArgumentException(s"Invalid ScenarioActivityType $name"))
+    )
 
   implicit def scenarioIdMapper: BaseColumnType[ScenarioId] =
     MappedColumnType.base[ScenarioId, Long](_.value, ScenarioId.apply)
@@ -130,6 +137,26 @@ object ScenarioActivityType extends Enum[ScenarioActivityType] {
   case object PerformedSingleExecution    extends ScenarioActivityType
   case object PerformedScheduledExecution extends ScenarioActivityType
   case object AutomaticUpdate             extends ScenarioActivityType
+
+  final case class CustomAction(value: String) extends ScenarioActivityType {
+    override def entryName: String = s"CUSTOM_ACTION_[$value]"
+  }
+
+  object CustomAction {
+    private val pattern: Regex = """CUSTOM_ACTION_\[(.+?)]""".r
+
+    def withEntryNameOption(entryName: String): Option[CustomAction] = {
+      entryName match {
+        case pattern(value) => Some(CustomAction(value))
+        case _              => None
+      }
+    }
+
+  }
+
+  def withEntryNameOption(entryName: String): Option[ScenarioActivityType] =
+    withNameOption(entryName)
+      .orElse(CustomAction.withEntryNameOption(entryName))
 
   override def values: immutable.IndexedSeq[ScenarioActivityType] = findValues
 

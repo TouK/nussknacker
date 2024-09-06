@@ -141,7 +141,6 @@ object ScenarioActivity {
       user: User,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
-      comment: ScenarioComment,
       oldName: String,
       newName: String,
   ) extends ScenarioActivity
@@ -229,6 +228,15 @@ object ScenarioActivity {
       dateFinished: Instant,
       changes: String,
       errorMessage: Option[String],
+  ) extends ScenarioActivity
+
+  final case class CustomAction(
+      scenarioId: ScenarioId,
+      scenarioActivityId: ScenarioActivityId,
+      user: User,
+      date: Instant,
+      scenarioVersion: Option[ScenarioVersion],
+      actionName: String,
   ) extends ScenarioActivity
 
 }

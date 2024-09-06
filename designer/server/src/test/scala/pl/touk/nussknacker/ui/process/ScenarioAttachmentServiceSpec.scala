@@ -7,6 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, ScenarioActivityId}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
@@ -51,7 +52,7 @@ class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with Scala
 
 private object TestProcessActivityRepository extends ScenarioActivityRepository {
 
-  override def fetchActivities(scenarioId: ProcessId)(implicit user: LoggedUser): DB[Seq[ScenarioActivity]] = ???
+  override def findActivities(scenarioId: ProcessId): DB[Seq[ScenarioActivity]] = ???
 
   override def addActivity(scenarioActivity: ScenarioActivity)(implicit user: LoggedUser): DB[ScenarioActivityId] = ???
 
@@ -72,9 +73,11 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
   ): DB[ScenarioActivityId] =
     DBIO.successful(ScenarioActivityId.random)
 
+  override def findAttachments(scenarioId: ProcessId): DB[Seq[AttachmentEntityData]] = ???
+
   override def findAttachment(scenarioId: ProcessId, attachmentId: Long): DB[Option[AttachmentEntityData]] = ???
 
-  override def findActivity(processId: ProcessId): DB[String] = ???
+  override def findActivity(processId: ProcessId): DB[ProcessActivity] = ???
 
   override def getActivityStats: DB[Map[String, Int]] = ???
 

@@ -330,8 +330,7 @@ class DeploymentServiceSpec
     lastStateAction.state shouldBe ProcessActionState.ExecutionFinished
     // we want to hide finished deploys
     processDetails.lastDeployedAction shouldBe empty
-    // todo NU-1772 in progress
-    // dbioRunner.run(activityRepository.findActivity(processId.id)).futureValue.comments should have length 1
+    dbioRunner.run(activityRepository.findActivity(processId.id)).futureValue.comments should have length 1
 
     deploymentManager.withEmptyProcessState(processName) {
       val stateAfterJobRetention =

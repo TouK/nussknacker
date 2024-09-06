@@ -25,6 +25,17 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
   import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
   import pl.touk.nussknacker.ui.api.description.scenarioActivity.InputOutput._
 
+  lazy val deprecatedScenarioActivityEndpoint
+      : SecuredEndpoint[ProcessName, ScenarioActivityError, Legacy.ProcessActivity, Any] =
+    baseNuApiEndpoint
+      .summary("Scenario activity service")
+      .tag("Scenario")
+      .get
+      .in("processes" / path[ProcessName]("scenarioName") / "activity")
+      .out(statusCode(Ok).and(jsonBody[Legacy.ProcessActivity].example(Examples.deprecatedScenarioActivity)))
+      .errorOut(scenarioNotFoundErrorOutput)
+      .withSecurity(auth)
+
   lazy val scenarioActivitiesEndpoint: SecuredEndpoint[
     ProcessName,
     ScenarioActivityError,
@@ -35,7 +46,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .summary("Scenario activities service")
       .tag("Activities")
       .get
-      .in("processes" / path[ProcessName]("scenarioName") / "activity")
+      .in("processes" / path[ProcessName]("scenarioName") / "activities")
       .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities)))
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)

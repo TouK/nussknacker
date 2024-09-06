@@ -145,8 +145,8 @@ class ManagementResourcesSpec
         val expectedDeployComment = "Deployment: deployComment"
         val expectedStopComment   = "Stop: cancelComment"
         getActivity(ProcessTestData.sampleScenario.name) ~> check {
-          val comments = responseAs[Dtos.ScenarioActivities].activities
-          // todomgw comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
+          val comments = responseAs[Dtos.Legacy.ProcessActivity].comments.sortBy(_.id)
+          comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
 
           val firstCommentId :: secondCommentId :: Nil = comments.map(_.id)
 

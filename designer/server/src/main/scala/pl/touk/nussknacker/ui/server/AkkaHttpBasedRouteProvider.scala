@@ -418,13 +418,13 @@ class AkkaHttpBasedRouteProvider(
             processAuthorizer = processAuthorizer,
             processChangeListener = processChangeListener
           ),
-// todo NU-1772 in progress
-//          new ProcessesExportResources(
-//            futureProcessRepository,
-//            processService,
-//            scenarioActivityRepository,
-//            processResolver
-//          ),
+          new ProcessesExportResources(
+            futureProcessRepository,
+            processService,
+            scenarioActivityRepository,
+            processResolver,
+            dbioRunner,
+          ),
           new ManagementResources(
             processAuthorizer,
             processService,

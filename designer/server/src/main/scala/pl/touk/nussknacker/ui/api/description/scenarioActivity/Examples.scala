@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{NoComment, NoScenario}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import sttp.tapir.EndpointIO.Example
@@ -9,6 +9,30 @@ import java.time.Instant
 import java.util.UUID
 
 object Examples {
+
+  val deprecatedScenarioActivity: Example[Legacy.ProcessActivity] = Example.of(
+    summary = Some("Display scenario activity"),
+    value = Legacy.ProcessActivity(
+      comments = List(
+        Legacy.Comment(
+          id = 1L,
+          processVersionId = 1L,
+          content = "some comment",
+          user = "test",
+          createDate = Instant.parse("2024-01-17T14:21:17Z")
+        )
+      ),
+      attachments = List(
+        Legacy.Attachment(
+          id = 1L,
+          processVersionId = 1L,
+          fileName = "some_file.txt",
+          user = "test",
+          createDate = Instant.parse("2024-01-17T14:21:17Z")
+        )
+      )
+    )
+  )
 
   val scenarioActivities: Example[ScenarioActivities] = Example.of(
     summary = Some("Display scenario actions"),
@@ -70,11 +94,6 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
-          comment = ScenarioActivityComment(
-            comment = Some("Changed name to better replect the purpose of this scenario"),
-            lastModifiedBy = "some user",
-            lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
-          ),
           oldName = "marketing campaign",
           newName = "old marketing campaign",
         ),

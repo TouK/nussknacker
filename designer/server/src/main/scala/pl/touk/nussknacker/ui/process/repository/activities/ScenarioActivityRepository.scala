@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.repository.activities
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, ScenarioActivityId}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
@@ -10,9 +11,9 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 trait ScenarioActivityRepository {
 
-  def fetchActivities(
+  def findActivities(
       scenarioId: ProcessId,
-  )(implicit user: LoggedUser): DB[Seq[ScenarioActivity]]
+  ): DB[Seq[ScenarioActivity]]
 
   def addActivity(
       scenarioActivity: ScenarioActivity,
@@ -37,6 +38,10 @@ trait ScenarioActivityRepository {
       attachmentToAdd: AttachmentToAdd
   )(implicit user: LoggedUser): DB[ScenarioActivityId]
 
+  def findAttachments(
+      scenarioId: ProcessId,
+  ): DB[Seq[AttachmentEntityData]]
+
   def findAttachment(
       scenarioId: ProcessId,
       attachmentId: Long,
@@ -44,7 +49,7 @@ trait ScenarioActivityRepository {
 
   def findActivity(
       processId: ProcessId
-  ): DB[String]
+  ): DB[Legacy.ProcessActivity]
 
   def getActivityStats: DB[Map[String, Int]]
 

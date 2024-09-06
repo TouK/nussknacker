@@ -14,6 +14,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.Comment
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
@@ -147,15 +148,14 @@ class DBFetchingProcessRepositorySpec
 
     renameProcess(oldName, newName)
 
-// todo NU-1772 in progress
-//    val comments = fetching
-//      .fetchProcessId(newName)
-//      .flatMap(v => activities.findActivity(v.get).map(_.comments))
-//      .futureValue
-//
-//    atLeast(1, comments) should matchPattern {
-//      case Comment(_, VersionId(1L), "Rename: [oldName] -> [newName]", user.username, _) =>
-//    }
+    val comments = fetching
+      .fetchProcessId(newName)
+      .flatMap(v => dbioRunner.run(activities.findActivity(v.get).map(_.comments)))
+      .futureValue
+
+    atLeast(1, comments) should matchPattern {
+      case Comment(_, 1L, "Rename: [oldName] -> [newName]", user.username, _) =>
+    }
   }
 
   test("should prevent rename to existing name") {
