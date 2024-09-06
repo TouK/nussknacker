@@ -23,6 +23,9 @@ services:
           memory: 256M
           cpus: '0.5'
 
+  designer:
+    image: touk/nussknacker:${NUSSKNACKER_VERSION:?NUSSKNACKER_VERSION must be defined}_scala-2.13
+
   postgres:
     ports:
       - 5432:5432
@@ -42,7 +45,38 @@ services:
   flink-jobmanager:
     ports:
       - 3031:8081
+    depends_on:
+      file-downloader:
+        condition: service_completed_successfully
+    volumes:
+      - /tmp/flink-scala-2-13_2.13-1.1.1-assembly.jar:/opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar
+    user: root
+    entrypoint: [
+      "sh", "-c",
+      "rm -f /opt/flink/lib/flink-scala-2-12* && chown flink /opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar && gosu flink:flink /docker-entrypoint.sh"
+    ]
+
+  flink-taskmanager:
+    depends_on:
+      file-downloader:
+        condition: service_completed_successfully
+    volumes:
+      - /tmp/flink-scala-2-13_2.13-1.1.1-assembly.jar:/opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar
+    user: root
+    entrypoint: [
+      "sh", "-c",
+      "rm -f /opt/flink/lib/flink-scala-2-12* && chown flink /opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar && gosu flink:flink /docker-entrypoint.sh"
+    ]
 
   grafana:
     ports:
       - 8081:3000
+
+  file-downloader:
+    image: curlimages/curl:7.85.0
+    volumes:
+      - /tmp:/data
+    entrypoint: [
+      "sh", "-c",
+      "curl -o /data/flink-scala-2-13_2.13-1.1.1-assembly.jar https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.1/flink-scala-2-13_2.13-1.1.1-assembly.jar"
+    ]
