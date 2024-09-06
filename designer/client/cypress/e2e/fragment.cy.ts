@@ -419,6 +419,8 @@ describe("Fragment", () => {
                 },
                 force: true,
             });
+
+        cy.viewport("macbook-16");
         cy.layoutScenario();
 
         cy.get('[joint-selector="layers"]').matchImage({ screenshotConfig: { padding: 16 } });
