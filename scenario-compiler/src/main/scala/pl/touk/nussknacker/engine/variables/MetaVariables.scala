@@ -4,8 +4,9 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Hidden, MetaData}
 import pl.touk.nussknacker.engine.definition.globalvariables.ObjectWithType
+import scala.jdk.CollectionConverters._
 
-final case class MetaVariables(processName: String, processLabels: List[String], properties: TypedMap)
+final case class MetaVariables(processName: String, processLabels: java.util.List[String], properties: TypedMap)
 
 object MetaVariables {
 
@@ -15,7 +16,7 @@ object MetaVariables {
 
   @Hidden
   def apply(metaData: MetaData): MetaVariables =
-    MetaVariables(metaData.name.value, metaData.labels, properties(metaData))
+    MetaVariables(metaData.name.value, metaData.labels.asJava, properties(metaData))
 
   @Hidden
   def typingResult(metaData: MetaData): TypingResult =

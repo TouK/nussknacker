@@ -148,7 +148,14 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
           .equalsJsonBody(
             s"""
                |{
-               |  "validationErrors": []
+               |  "validationErrors": [
+               |    {
+               |      "label": "tag100",
+               |      "messages": [
+               |        "Scenario label can contain up to 5 characters"
+               |      ]
+               |    }
+               |  ]
                |}
                |""".stripMargin
           )
