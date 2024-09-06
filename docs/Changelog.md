@@ -5,7 +5,7 @@
 #### Highlights
 
 ### 1.17.0 (Not released yet)
--------------------------
+
 * [#6658](https://github.com/TouK/nussknacker/pull/6658) Bump up circe-yaml lib to 0.15.2
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
 * [#6282](https://github.com/TouK/nussknacker/pull/6184) From now on, the existence of Kafka topics used in Sources and/or
@@ -86,23 +86,23 @@
 * Nussknacker Quickstart has been refurbished and is now based on [installation example](https://github.com/TouK/nussknacker-installation-example). Using Nussknacker Quickstart is now even clearer and easier.
 
 ### 1.16.3 (8 August 2024)
--------------------------
+
 * [#6527](https://github.com/TouK/nussknacker/pull/6527) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
   * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
 * [#6517](https://github.com/TouK/nussknacker/pull/6517) Allow using same variable names in a fragment and outside a fragment. Fix bleeding context from outside scenario into the fragment output node.
 
 ### 1.16.2 (18 July 2024)
--------------------------
+
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
 * [#6438](https://github.com/TouK/nussknacker/pull/6438) Fragment icon can be changed in the fragment properties
 
 ### 1.16.1 (16 July 2024)
--------------------------
+
 * [#6382](https://github.com/TouK/nussknacker/pull/6382) Avoid timeout on model reload by stopping DeploymentActor and RescheduleFinishedActor non-gracefully. Instead, retry until success while creating new actors.
 
 ### 1.16.0 (11 July 2024)
--------------------------
+
 
 * [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
@@ -142,30 +142,30 @@
 * New [one-command Docker installation script](https://github.com/TouK/nussknacker-installation-example) for setting up an example Nussknacker environment on-premise. This example can be a good reference for your own on-premises production setup, as well as for exploration and testing
 
 ### 1.15.4 (10 July 2024)
--------------------------
+
 * [#6319](https://github.com/TouK/nussknacker/pull/6319) Fix migration between environments.
 * [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
 
 ### 1.15.3 (24 June 2024)
--------------------------
+
 * [#6191](https://github.com/TouK/nussknacker/pull/6191) Fixes caching of Flink's jobs config. Was cached empty config in some cases.
 * [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
 * [#6230](https://github.com/TouK/nussknacker/pull/6230) Avoid potential race condition by preventing the marking of freshly deployed jobs as finished when synchronizing deployment states.
 * [#6204](https://github.com/TouK/nussknacker/pull/6204) [#6055](https://github.com/TouK/nussknacker/pull/6055) Fixup to lifecycle of ExecutionContext used in Asynchronous IO Mode which could lead to RejectedExecutionException after scenario restart on Flink.
 
 ### 1.15.2 (7 June 2024)
--------------------------
+
 * [#6134](https://github.com/TouK/nussknacker/pull/6134) Fixes in determining `lastStateActionData` and `lastDeployedActionData` for Scenario.
   * Deployed version of scenario is now shown properly even if other actions followed deploy.
   * Scenario state is now not impacted by actions that don't actually change it.
 
 ### 1.15.1 (5 June 2024)
--------------------------
+
 * [#6126](https://github.com/TouK/nussknacker/pull/6126) Fix statistics configuration.
 * [#6127](https://github.com/TouK/nussknacker/pull/6127) Ad-hoc tests available in scenarios without `flink-dropwizard-metrics-deps` in classPath
 
 ### 1.15.0 (17 May 2024)
--------------------------
+
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) [#3922](https://github.com/TouK/nussknacker/pull/5901) Libraries bump:
   * Cats 2.9.0 -> 2.10.0
@@ -220,7 +220,7 @@
 * Changes and improvements in Component API for custom component development
 
 ### 1.14.0 (21 Mar 2024)
--------------------------
+
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) [#5645](https://github.com/TouK/nussknacker/pull/5645) Libraries bump:
   * Flink: 1.16.2 -> 1.17.2
   * Cats Effect: 2.5.5 -> 3.5.2
@@ -308,22 +308,22 @@
 * Bumped Cats Effect 3
 
 ### 1.13.3 (28 June 2024)
-------------------------
+
 
 > :warning: **Warning:** This fix was introduced in 1.16.0 version and has only been backported to this version.
 
 * [#6285](https://github.com/TouK/nussknacker/pull/6285) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
 
 ### 1.13.2 (7 Mar 2024)
-------------------------
+
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
 
 ### 1.13.1 (7 Mar 2024)
--------------------------
+
 [this version was skipped, please use 1.13.2 instead]
 
 ### 1.13.0 (12 Jan 2024)
--------------------------
+
 * [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers
 * [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
@@ -387,33 +387,33 @@
 * _improvement_: [Utils](https://nussknacker.io/documentation/docs/developers_guide/Basics/#modules-architecture-and-conventions) modules enhancements
 
 ### 1.12.6 (29 Jan 2024)
-------------------------
+
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
 
 ### 1.12.5 (1 Dec 2023)
-------------------------
+
 * [#5110](https://github.com/TouK/nussknacker/pull/5110) Fix: The compare option doesn't display fragment input properties between the two versions
 
 ### 1.12.4 (14 Nov 2023)
-------------------------
+
 * [#4992](https://github.com/TouK/nussknacker/pull/4992) Fix: List of periodic deployments is now sorted not only by schedule time but also by its creation time.
 
 ### 1.12.3 (26 Oct 2023)
--------------------------
+
 
 > :warning: **Warning:** [this version was skipped]
 
 ### 1.12.2 (25 Oct 2023)
--------------------------
+
 
 > :warning: **Warning:** [this version was skipped]
 
 ### 1.12.1 (25 Oct 2023)
--------------------------
+
 * [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart
 
 ### 1.12.0 (6 Oct 2023)
--------------------------
+
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
   * Use `processingType` instead of `processName`
   * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`
@@ -455,15 +455,15 @@
 - Fix: Handling of non-parametrized queries in SQL query enricher
 
 ### 1.11.3 (11 Sep 2023)
--------------------------
+
 * [#4629](https://github.com/TouK/nussknacker/pull/4629) Fix closing of shared SttpBackend when reloading model
 
 ### 1.11.1 (25 Aug 2023)
--------------------------
+
 * [#4603](https://github.com/TouK/nussknacker/pull/4603) Fix subprocess -> fragment migration
 
 ### 1.11.0 (22 Aug 2023)
--------------------------
+
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility)
 * [#4440](https://github.com/TouK/nussknacker/pull/4440) Improvement: Better exception info handling at KafkaExceptionInfo.inputEvent,
   from now we will return here JSON with all context variables (including context parent tree)
@@ -481,7 +481,7 @@
 ## 1.11
 
 ### 1.10.0 (29 Jun 2023)
--------------------------
+
 * [#4400](https://github.com/TouK/nussknacker/pull/4400) Improvement: Avoid long waits for closing job on test Flink minicluster
 * [#4435](https://github.com/TouK/nussknacker/pull/4435) Fix: handle resolving refs when parsing Swagger 2.0 schema in openapi enricher
 * [#4275](https://github.com/TouK/nussknacker/pull/4275) Add helper methods for use in expressions:
@@ -535,11 +535,11 @@
 ## 1.9
 
 ### 1.9.1 (24 Apr 2023)
-------------------------
+
 * [#4243](https://github.com/TouK/nussknacker/pull/4243) Fix for: Scenario status remain "in-progress" after attempt of deploy of not validating scenario
 
 ### 1.9.0 (21 Apr 2023)
-------------------------
+
 * [#4195](https://github.com/TouK/nussknacker/pull/4195) Add functionality to generate test cases and test scenario without need to download a file.
 * [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.11
 * [#3979](https://github.com/TouK/nussknacker/pull/3979) Updated Flink 1.16.0 -> 1.16.1
@@ -588,12 +588,12 @@
 ## 1.8
 
 ### 1.8.1 (28 Feb 2023)
-------------------------
+
 * [#4018](https://github.com/TouK/nussknacker/pull/4018) Fix for: generate test data mechanism didn't work for json messages with defined schema id
 * [#4024](https://github.com/TouK/nussknacker/pull/4024) Fix encoding object in sink with JSON schema pattern properties
 
 ### 1.8.0 (17 Feb 2023)
-------------------------
+
 * [#3963](https://github.com/TouK/nussknacker/pull/3963) - Secure processDefinitionData/services endpoint by filtering based on user category "Read" permission
 * [#3945](https://github.com/TouK/nussknacker/pull/3945) - Allow to get Map category -> processingType through new categoriesWithProcessingType endpoint.
 * [#3821](https://github.com/TouK/nussknacker/pull/3821) - Exact typing & validation of JsonSchema enums (before only String values were handled).
@@ -619,7 +619,7 @@
 ## 1.7
 
 ### 1.7.0 (19 Dec 2022)
-------------------------
+
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Migrate from Flink Scala API to Java API
 * JSON Schema handling improvements:
   * [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types
@@ -673,7 +673,7 @@
 ## 1.6
 
 ### 1.6.1 (8 Nov 2022)
-------------------------
+
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenAPI definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix for json-schema additionalProperties validation
 * [#3672](https://github.com/TouK/nussknacker/pull/3672) Fix contextId assignment for the output of ForEachTransformer (Flink)
@@ -682,7 +682,7 @@
 * [#3685](https://github.com/TouK/nussknacker/pull/3685) Fix: inconsistent SwaggerDateTime typing (LocalDateTime/ZonedDateTime)
 
 ### 1.6.0 (18 Oct 2022)
-------------------------
+
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
 * [#3385](https://github.com/TouK/nussknacker/pull/3385) Security fix: add http headers `'X-Content-Type-Options':'nosniff'` and `'Referrer-Policy':'no-referrer'`.
 * [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
@@ -722,7 +722,7 @@
 ## 1.5
 
 ### 1.5.0 (16 Aug 2022)
-------------------------
+
 * [#3099](https://github.com/TouK/nussknacker/pull/3099) Added validation for input nodes names in UnionMemo
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend. Deploy with invalid comment now returns error with validation information, which is shown below input like in case of node parameters.
 * [#3113](https://github.com/TouK/nussknacker/pull/3113) Moved last panel tab Services from Admin tab. Removed Admin tab.
@@ -785,7 +785,7 @@
 ## 1.4
 
 ### 1.4.0 (14 Jun 2022)
-------------------------
+
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
 * [#3003](https://github.com/TouK/nussknacker/pull/3003) Streaming-lite runtime aware of K8s resource quotas
@@ -810,7 +810,7 @@
 ## 1.3
 
 ### 1.3.0 (22 Apr 2022)
-------------------------
+
 * [#2967](https://github.com/TouK/nussknacker/pull/2967) Add json-utils module and move there json-utils from `liteRequestResponseComponents`.
 * [#2955](https://github.com/TouK/nussknacker/pull/2955) Add Json schema sink/source (with editor) for request/response. Move inputSchema to properties.
 * [#2841](https://github.com/TouK/nussknacker/pull/2841) Some performance improvements - reduced number of serialization round-trips for scenario JSON
@@ -833,7 +833,7 @@
 ## 1.2
 
 ### 1.2.0 (11 Feb 2022)
-------------------------
+
 * Added component tab
 * [#2537](https://github.com/TouK/nussknacker/pull/2537) Refactoring of `LazyParameter` API:
   * `map`, `product` and `pure` methods don't require `LazyParameterInterpreter` implicit parameter anymore: can be used in other place then `LazyParameterInterpreterFunction`
@@ -866,14 +866,14 @@
 ## 1.1
 
 ### 1.1.1 (01 Feb 2022)
---------------------
+
 * [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
 * [#2744](https://github.com/TouK/nussknacker/pull/2744) Ugly resource waste fixed in component drag preview
 * [#2754](https://github.com/TouK/nussknacker/pull/2754) Fix error with pasting node,
 * [#2807](https://github.com/TouK/nussknacker/pull/2807) Fix default values for GenericNodeTransformation
 
 ### 1.1.0 (07 Dec 2021)
-------------------------
+
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
 * [#2179](https://github.com/TouK/nussknacker/pull/2179) Permission allowing for editing scenario on FE, but not saving etc.
 * [#2150](https://github.com/TouK/nussknacker/pull/2150)
@@ -930,7 +930,7 @@
 ## 1.0
 
 ### 1.0.0 (24 Sep 2021)
-------------------------
+
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
   load additional encoders.
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade to Flink 1.13
@@ -978,7 +978,7 @@
 ## 0.4
 
 ### 0.4.0 (12 Aug 2021)
-------------------------
+
 * More precise TypeInformation generation
   * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult
   * [#1343](https://github.com/TouK/nussknacker/pull/1343) Aggregators compute stored types
@@ -1043,7 +1043,7 @@
 ## 0.3
 
 ### 0.3.0 (17 Nov 2020)
-------------------------
+
 * [#1298](https://github.com/TouK/nussknacker/pull/1298) Feature flag `avroKryoGenericRecordSchemaIdSerialization` for avro kryo serialization optimization (default = false)
 * [#1315](https://github.com/TouK/nussknacker/pull/1315) Spring bumped 5.1.4 -> 5.1.19
 * [#1312](https://github.com/TouK/nussknacker/pull/1312) Ficus bumped 1.4.1 -> 1.4.7
@@ -1073,19 +1073,19 @@
 ## 0.2
 
 ### 0.2.2 (03 Sep 2020)
------------------------
+
 * [#1175](https://github.com/TouK/nussknacker/pull/1175) Fix for: BestEffortAvroEncoder haven't produced record with logical types for missing field with default values
 * [#1173](https://github.com/TouK/nussknacker/pull/1173) Fix for: Avro source wasn't be able to read record with schema with invalid defaults
 
 ### 0.2.1 (31 Aug 2020)
------------------------
+
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
 * [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation
 * [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for subprocess
 * [#1148](https://github.com/TouK/nussknacker/pull/1148) Fix FE regexp for match node id
 
 ### 0.2.0 (07 Aug 2020)
-------------------------
+
 * [#1099](https://github.com/TouK/nussknacker/pull/1099) New outer-join node
 * [#1024](https://github.com/TouK/nussknacker/pull/1024) Added default async interpretation value configured by `asyncExecutionConfig.defaultUseAsyncInterpretation` (false if missing).
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
@@ -1122,20 +1122,20 @@
 ## 0.1
 
 ### 0.1.2 (15 May 2020)
-------------------------
+
 * [#965](https://github.com/TouK/nussknacker/pull/965) Added new, 'aggregate-tumbling' node.
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` has now additional aggregation function `Sum`.
   Also was changed parameter from `windowLengthInSeconds` to `windowLength` with human friendly duration input.
 
 ### 0.1.1 (06 May 2020)
-------------
+
 * Branch parameters now can be eager (computed during process compilation)
 * More restrictive type checking in SpEL - mainly added verification of types of method's paramaters
 * Added support for Kafka consumer group strategies - setted up by `kafka.consumerGroupNamingStrategy` configuraton option
 * Bugfixes for joins
 
 ### 0.1.0 (30 Apr 2020)
--------------
+
 * Added support for explicitly setting uids in operators - turned on by `explicitUidInStatefulOperators` model's flag.
   By default setted up to false.
 * Old way of configuring Flink and model (via `flinkConfig` and `processConfig`) is removed. `processTypes`
@@ -1145,7 +1145,7 @@
 ## 0.0.x
 
 ### 0.0.12 (26 Oct 2019)
---------------------
+
 * Cross builds with Scala 2.11 and 2.12
 * First version of join nodes
 * OAuth2 authentication capabilities
@@ -1155,16 +1155,16 @@
 * Various usability improvements
 
 ### 0.0.11 (1 Apr 2019)
----------
+
 
 ### 0.0.10 (13 Nov 2018)
----------
+
 
 ### 0.0.9 (13 Jul 2018)
----------
+
 
 ### 0.0.8 (7 May 2018)
----------
+
 - expressions code syntax highlighting
 - source/sink params as expressions
 - multiline expression suggestions
@@ -1183,7 +1183,7 @@
 - Make sinks disableable
 
 ### 0.0.7 (22 Dec 2017)
----------
+
 - global imports in expressions
 - deployment standalone on multiple nodes
 - typed SpEL expressions - first iteration
@@ -1204,5 +1204,5 @@
 - spring version bump because of SPR-9194
 
 ### 0.0.6 (9 Aug 2017)
----------
+
 First open source version :)
