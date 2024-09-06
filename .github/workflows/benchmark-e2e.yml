@@ -21,4 +21,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: benchmark-e2e.csv
-          path: tmp/benchmarkResult.csv
+          path: /tmp/benchmarkResult.csv
