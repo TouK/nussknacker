@@ -11,6 +11,7 @@ import ujson.Value
 import pl.touk.nussknacker.test.MiscUtils._
 
 import java.io.{File => JFile}
+import java.time.Duration
 
 class DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion: String,
@@ -28,7 +29,7 @@ class DockerBasedInstallationExampleNuEnvironment(
         ServiceLogConsumer("bootstrap-setup", new Slf4jLogConsumer(slf4jLogger))
       ),
       waitingFor = Some(
-        WaitingForService("bootstrap-setup", new DockerHealthcheckWaitStrategy())
+        WaitingForService("bootstrap-setup", new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofSeconds(120)))
       ),
       // Change to 'true' to enable logging
       tailChildContainers = false
