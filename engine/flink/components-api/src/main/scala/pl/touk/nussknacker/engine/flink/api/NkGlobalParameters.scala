@@ -76,7 +76,6 @@ object NkGlobalParameters {
     ec.setGlobalJobParameters(globalParameters)
   }
 
-  // TODO: does this have to be option?
   def readFromContext(ec: ExecutionConfig): Option[NkGlobalParameters] =
     NkGlobalParametersToMapEncoder.decode(ec.getGlobalJobParameters.toMap.asScala.toMap)
 
