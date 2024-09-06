@@ -47,7 +47,7 @@ class AvroPayloadDeserializer(
     val avroExpectedSchemaData = expectedSchemaData.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]
     val avroWriterSchemaData   = writerSchemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
     val readerSchemaData       = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
-    val reader = createDatumReader(
+    val reader = getDatumReader(
       avroWriterSchemaData.schema.rawSchema(),
       readerSchemaData.schema.rawSchema(),
       useSchemaReflection,

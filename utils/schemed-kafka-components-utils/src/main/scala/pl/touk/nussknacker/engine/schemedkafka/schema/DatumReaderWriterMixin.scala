@@ -26,23 +26,23 @@ trait DatumReaderWriterMixin {
     new ConcurrentHashMap[(Schema, Schema, Boolean, Boolean), DatumReader[AnyRef]]()
 
   @transient private lazy val datumWriterCache =
-    new ConcurrentHashMap[(RecordType.RecordType, Schema), GenericDatumWriter[Any]]()
+    new ConcurrentHashMap[(RecordType, Schema), GenericDatumWriter[Any]]()
 
-  def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = {
+  def getDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = {
     val recordType = RecordType(record, useSchemaReflection)
     datumWriterCache.computeIfAbsent(
       (recordType, schema),
       _ => {
         recordType match {
-          case RecordType.Specific => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
-          case RecordType.Reflect  => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
-          case _                   => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
+          case Specific => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
+          case Reflect  => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
+          case _        => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
         }
       }
     )
   }
 
-  def createDatumReader(
+  def getDatumReader(
       writerSchema: Schema,
       readerSchema: Schema,
       useSchemaReflection: Boolean,
@@ -65,16 +65,18 @@ trait DatumReaderWriterMixin {
     )
   }
 
-  private object RecordType extends Enumeration with Serializable {
-    type RecordType = Value
+  private sealed trait RecordType extends Serializable
+  private object Specific         extends RecordType
+  private object Reflect          extends RecordType
+  private object Generic          extends RecordType
 
-    val Generic, Specific, Reflect = Value
+  private object RecordType {
 
-    def apply(record: Any, useSchemaReflection: Boolean): Value =
+    def apply(record: Any, useSchemaReflection: Boolean): RecordType =
       record match {
-        case _: SpecificRecord        => RecordType.Specific
-        case _ if useSchemaReflection => RecordType.Reflect
-        case _                        => RecordType.Generic
+        case _: SpecificRecord        => Specific
+        case _ if useSchemaReflection => Reflect
+        case _                        => Generic
       }
 
   }

@@ -26,7 +26,7 @@ private[schemaregistry] object AvroMessageFormatter extends DatumReaderWriterMix
         case bytes: Array[Byte] => ByteBuffer.wrap(bytes)
         case other              => other
       }
-      val writer = createDatumWriter(record, schema, useSchemaReflection = false)
+      val writer = getDatumWriter(record, schema, useSchemaReflection = false)
       writer.write(record, encoder)
       encoder.flush()
       val str = bos.toString(StandardCharsets.UTF_8)

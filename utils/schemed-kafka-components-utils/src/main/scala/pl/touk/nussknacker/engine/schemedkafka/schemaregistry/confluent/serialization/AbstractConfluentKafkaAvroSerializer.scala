@@ -90,7 +90,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
         case array: Array[Byte] => out.write(array)
         case _ =>
           val encoder = encoderToUse(avroSchema, out)
-          val writer  = createDatumWriter(data, avroSchema, useSchemaReflection = useSchemaReflection)
+          val writer  = getDatumWriter(data, avroSchema, useSchemaReflection = useSchemaReflection)
           writer.write(data, encoder)
           encoder.flush()
       }
