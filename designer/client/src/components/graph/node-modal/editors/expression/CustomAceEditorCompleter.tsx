@@ -80,6 +80,9 @@ const getNormalizedValue = (suggestion: ExpressionSuggestion): string => {
                 return `["${suggestion.methodName}"]`;
             }
     }
+    if (suggestion.parameters?.length > 0) {
+        return `${suggestion.methodName}()`;
+    }
     return suggestion.methodName;
 };
 
