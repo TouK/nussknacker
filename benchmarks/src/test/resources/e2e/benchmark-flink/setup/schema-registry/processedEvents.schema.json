@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "clientId": { "type": "string" },
+    "amount": { "type": "integer" },
+    "isLast": { "type": "boolean", "default": false }
+  },
+  "required": ["clientId", "amount"],
+  "additionalProperties": false
+}
