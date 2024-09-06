@@ -490,7 +490,7 @@ jobs:
         uses: peter-evans/create-pull-request@v4
         if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
-          HASH: ${{ format('#{0}', github.event.number || 0) }}
+          HASH: ${{ format('#{0}', github.event.number) }}
           BRANCH: ${{ needs.setup.outputs.git_source_branch }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -581,7 +581,7 @@ jobs:
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/lib/android 
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
         env:
