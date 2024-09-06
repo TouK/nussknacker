@@ -1,7 +1,7 @@
 services:
 
   bootstrap-setup:
-    image: touk/nussknacker-example-scenarios-library:0.3.0-SNAPSHOT # todo: set after release
+    image: touk/nussknacker-example-scenarios-library:0.3.0
     depends_on:
       nginx:
         condition: service_healthy

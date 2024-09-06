@@ -2,33 +2,30 @@ package pl.touk.nussknacker.test.installationexample
 
 import com.dimafeng.testcontainers.{DockerComposeContainer, ServiceLogConsumer, WaitingForService}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.IOUtils
+import org.slf4j.Logger
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
 import pl.touk.nussknacker.test.containers.ContainerExt.toContainerExt
-import pl.touk.nussknacker.test.installationexample.DockerBasedInstallationExampleNuEnvironment.{
-  JSON,
-  alogger,
-  fileFromResourceStream
-}
+import pl.touk.nussknacker.test.installationexample.DockerBasedInstallationExampleNuEnvironment.{JSON, slf4jLogger}
 import ujson.Value
+import pl.touk.nussknacker.test.MiscUtils._
 
-import java.io.{File => JFile, FileOutputStream, InputStream}
+import java.io.{File => JFile}
 
 class DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion: String,
     dockerComposeTweakFiles: Iterable[JFile]
 ) extends DockerComposeContainer(
       composeFiles = new JFile("examples/installation/docker-compose.yml") ::
-        fileFromResourceStream(
-          DockerBasedInstallationExampleNuEnvironment.getClass.getResourceAsStream("/bootstrap-setup.override.yml")
-        ) ::
+        DockerBasedInstallationExampleNuEnvironment.getClass
+          .getResourceAsStream("/bootstrap-setup.override.yml")
+          .toFile ::
         dockerComposeTweakFiles.toList,
       env = Map(
         "NUSSKNACKER_VERSION" -> nussknackerImageVersion
       ),
       logConsumers = Seq(
-        ServiceLogConsumer("bootstrap-setup", new Slf4jLogConsumer(alogger))
+        ServiceLogConsumer("bootstrap-setup", new Slf4jLogConsumer(slf4jLogger))
       ),
       waitingFor = Some(
         WaitingForService("bootstrap-setup", new DockerHealthcheckWaitStrategy())
@@ -46,16 +43,7 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
 
   type JSON = Value
 
-  // todo: better solution
-  private def alogger = logger.underlying
-
-  def fileFromResourceStream(in: InputStream): JFile = {
-    val tempFile = JFile.createTempFile("Nussknacker", null)
-    tempFile.deleteOnExit()
-    val out = new FileOutputStream(tempFile);
-    IOUtils.copy(in, out);
-    tempFile
-  }
+  private def slf4jLogger: Logger = logger.underlying
 
 }
 
