@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -65,14 +66,20 @@ class FlinkKafkaUniversalSink(
     protected override val exceptionHandlerPreparer: RuntimeContext => ExceptionHandler =
       flinkNodeContext.exceptionHandlerPreparer
 
+    @transient private var encodeRecord: Any => AnyRef = _
+
+    override def open(parameters: Configuration): Unit = {
+      super.open(parameters)
+      encodeRecord = schemaSupportDispatcher
+        .forSchemaType(schema.getParsedSchema.schemaType())
+        .formValueEncoder(schema.getParsedSchema, validationMode)
+    }
+
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
         exceptionHandler
           .handling(Some(NodeComponentInfo(nodeId, ComponentType.Sink, "flinkKafkaAvroSink")), ctx.context) {
-            val encode = schemaSupportDispatcher
-              .forSchemaType(schema.getParsedSchema.schemaType())
-              .formValueEncoder(schema.getParsedSchema, validationMode)
-            encode(data)
+            encodeRecord(data)
           }
           .orNull
       }
