@@ -26,16 +26,17 @@ trait DatumReaderWriterMixin {
     new ConcurrentHashMap[(Schema, Schema, Boolean, Boolean), DatumReader[AnyRef]]()
 
   @transient private lazy val datumWriterCache =
-    new ConcurrentHashMap[(Any, Schema, Boolean), GenericDatumWriter[Any]]()
+    new ConcurrentHashMap[(RecordType.RecordType, Schema), GenericDatumWriter[Any]]()
 
   def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = {
+    val recordType = RecordType(record, useSchemaReflection)
     datumWriterCache.computeIfAbsent(
-      (record, schema, useSchemaReflection),
+      (recordType, schema),
       _ => {
-        record match {
-          case _: SpecificRecord        => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
-          case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
-          case _                        => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
+        recordType match {
+          case RecordType.Specific => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
+          case RecordType.Reflect  => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
+          case _                   => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
         }
       }
     )
@@ -62,6 +63,20 @@ trait DatumReaderWriterMixin {
         }
       }
     )
+  }
+
+  private object RecordType extends Enumeration with Serializable {
+    type RecordType = Value
+
+    val Generic, Specific, Reflect = Value
+
+    def apply(record: Any, useSchemaReflection: Boolean): Value =
+      record match {
+        case _: SpecificRecord        => RecordType.Specific
+        case _ if useSchemaReflection => RecordType.Reflect
+        case _                        => RecordType.Generic
+      }
+
   }
 
 }
