@@ -34,9 +34,9 @@ trait DatumReaderWriterMixin {
       (recordType, schema),
       _ => {
         recordType match {
-          case Specific => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
-          case Reflect  => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
-          case _        => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
+          case Specific   => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
+          case Reflection => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
+          case _          => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
         }
       }
     )
@@ -67,7 +67,7 @@ trait DatumReaderWriterMixin {
 
   private sealed trait RecordType extends Serializable
   private object Specific         extends RecordType
-  private object Reflect          extends RecordType
+  private object Reflection       extends RecordType
   private object Generic          extends RecordType
 
   private object RecordType {
@@ -75,7 +75,7 @@ trait DatumReaderWriterMixin {
     def apply(record: Any, useSchemaReflection: Boolean): RecordType =
       record match {
         case _: SpecificRecord        => Specific
-        case _ if useSchemaReflection => Reflect
+        case _ if useSchemaReflection => Reflection
         case _                        => Generic
       }
 
