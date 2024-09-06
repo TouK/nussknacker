@@ -1,0 +1,23 @@
+name: Benchmarks JMH
+on:
+  schedule:
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+jobs:
+  benchmarks:
+    name: Benchmarks JMH
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
+      - name: Run benchmarks
+        run: sbt "benchmarks/jmh:run -i 8 -wi 3 -f1 -t1 -rf csv"
+      - name: Store benchmark results
+        uses: actions/upload-artifact@v2
+        with:
+          name: jmh-result.csv
+          path: benchmarks/jmh-result.csv

@@ -834,8 +834,9 @@ lazy val benchmarks = (project in file("benchmarks"))
     name                                 := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
-        "org.apache.flink" % "flink-runtime"        % flinkV
+        "org.apache.flink" % "flink-streaming-java"           % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
+        "org.apache.flink" % "flink-runtime"                  % flinkV,
+        "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       )
     },
     Jmh / run / javaOptions ++= (
@@ -851,6 +852,13 @@ lazy val benchmarks = (project in file("benchmarks"))
     Jmh / dependencyClasspath            := (Test / dependencyClasspath).value,
     Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
   )
+  .settings {
+    // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
+    forScalaVersion(defaultScalaV) {
+      case (2, 12) => doExecuteMainFromTestSources
+      case (2, 13) => executeMainFromTestSourcesNotSupported
+    }
+  }
   .dependsOn(
     designer,
     extensionsApi,
@@ -861,6 +869,20 @@ lazy val benchmarks = (project in file("benchmarks"))
     flinkBaseUnboundedComponents,
     testUtils % Test
   )
+
+lazy val doExecuteMainFromTestSources = Seq(
+  (Test / runMain) := (Test / runMain)
+    .dependsOn(distribution / Docker / publishLocal)
+    .evaluated
+)
+
+lazy val executeMainFromTestSourcesNotSupported = Seq(
+  (Test / runMain) := {
+    streams.value.log.info(
+      "E2E benchmarks are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12"
+    )
+  }
+)
 
 lazy val kafkaUtils = (project in utils("kafka-utils"))
   .settings(commonSettings)
@@ -1109,24 +1131,26 @@ lazy val testUtils = (project in utils("test-utils"))
     name := "nussknacker-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.scalatest"                 %% "scalatest"               % scalaTestV,
-        "com.typesafe.scala-logging"    %% "scala-logging"           % scalaLoggingV,
-        "com.typesafe"                   % "config"                  % configV,
-        "org.typelevel"                 %% "cats-core"               % catsV,
-        "ch.qos.logback"                 % "logback-classic"         % logbackV,
-        "org.springframework"            % "spring-jcl"              % springV,
-        "commons-io"                     % "commons-io"              % flinkCommonsIOV,
-        "org.scala-lang.modules"        %% "scala-collection-compat" % scalaCollectionsCompatV,
-        "com.softwaremill.sttp.client3" %% "slf4j-backend"           % sttpV,
-        "org.typelevel"                 %% "cats-effect"             % catsEffectV,
-        "io.circe"                      %% "circe-parser"            % circeV,
-        "org.testcontainers"             % "testcontainers"          % testContainersJavaV,
-        "com.lihaoyi"                   %% "ujson"                   % ujsonV,
+        "com.github.pathikrit"          %% "better-files"              % betterFilesV,
+        "org.scalatest"                 %% "scalatest"                 % scalaTestV,
+        "com.typesafe.scala-logging"    %% "scala-logging"             % scalaLoggingV,
+        "com.typesafe"                   % "config"                    % configV,
+        "org.typelevel"                 %% "cats-core"                 % catsV,
+        "ch.qos.logback"                 % "logback-classic"           % logbackV,
+        "org.springframework"            % "spring-jcl"                % springV,
+        "commons-io"                     % "commons-io"                % flinkCommonsIOV,
+        "org.scala-lang.modules"        %% "scala-collection-compat"   % scalaCollectionsCompatV,
+        "com.softwaremill.sttp.client3" %% "slf4j-backend"             % sttpV,
+        "org.typelevel"                 %% "cats-effect"               % catsEffectV,
+        "io.circe"                      %% "circe-parser"              % circeV,
+        "org.testcontainers"             % "testcontainers"            % testContainersJavaV,
+        "com.dimafeng"                  %% "testcontainers-scala-core" % testContainersScalaV,
+        "com.lihaoyi"                   %% "ujson"                     % ujsonV,
         // This lib produces more descriptive errors during validation than everit
-        "com.networknt"                  % "json-schema-validator"   % "1.4.0",
-        "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
-        "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"      % tapirV,
-        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % openapiCirceYamlV,
+        "com.networknt"                  % "json-schema-validator"     % "1.4.0",
+        "com.softwaremill.sttp.tapir"   %% "tapir-core"                % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"        % tapirV,
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"        % openapiCirceYamlV,
       ) ++ restAssuredDependency(scalaVersion.value)
     }
   )

@@ -1,5 +1,0 @@
-# JSON schemas to load (JSON schema file name from the schemas folder per line)
-Customers.schema.json
-ProcessedTransactions.schema.json
-SmsesWithOffer.schema.json
-Transactions.schema.json
