@@ -9,9 +9,8 @@ import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
-import pl.touk.nussknacker.engine.schemedkafka.schema.AvroStringSettings.forceUsingStringForStringSchema
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -19,9 +18,9 @@ import java.time.chrono.ChronoZonedDateTime
 import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
 import java.util
 import java.util.UUID
+import scala.collection.compat.immutable.LazyList
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
-import scala.collection.compat.immutable.LazyList
 
 class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
 
@@ -85,7 +84,7 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       case (Schema.Type.STRING, uuid: String) if schema.getLogicalType == LogicalTypes.uuid() =>
         encodeUUIDorError(uuid)
       case (Schema.Type.STRING, str: String) =>
-        Valid(encodeString(str))
+        Valid(str)
       case (Schema.Type.STRING, str: CharSequence) =>
         Valid(str)
       case (Schema.Type.BYTES, str: CharSequence) =>
@@ -205,7 +204,7 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       .asInstanceOf[collection.Map[AnyRef, AnyRef]]
       .map {
         case (k: String, v) =>
-          encode(v, schema.getValueType, Some(k)).map(encodeString(k) -> _)
+          encode(v, schema.getValueType, Some(k)).map(k -> _)
         case (k: CharSequence, v) =>
           encode(v, schema.getValueType, Some(k.toString)).map(k -> _)
         case (k, v) =>
@@ -238,10 +237,6 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       )
 
   private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
-
-  private def encodeString(str: String): CharSequence = {
-    if (forceUsingStringForStringSchema) str else new Utf8(str)
-  }
 
 }
 
