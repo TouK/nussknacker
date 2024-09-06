@@ -1,0 +1,17 @@
+services:
+
+  bootstrap-setup:
+    environment:
+      BENCHMARK_FLINK_DEPLOY: false
+    volumes:
+      - ../../benchmarks/src/test/resources/e2e/benchmark-flink:/scenario-examples/benchmark-flink
+
+  designer:
+    environment:
+      KAFKA_AUTO_OFFSET_RESET: "earliest"
+
+  kafka:
+    deploy:
+      resources:
+        limits:
+          memory: 2048M

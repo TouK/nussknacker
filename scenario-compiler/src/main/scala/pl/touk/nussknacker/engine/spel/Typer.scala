@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
   UnresolvedReferenceError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.PartTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{
   IllegalProjectionError,
   IllegalSelectionError,
@@ -434,6 +434,7 @@ private[spel] class Typer(
       case e: PropertyOrFieldReference =>
         current.stackHead
           .map(extractProperty(e, _))
+          .map(fallbackToCheckMethodsIfPropertyNotExists)
           .getOrElse(invalid(NonReferenceError(e.toStringAST)))
           .map(toNodeResult)
       // TODO: what should be here?
@@ -729,6 +730,16 @@ private[spel] class Typer(
           .map(CollectedTypingResult.withIntermediateAndFinal(intermediateResultsCombination, _))
     }
   }
+
+  private def fallbackToCheckMethodsIfPropertyNotExists(typing: TypingR[TypingResult]): TypingR[TypingResult] =
+    typing.mapWritten(_.map {
+      case e: NoPropertyError =>
+        methodReferenceTyper.typeMethodReference(typer.MethodReference(e.typ, false, e.property, Nil)) match {
+          case Left(me: ArgumentTypeError) => me
+          case _                           => e
+        }
+      case e => e
+    })
 
   private def valid[T](value: T): TypingR[T] = Writer(List.empty[ExpressionParseError], value)
 

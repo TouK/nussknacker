@@ -1,3 +1,0 @@
-# Example messages below (message per line)
-# { "one": 1, "two": 2 }
-# { "one": 1, "three": 3 }

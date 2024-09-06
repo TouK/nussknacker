@@ -1,0 +1,202 @@
+{
+  "metaData" : {
+    "id" : "DetectLargeTransactions",
+    "additionalFields" : {
+      "description" : null,
+      "properties" : {
+        "parallelism" : "2"
+      },
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes" : [
+    {
+      "id" : "transactions",
+      "ref" : {
+        "typ" : "kafka",
+        "parameters" : [
+          {
+            "name" : "Topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'transactions'"
+            }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
+          }
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 180,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "nextFalse" : [
+        {
+          "nextFalse" : [
+          ],
+          "id" : "only large ones",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "#input.amount > 30"
+          },
+          "isDisabled" : null,
+          "additionalFields" : {
+            "description" : null,
+            "layoutData" : {
+              "x" : 0,
+              "y" : 360
+            }
+          },
+          "type" : "Filter"
+        },
+        {
+          "id" : "send for audit",
+          "ref" : {
+            "typ" : "kafka",
+            "parameters" : [
+              {
+                "name" : "Topic",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "'processedEvents'"
+                }
+              },
+              {
+                "name" : "Schema version",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "'latest'"
+                }
+              },
+              {
+                "name" : "Key",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : ""
+                }
+              },
+              {
+                "name" : "Raw editor",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "true"
+                }
+              },
+              {
+                "name" : "Value validation mode",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "'strict'"
+                }
+              },
+              {
+                "name" : "Value",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "#input"
+                }
+              }
+            ]
+          },
+          "endResult" : null,
+          "isDisabled" : null,
+          "additionalFields" : {
+            "description" : null,
+            "layoutData" : {
+              "x" : 0,
+              "y" : 540
+            }
+          },
+          "type" : "Sink"
+        }
+      ],
+      "id" : "last packet",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#input.isLast"
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 180,
+          "y" : 180
+        }
+      },
+      "type" : "Filter"
+    },
+    {
+      "id" : "send to alerts",
+      "ref" : {
+        "typ" : "kafka",
+        "parameters" : [
+          {
+            "name" : "Topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'alerts'"
+            }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
+          },
+          {
+            "name" : "Key",
+            "expression" : {
+              "language" : "spel",
+              "expression" : ""
+            }
+          },
+          {
+            "name" : "Raw editor",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "false"
+            }
+          },
+          {
+            "name" : "message",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "\"Last request\""
+            }
+          },
+          {
+            "name" : "eventDate",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#DATE.now.toEpochMilli"
+            }
+          }
+        ]
+      },
+      "endResult" : null,
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 360,
+          "y" : 360
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}
