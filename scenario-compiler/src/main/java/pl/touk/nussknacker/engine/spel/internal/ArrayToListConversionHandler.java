@@ -4,6 +4,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
 import org.springframework.lang.Nullable;
+import pl.touk.nussknacker.engine.spel.CastDefinition;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class ArrayToListConversionHandler {
     public static final class ConversionAwareMethodsDiscovery {
@@ -21,15 +23,18 @@ public class ArrayToListConversionHandler {
             if (type.isArray()) {
                 return List.class.getMethods();
             }
-            return type.getMethods();
+            return Stream.concat(Arrays.stream(type.getMethods()), Arrays.stream(CastDefinition.class.getMethods()))
+                .toArray(Method[]::new);
         }
     }
 
     public static final class ConversionAwareMethodInvoker {
 
-        public Object invoke(Method method, Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
+        public Object invoke(Method method, Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException, ClassNotFoundException {
             if (target != null && target.getClass().isArray() && method.getDeclaringClass().isAssignableFrom(List.class)) {
                 return method.invoke(ArrayToListConversionHandler.convert(target), arguments);
+            } else if (target != null && method.getDeclaringClass().isAssignableFrom(CastDefinition.class)) {
+                return Class.forName((String) arguments[0]).isAssignableFrom(target.getClass());
             } else {
                 return method.invoke(target, arguments);
             }

@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.spel.CastDefinition
 
 import java.lang.annotation.Annotation
 import java.lang.reflect._
@@ -28,10 +29,18 @@ object ClassDefinitionExtractor extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
+  private lazy val defaultMethods = classOf[CastDefinition].getMethods.toList
+    .flatMap(m => extractMethod(classOf[CastDefinition], m)(ClassExtractionSettings.Default))
+    .groupBy(_._1)
+    .mapValuesNow(_.map(_._2))
+
+  private lazy val filteredDefaultMethods =
+    filterHiddenParameterAndReturnType(defaultMethods)(ClassExtractionSettings.Default)
+
   def extract(clazz: Class[_])(implicit settings: ClassExtractionSettings): ClassDefinition =
     ClassDefinition(
       Typed(clazz),
-      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false),
+      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false) ++ filteredDefaultMethods,
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
     )
 

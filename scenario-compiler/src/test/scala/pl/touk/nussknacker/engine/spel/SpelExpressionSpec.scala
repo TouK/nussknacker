@@ -1353,6 +1353,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("casts") {
+    parse[Any]("{a: 11}.isInstanceOf('java.util.Map') ? true : false", ctx).validExpression
+      .evaluateSync[Any](ctx) shouldBe true
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
