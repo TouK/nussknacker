@@ -29,12 +29,67 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       : SecuredEndpoint[ProcessName, ScenarioActivityError, Legacy.ProcessActivity, Any] =
     baseNuApiEndpoint
       .summary("Scenario activity service")
-      .tag("Scenario")
+      .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity")
       .out(statusCode(Ok).and(jsonBody[Legacy.ProcessActivity].example(Examples.deprecatedScenarioActivity)))
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
+      .deprecated()
+
+  lazy val deprecatedAddCommentEndpoint: SecuredEndpoint[AddCommentRequest, ScenarioActivityError, Unit, Any] =
+    baseNuApiEndpoint
+      .summary("Add scenario comment service")
+      .tag("Activities")
+      .post
+      .in("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity" / "comments")
+      .in(stringBody)
+      .mapInTo[AddCommentRequest]
+      .out(statusCode(Ok))
+      .errorOut(scenarioNotFoundErrorOutput)
+      .withSecurity(auth)
+      .deprecated()
+
+  lazy val deprecatedEditCommentEndpoint
+      : SecuredEndpoint[DeprecatedEditCommentRequest, ScenarioActivityError, Unit, Any] =
+    baseNuApiEndpoint
+      .summary("Edit process comment service")
+      .tag("Activities")
+      .put
+      .in(
+        "processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[Long]("commentId")
+      )
+      .in(stringBody)
+      .mapInTo[DeprecatedEditCommentRequest]
+      .out(statusCode(Ok))
+      .errorOut(
+        oneOf[ScenarioActivityError](
+          oneOfVariantFromMatchType(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariantFromMatchType(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError))
+        )
+      )
+      .withSecurity(auth)
+      .deprecated()
+
+  lazy val deprecatedDeleteCommentEndpoint
+      : SecuredEndpoint[DeprecatedDeleteCommentRequest, ScenarioActivityError, Unit, Any] =
+    baseNuApiEndpoint
+      .summary("Delete process comment service")
+      .tag("Activities")
+      .delete
+      .in(
+        "processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[Long]("commentId")
+      )
+      .mapInTo[DeprecatedDeleteCommentRequest]
+      .out(statusCode(Ok))
+      .errorOut(
+        oneOf[ScenarioActivityError](
+          oneOfVariantFromMatchType(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariantFromMatchType(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError))
+        )
+      )
+      .withSecurity(auth)
+      .deprecated()
 
   lazy val scenarioActivitiesEndpoint: SecuredEndpoint[
     ProcessName,
@@ -46,8 +101,19 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .summary("Scenario activities service")
       .tag("Activities")
       .get
-      .in("processes" / path[ProcessName]("scenarioName") / "activities")
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities")
       .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities)))
+      .errorOut(scenarioNotFoundErrorOutput)
+      .withSecurity(auth)
+
+  lazy val scenarioActivitiesMetadataEndpoint
+      : SecuredEndpoint[ProcessName, ScenarioActivityError, ScenarioActivitiesMetadata, Any] =
+    baseNuApiEndpoint
+      .summary("Scenario activities metadata service")
+      .tag("Activities")
+      .get
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "metadata")
+      .out(statusCode(Ok).and(jsonBody[ScenarioActivitiesMetadata].example(ScenarioActivitiesMetadata.default)))
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
@@ -56,7 +122,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .summary("Add scenario comment service")
       .tag("Activities")
       .post
-      .in("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity" / "comments")
+      .in("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity" / "comment")
       .in(stringBody)
       .mapInTo[AddCommentRequest]
       .out(statusCode(Ok))
@@ -69,7 +135,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .tag("Activities")
       .put
       .in(
-        "processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[UUID]("scenarioActivityId")
+        "processes" / path[ProcessName]("scenarioName") / "activity" / "comment" / path[UUID]("scenarioActivityId")
       )
       .in(stringBody)
       .mapInTo[EditCommentRequest]
@@ -88,7 +154,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .tag("Activities")
       .delete
       .in(
-        "processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[UUID]("scenarioActivityId")
+        "processes" / path[ProcessName]("scenarioName") / "activity" / "comment" / path[UUID]("scenarioActivityId")
       )
       .mapInTo[DeleteCommentRequest]
       .out(statusCode(Ok))

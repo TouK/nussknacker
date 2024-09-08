@@ -249,7 +249,7 @@ class DbProcessActionRepository(
       userName = user.username,
       impersonatedByUserId = user.impersonatingUserId,
       impersonatedByUserName = user.impersonatingUserName,
-      lastModifiedByUserName = None,
+      lastModifiedByUserName = Some(user.username),
       createdAt = Timestamp.from(createdAt),
       scenarioVersion = processVersion.map(_.value).map(ScenarioVersion.apply),
       comment = comment.map(_.value),
@@ -348,7 +348,7 @@ class DbProcessActionRepository(
       actionState: Set[ProcessActionState],
       actionNamesOpt: Option[Set[ScenarioActionName]]
   ): DB[Map[ProcessId, ProcessAction]] = {
-    val activityTypes = actionNamesOpt.getOrElse(Set.empty).flatMap(activityType).toList
+    val activityTypes = actionNamesOpt.getOrElse(Set.empty).map(activityType).toList
 
     val queryWithActionNamesFilter = NonEmptyList.fromList(activityTypes) match {
       case Some(activityTypes) =>
@@ -423,7 +423,7 @@ class DbProcessActionRepository(
       state = activityEntity.state
         .getOrElse(throw new AssertionError(s"State not available for finished action: $activityEntity")),
       failureMessage = activityEntity.errorMessage,
-      commentId = None, // todo NU-1772 in progress - pass the entire comment?
+      commentId = activityEntity.comment.map(_ => activityEntity.id),
       comment = activityEntity.comment.map(_.value),
       buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )
@@ -472,25 +472,25 @@ class DbProcessActionRepository(
   }
 
   private def activityTypes(actionNames: Set[ScenarioActionName]): Set[ScenarioActivityType] = {
-    actionNames.flatMap(activityType)
+    actionNames.map(activityType)
   }
 
-  private def activityType(actionName: ScenarioActionName): Option[ScenarioActivityType] = {
+  private def activityType(actionName: ScenarioActionName): ScenarioActivityType = {
     actionName match {
       case ScenarioActionName.Deploy =>
-        Some(ScenarioActivityType.ScenarioDeployed)
+        ScenarioActivityType.ScenarioDeployed
       case ScenarioActionName.Cancel =>
-        Some(ScenarioActivityType.ScenarioCanceled)
+        ScenarioActivityType.ScenarioCanceled
       case ScenarioActionName.Archive =>
-        Some(ScenarioActivityType.ScenarioArchived)
+        ScenarioActivityType.ScenarioArchived
       case ScenarioActionName.UnArchive =>
-        Some(ScenarioActivityType.ScenarioUnarchived)
+        ScenarioActivityType.ScenarioUnarchived
       case ScenarioActionName.Pause =>
-        Some(ScenarioActivityType.ScenarioPaused)
+        ScenarioActivityType.ScenarioPaused
       case ScenarioActionName.Rename =>
-        Some(ScenarioActivityType.ScenarioNameChanged)
-      case _ =>
-        None
+        ScenarioActivityType.ScenarioNameChanged
+      case otherCustomAction =>
+        ScenarioActivityType.CustomAction(otherCustomAction.value)
     }
   }
 

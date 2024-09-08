@@ -142,12 +142,16 @@ class ManagementResourcesSpec
       ) ~> check {
         status shouldBe StatusCodes.OK
         // TODO: remove Deployment:, Stop: after adding custom icons
-        val expectedDeployComment = "Deployment: deployComment"
-        val expectedStopComment   = "Stop: cancelComment"
+        val expectedDeployComment                = "deployComment"
+        val expectedStopComment                  = "cancelComment"
+        val expectedDeployCommentInLegacyService = s"Deployment: $expectedDeployComment"
+        val expectedStopCommentInLegacyService   = s"Stop: $expectedStopComment"
         getActivity(ProcessTestData.sampleScenario.name) ~> check {
           val comments = responseAs[Dtos.Legacy.ProcessActivity].comments.sortBy(_.id)
-          comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
-
+          comments.map(_.content) shouldBe List(
+            expectedDeployCommentInLegacyService,
+            expectedStopCommentInLegacyService
+          )
           val firstCommentId :: secondCommentId :: Nil = comments.map(_.id)
 
           Get(s"/processes/${ProcessTestData.sampleScenario.name}/deployments") ~> withAllPermissions(

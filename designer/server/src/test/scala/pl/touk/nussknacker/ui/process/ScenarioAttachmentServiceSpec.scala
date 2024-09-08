@@ -60,14 +60,6 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
       implicit user: LoggedUser
   ): DB[ScenarioActivityId] = ???
 
-  override def editComment(scenarioActivityId: ScenarioActivityId, comment: String)(
-      implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
-
-  override def deleteComment(scenarioActivityId: ScenarioActivityId)(
-      implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
-
   override def addAttachment(attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd)(
       implicit user: LoggedUser
   ): DB[ScenarioActivityId] =
@@ -80,5 +72,21 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
   override def findActivity(processId: ProcessId): DB[ProcessActivity] = ???
 
   override def getActivityStats: DB[Map[String, Int]] = ???
+
+  override def editComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId, comment: String)(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+
+  override def editComment(scenarioId: ProcessId, commentId: Long, comment: String)(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+
+  override def deleteComment(scenarioId: ProcessId, commentId: Long)(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+
+  override def deleteComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId)(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
 
 }

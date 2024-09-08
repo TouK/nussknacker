@@ -26,11 +26,24 @@ trait ScenarioActivityRepository {
   )(implicit user: LoggedUser): DB[ScenarioActivityId]
 
   def editComment(
+      scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId,
       comment: String,
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
 
+  def editComment(
+      scenarioId: ProcessId,
+      commentId: Long,
+      comment: String,
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+
   def deleteComment(
+      scenarioId: ProcessId,
+      commentId: Long,
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+
+  def deleteComment(
+      scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
 

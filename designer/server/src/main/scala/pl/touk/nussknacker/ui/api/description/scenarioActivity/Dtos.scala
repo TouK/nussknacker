@@ -5,7 +5,7 @@ import derevo.derive
 import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{Enum, EnumEntry}
 import io.circe
-import io.circe.generic.extras.Configuration
+import io.circe.generic.extras
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import sttp.model.MediaType
 import sttp.tapir._
 import sttp.tapir.derevo.schema
+import sttp.tapir.generic.Configuration
 
 import java.io.InputStream
 import java.time.Instant
@@ -23,6 +24,74 @@ import java.util.UUID
 import scala.collection.immutable
 
 object Dtos {
+
+  @derive(encoder, decoder, schema)
+  final case class ScenarioActivitiesMetadata(
+      activities: List[ScenarioActivityMetadata],
+      actions: List[ScenarioActivityActionMetadata],
+  )
+
+  object ScenarioActivitiesMetadata {
+
+    val default: ScenarioActivitiesMetadata = ScenarioActivitiesMetadata(
+      activities = ScenarioActivityType.values.map(ScenarioActivityMetadata.from).toList,
+      actions = List(
+        ScenarioActivityActionMetadata(
+          id = "compare",
+          displayableName = "Compare",
+          icon = "/assets/states/error.svg"
+        ),
+        ScenarioActivityActionMetadata(
+          id = "delete_comment",
+          displayableName = "Delete",
+          icon = "/assets/states/error.svg"
+        ),
+        ScenarioActivityActionMetadata(
+          id = "edit_comment",
+          displayableName = "Edit",
+          icon = "/assets/states/error.svg"
+        ),
+        ScenarioActivityActionMetadata(
+          id = "download_attachment",
+          displayableName = "Download",
+          icon = "/assets/states/error.svg"
+        ),
+        ScenarioActivityActionMetadata(
+          id = "delete_attachment",
+          displayableName = "Delete",
+          icon = "/assets/states/error.svg"
+        ),
+      )
+    )
+
+  }
+
+  @derive(encoder, decoder, schema)
+  final case class ScenarioActivityActionMetadata(
+      id: String,
+      displayableName: String,
+      icon: String,
+  )
+
+  @derive(encoder, decoder, schema)
+  final case class ScenarioActivityMetadata(
+      `type`: String,
+      displayableName: String,
+      icon: String,
+      supportedActions: List[String],
+  )
+
+  object ScenarioActivityMetadata {
+
+    def from(scenarioActivityType: ScenarioActivityType): ScenarioActivityMetadata =
+      ScenarioActivityMetadata(
+        `type` = scenarioActivityType.entryName,
+        displayableName = scenarioActivityType.displayableName,
+        icon = scenarioActivityType.icon,
+        supportedActions = scenarioActivityType.supportedActions,
+      )
+
+  }
 
   sealed trait ScenarioActivityType extends EnumEntry with UpperSnakecase {
     def displayableName: String
@@ -52,6 +121,12 @@ object Dtos {
 
     case object ScenarioDeployed extends ScenarioActivityType {
       override def displayableName: String        = "Deployment"
+      override def icon: String                   = "/assets/states/error.svg"
+      override def supportedActions: List[String] = List.empty
+    }
+
+    case object ScenarioPaused extends ScenarioActivityType {
+      override def displayableName: String        = "Pause"
       override def icon: String                   = "/assets/states/error.svg"
       override def supportedActions: List[String] = List.empty
     }
@@ -122,6 +197,12 @@ object Dtos {
       override def supportedActions: List[String] = List("compare")
     }
 
+    case object CustomAction extends ScenarioActivityType {
+      override def displayableName: String        = "Custom action"
+      override def icon: String                   = "/assets/states/error.svg"
+      override def supportedActions: List[String] = List.empty
+    }
+
     override def values: immutable.IndexedSeq[ScenarioActivityType] = findValues
 
     implicit def scenarioActivityTypeSchema: Schema[ScenarioActivityType] =
@@ -163,7 +244,6 @@ object Dtos {
   @derive(encoder, decoder, schema)
   final case class ScenarioActivities(activities: List[ScenarioActivity])
 
-  @derive(schema)
   sealed trait ScenarioActivity {
     def id: UUID
     def user: String
@@ -173,10 +253,16 @@ object Dtos {
 
   object ScenarioActivity {
 
-    implicit val scenarioActivityCodec: circe.Codec[ScenarioActivity] = {
-      implicit val configuration: Configuration =
-        Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
+    implicit def scenarioActivityCodec: circe.Codec[ScenarioActivity] = {
+      implicit val configuration: extras.Configuration =
+        extras.Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
       deriveConfiguredCodec
+    }
+
+    implicit def scenarioActivitySchema: Schema[ScenarioActivity] = {
+      implicit val configuration: Configuration =
+        Configuration.default.withDiscriminator("type").withScreamingSnakeCaseDiscriminatorValues
+      Schema.derived[ScenarioActivity]
     }
 
     final case class ScenarioCreated(
@@ -332,365 +418,6 @@ object Dtos {
 
   }
 
-//
-//  @derive(schema)
-//  final case class ScenarioActivity(
-//      id: ScenarioActivityId,
-//      `type`: ScenarioActivityType,
-//      user: String,
-//      date: Instant,
-//      scenarioVersion: Option[ScenarioVersion],
-//      comment: Option[String],
-//      additionalFields: List[AdditionalField],
-//      overrideDisplayableName: Option[String] = None,
-//      overrideSupportedActions: Option[List[String]] = None
-//  )
-//
-//  object ScenarioActivity {
-//
-
-//
-//    @derive(encoder, decoder, schema)
-//    final case class AdditionalField(
-//        name: String,
-//        value: String
-//    )
-//
-//    def forScenarioCreated(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.ScenarioCreated,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List.empty,
-//    )
-//
-//    def forScenarioArchived(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.ScenarioArchived,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List.empty,
-//    )
-//
-//    def forScenarioUnarchived(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.ScenarioUnarchived,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List.empty,
-//    )
-//
-//    // Scenario deployments
-//
-//    def forScenarioDeployed(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.ScenarioDeployed,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List.empty,
-//    )
-//
-//    def forScenarioCanceled(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.ScenarioCanceled,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List.empty,
-//    )
-//
-//    // Scenario modifications
-//
-//    def forScenarioModified(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.ScenarioModified,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List.empty,
-//      overrideDisplayableName = Some(s"Version $scenarioVersion saved"),
-//    )
-//
-//    def forScenarioNameChanged(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        oldName: String,
-//        newName: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.ScenarioNameChanged,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("oldName", oldName),
-//        AdditionalField("newName", newName),
-//      )
-//    )
-//
-//    def forCommentAdded(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.CommentAdded,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List.empty,
-//    )
-//
-//    def forCommentAddedAndDeleted(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        deletedByUser: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.CommentAdded,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("deletedByUser", deletedByUser),
-//      ),
-//      overrideSupportedActions = Some(List.empty)
-//    )
-//
-//    def forAttachmentPresent(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        attachmentId: String,
-//        attachmentFilename: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.AttachmentAdded,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("attachmentId", attachmentId),
-//        AdditionalField("attachmentFilename", attachmentFilename),
-//      )
-//    )
-//
-//    def forAttachmentDeleted(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        deletedByUser: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.AttachmentAdded,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("deletedByUser", deletedByUser),
-//      ),
-//      overrideSupportedActions = Some(List.empty)
-//    )
-//
-//    def forChangedProcessingMode(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        from: String,
-//        to: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.ChangedProcessingMode,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("from", from),
-//        AdditionalField("to", to),
-//      )
-//    )
-//
-//    // Migration between environments
-//
-//    def forIncomingMigration(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        sourceEnvironment: String,
-//        sourceScenarioVersion: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.IncomingMigration,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("sourceEnvironment", sourceEnvironment),
-//        AdditionalField("sourceScenarioVersion", sourceScenarioVersion),
-//      )
-//    )
-//
-//    def forOutgoingMigration(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        destinationEnvironment: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.OutgoingMigration,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("destinationEnvironment", destinationEnvironment),
-//      )
-//    )
-//
-//    // Batch
-//
-//    def forPerformedSingleExecution(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        dateFinished: String,
-//        status: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.PerformedSingleExecution,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("dateFinished", dateFinished),
-//        AdditionalField("status", status),
-//      )
-//    )
-//
-//    def forPerformedScheduledExecution(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        dateFinished: String,
-//        params: String,
-//        status: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.PerformedScheduledExecution,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("params", params),
-//        AdditionalField("dateFinished", dateFinished),
-//        AdditionalField("status", status),
-//      )
-//    )
-//
-//    // Other/technical
-//
-//    def forAutomaticUpdate(
-//        id: ScenarioActivityId,
-//        user: String,
-//        date: Instant,
-//        scenarioVersion: Option[ScenarioVersion],
-//        comment: Option[String],
-//        dateFinished: String,
-//        changes: String,
-//        status: String,
-//    ): ScenarioActivity = ScenarioActivity(
-//      id = id,
-//      `type` = ScenarioActivityType.AutomaticUpdate,
-//      user = user,
-//      date = date,
-//      scenarioVersion = scenarioVersion,
-//      comment = comment,
-//      additionalFields = List(
-//        AdditionalField("changes", changes),
-//        AdditionalField("dateFinished", dateFinished),
-//        AdditionalField("status", status),
-//      )
-//    )
-//
-//  }
-
   @derive(encoder, decoder, schema)
   final case class ScenarioAttachments(attachments: List[Attachment])
 
@@ -714,13 +441,27 @@ object Dtos {
 
   final case class AddCommentRequest(scenarioName: ProcessName, versionId: VersionId, commentContent: String)
 
+  final case class DeprecatedEditCommentRequest(
+      scenarioName: ProcessName,
+      commentId: Long,
+      commentContent: String
+  )
+
   final case class EditCommentRequest(
       scenarioName: ProcessName,
       scenarioActivityId: UUID,
       commentContent: String
   )
 
-  final case class DeleteCommentRequest(scenarioName: ProcessName, scenarioActivityId: UUID)
+  final case class DeleteCommentRequest(
+      scenarioName: ProcessName,
+      scenarioActivityId: UUID
+  )
+
+  final case class DeprecatedDeleteCommentRequest(
+      scenarioName: ProcessName,
+      commentId: Long,
+  )
 
   final case class AddAttachmentRequest(
       scenarioName: ProcessName,
@@ -750,7 +491,7 @@ object Dtos {
 
     implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoComment](e =>
-        s"Unable to delete comment for activity with id: ${e.scenarioActivityId}"
+        s"Unable to delete comment with id: ${e.scenarioActivityId}"
       )
 
   }

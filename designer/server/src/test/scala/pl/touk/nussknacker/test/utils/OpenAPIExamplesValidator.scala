@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test.utils
 
-import com.networknt.schema.{InputFormat, JsonSchemaFactory, ValidationMessage}
+import com.networknt.schema.{InputFormat, JsonSchemaFactory, SchemaValidatorsConfig, ValidationMessage}
 import io.circe.yaml.{parser => YamlParser}
 import io.circe.{ACursor, Json}
 import org.scalactic.anyvals.NonEmptyList
@@ -57,10 +57,14 @@ class OpenAPIExamplesValidator private (schemaFactory: JsonSchemaFactory) {
       isRequest: Boolean,
       componentsSchemas: Map[String, Json]
   ): List[InvalidExample] = {
+    val config = new SchemaValidatorsConfig
+    config.setOpenAPI3StyleDiscriminators(true)
     for {
       schema <- mediaType.hcursor.downField("schema").focus.toList
       resolvedSchema = resolveSchemaReferences(schema, componentsSchemas)
-      jsonSchema     = schemaFactory.getSchema(resolvedSchema.spaces2)
+      jsonSchema = schemaFactory
+        .getSchema(resolvedSchema.spaces2.replace("#/components/schemas/", "#/definitions/"))
+        .withConfig(config)
       (exampleId, exampleValue) <- mediaType.hcursor.downField("example").focus.map("example" -> _).toList :::
         mediaType.hcursor.downField("examples").focusObjectFields.flatMap { case (exampleId, exampleRoot) =>
           exampleRoot.hcursor.downField("value").focus.toList.map(exampleId -> _)
