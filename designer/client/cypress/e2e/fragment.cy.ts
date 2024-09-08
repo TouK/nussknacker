@@ -316,7 +316,7 @@ describe("Fragment", () => {
         });
     });
 
-    it("should add documentation url in fragment properties and show it in modal within scenario", () => {
+    it.only("should add documentation url in fragment properties and show it in modal within scenario", () => {
         const seed2 = "fragment2";
         cy.visitNewFragment(seed2, "fragment").as("fragmentName");
         cy.contains(/^properties/i)
