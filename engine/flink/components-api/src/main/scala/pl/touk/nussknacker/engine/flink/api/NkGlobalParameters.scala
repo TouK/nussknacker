@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters.NkGlobalParametersToMapEncoder
 
+
 import _root_.java.util
 import scala.jdk.CollectionConverters._
 
