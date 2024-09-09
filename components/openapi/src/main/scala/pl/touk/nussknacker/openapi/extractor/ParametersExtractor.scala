@@ -43,7 +43,7 @@ object ParametersExtractor {
     ParameterWithBodyFlag(
       Parameter(
         ParameterName(propertyName),
-        swaggerType.typingResult,
+        SwaggerTyped.typingResult(swaggerType, resolveListOfObjects = false),
         editor = swaggerType.editorOpt,
         validators = List.empty,
         defaultValue = None,
