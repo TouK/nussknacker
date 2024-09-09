@@ -3,6 +3,7 @@
 1.18.0 (Not released yet)
 -------------------------
 * [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
+* [#6797](https://github.com/TouK/nussknacker/pull/6797) Performance optimization of Avro processing
 
 1.16.3 (8 August 2024)
 -------------------------

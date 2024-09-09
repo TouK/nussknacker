@@ -4,7 +4,6 @@ import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.{LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.schemedkafka.schema.AvroStringSettings
 
 import java.nio.ByteBuffer
 import java.time.{Instant, LocalDate, LocalTime}
@@ -39,7 +38,7 @@ class AvroSchemaTypeDefinitionExtractor(recordUnderlyingType: TypedClass) {
         Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType)))
       case Schema.Type.MAP =>
         Typed.genericTypeClass[java.util.Map[_, _]](
-          List(AvroStringSettings.stringTypingResult, typeDefinition(schema.getValueType))
+          List(Typed[String], typeDefinition(schema.getValueType))
         )
       case Schema.Type.UNION =>
         val childTypeDefinitions = schema.getTypes.asScala.map(sch => typeDefinition(sch)).toSet
@@ -53,10 +52,9 @@ class AvroSchemaTypeDefinitionExtractor(recordUnderlyingType: TypedClass) {
           if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         Typed[java.math.BigDecimal]
       case Schema.Type.STRING =>
-        val baseType = AvroStringSettings.stringTypingResult
         Option(schema.getProp(AvroSchemaTypeDefinitionExtractor.dictIdProperty))
-          .map(Typed.taggedDictValue(baseType, _))
-          .getOrElse(baseType)
+          .map(Typed.taggedDictValue(Typed.typedClass[String], _))
+          .getOrElse(Typed.typedClass[String])
       case Schema.Type.BYTES =>
         Typed[ByteBuffer]
       case Schema.Type.FIXED =>

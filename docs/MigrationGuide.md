@@ -65,6 +65,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `WithConfig` from `test-utils` modules behaviour changes: now it only parses given config, 
     without resolving reference configs, system env variables etc.
 
+### Configuration changes
+* [#6635](https://github.com/TouK/nussknacker/pull/6635) `globalParameters.useTypingResultTypeInformation` parameter was removed.
+  Now we always use TypingResultTypeInformation
+* [#6797](https://github.com/TouK/nussknacker/pull/6797) `AVRO_USE_STRING_FOR_STRING_TYPE` environment variable
+  is not supported anymore - we always use String for String type in Avro. If you didn't set up this
+  environment variable, no action is needed
+
+
 ## In version 1.16.3
 
 ### Code API changes
