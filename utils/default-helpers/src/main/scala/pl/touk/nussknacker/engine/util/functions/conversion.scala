@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util.functions
 
 import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
+import pl.touk.nussknacker.engine.util.functions.ConversionUtils.{stringToBigInteger, stringToBoolean}
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
 
 import scala.util.Try
@@ -38,7 +39,10 @@ trait ConversionUtils extends HideToString {
 
   @Documentation(description = "Convert any value to Boolean or throw exception in case of failure")
   def toBoolean(@ParamName("value") value: Any): java.lang.Boolean = value match {
-    case v: String            => java.lang.Boolean.valueOf(v)
+    case v: String =>
+      stringToBoolean(v).getOrElse {
+        throw new IllegalArgumentException(s"Cannot convert: $value to Boolean")
+      }
     case v: java.lang.Boolean => v
     case null                 => null
     case _                    => throw new IllegalArgumentException(s"Cannot convert: $value to Boolean")
@@ -46,7 +50,7 @@ trait ConversionUtils extends HideToString {
 
   @Documentation(description = "Convert any value to Boolean or throw exception in case of failure")
   def toBooleanOrNull(@ParamName("value") value: Any): java.lang.Boolean = value match {
-    case v: String            => java.lang.Boolean.valueOf(v)
+    case v: String            => stringToBoolean(v).orNull
     case v: java.lang.Boolean => v
     case _                    => null
   }
@@ -86,7 +90,7 @@ trait ConversionUtils extends HideToString {
     case v: String => java.lang.Double.valueOf(numeric.toNumber(v).doubleValue())
     case v: Number => v.doubleValue()
     case null      => null
-    case _         => throw new IllegalArgumentException(s"Cannot convert: $value to Long")
+    case _         => throw new IllegalArgumentException(s"Cannot convert: $value to Double")
   }
 
   @Documentation(description = "Convert any value to Double or null in case of failure")
@@ -98,7 +102,7 @@ trait ConversionUtils extends HideToString {
 
   @Documentation(description = "Convert any value to BigInteger or throw exception in case of failure")
   def toBigInteger(@ParamName("value") value: Any): java.math.BigInteger = value match {
-    case v: String               => new java.math.BigInteger(v)
+    case v: String               => stringToBigInteger(v)
     case v: java.math.BigInteger => v
     case v: java.math.BigDecimal => v.toBigInteger
     case v: Number               => java.math.BigInteger.valueOf(v.longValue())
@@ -108,7 +112,7 @@ trait ConversionUtils extends HideToString {
 
   @Documentation(description = "Convert any value to BigInteger or null in case of failure")
   def toBigIntegerOrNull(@ParamName("value") value: Any): java.math.BigInteger = value match {
-    case v: String               => Try(new java.math.BigInteger(v)).getOrElse(null)
+    case v: String               => Try(stringToBigInteger(v)).getOrElse(null)
     case v: java.math.BigInteger => v
     case v: java.math.BigDecimal => v.toBigInteger
     case v: Number               => java.math.BigInteger.valueOf(v.longValue())
@@ -133,5 +137,24 @@ trait ConversionUtils extends HideToString {
     case v: Number               => Try(new java.math.BigDecimal(v.toString)).getOrElse(null)
     case _                       => null
   }
+
+}
+
+object ConversionUtils {
+
+  private def stringToBigInteger(value: String): java.math.BigInteger =
+    numeric.toNumber(value) match {
+      case n: java.math.BigInteger => n
+      case n                       => java.math.BigInteger.valueOf(n.longValue())
+    }
+
+  private def stringToBoolean(value: String): Option[java.lang.Boolean] =
+    if ("true".equalsIgnoreCase(value)) {
+      Some(true)
+    } else if ("false".equalsIgnoreCase(value)) {
+      Some(false)
+    } else {
+      None
+    }
 
 }

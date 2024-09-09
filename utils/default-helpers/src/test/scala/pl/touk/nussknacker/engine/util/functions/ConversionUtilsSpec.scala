@@ -21,13 +21,12 @@ class ConversionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       ("#CONV.toString('a')", "a"),
       ("#CONV.toString(null)", null),
       ("#CONV.toString(true)", "true"),
-      ("#CONV.toBoolean('a')", false),
       ("#CONV.toBoolean(null)", null),
       ("#CONV.toBoolean(true)", true),
       ("#CONV.toBoolean('true')", true),
       ("#CONV.toBooleanOrNull(1)", null),
       ("#CONV.toBooleanOrNull(1.1)", null),
-      ("#CONV.toBooleanOrNull('a')", false),
+      ("#CONV.toBooleanOrNull('a')", null),
       ("#CONV.toBooleanOrNull(null)", null),
       ("#CONV.toBooleanOrNull(true)", true),
       ("#CONV.toBooleanOrNull('true')", true),
@@ -114,6 +113,7 @@ class ConversionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
   test("should throw exception if a value cannot be converted to primitive") {
     Table(
       "expression",
+      "#CONV.toBoolean('a')",
       "#CONV.toBoolean(1)",
       "#CONV.toBoolean(1.1)",
       "#CONV.toInteger('a')",
