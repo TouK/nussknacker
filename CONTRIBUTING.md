@@ -130,8 +130,7 @@ Changing the version of the Scala is done by setting `NUSSKNACKER_SCALA_VERSION`
 
 #### Running using integration environment
 
-- Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/old-quickstart)
-- Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
+- Run `RunEnvForLocalDesigner` main class (or `RunEnvForLocalDesigner` Intellij run configuration)
 
 #### Running Designer with model classes on the same classes as designer
 
