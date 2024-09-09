@@ -64,27 +64,28 @@ export interface AnyValueParameterVariant extends GenericParameterVariant, Fragm
     valueEditor: null;
 }
 
-export type StringOrBooleanParameterVariant =
-    | FixedListParameterVariant
-    | AnyValueWithSuggestionsParameterVariant
-    | AnyValueParameterVariant;
+export type PermittedTypeParameterVariant = FixedListParameterVariant | AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant;
 
-export type FragmentInputParameter = StringOrBooleanParameterVariant | DefaultParameterVariant;
+export type FragmentInputParameter = PermittedTypeParameterVariant | DefaultParameterVariant;
 
-export function isFixedListParameter(item: StringOrBooleanParameterVariant): item is FixedListParameterVariant {
+export function isFixedListParameter(item: PermittedTypeParameterVariant): item is FixedListParameterVariant {
     return item.valueEditor?.allowOtherValue === false;
 }
 
-export function isAnyValueWithSuggestionsParameter(item: StringOrBooleanParameterVariant): item is AnyValueWithSuggestionsParameterVariant {
+export function isAnyValueWithSuggestionsParameter(item: PermittedTypeParameterVariant): item is AnyValueWithSuggestionsParameterVariant {
     return item?.valueEditor?.allowOtherValue === true;
 }
 
-export function isAnyValueParameter(item: StringOrBooleanParameterVariant): item is AnyValueParameterVariant {
+export function isAnyValueParameter(item: PermittedTypeParameterVariant): item is AnyValueParameterVariant {
     return item.valueEditor === null;
 }
 
-export function isStringOrBooleanVariant(item: FragmentInputParameter): item is StringOrBooleanParameterVariant {
-    return item.typ.refClazzName.includes("String") || item.typ.refClazzName.includes("Boolean");
+export function isPermittedTypeVariant(item: FragmentInputParameter): item is PermittedTypeParameterVariant {
+    return [
+        item.typ.refClazzName.includes("String"),
+        item.typ.refClazzName.includes("Boolean"),
+        item.typ.refClazzName.includes("Long"),
+    ].includes(true);
 }
 
 export type FieldName = `$param.${string}.$${string}`;
