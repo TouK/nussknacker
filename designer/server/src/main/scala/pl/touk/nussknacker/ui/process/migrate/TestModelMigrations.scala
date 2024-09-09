@@ -82,7 +82,7 @@ class TestModelMigrations(
         scenarioWithDetails.name,
         scenarioWithDetails.processingType,
         scenarioWithDetails.isFragment,
-        scenarioWithDetails.labels.map(_.map(ScenarioLabel.apply)).getOrElse(List.empty),
+        scenarioWithDetails.labels.map(ScenarioLabel.apply),
         scenarioGraph,
         scenarioWithDetails.validationResultUnsafe
       )

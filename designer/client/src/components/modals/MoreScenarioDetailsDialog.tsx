@@ -54,6 +54,7 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
     }, [scenario.processingMode]);
 
     const displayStatus = !scenario.isArchived && !scenario.isFragment;
+    const displayLabels = scenario.labels.length !== 0;
 
     return (
         <WindowContent
@@ -94,10 +95,12 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.engine", "Engine")}</ItemLabelStyled>
                                 <Typography variant={"caption"}>{scenario.engineSetupName}</Typography>
                             </ItemWrapperStyled>
-                            <ItemWrapperStyled>
-                                <ItemLabelStyled>{i18next.t("scenarioDetails.label.labels", "Labels")}</ItemLabelStyled>
-                                <Typography variant={"caption"}>{(scenario.labels || []).join(", ")}</Typography>
-                            </ItemWrapperStyled>
+                            {displayLabels && (
+                                <ItemWrapperStyled>
+                                    <ItemLabelStyled>{i18next.t("scenarioDetails.label.labels", "Labels")}</ItemLabelStyled>
+                                    <Typography variant={"caption"}>{scenario.labels.join(", ")}</Typography>
+                                </ItemWrapperStyled>
+                            )}
                             <ItemWrapperStyled>
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.created", "Created")}</ItemLabelStyled>
                                 <Typography variant={"caption"}>{moment(scenario.createdAt).format(DATE_FORMAT)}</Typography>

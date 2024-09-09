@@ -20,12 +20,11 @@ export type RenameProcessAction = {
 export type EditScenarioLabels = {
     type: "EDIT_LABELS";
     labels: string[];
-}
-
+};
 
 export function editScenarioLabels(scenarioLabels: string[]) {
     return (dispatch) => {
-        dispatch({type: "EDIT_LABELS", labels: scenarioLabels.sort((a, b) => a.localeCompare(b))})
+        dispatch({ type: "EDIT_LABELS", labels: scenarioLabels });
     };
 }
 

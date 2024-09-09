@@ -33,8 +33,12 @@ class ProcessUtils {
             return true;
         }
 
+        const labelsFor = (scenario: Scenario): string[] => {
+            return scenario.labels ? scenario.labels.slice().sort((a, b) => a.localeCompare(b)) : [];
+        };
+
         const isGraphUpdated = isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
-        const areScenarioLabelsUpdated = isEqual(scenario.labels, savedProcessState.labels);
+        const areScenarioLabelsUpdated = isEqual(labelsFor(scenario), labelsFor(savedProcessState));
 
         return !savedProcessState || (isGraphUpdated && areScenarioLabelsUpdated);
     };

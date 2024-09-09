@@ -8,7 +8,7 @@ object ScenarioDetailsOps {
   implicit class ScenarioWithDetailsOps(val details: ScenarioWithDetails) extends AnyVal {
 
     def scenarioLabels: List[ScenarioLabel] = {
-      details.labels.map(_.map(ScenarioLabel.apply)).getOrElse(List.empty)
+      details.labels.map(ScenarioLabel.apply)
     }
 
   }

@@ -138,7 +138,7 @@ object TestProcessUtil {
       scenarioGraph: ScenarioGraph,
       name: ProcessName = ProcessTestData.sampleProcessName,
       isFragment: Boolean = false,
-      labels: Option[List[String]] = None,
+      labels: List[String] = List.empty,
       validationResult: ValidationResult = ValidationResult.success
   ): ScenarioWithDetailsForMigrations = {
     ScenarioWithDetailsForMigrations(

@@ -6,6 +6,7 @@ import {
     Box,
     Chip,
     createFilterOptions,
+    Link,
     styled,
     SxProps,
     TextField,
@@ -21,19 +22,17 @@ import { editScenarioLabels } from "../../../actions/nk";
 import { debounce } from "lodash";
 import { ScenarioLabelValidationError } from "../../Labels/types";
 
-interface Props {
-    readOnly: boolean;
+interface AddLabelProps {
+    onClick: () => void;
 }
 
-export type LabelsEdit = React.ComponentType<Props> | ForwardRefExoticComponent<Props>;
-
-const AddLabel = ({ onClick, theme: Theme }) => {
+const AddLabel = ({ onClick }: AddLabelProps) => {
     return (
         <Typography
-            component={Box}
+            component={Link}
             variant={"caption"}
             sx={(theme) => ({ cursor: "pointer", textDecoration: "none", color: theme.palette.text.primary })}
-            onClick={(e) => onClick()}
+            onClick={onClick}
         >
             {i18next.t("panels.scenarioDetails.labels.addLabelTitle", "+ Add label")}
         </Typography>
@@ -60,7 +59,7 @@ const StyledAutocomplete = styled(Autocomplete)<{ isEdited: boolean }>(({ isEdit
     },
 }));
 
-const filter = createFilterOptions();
+const filter = createFilterOptions<string | LabelOption>();
 
 type LabelOption = {
     title: string;
@@ -80,16 +79,27 @@ function toLabelValue(option: LabelOption): string {
 }
 
 function formatErrors(errors: ScenarioLabelValidationError[]): string {
-    return errors.map((error) => `Incorrect value '${error.label}': ${error.messages.join(",")}`).join("\n");
+    return errors
+        .map(
+            (error) =>
+                `${i18next.t("panels.scenarioDetails.labels.incorrectLabel", "Incorrect value")} '${error.label}': ${error.messages.join(
+                    ",",
+                )}`,
+        )
+        .join("\n");
 }
 
-export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
-    const scenarioLabels: LabelOption[] = useSelector(getScenarioLabels).map(toLabelOption);
-    const initialLabelErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
-        scenarioLabels.some((label) => toLabelValue(label) === error.label),
+interface Props {
+    readOnly: boolean;
+}
+
+export const ScenarioLabels = ({ readOnly }: Props) => {
+    const scenarioLabelOptions: LabelOption[] = useSelector(getScenarioLabels).map(toLabelOption);
+    const initialScenarioLabelOptionsErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
+        scenarioLabelOptions.some((option) => toLabelValue(option) === error.label),
     );
-    const [labelsErrors, setLabelsErrors] = useState<ScenarioLabelValidationError[]>(initialLabelErrors);
-    const [showEditor, setShowEditor] = useState(scenarioLabels.length !== 0);
+    const [labelOptionsErrors, setLabelOptionsErrors] = useState<ScenarioLabelValidationError[]>(initialScenarioLabelOptionsErrors);
+    const [showEditor, setShowEditor] = useState(scenarioLabelOptions.length !== 0);
 
     const theme = useTheme();
     const { menuOption } = selectStyled(theme);
@@ -104,22 +114,26 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
     const [inputTyping, setInputTyping] = useState(false);
     const [inputErrors, setInputErrors] = useState<ScenarioLabelValidationError[]>([]);
 
-    const handleAddLabelClick = () => {
+    const handleAddLabelClick = (): void => {
         setShowEditor(true);
         setIsEdited(true);
     };
 
-    const inputHelperText: () => string = () => {
+    const isInputInSelectedOptions = (inputValue: string): boolean => {
+        return scenarioLabelOptions.some((option) => inputValue === toLabelValue(option));
+    };
+
+    const inputHelperText = useMemo(() => {
         if (inputErrors.length !== 0) {
-            return formatErrors(inputErrors.concat(labelsErrors));
+            return formatErrors(inputErrors.concat(labelOptionsErrors));
         }
 
-        if (!isOpen && labelsErrors.length !== 0) {
-            return formatErrors(labelsErrors);
+        if (!isOpen && labelOptionsErrors.length !== 0) {
+            return formatErrors(labelOptionsErrors);
         }
 
         return undefined;
-    };
+    }, [inputErrors, labelOptionsErrors, isOpen]);
 
     const validateInput = useMemo(() => {
         return debounce(async (newInput: string) => {
@@ -135,52 +149,61 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
         }, 500);
     }, []);
 
-    const validateLabels = useMemo(() => {
+    const validateSelectedOptions = useMemo(() => {
         return debounce(async (labels: LabelOption[]) => {
             const values = labels.map(toLabelValue);
             const response = await HttpService.validateScenarioLabels(values);
 
             if (response.status === 200) {
                 const validationError = response.data.validationErrors;
-                setLabelsErrors(validationError);
+                setLabelOptionsErrors(validationError);
             }
         }, 500);
     }, []);
 
-    const fetchAvailableLabels = useCallback(async () => {
-        setIsFetching(true);
-        const { data } = await HttpService.fetchScenarioLabels();
-        setIsFetching(false);
-        return data.labels.map(toLabelOption);
+    const fetchAvailableLabelOptions = useCallback(async () => {
+        try {
+            setIsFetching(true);
+            const { data } = await HttpService.fetchScenarioLabels();
+            return data.labels.map(toLabelOption);
+        } finally {
+            setIsFetching(false);
+        }
     }, []);
 
-    const setLabels = (labels: LabelOption[]) => {
-        const sortedLabels = labels.map(toLabelValue).sort((a, b) => a.localeCompare(b));
-        dispatch(editScenarioLabels(sortedLabels));
+    const setLabels = (options: LabelOption[]) => {
+        const newLabels = options.map(toLabelValue);
+        dispatch(editScenarioLabels(newLabels));
     };
 
     useEffect(() => {
-        validateLabels(scenarioLabels);
+        validateSelectedOptions(scenarioLabelOptions);
+    }, [scenarioLabelOptions, validateSelectedOptions]);
 
-        if (!isEdited && scenarioLabels.length === 0) {
+    useEffect(() => {
+        // show add label component if user clears all labels and looses focus
+        if (!isEdited && scenarioLabelOptions.length === 0) {
             setShowEditor(false);
         }
+    }, [scenarioLabelOptions, isEdited]);
 
-        if (!showEditor && scenarioLabels.length !== 0) {
+    useEffect(() => {
+        // show editor if user use edit options (undo, redo) and editor is hidden
+        if (!showEditor && scenarioLabelOptions.length !== 0) {
             setShowEditor(true);
         }
-    }, [scenarioLabels]);
+    }, [scenarioLabelOptions, showEditor]);
 
     return (
         <>
             {!showEditor ? (
-                <AddLabel onClick={handleAddLabelClick} theme={theme} />
+                <AddLabel onClick={handleAddLabelClick} />
             ) : (
                 <StyledAutocomplete
                     isEdited={isEdited}
                     id="scenario-labels"
                     disabled={readOnly}
-                    disableClearable={!isEdited}
+                    disableClearable={false}
                     disableCloseOnSelect={false}
                     freeSolo
                     fullWidth
@@ -189,11 +212,16 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
 
                         const { inputValue } = params;
 
-                        const isExisting = options.some((option) => (typeof option === "string" ? false : inputValue === option.value));
-                        if (inputValue !== "" && !isExisting && !inputTyping && inputErrors.length === 0) {
+                        const isInProposedOptions = filtered.some((option) =>
+                            typeof option === "string" ? false : inputValue === toLabelValue(option),
+                        );
+                        const isInSelectedOptions = isInputInSelectedOptions(inputValue);
+
+                        if (inputValue !== "" && !isInProposedOptions && !isInSelectedOptions && !inputTyping && inputErrors.length === 0) {
                             filtered.push({
                                 inputValue,
                                 title: `${i18next.t("panels.scenarioDetails.labels.addNewLabel", "Add label")} "${inputValue}"`,
+                                value: inputValue,
                             });
                         }
 
@@ -215,14 +243,18 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                     inputValue={input}
                     isOptionEqualToValue={(v1: LabelOption, v2: LabelOption) => v1.value === v2.value}
                     loading={isFetching || inputTyping}
-                    loadingText={inputTyping ? "Typing..." : "Loading..."}
+                    loadingText={
+                        inputTyping
+                            ? i18next.t("panels.scenarioDetails.labels.labelTyping", "Typing...")
+                            : i18next.t("panels.scenarioDetails.labels.labelsLoading", "Loading...")
+                    }
                     multiple
-                    noOptionsText={i18next.t("panels.scenarioDetails.noAvailableScenarioLabels", "No labels")}
+                    noOptionsText={i18next.t("panels.scenarioDetails.labels.noAvailableLabels", "No labels")}
                     onBlur={() => {
                         setIsEdited(false);
                         setInput("");
                         setInputErrors([]);
-                        if (scenarioLabels.length == 0) {
+                        if (scenarioLabelOptions.length === 0) {
                             setShowEditor(false);
                         }
                     }}
@@ -230,7 +262,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                         const labelOptions = values.map((value) => {
                             if (typeof value === "string") {
                                 return toLabelOption(value);
-                            } else if (value && value.inputValue) {
+                            } else if (value.inputValue) {
                                 return toLabelOption(value.inputValue);
                             } else {
                                 return value;
@@ -253,8 +285,8 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                         setInput(newInputValue);
                     }}
                     onOpen={async () => {
-                        const fetchedAvailableLabels = await fetchAvailableLabels();
-                        setOptions(fetchedAvailableLabels);
+                        const fetchedOptions = await fetchAvailableLabelOptions();
+                        setOptions(fetchedOptions);
                         setIsOpen(true);
                     }}
                     open={isOpen}
@@ -266,12 +298,15 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                                 {...params}
                                 variant="outlined"
                                 autoFocus={isEdited}
-                                error={labelsErrors.length !== 0 || inputErrors.length !== 0}
-                                helperText={inputHelperText()}
+                                error={labelOptionsErrors.length !== 0 || inputErrors.length !== 0}
+                                helperText={inputHelperText}
                                 inputProps={{
                                     ...params.inputProps,
                                     onKeyDown: (event) => {
-                                        if (event.key === "Enter" && (inputErrors.length !== 0 || inputTyping)) {
+                                        if (
+                                            event.key === "Enter" &&
+                                            (inputErrors.length !== 0 || inputTyping || isInputInSelectedOptions(input))
+                                        ) {
                                             event.stopPropagation();
                                         }
                                     },
@@ -292,7 +327,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                             .map((option: LabelOption, index: number) => {
                                 const { key, ...tagProps } = getTagProps({ index });
                                 const props = isEdited ? { ...tagProps } : {};
-                                const labelError = labelsErrors.find((error) => error.label == toLabelValue(option));
+                                const labelError = labelOptionsErrors.find((error) => error.label === toLabelValue(option));
                                 return (
                                     <Chip
                                         key={key}
@@ -307,7 +342,7 @@ export const ScenarioLabels: LabelsEdit = ({ readOnly }: Props) => {
                             });
                     }}
                     size="small"
-                    value={scenarioLabels}
+                    value={scenarioLabelOptions}
                 />
             )}
         </>
