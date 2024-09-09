@@ -23,6 +23,9 @@
 * [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`.
 * [#6778](https://github.com/TouK/nussknacker/pull/6778) SpeL: check for methods if a property for a given name does not exist.
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
+* [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside 
+  indexer for Maps and Lists (for example `{1,2,3}[#otherList.remove(1) == null ? 0 : 0]`). This allowed executing 
+  some types of unallowed expressions.
 
 ## 1.17
 
