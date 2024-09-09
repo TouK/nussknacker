@@ -1,16 +1,7 @@
 package pl.touk.nussknacker.ui.process.newactivity
 
 import cats.data.EitherT
-import pl.touk.nussknacker.engine.api.deployment.{
-  ScenarioActivity,
-  ScenarioActivityId,
-  ScenarioComment,
-  ScenarioId,
-  ScenarioVersion,
-  User,
-  UserId,
-  UserName
-}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.Comment
@@ -78,7 +69,7 @@ class ActivityService(
             ScenarioActivity.ScenarioDeployed(
               scenarioId = ScenarioId(scenarioId.value),
               scenarioActivityId = ScenarioActivityId.random,
-              user = User(
+              user = ScenarioUser(
                 id = UserId(loggedUser.id),
                 name = UserName(loggedUser.username),
                 impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),

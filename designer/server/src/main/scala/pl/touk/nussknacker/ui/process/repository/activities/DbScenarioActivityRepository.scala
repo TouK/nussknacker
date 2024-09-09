@@ -297,7 +297,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
   }
 
   private def toUser(loggedUser: LoggedUser) = {
-    User(
+    ScenarioUser(
       id = UserId(loggedUser.id),
       name = UserName(loggedUser.username),
       impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
@@ -581,8 +581,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     }
   }
 
-  private def userFromEntity(entity: ScenarioActivityEntityData): User = {
-    User(
+  private def userFromEntity(entity: ScenarioActivityEntityData): ScenarioUser = {
+    ScenarioUser(
       id = UserId(entity.userId),
       name = UserName(entity.userName),
       impersonatedByUserId = entity.impersonatedByUserId.map(UserId.apply),

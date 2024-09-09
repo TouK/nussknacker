@@ -15,7 +15,7 @@ object ScenarioActivityId {
   def random: ScenarioActivityId = ScenarioActivityId(UUID.randomUUID())
 }
 
-final case class User(
+final case class ScenarioUser(
     id: UserId,
     name: UserName,
     impersonatedByUserId: Option[UserId],
@@ -64,7 +64,7 @@ final case class Environment(name: String) extends AnyVal
 sealed trait ScenarioActivity {
   def scenarioId: ScenarioId
   def scenarioActivityId: ScenarioActivityId
-  def user: User
+  def user: ScenarioUser
   def date: Instant
   def scenarioVersion: Option[ScenarioVersion]
 }
@@ -74,7 +74,7 @@ object ScenarioActivity {
   final case class ScenarioCreated(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
   ) extends ScenarioActivity
@@ -82,7 +82,7 @@ object ScenarioActivity {
   final case class ScenarioArchived(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
   ) extends ScenarioActivity
@@ -90,7 +90,7 @@ object ScenarioActivity {
   final case class ScenarioUnarchived(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
   ) extends ScenarioActivity
@@ -100,7 +100,7 @@ object ScenarioActivity {
   final case class ScenarioDeployed(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       comment: ScenarioComment,
@@ -109,7 +109,7 @@ object ScenarioActivity {
   final case class ScenarioPaused(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       comment: ScenarioComment,
@@ -118,7 +118,7 @@ object ScenarioActivity {
   final case class ScenarioCanceled(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       comment: ScenarioComment,
@@ -129,7 +129,7 @@ object ScenarioActivity {
   final case class ScenarioModified(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       comment: ScenarioComment,
@@ -138,7 +138,7 @@ object ScenarioActivity {
   final case class ScenarioNameChanged(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       oldName: String,
@@ -148,7 +148,7 @@ object ScenarioActivity {
   final case class CommentAdded(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       comment: ScenarioComment,
@@ -157,7 +157,7 @@ object ScenarioActivity {
   final case class AttachmentAdded(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       attachment: ScenarioAttachment,
@@ -166,7 +166,7 @@ object ScenarioActivity {
   final case class ChangedProcessingMode(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       from: ProcessingMode,
@@ -178,7 +178,7 @@ object ScenarioActivity {
   final case class IncomingMigration(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       sourceEnvironment: Environment,
@@ -188,7 +188,7 @@ object ScenarioActivity {
   final case class OutgoingMigration(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       comment: ScenarioComment,
@@ -200,7 +200,7 @@ object ScenarioActivity {
   final case class PerformedSingleExecution(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       dateFinished: Instant,
@@ -210,7 +210,7 @@ object ScenarioActivity {
   final case class PerformedScheduledExecution(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       dateFinished: Instant,
@@ -222,7 +222,7 @@ object ScenarioActivity {
   final case class AutomaticUpdate(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       dateFinished: Instant,
@@ -233,7 +233,7 @@ object ScenarioActivity {
   final case class CustomAction(
       scenarioId: ScenarioId,
       scenarioActivityId: ScenarioActivityId,
-      user: User,
+      user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
       actionName: String,

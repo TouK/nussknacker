@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
-import java.time.{Clock, Instant}
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
@@ -161,7 +161,7 @@ class DBProcessRepository(
             ScenarioActivity.ScenarioModified(
               scenarioId = ScenarioId(scenarioId.value),
               scenarioActivityId = ScenarioActivityId.random,
-              user = User(
+              user = ScenarioUser(
                 id = UserId(loggedUser.id),
                 name = UserName(loggedUser.username),
                 impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
@@ -293,7 +293,7 @@ class DBProcessRepository(
             ScenarioActivity.ScenarioNameChanged(
               scenarioId = ScenarioId(process.id.value),
               scenarioActivityId = ScenarioActivityId.random,
-              user = User(
+              user = ScenarioUser(
                 id = UserId(loggedUser.id),
                 name = UserName(loggedUser.username),
                 impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
