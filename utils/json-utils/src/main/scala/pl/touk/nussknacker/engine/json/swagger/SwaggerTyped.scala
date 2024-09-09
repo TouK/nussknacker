@@ -173,44 +173,51 @@ object SwaggerTyped {
     Option(schema.getType)
       .orElse(Option(schema.getTypes).map(_.asScala.head))
 
-  def typingResult(swaggerTyped: SwaggerTyped): TypingResult = swaggerTyped match {
-    case SwaggerObject(elementType, additionalProperties, patternProperties) =>
-      handleSwaggerObject(elementType, additionalProperties, patternProperties)
-    case SwaggerArray(ofType) =>
-      Typed.genericTypeClass(classOf[java.util.List[_]], List(typingResult(ofType)))
-    case SwaggerEnum(values) =>
-      Typed.fromIterableOrUnknownIfEmpty(values.map(Typed.fromInstance))
-    case SwaggerBool =>
-      Typed.typedClass[java.lang.Boolean]
-    case SwaggerString =>
-      Typed.typedClass[String]
-    case SwaggerInteger =>
-      Typed.typedClass[java.lang.Integer]
-    case SwaggerLong =>
-      Typed.typedClass[java.lang.Long]
-    case SwaggerBigInteger =>
-      Typed.typedClass[java.math.BigInteger]
-    case SwaggerDouble =>
-      Typed.typedClass[java.lang.Double]
-    case SwaggerBigDecimal =>
-      Typed.typedClass[java.math.BigDecimal]
-    case SwaggerDateTime =>
-      Typed.typedClass[ZonedDateTime]
-    case SwaggerDate =>
-      Typed.typedClass[LocalDate]
-    case SwaggerTime =>
-      Typed.typedClass[LocalTime]
-    case SwaggerUnion(types) => Typed.fromIterableOrUnknownIfEmpty(types.map(typingResult))
-    case SwaggerAny =>
-      Unknown
-    case SwaggerNull =>
-      TypedNull
-  }
+  // `resolveListOfObjects` flag allows one to stop resolving Type recursion for  SwaggerArray[SwaggerObject]
+  // this is needed for correct validations in openApi enrichers with input parameters that contains list of objects with optional fields
+  // TODO: validations in openApi enrichers should be based on actual schema instead of `TypingResult` instance
+  def typingResult(swaggerTyped: SwaggerTyped, resolveListOfObjects: Boolean = true): TypingResult =
+    swaggerTyped match {
+      case SwaggerObject(elementType, additionalProperties, patternProperties) =>
+        handleSwaggerObject(elementType, additionalProperties, patternProperties, resolveListOfObjects)
+      case SwaggerArray(SwaggerObject(_, _, _)) if !resolveListOfObjects =>
+        Typed.genericTypeClass(classOf[java.util.List[_]], List(Unknown))
+      case SwaggerArray(ofType) =>
+        Typed.genericTypeClass(classOf[java.util.List[_]], List(typingResult(ofType, resolveListOfObjects)))
+      case SwaggerEnum(values) =>
+        Typed.fromIterableOrUnknownIfEmpty(values.map(Typed.fromInstance))
+      case SwaggerBool =>
+        Typed.typedClass[java.lang.Boolean]
+      case SwaggerString =>
+        Typed.typedClass[String]
+      case SwaggerInteger =>
+        Typed.typedClass[java.lang.Integer]
+      case SwaggerLong =>
+        Typed.typedClass[java.lang.Long]
+      case SwaggerBigInteger =>
+        Typed.typedClass[java.math.BigInteger]
+      case SwaggerDouble =>
+        Typed.typedClass[java.lang.Double]
+      case SwaggerBigDecimal =>
+        Typed.typedClass[java.math.BigDecimal]
+      case SwaggerDateTime =>
+        Typed.typedClass[ZonedDateTime]
+      case SwaggerDate =>
+        Typed.typedClass[LocalDate]
+      case SwaggerTime =>
+        Typed.typedClass[LocalTime]
+      case SwaggerUnion(types) => Typed.fromIterableOrUnknownIfEmpty(types.map(typingResult(_, resolveListOfObjects)))
+      case SwaggerAny =>
+        Unknown
+      case SwaggerNull =>
+        TypedNull
+    }
 
   private def handleSwaggerObject(
       elementType: Map[PropertyName, SwaggerTyped],
       additionalProperties: AdditionalProperties,
-      patternProperties: List[PatternWithSwaggerTyped]
+      patternProperties: List[PatternWithSwaggerTyped],
+      resolveListOfObject: Boolean = true
   ): TypingResult = {
     import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
     def typedStringKeyMap(valueType: TypingResult) = {
@@ -218,7 +225,7 @@ object SwaggerTyped {
     }
     if (elementType.isEmpty) {
       val patternPropertiesTypesSet = patternProperties.map { case PatternWithSwaggerTyped(_, propertySwaggerTyped) =>
-        typingResult(propertySwaggerTyped)
+        typingResult(propertySwaggerTyped, resolveListOfObject)
       }
       additionalProperties match {
         case AdditionalPropertiesDisabled if patternPropertiesTypesSet.isEmpty =>
@@ -226,10 +233,10 @@ object SwaggerTyped {
         case AdditionalPropertiesDisabled =>
           typedStringKeyMap(Typed.fromIterableOrUnknownIfEmpty(patternPropertiesTypesSet))
         case AdditionalPropertiesEnabled(value) =>
-          typedStringKeyMap(Typed(NonEmptyList(typingResult(value), patternPropertiesTypesSet)))
+          typedStringKeyMap(Typed(NonEmptyList(typingResult(value, resolveListOfObject), patternPropertiesTypesSet)))
       }
     } else {
-      Typed.record(elementType.mapValuesNow(typingResult))
+      Typed.record(elementType.mapValuesNow(typingResult(_, resolveListOfObject)))
     }
   }
 
