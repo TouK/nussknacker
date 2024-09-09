@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 import java.sql.Timestamp
 import java.time.Instant
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     implicit executionContext: ExecutionContext,
@@ -204,7 +205,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       attachmentEntities <- findAttachments(processId)
       attachments = attachmentEntities.map(toDto)
       activities <- doFindActivities(processId)
-      comments = activities.flatMap(toComment)
+      comments = activities.flatMap { case (id, activity) => toComment(id, activity) }
     } yield Legacy.ProcessActivity(
       comments = comments.toList,
       attachments = attachments.toList,
@@ -232,8 +233,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     )
   }
 
-  private def toComment(idAndActivity: (Long, ScenarioActivity)): Option[Legacy.Comment] = {
-    val (id, scenarioActivity) = idAndActivity
+  private def toComment(id: Long, scenarioActivity: ScenarioActivity): Option[Legacy.Comment] = {
     scenarioActivity match {
       case _: ScenarioActivity.ScenarioCreated =>
         None
@@ -775,7 +775,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
         (for {
           sourceEnvironment <- additionalPropertyFromEntity(entity, "sourceEnvironment")
           sourceScenarioVersion <- additionalPropertyFromEntity(entity, "sourceScenarioVersion").flatMap(
-            _.toLongOption.toRight("sourceScenarioVersion is not a valid Long")
+            toLongOption(_).toRight("sourceScenarioVersion is not a valid Long")
           )
         } yield ScenarioActivity.IncomingMigration(
           scenarioId = scenarioIdFromEntity(entity),
@@ -862,5 +862,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       createDate = attachmentEntityData.createDateTime,
     )
   }
+
+  private def toLongOption(str: String) = Try(str.toLong).toOption
 
 }
