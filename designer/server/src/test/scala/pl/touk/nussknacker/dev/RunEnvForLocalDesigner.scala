@@ -7,13 +7,14 @@ import pl.touk.nussknacker.test.installationexample.DockerBasedInstallationExamp
 
 import java.io.{File => JFile}
 
+// You can use it for a development purposes. The Nu stack is based on the Installation Example
 object RunEnvForLocalDesigner extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = for {
     scalaV <- readScalaVersion(args)
-    _      <- log("Starting...")         // todo: better messages
+    _      <- log(s"Starting docker compose-based stack (for $scalaV) to be used with locally run Nu Designer...")
     _      <- createDockerEnv(scalaV)
-    _      <- log("Run designer now...") // todo: better messages
+    _      <- log("You can run designer now...")
     _      <- IO.never[Unit]
   } yield ExitCode.Success
 
