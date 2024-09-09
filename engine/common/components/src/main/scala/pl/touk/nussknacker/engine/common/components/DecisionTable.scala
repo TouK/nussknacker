@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataD
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
 

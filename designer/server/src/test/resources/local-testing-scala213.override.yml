@@ -1,3 +1,14 @@
+x-flink-service-common: &common-flink
+  depends_on:
+    flink-scala213-downloader:
+      condition: service_completed_successfully
+  volumes:
+    - /tmp/flink-scala-2-13_2.13-1.1.1-assembly.jar:/opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar
+  entrypoint: [
+    "sh", "-c",
+    "rm -f /opt/flink/lib/flink-scala_2.12* && chown flink /opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar && /ex-docker-entrypoint.sh \"$@\"", "--"
+  ]
+
 services:
 
   bootstrap-setup:
@@ -45,34 +56,16 @@ services:
   flink-jobmanager:
     ports:
       - 3031:8081
-    depends_on:
-      file-downloader:
-        condition: service_completed_successfully
-    volumes:
-      - /tmp/flink-scala-2-13_2.13-1.1.1-assembly.jar:/opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar
-    user: root
-    entrypoint: [
-      "sh", "-c",
-      "rm -f /opt/flink/lib/flink-scala-2-12* && chown flink /opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar && gosu flink:flink /docker-entrypoint.sh"
-    ]
+    <<: *common-flink
 
   flink-taskmanager:
-    depends_on:
-      file-downloader:
-        condition: service_completed_successfully
-    volumes:
-      - /tmp/flink-scala-2-13_2.13-1.1.1-assembly.jar:/opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar
-    user: root
-    entrypoint: [
-      "sh", "-c",
-      "rm -f /opt/flink/lib/flink-scala-2-12* && chown flink /opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar && gosu flink:flink /docker-entrypoint.sh"
-    ]
+    <<: *common-flink
 
   grafana:
     ports:
       - 8081:3000
 
-  file-downloader:
+  flink-scala213-downloader:
     image: curlimages/curl:7.85.0
     volumes:
       - /tmp:/data

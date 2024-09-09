@@ -12,7 +12,7 @@ object RunEnvForLocalDesigner extends IOApp with LazyLogging {
   private lazy val dockerEnv = new DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion = "latest",
     dockerComposeTweakFiles = List(
-      new JFile(Resource.getUrl("local-testing.override.yml").toURI),
+      new JFile(Resource.getUrl("local-testing-scala213.override.yml").toURI),
     )
   )
 
