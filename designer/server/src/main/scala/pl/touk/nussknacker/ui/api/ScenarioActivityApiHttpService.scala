@@ -72,18 +72,6 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    endpoints.deprecatedEditCommentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => request: DeprecatedEditCommentRequest =>
-        for {
-          scenarioId <- getScenarioIdByName(request.scenarioName)
-          _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- editComment(request, scenarioId)
-        } yield ()
-      }
-  }
-
-  expose {
     endpoints.deprecatedDeleteCommentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: DeprecatedDeleteCommentRequest =>
@@ -96,6 +84,31 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
+    endpoints.addAttachmentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: AddAttachmentRequest =>
+        for {
+          scenarioId <- getScenarioIdByName(request.scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- saveAttachment(request, scenarioId)
+        } yield ()
+      }
+  }
+
+  expose {
+    endpoints.downloadAttachmentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
+        for {
+          scenarioId      <- getScenarioIdByName(request.scenarioName)
+          _               <- isAuthorized(scenarioId, Permission.Read)
+          maybeAttachment <- EitherT.right(attachmentService.readAttachment(request.attachmentId, scenarioId))
+          response = buildResponse(maybeAttachment)
+        } yield response
+      }
+  }
+
+  expose {
     endpoints.scenarioActivitiesEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
@@ -104,6 +117,18 @@ class ScenarioActivityApiHttpService(
           _          <- isAuthorized(scenarioId, Permission.Read)
           activities <- fetchActivities(scenarioId)
         } yield ScenarioActivities(activities)
+      }
+  }
+
+  expose {
+    endpoints.attachmentsEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => processName: ProcessName =>
+        for {
+          scenarioId  <- getScenarioIdByName(processName)
+          _           <- isAuthorized(scenarioId, Permission.Read)
+          attachments <- fetchAttachments(scenarioId)
+        } yield attachments
       }
   }
 
@@ -155,42 +180,8 @@ class ScenarioActivityApiHttpService(
       }
   }
 
-  expose {
-    endpoints.attachmentsEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => processName: ProcessName =>
-        for {
-          scenarioId  <- getScenarioIdByName(processName)
-          _           <- isAuthorized(scenarioId, Permission.Read)
-          attachments <- fetchAttachments(scenarioId)
-        } yield attachments
-      }
-  }
-
-  expose {
-    endpoints.addAttachmentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => request: AddAttachmentRequest =>
-        for {
-          scenarioId <- getScenarioIdByName(request.scenarioName)
-          _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- saveAttachment(request, scenarioId)
-        } yield ()
-      }
-  }
-
-  expose {
-    endpoints.downloadAttachmentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
-        for {
-          scenarioId      <- getScenarioIdByName(request.scenarioName)
-          _               <- isAuthorized(scenarioId, Permission.Read)
-          maybeAttachment <- EitherT.right(attachmentService.readAttachment(request.attachmentId, scenarioId))
-          response = buildResponse(maybeAttachment)
-        } yield response
-      }
-  }
+  private def notImplemented[T]: EitherT[Future, ScenarioActivityError, T] =
+    EitherT.leftT[Future, T](ScenarioActivityError.NotImplemented: ScenarioActivityError)
 
   private def getScenarioIdByName(scenarioName: ProcessName) = {
     EitherT.fromOptionF(

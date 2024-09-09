@@ -50,27 +50,6 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .withSecurity(auth)
       .deprecated()
 
-  lazy val deprecatedEditCommentEndpoint
-      : SecuredEndpoint[DeprecatedEditCommentRequest, ScenarioActivityError, Unit, Any] =
-    baseNuApiEndpoint
-      .summary("Edit process comment service")
-      .tag("Activities")
-      .put
-      .in(
-        "processes" / path[ProcessName]("scenarioName") / "activity" / "comments" / path[Long]("commentId")
-      )
-      .in(stringBody)
-      .mapInTo[DeprecatedEditCommentRequest]
-      .out(statusCode(Ok))
-      .errorOut(
-        oneOf[ScenarioActivityError](
-          oneOfVariantFromMatchType(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
-          oneOfVariantFromMatchType(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError))
-        )
-      )
-      .withSecurity(auth)
-      .deprecated()
-
   lazy val deprecatedDeleteCommentEndpoint
       : SecuredEndpoint[DeprecatedDeleteCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint

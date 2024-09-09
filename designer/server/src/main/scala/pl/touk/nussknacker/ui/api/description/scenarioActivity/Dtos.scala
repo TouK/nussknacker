@@ -482,6 +482,10 @@ object Dtos {
   sealed trait ScenarioActivityError
 
   object ScenarioActivityError {
+
+    // todo NU-1772 - remove this error when API is implemented
+    final case object NotImplemented extends ScenarioActivityError
+
     final case class NoScenario(scenarioName: ProcessName) extends ScenarioActivityError
     final case object NoPermission                         extends ScenarioActivityError with CustomAuthorizationError
     final case class NoComment(scenarioActivityId: String) extends ScenarioActivityError
