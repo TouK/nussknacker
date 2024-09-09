@@ -13654,6 +13654,150 @@
           }
         }
       ],
+      "toBigDecimal": [
+        {
+          "description": "Convert any value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert any value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigInteger": [
+        {
+          "description": "Convert any value to BigInteger or throw exception in case of failure",
+          "name": "toBigInteger",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.math.BigInteger"}
+          }
+        }
+      ],
+      "toBigIntegerOrNull": [
+        {
+          "description": "Convert any value to BigInteger or null in case of failure",
+          "name": "toBigIntegerOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.math.BigInteger"}
+          }
+        }
+      ],
+      "toBoolean": [
+        {
+          "description": "Convert any value to Boolean or throw exception in case of failure",
+          "name": "toBoolean",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "toBooleanOrNull": [
+        {
+          "description": "Convert any value to Boolean or throw exception in case of failure",
+          "name": "toBooleanOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert any value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert any value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toInteger": [
+        {
+          "description": "Convert any value to Integer or throw exception in case of failure",
+          "name": "toInteger",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toIntegerOrNull": [
+        {
+          "description": "Convert any value to Integer or null in case of failure",
+          "name": "toIntegerOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert any value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert any value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
       "toNumber": [
         {
           "description": "Parse string to number",
@@ -13685,6 +13829,30 @@
               "result": {"refClazzName": "java.lang.Number"}
             }
           ]
+        }
+      ],
+      "toNumberOrNull": [
+        {
+          "description": "Parse any value to Number or null in case failure",
+          "name": "toNumberOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Number"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "description": "Convert any value to String",
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
         }
       ]
     },

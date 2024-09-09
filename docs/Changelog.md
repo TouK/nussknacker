@@ -18,11 +18,26 @@
     when entering into node form. Please be aware that changes in `tableDefinition.sql` are not refreshed.
     To do this, use `/app/processingtype/reload` API
 * [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
-* [#6695](https://github.com/TouK/nussknacker/pull/6680) From now on, arrays on UI are visible as lists but on a
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) From now on, arrays on UI are visible as lists but on a 
   background they are stored as it is and SpeL converts them to lists in a runtime.
 * [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`.
 * [#6778](https://github.com/TouK/nussknacker/pull/6778) SpeL: check for methods if a property for a given name does not exist.
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
+* [#6807](https://github.com/TouK/nussknacker/pull/6807) Add conversion functions to primitives to: `#CONV`:
+  * toNumberOrNull
+  * toString
+  * toBoolean
+  * toBooleanOrNull
+  * toInteger
+  * toIntegerOrNull
+  * toLong
+  * toLongOrNull
+  * toDouble
+  * toDoubleOrNull
+  * toBigInteger
+  * toBigIntegerOrNull
+  * toBigDecimal
+  * toBigDecimalOrNull
 
 ## 1.17
 
