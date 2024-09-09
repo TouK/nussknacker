@@ -12,7 +12,7 @@ describe("Fragment", () => {
     });
 
     beforeEach(() => {
-        cy.viewport(1440, 1250);
+        cy.viewport(1600, 1250);
     });
 
     it("should allow adding input parameters and display used fragment graph in modal", () => {
@@ -222,13 +222,11 @@ describe("Fragment", () => {
             .should("be.enabled")
             .click();
 
-        cy.getNode("sendSms")
-            .parent()
-            .matchImage({
-                screenshotConfig: {
-                    padding: 16,
-                },
-            });
+        cy.get("[data-testid=graphPage]").matchImage({
+            screenshotConfig: {
+                padding: 16,
+            },
+        });
 
         cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
