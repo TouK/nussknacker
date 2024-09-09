@@ -94,14 +94,51 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
+    endpoints.addAttachmentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: AddAttachmentRequest =>
+        for {
+          scenarioId <- getScenarioIdByName(request.scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- saveAttachment(request, scenarioId)
+        } yield ()
+      }
+  }
+
+  expose {
+    endpoints.downloadAttachmentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
+        for {
+          scenarioId      <- getScenarioIdByName(request.scenarioName)
+          _               <- isAuthorized(scenarioId, Permission.Read)
+          maybeAttachment <- EitherT.right(attachmentService.readAttachment(request.attachmentId, scenarioId))
+          response = buildResponse(maybeAttachment)
+        } yield response
+      }
+  }
+
+  expose {
     endpoints.scenarioActivitiesEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
         for {
           scenarioId <- getScenarioIdByName(scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Read)
-          activities <- EitherT.liftF(Future.failed(new Exception("API not yet implemented")))
+          activities <- notImplemented[List[ScenarioActivity]]
         } yield ScenarioActivities(activities)
+      }
+  }
+
+  expose {
+    endpoints.attachmentsEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => processName: ProcessName =>
+        for {
+          scenarioId  <- getScenarioIdByName(processName)
+          _           <- isAuthorized(scenarioId, Permission.Read)
+          attachments <- notImplemented[ScenarioAttachments]
+        } yield attachments
       }
   }
 
@@ -124,7 +161,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(request.scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- addNewComment(request, scenarioId)
+          _          <- notImplemented[Unit]
         } yield ()
       }
   }
@@ -150,43 +187,6 @@ class ScenarioActivityApiHttpService(
           _          <- isAuthorized(scenarioId, Permission.Write)
           _          <- notImplemented[Unit]
         } yield ()
-      }
-  }
-
-  expose {
-    endpoints.attachmentsEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => processName: ProcessName =>
-        for {
-          scenarioId  <- getScenarioIdByName(processName)
-          _           <- isAuthorized(scenarioId, Permission.Read)
-          attachments <- notImplemented[ScenarioAttachments]
-        } yield attachments
-      }
-  }
-
-  expose {
-    endpoints.addAttachmentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => request: AddAttachmentRequest =>
-        for {
-          scenarioId <- getScenarioIdByName(request.scenarioName)
-          _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- saveAttachment(request, scenarioId)
-        } yield ()
-      }
-  }
-
-  expose {
-    endpoints.downloadAttachmentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
-        for {
-          scenarioId      <- getScenarioIdByName(request.scenarioName)
-          _               <- isAuthorized(scenarioId, Permission.Read)
-          maybeAttachment <- EitherT.right(attachmentService.readAttachment(request.attachmentId, scenarioId))
-          response = buildResponse(maybeAttachment)
-        } yield response
       }
   }
 
