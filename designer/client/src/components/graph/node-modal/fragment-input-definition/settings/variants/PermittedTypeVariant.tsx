@@ -8,14 +8,14 @@ import {
     isAnyValueWithSuggestionsParameter,
     isFixedListParameter,
     onChangeType,
-    StringOrBooleanParameterVariant,
+    PermittedTypeParameterVariant,
 } from "../../item";
 import { NodeValidationError, VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
 
 interface Props {
-    item: StringOrBooleanParameterVariant;
+    item: PermittedTypeParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
@@ -23,7 +23,7 @@ interface Props {
     errors: NodeValidationError[];
 }
 
-export const StringBooleanVariant = ({ item, path, variableTypes, onChange, readOnly, errors, ...props }: Props) => {
+export const PermittedTypeVariant = ({ item, path, variableTypes, onChange, readOnly, errors, ...props }: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
