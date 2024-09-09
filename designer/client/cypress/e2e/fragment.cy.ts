@@ -222,11 +222,13 @@ describe("Fragment", () => {
             .should("be.enabled")
             .click();
 
-        cy.get("[data-testid=graphPage]").matchImage({
-            screenshotConfig: {
-                padding: 16,
-            },
-        });
+        cy.getNode("sendSms")
+            .parent()
+            .matchImage({
+                screenshotConfig: {
+                    padding: 16,
+                },
+            });
 
         cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
