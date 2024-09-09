@@ -50,6 +50,7 @@
 * [#6886](https://github.com/TouK/nussknacker/pull/6886) Fix for "Illegal table name:$nuCatalog" error when using Apache Iceberg catalog.
   Internal Nussknacker catalog is now named `_nu_catalog`
 * [#6766](https://github.com/TouK/nussknacker/pull/6766) Scenario labels support - you can assign labels to scenarios and use them to filter the scenario list
+* [#6805](https://github.com/TouK/nussknacker/pull/6805) Support for Flink 1.19.1
 
 ## 1.17
 
