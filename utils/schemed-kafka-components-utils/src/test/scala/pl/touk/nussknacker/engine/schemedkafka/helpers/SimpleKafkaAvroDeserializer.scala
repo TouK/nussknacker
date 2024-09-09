@@ -19,8 +19,6 @@ class SimpleKafkaAvroDeserializer(schemaRegistry: SchemaRegistryClient) extends 
   protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
 
   private lazy val confluentAvroPayloadDeserializer = new AvroPayloadDeserializer(
-    useSchemaReflection = false,
-    useSpecificAvroReader = false,
     new GenericRecordSchemaIdSerializationSupport(schemaIdSerializationEnabled = true),
     decoderFactory
   )
