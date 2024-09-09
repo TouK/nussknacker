@@ -1,6 +1,16 @@
 package pl.touk.nussknacker.ui.process.newactivity
 
 import cats.data.EitherT
+import pl.touk.nussknacker.engine.api.deployment.{
+  ScenarioActivity,
+  ScenarioActivityId,
+  ScenarioComment,
+  ScenarioId,
+  ScenarioVersion,
+  User,
+  UserId,
+  UserName
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.Comment
@@ -11,6 +21,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: This service in the future should handle all activities that modify anything in application.
@@ -58,17 +69,31 @@ class ActivityService(
       commentOpt: Option[Comment],
       scenarioId: ProcessId,
       scenarioGraphVersionId: VersionId,
-      user: LoggedUser
+      loggedUser: LoggedUser
   ): EitherT[Future, ActivityError[ErrorType], Unit] = {
-
     EitherT.right[ActivityError[ErrorType]](
-      Future.unit
-// todo NU-1772 in progress
-//      commentOpt
-//        .map(comment =>
-//          dbioRunner.run(scenarioActivityRepository.addComment(scenarioId, scenarioGraphVersionId, comment)(user))
-//        )
-//        .getOrElse(Future.unit)
+      dbioRunner
+        .run(
+          scenarioActivityRepository.addActivity(
+            ScenarioActivity.ScenarioDeployed(
+              scenarioId = ScenarioId(scenarioId.value),
+              scenarioActivityId = ScenarioActivityId.random,
+              user = User(
+                id = UserId(loggedUser.id),
+                name = UserName(loggedUser.username),
+                impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
+                impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
+              ),
+              date = Instant.now(),
+              scenarioVersion = Some(ScenarioVersion(scenarioGraphVersionId.value)),
+              comment = commentOpt match {
+                case Some(comment) => ScenarioComment.Available(comment.value, UserName(loggedUser.username))
+                case None          => ScenarioComment.Deleted(UserName(loggedUser.username))
+              },
+            )
+          )(loggedUser)
+        )
+        .map(_ => ())
     )
   }
 

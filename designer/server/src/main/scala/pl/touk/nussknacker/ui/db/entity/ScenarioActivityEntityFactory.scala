@@ -170,23 +170,21 @@ object AdditionalProperties {
 
 final case class ScenarioActivityEntityData(
     id: Long,
-    activityType: ScenarioActivityType,       // actionName: ScenarioActionName
-    scenarioId: ProcessId,                    // processId: ProcessId,
-    activityId: ScenarioActivityId,           // id: ProcessActionId
-    userId: String,                           // user: String,
-    userName: String,                         // user: String,
-    impersonatedByUserId: Option[String],     // impersonatedByIdentity: Option[String]
-    impersonatedByUserName: Option[String],   // impersonatedByUsername: Option[String]
-    lastModifiedByUserName: Option[String],   // user: String,
-    createdAt: Timestamp,                     // createdAt: Timestamp,
-    scenarioVersion: Option[ScenarioVersion], // processVersionId: Option[VersionId],
-
-    comment: Option[String], // commentId: Option[Long],
+    activityType: ScenarioActivityType,
+    scenarioId: ProcessId,
+    activityId: ScenarioActivityId,
+    userId: String,
+    userName: String,
+    impersonatedByUserId: Option[String],
+    impersonatedByUserName: Option[String],
+    lastModifiedByUserName: Option[String],
+    createdAt: Timestamp,
+    scenarioVersion: Option[ScenarioVersion],
+    comment: Option[String],
     attachmentId: Option[Long],
-    finishedAt: Option[Timestamp],     // performedAt: Option[Timestamp],
-    state: Option[ProcessActionState], // state: ProcessActionState,
-    errorMessage: Option[String],      // failureMessage: Option[String],
-    buildInfo: Option[String],         // buildInfo: Option[String]
-
+    finishedAt: Option[Timestamp],
+    state: Option[ProcessActionState],
+    errorMessage: Option[String],
+    buildInfo: Option[String],
     additionalProperties: AdditionalProperties,
 )

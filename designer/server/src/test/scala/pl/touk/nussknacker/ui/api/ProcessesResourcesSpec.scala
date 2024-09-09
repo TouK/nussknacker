@@ -35,6 +35,7 @@ import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{
 import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
@@ -608,9 +609,8 @@ class ProcessesResourcesSpec
     }
 
     getActivity(processName) ~> check {
-// todo NU-1772 in progress
-//      val comments = responseAs[ProcessActivity].comments
-//      comments.loneElement.content shouldBe comment
+      val comments = responseAs[ProcessActivity].comments
+      comments.loneElement.content shouldBe comment
     }
   }
 
