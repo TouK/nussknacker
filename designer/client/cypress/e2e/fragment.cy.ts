@@ -12,7 +12,7 @@ describe("Fragment", () => {
     });
 
     beforeEach(() => {
-        cy.viewport(1440, 1200);
+        cy.viewport(1440, 1250);
     });
 
     it("should allow adding input parameters and display used fragment graph in modal", () => {
@@ -188,6 +188,7 @@ describe("Fragment", () => {
         cy.get("#nk-graph-fragment [model-id='input']").scrollIntoView().should("be.visible");
 
         cy.wait("@fragmentInputValidation");
+        cy.get("[data-testid=window]").find("section").scrollTo("top");
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
 
         cy.get("[data-testid=window]").find("section").scrollTo("bottom");
@@ -295,6 +296,7 @@ describe("Fragment", () => {
             .find("[data-testid='form-helper-text']")
             .should("be.visible");
 
+        cy.get("[data-testid=window]").find("section").scrollTo("top");
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
     });
 
