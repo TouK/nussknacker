@@ -2,7 +2,7 @@ import React from "react";
 import { Option } from "../../../FieldsSelect";
 import { TypeSelect } from "../../../TypeSelect";
 import { useTranslation } from "react-i18next";
-import { FixedValuesType, InputMode, onChangeType, StringOrBooleanParameterVariant, ValueEditor } from "../../../item";
+import { FixedValuesType, InputMode, onChangeType, PermittedTypeParameterVariant, ValueEditor } from "../../../item";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { useSettings } from "../../SettingsProvider";
 import { NodeValidationError } from "../../../../../../../types";
@@ -11,7 +11,7 @@ import { FormControl } from "@mui/material";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
-    item: StringOrBooleanParameterVariant;
+    item: PermittedTypeParameterVariant;
     path: string;
     inputModeOptions: Option[];
     readOnly: boolean;
