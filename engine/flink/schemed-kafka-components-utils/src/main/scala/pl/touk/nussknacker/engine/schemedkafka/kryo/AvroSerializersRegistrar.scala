@@ -3,9 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.kryo
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
-import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.java.typeutils.AvroUtils
 import pl.touk.nussknacker.engine.api.component.ComponentProviderConfig
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -87,17 +85,6 @@ object AvroSerializersRegistrar extends LazyLogging {
     } else {
       logger.debug("Skipping SchemaIdBasedAvroGenericRecordSerializer registration")
     }
-  }
-
-}
-
-object AvroUtilsCompatibilityLayer {
-
-  private[kryo] def addAvroSerializersIfRequired(executionConfig: ExecutionConfig): Unit = {
-    AvroUtils.getAvroUtils.addAvroSerializersIfRequired(
-      executionConfig.getSerializerConfig,
-      classOf[GenericData.Record]
-    )
   }
 
 }

@@ -173,8 +173,8 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val newSerializersToUse = newSerializers.filter(k => commons.contains(k._1))
       val snapshotsToUse      = serializersSnapshots.filter(k => commons.contains(k._1))
 
-      val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
-        newSerializersToUse.map(_._2.snapshotConfiguration()),
+      val fieldsCompatibility = CompositeTypeSerializerUtilCompatibilityLayer.constructIntermediateCompatibilityResult(
+        newSerializersToUse.map(_._2),
         snapshotsToUse.map(_._2)
       )
 
