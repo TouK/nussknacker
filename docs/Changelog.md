@@ -74,6 +74,7 @@
   * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
   * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
 * [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
+* [#6815](https://github.com/TouK/nussknacker/pull/6815) Performance improvement: Optimize serializer creation in UniversalSchemaSupport
 
 ## 1.16
 
