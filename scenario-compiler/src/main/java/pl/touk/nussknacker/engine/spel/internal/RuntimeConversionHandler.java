@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class ArrayToListConversionHandler {
+public class RuntimeConversionHandler {
     public static final class ConversionAwareMethodsDiscovery {
 
         public Method[] discover(Class<?> type) {
@@ -32,7 +32,7 @@ public class ArrayToListConversionHandler {
 
         public Object invoke(Method method, Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException, ClassNotFoundException {
             if (target != null && target.getClass().isArray() && method.getDeclaringClass().isAssignableFrom(List.class)) {
-                return method.invoke(ArrayToListConversionHandler.convert(target), arguments);
+                return method.invoke(RuntimeConversionHandler.convert(target), arguments);
             } else if (target != null && method.getDeclaringClass().isAssignableFrom(CastDefinition.class)) {
                 return Class.forName((String) arguments[0]).isAssignableFrom(target.getClass());
             } else {
@@ -79,7 +79,7 @@ public class ArrayToListConversionHandler {
             if (source == null) {
                 return null;
             }
-            return ArrayToListConversionHandler.convert(source);
+            return RuntimeConversionHandler.convert(source);
         }
 
     }

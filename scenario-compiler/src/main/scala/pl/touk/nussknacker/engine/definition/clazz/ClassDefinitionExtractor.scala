@@ -19,33 +19,40 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.{
+  extractClass,
+  extractGenericReturnType,
+  extractMethodReturnType,
+  extractParameterType
+}
 import pl.touk.nussknacker.engine.spel.CastDefinition
 
 import java.lang.annotation.Annotation
 import java.lang.reflect._
 import java.util.Optional
 
-object ClassDefinitionExtractor extends LazyLogging {
+class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
   private lazy val defaultMethods = classOf[CastDefinition].getMethods.toList
-    .flatMap(m => extractMethod(classOf[CastDefinition], m)(ClassExtractionSettings.Default))
+    .flatMap(m => extractMethod(classOf[CastDefinition], m))
     .groupBy(_._1)
     .mapValuesNow(_.map(_._2))
 
   private lazy val filteredDefaultMethods =
-    filterHiddenParameterAndReturnType(defaultMethods)(ClassExtractionSettings.Default)
+    filterHiddenParameterAndReturnType(defaultMethods)
 
-  def extract(clazz: Class[_])(implicit settings: ClassExtractionSettings): ClassDefinition =
+  def extract(clazz: Class[_]): ClassDefinition =
     ClassDefinition(
       Typed(clazz),
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false) ++ filteredDefaultMethods,
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
     )
 
-  private def extractPublicMethodsAndFields(clazz: Class[_], staticMethodsAndFields: Boolean)(
-      implicit settings: ClassExtractionSettings
+  private def extractPublicMethodsAndFields(
+      clazz: Class[_],
+      staticMethodsAndFields: Boolean
   ): Map[String, List[MethodDefinition]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods          = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
@@ -57,7 +64,7 @@ object ClassDefinitionExtractor extends LazyLogging {
       clazz: Class[_],
       membersPredicate: VisibleMembersPredicate,
       staticMethodsAndFields: Boolean
-  )(implicit settings: ClassExtractionSettings): Map[String, List[MethodDefinition]] = {
+  ): Map[String, List[MethodDefinition]] = {
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
            does not contain any implicitly declared methods from {@code Object}.
            The same for primitives - we assume that languages like SpEL will be able to do boxing
@@ -100,7 +107,7 @@ object ClassDefinitionExtractor extends LazyLogging {
   // We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
   private def filterHiddenParameterAndReturnType(
       infos: Map[String, List[MethodDefinition]]
-  )(implicit settings: ClassExtractionSettings): Map[String, List[MethodDefinition]] = {
+  ): Map[String, List[MethodDefinition]] = {
     def typeResultVisible(t: TypingResult): Boolean = t match {
       case str: SingleTypingResult =>
         !settings.isHidden(str.typeHintsObjType.klass) && str.typeHintsObjType.params.forall(typeResultVisible)
@@ -150,7 +157,7 @@ object ClassDefinitionExtractor extends LazyLogging {
   }
 
   // SpEL is able to access getters using property name so you can write `obj.foo` instead of `obj.getFoo`
-  private def collectMethodNames(method: Method)(implicit settings: ClassExtractionSettings): List[String] = {
+  private def collectMethodNames(method: Method): List[String] = {
     val isGetter = method.getName.matches("^(get|is).+") && method.getParameterCount == 0
     if (isGetter) {
       val propertyMethod = StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))
@@ -167,7 +174,7 @@ object ClassDefinitionExtractor extends LazyLogging {
   private def extractMethod(
       clazz: Class[_],
       method: Method
-  )(implicit settings: ClassExtractionSettings): List[(String, MethodDefinition)] =
+  ): List[(String, MethodDefinition)] =
     extractAnnotation(method, classOf[GenericType]) match {
       case None             => extractRegularMethod(clazz, method)
       case Some(annotation) => extractGenericMethod(method, annotation)
@@ -193,9 +200,7 @@ object ClassDefinitionExtractor extends LazyLogging {
     }
   }
 
-  private def extractGenericMethod(method: Method, genericType: GenericType)(
-      implicit settings: ClassExtractionSettings
-  ): List[(String, MethodDefinition)] = {
+  private def extractGenericMethod(method: Method, genericType: GenericType): List[(String, MethodDefinition)] = {
     val typeFunctionInstance = getTypeFunctionInstanceFromAnnotation(method, genericType)
 
     val methodTypeInfo = extractGenericParameters(typeFunctionInstance, method)
@@ -213,7 +218,7 @@ object ClassDefinitionExtractor extends LazyLogging {
   private def extractRegularMethod(
       clazz: Class[_],
       method: Method
-  )(implicit settings: ClassExtractionSettings): List[(String, MethodDefinition)] = {
+  ): List[(String, MethodDefinition)] = {
     collectMethodNames(method).map { methodName =>
       val reflectionBasedDefinition = extractMethodTypeInfo(method)
       val methodDefinition = extractMemberMethodDefinition(clazz, method, methodName, reflectionBasedDefinition)
@@ -225,7 +230,7 @@ object ClassDefinitionExtractor extends LazyLogging {
       clazz: Class[_],
       membersPredicate: VisibleMembersPredicate,
       staticMethodsAndFields: Boolean
-  )(implicit settings: ClassExtractionSettings): Map[String, MethodDefinition] = {
+  ): Map[String, MethodDefinition] = {
     val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     val fields =
       if (staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
@@ -242,7 +247,7 @@ object ClassDefinitionExtractor extends LazyLogging {
       member: Member with AccessibleObject,
       memberName: String,
       reflectionBasedDefinition: MethodTypeInfo
-  )(implicit settings: ClassExtractionSettings): MethodDefinition = {
+  ): MethodDefinition = {
     settings
       .typingFunction(clazz, member)
       .map(prepareFunctionMethodDefinition(clazz, member, memberName, reflectionBasedDefinition, _))
@@ -327,20 +332,63 @@ object ClassDefinitionExtractor extends LazyLogging {
     )
   }
 
-  def extractParameterType(javaParam: java.lang.reflect.Parameter): TypingResult = {
-    extractClass(javaParam.getParameterizedType).getOrElse(Typed(javaParam.getType))
-  }
-
   private def extractFieldReturnType(field: Field): TypingResult = {
     extractGenericReturnType(field.getGenericType)
       .orElse(extractClass(field.getGenericType))
       .getOrElse(Typed(field.getType))
   }
 
+  private def extractScalaVersionOfVarArgMethod(method: Method): Option[Method] = {
+    val obj  = method.getDeclaringClass
+    val name = method.getName
+    val args = method.getParameterTypes.toList
+    args match {
+      case noVarArgs :+ varArg if method.isVarArgs && varArg.isArray =>
+        try {
+          Some(obj.getMethod(name, noVarArgs :+ classOf[Seq[_]]: _*))
+        } catch {
+          case _: NoSuchMethodException => None
+        }
+      case _ => None
+    }
+  }
+
+  private def extractJavaVersionOfVarArgMethod(method: Method): Option[Method] = {
+    method.getDeclaringClass.getMethods.find(m =>
+      m.isVarArgs && (m.getParameterTypes.toList match {
+        case noVarArgs :+ varArgArr if varArgArr.isArray =>
+          method.getParameterTypes.toList == noVarArgs :+ classOf[Seq[_]]
+        case _ => false
+      })
+    )
+  }
+
+  // "varargs" annotation creates new function that has java style varArgs
+  // but it disregards annotations, so we have to look for original function
+  // to extract them.
+  private def extractAnnotation[T <: Annotation](obj: AnnotatedElement, annotationType: Class[T]): Option[T] =
+    Option(obj.getAnnotation(annotationType)).orElse(obj match {
+      case method: Method => extractScalaVersionOfVarArgMethod(method).flatMap(extractAnnotation(_, annotationType))
+      // TODO: Add new case for parameters.
+      case _ => None
+    })
+
+}
+
+object ClassDefinitionExtractor {
+
   def extractMethodReturnType(method: Method): TypingResult = {
     extractGenericReturnType(method.getGenericReturnType)
       .orElse(extractClass(method.getGenericReturnType))
       .getOrElse(Typed(method.getReturnType))
+  }
+
+  def extractParameterType(javaParam: java.lang.reflect.Parameter): TypingResult = {
+    extractClass(javaParam.getParameterizedType).getOrElse(Typed(javaParam.getType))
+  }
+
+  def companionObject[T](klazz: Class[T]): T = {
+    klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
   private def extractGenericReturnType(typ: Type): Option[TypingResult] = {
@@ -395,45 +443,6 @@ object ClassDefinitionExtractor extends LazyLogging {
       paramsRawType,
       paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown))
     )
-  }
-
-  private def extractScalaVersionOfVarArgMethod(method: Method): Option[Method] = {
-    val obj  = method.getDeclaringClass
-    val name = method.getName
-    val args = method.getParameterTypes.toList
-    args match {
-      case noVarArgs :+ varArg if method.isVarArgs && varArg.isArray =>
-        try {
-          Some(obj.getMethod(name, noVarArgs :+ classOf[Seq[_]]: _*))
-        } catch {
-          case _: NoSuchMethodException => None
-        }
-      case _ => None
-    }
-  }
-
-  private def extractJavaVersionOfVarArgMethod(method: Method): Option[Method] = {
-    method.getDeclaringClass.getMethods.find(m =>
-      m.isVarArgs && (m.getParameterTypes.toList match {
-        case noVarArgs :+ varArgArr if varArgArr.isArray =>
-          method.getParameterTypes.toList == noVarArgs :+ classOf[Seq[_]]
-        case _ => false
-      })
-    )
-  }
-
-  // "varargs" annotation creates new function that has java style varArgs
-  // but it disregards annotations, so we have to look for original function
-  // to extract them.
-  private def extractAnnotation[T <: Annotation](obj: AnnotatedElement, annotationType: Class[T]): Option[T] =
-    Option(obj.getAnnotation(annotationType)).orElse(obj match {
-      case method: Method => extractScalaVersionOfVarArgMethod(method).flatMap(extractAnnotation(_, annotationType))
-      // TODO: Add new case for parameters.
-      case _ => None
-    })
-
-  def companionObject[T](klazz: Class[T]): T = {
-    klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
 }
