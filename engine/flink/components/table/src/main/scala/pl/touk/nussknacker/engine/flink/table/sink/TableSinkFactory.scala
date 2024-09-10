@@ -16,13 +16,12 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.TablesDefinitionDiscovery
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
+import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, TablesDefinitionDiscovery}
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
-import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
-import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory.getSelectedTableUnsafe
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.parameters.{
   SchemaBasedParameter,
@@ -34,13 +33,13 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
-class TableSinkFactory(sqlStatements: List[SqlStatement])
+class TableSinkFactory(flinkDataDefinition: FlinkDataDefinition)
     extends SingleInputDynamicComponent[Sink]
     with SinkFactory
     with BoundedStreamComponent {
 
   @transient
-  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscoveryUnsafe(sqlStatements)
+  private lazy val tablesDiscovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).orFail
 
   override type State = TableSinkFactoryState
 
@@ -180,7 +179,7 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
 
     new TableSink(
       tableDefinition = finalState.tableDefinition,
-      sqlStatements = sqlStatements,
+      flinkDataDefinition = flinkDataDefinition,
       value = lazyValueParam
     )
   }
