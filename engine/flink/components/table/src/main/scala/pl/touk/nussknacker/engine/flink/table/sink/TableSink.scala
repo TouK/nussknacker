@@ -16,13 +16,13 @@ import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExc
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeSchemaBasedEncoder
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
+import pl.touk.nussknacker.engine.flink.table.utils.ToTableTypeSchemaBasedEncoder
 
 class TableSink(
     tableDefinition: TableDefinition,
-    sqlStatements: List[SqlStatement],
+    flinkDataDefinition: FlinkDataDefinition,
     value: LazyParameter[AnyRef]
 ) extends FlinkSink {
 
@@ -44,6 +44,7 @@ class TableSink(
   ): DataStreamSink[_] = {
     val env      = dataStream.getExecutionEnvironment
     val tableEnv = StreamTableEnvironment.create(env)
+    flinkDataDefinition.registerIn(tableEnv)
 
     /*
       DataStream to Table transformation:
@@ -57,10 +58,8 @@ class TableSink(
     val streamOfRows    = dataStream.flatMap(EncodeAsTableTypeFunction(flinkNodeContext, value.returnType, sinkRowType))
     val inputValueTable = tableEnv.fromDataStream(streamOfRows)
 
-    sqlStatements.foreach(tableEnv.executeSql)
-
     val statementSet = tableEnv.createStatementSet()
-    statementSet.add(inputValueTable.insertInto(s"`${tableDefinition.tableName}`"))
+    statementSet.add(inputValueTable.insertInto(tableDefinition.tableId.toString))
     statementSet.attachAsDataStream()
 
     /*
