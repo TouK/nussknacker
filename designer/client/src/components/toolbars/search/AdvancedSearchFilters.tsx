@@ -1,6 +1,8 @@
-import React, { useMemo } from "react";
-import { TextField, Button, Box, Typography } from "@mui/material";
+import React, { useMemo, useRef } from "react";
+import { Button, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
+import { SearchLabel } from "../../sidePanels/SearchLabel";
 
 const transformInput = (input: string, fieldName: string) => {
     return input === "" ? "" : `${fieldName}:(${input})`;
@@ -30,6 +32,13 @@ export function AdvancedSearchFilters({
     setCollapsedHandler: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
     const { t } = useTranslation();
+    const idRef = useRef<HTMLInputElement>(null);
+    const descriptionRef = useRef<HTMLInputElement>(null);
+    const paramNameRef = useRef<HTMLInputElement>(null);
+    const paramValueRef = useRef<HTMLInputElement>(null);
+    const outputValueRef = useRef<HTMLInputElement>(null);
+    const typeRef = useRef<HTMLInputElement>(null);
+    const edgeExpressionRef = useRef<HTMLInputElement>(null);
 
     const displayNames = useMemo(
         () => ({
@@ -66,7 +75,15 @@ export function AdvancedSearchFilters({
     };
 
     const handleCancel = () => {
-        setCollapsedHandler(false);
+        idRef.current.value = "";
+        descriptionRef.current.value = "";
+        paramNameRef.current.value = "";
+        paramValueRef.current.value = "";
+        outputValueRef.current.value = "";
+        typeRef.current.value = "";
+        edgeExpressionRef.current.value = "";
+
+        setFilter(extractSimpleSearchQuery(filter));
     };
 
     return (
@@ -84,16 +101,30 @@ export function AdvancedSearchFilters({
             <Typography fontWeight="bold" sx={{ m: 1 }}>
                 Advanced Search
             </Typography>
-            <TextField sx={{ m: 1 }} size="small" label={displayNames["id"]} name="id" />
-            <TextField size="small" sx={{ m: 1 }} label={displayNames["description"]} name="paramValue" />
-            <TextField size="small" sx={{ m: 1 }} label={displayNames["paramName"]} name="paramName" />
-            <TextField size="small" sx={{ m: 1 }} label={displayNames["paramValue"]} name="paramValue" />
-            <TextField size="small" sx={{ m: 1 }} label={displayNames["outputValue"]} name="outputValue" />
-            <TextField size="small" sx={{ m: 1 }} label={displayNames["type"]} name="type" />
-            <TextField size="small" sx={{ m: 1 }} label={displayNames["edgeExpression"]} name="edgeExpression" />
-            <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "80%", mt: 1, mb: 1 }}>
+            <SearchLabeledInput ref={idRef} name="id">
+                <SearchLabel label={displayNames["id"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput ref={descriptionRef} name="description">
+                <SearchLabel label={displayNames["description"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput ref={paramNameRef} name="paramName">
+                <SearchLabel label={displayNames["paramName"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput ref={paramValueRef} name="paramValue">
+                <SearchLabel label={displayNames["paramValue"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput ref={outputValueRef} name="outputValue">
+                <SearchLabel label={displayNames["outputValue"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput ref={typeRef} name="type">
+                <SearchLabel label={displayNames["type"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput ref={edgeExpressionRef} name="edgeExpression">
+                <SearchLabel label={displayNames["edgeExpression"]} />
+            </SearchLabeledInput>
+            <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "80%", mt: 2, mb: 1 }}>
                 <Button sx={{ width: "45%" }} size="small" variant="outlined" onClick={handleCancel}>
-                    Cancel
+                    Clear
                 </Button>
                 <Button variant="contained" size="small" sx={{ width: "45%" }} type="submit">
                     Submit
