@@ -114,11 +114,11 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
   test("should take parameters per column in non-raw mode") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$inputTableName'".spel)
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`$inputTableName`'".spel)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$outputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$outputTableName`'".spel,
         "Raw editor" -> "false".spel,
         "client_id"  -> "''".spel,
         "amount"     -> "1".spel,
@@ -134,11 +134,11 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
   test("should skip virtual columns in listed parameters in non-raw mode") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$inputTableName'".spel)
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`$inputTableName`'".spel)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$virtualColumnOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$virtualColumnOutputTableName`'".spel,
         "Raw editor" -> "false".spel,
         "quantity"   -> "2".spel,
         "price"      -> "1.5".spel,
@@ -154,11 +154,11 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
   test("should return errors for type errors in non-raw mode value parameters") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$inputTableName'".spel)
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`$inputTableName`'".spel)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$outputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$outputTableName`'".spel,
         "Raw editor" -> "false".spel,
         "client_id"  -> "123.11".spel,
         "amount"     -> "''".spel,
@@ -190,11 +190,11 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
   test("should return errors for illegally named columns for non-raw mode") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$inputTableName'".spel)
+      .source("start", "table", "Table" -> s"'`default_catalog`.`default_database`.`$inputTableName`'".spel)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$outputTableNameWithInvalidCols'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$outputTableNameWithInvalidCols`'".spel,
         "Raw editor" -> "false".spel
       )
 

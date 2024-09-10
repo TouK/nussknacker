@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.table.extractor
+package pl.touk.nussknacker.engine.flink.table.definition
 
 import com.typesafe.scalalogging.LazyLogging
 

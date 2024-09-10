@@ -8,10 +8,12 @@ import org.apache.flink.configuration.{Configuration, CoreOptions, PipelineOptio
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{EnvironmentSettings, Schema, Table, TableDescriptor, TableEnvironment}
+import org.apache.flink.table.api._
+import org.apache.flink.table.catalog.ObjectIdentifier
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition
+import pl.touk.nussknacker.engine.flink.table.definition.FlinkDataDefinition._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.nio.charset.StandardCharsets
@@ -38,12 +40,12 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   def generateLiveTestData(
       limit: Int,
       schema: Schema,
-      sqlStatements: List[SqlStatement],
-      tableName: TableName
+      flinkDataDefinition: FlinkDataDefinition,
+      tableId: ObjectIdentifier
   ): TestData = generateTestData(
     limit = limit,
     schema = schema,
-    buildSourceTable = createLiveDataGeneratorTable(sqlStatements, tableName, schema)
+    buildSourceTable = createLiveDataGeneratorTable(flinkDataDefinition, tableId, schema)
   )
 
   def generateRandomTestData(amount: Int, schema: Schema): TestData = generateTestData(
@@ -119,12 +121,12 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   }
 
   private def createLiveDataGeneratorTable(
-      sqlStatements: List[SqlStatement],
-      tableName: TableName,
+      flinkDataDefinition: FlinkDataDefinition,
+      tableId: ObjectIdentifier,
       schema: Schema
   )(env: TableEnvironment): Table = {
-    TableSource.executeSqlDDL(sqlStatements, env)
-    env.from(s"`$tableName`").select(schema.getColumns.asScala.map(_.getName).map($).toList: _*)
+    flinkDataDefinition.registerIn(env).orFail
+    env.from(tableId.toString).select(schema.getColumns.asScala.map(_.getName).map($).toList: _*)
   }
 
   private def createTempFileTable(flinkTableSchema: Schema)(implicit env: TableEnvironment): (Path, TableName) = {
