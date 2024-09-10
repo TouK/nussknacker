@@ -4,11 +4,7 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class DetermineOfferedPlanSpec
-    extends AnyFreeSpecLike
-    with DockerBasedInstallationExampleNuEnvironment
-    with Matchers
-    with VeryPatientScalaFutures {
+class DetermineOfferedPlanSpec extends AnyFreeSpecLike with BaseE2eSpec with Matchers with VeryPatientScalaFutures {
 
   "Properly determine offers for customers" in {
     val customers = List(
@@ -19,11 +15,11 @@ class DetermineOfferedPlanSpec
     )
 
     customers.foreach { customer =>
-      sendMessageToKafka("Customers", customer)
+      client.sendMessageToKafka("Customers", customer)
     }
 
     eventually {
-      val smses = readAllMessagesFromKafka("SmsesWithOffer")
+      val smses = client.readAllMessagesFromKafka("SmsesWithOffer")
       smses should equal(
         List(
           smsWithOfferJson("Nick", "Junior Package"),
@@ -34,8 +30,8 @@ class DetermineOfferedPlanSpec
   }
 
   override protected def afterEach(): Unit = {
-    purgeKafkaTopic("Customers")
-    purgeKafkaTopic("SmsesWithOffer")
+    client.purgeKafkaTopic("Customers")
+    client.purgeKafkaTopic("SmsesWithOffer")
     super.afterEach()
   }
 

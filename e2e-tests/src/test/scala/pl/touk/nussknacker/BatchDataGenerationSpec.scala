@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScena
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
-    with DockerBasedInstallationExampleNuEnvironment
+    with BaseE2eSpec
     with Matchers
     with VeryPatientScalaFutures
     with NuRestAssureExtensions

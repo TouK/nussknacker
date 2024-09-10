@@ -1,5 +1,0 @@
-# Example topic names below (topic name per line)
-Customers
-ProcessedTransactions
-SmsesWithOffer
-Transactions

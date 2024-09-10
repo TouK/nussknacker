@@ -1,7 +1,7 @@
 import React from "react";
-import { onChangeType, FragmentInputParameter, isStringOrBooleanVariant } from "../item";
+import { onChangeType, FragmentInputParameter, isPermittedTypeVariant } from "../item";
 import { NodeValidationError, VariableTypes } from "../../../../../types";
-import { DefaultVariant, StringBooleanVariant } from "./variants";
+import { DefaultVariant, PermittedTypeVariant } from "./variants";
 
 interface Settings {
     item: FragmentInputParameter;
@@ -13,8 +13,8 @@ interface Settings {
 }
 
 export function Settings(props: Settings) {
-    if (isStringOrBooleanVariant(props.item)) {
-        return <StringBooleanVariant {...props} item={props.item} />;
+    if (isPermittedTypeVariant(props.item)) {
+        return <PermittedTypeVariant {...props} item={props.item} />;
     }
 
     return <DefaultVariant {...props} item={props.item} />;
