@@ -32,7 +32,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
     val examplesValidationResult = OpenAPIExamplesValidator.forTapir.validateExamples(
       specYaml = generatedSpec,
       excludeResponseValidationForOperationIds = List(
-        "getApiProcessesScenarionameActivityActivities" // todo NU-1772: responses contains discriminator, it is not properly handled by validator
+        "getApiProcessesScenarionameActivityActivities" // todo NU-1772: responses contain discriminator, it is not properly handled by validator
       )
     )
     val clue = examplesValidationResult
@@ -50,9 +50,15 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
   }
 
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
-    val currentNuDesignerOpenApiYamlContent =
-      (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
-    NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
+    // todo NU-1772: OpenAPI differs when generated on Scala 2.12 and Scala 2.13 (order of endpoints is different)
+    // test is for now ignored on Scala 2.12
+    if (scala.util.Properties.versionNumberString.startsWith("2.13")) {
+      val currentNuDesignerOpenApiYamlContent =
+        (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
+      NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
+    } else {
+      info("OpenAPI differs when generated on Scala 2.12 and Scala 2.13. Test is ignored on Scala 2.12")
+    }
   }
 
   test("API enum compatibility test") {
