@@ -1,13 +1,11 @@
 package db.migration
 
+import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_055__CreateScenarioActivitiesDefinition.{
   ScenarioActivitiesDefinitions,
   ScenarioActivityEntityData
 }
-import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivities.{
-  CommentsDefinitions,
-  ProcessActionsDefinitions
-}
+import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition.Migration
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
@@ -18,74 +16,113 @@ import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends SlickMigration {
+trait V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
   import profile.api._
 
-  private val scenarioActivitiesDefinitions = new ScenarioActivitiesDefinitions(profile)
-  private val processActionsDefinitions     = new ProcessActionsDefinitions(profile)
-  private val commentsDefinitions           = new CommentsDefinitions(profile)
-
-  override def migrateActions: DBIOAction[Any, NoStream, _ <: Effect] = {
-    processActionsDefinitions.table
-      .joinLeft(commentsDefinitions.table)
-      .on(_.commentId === _.id)
-      .result
-      .map { actionsWithComments =>
-        actionsWithComments.map { case (processAction, maybeComment) =>
-          ScenarioActivityEntityData(
-            id = -1L,
-            activityType = activityTypeStr(processAction.actionName),
-            scenarioId = processAction.processId,
-            activityId = processAction.id,
-            userId = processAction.user, // todo
-            userName = processAction.user,
-            impersonatedByUserId = processAction.impersonatedByIdentity,
-            impersonatedByUserName = processAction.impersonatedByUsername,
-            lastModifiedByUserName = processAction.impersonatedByUsername,
-            createdAt = processAction.createdAt,
-            scenarioVersion = processAction.processVersionId,
-            comment = maybeComment.map(_.content),
-            attachmentId = None,
-            finishedAt = processAction.performedAt,
-            state = Some(processAction.state),
-            errorMessage = processAction.failureMessage,
-            buildInfo = None,
-            additionalProperties = Map.empty[String, String].asJson.noSpaces
-          )
-        }.toList
-      }
-      .flatMap(scenarioActivitiesDefinitions.scenarioActivitiesTable ++= _)
-  }
-
-  private def activityTypeStr(actionName: String) = {
-    val activityType = ScenarioActionName(actionName) match {
-      case ScenarioActionName.Deploy =>
-        ScenarioActivityType.ScenarioDeployed
-      case ScenarioActionName.Cancel =>
-        ScenarioActivityType.ScenarioCanceled
-      case ScenarioActionName.Archive =>
-        ScenarioActivityType.ScenarioArchived
-      case ScenarioActionName.UnArchive =>
-        ScenarioActivityType.ScenarioUnarchived
-      case ScenarioActionName.Pause =>
-        ScenarioActivityType.ScenarioPaused
-      case ScenarioActionName.Rename =>
-        ScenarioActivityType.ScenarioNameChanged
-      case InstantBatchCustomAction.name =>
-        ScenarioActivityType.PerformedSingleExecution
-      case otherCustomName =>
-        ScenarioActivityType.CustomAction(otherCustomName.value)
-    }
-    activityType.entryName
+  override def migrateActions: DBIOAction[Any, NoStream, Effect.All] = {
+    new Migration(profile).migrateActions
   }
 
 }
 
-object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition {
+object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends LazyLogging {
+
+  class Migration(val profile: JdbcProfile) {
+
+    import profile.api._
+
+    private val scenarioActivitiesDefinitions = new ScenarioActivitiesDefinitions(profile)
+    private val processActionsDefinitions     = new ProcessActionsDefinitions(profile)
+    private val commentsDefinitions           = new CommentsDefinitions(profile)
+
+    def migrateActions: DBIOAction[(List[ScenarioActivityEntityData], Int), NoStream, Effect.All] = {
+      logger.info("Executing migration V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition")
+      for {
+        _ <- scenarioActivitiesDefinitions.scenarioActivitiesTable += ScenarioActivityEntityData(
+          id = -1L,
+          activityType = "QWERTY",
+          scenarioId = 1,
+          activityId = UUID.randomUUID(),
+          userId = "user",
+          userName = "user",
+          impersonatedByUserId = Some("user"),
+          impersonatedByUserName = Some("user"),
+          lastModifiedByUserName = Some("user"),
+          createdAt = Timestamp.from(Instant.now),
+          scenarioVersion = Some(1),
+          comment = None,
+          attachmentId = None,
+          finishedAt = Some(Timestamp.from(Instant.now)),
+          state = None,
+          errorMessage = None,
+          buildInfo = None,
+          additionalProperties = Map.empty[String, String].asJson.noSpaces
+        )
+        _ <-
+          sqlu"""insert into public.processes (name, description, category, processing_type, is_fragment, is_archived, id, created_at, created_by, impersonated_by_identity, impersonated_by_username, latest_version_id, latest_finished_action_id, latest_finished_cancel_action_id, latest_finished_deploy_action_id) values ('2024_Q3_6917_NETFLIX', null, 'BatchPeriodic', 'streaming-batch-periodic', false, false, 141, '2024-09-02 11:01:24.564191', 'Łukasz Ciołecki', null, null, null, null, null, null)"""
+        actionsWithComments <-
+          processActionsDefinitions.table
+            .joinLeft(commentsDefinitions.table)
+            .on(_.commentId === _.id)
+            .result
+        _ = logger.info(s"There are ${actionsWithComments.length} process actions to migrate")
+        activities =
+          actionsWithComments.map { case (processAction, maybeComment) =>
+            ScenarioActivityEntityData(
+              id = -1L,
+              activityType = activityTypeStr(processAction.actionName),
+              scenarioId = processAction.processId,
+              activityId = processAction.id,
+              userId = processAction.user, // todo
+              userName = processAction.user,
+              impersonatedByUserId = processAction.impersonatedByIdentity,
+              impersonatedByUserName = processAction.impersonatedByUsername,
+              lastModifiedByUserName = processAction.impersonatedByUsername,
+              createdAt = processAction.createdAt,
+              scenarioVersion = processAction.processVersionId,
+              comment = maybeComment.map(_.content),
+              attachmentId = None,
+              finishedAt = processAction.performedAt,
+              state = Some(processAction.state),
+              errorMessage = processAction.failureMessage,
+              buildInfo = None,
+              additionalProperties = Map.empty[String, String].asJson.noSpaces
+            )
+          }.toList
+        _ = logger.info(s"Created ${activities.length} scenario activities based on preexisting actions")
+        count <- DBIO.sequence(activities.map(scenarioActivitiesDefinitions.scenarioActivitiesTable += _)).map(_.sum)
+        _ = logger.info(s"Inserted $count scenario activities to the db")
+      } yield (activities, count)
+    }
+
+    private def activityTypeStr(actionName: String) = {
+      val activityType = ScenarioActionName(actionName) match {
+        case ScenarioActionName.Deploy =>
+          ScenarioActivityType.ScenarioDeployed
+        case ScenarioActionName.Cancel =>
+          ScenarioActivityType.ScenarioCanceled
+        case ScenarioActionName.Archive =>
+          ScenarioActivityType.ScenarioArchived
+        case ScenarioActionName.UnArchive =>
+          ScenarioActivityType.ScenarioUnarchived
+        case ScenarioActionName.Pause =>
+          ScenarioActivityType.ScenarioPaused
+        case ScenarioActionName.Rename =>
+          ScenarioActivityType.ScenarioNameChanged
+        case InstantBatchCustomAction.name =>
+          ScenarioActivityType.PerformedSingleExecution
+        case otherCustomName =>
+          ScenarioActivityType.CustomAction(otherCustomName.value)
+      }
+      activityType.entryName
+    }
+
+  }
 
   class ProcessActionsDefinitions(val profile: JdbcProfile) {
     import profile.api._

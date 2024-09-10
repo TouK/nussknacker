@@ -11,6 +11,8 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
+    <logger name="db.migration" level="DEBUG"/>
+
     <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
     <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
     <logger name="slick.jdbc.JdbcBackend.statement" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
@@ -57,7 +59,7 @@
     <logger name="org.apache.zookeeper.server.PrepRequestProcessor" level="WARN"/>
     <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR"/>
 
-    <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
+    <logger name="org.flywaydb" level="DEBUG"/>
     <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>
     <logger name="org.apache.fop.apps.FOUserAgent" level="ERROR"/>
     <!-- skuber by default logs all requests to k8s on INFO -->

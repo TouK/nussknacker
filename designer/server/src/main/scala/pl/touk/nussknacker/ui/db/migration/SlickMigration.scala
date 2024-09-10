@@ -40,6 +40,7 @@ trait ProcessJsonMigration extends SlickMigration with NuTables with LazyLogging
 
   override protected def migrateActions
       : DBIOAction[Seq[Int], NoStream, Effect.Read with Effect.Read with Effect.Write] = {
+    logger.error("Migration")
     for {
       allVersionIds <- processVersionsTableWithUnit.map(pve => (pve.id, pve.processId)).result
       updated <- DBIOAction.sequence(allVersionIds.zipWithIndex.map { case ((id, processId), scenarioIndex) =>

@@ -1,21 +1,26 @@
 package db.migration
 
+import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_055__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
+import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition.logger
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc.JdbcProfile
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
-trait V1_055__CreateScenarioActivitiesDefinition extends SlickMigration {
+trait V1_055__CreateScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
   import profile.api._
 
   private val definitions = new ScenarioActivitiesDefinitions(profile)
 
   override def migrateActions: DBIOAction[Any, NoStream, _ <: Effect] = {
+    logger.info("Starting migration V1_055__CreateScenarioActivitiesDefinition")
     definitions.scenarioActivitiesTable.schema.create
+      .map(_ => logger.info("Execution finished for migration V1_055__CreateScenarioActivitiesDefinition"))
   }
 
 }
