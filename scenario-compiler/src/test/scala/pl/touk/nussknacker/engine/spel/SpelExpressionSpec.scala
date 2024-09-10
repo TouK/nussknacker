@@ -497,7 +497,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
 
-  test("return invalid argument if arguments is not passed to method") {
+  test("return invalid argument if arguments are not passed to method") {
     val parsed             = parse[Any]("#processHelper.add", ctxWithGlobal)
     val expectedValidation = Invalid("Mismatch parameter types. Found: add(). Required: add(Integer, Integer)")
     parsed.isInvalid shouldBe true
