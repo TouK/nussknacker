@@ -5,12 +5,12 @@ describe("Scenario labels", () => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
-    after(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
-    });
-
     beforeEach(() => {
         cy.mockWindowDate();
+    });
+
+    afterEach(() => {
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     describe("designer", () => {
@@ -59,6 +59,8 @@ describe("Scenario labels", () => {
 
         it("should show labels for scenario", () => {
             cy.visitNewProcess(seed).then((processName) => cy.addLabelsToNewProcess(processName, ["tag1", "tag3"]));
+
+            cy.viewport(1500, 800);
 
             cy.get("[data-testid=scenario-label-0]").should("be.visible").contains("tag1");
             cy.get("[data-testid=scenario-label-1]").should("be.visible").contains("tag3");
