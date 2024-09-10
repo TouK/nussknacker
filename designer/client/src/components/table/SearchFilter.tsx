@@ -26,6 +26,7 @@ export function AdvancedOptionsIcon(props: {
             className={cx(
                 flex,
                 css({
+                    transform: "scale(1.5)",
                     ".icon-fill": {
                         fill: "none",
                         stroke: !props.isActive ? theme.palette.text.secondary : theme.palette.primary.main,
@@ -43,6 +44,7 @@ export function SearchIcon(props: { isEmpty?: boolean }): JSX.Element {
             className={cx(
                 flex,
                 css({
+                    transform: "scale(0.8)",
                     ".icon-fill": {
                         fill: props.isEmpty ? theme.palette.text.secondary : theme.palette.primary.main,
                     },
