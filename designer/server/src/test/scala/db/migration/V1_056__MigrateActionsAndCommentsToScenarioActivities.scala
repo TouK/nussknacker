@@ -38,6 +38,7 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
   "When data is present in old actions and comments tables" - {
     "migrate data to scenario_activities table" in {
       import HsqldbProfile.api._
+
       val runner = newDBIOActionRunner(testDbRef)
 
       val migration                 = new Migration(HsqldbProfile)
