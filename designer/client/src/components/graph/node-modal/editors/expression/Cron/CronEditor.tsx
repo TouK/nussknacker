@@ -8,6 +8,7 @@ import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../For
 import { CronEditorStyled } from "./CronEditorStyled";
 import { ExtendedEditor } from "../Editor";
 import { FieldError } from "../../Validators";
+import { nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
 
 export type CronExpression = string;
 
@@ -73,7 +74,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     };
 
     return (
-        <CronEditorStyled ref={node}>
+        <CronEditorStyled ref={node} className={nodeValue}>
             <Input
                 value={value}
                 fieldErrors={fieldErrors}
