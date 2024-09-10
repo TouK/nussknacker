@@ -1,8 +1,7 @@
 import { Theme } from "@mui/material";
 import "react-datetime/css/react-datetime.css";
-import { rowAceEditor } from "../../components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
-import { blendDarken, blendLighten, getBorderColor } from "./helpers";
 import { nodeInput, rowAceEditor } from "../../components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { blendDarken, blendLighten, getBorderColor } from "./helpers";
 
 const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker .ace_gutter": {

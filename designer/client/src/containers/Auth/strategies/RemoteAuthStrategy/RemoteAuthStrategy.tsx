@@ -1,15 +1,18 @@
+import { ModuleString, ModuleUrl, splitUrl } from "@touk/federated-component";
 import React, { FunctionComponent, PropsWithChildren } from "react";
 import { PendingPromise } from "../../../../common/PendingPromise";
 import SystemUtils from "../../../../common/SystemUtils";
 import { ErrorBoundary } from "../../../../components/common/error-boundary";
+import { RemoteComponent } from "../../../../components/RemoteComponent";
 import { RemoteAuthenticationSettings } from "../../../../reducers/settings";
-import { ModuleString, ModuleUrl, splitUrl } from "@touk/federated-component";
 import { AuthErrorCodes } from "../../AuthErrorCodes";
 import { Strategy, StrategyConstructor } from "../../Strategy";
 import { AuthClient } from "./externalAuthModule";
-import { RemoteComponent } from "../../../../components/RemoteComponent";
 
 type AuthLibCallback = (a: AuthClient) => void;
+type RemoteAuthProviderProps = PropsWithChildren<{
+    onInit: AuthLibCallback;
+}>;
 
 function createAuthWrapper(
     {
@@ -24,7 +27,7 @@ function createAuthWrapper(
     return function Wrapper({ children }: PropsWithChildren<unknown>) {
         return (
             <ErrorBoundary>
-                <RemoteComponent url={url} scope={scope} onInit={onInit}>
+                <RemoteComponent<RemoteAuthProviderProps> url={url} scope={scope} onInit={onInit}>
                     {children}
                 </RemoteComponent>
             </ErrorBoundary>
