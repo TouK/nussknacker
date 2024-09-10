@@ -1,16 +1,17 @@
-package pl.touk.nussknacker.engine.flink.table.extractor
+package pl.touk.nussknacker.engine.flink.table.definition
 
-import org.apache.flink.table.api.DataTypes
-import org.apache.flink.table.catalog.{Column, ResolvedSchema}
+import cats.data.Validated.Invalid
+import org.apache.flink.configuration.Configuration
+import org.apache.flink.table.api.{DataTypes, Schema}
+import org.apache.flink.table.catalog._
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
-import pl.touk.nussknacker.engine.flink.table._
-import pl.touk.nussknacker.engine.flink.table.extractor.TablesDefinitionDiscoveryTest.invalidSqlStatements
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.engine.flink.table.definition.TablesDefinitionDiscoveryTest.invalidSqlStatements
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
+import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
 import scala.jdk.CollectionConverters._
 
@@ -19,11 +20,25 @@ class TablesDefinitionDiscoveryTest
     with Matchers
     with LoneElement
     with ValidatedValuesDetailedMessage
-    with TableDrivenPropertyChecks {
+    with TableDrivenPropertyChecks
+    with PatientScalaFutures {
+
+  test("return error for empty flink data definition") {
+    FlinkDataDefinition.create(
+      sqlStatements = None,
+      catalogConfigurationOpt = None,
+    ) should matchPattern { case Invalid(EmptyDataDefinition) =>
+    }
+  }
 
   test("extracts configuration from valid sql statement") {
-    val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
-    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(statements).validValue
+    val flinkDataDefinition = FlinkDataDefinition
+      .create(
+        sqlStatements = Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)),
+        catalogConfigurationOpt = None,
+      )
+      .validValue
+    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
     val tablesDefinitions = discovery.listTables
     val tableDefinition   = tablesDefinitions.loneElement
     val sourceRowType     = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
@@ -64,23 +79,51 @@ class TablesDefinitionDiscoveryTest
        |      'connector' = 'datagen'
        |);""".stripMargin
 
-    val statements        = SqlStatementReader.readSql(statementsStr)
-    val discovery         = TablesDefinitionDiscovery.prepareDiscovery(statements).validValue
-    val tablesDefinitions = discovery.listTables
+    val flinkDataDefinition = FlinkDataDefinition
+      .create(
+        sqlStatements = Some(SqlStatementReader.readSql(statementsStr)),
+        catalogConfigurationOpt = None,
+      )
+      .validValue
+    val discovery        = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
+    val tablesDefinition = discovery.listTables.loneElement
 
-    tablesDefinitions.loneElement shouldBe TableDefinition(
-      tableName,
-      ResolvedSchema.of(Column.physical("someString", DataTypes.STRING()))
-    )
+    tablesDefinition.tableId.toString shouldBe "`someCatalog`.`someDatabase`.`testTable2`"
+    tablesDefinition.schema shouldBe ResolvedSchema.of(Column.physical("someString", DataTypes.STRING()))
   }
 
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
-      val parsedStatement             = SqlStatementReader.readSql(invalidStatement)
-      val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(parsedStatement).invalidValue
+      val flinkDataDefinition = FlinkDataDefinition
+        .create(
+          sqlStatements = Some(SqlStatementReader.readSql(invalidStatement)),
+          catalogConfigurationOpt = None,
+        )
+        .validValue
+      val sqlStatementExecutionErrors = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).invalidValue
 
       sqlStatementExecutionErrors.size shouldBe 1
     }
+  }
+
+  test("use catalog configuration in data definition") {
+    val catalogConfiguration = Configuration.fromMap(Map("type" -> "mockable").asJava)
+    val catalogTable = CatalogTable.of(
+      Schema.newBuilder().column("fooColumn", DataTypes.STRING()).build(),
+      null,
+      List.empty[String].asJava,
+      Map.empty[String, String].asJava
+    )
+    MockableCatalogFactory.resetCatalog()
+    MockableCatalogFactory.catalog.createTable(ObjectPath.fromString("default.fooTable"), catalogTable, false)
+    val flinkDataDefinition = FlinkDataDefinition.create(None, Some(catalogConfiguration)).validValue
+
+    val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
+
+    val tableDefinition = discovery.listTables.loneElement
+
+    tableDefinition.tableId.toString shouldBe s"`${FlinkDataDefinition.internalCatalogName}`.`default`.`fooTable`"
+    tableDefinition.schema shouldBe ResolvedSchema.of(Column.physical("fooColumn", DataTypes.STRING()))
   }
 
 }

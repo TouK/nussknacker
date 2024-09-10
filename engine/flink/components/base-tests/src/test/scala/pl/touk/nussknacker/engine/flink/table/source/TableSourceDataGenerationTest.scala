@@ -5,7 +5,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
-import pl.touk.nussknacker.engine.flink.table.extractor.{SqlStatementReader, TablesDefinitionDiscovery}
+import pl.touk.nussknacker.engine.flink.table.definition.{
+  FlinkDataDefinition,
+  SqlStatementReader,
+  TablesDefinitionDiscovery
+}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
@@ -16,13 +20,18 @@ class TableSourceDataGenerationTest
     with LoneElement
     with ValidatedValuesDetailedMessage {
 
-  private val statements = SqlStatementReader.readSql(SimpleTable.sqlStatement)
+  private val flinkDataDefinition = FlinkDataDefinition
+    .create(
+      sqlStatements = Some(SqlStatementReader.readSql(SimpleTable.sqlStatement)),
+      catalogConfigurationOpt = None,
+    )
+    .validValue
 
-  private val discovery = TablesDefinitionDiscovery.prepareDiscovery(statements).validValue
+  private val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
 
   private val tableSource = new TableSource(
     tableDefinition = discovery.listTables.loneElement,
-    sqlStatements = statements,
+    flinkDataDefinition = flinkDataDefinition,
     testDataGenerationMode = TestDataGenerationMode.Random
   )
 
