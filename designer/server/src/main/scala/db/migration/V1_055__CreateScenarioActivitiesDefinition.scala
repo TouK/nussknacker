@@ -1,6 +1,8 @@
 package db.migration
 
+import db.migration.V1_055__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
+import slick.jdbc.JdbcProfile
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
@@ -10,77 +12,88 @@ trait V1_055__CreateScenarioActivitiesDefinition extends SlickMigration {
 
   import profile.api._
 
+  private val definitions = new ScenarioActivitiesDefinitions(profile)
+
   override def migrateActions: DBIOAction[Any, NoStream, _ <: Effect] = {
-    scenarioActivitiesTable.schema.create
+    definitions.scenarioActivitiesTable.schema.create
   }
 
-  private val scenarioActivitiesTable = TableQuery[ScenarioActivityEntity]
+}
 
-  private class ScenarioActivityEntity(tag: Tag) extends Table[ScenarioActivityEntityData](tag, "scenario_activities") {
+object V1_055__CreateScenarioActivitiesDefinition {
 
-    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  class ScenarioActivitiesDefinitions(val profile: JdbcProfile) {
+    import profile.api._
 
-    def activityType: Rep[String] = column[String]("activity_type", NotNull)
+    val scenarioActivitiesTable = TableQuery[ScenarioActivityEntity]
 
-    def scenarioId: Rep[Long] = column[Long]("scenario_id", NotNull)
+    class ScenarioActivityEntity(tag: Tag) extends Table[ScenarioActivityEntityData](tag, "scenario_activities") {
 
-    def activityId: Rep[UUID] = column[UUID]("activity_id", NotNull)
+      def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
-    def userId: Rep[String] = column[String]("user_id", NotNull)
+      def activityType: Rep[String] = column[String]("activity_type", NotNull)
 
-    def userName: Rep[String] = column[String]("user_name", NotNull)
+      def scenarioId: Rep[Long] = column[Long]("scenario_id", NotNull)
 
-    def impersonatedByUserId: Rep[Option[String]] = column[Option[String]]("impersonated_by_user_id")
+      def activityId: Rep[UUID] = column[UUID]("activity_id", NotNull)
 
-    def impersonatedByUserName: Rep[Option[String]] = column[Option[String]]("impersonated_by_user_name")
+      def userId: Rep[String] = column[String]("user_id", NotNull)
 
-    def lastModifiedByUserName: Rep[Option[String]] = column[Option[String]]("last_modified_by_user_name")
+      def userName: Rep[String] = column[String]("user_name", NotNull)
 
-    def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
+      def impersonatedByUserId: Rep[Option[String]] = column[Option[String]]("impersonated_by_user_id")
 
-    def scenarioVersion: Rep[Option[Long]] = column[Option[Long]]("scenario_version")
+      def impersonatedByUserName: Rep[Option[String]] = column[Option[String]]("impersonated_by_user_name")
 
-    def comment: Rep[Option[String]] = column[Option[String]]("comment")
+      def lastModifiedByUserName: Rep[Option[String]] = column[Option[String]]("last_modified_by_user_name")
 
-    def attachmentId: Rep[Option[Long]] = column[Option[Long]]("attachment_id")
+      def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
 
-    def performedAt: Rep[Option[Timestamp]] = column[Option[Timestamp]]("performed_at")
+      def scenarioVersion: Rep[Option[Long]] = column[Option[Long]]("scenario_version")
 
-    def state: Rep[Option[String]] = column[Option[String]]("state")
+      def comment: Rep[Option[String]] = column[Option[String]]("comment")
 
-    def errorMessage: Rep[Option[String]] = column[Option[String]]("error_message")
+      def attachmentId: Rep[Option[Long]] = column[Option[Long]]("attachment_id")
 
-    def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
+      def performedAt: Rep[Option[Timestamp]] = column[Option[Timestamp]]("performed_at")
 
-    def additionalProperties: Rep[String] = column[String]("additional_properties", NotNull)
+      def state: Rep[Option[String]] = column[Option[String]]("state")
 
-    override def * =
-      (
-        id,
-        activityType,
-        scenarioId,
-        activityId,
-        userId,
-        userName,
-        impersonatedByUserId,
-        impersonatedByUserName,
-        lastModifiedByUserName,
-        createdAt,
-        scenarioVersion,
-        comment,
-        attachmentId,
-        performedAt,
-        state,
-        errorMessage,
-        buildInfo,
-        additionalProperties,
-      ) <> (
-        ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
-      )
+      def errorMessage: Rep[Option[String]] = column[Option[String]]("error_message")
+
+      def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
+
+      def additionalProperties: Rep[String] = column[String]("additional_properties", NotNull)
+
+      override def * =
+        (
+          id,
+          activityType,
+          scenarioId,
+          activityId,
+          userId,
+          userName,
+          impersonatedByUserId,
+          impersonatedByUserName,
+          lastModifiedByUserName,
+          createdAt,
+          scenarioVersion,
+          comment,
+          attachmentId,
+          performedAt,
+          state,
+          errorMessage,
+          buildInfo,
+          additionalProperties,
+        ) <> (
+          ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
+        )
+
+    }
 
   }
 
-  private sealed case class ScenarioActivityEntityData(
+  final case class ScenarioActivityEntityData(
       id: Long,
       activityType: String,
       scenarioId: Long,
