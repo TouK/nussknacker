@@ -1353,24 +1353,53 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("casts") {
-    parse[Any]("{a: 11}.canCastTo('java.util.Map') ? true : false", ctx).validExpression
-      .evaluateSync[Any](ctx) shouldBe true
+  test("should check if a type can be casted to a given type") {
+    forAll(
+      Table(
+        ("expression", "expectedResult"),
+        ("{a: 11}.canCastTo('java.util.Map')", true),
+        ("{11}.canCastTo('java.util.Map')", false),
+      )
+    ) { (expression, expectedResult) =>
+      parse[Any](expression, ctx).validExpression.evaluateSync[Any](ctx) shouldBe expectedResult
+    }
   }
 
-  test("casts1") {
-    parse[Any]("11.canCastTo('java.util.Map') ? true : false", ctx).validExpression
-      .evaluateSync[Any](ctx) shouldBe true
+  test("should return unknownMethodError during invoke cast on simple types") {
+    forAll(
+      Table(
+        ("expression", "expectedMethod", "expectedType"),
+        ("11.canCastTo('java.lang.String')", "canCastTo", "Integer"),
+        ("true.canCastTo('java.lang.String')", "canCastTo", "Boolean"),
+        ("'true'.canCastTo('java.lang.String')", "canCastTo", "String"),
+        ("11.castTo('java.lang.String')", "castTo", "Integer"),
+        ("true.castTo('java.lang.String')", "castTo", "Boolean"),
+        ("'true'.castTo('java.lang.String')", "castTo", "String"),
+      )
+    ) { (expression, expectedMethod, expectedType) =>
+      parse[Any](expression, ctx).invalidValue.toList should matchPattern {
+        case UnknownMethodError(expectedMethod, expectedType) :: Nil =>
+      }
+    }
   }
 
-  test("casts2") {
+  test("should compute correct result type based on parameter") {
     val parsed = parse[Any]("{11, 12}.castTo('java.util.Collection')", ctx).validValue
     parsed.returnType shouldBe Typed.typedClass(classOf[java.util.Collection[_]])
   }
 
   test("should return an error if the cast return type cannot be determined at parse time") {
-    val parsed = parse[Any]("{11, 12}.castTo('java.util.Collection')", ctx).validValue
-    parsed.returnType shouldBe Typed.typedClass(classOf[java.util.Collection[_]])
+    parse[Any]("{11, 12}.castTo('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
+      case ArgumentTypeError("castTo", _, _) :: Nil =>
+    }
+    parse[Any]("{11, 12}.castTo(#obj.id)", ctx).invalidValue.toList should matchPattern {
+      case ArgumentTypeError("castTo", _, _) :: Nil =>
+    }
+  }
+
+  test("should throw exception if cast fails") {
+    val value1 = parse[Any]("#obj.castTo('java.lang.String')", ctx).validExpression.evaluateSync[Any](ctx)
+    value1 shouldBe "expectedResult"
   }
 
 }

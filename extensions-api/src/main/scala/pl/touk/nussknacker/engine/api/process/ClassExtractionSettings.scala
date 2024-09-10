@@ -164,6 +164,7 @@ object ClassExtractionSettings {
       AvroExcludedMembers ++
       JavaTimeExcludeMembers ++
       ExtensionExcludedMembers :+
+//      JavaTimeExcludeMembers :+
       ReturnMemberPredicate(
         SuperClassPredicate(
           ExactClassPredicate(
@@ -339,7 +340,18 @@ object ClassExtractionSettings {
     )
 
   lazy val IncludedExtensionMembers: List[ClassMemberPredicate] = List(
-    MemberNamePredicate(ClassPredicate { case _ => true }, Set("canCastTo", "castTo")),
+    MemberNamePredicate(
+      SuperClassPredicate(
+        ExactClassPredicate(
+          classOf[Iterable[_]],
+          classOf[Option[_]],
+          classOf[Map[_, _]],
+          classOf[java.util.Collection[_]],
+          classOf[java.util.Map[_, _]]
+        )
+      ),
+      Set("canCastTo", "castTo")
+    ),
   )
 
   lazy val DefaultTypingFunctionRules: List[TypingFunctionRule] =

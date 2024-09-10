@@ -40,8 +40,15 @@ class CastImpl(target: Any) extends Cast {
   override def canCastTo(clazzType: String): Boolean =
     Class.forName(clazzType).isAssignableFrom(target.getClass)
 
-  override def castTo[T](clazzType: String): T =
-    target.asInstanceOf[T]
+  override def castTo[T](clazzType: String): T = Try {
+    val clazz = Class.forName(clazzType)
+    if (clazz.isInstance(target)) {
+      clazz.cast(target).asInstanceOf[T]
+    } else {
+      throw new IllegalArgumentException(s"Cannot cast: ${target.getClass} to: $clazzType")
+    }
+  }.get
+
 }
 
 object CastImpl {
