@@ -15,7 +15,7 @@ import {
     useTheme,
 } from "@mui/material";
 import { selectStyled } from "../../../stylesheets/SelectStyled";
-import React, { ForwardRefExoticComponent, useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import HttpService from "../../../http/HttpService";
 import i18next from "i18next";
 import { editScenarioLabels } from "../../../actions/nk";
@@ -94,7 +94,8 @@ interface Props {
 }
 
 export const ScenarioLabels = ({ readOnly }: Props) => {
-    const scenarioLabelOptions: LabelOption[] = useSelector(getScenarioLabels).map(toLabelOption);
+    const scenarioLabels = useSelector(getScenarioLabels);
+    const scenarioLabelOptions: LabelOption[] = useMemo(() => scenarioLabels.map(toLabelOption), [scenarioLabels]);
     const initialScenarioLabelOptionsErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
         scenarioLabelOptions.some((option) => toLabelValue(option) === error.label),
     );
@@ -110,7 +111,6 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
     const [isEdited, setIsEdited] = useState(false);
     const [options, setOptions] = useState<LabelOption[]>([]);
 
-    const [input, setInput] = useState("");
     const [inputTyping, setInputTyping] = useState(false);
     const [inputErrors, setInputErrors] = useState<ScenarioLabelValidationError[]>([]);
 
@@ -240,9 +240,9 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                         }
                         return toLabelValue(option);
                     }}
-                    inputValue={input}
                     isOptionEqualToValue={(v1: LabelOption, v2: LabelOption) => v1.value === v2.value}
                     loading={isFetching || inputTyping}
+                    clearOnBlur
                     loadingText={
                         inputTyping
                             ? i18next.t("panels.scenarioDetails.labels.labelTyping", "Typing...")
@@ -252,7 +252,6 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                     noOptionsText={i18next.t("panels.scenarioDetails.labels.noAvailableLabels", "No labels")}
                     onBlur={() => {
                         setIsEdited(false);
-                        setInput("");
                         setInputErrors([]);
                         if (scenarioLabelOptions.length === 0) {
                             setShowEditor(false);
@@ -282,7 +281,6 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                         }
                         setInputErrors([]);
                         validateInput(newInputValue);
-                        setInput(newInputValue);
                     }}
                     onOpen={async () => {
                         const fetchedOptions = await fetchAvailableLabelOptions();
@@ -303,6 +301,8 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 inputProps={{
                                     ...params.inputProps,
                                     onKeyDown: (event) => {
+                                        const input = (event.target as HTMLInputElement).value;
+
                                         if (
                                             event.key === "Enter" &&
                                             (inputErrors.length !== 0 || inputTyping || isInputInSelectedOptions(input))
