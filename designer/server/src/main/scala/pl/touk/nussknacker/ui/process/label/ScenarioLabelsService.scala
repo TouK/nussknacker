@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.label
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioLabelsRepository}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ScenarioLabelsValidator
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,11 +15,11 @@ class ScenarioLabelsService(
     implicit ec: ExecutionContext
 ) {
 
-  def readLabels(): Future[List[String]] = {
+  def readLabels(loggedUser: LoggedUser): Future[List[String]] = {
     dbioRunner
-      .run(scenarioLabelsRepository.getLabels)
+      .run(scenarioLabelsRepository.getLabels(loggedUser))
       .map {
-        _.toList.flatMap(_._2).map(_.value).distinct.sorted
+        _.map(_.value).sorted
       }
   }
 

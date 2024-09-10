@@ -14,6 +14,7 @@ declare global {
             importTestProcess: typeof importTestProcess;
             visitNewProcess: typeof visitNewProcess;
             visitNewFragment: typeof visitNewFragment;
+            addLabelsToNewProcess: typeof addLabelsToNewProcess;
             postFormData: typeof postFormData;
             visitProcess: typeof visitProcess;
             getNode: typeof getNode;
@@ -90,6 +91,25 @@ function visitNewFragment(name?: string, fixture?: string, category?: string) {
     cy.intercept("GET", "/api/processes/*").as("fetch");
     return cy.createTestFragment(name, fixture, category).then((processName) => {
         return cy.visitProcess(processName);
+    });
+}
+
+function addLabelsToNewProcess(name?: string, labels?: string[]) {
+    return cy.visitProcess(name).then((processName) => {
+        cy.intercept("PUT", "/api/processes/*").as("save");
+        cy.get("[data-testid=AddLabel]").should("be.visible").click();
+        cy.get("[data-testid=LabelInput]").should("be.visible").click().as("labelInput");
+
+        labels.forEach((label) => {
+            cy.get("@labelInput").type(label);
+            cy.wait(1000); // wait for validation
+            cy.get("@labelInput").type("{enter}");
+        });
+
+        cy.contains(/^save/i).should("be.enabled").click();
+        cy.contains(/^ok$/i).should("be.enabled").click();
+        cy.wait("@save").its("response.statusCode").should("eq", 200);
+        return cy.wrap(processName);
     });
 }
 
@@ -292,6 +312,7 @@ Cypress.Commands.add("createTestFragment", createTestFragment);
 Cypress.Commands.add("importTestProcess", importTestProcess);
 Cypress.Commands.add("visitNewProcess", visitNewProcess);
 Cypress.Commands.add("visitNewFragment", visitNewFragment);
+Cypress.Commands.add("addLabelsToNewProcess", addLabelsToNewProcess);
 Cypress.Commands.add("postFormData", postFormData);
 Cypress.Commands.add("visitProcess", visitProcess);
 Cypress.Commands.add("getNode", getNode);

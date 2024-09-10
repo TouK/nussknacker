@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test.utils
 
-import com.networknt.schema.{InputFormat, JsonSchemaFactory, ValidationMessage}
+import com.networknt.schema.{InputFormat, JsonSchemaFactory, SchemaValidatorsConfig, ValidationMessage}
 import io.circe.yaml.{parser => YamlParser}
 import io.circe.{ACursor, Json}
 import org.scalactic.anyvals.NonEmptyList

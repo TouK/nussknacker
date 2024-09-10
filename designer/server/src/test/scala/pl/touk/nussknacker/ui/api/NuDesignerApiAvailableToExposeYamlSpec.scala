@@ -36,7 +36,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
       }
       .mkString("", "\n", "\n")
     withClue(clue) {
-      examplesValidationResult.size shouldEqual 0
+      examplesValidationResult should be(List.empty[InvalidExample])
     }
   }
 

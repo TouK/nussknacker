@@ -182,6 +182,8 @@ object ProcessTestData {
 
   val sampleProcessName: ProcessName = ProcessName("fooProcess")
 
+  val sampleScenarioLabels: List[String] = List("tag1", "tag2")
+
   val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName)
 
   val validProcessWithEmptySpelExpr: CanonicalProcess =

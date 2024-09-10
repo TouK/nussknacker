@@ -24,7 +24,7 @@ class ScenarioLabelsApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogicSuccess { implicit loggedUser: LoggedUser => _ =>
         service
-          .readLabels()
+          .readLabels(loggedUser)
           .map(labels => ScenarioLabels(labels))
       }
   }

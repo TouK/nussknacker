@@ -29,6 +29,7 @@ interface AddLabelProps {
 const AddLabel = ({ onClick }: AddLabelProps) => {
     return (
         <Typography
+            data-testid="AddLabel"
             component={Link}
             variant={"caption"}
             sx={(theme) => ({ cursor: "pointer", textDecoration: "none", color: theme.palette.text.primary })}
@@ -200,6 +201,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                 <AddLabel onClick={handleAddLabelClick} />
             ) : (
                 <StyledAutocomplete
+                    data-testid={"Labels"}
                     isEdited={isEdited}
                     id="scenario-labels"
                     disabled={readOnly}
@@ -292,6 +294,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                     renderInput={(params) => (
                         <div ref={params.InputProps.ref}>
                             <TextField
+                                data-testid={"LabelInput"}
                                 size="small"
                                 {...params}
                                 variant="outlined"
@@ -331,6 +334,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 return (
                                     <Chip
                                         key={key}
+                                        data-testid={`scenario-label-${index}`}
                                         color={labelError ? "error" : "default"}
                                         size="small"
                                         variant="outlined"

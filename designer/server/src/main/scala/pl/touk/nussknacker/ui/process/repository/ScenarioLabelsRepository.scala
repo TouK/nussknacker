@@ -3,9 +3,11 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.data.NonEmptyList
 import db.util.DBIOActionInstances.{DB, _}
 import pl.touk.nussknacker.engine.api.process.ProcessId
-import pl.touk.nussknacker.ui.db.entity.ScenarioLabelEntityData
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessEntityFactory, ScenarioLabelEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContext
@@ -27,6 +29,10 @@ class ScenarioLabelsRepository(protected val dbRef: DbRef)(implicit ec: Executio
           (scenarioId, tagsEntities.map(toScenarioLabel).toList)
         }
       }
+  }
+
+  def getLabels(loggedUser: LoggedUser): DB[List[ScenarioLabel]] = {
+    labelsByUser(loggedUser).result.map(_.map(ScenarioLabel.apply).toList)
   }
 
   def overwriteLabels(scenarioId: ProcessId, scenarioLabels: List[ScenarioLabel]): DB[Unit] =
@@ -61,5 +67,29 @@ class ScenarioLabelsRepository(protected val dbRef: DbRef)(implicit ec: Executio
     Compiled((scenarioId: Rep[ProcessId]) => labelsTable.filter(_.scenarioId === scenarioId))
 
   private def toScenarioLabel(entity: ScenarioLabelEntityData) = ScenarioLabel(entity.name)
+
+  private def labelsByUser(
+      implicit loggedUser: LoggedUser
+  ) = {
+    def getTableForUser(user: RealLoggedUser) = {
+      user match {
+        case user: CommonUser =>
+          labelsTable
+            .join(scenarioIdsFor(user))
+            .on(_.scenarioId === _)
+            .map(_._1.name)
+            .distinct
+        case _: AdminUser =>
+          labelsTable.map(_.name).distinct
+      }
+    }
+    loggedUser match {
+      case user: RealLoggedUser   => getTableForUser(user)
+      case user: ImpersonatedUser => getTableForUser(user.impersonatedUser)
+    }
+  }
+
+  private def scenarioIdsFor(user: CommonUser) =
+    processesTable.filter(_.processCategory inSet user.categories(Permission.Read)).map(_.id)
 
 }

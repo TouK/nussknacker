@@ -85,9 +85,10 @@ class MigrationService(
       migrateScenarioData.processCategory,
       migrateScenarioData.engineSetupName
     )
-    val scenarioGraph = migrateScenarioData.scenarioGraph
-    val processName   = migrateScenarioData.processName
-    val isFragment    = migrateScenarioData.isFragment
+    val scenarioGraph  = migrateScenarioData.scenarioGraph
+    val processName    = migrateScenarioData.processName
+    val isFragment     = migrateScenarioData.isFragment
+    val scenarioLabels = migrateScenarioData.scenarioLabels.map(ScenarioLabel.apply)
     val forwardedUsernameO =
       if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioData.remoteUserName)) else None
     val updateProcessComment = {
@@ -98,7 +99,6 @@ class MigrationService(
           UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by Unknown user")
       }
     }
-    val scenarioLabels: List[ScenarioLabel] = List.empty
 
     val updateScenarioCommand =
       UpdateScenarioCommand(
