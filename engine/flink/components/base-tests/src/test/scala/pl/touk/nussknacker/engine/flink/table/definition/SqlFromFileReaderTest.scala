@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.table.extractor
+package pl.touk.nussknacker.engine.flink.table.definition
 
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite

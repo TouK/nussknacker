@@ -27,6 +27,7 @@ trait BaseSpelSpec {
     "DATE_FORMAT" -> new DateFormatUtils(Locale.US),
     "UTIL"        -> util,
     "NUMERIC"     -> numeric,
+    "CONV"        -> conversion
   )
 
   private val parser = SpelExpressionParser.default(
@@ -44,6 +45,7 @@ trait BaseSpelSpec {
     classOf[DateFormatUtils],
     util.getClass,
     numeric.getClass,
+    conversion.getClass,
   )
 
   protected def evaluate[T: TypeTag](expr: String, localVariables: Map[String, Any] = Map.empty): T = {
