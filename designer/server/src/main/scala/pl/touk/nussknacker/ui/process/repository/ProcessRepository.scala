@@ -162,7 +162,7 @@ class DBProcessRepository(
               scenarioId = ScenarioId(scenarioId.value),
               scenarioActivityId = ScenarioActivityId.random,
               user = ScenarioUser(
-                id = UserId(loggedUser.id),
+                id = Some(UserId(loggedUser.id)),
                 name = UserName(loggedUser.username),
                 impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
                 impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
@@ -294,7 +294,7 @@ class DBProcessRepository(
               scenarioId = ScenarioId(process.id.value),
               scenarioActivityId = ScenarioActivityId.random,
               user = ScenarioUser(
-                id = UserId(loggedUser.id),
+                id = Some(UserId(loggedUser.id)),
                 name = UserName(loggedUser.username),
                 impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
                 impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)

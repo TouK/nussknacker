@@ -42,7 +42,7 @@ object V1_055__CreateScenarioActivitiesDefinition {
 
       def activityId: Rep[UUID] = column[UUID]("activity_id", NotNull)
 
-      def userId: Rep[String] = column[String]("user_id", NotNull)
+      def userId: Rep[Option[String]] = column[Option[String]]("user_id")
 
       def userName: Rep[String] = column[String]("user_name", NotNull)
 
@@ -103,7 +103,7 @@ object V1_055__CreateScenarioActivitiesDefinition {
       activityType: String,
       scenarioId: Long,
       activityId: UUID,
-      userId: String,
+      userId: Option[String],
       userName: String,
       impersonatedByUserId: Option[String],
       impersonatedByUserName: Option[String],

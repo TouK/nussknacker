@@ -16,7 +16,6 @@ import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
-import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -43,28 +42,6 @@ object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
     def migrateActions: DBIOAction[(List[ScenarioActivityEntityData], Int), NoStream, Effect.All] = {
       logger.info("Executing migration V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition")
       for {
-        _ <- scenarioActivitiesDefinitions.scenarioActivitiesTable += ScenarioActivityEntityData(
-          id = -1L,
-          activityType = "QWERTY",
-          scenarioId = 1,
-          activityId = UUID.randomUUID(),
-          userId = "user",
-          userName = "user",
-          impersonatedByUserId = Some("user"),
-          impersonatedByUserName = Some("user"),
-          lastModifiedByUserName = Some("user"),
-          createdAt = Timestamp.from(Instant.now),
-          scenarioVersion = Some(1),
-          comment = None,
-          attachmentId = None,
-          finishedAt = Some(Timestamp.from(Instant.now)),
-          state = None,
-          errorMessage = None,
-          buildInfo = None,
-          additionalProperties = Map.empty[String, String].asJson.noSpaces
-        )
-        _ <-
-          sqlu"""insert into public.processes (name, description, category, processing_type, is_fragment, is_archived, id, created_at, created_by, impersonated_by_identity, impersonated_by_username, latest_version_id, latest_finished_action_id, latest_finished_cancel_action_id, latest_finished_deploy_action_id) values ('2024_Q3_6917_NETFLIX', null, 'BatchPeriodic', 'streaming-batch-periodic', false, false, 141, '2024-09-02 11:01:24.564191', 'Łukasz Ciołecki', null, null, null, null, null, null)"""
         actionsWithComments <-
           processActionsDefinitions.table
             .joinLeft(commentsDefinitions.table)
@@ -78,11 +55,11 @@ object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
               activityType = activityTypeStr(processAction.actionName),
               scenarioId = processAction.processId,
               activityId = processAction.id,
-              userId = processAction.user, // todo
+              userId = None,
               userName = processAction.user,
               impersonatedByUserId = processAction.impersonatedByIdentity,
               impersonatedByUserName = processAction.impersonatedByUsername,
-              lastModifiedByUserName = processAction.impersonatedByUsername,
+              lastModifiedByUserName = Some(processAction.user),
               createdAt = processAction.createdAt,
               scenarioVersion = processAction.processVersionId,
               comment = maybeComment.map(_.content),

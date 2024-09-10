@@ -16,7 +16,7 @@ object ScenarioActivityId {
 }
 
 final case class ScenarioUser(
-    id: UserId,
+    id: Option[UserId],
     name: UserName,
     impersonatedByUserId: Option[UserId],
     impersonatedByUserName: Option[UserName],

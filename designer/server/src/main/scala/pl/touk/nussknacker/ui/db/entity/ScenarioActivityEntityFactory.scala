@@ -33,7 +33,7 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
     def activityId: Rep[ScenarioActivityId] = column[ScenarioActivityId]("activity_id", NotNull)
 
-    def userId: Rep[String] = column[String]("user_id", NotNull)
+    def userId: Rep[Option[String]] = column[Option[String]]("user_id")
 
     def userName: Rep[String] = column[String]("user_name", NotNull)
 
@@ -173,7 +173,7 @@ final case class ScenarioActivityEntityData(
     activityType: ScenarioActivityType,
     scenarioId: ProcessId,
     activityId: ScenarioActivityId,
-    userId: String,
+    userId: Option[String],
     userName: String,
     impersonatedByUserId: Option[String],
     impersonatedByUserName: Option[String],

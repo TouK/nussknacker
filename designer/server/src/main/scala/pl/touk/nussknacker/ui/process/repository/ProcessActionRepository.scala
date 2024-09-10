@@ -245,7 +245,7 @@ class DbProcessActionRepository(
       activityType = activityType,
       scenarioId = processId,
       activityId = ScenarioActivityId(actionIdOpt.map(_.value).getOrElse(UUID.randomUUID())),
-      userId = user.id,
+      userId = Some(user.id),
       userName = user.username,
       impersonatedByUserId = user.impersonatingUserId,
       impersonatedByUserName = user.impersonatingUserName,
