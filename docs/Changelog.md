@@ -42,6 +42,9 @@
   * toBigIntegerOrNull
   * toBigDecimal
   * toBigDecimalOrNull
+* [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside 
+  indexer for Maps and Lists (for example `{1,2,3}[#otherList.remove(1) == null ? 0 : 0]`). This allowed executing 
+  some types of unallowed expressions.
 
 ## 1.17
 

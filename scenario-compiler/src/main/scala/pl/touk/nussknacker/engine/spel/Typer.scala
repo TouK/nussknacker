@@ -216,9 +216,9 @@ private[spel] class Typer(
         case TypedClass(clazz, param :: Nil)
             if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
-          validNodeResult(param)
+          withTypedChildren(_ => valid(param))
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
-          validNodeResult(valueParam)
+          withTypedChildren(_ => valid(valueParam))
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case union: TypedUnion               => typeUnion(e, union)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
