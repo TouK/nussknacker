@@ -278,17 +278,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
   }
 
   def getActivityStats: DB[Map[String, Int]] = {
-    val activityTypesWithLegacyComments = Set(
-      ScenarioActivityType.ScenarioDeployed,
-      ScenarioActivityType.ScenarioPaused,
-      ScenarioActivityType.ScenarioCanceled,
-      ScenarioActivityType.ScenarioModified,
-      ScenarioActivityType.ScenarioNameChanged,
-      ScenarioActivityType.CommentAdded,
-    )
     val findScenarioProcessActivityStats = for {
       attachmentsTotal <- attachmentsTable.length.result
-      commentsTotal <- scenarioActivityTable.filter(_.activityType inSet activityTypesWithLegacyComments).length.result
+      commentsTotal    <- scenarioActivityTable.filter(_.comment.isDefined).length.result
     } yield Map(
       AttachmentsTotal -> attachmentsTotal,
       CommentsTotal    -> commentsTotal,

@@ -124,16 +124,15 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
         _       <- commentsDefinitions.table += commentEntity(process)
         _       <- processActionsDefinitions.table += processActionEntity(process)
         result  <- migration.migrateActions
-      } yield result._1
+      } yield (process, result._1)
 
-      val activitiesCreatedDuringMigration = Await.result(runner.run(dbOperations), Duration.Inf)
-
-      activitiesCreatedDuringMigration shouldBe
+      val (createdProcess, insertedActivities) = Await.result(runner.run(dbOperations), Duration.Inf)
+      insertedActivities shouldBe
         List(
           ScenarioActivityEntityData(
             id = -1,
             activityType = "SCENARIO_DEPLOYED",
-            scenarioId = 1,
+            scenarioId = createdProcess.id.value,
             activityId = actionId,
             userId = None,
             userName = user,
