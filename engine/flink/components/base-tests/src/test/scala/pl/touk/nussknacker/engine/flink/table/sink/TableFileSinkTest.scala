@@ -209,6 +209,15 @@ class TableFileSinkTest
       |      'path' = 'file:///$datetimeExpressionOutputDirectory',
       |      'format' = 'json'
       |) LIKE `$datetimePingPongInputTableName`;
+      |
+      |CREATE DATABASE testdb;
+      |
+      |CREATE TABLE testdb.tablewithqualifiedname (
+      |      `quantity` INT
+      |) WITH (
+      |    'connector' = 'datagen',
+      |    'number-of-rows' = '1'
+      |);
       |""".stripMargin
 
   private lazy val sqlTablesDefinitionFilePath = {
@@ -253,7 +262,11 @@ class TableFileSinkTest
   test("should do file-to-file ping-pong for all basic types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$basicPingPongInputTableName'".spel)
+      .source(
+        "start",
+        "table",
+        "Table" -> s"'`default_catalog`.`default_database`.`$basicPingPongInputTableName`'".spel
+      )
       .buildVariable(
         "example-transformations",
         "out",
@@ -270,7 +283,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$basicPingPongOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$basicPingPongOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -305,11 +318,15 @@ class TableFileSinkTest
   test("should be able to access virtual columns in input table") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$virtualColumnInputTableName'".spel)
+      .source(
+        "start",
+        "table",
+        "Table" -> s"'`default_catalog`.`default_database`.`$virtualColumnInputTableName`'".spel
+      )
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$virtualColumnOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$virtualColumnOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -356,7 +373,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$basicExpressionOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$basicExpressionOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> basicTypesExpression
       )
@@ -383,7 +400,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$oneColumnOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$oneColumnOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> valueExpression
       )
@@ -397,7 +414,11 @@ class TableFileSinkTest
   test("should do file-to-file ping-pong for advanced types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$advancedPingPongInputTableName'".spel)
+      .source(
+        "start",
+        "table",
+        "Table" -> s"'`default_catalog`.`default_database`.`$advancedPingPongInputTableName`'".spel
+      )
       .buildVariable(
         "example-transformations",
         "out",
@@ -409,7 +430,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$advancedPingPongOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$advancedPingPongOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -487,7 +508,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$advancedExpressionOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$advancedExpressionOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> valueExpression
       )
@@ -526,7 +547,11 @@ class TableFileSinkTest
   test("should do file-to-file ping-pong for datetime types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$datetimePingPongInputTableName'".spel)
+      .source(
+        "start",
+        "table",
+        "Table" -> s"'`default_catalog`.`default_database`.`$datetimePingPongInputTableName`'".spel
+      )
       .buildVariable(
         "example-transformations",
         "out",
@@ -538,7 +563,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$datetimePingPongOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$datetimePingPongOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -581,7 +606,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"         -> s"'$datetimeExpressionOutputTableName'".spel,
+        "Table"         -> s"'`default_catalog`.`default_database`.`$datetimeExpressionOutputTableName`'".spel,
         "Raw editor"    -> "false".spel,
         "date"          -> "T(java.time.LocalDate).parse('2024-01-01')".spel,
         "time"          -> "T(java.time.LocalTime).parse('12:01:02.000000003')".spel,
@@ -623,7 +648,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$genericsOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$genericsOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> valueExpression
       )
@@ -654,7 +679,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$oneColumnOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$oneColumnOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> valueExpression
       )
