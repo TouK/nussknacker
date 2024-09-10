@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinitionSet,
   StaticMethodDefinition
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -71,7 +70,8 @@ class ExpressionSuggesterSpec
     with Matchers
     with PatientScalaFutures
     with TableDrivenPropertyChecks {
-  implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
+  val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
+  val classDefinitionExtractor                         = new ClassDefinitionExtractor(classExtractionSettings)
 
   private val dictRegistry = new SimpleDictRegistry(
     Map(
@@ -84,11 +84,11 @@ class ExpressionSuggesterSpec
 
   private val clazzDefinitions: ClassDefinitionSet = ClassDefinitionSet(
     Set(
-      ClassDefinitionExtractor.extract(classOf[A]),
-      ClassDefinitionExtractor.extract(classOf[B]),
-      ClassDefinitionExtractor.extract(classOf[C]),
-      ClassDefinitionExtractor.extract(classOf[AA]),
-      ClassDefinitionExtractor.extract(classOf[WithList]),
+      classDefinitionExtractor.extract(classOf[A]),
+      classDefinitionExtractor.extract(classOf[B]),
+      classDefinitionExtractor.extract(classOf[C]),
+      classDefinitionExtractor.extract(classOf[AA]),
+      classDefinitionExtractor.extract(classOf[WithList]),
       ClassDefinition(
         Typed.typedClass[String],
         Map(
@@ -109,8 +109,8 @@ class ExpressionSuggesterSpec
         ),
         Map.empty
       ),
-      ClassDefinitionExtractor.extract(classOf[Util]),
-      ClassDefinitionExtractor.extract(classOf[Duration]),
+      classDefinitionExtractor.extract(classOf[Util]),
+      classDefinitionExtractor.extract(classOf[Duration]),
       ClassDefinition(
         Typed.typedClass[java.util.Map[_, _]],
         Map("empty" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),

@@ -4,7 +4,8 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
 import org.springframework.lang.Nullable;
-import pl.touk.nussknacker.engine.spel.CastDefinition;
+import pl.touk.nussknacker.engine.extension.Cast;
+import pl.touk.nussknacker.engine.extension.ExtensionMethods;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -23,7 +24,7 @@ public class RuntimeConversionHandler {
             if (type.isArray()) {
                 return List.class.getMethods();
             }
-            return Stream.concat(Arrays.stream(type.getMethods()), Arrays.stream(CastDefinition.class.getMethods()))
+            return Stream.concat(Arrays.stream(type.getMethods()), Arrays.stream(Cast.class.getMethods()))
                 .toArray(Method[]::new);
         }
     }
@@ -33,8 +34,8 @@ public class RuntimeConversionHandler {
         public Object invoke(Method method, Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException, ClassNotFoundException {
             if (target != null && target.getClass().isArray() && method.getDeclaringClass().isAssignableFrom(List.class)) {
                 return method.invoke(RuntimeConversionHandler.convert(target), arguments);
-            } else if (target != null && method.getDeclaringClass().isAssignableFrom(CastDefinition.class)) {
-                return Class.forName((String) arguments[0]).isAssignableFrom(target.getClass());
+            } else if (ExtensionMethods.applies(method.getDeclaringClass())) {
+                return ExtensionMethods.invoke(method, target, arguments);
             } else {
                 return method.invoke(target, arguments);
             }

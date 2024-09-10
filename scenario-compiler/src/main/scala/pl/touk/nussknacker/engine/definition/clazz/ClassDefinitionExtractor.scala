@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.{
   extractMethodReturnType,
   extractParameterType
 }
-import pl.touk.nussknacker.engine.spel.CastDefinition
+import pl.touk.nussknacker.engine.extension.ExtensionMethods
 
 import java.lang.annotation.Annotation
 import java.lang.reflect._
@@ -35,18 +35,12 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private lazy val defaultMethods = classOf[CastDefinition].getMethods.toList
-    .flatMap(m => extractMethod(classOf[CastDefinition], m))
-    .groupBy(_._1)
-    .mapValuesNow(_.map(_._2))
-
-  private lazy val filteredDefaultMethods =
-    filterHiddenParameterAndReturnType(defaultMethods)
+  private lazy val extensionMethodsDefinitions = buildExtensionMethodsDefinitions()
 
   def extract(clazz: Class[_]): ClassDefinition =
     ClassDefinition(
       Typed(clazz),
-      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false) ++ filteredDefaultMethods,
+      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false),
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
     )
 
@@ -56,8 +50,9 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
   ): Map[String, List[MethodDefinition]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods          = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
+    val extensionMethods = extractExtensionMethods(membersPredicate, staticMethodsAndFields)
     val fields           = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
-    filterHiddenParameterAndReturnType(methods ++ fields)
+    filterHiddenParameterAndReturnType(methods ++ fields ++ extensionMethods)
   }
 
   private def extractPublicMethods(
@@ -372,6 +367,29 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
       // TODO: Add new case for parameters.
       case _ => None
     })
+
+  private def extractExtensionMethods(
+      membersPredicate: VisibleMembersPredicate,
+      staticMethodsAndFields: Boolean
+  ): Map[String, List[MethodDefinition]] = {
+    if (staticMethodsAndFields) {
+      Map.empty
+    } else {
+      extensionMethodsDefinitions
+        .filter(definitionsByMethods => membersPredicate.shouldBeVisible(definitionsByMethods._1))
+        .flatMap(_._2)
+        .toList
+        .toGroupedMap
+    }
+  }
+
+  private def buildExtensionMethodsDefinitions(): Set[(Method, List[(String, MethodDefinition)])] =
+    ExtensionMethods.registry.flatMap { clazz =>
+      clazz.getMethods.toList
+        .filter(m => !Modifier.isStatic(m.getModifiers))
+        .filter(extractJavaVersionOfVarArgMethod(_).isEmpty)
+        .map(m => m -> extractMethod(clazz, m))
+    }
 
 }
 

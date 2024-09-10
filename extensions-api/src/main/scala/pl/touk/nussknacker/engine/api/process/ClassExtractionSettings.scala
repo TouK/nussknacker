@@ -159,7 +159,11 @@ object ClassExtractionSettings {
     )
 
   lazy val DefaultExcludedMembers: List[ClassMemberPredicate] =
-    CommonExcludedMembers ++ KafkaExcludedMembers ++ AvroExcludedMembers ++ JavaTimeExcludeMembers :+
+    CommonExcludedMembers ++
+      KafkaExcludedMembers ++
+      AvroExcludedMembers ++
+      JavaTimeExcludeMembers ++
+      ExtensionExcludedMembers :+
       ReturnMemberPredicate(
         SuperClassPredicate(
           ExactClassPredicate(
@@ -223,8 +227,21 @@ object ClassExtractionSettings {
       )
     )
 
+  lazy val ExtensionExcludedMembers: List[ClassMemberPredicate] = List(
+    MemberNamePredicate(
+      SuperClassPredicate(
+        ExactClassPredicate(
+          classOf[java.lang.Boolean],
+          classOf[Number],
+          classOf[CharSequence],
+        )
+      ),
+      Set("canCastTo", "castTo")
+    )
+  )
+
   lazy val DefaultIncludedMembers: List[ClassMemberPredicate] =
-    IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers
+    IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers ++ IncludedExtensionMembers
 
   lazy val IncludedStdMembers: List[ClassMemberPredicate] =
     List(
@@ -320,6 +337,10 @@ object ClassExtractionSettings {
         Set("noSpaces", "noSpacesSortKeys", "spaces2", "spaces2SortKeys", "spaces4", "spaces4SortKeys", ToStringMethod)
       ),
     )
+
+  lazy val IncludedExtensionMembers: List[ClassMemberPredicate] = List(
+    MemberNamePredicate(ClassPredicate { case _ => true }, Set("canCastTo", "castTo")),
+  )
 
   lazy val DefaultTypingFunctionRules: List[TypingFunctionRule] =
     List(

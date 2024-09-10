@@ -1354,8 +1354,23 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("casts") {
-    parse[Any]("{a: 11}.isInstanceOf('java.util.Map') ? true : false", ctx).validExpression
+    parse[Any]("{a: 11}.canCastTo('java.util.Map') ? true : false", ctx).validExpression
       .evaluateSync[Any](ctx) shouldBe true
+  }
+
+  test("casts1") {
+    parse[Any]("11.canCastTo('java.util.Map') ? true : false", ctx).validExpression
+      .evaluateSync[Any](ctx) shouldBe true
+  }
+
+  test("casts2") {
+    val parsed = parse[Any]("{11, 12}.castTo('java.util.Collection')", ctx).validValue
+    parsed.returnType shouldBe Typed.typedClass(classOf[java.util.Collection[_]])
+  }
+
+  test("should return an error if the cast return type cannot be determined at parse time") {
+    val parsed = parse[Any]("{11, 12}.castTo('java.util.Collection')", ctx).validValue
+    parsed.returnType shouldBe Typed.typedClass(classOf[java.util.Collection[_]])
   }
 
 }
