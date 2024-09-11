@@ -1,8 +1,10 @@
-import React, { useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
 import { SearchLabel } from "../../sidePanels/SearchLabel";
+import { SearchQuery } from "./SearchResults";
+import { resolveSearchQuery } from "./utils";
 
 const transformInput = (input: string, fieldName: string) => {
     return input === "" ? "" : `${fieldName}:(${input})`;
@@ -32,13 +34,7 @@ export function AdvancedSearchFilters({
     setCollapsedHandler: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
     const { t } = useTranslation();
-    const idRef = useRef<HTMLInputElement>(null);
-    const descriptionRef = useRef<HTMLInputElement>(null);
-    const paramNameRef = useRef<HTMLInputElement>(null);
-    const paramValueRef = useRef<HTMLInputElement>(null);
-    const outputValueRef = useRef<HTMLInputElement>(null);
-    const typeRef = useRef<HTMLInputElement>(null);
-    const edgeExpressionRef = useRef<HTMLInputElement>(null);
+    const refForm = useRef<HTMLFormElement>(null);
 
     const displayNames = useMemo(
         () => ({
@@ -53,14 +49,24 @@ export function AdvancedSearchFilters({
         [t],
     );
 
-    console.log(displayNames);
+    //Here be dragons: direct DOM manipulation
+    useEffect(() => {
+        if (refForm.current) {
+            const searchQuery = resolveSearchQuery(filter);
+            const formElements = refForm.current.elements;
+
+            Array.from(formElements).forEach((element: HTMLInputElement) => {
+                if (element.name in searchQuery) {
+                    element.value = (searchQuery[element.name] || []).join(",");
+                }
+            });
+        }
+    }, [filter]);
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         const formData = new FormData(event.currentTarget);
-
-        console.log(formData);
 
         const transformedInputs = Array.from(formData.entries())
             .map(([fieldName, fieldValue]) => {
@@ -72,22 +78,18 @@ export function AdvancedSearchFilters({
         const finalText = transformedInputs.join(" ").trim() + " " + extractSimpleSearchQuery(filter);
 
         setFilter(finalText);
+        setCollapsedHandler(false);
     };
 
-    const handleCancel = () => {
-        idRef.current.value = "";
-        descriptionRef.current.value = "";
-        paramNameRef.current.value = "";
-        paramValueRef.current.value = "";
-        outputValueRef.current.value = "";
-        typeRef.current.value = "";
-        edgeExpressionRef.current.value = "";
-
+    const handleClear = () => {
         setFilter(extractSimpleSearchQuery(filter));
+
+        refForm.current.reset();
     };
 
     return (
         <Box
+            ref={refForm}
             component="form"
             onSubmit={handleSubmit}
             sx={{
@@ -98,36 +100,34 @@ export function AdvancedSearchFilters({
                 alignItems: "center",
             }}
         >
-            <Typography fontWeight="bold" sx={{ m: 1 }}>
-                Advanced Search
-            </Typography>
-            <SearchLabeledInput ref={idRef} name="id">
+            <Typography fontWeight="bold">{t("search.panel.advancedFilters.label", "Advanced Search")}</Typography>
+            <SearchLabeledInput name="id">
                 <SearchLabel label={displayNames["id"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput ref={descriptionRef} name="description">
+            <SearchLabeledInput name="description">
                 <SearchLabel label={displayNames["description"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput ref={paramNameRef} name="paramName">
+            <SearchLabeledInput name="paramName">
                 <SearchLabel label={displayNames["paramName"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput ref={paramValueRef} name="paramValue">
+            <SearchLabeledInput name="paramValue">
                 <SearchLabel label={displayNames["paramValue"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput ref={outputValueRef} name="outputValue">
+            <SearchLabeledInput name="outputValue">
                 <SearchLabel label={displayNames["outputValue"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput ref={typeRef} name="type">
+            <SearchLabeledInput name="type">
                 <SearchLabel label={displayNames["type"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput ref={edgeExpressionRef} name="edgeExpression">
+            <SearchLabeledInput name="edgeExpression">
                 <SearchLabel label={displayNames["edgeExpression"]} />
             </SearchLabeledInput>
-            <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "80%", mt: 2, mb: 1 }}>
-                <Button sx={{ width: "45%" }} size="small" variant="outlined" onClick={handleCancel}>
-                    Clear
+            <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "100%", mt: 2, mb: 1 }}>
+                <Button sx={{ width: "45%" }} size="small" variant="outlined" onClick={handleClear}>
+                    {t("search.panel.advancedFilters.clearButton.label", "Clear")}
                 </Button>
                 <Button variant="contained" size="small" sx={{ width: "45%" }} type="submit">
-                    Submit
+                    {t("search.panel.advancedFilters.submitButton.label", "Submit")}
                 </Button>
             </Box>
         </Box>
