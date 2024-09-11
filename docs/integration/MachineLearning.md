@@ -46,4 +46,4 @@ where we present a complete path from analysing a dataset to training a model an
 in a Nussknacker scenario.
 
 The ML enrichers are Enterprise components of Nussknacker and require a separate license. Please contact
-<info@nussknacker.io> for license terms and more details.
+<enterprise@nussknacker.io> for license terms and more details.
