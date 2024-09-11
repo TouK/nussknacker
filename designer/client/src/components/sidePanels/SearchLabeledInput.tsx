@@ -9,7 +9,7 @@ export type SearchLabeledInputProps = PropsWithChildren<{
 
 export const SearchLabeledInput = forwardRef<HTMLInputElement, SearchLabeledInputProps>(({ children, ...props }, ref) => {
     return (
-        <FormControl sx={{ display: "flex", flexDirection: "column", m: 0, gap: 1 }}>
+        <FormControl sx={{ display: "flex", flexDirection: "column", m: 0, gap: 1, width: "100%" }}>
             {children}
             <input ref={ref} {...props} className={nodeInput} />
         </FormControl>
