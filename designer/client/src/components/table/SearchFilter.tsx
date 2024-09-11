@@ -26,6 +26,7 @@ export function AdvancedOptionsIcon(props: {
             className={cx(
                 flex,
                 css({
+                    cursor: "pointer",
                     transform: "scale(1.5)",
                     ".icon-fill": {
                         fill: "none",

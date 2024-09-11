@@ -157,7 +157,9 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
 
                         const allChecksPassed = isEqual(groups, displayKeyNamesRelevantForFiltering);
 
-                        if (!allChecksPassed || groupsAux.length === 0) {
+                        const hasValidQueryOrGroups = searchQuery.plainQuery === "" ? false : groupsAux.length === 0;
+
+                        if (!allChecksPassed || hasValidQueryOrGroups) {
                             edges = [];
                             groups = [];
                         }

@@ -10,6 +10,7 @@ import { SearchInputWithIcon } from "../../themed/SearchInput";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 import { Collapse } from "@mui/material";
 import { AdvancedSearchFilters } from "./AdvancedSearchFilters";
+import { SearchPanelStyled, TipPanelStyled } from "../../tips/Styled";
 
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
@@ -37,7 +38,9 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
                 <SearchIcon isEmpty={isEmpty(filter)} />
             </SearchInputWithIcon>
             <Collapse in={advancedOptionsCollapsed} timeout="auto" unmountOnExit={false}>
-                <AdvancedSearchFilters filter={filter} setFilter={setFilter} setCollapsedHandler={setAdvancedOptionsCollapsed} />
+                <SearchPanelStyled>
+                    <AdvancedSearchFilters filter={filter} setFilter={setFilter} setCollapsedHandler={setAdvancedOptionsCollapsed} />
+                </SearchPanelStyled>
             </Collapse>
             <SearchResults filterRawText={filter} />
         </ToolbarWrapper>
