@@ -22,6 +22,7 @@ export function AdvancedOptionsIcon(props: {
 
     return (
         <AdvancedSearchSvg
+            id="advanced-search-icon"
             onClick={toggleCollapseHandler}
             className={cx(
                 flex,
@@ -60,6 +61,7 @@ export function ClearIcon(): JSX.Element {
 
     return (
         <DeleteSvg
+            id="clear-icon"
             className={cx(
                 flex,
                 css({

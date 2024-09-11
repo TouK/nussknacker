@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
@@ -28,13 +28,15 @@ export function AdvancedSearchFilters({
     filter,
     setFilter,
     setCollapsedHandler,
+    refForm,
 }: {
     filter: string;
     setFilter: React.Dispatch<React.SetStateAction<string>>;
     setCollapsedHandler: React.Dispatch<React.SetStateAction<boolean>>;
+    refForm: MutableRefObject<HTMLFormElement>;
 }) {
     const { t } = useTranslation();
-    const refForm = useRef<HTMLFormElement>(null);
+    //const refForm = useRef<HTMLFormElement>(null);
 
     const displayNames = useMemo(
         () => ({
@@ -58,6 +60,8 @@ export function AdvancedSearchFilters({
             Array.from(formElements).forEach((element: HTMLInputElement) => {
                 if (element.name in searchQuery) {
                     element.value = (searchQuery[element.name] || []).join(",");
+                } else {
+                    element.value = "";
                 }
             });
         }
@@ -126,7 +130,7 @@ export function AdvancedSearchFilters({
                 <Button sx={{ width: "45%" }} size="small" variant="outlined" onClick={handleClear}>
                     {t("search.panel.advancedFilters.clearButton.label", "Clear")}
                 </Button>
-                <Button variant="contained" size="small" sx={{ width: "45%" }} type="submit">
+                <Button name="cancel-button" variant="contained" size="small" sx={{ width: "45%" }} type="submit">
                     {t("search.panel.advancedFilters.submitButton.label", "Submit")}
                 </Button>
             </Box>
