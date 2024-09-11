@@ -44,6 +44,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
+import pl.touk.nussknacker.engine.spel.Typer.SpelCompilationException
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -1386,6 +1387,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should compute correct result type based on parameter") {
     val parsed = parse[Any]("{11, 12}.castTo('java.util.Collection')", ctx).validValue
     parsed.returnType shouldBe Typed.typedClass(classOf[java.util.Collection[_]])
+    parsed.expression.evaluateSync[Any](ctx) shouldBe a[java.util.Collection[_]]
   }
 
   test("should return an error if the cast return type cannot be determined at parse time") {
@@ -1398,8 +1400,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should throw exception if cast fails") {
-    val value1 = parse[Any]("#obj.castTo('java.lang.String')", ctx).validExpression.evaluateSync[Any](ctx)
-    value1 shouldBe "expectedResult"
+    val caught = intercept[SpelExpressionEvaluationException] {
+      parse[Any]("#obj.castTo('java.lang.String')", ctx).validExpression.evaluateSync[Any](ctx)
+    }
+    caught.getMessage should include(
+      "Cannot cast: class pl.touk.nussknacker.engine.spel.SpelExpressionSpec$Test to: java.lang.String"
+    )
   }
 
 }
