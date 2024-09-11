@@ -15,7 +15,11 @@ import { SearchPanelStyled, TipPanelStyled } from "../../tips/Styled";
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
     const [filter, setFilter] = useState<string>("");
-    const clearFilter = useCallback(() => setFilter(""), []);
+    const refForm = useRef<HTMLFormElement>(null);
+    const clearFilter = useCallback(() => {
+        setFilter("");
+        refForm.current.reset();
+    }, []);
     const [advancedOptionsCollapsed, setAdvancedOptionsCollapsed] = useState(false);
 
     const searchRef = useRef<Focusable>();
@@ -39,7 +43,12 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
             </SearchInputWithIcon>
             <Collapse in={advancedOptionsCollapsed} timeout="auto" unmountOnExit={false}>
                 <SearchPanelStyled>
-                    <AdvancedSearchFilters filter={filter} setFilter={setFilter} setCollapsedHandler={setAdvancedOptionsCollapsed} />
+                    <AdvancedSearchFilters
+                        refForm={refForm}
+                        filter={filter}
+                        setFilter={setFilter}
+                        setCollapsedHandler={setAdvancedOptionsCollapsed}
+                    />
                 </SearchPanelStyled>
             </Collapse>
             <SearchResults filterRawText={filter} />
