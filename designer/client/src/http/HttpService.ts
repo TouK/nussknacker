@@ -319,7 +319,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "33e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -327,7 +327,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-17T13:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -335,7 +335,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-17T12:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -343,7 +343,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "10b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-17T11:01:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -352,7 +352,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-16T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -361,7 +361,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-15T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -370,7 +370,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-14T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -387,7 +387,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-12T13:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -396,7 +396,63 @@ const activitiesMock: ActivitiesResponse = {
             id: "552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-11T11:21:17Z",
+            scenarioVersionId: 1,
+            additionalFields: [
+                {
+                    name: "deletedByUser",
+                    value: "John Doe",
+                },
+            ],
+            overrideSupportedActions: [],
+        },
+        {
+            id: "552cf846-a330-46d8-a747-5884813ea6a3",
+            type: "COMMENT_ADDED",
+            user: "some user",
+            date: "2024-01-11T12:21:17Z",
+            scenarioVersionId: 1,
+            additionalFields: [
+                {
+                    name: "deletedByUser",
+                    value: "John Doe",
+                },
+            ],
+            overrideSupportedActions: [],
+        },
+        {
+            id: "552cf846-a330-46d8-a747-5884813ea6a3",
+            type: "COMMENT_ADDED",
+            user: "some user",
+            date: "2024-01-11T18:21:17Z",
+            scenarioVersionId: 1,
+            additionalFields: [
+                {
+                    name: "deletedByUser",
+                    value: "John Doe",
+                },
+            ],
+            overrideSupportedActions: [],
+        },
+        {
+            id: "552cf846-a330-46d8-a747-5884813ea6a3",
+            type: "COMMENT_ADDED",
+            user: "some user",
+            date: "2024-01-11T14:21:17Z",
+            scenarioVersionId: 1,
+            additionalFields: [
+                {
+                    name: "deletedByUser",
+                    value: "John Doe",
+                },
+            ],
+            overrideSupportedActions: [],
+        },
+        {
+            id: "552cf846-a330-46d8-a747-5884813ea6a3",
+            type: "COMMENT_ADDED",
+            user: "some user",
+            date: "2024-01-11T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -410,7 +466,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2024-01-11T01:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -427,7 +483,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -441,7 +497,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -458,7 +514,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e8",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -476,7 +532,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a5248548",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -490,12 +546,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec3-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -507,7 +563,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc5-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -516,7 +572,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -528,7 +584,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "e4f55ffb-e595-417b-8586-2c2eee99d75e",
             type: "AUTOMATIC_UPDATE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -537,7 +593,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -549,7 +605,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "133e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -557,7 +613,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "24677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -565,7 +621,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -573,7 +629,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "410b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -582,7 +638,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "5d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -591,7 +647,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "6c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -600,7 +656,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "74a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -617,7 +673,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "8cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -626,7 +682,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "9552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -640,7 +696,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f5",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -657,7 +713,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c3",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -671,7 +727,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb2",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -688,7 +744,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e83",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -706,7 +762,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a52485487",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -720,12 +776,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec53-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -737,7 +793,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc544-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -746,7 +802,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -758,7 +814,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "e4f55ffb3-e595-417b-8586-2c2eee99d75e",
             type: "AUTOMATIC_UPDATE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -767,7 +823,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -779,7 +835,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "10b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -788,7 +844,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -797,7 +853,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -806,7 +862,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -823,7 +879,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -832,7 +888,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -846,7 +902,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -863,7 +919,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "33e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -871,7 +927,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -879,7 +935,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -887,7 +943,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "10b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -896,7 +952,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -905,7 +961,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -914,7 +970,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -931,7 +987,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -940,7 +996,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -954,7 +1010,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -971,7 +1027,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -985,7 +1041,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1002,7 +1058,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e8",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -1020,7 +1076,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a5248548",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -1034,12 +1090,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec3-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1051,7 +1107,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc5-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1060,7 +1116,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1072,7 +1128,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "e4f55ffb-e595-417b-8586-2c2eee99d75e",
             type: "AUTOMATIC_UPDATE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1081,7 +1137,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1093,7 +1149,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "133e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1101,7 +1157,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "24677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1109,7 +1165,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1117,7 +1173,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "410b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -1126,7 +1182,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "5d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -1135,7 +1191,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "6c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -1144,7 +1200,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "74a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1161,7 +1217,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "8cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -1170,7 +1226,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "9552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1184,7 +1240,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f5",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1201,7 +1257,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c3",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1215,7 +1271,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb2",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1232,7 +1288,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e83",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -1250,7 +1306,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a52485487",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -1264,12 +1320,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec53-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1281,7 +1337,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc544-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1290,7 +1346,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1302,7 +1358,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "33e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1310,7 +1366,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1318,7 +1374,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1326,7 +1382,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "10b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -1335,7 +1391,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -1344,7 +1400,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -1353,7 +1409,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1370,7 +1426,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -1379,7 +1435,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1393,7 +1449,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1410,7 +1466,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1424,7 +1480,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1441,7 +1497,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e8",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -1459,7 +1515,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a5248548",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -1473,12 +1529,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec3-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1490,7 +1546,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc5-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1499,7 +1555,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1511,7 +1567,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "e4f55ffb-e595-417b-8586-2c2eee99d75e",
             type: "AUTOMATIC_UPDATE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1520,7 +1576,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1532,7 +1588,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "133e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1540,7 +1596,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "24677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1548,7 +1604,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1556,7 +1612,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "410b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -1565,7 +1621,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "5d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -1574,7 +1630,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "6c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -1583,7 +1639,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "74a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1600,7 +1656,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "8cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -1609,7 +1665,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "9552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1623,7 +1679,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f5",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1640,7 +1696,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c3",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1654,7 +1710,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb2",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1671,7 +1727,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e83",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -1689,7 +1745,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a52485487",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -1703,12 +1759,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec53-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1720,7 +1776,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc544-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1729,7 +1785,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1741,7 +1797,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "33e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1749,7 +1805,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1757,7 +1813,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1765,7 +1821,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "10b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -1774,7 +1830,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -1783,7 +1839,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -1792,7 +1848,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1809,7 +1865,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -1818,7 +1874,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1832,7 +1888,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1849,7 +1905,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1863,7 +1919,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1880,7 +1936,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e8",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -1898,7 +1954,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a5248548",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -1912,12 +1968,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec3-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1929,7 +1985,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc5-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1938,7 +1994,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1950,7 +2006,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "e4f55ffb-e595-417b-8586-2c2eee99d75e",
             type: "AUTOMATIC_UPDATE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -1959,7 +2015,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -1971,7 +2027,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "133e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1979,7 +2035,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "24677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1987,7 +2043,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -1995,7 +2051,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "410b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -2004,7 +2060,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "5d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -2013,7 +2069,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "6c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -2022,7 +2078,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "74a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2039,7 +2095,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "8cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -2048,7 +2104,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "9552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2062,7 +2118,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f5",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2079,7 +2135,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c3",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2093,7 +2149,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb2",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2110,7 +2166,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e83",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -2128,7 +2184,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a52485487",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -2142,12 +2198,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec53-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2159,7 +2215,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc544-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2168,7 +2224,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2180,7 +2236,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "33e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2188,7 +2244,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2196,7 +2252,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2204,7 +2260,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "10b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -2213,7 +2269,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -2222,7 +2278,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -2231,7 +2287,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2248,7 +2304,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -2257,7 +2313,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2271,7 +2327,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2288,7 +2344,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2302,7 +2358,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2319,7 +2375,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e8",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -2337,7 +2393,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a5248548",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -2351,12 +2407,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec3-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2368,7 +2424,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc5-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2377,7 +2433,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2389,7 +2445,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "e4f55ffb-e595-417b-8586-2c2eee99d75e",
             type: "AUTOMATIC_UPDATE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2398,7 +2454,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2410,7 +2466,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "133e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2418,7 +2474,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "24677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2426,7 +2482,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2434,7 +2490,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "410b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -2443,7 +2499,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "5d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -2452,7 +2508,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "6c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -2461,7 +2517,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "74a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2478,7 +2534,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "8cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -2487,7 +2543,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "9552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2501,7 +2557,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f5",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2518,7 +2574,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c3",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2532,7 +2588,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb2",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2549,7 +2605,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e83",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -2567,7 +2623,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a52485487",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -2581,12 +2637,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec53-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2598,7 +2654,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc544-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2607,7 +2663,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2619,7 +2675,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "33e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2627,7 +2683,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2635,7 +2691,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2643,7 +2699,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "10b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -2652,7 +2708,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -2661,7 +2717,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -2670,7 +2726,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2687,7 +2743,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -2696,7 +2752,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2710,7 +2766,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2727,7 +2783,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2741,7 +2797,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2758,7 +2814,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e8",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -2776,7 +2832,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a5248548",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -2790,12 +2846,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec3-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2807,7 +2863,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc5-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2816,7 +2872,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2828,7 +2884,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "e4f55ffb-e595-417b-8586-2c2eee99d75e",
             type: "AUTOMATIC_UPDATE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2837,7 +2893,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -2849,7 +2905,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "133e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2857,7 +2913,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "24677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2865,7 +2921,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -2873,7 +2929,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "410b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -2882,7 +2938,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "5d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -2891,7 +2947,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "6c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -2900,7 +2956,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "74a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2917,7 +2973,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "8cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -2926,7 +2982,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "9552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2940,7 +2996,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f5",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2957,7 +3013,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c3",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2971,7 +3027,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb2",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -2988,7 +3044,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e83",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -3006,7 +3062,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a52485487",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -3020,12 +3076,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec53-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -3037,7 +3093,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc544-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3046,7 +3102,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -3058,7 +3114,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "33e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -3066,7 +3122,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -3074,7 +3130,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -3082,7 +3138,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "10b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -3091,7 +3147,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -3100,7 +3156,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -3109,7 +3165,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3126,7 +3182,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -3135,7 +3191,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3149,7 +3205,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3166,7 +3222,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3180,7 +3236,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3197,7 +3253,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e8",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -3215,7 +3271,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a5248548",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -3229,12 +3285,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec3-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -3246,7 +3302,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc5-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3255,7 +3311,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -3267,7 +3323,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "e4f55ffb-e595-417b-8586-2c2eee99d75e",
             type: "AUTOMATIC_UPDATE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3276,7 +3332,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -3288,7 +3344,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "133e5143e-187d-455e-99ec-56f607729c98",
             type: "SCENARIO_CREATED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -3296,7 +3352,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "24677ad89-154a-424d-b1d3-26632b0b6b8a",
             type: "SCENARIO_ARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -3304,7 +3360,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3aa4b30a8-9051-4a2a-ae6e-7042210ae096",
             type: "SCENARIO_UNARCHIVED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [],
         },
@@ -3312,7 +3368,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "410b5f550-eaef-419d-8264-219dca9a84c5",
             type: "SCENARIO_DEPLOYED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
             additionalFields: [],
@@ -3321,7 +3377,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "5d3381b4d-220e-459e-bedd-71b142c257a7",
             type: "SCENARIO_CANCELED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Canceled because marketing campaign ended",
             additionalFields: [],
@@ -3330,7 +3386,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "6c21a0472-6bef-4b44-aacc-aae307546d89",
             type: "SCENARIO_MODIFIED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             comment: "Added new processing step",
             additionalFields: [],
             overrideDisplayableName: "Version 1 saved",
@@ -3339,7 +3395,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "74a6805de-6555-4976-92b2-9baefcccd990",
             type: "SCENARIO_NAME_CHANGED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3356,7 +3412,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "8cd1eb7b8-b266-44b3-983b-e4ba0cecb44b",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Now scenario handles errors in datasource better",
             additionalFields: [],
@@ -3365,7 +3421,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "9552cf846-a330-46d8-a747-5884813ea6a3",
             type: "COMMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3379,7 +3435,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "12540601-f4d4-43ca-a303-a19baee30f8f5",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3396,7 +3452,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "b350c1f4-0dda-4672-a525-23697fd58a2c3",
             type: "ATTACHMENT_ADDED",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3410,7 +3466,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "4de805c3-498d-4d51-837e-6931ba58f9fb2",
             type: "CHANGED_PROCESSING_MODE",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3427,7 +3483,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "adaa9335-6ca9-4afe-9791-0bb71375f6e83",
             type: "INCOMING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration from preprod",
             additionalFields: [
@@ -3445,7 +3501,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "3dedd8bf-b3da-4d91-a3ea-a424a52485487",
             type: "OUTGOING_MIGRATION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             comment: "Migration to preprod",
             additionalFields: [
@@ -3459,12 +3515,12 @@ const activitiesMock: ActivitiesResponse = {
             id: "44a59921-c99b-4dcd-8ec53-06739c0825e3",
             type: "PERFORMED_SINGLE_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",
@@ -3476,7 +3532,7 @@ const activitiesMock: ActivitiesResponse = {
             id: "f1bd6bc544-f624-4074-aa3d-072fda51331d",
             type: "PERFORMED_SCHEDULED_EXECUTION",
             user: "some user",
-            date: "2024-01-17T14:21:17Z",
+            date: "2023-01-17T14:21:17Z",
             scenarioVersionId: 1,
             additionalFields: [
                 {
@@ -3485,7 +3541,7 @@ const activitiesMock: ActivitiesResponse = {
                 },
                 {
                     name: "dateFinished",
-                    value: "2024-01-17T14:21:17Z",
+                    value: "2023-01-17T14:21:17Z",
                 },
                 {
                     name: "status",

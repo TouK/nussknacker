@@ -10,7 +10,7 @@ import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { VersionsPanel } from "../toolbars/VersionsPanel";
 import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
 import { SearchPanel } from "../toolbars/search/SearchPanel";
-import { ActivitiesPanel } from "../toolbars/ActivitiesPanel";
+import { ActivitiesPanel } from "../toolbars/activities";
 
 export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelProps>> = {
     DefaultPanel: DefaultToolbarPanel,
