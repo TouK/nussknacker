@@ -104,6 +104,8 @@ export type SourceWithParametersTest = {
     };
 };
 
+export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
+
 export type NodeUsageData = {
     fragmentNodeId?: string;
     nodeId: string;
@@ -342,11 +344,16 @@ class HttpService {
     deploy(
         processName: string,
         comment?: string,
+        nodesDeploymentData?: NodesDeploymentData,
     ): Promise<{
         isSuccess: boolean;
     }> {
+        const runDeploymentRequest = {
+            ...(nodesDeploymentData && { nodesDeploymentData: nodesDeploymentData }),
+            ...(comment && { comment: comment }),
+        };
         return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
+            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {
                 return { isSuccess: true };
             })
@@ -698,6 +705,21 @@ class HttpService {
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    getActivityParameters(processName: string, scenarioGraph: ScenarioGraph) {
+        const promise = api.post(
+            `/activityInfo/${encodeURIComponent(processName)}/activityParameters`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGetTestParameters", "Failed to get activity parameters definition"),
                 error,
                 true,
             ),

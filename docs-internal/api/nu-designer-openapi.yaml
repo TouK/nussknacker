@@ -221,88 +221,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/processManagement/customAction/{scenarioName}/validation:
-    post:
-      tags:
-      - CustomAction
-      summary: Endpoint to validate input in custom action fields
-      operationId: postApiProcessmanagementCustomactionScenarionameValidation
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CustomActionRequest'
-        required: true
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomActionValidationDto'
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
   /api/app/healthCheck:
     get:
       tags:
@@ -1049,6 +967,88 @@ paths:
                   $ref: '#/components/schemas/DictDto'
         '400':
           description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processManagement/customAction/{scenarioName}/validation:
+    post:
+      tags:
+      - CustomAction
+      summary: Endpoint to validate input in custom action fields
+      operationId: postApiProcessmanagementCustomactionScenarionameValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomActionRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomActionValidationDto'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -5257,6 +5257,10 @@ components:
           type: string
         label:
           type: string
+        hintText:
+          type:
+          - string
+          - 'null'
     FixedExpressionValueWithIcon:
       title: FixedExpressionValueWithIcon
       type: object
@@ -5274,11 +5278,15 @@ components:
     FixedValuesParameterEditor:
       title: FixedValuesParameterEditor
       type: object
+      required:
+      - mode
       properties:
         possibleValues:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValue'
+        mode:
+          type: string
     FixedValuesWithIconParameterEditor:
       title: FixedValuesWithIconParameterEditor
       type: object
@@ -5467,8 +5475,8 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeId_NodeDeploymentData:
-      title: Map_NodeId_NodeDeploymentData
+    Map_NodeId_String:
+      title: Map_NodeId_String
       type: object
       additionalProperties:
         type: string
@@ -6348,7 +6356,7 @@ components:
         scenarioName:
           type: string
         nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+          $ref: '#/components/schemas/Map_NodeId_String'
         comment:
           type:
           - string
