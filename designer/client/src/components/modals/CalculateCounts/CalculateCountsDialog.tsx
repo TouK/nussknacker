@@ -59,7 +59,7 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
                 classname: LoadingButtonTypes.secondaryButton,
             },
             {
-                title: t("dialog.button.ok", "Ok"),
+                title: t("dialog.button.ok", "Apply"),
                 disabled: !isStateValid,
                 action: async () => {
                     await confirm();

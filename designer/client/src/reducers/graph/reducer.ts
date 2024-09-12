@@ -84,6 +84,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testFormParameters: action.testFormParameters,
             };
         }
+        case "UPDATE_ACTIVITY_PARAMETERS": {
+            return {
+                ...state,
+                activityParameters: action.activityParameters,
+            };
+        }
         case "DISPLAY_PROCESS": {
             const { scenario } = action;
             return {

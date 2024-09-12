@@ -1,6 +1,7 @@
 import { Layout, RefreshData } from "../../actions/nk";
 import { Scenario } from "../../components/Process/types";
 import { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
+import { ActivityParameters } from "../../types/activity";
 
 export interface NodeCounts {
     errors?: number;
@@ -15,6 +16,7 @@ export type GraphState = {
     scenario?: Scenario;
     selectionState?: string[];
     layout: Layout;
+    activityParameters?: ActivityParameters;
     testCapabilities?: TestCapabilities;
     testFormParameters?: TestFormParameters[];
     testResults: TestResults;

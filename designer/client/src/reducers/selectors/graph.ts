@@ -8,6 +8,7 @@ import { ProcessCounts } from "../graph";
 import { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
 import { TestFormParameters } from "../../common/TestResultUtils";
+import { ActivityParameters } from "../../types/activity";
 
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
@@ -70,6 +71,7 @@ export const isArchivePossible = createSelector(
     [getProcessState, isFragment],
     (state, isFragment) => isFragment || ProcessStateUtils.canArchive(state),
 );
+export const getActivityParameters = createSelector(getGraph, (g) => g.activityParameters || ({} as ActivityParameters));
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);
