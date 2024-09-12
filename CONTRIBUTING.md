@@ -130,7 +130,18 @@ Changing the version of the Scala is done by setting `NUSSKNACKER_SCALA_VERSION`
 
 #### Running using integration environment
 
-- Run `RunEnvForLocalDesigner` main class (or `RunEnvForLocalDesigner` Intellij run configuration)
+Use one of the following method:
+1. run using SBT: `sbt designer/test:"runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner"`
+2. run using Intellij configuration: `RunEnvForLocalDesigner` 
+3. run Docker Compose: `docker compose -f examples/installation/docker-compose.yml -f designer/server/src/test/resources/local-testing.override.yml -f designer/server/src/test/resources/nu-scala213.override.yml up -d `
+
+You can also customize the setup by adding your changes in separate yaml file:
+* like this: `sbt designer/test:"runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner --customizeYaml=/tmp/my.override.yml"`
+* or this: `docker compose -f examples/installation/docker-compose.yml -f designer/server/src/test/resources/local-testing.override.yml -f designer/server/src/test/resources/nu-scala213.override.yml -f /tmp/my.override.yml up -d`
+
+By default, an environment for Scala 2.13 is prepared. To run one for Scala 2.12:
+* run: `sbt designer/test:"runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner --scalaV scala212"`
+* or run: `docker compose -f examples/installation/docker-compose.yml -f designer/server/src/test/resources/local-testing.override.yml -f /tmp/my.override.yml up -d` 
 
 #### Running Designer with model classes on the same classes as designer
 

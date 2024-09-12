@@ -11,62 +11,14 @@ x-flink-service-common: &common-flink
 
 services:
 
-  bootstrap-setup:
-    image: touk/nussknacker-example-scenarios-library:0.3.0
-    depends_on:
-      nginx:
-        condition: service_healthy
-      designer:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      schema-registry:
-        condition: service_healthy
-    environment:
-      DISABLE_EMBEDDED_EXAMPLES: true
-      NU_DESIGNER_ADDRESS: "nginx:8080"
-      NU_REQUEST_RESPONSE_OPEN_API_SERVICE_ADDRESS: "nginx:8181"
-      KAFKA_ADDRESS: "kafka:9092"
-      SCHEMA_REGISTRY_ADDRESS: "schema-registry:8081"
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
-
-  nginx:
-    ports: []
-
   designer:
     image: touk/nussknacker:${NUSSKNACKER_VERSION:?NUSSKNACKER_VERSION must be defined}_scala-2.13
 
-  postgres:
-    ports:
-      - 5432:5432
-
-  influxdb:
-    ports:
-      - 3086:8086
-
-  kafka:
-    ports:
-      - 3032:9092
-
-  schema-registry:
-    ports:
-      - 3082:8081
-
   flink-jobmanager:
-    ports:
-      - 3031:8081
     <<: *common-flink
 
   flink-taskmanager:
     <<: *common-flink
-
-  grafana:
-    ports:
-      - 8081:3000
 
   flink-scala213-downloader:
     image: curlimages/curl:7.85.0

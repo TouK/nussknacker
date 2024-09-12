@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.dev
 
-import better.files.Resource
 import cats.effect.{ExitCode, IO, IOApp}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.dev.RunEnvForLocalDesigner.Config.ScalaV
+import pl.touk.nussknacker.test.MiscUtils.InputStreamOps
 import pl.touk.nussknacker.test.installationexample.DockerBasedInstallationExampleNuEnvironment
+import scopt.{OParser, Read}
 
 import java.io.{File => JFile}
 
@@ -11,31 +13,29 @@ import java.io.{File => JFile}
 object RunEnvForLocalDesigner extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = for {
-    scalaV <- readScalaVersion(args)
-    _      <- log(s"Starting docker compose-based stack (for $scalaV) to be used with locally run Nu Designer...")
-    _      <- createDockerEnv(scalaV)
-    _      <- log("You can run designer now...")
-    _      <- IO.never[Unit]
+    config <- readConfig(args)
+    _ <- log(s"Starting docker compose-based stack (for ${config.scalaV}) to be used with locally run Nu Designer...")
+    _ <- createDockerEnv(config)
+    _ <- log("You can run designer now...")
+    _ <- IO.never[Unit]
   } yield ExitCode.Success
 
-  private def readScalaVersion(args: List[String]) = IO.delay {
-    args.headOption.map(_.toLowerCase) match {
-      case Some("scala212") => ScalaV.Scala212
-      case Some("Scala213") => ScalaV.Scala213
-      case Some(other) =>
-        throw new IllegalArgumentException(s"[$other] Not supported Scala version. Use: scala212 or scala213")
-      case None => ScalaV.Scala213
-    }
+  private def readConfig(args: List[String]) = IO.delay {
+    OParser
+      .parse(Config.parser, args, Config())
+      .getOrElse(throw new Exception("Invalid arguments"))
   }
 
-  private def createDockerEnv(scalaV: ScalaV) = IO.delay {
-    val overrideYml = scalaV match {
-      case ScalaV.Scala212 => "local-testing-scala212.override.yml"
-      case ScalaV.Scala213 => "local-testing-scala213.override.yml"
+  private def createDockerEnv(config: Config) = IO.delay {
+    val scalaVOverrideYmlFile = config.scalaV match {
+      case ScalaV.Scala212 => None
+      case ScalaV.Scala213 => Some(getClass.getResourceAsStream("/nu-scala213.override.yml").toFile)
     }
     val env = new DockerBasedInstallationExampleNuEnvironment(
       nussknackerImageVersion = "latest",
-      dockerComposeTweakFiles = new JFile(Resource.getUrl(overrideYml).toURI) :: Nil
+      dockerComposeTweakFiles = scalaVOverrideYmlFile.toVector :+
+        getClass.getResourceAsStream("/local-testing.override.yml").toFile :++
+        config.customizeYaml.toVector
     )
     // we don't need this service (TBH designer is not needed too, but I left it intentionally - maybe it'd be useful)
     env.client.stopService("nginx")
@@ -44,11 +44,48 @@ object RunEnvForLocalDesigner extends IOApp with LazyLogging {
 
   private def log(message: => String) = IO.delay(logger.info(message))
 
-  sealed trait ScalaV
+  final case class Config(scalaV: ScalaV = ScalaV.Scala213, customizeYaml: Option[JFile] = None)
 
-  object ScalaV {
-    case object Scala212 extends ScalaV
-    case object Scala213 extends ScalaV
+  object Config {
+
+    sealed trait ScalaV
+
+    object ScalaV {
+      case object Scala212 extends ScalaV
+      case object Scala213 extends ScalaV
+
+      implicit val scalaVRead: Read[ScalaV] =
+        scopt.Read.reads(_.toLowerCase).map {
+          case "scala212" => ScalaV.Scala212
+          case "scala213" => ScalaV.Scala213
+        }
+
+    }
+
+    private val builder = OParser.builder[Config]
+
+    import builder._
+
+    lazy val parser: OParser[Unit, Config] = OParser.sequence(
+      head("Env for local development of Nu Designer"),
+      programName("sbt designer/test:runMain pl.touk.nussknacker.dev.RunEnvForLocalDesigner"),
+      opt[ScalaV]('s', "scalaV")
+        .optional()
+        .action((scalaV, c) => c.copy(scalaV = scalaV))
+        .text("Scala version. Available options: scala212, scala213"),
+      opt[JFile]('c', "customizeYaml")
+        .optional()
+        .valueName("<absolute file path>")
+        .validate { file =>
+          if (!file.exists()) Left(s"'$file' does NOT exist")
+          else if (!file.isFile) Left(s"'$file' is NOT a file")
+          else if (!file.canRead) Left(s"CANNOT read the file '$file'")
+          else Right(())
+        }
+        .action((customizeYaml, c) => c.copy(customizeYaml = Some(customizeYaml)))
+        .text("Yaml file for docker compose override"),
+    )
+
   }
 
 }

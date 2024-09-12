@@ -2,6 +2,7 @@
   <configuration default="false" name="RunEnvForLocalDesigner" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.dev.RunEnvForLocalDesigner" />
     <module name="nussknacker-designer" />
+    <option name="PROGRAM_PARAMETERS" value="--customizeYaml=tmp/my.override.yml --scalaV scala213" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="pl.touk.nussknacker.dev.*" />
@@ -9,7 +10,7 @@
       </pattern>
     </extension>
     <method v="2">
-      <option name="Make" enabled="true" />x
+      <option name="Make" enabled="true" />
     </method>
   </configuration>
 </component>
