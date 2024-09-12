@@ -134,7 +134,8 @@ class ManagementResources(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
                         commonData = CommonCommandData(processIdWithName, comment.map(ApiCallComment(_)), user),
-                        nodesDeploymentData = NodesDeploymentData.empty, // TODO: here goes map of parameters defined by
+                        nodesDeploymentData =
+                          NodesDeploymentData.empty, // TODO: here goes map of parameters defined by activityParameters
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
                     )
@@ -156,7 +157,8 @@ class ManagementResources(
                   .processCommand(
                     RunDeploymentCommand(
                       commonData = CommonCommandData(processIdWithName, comment.map(UserComment), user),
-                      nodesDeploymentData = NodesDeploymentData.empty, // TODO: tu dostarczam offset
+                      nodesDeploymentData =
+                        NodesDeploymentData.empty, // TODO: here goes map of parameters defined by activityParameters
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
                   )
