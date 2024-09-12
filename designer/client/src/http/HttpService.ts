@@ -158,9 +158,25 @@ export interface ScenarioParametersCombinations {
 
 export type ProcessDefinitionDataDictOption = { key: string; label: string };
 type DictOption = { id: string; label: string };
+type ActivityTypes =
+    | "SCENARIO_CREATED"
+    | "SCENARIO_ARCHIVED"
+    | "SCENARIO_UNARCHIVED"
+    | "SCENARIO_DEPLOYED"
+    | "SCENARIO_CANCELED"
+    | "SCENARIO_MODIFIED"
+    | "SCENARIO_NAME_CHANGED"
+    | "COMMENT_ADDED"
+    | "ATTACHMENT_ADDED"
+    | "CHANGED_PROCESSING_MODE"
+    | "INCOMING_MIGRATION"
+    | "OUTGOING_MIGRATION"
+    | "PERFORMED_SINGLE_EXECUTION"
+    | "PERFORMED_SCHEDULED_EXECUTION"
+    | "AUTOMATIC_UPDATE";
 
 export interface ActivityMetadata {
-    type: string;
+    type: ActivityTypes;
     displayableName: string;
     icon: string;
     supportedActions: string[];
@@ -175,7 +191,7 @@ export interface ActionMetadata {
 export interface ActivitiesResponse {
     activities: {
         id: string;
-        type: string;
+        type: ActivityTypes;
         user: string;
         date: string;
         scenarioVersionId?: number;

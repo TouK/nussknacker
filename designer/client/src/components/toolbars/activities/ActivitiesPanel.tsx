@@ -56,14 +56,18 @@ const mergeActivityDataWithMetadata = (
 };
 
 export const StyledActivityRoot = styled("div")(({ theme }) => ({
-    padding: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(4)}`,
+    padding: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(2)}`,
 }));
-export const StyledActivityHeader = styled("div")(({ theme }) => ({
+export const StyledActivityHeader = styled("div")<{ isHighlighted: boolean; isActive: boolean }>(({ theme, isHighlighted, isActive }) => ({
     display: "flex",
     alignItems: "center",
-    padding: theme.spacing(1),
-    backgroundColor: blend(theme.palette.background.paper, theme.palette.primary.main, 0.2),
-    border: `1px solid ${getBorderColor(theme)}`,
+    padding: theme.spacing(0.5),
+    backgroundColor: isActive
+        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.2)
+        : isHighlighted
+        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.05)
+        : undefined,
+    border: (isActive || isHighlighted) && `1px solid ${getBorderColor(theme)}`,
     borderRadius: theme.spacing(1),
 }));
 export const StyledActivityBody = styled("div")(({ theme }) => ({
@@ -103,37 +107,43 @@ const HeaderActivity = ({ activityAction }: { activityAction: ActionMetadata }) 
     }
 };
 
-const ActivityItem = forwardRef(({ activity }: { activity: Activity }, ref: ForwardedRef<HTMLDivElement>) => {
-    const commentSettings = useSelector(getCommentSettings);
+const ActivityItem = forwardRef(
+    ({ activity, isActiveItem }: { activity: Activity; isActiveItem: boolean }, ref: ForwardedRef<HTMLDivElement>) => {
+        const commentSettings = useSelector(getCommentSettings);
 
-    return (
-        <StyledActivityRoot ref={ref}>
-            <StyledActivityHeader>
-                <StyledHeaderIcon src={activity.activities.icon} />
-                <Typography variant={"body2"}>{activity.activities.displayableName}</Typography>
-                {activity.actions.map((activityAction) => (
-                    <HeaderActivity key={activityAction.id} activityAction={activityAction} />
-                ))}
-            </StyledActivityHeader>
-            <StyledActivityBody>
-                <Typography mt={0.5} component={"p"} variant={"caption"}>
-                    {formatDateTime(activity.date)} | {activity.user}
-                </Typography>
-                {activity.scenarioVersionId && (
-                    <Typography component={"p"} variant={"caption"}>
-                        Version: {activity.scenarioVersionId}
+        const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
+
+        return (
+            <StyledActivityRoot ref={ref}>
+                <StyledActivityHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
+                    <StyledHeaderIcon src={activity.activities.icon} />
+                    <Typography variant={"caption"} sx={(theme) => ({ color: theme.palette.text.primary })}>
+                        {activity.activities.displayableName}
                     </Typography>
-                )}
-                {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
-                {activity.additionalFields.map((additionalField, index) => (
-                    <Typography key={index} component={"p"} variant={"caption"}>
-                        {additionalField.name}: {additionalField.value}
+                    {activity.actions.map((activityAction) => (
+                        <HeaderActivity key={activityAction.id} activityAction={activityAction} />
+                    ))}
+                </StyledActivityHeader>
+                <StyledActivityBody>
+                    <Typography mt={0.5} component={"p"} variant={"overline"}>
+                        {formatDateTime(activity.date)} | {activity.user}
                     </Typography>
-                ))}
-            </StyledActivityBody>
-        </StyledActivityRoot>
-    );
-});
+                    {activity.scenarioVersionId && (
+                        <Typography component={"p"} variant={"overline"}>
+                            Version: {activity.scenarioVersionId}
+                        </Typography>
+                    )}
+                    {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
+                    {activity.additionalFields.map((additionalField, index) => (
+                        <Typography key={index} component={"p"} variant={"overline"}>
+                            {additionalField.name}: {additionalField.value}
+                        </Typography>
+                    ))}
+                </StyledActivityBody>
+            </StyledActivityRoot>
+        );
+    },
+);
 
 ActivityItem.displayName = "ActivityItem";
 
@@ -275,6 +285,8 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const Row = ({ index, style }) => {
         const rowRef = useRef<HTMLDivElement>(null);
         const activity = useMemo(() => dataToDisplay[index], [index]);
+        const firstDeployedIndex = useMemo(() => dataToDisplay.findIndex((activeItem) => activeItem.type === "SCENARIO_DEPLOYED"), []);
+        const isActiveDeployedItem = firstDeployedIndex === index;
 
         useEffect(() => {
             if (rowRef.current) {
@@ -285,7 +297,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         const itemToRender = useMemo(() => {
             switch (activity.ui.type) {
                 case "item": {
-                    return <ActivityItem activity={activity} ref={rowRef} />;
+                    return <ActivityItem activity={activity} ref={rowRef} isActiveItem={isActiveDeployedItem} />;
                 }
                 case "date": {
                     return (
@@ -332,7 +344,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
 
     return (
         <ToolbarWrapper {...props} title={"Activities"}>
-            <div style={{ width: "100%", height: "500px" }}>
+            <div style={{ width: "100%", height: "700px" }}>
                 <AutoSizer>
                     {({ width, height }) => (
                         <VariableSizeList
