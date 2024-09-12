@@ -12,6 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition.activity.ModelDataActivityInfoProvider
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -55,7 +56,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.newactivity.ActivityService
+import pl.touk.nussknacker.ui.process.newactivity.{ActivityService, ScenarioActivityService}
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizationConfig,
   DeploymentsStatusesSynchronizationScheduler,
@@ -208,6 +209,12 @@ class AkkaHttpBasedRouteProvider(
             counter,
             new ScenarioTestExecutorServiceImpl(scenarioResolver, deploymentManager)
           )
+      }
+      val scenarioActivityService = scenarioTestServiceDeps.mapValues { case (_, processResolver, _, modelData, _) =>
+        new ScenarioActivityService(
+          new ModelDataActivityInfoProvider(modelData),
+          processResolver
+        )
       }
 
       val processValidator = scenarioTestServiceDeps.mapValues(_._1)
@@ -479,6 +486,7 @@ class AkkaHttpBasedRouteProvider(
             }
           ),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
+          new ActivityInfoResources(processService, scenarioActivityService),
           new StatusResources(stateDefinitionService),
         )
 

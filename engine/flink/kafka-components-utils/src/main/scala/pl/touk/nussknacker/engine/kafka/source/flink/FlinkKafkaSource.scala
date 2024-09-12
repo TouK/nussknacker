@@ -11,12 +11,20 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.KafkaSourceDeploymentData
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport, TopicName}
+import pl.touk.nussknacker.engine.api.process.{
+  ContextInitializer,
+  TestWithParametersSupport,
+  TopicName,
+  WithActivityParameters
+}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -55,7 +63,8 @@ class FlinkKafkaSource[T](
     with Serializable
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
-    with TestWithParametersSupport[T] {
+    with TestWithParametersSupport[T]
+    with WithActivityParameters {
 
   @silent("deprecated")
   override def sourceStream(
@@ -73,11 +82,19 @@ class FlinkKafkaSource[T](
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
+  override def activityParametersDefinition: Map[String, List[Parameter]] = Map(
+    ScenarioActionName.Deploy.value -> List(
+      Parameter(ParameterName("offset"), Typed.apply[String])
+    )
+  )
+
   @silent("deprecated")
   protected def flinkSourceFunction(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
+    // TODO: handle deployment parameters -> offset
+    val deploymentDataOpt = flinkNodeContext.nodeDeploymentData.collect { case d: KafkaSourceDeploymentData => d }
     topics.toList.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
