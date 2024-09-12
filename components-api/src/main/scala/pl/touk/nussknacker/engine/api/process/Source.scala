@@ -49,6 +49,10 @@ trait TestWithParametersSupport[+T] { self: Source =>
   def parametersToTestData(params: Map[ParameterName, AnyRef]): T
 }
 
+trait WithActivityParameters { self: Source =>
+  def activityParametersDefinition: Map[String, List[Parameter]]
+}
+
 /**
   * [[pl.touk.nussknacker.engine.api.process.SourceFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]

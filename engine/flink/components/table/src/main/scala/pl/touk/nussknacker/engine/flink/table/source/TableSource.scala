@@ -52,7 +52,7 @@ class TableSource(
     val selectQuery = tableEnv.from(tableDefinition.tableId.toString)
 
     val finalQuery = flinkNodeContext.nodeDeploymentData
-      .map { case SqlFilteringExpression(sqlExpression) =>
+      .collect { case SqlFilteringExpression(sqlExpression) =>
         tableEnv.executeSql(
           s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM ${tableDefinition.tableId} WHERE $sqlExpression"
         )

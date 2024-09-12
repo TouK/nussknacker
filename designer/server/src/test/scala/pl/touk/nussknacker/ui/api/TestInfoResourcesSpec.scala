@@ -154,3 +154,40 @@ class TestInfoResourcesSpec
   }
 
 }
+
+class ActivityInfoResourcesSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with Matchers
+    with FailFastCirceSupport
+    with NuResourcesTest
+    with PatientScalaFutures
+    with EitherValuesDetailedMessage {
+
+  private val scenarioGraph: ScenarioGraph = ProcessTestData.sampleScenarioGraph
+  private val testPermissionAll            = List(Permission.Deploy, Permission.Read, Permission.Write)
+
+  private def route() = new ActivityInfoResources(
+    processService,
+    mapProcessingTypeDataProvider(
+      Streaming.stringify -> createScenarioActivityService
+    )
+  )
+
+  test("get activity parameters") {
+    saveProcess(scenarioGraph) {
+      Post(
+        s"/activityInfo/${ProcessTestData.sampleProcessName}/activityParameters",
+        scenarioGraph.toJsonRequestEntity()
+      ) ~> withPermissions(
+        route(),
+        testPermissionAll: _*
+      ) ~> check {
+        status shouldEqual StatusCodes.OK
+        val content = entityAs[Json].noSpaces
+        content shouldBe """{}"""
+      }
+    }
+  }
+
+}
