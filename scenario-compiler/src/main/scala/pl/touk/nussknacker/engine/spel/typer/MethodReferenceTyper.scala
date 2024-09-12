@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, MethodDefinition}
+import pl.touk.nussknacker.engine.extension.CastTyping
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
@@ -21,7 +22,11 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
       case TypedNull =>
         Left(IllegalInvocationError(TypedNull))
       case Unknown =>
-        if (methodExecutionForUnknownAllowed) Right(Unknown) else Left(IllegalInvocationError(Unknown))
+        if (CastTyping.isCastMethod(reference)) CastTyping.Instance.computeResultType(reference)
+        else if (methodExecutionForUnknownAllowed) Right(Unknown)
+        // todo: lbg suggestions?
+//        if (methodExecutionForUnknownAllowed) Right(Unknown)
+        else Left(IllegalInvocationError(Unknown))
     }
   }
 

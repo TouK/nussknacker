@@ -2,23 +2,37 @@ package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
+import pl.touk.nussknacker.engine.api.Documentation
+import pl.touk.nussknacker.engine.api.generics.{
+  ExpressionParseError,
+  GenericFunctionTypingError,
+  GenericType,
+  TypingFunction
+}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.GenericFunctionError
+import pl.touk.nussknacker.engine.spel.typer.MethodReference
 
 import scala.util.{Failure, Success, Try}
 
 sealed trait Cast {
 
+  @Documentation(description = "Checks if a type can be casted to a given class")
   def canCastTo(clazzType: String): Boolean
 
-  @GenericType(typingFunction = classOf[Cast.CastToTyping])
+  @Documentation(description = "Casts a type to a given class")
+  @GenericType(typingFunction = classOf[CastTyping.Typing])
   def castTo[T](clazzType: String): T
+
 }
 
-object Cast {
+object CastTyping {
+  private lazy val castMethods = classOf[Cast].getMethods.map(_.getName).toSet
 
-  private class CastToTyping extends TypingFunction {
+  def isCastMethod(reference: MethodReference): Boolean = castMethods.contains(reference.methodName)
+
+  class Typing extends TypingFunction {
 
     override def computeResultType(
         arguments: List[typing.TypingResult]
@@ -31,8 +45,14 @@ object Cast {
       case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
+    def computeResultType(reference: MethodReference): Either[ExpressionParseError, typing.TypingResult] =
+      computeResultType(reference.params)
+        .leftMap(_ => GenericFunctionError("Provided class name is invalid"))
+        .toEither
+
   }
 
+  object Instance extends Typing
 }
 
 class CastImpl(target: Any) extends Cast {
