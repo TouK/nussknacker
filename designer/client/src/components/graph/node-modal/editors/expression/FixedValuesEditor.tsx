@@ -5,7 +5,7 @@ import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
-import { Stack, styled, Typography, useTheme } from "@mui/material";
+import { FormControlLabel, Radio, RadioGroup, Stack, styled, Typography, useTheme } from "@mui/material";
 import { ExtendedEditor } from "./Editor";
 import { FieldError } from "../Validators";
 import { FixedValuesOption } from "../../fragment-input-definition/item";
@@ -26,6 +26,7 @@ interface Option {
     label: string;
     value: string;
     icon: string | null;
+    hintText: string | null;
 }
 
 function getOptions(values: FixedValuesOption[]): Option[] {
@@ -33,19 +34,26 @@ function getOptions(values: FixedValuesOption[]): Option[] {
         value: value.expression,
         label: value.label,
         icon: value.icon,
+        hintText: value.hintText,
     }));
+}
+
+enum FixedValuesEditorMode {
+    LIST = "LIST",
+    RADIO = "RADIO",
 }
 
 export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
             (expressionObj && options.find((option) => option.value === expressionObj.expression)) || // current value with label taken from options
-            (expressionObj && { value: expressionObj.expression, label: expressionObj.expression, icon: null }) || // current value is no longer valid option? Show it anyway, let user know. Validation should take care
+            (expressionObj && { value: expressionObj.expression, label: expressionObj.expression, icon: null, hintText: null }) || // current value is no longer valid option? Show it anyway, let user know. Validation should take care
             null
         ); // just leave undefined and let the user explicitly select one
     };
 
     const { expressionObj, readOnly, onValueChange, className, showValidation, editorConfig, fieldErrors } = props;
+    const mode = FixedValuesEditorMode[editorConfig.mode || "LIST"];
     const options = getOptions(editorConfig.possibleValues);
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
@@ -58,7 +66,17 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
         selectStyled(theme);
-    return (
+    return mode == FixedValuesEditorMode.RADIO ? (
+        <div className={cx(className)}>
+            <RadioGroup value={currentOption.value} onChange={(event) => onValueChange(event.target.value)}>
+                {options.map((option: Option) => {
+                    const label = option.value === "" ? `${option.value} (default)` : option.value;
+                    return <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={label} />;
+                })}
+            </RadioGroup>
+            {currentOption.hintText ? <Typography sx={{ width: "100%" }}>{currentOption.hintText}</Typography> : null}
+        </div>
+    ) : (
         <div className={cx(className)}>
             <Creatable
                 value={currentOption}
