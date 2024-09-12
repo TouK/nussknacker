@@ -168,13 +168,16 @@ class DefinitionResourcesSpec
         .parse("""{"possibleValues" : [
                    |    {
                    |      "expression" : "",
-                   |      "label" : ""
+                   |      "label" : "",
+                   |      "hintText" : null
                    |    },
                    |    {
                    |      "expression" : "'someValue'",
-                   |      "label" : "someValue"
+                   |      "label" : "someValue",
+                   |      "hintText" : null
                    |    }
                    |  ],
+                   |  "mode" : "LIST",
                    |  "type" : "FixedValuesParameterEditor"
                    |}""".stripMargin)
         .toOption

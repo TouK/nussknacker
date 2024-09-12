@@ -12,18 +12,22 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
+import pl.touk.nussknacker.engine.definition.activity.CommonModelDataInfoProvider
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.test.TestInfoProvider.{
   ScenarioTestDataGenerationError,
   SourceTestDataGenerationError,
   TestDataPreparationError
 }
-import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
 
-class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
+class ModelDataTestInfoProvider(modelData: ModelData)
+    extends CommonModelDataInfoProvider(modelData)
+    with TestInfoProvider
+    with LazyLogging {
 
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
@@ -204,10 +208,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       }
       .sequence
       .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
-  }
-
-  private def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
-    scenario.collectAllNodes.flatMap(asSource) ++ scenario.collectAllNodes.flatMap(asFragmentInputDefinition)
   }
 
   private def formatError(error: String, recordIdx: Int): String = {

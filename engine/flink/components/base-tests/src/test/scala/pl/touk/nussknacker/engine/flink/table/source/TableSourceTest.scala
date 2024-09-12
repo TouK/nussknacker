@@ -7,12 +7,13 @@ import org.scalatest.{BeforeAndAfterAll, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData, SqlFilteringExpression}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.minicluster.FlinkMiniClusterFactory
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, StubbedCatalogFactory}
+import pl.touk.nussknacker.engine.flink.table.source.TableSource.SQL_EXPRESSION_PARAMETER_NAME
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -94,7 +95,7 @@ class TableSourceTest
     val result = runner
       .runWithoutData[Row](
         scenario,
-        nodesData = NodesDeploymentData(Map(NodeId("start") -> SqlFilteringExpression("true = true")))
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
       )
       .validValue
     result.errors shouldBe empty
@@ -134,7 +135,7 @@ class TableSourceTest
     val resultWithoutFiltering = runnerWithCatalogConfiguration
       .runWithoutData[Row](
         scenario,
-        nodesData = NodesDeploymentData(Map(NodeId("start") -> SqlFilteringExpression("true = true")))
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = true")))
       )
       .validValue
     resultWithoutFiltering.errors shouldBe empty
@@ -143,7 +144,7 @@ class TableSourceTest
     val resultWithFiltering = runnerWithCatalogConfiguration
       .runWithoutData[Row](
         scenario,
-        nodesData = NodesDeploymentData(Map(NodeId("start") -> SqlFilteringExpression("true = false")))
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> Map(SQL_EXPRESSION_PARAMETER_NAME -> "true = false")))
       )
       .validValue
     resultWithFiltering.errors shouldBe empty

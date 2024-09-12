@@ -37,7 +37,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
                     title: message,
                     kind: WindowKind.deployProcess,
                     width: ACTION_DIALOG_WIDTH,
-                    meta: { action },
+                    meta: { action, activityName: "CANCEL" },
                 })
             }
             type={type}

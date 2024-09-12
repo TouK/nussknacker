@@ -10,10 +10,17 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport, TopicName}
+import pl.touk.nussknacker.engine.api.process.{
+  ContextInitializer,
+  TestWithParametersSupport,
+  TopicName,
+  WithActivityParameters
+}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
@@ -54,7 +61,8 @@ class FlinkKafkaSource[T](
     with Serializable
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
-    with TestWithParametersSupport[T] {
+    with TestWithParametersSupport[T]
+    with WithActivityParameters {
 
   @silent("deprecated")
   override def sourceStream(
@@ -72,11 +80,40 @@ class FlinkKafkaSource[T](
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
+  private val OFFSET_RESET_STRATEGY_PARAM_NAME = "offsetResetStrategy"
+
+  override def activityParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
+    val defaultValue = if (kafkaConfig.forceLatestRead.contains(true)) Some("LATEST") else Some("NONE")
+    val editor = Some(
+      FixedValuesParameterEditor(
+        List(
+          FixedExpressionValue("LATEST", "LATEST"),
+          FixedExpressionValue("EARLIEST", "EARLIEST"),
+          FixedExpressionValue("NONE", "NONE"),
+        )
+      )
+    )
+    Map(
+      ScenarioActionName.Deploy.value -> Map(
+        OFFSET_RESET_STRATEGY_PARAM_NAME -> ParameterConfig(
+          defaultValue = defaultValue,
+          editor = editor,
+          validators = None,
+          label = None,
+          hintText = None
+        ),
+      )
+    )
+  }
+
   @silent("deprecated")
   protected def flinkSourceFunction(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
+    // TODO: use deployment parameters -> offsetResetStrategy
+    val offsetResetStrategy =
+      flinkNodeContext.nodeDeploymentData.flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME)).getOrElse()
     topics.toList.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }

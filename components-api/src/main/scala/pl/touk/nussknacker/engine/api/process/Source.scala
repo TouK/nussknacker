@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.component.Component._
-import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{Component, ParameterConfig, ProcessingMode}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -47,6 +47,15 @@ trait TestWithParametersSupport[+T] { self: Source =>
   // TODO add support for dynamic parameters
   def testParametersDefinition: List[Parameter]
   def parametersToTestData(params: Map[ParameterName, AnyRef]): T
+}
+
+/**
+ * Used to define Source parameters for each activity
+ * e.g.
+ *   {"DEPLOY": { "parametername": ...parameter configuration... }
+ */
+trait WithActivityParameters { self: Source =>
+  def activityParametersDefinition: Map[String, Map[String, ParameterConfig]]
 }
 
 /**

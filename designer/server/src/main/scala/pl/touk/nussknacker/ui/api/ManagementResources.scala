@@ -6,6 +6,7 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
@@ -61,6 +62,11 @@ object ManagementResources {
 
   }
 
+  @JsonCodec final case class RunDeploymentRequest(
+      nodesDeploymentData: Option[NodesDeploymentData],
+      comment: Option[String]
+  )
+
 }
 
 class ManagementResources(
@@ -114,16 +120,16 @@ class ManagementResources(
           }
         } ~
         path("deploy" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]]) & parameters(Symbol("savepointPath"))) {
-            (processIdWithName, comment, savepointPath) =>
+          (post & processId(processName) & entity(as[RunDeploymentRequest]) & parameters(Symbol("savepointPath"))) {
+            (processIdWithName, request, savepointPath) =>
               canDeploy(processIdWithName) {
                 complete {
                   deploymentService
                     .processCommand(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
-                        commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
-                        nodesDeploymentData = NodesDeploymentData.empty,
+                        commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
+                        nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
                     )
@@ -137,15 +143,15 @@ class ManagementResources(
     pathPrefix("processManagement") {
 
       path("deploy" / ProcessNameSegment) { processName =>
-        (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+        (post & processId(processName) & entity(as[RunDeploymentRequest])) { (processIdWithName, request) =>
           canDeploy(processIdWithName) {
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
                   .processCommand(
                     RunDeploymentCommand(
-                      commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
-                      nodesDeploymentData = NodesDeploymentData.empty,
+                      commonData = CommonCommandData(processIdWithName, request.comment.flatMap(Comment.from), user),
+                      nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
                   )

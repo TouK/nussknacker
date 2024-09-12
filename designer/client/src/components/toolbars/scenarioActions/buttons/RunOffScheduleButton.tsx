@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
-import HttpService from "../../../../http/HttpService";
+import HttpService, {NodesDeploymentData} from "../../../../http/HttpService";
 import {
     getProcessName,
     isRunOffSchedulePossible,
@@ -34,7 +34,7 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const available = validationResultPresent && !disabled && isPossible && capabilities.deploy;
 
     const { open } = useWindows();
-    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string) =>
+    const action = (name: ProcessName, versionId: ProcessVersionId, comment: string, nodesDeploymentData?: NodesDeploymentData) =>
         HttpService.runOffSchedule(name, comment).finally(() => dispatch(loadProcessState(name, versionId)));
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
@@ -53,7 +53,7 @@ export default function RunOffScheduleButton(props: ToolbarButtonProps) {
                         title: message,
                         kind: WindowKind.deployProcess,
                         width: ACTION_DIALOG_WIDTH,
-                        meta: { action },
+                        meta: { action, activityName: "RUN_OFF_SCHEDULE" }, // fixme: activityName, do we need this?
                     })
                 }
                 type={type}

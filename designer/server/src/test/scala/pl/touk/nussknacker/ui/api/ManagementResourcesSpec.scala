@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.mock.MockDeploymentManagerSyntaxSugar.Ops
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.api.ManagementResources.RunDeploymentRequest
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
@@ -234,8 +235,15 @@ class ManagementResourcesSpec
   }
 
   test("not authorize user with write permission to deploy") {
+    import io.circe.syntax._
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
-    Post(s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}") ~> withPermissions(
+    Post(
+      s"/processManagement/deploy/${ProcessTestData.sampleScenario.name}",
+      HttpEntity(
+        ContentTypes.`application/json`,
+        RunDeploymentRequest(None, None).asJson.noSpaces
+      )
+    ) ~> withPermissions(
       deployRoute(),
       Permission.Write
     ) ~> check {
