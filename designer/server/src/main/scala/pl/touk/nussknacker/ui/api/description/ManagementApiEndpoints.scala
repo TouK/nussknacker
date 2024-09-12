@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.encoder
 import derevo.derive
@@ -9,8 +9,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.restmodel.{BaseEndpointDefinitions, CustomActionRequest}
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError
-import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{NoActionDefinition, NoScenario}
+import pl.touk.nussknacker.ui.api.description.ManagementApiEndpoints.Dtos.{CustomActionValidationDto, ManagementApiError, NoActionDefinition, NoScenario}
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ClassCodec._
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
@@ -59,14 +58,15 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
 
 }
 
-@derive(schema, encoder)
-final case class CustomActionValidationDto(validationErrors: List[NodeValidationError], validationPerformed: Boolean)
 
 object ManagementApiEndpoints {
 
-  sealed trait ManagementApiError
+  object Dtos {
 
-  object ManagementApiError {
+    @derive(schema, encoder)
+    final case class CustomActionValidationDto(validationErrors: List[NodeValidationError], validationPerformed: Boolean)
+
+    sealed trait ManagementApiError
     final case object NoPermission                         extends ManagementApiError with CustomAuthorizationError
     final case class NoScenario(scenarioName: ProcessName) extends ManagementApiError
     final case class NoActionDefinition(scenarioName: ProcessName, actionName: ScenarioActionName)
