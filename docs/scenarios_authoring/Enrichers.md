@@ -152,15 +152,19 @@ Similarly, information about field names and types returned by the OpenAPI servi
 ## ML enricher
 **(Enterprise only)**
 
-Nussknacker can infer ML models using the Machine Learning enrichers. The ML enrichers are Enterprise components of Nussknacker and require a separate license. Please contact <info@nussknacker.io> for license terms and more details.
+Similarly to SQL and OpenAPI enrichers, as ML model input and output vectors are known to Designer, when you double-click 
+the ML Enricher node in the scenario you will see entry fields required by the selected model and version;
+data type hints and syntax error checking functionality will be active.
 
-We support the inference of the following ML technologies:
-- native Python models discovered using the [MLflow](https://mlflow.org/) model registry and executed with our ML runtime
-- models exported in the [PMML](https://en.wikipedia.org/wiki/Predictive_Model_Markup_Language) format
-- models exported in the [H2O](https://h2o.ai/) format
-
-Similarly to SQL and OpenAPI enrichers, as ML model input and output are known to Designer, when you double-click the ML Enricher node in the scenario you will see entry fields required by the model; data type hints and syntax error checking functionality will be active.   
-
-From the scenario author perspective, the ML Enricher is indistinguishable from OpenAPI enricher - it just takes some input parameters and returns a value. 
+From the scenario author perspective, the ML Enricher is indistinguishable from OpenAPI enricher - it just takes 
+some input parameters and returns a value, e.g. a risk.
 
 ![alt_text](img/mlEnricherForm.png "ML Enricher")
+
+The following ML models are supported:
+- [ONNX](https://onnx.ai/)
+- [PMML](https://en.wikipedia.org/wiki/Predictive_Model_Markup_Language)
+- [H2O](https://h2o.ai/)
+- models fetched from [MLflow](https://mlflow.org/) models registry
+
+Please check [ML integration](../integration/MachineLearning.md) page for more details on how models are inferred by Nussknacker.
