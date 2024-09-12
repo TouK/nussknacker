@@ -173,7 +173,7 @@ object SwaggerTyped {
     Option(schema.getType)
       .orElse(Option(schema.getTypes).map(_.asScala.head))
 
-  // `resolveListOfObjects` flag allows one to stop resolving Type recursion for  SwaggerArray[SwaggerObject]
+  // `resolveListOfObjects` flag allows one to stop resolving Type recursion for SwaggerArray[SwaggerObject]
   // this is needed for correct validations in openApi enrichers with input parameters that contains list of objects with optional fields
   // TODO: validations in openApi enrichers should be based on actual schema instead of `TypingResult` instance
   def typingResult(swaggerTyped: SwaggerTyped, resolveListOfObjects: Boolean = true): TypingResult =
