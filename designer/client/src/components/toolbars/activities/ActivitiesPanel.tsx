@@ -1,22 +1,12 @@
-import React, { ForwardedRef, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import httpService, { ActionMetadata, ActivitiesResponse, ActivityMetadata, ActivityMetadataResponse } from "../../../http/HttpService";
-import { Box, Divider, styled, Typography } from "@mui/material";
-import { formatDateTime } from "../../../common/DateUtils";
-import CommentContent from "../../comment/CommentContent";
-import { useSelector } from "react-redux";
-import { createSelector } from "reselect";
-import { getFeatureSettings } from "../../../reducers/selectors/settings";
-import UrlIcon from "../../UrlIcon";
-import { getBorderColor } from "../../../containers/theme/helpers";
-import { blend } from "@mui/system";
 import { VariableSizeList } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import moment from "moment";
-import { MoreItemsButton } from "./MoreItemsButton";
 import { v4 as uuid4 } from "uuid";
-import { LessItemsButton } from "./LessItemsButton";
+import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
 
 interface UiButtonActivity {
     type: "moreItemsButton";
@@ -34,7 +24,7 @@ interface UiItemActivity {
     isDisabled: boolean;
 }
 
-type Activity = ActivitiesResponse["activities"][number] & {
+export type Activity = ActivitiesResponse["activities"][number] & {
     activities: ActivityMetadata;
     actions: ActionMetadata[];
     ui?: UiButtonActivity | UiDateActivity | UiItemActivity;
@@ -55,108 +45,89 @@ const mergeActivityDataWithMetadata = (
     });
 };
 
-export const StyledActivityRoot = styled("div")(({ theme }) => ({
-    padding: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(2)}`,
-}));
-export const StyledActivityHeader = styled("div")<{ isHighlighted: boolean; isActive: boolean }>(({ theme, isHighlighted, isActive }) => ({
-    display: "flex",
-    alignItems: "center",
-    padding: theme.spacing(0.5),
-    backgroundColor: isActive
-        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.2)
-        : isHighlighted
-        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.05)
-        : undefined,
-    border: (isActive || isHighlighted) && `1px solid ${getBorderColor(theme)}`,
-    borderRadius: theme.spacing(1),
-}));
-export const StyledActivityBody = styled("div")(({ theme }) => ({
-    margin: theme.spacing(1),
-}));
-export const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
-    width: "16px",
-    height: "16px",
-    marginRight: theme.spacing(1),
-}));
+const handleDataToDisplayGeneration = (activitiesDataWithMetadata: Activity[]) => {
+    const infiniteListData = [];
+    const hideItemsOptionAvailableLimit = 4;
+    const formatDate = (date: string) => moment(date).format("YYYY-MM-DD");
 
-export const StyledHeaderActionIcon = styled(UrlIcon)(() => ({
-    width: "16px",
-    height: "16px",
-    marginLeft: "auto",
-    cursor: "pointer",
-}));
+    const recursiveDateLabelDesignation = (activity: Activity, index: number, occurrence = 0) => {
+        const nextActivity = activitiesDataWithMetadata[index + 1 + occurrence];
+        const previousActivity = activitiesDataWithMetadata[index - 1 + occurrence];
 
-const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
-
-const HeaderActivity = ({ activityAction }: { activityAction: ActionMetadata }) => {
-    switch (activityAction.id) {
-        case "compare": {
-            return (
-                <StyledHeaderActionIcon
-                    onClick={() => {
-                        alert(`action called: ${activityAction.id}`);
-                    }}
-                    key={activityAction.id}
-                    src={activityAction.icon}
-                />
-            );
+        if (occurrence > hideItemsOptionAvailableLimit && activity.type !== nextActivity?.type) {
+            return {
+                id: uuid4(),
+                ui: {
+                    type: "date",
+                    value: `${formatDate(activity.date)} - ${formatDate(previousActivity.date)}`,
+                },
+            };
         }
-        default: {
-            return null;
+
+        if (activity.type === nextActivity?.type) {
+            occurrence++;
+            return recursiveDateLabelDesignation(activity, index, occurrence);
         }
-    }
+
+        if (
+            activity.type !== nextActivity?.type &&
+            moment(activity.date).format("YYYY-MM-DD") !==
+                (previousActivity?.date ? moment(previousActivity.date).format("YYYY-MM-DD") : undefined)
+        ) {
+            return {
+                id: uuid4(),
+                ui: { value: formatDate(activity.date), type: "date" },
+            };
+        }
+
+        return undefined;
+    };
+
+    const recursiveMoreItemsButtonDesignation = (activity: Activity, index: number, occurrence = 0) => {
+        const previousActivity = activitiesDataWithMetadata[index - 1 - occurrence];
+
+        if (occurrence > hideItemsOptionAvailableLimit && activity.type !== previousActivity?.type) {
+            return {
+                id: uuid4(),
+                ui: {
+                    type: "moreItemsButton",
+                    sameItemOccurrence: occurrence,
+                    clicked: false,
+                },
+            };
+        }
+
+        if (activity.type === previousActivity?.type) {
+            occurrence++;
+            return recursiveMoreItemsButtonDesignation(activity, index, occurrence);
+        }
+
+        return undefined;
+    };
+
+    activitiesDataWithMetadata
+        .sort((a, b) => moment(b.date).diff(a.date))
+        .forEach((activity, index) => {
+            const dateLabel = recursiveDateLabelDesignation(activity, index);
+            const moreItemsButton = recursiveMoreItemsButtonDesignation(activity, index);
+            dateLabel && infiniteListData.push(dateLabel);
+            infiniteListData.push({ ...activity, id: uuid4(), ui: { type: "item", isDisabled: false } });
+            moreItemsButton && infiniteListData.push(moreItemsButton);
+        });
+
+    return infiniteListData;
 };
-
-const ActivityItem = forwardRef(
-    ({ activity, isActiveItem }: { activity: Activity; isActiveItem: boolean }, ref: ForwardedRef<HTMLDivElement>) => {
-        const commentSettings = useSelector(getCommentSettings);
-
-        const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
-
-        return (
-            <StyledActivityRoot ref={ref}>
-                <StyledActivityHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
-                    <StyledHeaderIcon src={activity.activities.icon} />
-                    <Typography variant={"caption"} sx={(theme) => ({ color: theme.palette.text.primary })}>
-                        {activity.activities.displayableName}
-                    </Typography>
-                    {activity.actions.map((activityAction) => (
-                        <HeaderActivity key={activityAction.id} activityAction={activityAction} />
-                    ))}
-                </StyledActivityHeader>
-                <StyledActivityBody>
-                    <Typography mt={0.5} component={"p"} variant={"overline"}>
-                        {formatDateTime(activity.date)} | {activity.user}
-                    </Typography>
-                    {activity.scenarioVersionId && (
-                        <Typography component={"p"} variant={"overline"}>
-                            Version: {activity.scenarioVersionId}
-                        </Typography>
-                    )}
-                    {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
-                    {activity.additionalFields.map((additionalField, index) => (
-                        <Typography key={index} component={"p"} variant={"overline"}>
-                            {additionalField.name}: {additionalField.value}
-                        </Typography>
-                    ))}
-                </StyledActivityBody>
-            </StyledActivityRoot>
-        );
-    },
-);
-
-ActivityItem.displayName = "ActivityItem";
 
 export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const listRef = useRef<VariableSizeList>(null);
     const rowHeights = useRef({});
 
-    const setRowHeight = useCallback((index, size) => {
+    const setRowHeight = useCallback((index: number, height: number) => {
         if (listRef.current) {
             listRef.current.resetAfterIndex(0);
         }
 
-        rowHeights.current = { ...rowHeights.current, [index]: size };
+        rowHeights.current = { ...rowHeights.current, [index]: height };
     }, []);
 
     const getRowHeight = useCallback((index: number) => {
@@ -165,84 +136,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
 
     const [data, setData] = useState<Activity[]>([]);
 
-    useEffect(() => {
-        Promise.all([httpService.fetchActivitiesMetadata(), httpService.fetchActivities()]).then(([activitiesMetadata, { activities }]) => {
-            const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
-
-            const infiniteListData = [];
-            const hideItemsOptionAvailableLimit = 4;
-            const formatDate = (date: string) => moment(date).format("YYYY-MM-DD");
-
-            const recursiveDateLabelDesignation = (activity, index, occurrence = 0) => {
-                const nextActivity = mergedActivitiesDataWithMetadata[index + 1 + occurrence];
-                const previousActivity = mergedActivitiesDataWithMetadata[index - 1 + occurrence];
-
-                if (occurrence > hideItemsOptionAvailableLimit && activity.type !== nextActivity?.type) {
-                    return {
-                        id: uuid4(),
-                        ui: {
-                            type: "date",
-                            value: `${formatDate(activity.date)} - ${formatDate(previousActivity.date)}`,
-                        },
-                    };
-                }
-
-                if (activity.type === nextActivity?.type) {
-                    occurrence++;
-                    return recursiveDateLabelDesignation(activity, index, occurrence);
-                }
-
-                if (
-                    activity.type !== nextActivity?.type &&
-                    moment(activity.date).format("YYYY-MM-DD") !==
-                        (previousActivity?.date ? moment(previousActivity.date).format("YYYY-MM-DD") : undefined)
-                ) {
-                    return {
-                        id: uuid4(),
-                        ui: { value: formatDate(activity.date), type: "date" },
-                    };
-                }
-
-                return undefined;
-            };
-
-            const recursiveMoreItemsButtonDesignation = (activity, index, occurrence = 0) => {
-                const previousActivity = mergedActivitiesDataWithMetadata[index - 1 - occurrence];
-
-                if (occurrence > hideItemsOptionAvailableLimit && activity.type !== previousActivity?.type) {
-                    return {
-                        id: uuid4(),
-                        ui: {
-                            type: "moreItemsButton",
-                            sameItemOccurrence: occurrence,
-                            clicked: false,
-                        },
-                    };
-                }
-
-                if (activity.type === previousActivity?.type) {
-                    occurrence++;
-                    return recursiveMoreItemsButtonDesignation(activity, index, occurrence);
-                }
-
-                return undefined;
-            };
-
-            mergedActivitiesDataWithMetadata
-                .sort((a, b) => moment(b.date).diff(a.date))
-                .forEach((activity, index) => {
-                    const dateLabel = recursiveDateLabelDesignation(activity, index);
-                    const moreItemsButton = recursiveMoreItemsButtonDesignation(activity, index);
-                    dateLabel && infiniteListData.push(dateLabel);
-                    infiniteListData.push({ ...activity, id: uuid4(), ui: { type: "item", isDisabled: false } });
-                    moreItemsButton && infiniteListData.push(moreItemsButton);
-                });
-
-            setData(infiniteListData);
-        });
-    }, []);
-
-    const handleHideData = (index: number, sameItemOccurrence: number) => {
+    const handleHideRow = (index: number, sameItemOccurrence: number) => {
         setData((prevState) => {
             return prevState.map((data, indx) => {
                 if (indx === index) {
@@ -259,7 +153,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         listRef.current.scrollToItem(index - sameItemOccurrence - 2);
     };
 
-    const handleShowData = (index: number, sameItemOccurrence: number) => {
+    const handleShowRow = (index: number, sameItemOccurrence: number) => {
         setData((prevState) => {
             return prevState.map((data, indx) => {
                 if (indx === index + sameItemOccurrence) {
@@ -280,67 +174,15 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         [data],
     );
 
+    useEffect(() => {
+        Promise.all([httpService.fetchActivitiesMetadata(), httpService.fetchActivities()]).then(([activitiesMetadata, { activities }]) => {
+            const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
+
+            setData(handleDataToDisplayGeneration(mergedActivitiesDataWithMetadata));
+        });
+    }, []);
+
     if (!dataToDisplay.length) return;
-
-    const Row = ({ index, style }) => {
-        const rowRef = useRef<HTMLDivElement>(null);
-        const activity = useMemo(() => dataToDisplay[index], [index]);
-        const firstDeployedIndex = useMemo(() => dataToDisplay.findIndex((activeItem) => activeItem.type === "SCENARIO_DEPLOYED"), []);
-        const isActiveDeployedItem = firstDeployedIndex === index;
-
-        useEffect(() => {
-            if (rowRef.current) {
-                setRowHeight(index, rowRef.current.clientHeight);
-            }
-        }, [index, rowRef]);
-
-        const itemToRender = useMemo(() => {
-            switch (activity.ui.type) {
-                case "item": {
-                    return <ActivityItem activity={activity} ref={rowRef} isActiveItem={isActiveDeployedItem} />;
-                }
-                case "date": {
-                    return (
-                        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} px={1}>
-                            <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white })} />
-                            <Typography component={"div"} variant={"caption"} ref={rowRef} flex={1} textAlign={"center"}>
-                                {activity.ui.value}
-                            </Typography>
-                            <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white })} />
-                        </Box>
-                    );
-                }
-                case "moreItemsButton": {
-                    return (
-                        <div ref={rowRef}>
-                            {activity.ui.isClicked ? (
-                                <MoreItemsButton
-                                    sameItemOccurrence={activity.ui.sameItemOccurrence}
-                                    handleShowData={handleShowData}
-                                    index={index}
-                                />
-                            ) : (
-                                <LessItemsButton
-                                    sameItemOccurrence={activity.ui.sameItemOccurrence}
-                                    handleHideData={handleHideData}
-                                    index={index}
-                                />
-                            )}
-                        </div>
-                    );
-                }
-                default: {
-                    return null;
-                }
-            }
-        }, [activity, index]);
-
-        return (
-            <div key={activity.id} style={style}>
-                {itemToRender}
-            </div>
-        );
-    };
 
     return (
         <ToolbarWrapper {...props} title={"Activities"}>
@@ -358,7 +200,16 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                 return dataToDisplay[index].id;
                             }}
                         >
-                            {Row}
+                            {({ index, style }) => (
+                                <ActivitiesPanelRow
+                                    index={index}
+                                    style={style}
+                                    setRowHeight={setRowHeight}
+                                    handleShowRow={handleShowRow}
+                                    handleHideRow={handleHideRow}
+                                    activities={dataToDisplay}
+                                />
+                            )}
                         </VariableSizeList>
                     )}
                 </AutoSizer>

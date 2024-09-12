@@ -3,18 +3,18 @@ import { ToggleItemsButton, ToggleItemsRoot } from "./styled";
 import { Divider } from "@mui/material";
 
 interface Props {
-    handleHideData(index: number, sameItemOccurrence: number): void;
+    handleHideRow(index: number, sameItemOccurrence: number): void;
     index: number;
     sameItemOccurrence: number;
 }
 
-export const LessItemsButton = ({ handleHideData, index, sameItemOccurrence }: Props) => {
+export const LessItemsButton = ({ handleHideRow, index, sameItemOccurrence }: Props) => {
     return (
         <ToggleItemsRoot>
             <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.primary.main })} />
             <ToggleItemsButton
                 onClick={() => {
-                    handleHideData(index, sameItemOccurrence);
+                    handleHideRow(index, sameItemOccurrence);
                 }}
             >
                 Show less
