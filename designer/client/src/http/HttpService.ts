@@ -33,7 +33,7 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, LayoutData, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, LayoutData, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 import { handleAxiosError } from "../devHelpers";
@@ -106,6 +106,8 @@ export type SourceWithParametersTest = {
         [paramName: string]: Expression;
     };
 };
+
+export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
 
 export type NodeUsageData = {
     fragmentNodeId?: string;
@@ -341,11 +343,16 @@ class HttpService {
     deploy(
         processName: string,
         comment?: string,
+        nodesDeploymentData?: NodesDeploymentData,
     ): Promise<{
         isSuccess: boolean;
     }> {
+        const runDeploymentRequest = {
+            ...(nodesDeploymentData && { nodesDeploymentData: nodesDeploymentData }),
+            ...(comment && { comment: comment }),
+        };
         return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
+            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {
                 return { isSuccess: true };
             })
@@ -656,6 +663,21 @@ class HttpService {
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    getActivityParameters(processName: string, scenarioGraph: ScenarioGraph) {
+        const promise = api.post(
+            `/activityInfo/${encodeURIComponent(processName)}/activityParameters`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGetTestParameters", "Failed to get activity parameters definition"),
                 error,
                 true,
             ),

@@ -133,6 +133,13 @@ package object definition {
       hintText: Option[String]
   )
 
+  @JsonCodec final case class UiActivityParameterConfig(
+      defaultValue: Option[String],
+      editor: ParameterEditor,
+      label: Option[String],
+      hintText: Option[String]
+  )
+
   object UIParameter {
     implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] =
       deriveConfiguredDecoder[UIParameter]
