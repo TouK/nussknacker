@@ -5579,11 +5579,15 @@ components:
     FixedValuesParameterEditor:
       title: FixedValuesParameterEditor
       type: object
+      required:
+      - mode
       properties:
         possibleValues:
           type: array
           items:
             $ref: '#/components/schemas/FixedExpressionValue'
+        mode:
+          type: string
     FixedValuesWithIconParameterEditor:
       title: FixedValuesWithIconParameterEditor
       type: object
@@ -5772,8 +5776,8 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeId_NodeDeploymentData:
-      title: Map_NodeId_NodeDeploymentData
+    Map_NodeId_String:
+      title: Map_NodeId_String
       type: object
       additionalProperties:
         type: string
@@ -6653,7 +6657,7 @@ components:
         scenarioName:
           type: string
         nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+          $ref: '#/components/schemas/Map_NodeId_String'
         comment:
           type:
           - string
