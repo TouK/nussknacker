@@ -11,15 +11,24 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClie
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 // We need it because we use avro records inside our Context class
 class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
 
   override def register(modelConfig: Config, executionConfig: ExecutionConfig): Unit = {
     logger.debug("Registering default avro serializers")
-    AvroUtilsCompatibilityLayer.addAvroSerializersIfRequired(executionConfig)
+    registerAvroSerializers(executionConfig)
     val resolvedKafkaConfig = resolveConfig(modelConfig)
     registerGenericRecordSchemaIdSerializationForGlobalKafkaConfigIfNeed(resolvedKafkaConfig, executionConfig)
+  }
+
+  private def registerAvroSerializers(executionConfig: ExecutionConfig): Unit = {
+    val avroUtilsProvider = ScalaServiceLoader
+      .load[AvroUtilsCompatibilityProvider](getClass.getClassLoader)
+      .headOption
+      .getOrElse(DefaultAvroUtils)
+    avroUtilsProvider.addAvroSerializersIfRequired(executionConfig)
   }
 
   private def resolveConfig(modelConfig: Config): Option[KafkaConfig] = {

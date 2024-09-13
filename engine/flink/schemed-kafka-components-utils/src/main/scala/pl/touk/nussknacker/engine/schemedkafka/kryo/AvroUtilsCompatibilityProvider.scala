@@ -4,7 +4,13 @@ import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.java.typeutils.AvroUtils
 
-private[kryo] object AvroUtilsCompatibilityLayer {
+trait AvroUtils {
+  def addAvroSerializersIfRequired(executionConfig: ExecutionConfig): Unit
+}
+
+trait AvroUtilsCompatibilityProvider extends AvroUtils
+
+object DefaultAvroUtils extends AvroUtils {
 
   def addAvroSerializersIfRequired(executionConfig: ExecutionConfig): Unit = {
     AvroUtils.getAvroUtils.addAvroSerializersIfRequired(

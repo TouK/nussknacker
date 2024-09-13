@@ -4,13 +4,9 @@ import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.{
-  CompositeTypeSerializerUtil,
-  TypeSerializer,
-  TypeSerializerSchemaCompatibility,
-  TypeSerializerSnapshot
-}
+import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSchemaCompatibility, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.reflect.ClassTag
 
@@ -173,10 +169,14 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val newSerializersToUse = newSerializers.filter(k => commons.contains(k._1))
       val snapshotsToUse      = serializersSnapshots.filter(k => commons.contains(k._1))
 
-      val fieldsCompatibility = CompositeTypeSerializerUtilCompatibilityLayer.constructIntermediateCompatibilityResult(
-        newSerializersToUse.map(_._2),
-        snapshotsToUse.map(_._2)
-      )
+      val fieldsCompatibility = ScalaServiceLoader
+        .load[CompositeTypeSerializerUtilCompatibilityProvider](getClass.getClassLoader)
+        .headOption
+        .getOrElse(DefaultCompositeTypeSerializerUtil)
+        .constructIntermediateCompatibilityResult(
+          newSerializersToUse.map(_._2),
+          snapshotsToUse.map(_._2)
+        )
 
       // We construct detailed message to show when there are compatibility issues
       def fieldsCompatibilityMessage: String = newSerializersToUse
