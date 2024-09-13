@@ -247,7 +247,12 @@ describe("Fragment", () => {
             .its("response.statusCode")
             .should("eq", 200)
             .then(() => {
-                cy.get("@window").get("[title='Value']").siblings().eq(0).find("[data-testid='form-helper-text']").should("exist");
+                cy.get("[data-testid=window]")
+                    .find("[title='Value']")
+                    .siblings()
+                    .eq(0)
+                    .find("[data-testid='form-helper-text']")
+                    .should("exist");
             });
         cy.wait("@suggestions").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
