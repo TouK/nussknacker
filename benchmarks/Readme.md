@@ -18,11 +18,7 @@ benchmarks/Jmh/run -i 8 -wi 3 -f1 -t2 -prof jfr:stackDepth=512 .*SampleSpelBench
 ```
 
 # E2E benchmarks
-<<<<<<< HEAD
-Benchmarks based on the docker installation example environment. 
-=======
 Benchmarks based on the docker installation example environment.
->>>>>>> origin/staging
 The docker from sources is built and published in local registry and then the benchmark code is run.
 
 ## Running in sbt:
