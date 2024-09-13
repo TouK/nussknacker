@@ -3,7 +3,7 @@ import { InputWithIcon } from "./InputWithIcon";
 
 export const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({
     ...theme.typography.body2,
-    width: "100%",
+    width: "75%",
     borderRadius: 0,
     height: "36px !important",
     color: theme.palette.text.secondary,
