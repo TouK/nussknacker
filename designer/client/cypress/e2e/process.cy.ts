@@ -44,8 +44,8 @@ describe("Process", () => {
                 .should("be.enabled")
                 .click();
             cy.get("[data-testid=window]").should("be.visible");
-            cy.get('[title="Name"]').siblings().first().click().type("-renamed");
-            cy.get('[title="Description"]').siblings().first().type("RENAMED");
+            cy.get("[data-testid=window]").find('[title="Name"]').siblings().first().click().type("-renamed");
+            cy.get("[data-testid=window]").find('[title="Description"]').siblings().first().type("RENAMED");
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
