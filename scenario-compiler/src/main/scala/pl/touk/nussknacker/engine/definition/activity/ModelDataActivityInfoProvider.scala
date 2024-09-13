@@ -8,9 +8,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asSource}
+import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import shapeless.syntax.typeable._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ModelDataActivityInfoProvider(modelData: ModelData) extends ActivityInfoProvider {
 
@@ -35,17 +35,37 @@ class ModelDataActivityInfoProvider(modelData: ModelData) extends ActivityInfoPr
 
   override def getActivityParameters(scenario: CanonicalProcess): Map[String, Map[String, List[Parameter]]] = {
     modelData.withThisAsContextClassLoader {
-      val asdf = scenario.collectAllNodes.flatMap(asSource)
-      val compiledSources = for {
-        source    <- scenario.collectAllNodes.flatMap(asSource)
-        sourceObj <- prepareSourceObj(source)(scenario.metaData, NodeId(source.id))
-      } yield sourceObj
-      val stefan = compiledSources
-        .flatMap(_.cast[WithActivityParameters])
-        .map(_.activityParametersDefinition)
-
-      Map.empty
+      val nodeToActivityToParameters = collectAllSources(scenario)
+        .map(source => source.id -> getActivityParameters(source, scenario.metaData))
+        .toMap
+      groupByActivity(nodeToActivityToParameters)
     }
+  }
+
+  private def groupByActivity(
+      nodeToActivityToParameters: Map[String, Map[String, List[Parameter]]]
+  ): Map[String, Map[String, List[Parameter]]] = {
+    val activityToNodeToParameters = for {
+      (node, activityToParams) <- nodeToActivityToParameters.toList
+      (activity, params)       <- activityToParams.toList
+    } yield (activity, node -> params)
+    activityToNodeToParameters
+      .groupBy(_._1)
+      .mapValuesNow(_.map(_._2).toMap)
+  }
+
+  private def getActivityParameters(source: SourceNodeData, metaData: MetaData): Map[String, List[Parameter]] = {
+    modelData.withThisAsContextClassLoader {
+      val compiledSource = prepareSourceObj(source)(metaData, NodeId(source.id))
+      compiledSource match {
+        case Some(s: WithActivityParameters) => s.activityParametersDefinition
+        case _                               => Map.empty
+      }
+    }
+  }
+
+  private def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
+    scenario.collectAllNodes.flatMap(asSource) ++ scenario.collectAllNodes.flatMap(asFragmentInputDefinition)
   }
 
 }

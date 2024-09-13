@@ -210,7 +210,7 @@ object DeploymentApiEndpoints {
         modifiedAt: Instant
     )
 
-    implicit val nodeDeploymentDataCodec: Schema[NodeDeploymentData] = Schema.string[SqlFilteringExpression].as
+    implicit val nodeDeploymentDataCodec: Schema[NodeDeploymentData] = Schema.derived
 
     implicit val nodesDeploymentDataCodec: Schema[NodesDeploymentData] = Schema
       .schemaForMap[NodeId, NodeDeploymentData](_.id)

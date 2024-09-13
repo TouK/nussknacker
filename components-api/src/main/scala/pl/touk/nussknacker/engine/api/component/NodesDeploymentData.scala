@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.api.component
 
-import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
+import cats.syntax.functor._
 import io.circe.{Decoder, Encoder}
+import io.circe.generic.auto._
+import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.NodeId
 
 final case class NodesDeploymentData(dataByNodeId: Map[NodeId, NodeDeploymentData])
@@ -20,20 +21,24 @@ object NodesDeploymentData {
 
 }
 
-@JsonCodec sealed trait NodeDeploymentData
+sealed trait NodeDeploymentData
 
 final case class SqlFilteringExpression(sqlExpression: String) extends NodeDeploymentData
 
-final case class KafkaSourceDeploymentData(offset: String) extends NodeDeploymentData
+final case class KafkaSourceOffset(offset: Long) extends NodeDeploymentData
 
-//object NodeDeploymentData {
-//
-//  implicit val nodeDeploymentDataEncoder: Encoder[NodeDeploymentData] =
-//    deriveUnwrappedEncoder[SqlFilteringExpression].contramap { case sqlExpression: SqlFilteringExpression =>
-//      sqlExpression
-//    }
-//
-//  implicit val nodeDeploymentDataDecoder: Decoder[NodeDeploymentData] =
-//    deriveUnwrappedDecoder[SqlFilteringExpression].map(identity)
-//
-//}
+object NodeDeploymentData {
+
+  implicit val nodeDeploymentDataEncoder: Encoder[NodeDeploymentData] =
+    Encoder.instance {
+      case s: SqlFilteringExpression => s.asJson
+      case o: KafkaSourceOffset      => o.asJson
+    }
+
+  implicit val nodeDeploymentDataDecoder: Decoder[NodeDeploymentData] =
+    List[Decoder[NodeDeploymentData]](
+      Decoder[SqlFilteringExpression].widen,
+      Decoder[KafkaSourceOffset].widen
+    ).reduceLeft(_ or _)
+
+}

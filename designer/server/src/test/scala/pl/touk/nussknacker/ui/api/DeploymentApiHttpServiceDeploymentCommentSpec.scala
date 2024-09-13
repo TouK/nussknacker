@@ -79,7 +79,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
             .jsonBody(s"""{
                          |  "scenarioName": "$scenarioName",
                          |  "nodesDeploymentData": {
-                         |    "$sourceNodeId": "`date` = '2024-01-01'"
+                         |    "$sourceNodeId": {"sqlExpression":"`date` = '2024-01-01'"}
                          |  }
                          |}""".stripMargin)
             .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
@@ -99,7 +99,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
             .jsonBody(s"""{
                          |  "scenarioName": "$scenarioName",
                          |  "nodesDeploymentData": {
-                         |    "$sourceNodeId": "`date` = '2024-01-01'"
+                         |    "$sourceNodeId": {"sqlExpression":"`date` = '2024-01-01'"}
                          |  },
                          |  "comment": "deployment comment not matching configured pattern"
                          |}""".stripMargin)
@@ -121,7 +121,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
             .jsonBody(s"""{
                          |  "scenarioName": "$scenarioName",
                          |  "nodesDeploymentData": {
-                         |    "$sourceNodeId": "`date` = '2024-01-01'"
+                         |    "$sourceNodeId": {"sqlExpression":"`date` = '2024-01-01'"}
                          |  },
                          |  "comment": "comment with $configuredPhrase"
                          |}""".stripMargin)

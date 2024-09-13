@@ -11,7 +11,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.KafkaSourceDeploymentData
+import pl.touk.nussknacker.engine.api.component.KafkaSourceOffset
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -84,7 +84,7 @@ class FlinkKafkaSource[T](
 
   override def activityParametersDefinition: Map[String, List[Parameter]] = Map(
     ScenarioActionName.Deploy.value -> List(
-      Parameter(ParameterName("offset"), Typed.apply[String])
+      Parameter(ParameterName("offset"), Typed.apply[Long])
     )
   )
 
@@ -94,7 +94,7 @@ class FlinkKafkaSource[T](
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
     // TODO: handle deployment parameters -> offset
-    val deploymentDataOpt = flinkNodeContext.nodeDeploymentData.collect { case d: KafkaSourceDeploymentData => d }
+    val deploymentDataOpt = flinkNodeContext.nodeDeploymentData.collect { case d: KafkaSourceOffset => d }
     topics.toList.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
