@@ -2,7 +2,7 @@
 Benchmarks in this module are suitable for things like:
 - performance of SpEL evaluation
 - handling Context operations
-and probably not for more end to end scenarios - like testing Flink process
+  and probably not for more end to end scenarios - like testing Flink process
 
 For some benchmarks sample values for 4-core machine are included. They **should not** be considered
 as proper reference, since results will vary a lot between machines/runs. However, if after some changes
@@ -18,7 +18,11 @@ benchmarks/Jmh/run -i 8 -wi 3 -f1 -t2 -prof jfr:stackDepth=512 .*SampleSpelBench
 ```
 
 # E2E benchmarks
+<<<<<<< HEAD
 Benchmarks based on the docker installation example environment. 
+=======
+Benchmarks based on the docker installation example environment.
+>>>>>>> origin/staging
 The docker from sources is built and published in local registry and then the benchmark code is run.
 
 ## Running in sbt:
