@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.dev
 
 import cats.effect.{ExitCode, IO, IOApp}
+import com.dimafeng.testcontainers.{DockerComposeContainer, WaitingForService}
 import com.typesafe.scalalogging.LazyLogging
+import org.testcontainers.containers.wait.strategy.ShellStrategy
 import pl.touk.nussknacker.dev.RunEnvForLocalDesigner.Config.ScalaV
 import pl.touk.nussknacker.test.MiscUtils.InputStreamOps
-import pl.touk.nussknacker.test.installationexample.DockerBasedInstallationExampleNuEnvironment
 import scopt.{OParser, Read}
 
 import java.io.{File => JFile}
@@ -29,16 +30,12 @@ object RunEnvForLocalDesigner extends IOApp with LazyLogging {
   private def createDockerEnv(config: Config) = IO.delay {
     val scalaVOverrideYmlFile = config.scalaV match {
       case ScalaV.Scala212 => None
-      case ScalaV.Scala213 => Some(getClass.getResourceAsStream("/nu-scala213.override.yml").toFile)
+      case ScalaV.Scala213 => Some(new JFile("examples/dev/nu-scala213.override.yml"))
     }
-    val env = new DockerBasedInstallationExampleNuEnvironment(
-      nussknackerImageVersion = "latest",
-      dockerComposeTweakFiles = scalaVOverrideYmlFile.toVector :+
-        getClass.getResourceAsStream("/local-testing.override.yml").toFile :++
-        config.customizeYaml.toVector
+    val env = new LocalTestingEnvDockerCompose(
+      dockerComposeTweakFiles = scalaVOverrideYmlFile.toVector :++ config.customizeYaml.toVector
     )
-    // we don't need this service (TBH designer is not needed too, but I left it intentionally - maybe it'd be useful)
-    env.client.stopService("nginx")
+    env.start()
     env
   }
 
@@ -87,5 +84,16 @@ object RunEnvForLocalDesigner extends IOApp with LazyLogging {
     )
 
   }
+
+  class LocalTestingEnvDockerCompose(dockerComposeTweakFiles: Iterable[JFile])
+      extends DockerComposeContainer(
+        composeFiles = new JFile("examples/dev/local-testing.docker-compose.yml") ::
+          dockerComposeTweakFiles.toList,
+        waitingFor = Some(
+          WaitingForService("wait-for-all", new ShellStrategy().withCommand("pwd")),
+        ),
+        // Change to 'true' to enable logging
+        tailChildContainers = false
+      )
 
 }

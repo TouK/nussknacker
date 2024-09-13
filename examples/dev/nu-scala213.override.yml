@@ -11,9 +11,6 @@ x-flink-service-common: &common-flink
 
 services:
 
-  designer:
-    image: touk/nussknacker:${NUSSKNACKER_VERSION:?NUSSKNACKER_VERSION must be defined}_scala-2.13
-
   flink-jobmanager:
     <<: *common-flink
 
