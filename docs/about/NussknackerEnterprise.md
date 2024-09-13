@@ -18,5 +18,5 @@ Future plans:
 - Automatic input / output logging from enrichers
 - Redis integration component 
 
-For license and support terms contact info@nussknacker.io.
+For license and support terms contact <enterprise@nussknacker.io>.
 

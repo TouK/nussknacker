@@ -37,7 +37,8 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperation
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
   NoPropertyError,
   UnknownClassError,
-  UnknownMethodError
+  UnknownMethodError,
+  UnresolvedReferenceError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
@@ -496,7 +497,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
 
-  test("return invalid argument if arguments is not passed to method") {
+  test("return invalid argument if arguments are not passed to method") {
     val parsed             = parse[Any]("#processHelper.add", ctxWithGlobal)
     val expectedValidation = Invalid("Mismatch parameter types. Found: add(). Required: add(Integer, Integer)")
     parsed.isInvalid shouldBe true
@@ -1278,6 +1279,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should not validate array constructor") {
     List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
       illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
+    )
+  }
+
+  test("indexing on maps and lists should validate nodes inside indexer") {
+    List("#processHelper.stringOnStringMap[#invalidRef]", "{1,2,3}[#invalidRef]").map(expr =>
+      parse[Any](expr, ctxWithGlobal).invalidValue shouldBe NonEmptyList.one(
+        UnresolvedReferenceError("invalidRef")
+      )
     )
   }
 
