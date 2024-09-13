@@ -2007,7 +2007,6 @@ lazy val designer = (project in file("designer/server"))
         "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
         "com.github.scopt"              %% "scopt"                           % "4.1.0"              % Test,
-        "com.lihaoyi"                   %% "os-lib"                          % "0.9.1"              % Test,
         "org.questdb"                    % "questdb"                         % "7.4.2",
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>

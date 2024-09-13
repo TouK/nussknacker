@@ -87,11 +87,6 @@ class DockerBasedInstallationExampleClient(env: DockerBasedInstallationExampleNu
     bootstrapSetupService.executeBash(s"""/app/utils/kafka/purge-topic.sh "$topic" """)
   }
 
-  def stopService(name: String): Unit = {
-    val containerId = unsafeContainerByServiceName(name).getContainerId
-    DockerClientFactory.instance.client.stopContainerCmd(containerId).exec
-  }
-
   private def unsafeContainerByServiceName(name: String) = env
     .getContainerByServiceName(name)
     .getOrElse(throw new IllegalStateException(s"'$name' service not available!"))
