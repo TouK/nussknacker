@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 import org.apache.flink.api.common.typeutils.CompositeTypeSerializerUtil.IntermediateCompatibilityResult
 import org.apache.flink.api.common.typeutils.{CompositeTypeSerializerUtil, TypeSerializer, TypeSerializerSnapshot}
 
-trait CompositeTypeSerializerUtil {
+trait CompositeTypeSerializerUtilWrapper {
 
   def constructIntermediateCompatibilityResult[T](
       newNestedSerializerSnapshots: Array[TypeSerializer[_]],
@@ -12,7 +12,7 @@ trait CompositeTypeSerializerUtil {
 
 }
 
-object DefaultCompositeTypeSerializerUtil extends CompositeTypeSerializerUtil {
+object DefaultCompositeTypeSerializerUtil extends CompositeTypeSerializerUtilWrapper {
 
   override def constructIntermediateCompatibilityResult[T](
       newNestedSerializerSnapshots: Array[TypeSerializer[_]],
@@ -26,4 +26,4 @@ object DefaultCompositeTypeSerializerUtil extends CompositeTypeSerializerUtil {
 
 }
 
-trait CompositeTypeSerializerUtilCompatibilityProvider extends CompositeTypeSerializerUtil
+trait CompositeTypeSerializerUtilCompatibilityProvider extends CompositeTypeSerializerUtilWrapper
