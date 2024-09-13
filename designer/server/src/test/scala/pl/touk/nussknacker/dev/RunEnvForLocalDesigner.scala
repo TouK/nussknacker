@@ -33,7 +33,7 @@ object RunEnvForLocalDesigner extends IOApp with LazyLogging {
       case ScalaV.Scala213 => Some(new JFile("examples/dev/nu-scala213.override.yml"))
     }
     val env = new LocalTestingEnvDockerCompose(
-      dockerComposeTweakFiles = scalaVOverrideYmlFile.toVector :++ config.customizeYaml.toVector
+      dockerComposeTweakFiles = scalaVOverrideYmlFile.toList ::: config.customizeYaml.toList
     )
     env.start()
     env
