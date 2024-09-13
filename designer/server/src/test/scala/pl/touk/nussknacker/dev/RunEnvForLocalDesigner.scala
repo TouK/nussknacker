@@ -5,12 +5,12 @@ import com.dimafeng.testcontainers.{DockerComposeContainer, WaitingForService}
 import com.typesafe.scalalogging.LazyLogging
 import org.testcontainers.containers.wait.strategy.ShellStrategy
 import pl.touk.nussknacker.dev.RunEnvForLocalDesigner.Config.ScalaV
-import pl.touk.nussknacker.test.MiscUtils.InputStreamOps
 import scopt.{OParser, Read}
 
 import java.io.{File => JFile}
 
-// You can use it for a development purposes. The Nu stack is based on the Installation Example
+// You can use it for a development purposes. It runs docker compose defined in `examples/dev` folder.
+// After running this class you can run Nu Designer locally that can connect to the exposed services.
 object RunEnvForLocalDesigner extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = for {
