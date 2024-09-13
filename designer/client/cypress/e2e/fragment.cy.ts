@@ -241,7 +241,7 @@ describe("Fragment", () => {
                 request.alias = "suggestions";
             }
         });
-        cy.get('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
+        cy.get("[data-testid=window]").find('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
         // We wait for validation result to be sure that red message below the form field will be visible
         cy.wait("@validation")
             .its("response.statusCode")

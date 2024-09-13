@@ -60,7 +60,7 @@ describe("Process", () => {
             cy.contains(/^properties/i)
                 .should("be.enabled")
                 .click();
-            cy.get('[title="Description"]').siblings().first().should("contain", "RENAMED");
+            cy.get("[data-testid=window]").find('[title="Description"]').siblings().first().should("contain", "RENAMED");
         });
 
         it("should allow archive with redirect to list", function () {
