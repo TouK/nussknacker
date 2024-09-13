@@ -1,52 +1,89 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.base.it.NuResourcesTest
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.test.utils.domain.TestFactory.{mapProcessingTypeDataProvider, withPermissions}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import io.restassured.RestAssured.`given`
+import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.hamcrest.Matchers.equalTo
+import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLoggingIfValidationFails}
+import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil
 
 class ActivityInfoResourcesSpec
-    extends AnyFunSuite
-    with ScalatestRouteTest
-    with Matchers
-    with FailFastCirceSupport
-    with NuResourcesTest
-    with PatientScalaFutures
-    with EitherValuesDetailedMessage {
+    extends AnyFreeSpecLike
+    with NuItTest
+    with WithSimplifiedDesignerConfig
+    with WithSimplifiedConfigScenarioHelper
+    with WithBusinessCaseRestAssuredUsersExtensions
+    with NuRestAssureMatchers
+    with RestAssuredVerboseLoggingIfValidationFails {
 
-  private val scenarioGraph: ScenarioGraph = ProcessTestData.sampleScenarioGraph
-  private val testPermissionAll            = List(Permission.Deploy, Permission.Read, Permission.Write)
+  "The scenario activity info endpoint when" - {
+    "return activity parameters when defined" in {
+      val scenario = ScenarioBuilder
+        .streaming("scenarioWithSourceWithDeployParameters")
+        .source("sourceWithParametersId", "boundedSourceWithOffset", "elements" -> "{'one', 'two', 'three'}".spel)
+        .emptySink("exampleSinkId", "emptySink")
 
-  private def route() = new ActivityInfoResources(
-    processService,
-    mapProcessingTypeDataProvider(
-      Streaming.stringify -> createScenarioActivityService
-    )
-  )
+      given()
+        .applicationState {
+          createSavedScenario(scenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
+        .post(s"$nuDesignerHttpAddress/api/activityInfo/${scenario.name.value}/activityParameters")
+        .Then()
+        .statusCode(200)
+        .body(
+          "DEPLOY[0].sourceId",
+          equalTo("sourceWithParametersId"),
+          "DEPLOY[0].parameters[0].name",
+          equalTo("offset"),
+          "DEPLOY[0].parameters[0].typ.display",
+          equalTo("Long")
+        )
+    }
 
-  test("get activity parameters") {
-    saveProcess(scenarioGraph) {
-      Post(
-        s"/activityInfo/${ProcessTestData.sampleProcessName}/activityParameters",
-        scenarioGraph.toJsonRequestEntity()
-      ) ~> withPermissions(
-        route(),
-        testPermissionAll: _*
-      ) ~> check {
-        status shouldEqual StatusCodes.OK
-        val content = entityAs[Json].noSpaces
-        content shouldBe """{}"""
-      }
+    "return empty map when no activity parameters" in {
+      val scenario = ScenarioBuilder
+        .streaming("scenarioWithoutParameters")
+        .source("sourceNoParamsId", "boundedSource", "elements" -> "{'one', 'two', 'three'}".spel)
+        .emptySink("exampleSinkId", "emptySink")
+
+      given()
+        .applicationState {
+          createSavedScenario(scenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
+        .post(s"$nuDesignerHttpAddress/api/activityInfo/${scenario.name.value}/activityParameters")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          "{}"
+        )
+    }
+
+    "return no data found when there is no scenario" in {
+      val scenario = ScenarioBuilder
+        .streaming("invalidScenario")
+        .source("exampleSource", "boundedSource", "elements" -> "{'one', 'two', 'three'}".spel)
+        .emptySink("exampleSinkId", "emptySink")
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(TestProcessUtil.toJson(scenario).noSpaces)
+        .post(s"$nuDesignerHttpAddress/api/activityInfo/${scenario.name.value}/activityParameters")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(
+          s"No scenario ${scenario.name.value} found"
+        )
     }
   }
 

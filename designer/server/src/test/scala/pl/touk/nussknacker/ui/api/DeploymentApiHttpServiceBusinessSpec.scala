@@ -65,7 +65,7 @@ class DeploymentApiHttpServiceBusinessSpec
   private val correctDeploymentRequest = s"""{
                                             |  "scenarioName": "$scenarioName",
                                             |  "nodesDeploymentData": {
-                                            |    "$sourceNodeId": "`date` = '2024-01-01'"
+                                            |    "$sourceNodeId": {"sqlExpression":"`date` = '2024-01-01'"}
                                             |  }
                                             |}""".stripMargin
 

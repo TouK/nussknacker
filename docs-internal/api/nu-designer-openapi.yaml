@@ -229,87 +229,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/processManagement/customAction/{scenarioName}/validation:
-    post:
-      tags:
-      - CustomAction
-      summary: Endpoint to validate input in custom action fields
-      operationId: postApiProcessmanagementCustomactionScenarionameValidation
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CustomActionRequest'
-        required: true
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomActionValidationDto'
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
   /api/app/healthCheck:
     get:
       tags:
@@ -898,7 +817,8 @@ paths:
             example:
               scenarioName: scenario1
               nodesDeploymentData:
-                sourceNodeId1: field1 = 'value'
+                sourceNodeId1:
+                  sqlExpression: field1 = 'value'
         required: true
       responses:
         '202':
@@ -1108,6 +1028,87 @@ paths:
                   $ref: '#/components/schemas/DictDto'
         '400':
           description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processManagement/customAction/{scenarioName}/validation:
+    post:
+      tags:
+      - CustomAction
+      summary: Endpoint to validate input in custom action fields
+      operationId: postApiProcessmanagementCustomactionScenarionameValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomActionRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomActionValidationDto'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -4806,6 +4807,15 @@ components:
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
+    KafkaSourceOffset:
+      title: KafkaSourceOffset
+      type: object
+      required:
+      - offset
+      properties:
+        offset:
+          type: integer
+          format: int64
     LayoutData:
       title: LayoutData
       type: object
@@ -4861,7 +4871,7 @@ components:
       title: Map_NodeId_NodeDeploymentData
       type: object
       additionalProperties:
-        type: string
+        $ref: '#/components/schemas/NodeDeploymentData'
     Map_String:
       title: Map_String
       type: object
@@ -5289,6 +5299,11 @@ components:
             type: string
           type:
             $ref: '#/components/schemas/NodeTypes12'
+    NodeDeploymentData:
+      title: NodeDeploymentData
+      oneOf:
+      - $ref: '#/components/schemas/KafkaSourceOffset'
+      - $ref: '#/components/schemas/SqlFilteringExpression'
     NodeTypes:
       title: NodeTypes
       type: string
@@ -6029,6 +6044,14 @@ components:
     SpelTemplateParameterEditor:
       title: SpelTemplateParameterEditor
       type: object
+    SqlFilteringExpression:
+      title: SqlFilteringExpression
+      type: object
+      required:
+      - sqlExpression
+      properties:
+        sqlExpression:
+          type: string
     SqlParameterEditor:
       title: SqlParameterEditor
       type: object
