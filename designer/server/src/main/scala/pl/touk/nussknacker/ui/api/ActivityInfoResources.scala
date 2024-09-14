@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.newactivity.ScenarioActivityService
+import pl.touk.nussknacker.ui.process.newactivity.ActivityInfoService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 
 class ActivityInfoResources(
     protected val processService: ProcessService,
-    scenarioActivityServices: ProcessingTypeDataProvider[ScenarioActivityService, _]
+    activityInfoService: ProcessingTypeDataProvider[ActivityInfoService, _]
 )(implicit val ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -25,10 +25,11 @@ class ActivityInfoResources(
     pathPrefix("activityInfo" / ProcessNameSegment) { processName =>
       (post & processDetailsForName(processName)) { processDetails =>
         entity(as[ScenarioGraph]) { scenarioGraph =>
-          val scenarioTestService = scenarioActivityServices.forProcessingTypeUnsafe(processDetails.processingType)
           path("activityParameters") {
             complete {
-              scenarioTestService.getActivityParameters(scenarioGraph, processName, processDetails.isFragment)
+              activityInfoService
+                .forProcessingTypeUnsafe(processDetails.processingType)
+                .getActivityParameters(scenarioGraph, processName, processDetails.isFragment)
             }
           }
         }

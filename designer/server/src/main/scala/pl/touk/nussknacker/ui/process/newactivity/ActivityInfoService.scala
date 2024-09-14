@@ -12,7 +12,8 @@ import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
-class ScenarioActivityService(activityInfoProvider: ActivityInfoProvider, processResolver: UIProcessResolver) {
+// TODO: move to ActivityService? execute node compilation only once with ScenarioTestService?
+class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processResolver: UIProcessResolver) {
 
   def getActivityParameters(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
       implicit user: LoggedUser
