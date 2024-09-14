@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.newactivity
 
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -12,14 +13,15 @@ import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
-class ScenarioActivityService(activityInfoProvider: ActivityInfoProvider, processResolver: UIProcessResolver) {
+// TODO: move to ActivityService? execute node compilation only once with ScenarioTestService?
+class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processResolver: UIProcessResolver) {
 
-  def getActivityParameters(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
+  def getActivityParameters(scenarioGraph: ScenarioGraph, processVersion: ProcessVersion, isFragment: Boolean)(
       implicit user: LoggedUser
   ): Map[String, List[UISourceParameters]] = {
-    val canonical = toCanonicalProcess(scenarioGraph, processName, isFragment)
+    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     activityInfoProvider
-      .getActivityParameters(canonical)
+      .getActivityParameters(processVersion, canonical)
       .map { case (activityName, nodeParamsMap) =>
         activityName -> nodeParamsMap
           .map { case (nodeId, params) =>
@@ -33,10 +35,10 @@ class ScenarioActivityService(activityInfoProvider: ActivityInfoProvider, proces
   // copied from ScenarioTestService
   private def toCanonicalProcess(
       scenarioGraph: ScenarioGraph,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean
   )(implicit user: LoggedUser): CanonicalProcess = {
-    processResolver.validateAndResolve(scenarioGraph, processName, isFragment)
+    processResolver.validateAndResolve(scenarioGraph, processVersion, isFragment)
   }
 
   // copied from ScenarioTestService
