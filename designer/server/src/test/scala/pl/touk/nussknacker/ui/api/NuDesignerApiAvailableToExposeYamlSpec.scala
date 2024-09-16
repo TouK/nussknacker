@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -8,6 +10,7 @@ import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
 import pl.touk.nussknacker.ui.security.api.AuthManager.ImpersonationConsideringInputEndpoint
+import pl.touk.nussknacker.ui.server.{AkkaHttpBasedTapirStreamEndpointProvider, TapirStreamEndpointProvider}
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
@@ -15,6 +18,7 @@ import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.{Endpoint, EndpointInput, auth}
 
 import java.lang.reflect.{Method, Modifier}
+import scala.concurrent.Await
 import scala.util.Try
 
 // if the test fails it probably means that you should regenerate the Nu Designer OpenAPI document
@@ -24,8 +28,13 @@ import scala.util.Try
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
   test("Nu Designer OpenAPI document with all available to expose endpoints should have examples matching schemas") {
-    val generatedSpec            = NuDesignerApiAvailableToExpose.generateOpenApiYaml
-    val examplesValidationResult = OpenAPIExamplesValidator.forTapir.validateExamples(generatedSpec)
+    val generatedSpec = NuDesignerApiAvailableToExpose.generateOpenApiYaml
+    val examplesValidationResult = OpenAPIExamplesValidator.forTapir.validateExamples(
+      specYaml = generatedSpec,
+      excludeResponseValidationForOperationIds = List(
+        "getApiProcessesScenarionameActivityActivities" // todo NU-1772: responses contain discriminator, it is not properly handled by validator
+      )
+    )
     val clue = examplesValidationResult
       .map { case InvalidExample(_, _, operationId, isRequest, exampleId, errors) =>
         errors
@@ -41,9 +50,16 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
   }
 
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
-    val currentNuDesignerOpenApiYamlContent =
-      (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
-    NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
+    // OpenAPI differs when generated on Scala 2.12 and Scala 2.13 (order of endpoints is different).
+    // - test is ignored on Scala 2.12,
+    // - it is probably not necessary to fix it, because we plan to remove Scala 2.12 support anyway
+    if (scala.util.Properties.versionNumberString.startsWith("2.13")) {
+      val currentNuDesignerOpenApiYamlContent =
+        (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
+      NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
+    } else {
+      info("OpenAPI differs when generated on Scala 2.12 and Scala 2.13. Test is ignored on Scala 2.12")
+    }
   }
 
   test("API enum compatibility test") {
@@ -138,30 +154,46 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
 object NuDesignerApiAvailableToExpose {
 
-  def generateOpenApiYaml: String = {
-    val endpoints = findApiEndpointsClasses().flatMap(findEndpointsInClass)
+  def generateOpenApiYaml: String = withStreamProvider { streamProvider =>
+    val endpoints = findApiEndpointsClasses().flatMap(findEndpointsInClass(streamProvider))
     val docs = OpenAPIDocsInterpreter(NuDesignerExposedApiHttpService.openAPIDocsOptions).toOpenAPI(
       es = endpoints,
       title = NuDesignerExposedApiHttpService.openApiDocumentTitle,
       version = ""
     )
-
     docs.toYaml
+  }
+
+  private def withStreamProvider[T](handle: TapirStreamEndpointProvider => T): T = {
+    val actorSystem: ActorSystem                    = ActorSystem()
+    val mat: Materializer                           = Materializer(actorSystem)
+    val streamProvider: TapirStreamEndpointProvider = new AkkaHttpBasedTapirStreamEndpointProvider()(mat)
+    val result                                      = handle(streamProvider)
+    Await.result(actorSystem.terminate(), scala.concurrent.duration.Duration.Inf)
+    result
   }
 
   private def findApiEndpointsClasses() = {
     ReflectionBasedUtils.findSubclassesOf[BaseEndpointDefinitions]("pl.touk.nussknacker.ui.api")
   }
 
-  private def findEndpointsInClass(clazz: Class[_ <: BaseEndpointDefinitions]) = {
-    val endpointDefinitions = createInstanceOf(clazz)
+  private def findEndpointsInClass(
+      streamEndpointProvider: TapirStreamEndpointProvider
+  )(
+      clazz: Class[_ <: BaseEndpointDefinitions]
+  ) = {
+    val endpointDefinitions = createInstanceOf(streamEndpointProvider)(clazz)
     clazz.getDeclaredMethods.toList
       .filter(isEndpointMethod)
       .sortBy(_.getName)
       .map(instantiateEndpointDefinition(endpointDefinitions, _))
   }
 
-  private def createInstanceOf(clazz: Class[_ <: BaseEndpointDefinitions]) = {
+  private def createInstanceOf(
+      streamEndpointProvider: TapirStreamEndpointProvider,
+  )(
+      clazz: Class[_ <: BaseEndpointDefinitions],
+  ) = {
     val basicAuth = auth
       .basic[Option[String]]()
       .map(_.map(PassedAuthCredentials))(_.map(_.value))
@@ -172,6 +204,10 @@ object NuDesignerApiAvailableToExpose {
       .orElse {
         Try(clazz.getDeclaredConstructor())
           .map(_.newInstance())
+      }
+      .orElse {
+        Try(clazz.getConstructor(classOf[EndpointInput[PassedAuthCredentials]], classOf[TapirStreamEndpointProvider]))
+          .map(_.newInstance(basicAuth, streamEndpointProvider))
       }
       .getOrElse(
         throw new IllegalStateException(
