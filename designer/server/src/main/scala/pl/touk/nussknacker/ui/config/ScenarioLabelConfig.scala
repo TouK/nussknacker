@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.config
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.ValidatedNel
 import cats.implicits._
 import com.typesafe.config.Config
 
@@ -18,17 +16,16 @@ object ScenarioLabelConfig {
       message.replaceAll(s"""\\{label\\}""", label)
   }
 
-  def create(rules: List[ScenarioLabelConfig.ValidationRule]): ScenarioLabelConfig = new ScenarioLabelConfig(rules)
-
   private[config] def create(config: Config): Option[ScenarioLabelConfig] = {
     val rootPath = "scenarioLabelSettings"
     if (config.hasPath(rootPath)) {
       val settingConfig = config.getConfig(rootPath)
       createValidationRules(settingConfig) match {
-        case Valid(rules) => Some(new ScenarioLabelConfig(rules))
-        case Invalid(errors) =>
+        case Right(rules) => Some(new ScenarioLabelConfig(rules))
+        case Left(error) =>
           throw new IllegalArgumentException(
-            s"Invalid configuration for '$rootPath'. Details: ${errors.map(_.message).mkString_(",")}"
+            s"Invalid configuration for '$rootPath'",
+            error
           )
       }
     } else {
@@ -40,17 +37,17 @@ object ScenarioLabelConfig {
     settingConfig
       .getConfigList("validationRules")
       .asScala
-      .map(createRule)
       .toList
-      .sequence
+      .traverse(createRule)
   }
 
-  private def createRule(config: Config): ValidatedNel[ScenarioLabelValidationRuleError, ValidationRule] = {
+  private def createRule(config: Config): Either[ScenarioLabelValidationRuleError, ValidationRule] = {
     val validationPattern = config.getString("validationPattern")
 
-    Try(validationPattern.r).toValidated
-      .leftMap((_: Throwable) => ScenarioLabelValidationRuleError(s"Incorrect validationPattern: $validationPattern"))
-      .toValidatedNel
+    Try(validationPattern.r).toEither
+      .leftMap((ex: Throwable) =>
+        ScenarioLabelValidationRuleError(s"Incorrect validationPattern: $validationPattern", ex)
+      )
       .map { regex: Regex =>
         ValidationRule(
           validationRegex = regex,
@@ -59,5 +56,6 @@ object ScenarioLabelConfig {
       }
   }
 
-  private final case class ScenarioLabelValidationRuleError(message: String)
+  private final case class ScenarioLabelValidationRuleError(message: String, cause: Throwable)
+      extends Exception(message, cause)
 }

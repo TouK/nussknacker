@@ -10,17 +10,17 @@ trait ScenarioLabelsEntityFactory extends BaseEntityFactory {
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
-  class ScenarioLabelsEntity(tag: Tag) extends Table[ScenarioLabelEntityData](tag, "tags") {
+  class ScenarioLabelsEntity(tag: Tag) extends Table[ScenarioLabelEntityData](tag, "scenario_labels") {
 
-    def name = column[String]("name")
+    def label = column[String]("label")
 
-    def scenarioId = column[ProcessId]("process_id", NotNull)
+    def scenarioId = column[ProcessId]("scenario_id", NotNull)
 
-    def * = (name, scenarioId) <> (ScenarioLabelEntityData.apply _ tupled, ScenarioLabelEntityData.unapply)
+    def * = (label, scenarioId) <> (ScenarioLabelEntityData.apply _ tupled, ScenarioLabelEntityData.unapply)
 
-    def pk = primaryKey("pk_tag", (name, scenarioId))
+    def pk = primaryKey("pk_scenario_label", (label, scenarioId))
 
-    def scenario = foreignKey("tag-process-fk", scenarioId, processesTable)(
+    def scenario = foreignKey("label_scenario_fk", scenarioId, processesTable)(
       _.id,
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.Cascade

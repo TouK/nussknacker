@@ -60,7 +60,7 @@ object ProcessService {
   @JsonCodec final case class UpdateScenarioCommand(
       scenarioGraph: ScenarioGraph,
       comment: Option[UpdateProcessComment],
-      scenarioLabels: Option[List[String]],
+      scenarioLabels: List[String],
       forwardedUserName: Option[RemoteUserName]
   )
 
@@ -400,14 +400,14 @@ class DBProcessService(
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
       val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
-      val scenarioLabels  = action.scenarioLabels.map(_.map(ScenarioLabel.apply))
+      val scenarioLabels  = action.scenarioLabels.map(ScenarioLabel.apply)
       val validation =
         FatalValidationError.saveNotAllowedAsError(
           processResolver.validateBeforeUiResolving(
             action.scenarioGraph,
             details.name,
             details.isFragment,
-            scenarioLabels.getOrElse(List.empty)
+            scenarioLabels
           )
         )
       val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)

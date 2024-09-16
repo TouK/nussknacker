@@ -270,6 +270,7 @@ object MigrationApiEndpoints {
         import pl.touk.nussknacker.ui.api.TapirCodecs.ProcessNameCodec._
         implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestDtoV1] = Schema.derived
         implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.derived
+//        implicit val migrateScenarioRequestV3Schema: Schema[MigrateScenarioRequestDtoV3] = Schema.derived
 
         val derived = Schema.derived[MigrateScenarioRequestDto]
         derived.schemaType match {
@@ -281,6 +282,7 @@ object MigrationApiEndpoints {
                 Map(
                   "1" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV1].getSimpleName)),
                   "2" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV2].getSimpleName)),
+//                  "3" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV2].getSimpleName)),
                 )
               )
             )
@@ -292,12 +294,14 @@ object MigrationApiEndpoints {
       implicit val encoder: Encoder[MigrateScenarioRequestDto] = Encoder.instance {
         case v1: MigrateScenarioRequestDtoV1 => v1.asJson
         case v2: MigrateScenarioRequestDtoV2 => v2.asJson
+//        case v3: MigrateScenarioRequestDtoV3 => v3.asJson
       }
 
       implicit val decoder: Decoder[MigrateScenarioRequestDto] = Decoder.instance { cursor =>
         cursor.downField("version").as[Int].flatMap {
-          case 1     => cursor.as[MigrateScenarioRequestDtoV1]
-          case 2     => cursor.as[MigrateScenarioRequestDtoV2]
+          case 1 => cursor.as[MigrateScenarioRequestDtoV1]
+          case 2 => cursor.as[MigrateScenarioRequestDtoV2]
+//          case 3     => cursor.as[MigrateScenarioRequestDtoV3]
           case other => throw new IllegalStateException(s"Cannot decode migration request for version [$other]")
         }
       }

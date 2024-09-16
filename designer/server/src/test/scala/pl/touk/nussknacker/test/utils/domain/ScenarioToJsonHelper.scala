@@ -15,7 +15,7 @@ object ScenarioToJsonHelper {
 
   implicit class ScenarioGraphToJson(scenarioGraph: ScenarioGraph) {
     def toJsonAsProcessToSave: Json =
-      UpdateScenarioCommand(scenarioGraph, comment = None, scenarioLabels = None, forwardedUserName = None).asJson
+      UpdateScenarioCommand(scenarioGraph, comment = None, scenarioLabels = List.empty, forwardedUserName = None).asJson
   }
 
   implicit class ScenarioToJson(scenario: CanonicalProcess) {

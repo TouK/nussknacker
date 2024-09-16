@@ -175,6 +175,34 @@ class ScenarioLabelsApiHttpServiceBusinessSpec
                |""".stripMargin
           )
       }
+      "labels are duplicated" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .body(
+            s"""
+               |{
+               |  "labels": ["tag1", "tag1"]
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""
+               |{
+               |  "validationErrors": [
+               |    {
+               |      "label": "tag1",
+               |      "messages": [
+               |          "Label has to be unique"
+               |      ]
+               |    }
+               |  ]
+               |}
+               |""".stripMargin
+          )
+      }
     }
   }
 

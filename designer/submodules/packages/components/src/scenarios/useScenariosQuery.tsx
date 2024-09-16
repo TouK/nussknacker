@@ -80,7 +80,7 @@ export function useUserQuery(): UseQueryResult<UserData> {
 }
 
 export function useScenarioLabelsQuery(): UseQueryResult<AvailableScenarioLabels> {
-    const api = useContext(NkApiContext)
+    const api = useContext(NkApiContext);
     return useQuery({
         queryKey: ["scenarioLabels"],
         queryFn: async () => {

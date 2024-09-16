@@ -13,6 +13,7 @@ import { ScenarioStatus } from "./scenarioStatus";
 import { ProcessingModeItem } from "./processingMode";
 import { formatDateTime } from "nussknackerUi/DateUtils";
 import { LabelChip } from "../../common/labelChip";
+import { TruncateWrapper } from "../../components";
 
 function Category({ value, filtersContext }: { value: string; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
@@ -23,13 +24,10 @@ function Category({ value, filtersContext }: { value: string; filtersContext: Fi
 function Labels({ values, filtersContext }: { values: string[]; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
     const filterValue = useMemo(() => getFilter("LABEL", true), [getFilter]);
-    return (
-        <div>
-            {values.map((v) => (
-                <LabelChip key={v} value={v} filterValue={filterValue} setFilter={setFilter("LABEL")} />
-            ))}
-        </div>
-    );
+
+    const elements = values.map((v) => <LabelChip key={v} value={v} filterValue={filterValue} setFilter={setFilter("LABEL")} />);
+    // eslint-disable-next-line react/no-children-prop
+    return <TruncateWrapper>{elements}</TruncateWrapper>;
 }
 
 export function LastAction({ lastAction }: { lastAction: ProcessActionType }): JSX.Element {
@@ -88,7 +86,7 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
             {!row.isFragment && !row.isArchived && <ScenarioStatus state={row.state} filtersContext={filtersContext} />}
             <ProcessingModeItem processingMode={row.processingMode} filtersContext={filtersContext} />
             <Category value={row.processCategory} filtersContext={filtersContext} />
-            <Labels values={row.labels || []} filtersContext={filtersContext} />
+            <Labels values={row.labels} filtersContext={filtersContext} />
         </Stack>
     );
 }

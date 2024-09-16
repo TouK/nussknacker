@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.scalalogging.LazyLogging
+import cats.data.Validated
 import pl.touk.nussknacker.ui.api.description.ScenarioLabelsApiEndpoints
 import pl.touk.nussknacker.ui.api.description.ScenarioLabelsApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
@@ -12,8 +12,7 @@ class ScenarioLabelsApiHttpService(
     authManager: AuthManager,
     service: ScenarioLabelsService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authManager)
-    with LazyLogging {
+    extends BaseHttpService(authManager) {
 
   private val labelsApiEndpoints = new ScenarioLabelsApiEndpoints(
     authManager.authenticationEndpointInput()
@@ -34,15 +33,14 @@ class ScenarioLabelsApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogicSuccess { implicit loggedUser: LoggedUser => request =>
         Future.successful {
-          service
-            .validatedScenarioLabels(request.labels)
-            .swap
-            .map { errors =>
+          service.validatedScenarioLabels(request.labels) match {
+            case Validated.Valid(()) =>
+              ScenarioLabelsValidationResponseDto(validationErrors = List.empty)
+            case Validated.Invalid(errors) =>
               ScenarioLabelsValidationResponseDto(validationErrors =
                 errors.map(e => ValidationError(label = e.label, messages = e.validationMessages.toList)).toList
               )
-            }
-            .getOrElse(ScenarioLabelsValidationResponseDto(validationErrors = List.empty))
+          }
         }
       }
   }

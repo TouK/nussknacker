@@ -65,7 +65,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
             {
                 field: "labels",
                 cellClassName: "stretch",
-                headerName: t("table.scenarios.title.MODIFIED_BY", "Labels"),
+                headerName: t("table.scenarios.title.LABEL", "Labels"),
                 renderCell: (props) => <FilterLinkCell<ScenariosFiltersModel> filterKey="LABEL" {...props} />,
                 flex: 1,
             },

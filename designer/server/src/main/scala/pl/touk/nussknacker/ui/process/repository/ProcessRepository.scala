@@ -63,7 +63,7 @@ object ProcessRepository {
       private val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
       comment: Option[Comment],
-      labels: Option[List[ScenarioLabel]],
+      labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
   ) {
@@ -177,14 +177,10 @@ class DBProcessRepository(
           addNewCommentToVersion(processId, oldVersion).map(_ => updateProcessRes)
         case _ => dbMonad.unit
       }
-      _ <- updateProcessAction.labels match {
-        case Some(labels) =>
-          scenarioLabelsRepository.overwriteLabels(
-            updateProcessAction.id.id,
-            labels.map(label => ScenarioLabel(label.value))
-          )
-        case None => dbMonad.unit
-      }
+      _ <- scenarioLabelsRepository.overwriteLabels(
+        updateProcessAction.id.id,
+        updateProcessAction.labels
+      )
     } yield updateProcessRes
   }
 

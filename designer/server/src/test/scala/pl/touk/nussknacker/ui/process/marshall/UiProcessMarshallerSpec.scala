@@ -45,7 +45,6 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
        |{
        |    "metaData" : {
        |      "id" : "$name",
-       |      "labels": [],
        |      "additionalFields" : {
        |         "description": "$someProcessDescription",
        |         "properties" : {

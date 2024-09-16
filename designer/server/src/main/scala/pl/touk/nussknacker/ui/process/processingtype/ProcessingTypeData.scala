@@ -122,7 +122,7 @@ object ProcessingTypeData {
     val staticDefinitionForDynamicComponents =
       DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
         modelData,
-        metaDataInitializer.create(_, List.empty, Map.empty)
+        metaDataInitializer.create(_, Map.empty)
       )
 
     val singleProcessingMode =

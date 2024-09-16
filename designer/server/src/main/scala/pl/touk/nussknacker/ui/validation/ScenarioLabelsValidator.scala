@@ -21,9 +21,8 @@ class ScenarioLabelsValidator(config: Option[ScenarioLabelConfig]) {
       validationRules: NonEmptyList[ScenarioLabelConfig.ValidationRule]
   ): Validated[NonEmptyList[ValidationError], Unit] = {
     scenarioLabels
-      .map(label => validateScenarioLabel(validationRules, label).toValidatedNel)
-      .sequence
-      .map((_: NonEmptyList[Unit]) => ())
+      .traverse(label => validateScenarioLabel(validationRules, label).toValidatedNel)
+      .andThen(labels => validateUniqueness(labels))
   }
 
   private def getValidationRules =
@@ -35,12 +34,11 @@ class ScenarioLabelsValidator(config: Option[ScenarioLabelConfig]) {
   private def validateScenarioLabel(
       validationRules: NonEmptyList[ScenarioLabelConfig.ValidationRule],
       label: ScenarioLabel
-  ): Validated[ValidationError, Unit] = {
+  ): Validated[ValidationError, ScenarioLabel] = {
     validationRules
-      .map(rule => validate(label, rule))
-      .sequence
+      .traverse(rule => validate(label, rule))
+      .as(label)
       .leftMap(messages => ValidationError(label.value, messages))
-      .map((_: NonEmptyList[Unit]) => ())
   }
 
   private def validate(label: ScenarioLabel, rule: ScenarioLabelConfig.ValidationRule) = {
@@ -54,11 +52,28 @@ class ScenarioLabelsValidator(config: Option[ScenarioLabelConfig]) {
       .toValidatedNel
   }
 
+  private def validateUniqueness(labels: NonEmptyList[ScenarioLabel]) = {
+    labels.toList
+      .groupBy(identity)
+      .filter { case (_, values) =>
+        values.length > 1
+      }
+      .keys
+      .toList
+      .toNel match {
+      case Some(notUniqueLabels) =>
+        Validated.invalid(
+          notUniqueLabels
+            .map(label => ValidationError(label.value, NonEmptyList.one("Label has to be unique")))
+        )
+      case None =>
+        Validated.validNel(())
+    }
+  }
+
 }
 
 object ScenarioLabelsValidator {
-
-  val default: ScenarioLabelsValidator = new ScenarioLabelsValidator(None)
 
   final case class ValidationError(label: String, validationMessages: NonEmptyList[String])
 }

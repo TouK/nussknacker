@@ -21,8 +21,6 @@ import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.Variable
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -605,7 +603,7 @@ class ProcessesResourcesSpec
       nodes = List.empty,
       edges = List.empty
     )
-    val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")), None)
+    val command = UpdateScenarioCommand(scenarioGraph, None, List("tag1", "tag2"), None)
 
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
@@ -643,7 +641,7 @@ class ProcessesResourcesSpec
       val command1 = UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = None,
-        scenarioLabels = Some(List("tag2", "tag1")),
+        scenarioLabels = List("tag2", "tag1"),
         forwardedUserName = None
       )
       doUpdateProcess(command1, processName) {
@@ -655,7 +653,7 @@ class ProcessesResourcesSpec
       val command2 = UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = None,
-        scenarioLabels = Some(List("tag3", "tag1", "tag4")),
+        scenarioLabels = List("tag3", "tag1", "tag4"),
         forwardedUserName = None
       )
       doUpdateProcess(command2, processName) {
@@ -667,7 +665,7 @@ class ProcessesResourcesSpec
       val command3 = UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = None,
-        scenarioLabels = Some(List("tag3")),
+        scenarioLabels = List("tag3"),
         forwardedUserName = None
       )
       doUpdateProcess(command3, processName) {
@@ -1386,7 +1384,7 @@ class ProcessesResourcesSpec
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
         comment.map(UpdateProcessComment(_)),
-        None,
+        List.empty,
         None
       ),
       process.name
@@ -1445,7 +1443,7 @@ class ProcessesResourcesSpec
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateScenarioCommand(process, comment = None, scenarioLabels = None, forwardedUserName = None),
+      UpdateScenarioCommand(process, comment = None, scenarioLabels = List.empty, forwardedUserName = None),
       name
     )(
       testCode

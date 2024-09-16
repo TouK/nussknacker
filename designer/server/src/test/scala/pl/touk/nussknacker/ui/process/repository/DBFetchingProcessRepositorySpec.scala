@@ -305,7 +305,7 @@ class DBFetchingProcessRepositorySpec
       processId,
       canonicalProcess,
       comment = None,
-      labels = None,
+      labels = List.empty,
       increaseVersionWhenJsonNotChanged,
       forwardedUserName = None
     )

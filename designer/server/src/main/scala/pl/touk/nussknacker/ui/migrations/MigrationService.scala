@@ -104,7 +104,7 @@ class MigrationService(
       UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = Some(updateProcessComment),
-        scenarioLabels = Some(scenarioLabels.map(_.value)),
+        scenarioLabels = scenarioLabels.map(_.value),
         forwardedUserName = forwardedUsernameO
       )
 

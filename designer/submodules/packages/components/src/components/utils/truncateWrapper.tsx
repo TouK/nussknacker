@@ -1,5 +1,5 @@
 import { Visibility } from "@mui/icons-material";
-import { Box, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
+import { Box, ClickAwayListener, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
 import React, { PropsWithChildren, useCallback, useRef } from "react";
@@ -56,8 +56,23 @@ const Truncator = ({
     popupState: PopupState;
 }) => {
     const { t } = useTranslation();
+
+    const baseTrigger = bindTrigger(popupState);
+    const trigger = {
+        ...baseTrigger,
+        onClick: (e) => {
+            baseTrigger.onClick(e);
+            e.stopPropagation();
+            e.preventDefault();
+        },
+        onTouchStart: (e) => {
+            baseTrigger.onTouchStart(e);
+            e.stopPropagation();
+            e.preventDefault();
+        },
+    };
     return (
-        <TruncateButton {...bindTrigger(popupState)} className="truncator">
+        <TruncateButton {...trigger} className="truncator">
             <Visibility sx={{ fontSize: "18px" }} />
             <Typography sx={{ mx: "4px", fontSize: "13px" }}>
                 {itemsCount === hiddenItemsCount

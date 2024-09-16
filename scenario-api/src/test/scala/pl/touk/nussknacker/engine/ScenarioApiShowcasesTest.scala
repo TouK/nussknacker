@@ -25,8 +25,6 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
     s"""{
        |  "metaData" : {
        |    "id" : "$scenarioName",
-       |    "labels" : [
-       |    ],
        |    "additionalFields" : {
        |      "properties" : {
        |        "parallelism" : "",

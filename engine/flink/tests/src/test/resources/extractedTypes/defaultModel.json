@@ -15074,25 +15074,6 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.variables.MetaVariables"},
     "methods": {
-      "processLabels": [
-        {
-          "name": "processLabels",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "refClazzName": "java.util.List",
-              "params" : [
-                {
-                  "display" : "String",
-                  "params" : [],
-                  "refClazzName" : "java.lang.String",
-                  "type" : "TypedClass"
-                }
-              ]
-            }
-          }
-        }
-      ],
       "processName": [
         {
           "name": "processName",
@@ -15144,20 +15125,6 @@
           "signature": {
             "noVarArgs": [
               {"name": "processName", "refClazz": {"refClazzName": "java.lang.String"}},
-              {
-                "name": "processLabels",
-                "refClazz": {
-                  "refClazzName": "java.util.List",
-                  "params" : [
-                    {
-                      "display" : "String",
-                      "params" : [],
-                      "refClazzName" : "java.lang.String",
-                      "type" : "TypedClass"
-                    }
-                  ]
-                }
-              },
               {
                 "name": "properties",
                 "refClazz": {

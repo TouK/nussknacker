@@ -10,6 +10,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
   * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
 
+* [#6766](https://github.com/TouK/nussknacker/pull/6766) Process API changes:
+   * Field `ScenarioWithDetails.tags` was removed (it had the same value as `labels`)
+
 ### Other changes
 
 * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.

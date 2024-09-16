@@ -44,18 +44,20 @@ class ScenarioLabelsRepository(protected val dbRef: DbRef)(implicit ec: Executio
       existingLabels <- findLabels(scenarioId)
       maybeLabelsToInsert = NonEmptyList.fromList((newLabels -- existingLabels).toList)
       maybeLabelsToRemove = NonEmptyList.fromList((existingLabels -- newLabels).toList)
-      _ <- maybeLabelsToInsert match {
+      _: Unit <- maybeLabelsToInsert match {
         case Some(labelsToRemove) =>
-          labelsTable ++= labelsToRemove.toList.map(label => ScenarioLabelEntityData(label.value, scenarioId))
-        case None => dbMonad.pure(None)
+          (labelsTable ++= labelsToRemove.toList.map(label => ScenarioLabelEntityData(label.value, scenarioId)))
+            .map(_ => ())
+        case None => dbMonad.unit
       }
-      _ <- maybeLabelsToRemove match {
+      _: Unit <- maybeLabelsToRemove match {
         case Some(labelsToRemove) =>
           labelsTable
             .filter(_.scenarioId === scenarioId)
-            .filter(_.name.inSet(labelsToRemove.toList.map(_.value).toSet))
+            .filter(_.label.inSet(labelsToRemove.toList.map(_.value).toSet))
             .delete
-        case None => dbMonad.pure(0)
+            .map(_ => ())
+        case None => dbMonad.unit
       }
     } yield ()
   }
@@ -68,19 +70,17 @@ class ScenarioLabelsRepository(protected val dbRef: DbRef)(implicit ec: Executio
 
   private def toScenarioLabel(entity: ScenarioLabelEntityData) = ScenarioLabel(entity.name)
 
-  private def labelsByUser(
-      implicit loggedUser: LoggedUser
-  ) = {
+  private def labelsByUser(loggedUser: LoggedUser) = {
     def getTableForUser(user: RealLoggedUser) = {
       user match {
         case user: CommonUser =>
           labelsTable
             .join(scenarioIdsFor(user))
             .on(_.scenarioId === _)
-            .map(_._1.name)
+            .map(_._1.label)
             .distinct
         case _: AdminUser =>
-          labelsTable.map(_.name).distinct
+          labelsTable.map(_.label).distinct
       }
     }
     loggedUser match {

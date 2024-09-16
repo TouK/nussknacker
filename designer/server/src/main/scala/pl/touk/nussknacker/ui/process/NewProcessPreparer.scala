@@ -37,8 +37,8 @@ class NewProcessPreparer(
       (key, config.defaultValue.getOrElse(""))
     }
     val initialMetadata =
-      if (isFragment) MetaData(processName.value, List.empty, initialFragmentFields)
-      else creator.create(processName, List.empty, initialProperties)
+      if (isFragment) MetaData(processName.value, initialFragmentFields)
+      else creator.create(processName, initialProperties)
 
     val emptyCanonical = CanonicalProcess(
       metaData = initialMetadata,

@@ -295,7 +295,7 @@ trait NuResourcesTest
   protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, None, None, None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, None, List.empty, None), name)(testCode)
 
   protected def updateCanonicalProcessAndAssertSuccess(process: CanonicalProcess): Assertion =
     updateCanonicalProcess(process) {
@@ -309,7 +309,7 @@ trait NuResourcesTest
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
         comment.map(UpdateProcessComment(_)),
-        None,
+        List.empty,
         None
       ),
       process.name
@@ -532,7 +532,7 @@ object ProcessJson extends OptionValues {
       state = state.map(StateJson(_)),
       processCategory = process.hcursor.downField("processCategory").as[String].toOption.value,
       isArchived = process.hcursor.downField("isArchived").as[Boolean].toOption.value,
-      labels = process.hcursor.downField("labels").as[Option[List[String]]].toOption.value,
+      labels = process.hcursor.downField("labels").as[List[String]].toOption.value,
       history = process.hcursor
         .downField("history")
         .as[Option[List[Json]]]
@@ -551,7 +551,7 @@ final case class ProcessJson(
     state: Option[StateJson],
     processCategory: String,
     isArchived: Boolean,
-    labels: Option[List[String]],
+    labels: List[String],
     // Process on list doesn't contain history
     history: Option[List[ProcessVersionJson]]
 ) {

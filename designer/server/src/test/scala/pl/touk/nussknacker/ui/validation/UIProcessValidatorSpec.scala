@@ -339,10 +339,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       createGraph(
         List(
           Source("in", SourceRef(ProcessTestData.existingSourceFactory, List())),
-          Variable(id = "var1", varName = "var1", value = "#meta.processLabels".spel),
           Sink("out", SinkRef(ProcessTestData.existingSinkFactory, List()))
         ),
-        List(Edge("in", "var1", None), Edge("var1", "out", None)),
+        List(Edge("in", "out", None)),
       )
     }
 

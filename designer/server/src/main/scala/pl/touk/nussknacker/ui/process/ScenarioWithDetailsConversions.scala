@@ -43,7 +43,6 @@ object ScenarioWithDetailsConversions {
       modifiedBy = details.modifiedBy,
       createdAt = details.createdAt,
       createdBy = details.createdBy,
-      tags = Some(details.scenarioLabels),
       labels = details.scenarioLabels,
       lastDeployedAction = details.lastDeployedAction,
       lastStateAction = details.lastStateAction,
