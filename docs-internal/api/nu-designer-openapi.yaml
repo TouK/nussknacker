@@ -3480,7 +3480,9 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
                       comment:
-                        comment: Deployment of scenario - task JIRA-1234
+                        status:
+                          comment: Deployment of scenario - task JIRA-1234
+                          type: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       type: SCENARIO_DEPLOYED
@@ -3489,7 +3491,9 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
                       comment:
-                        comment: Canceled because marketing campaign ended
+                        status:
+                          comment: Canceled because marketing campaign ended
+                          type: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       type: SCENARIO_CANCELED
@@ -3498,7 +3502,9 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
                       comment:
-                        comment: Added new processing step
+                        status:
+                          comment: Added new processing step
+                          type: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       type: SCENARIO_MODIFIED
@@ -3514,7 +3520,9 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
                       comment:
-                        comment: Added new processing step
+                        status:
+                          comment: Added new processing step
+                          type: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       type: COMMENT_ADDED
@@ -3523,6 +3531,8 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
                       comment:
+                        status:
+                          type: DELETED
                         lastModifiedBy: John Doe
                         lastModifiedAt: '2024-01-18T14:21:17Z'
                       type: COMMENT_ADDED
@@ -3531,7 +3541,9 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
                       attachment:
-                        id: 10000001
+                        status:
+                          id: 10000001
+                          type: AVAILABLE
                         filename: attachment01.png
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
@@ -3541,6 +3553,8 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
                       attachment:
+                        status:
+                          type: DELETED
                         filename: attachment01.png
                         lastModifiedBy: John Doe
                         lastModifiedAt: '2024-01-18T14:21:17Z'
@@ -3564,7 +3578,9 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
                       comment:
-                        comment: Added new processing step
+                        status:
+                          comment: Added new processing step
+                          type: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       destinationEnvironment: preprod
@@ -3939,6 +3955,29 @@ components:
           - 'null'
         type:
           type: string
+    Available:
+      title: Available
+      type: object
+      required:
+      - id
+      - type
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+    Available1:
+      title: Available
+      type: object
+      required:
+      - comment
+      - type
+      properties:
+        comment:
+          type: string
+        type:
+          type: string
     BoolParameterEditor:
       title: BoolParameterEditor
       type: object
@@ -4282,6 +4321,22 @@ components:
     DateTimeParameterEditor:
       title: DateTimeParameterEditor
       type: object
+    Deleted:
+      title: Deleted
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+    Deleted1:
+      title: Deleted
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
     Dict:
       title: Dict
       type: object
@@ -5741,15 +5796,13 @@ components:
       title: ScenarioActivityAttachment
       type: object
       required:
+      - status
       - filename
       - lastModifiedBy
       - lastModifiedAt
       properties:
-        id:
-          type:
-          - integer
-          - 'null'
-          format: int64
+        status:
+          $ref: '#/components/schemas/ScenarioActivityAttachmentStatus'
         filename:
           type: string
         lastModifiedBy:
@@ -5757,22 +5810,41 @@ components:
         lastModifiedAt:
           type: string
           format: date-time
+    ScenarioActivityAttachmentStatus:
+      title: ScenarioActivityAttachmentStatus
+      oneOf:
+      - $ref: '#/components/schemas/Available'
+      - $ref: '#/components/schemas/Deleted'
+      discriminator:
+        propertyName: type
+        mapping:
+          AVAILABLE: '#/components/schemas/Available'
+          DELETED: '#/components/schemas/Deleted'
     ScenarioActivityComment:
       title: ScenarioActivityComment
       type: object
       required:
+      - status
       - lastModifiedBy
       - lastModifiedAt
       properties:
-        comment:
-          type:
-          - string
-          - 'null'
+        status:
+          $ref: '#/components/schemas/ScenarioActivityCommentStatus'
         lastModifiedBy:
           type: string
         lastModifiedAt:
           type: string
           format: date-time
+    ScenarioActivityCommentStatus:
+      title: ScenarioActivityCommentStatus
+      oneOf:
+      - $ref: '#/components/schemas/Available1'
+      - $ref: '#/components/schemas/Deleted1'
+      discriminator:
+        propertyName: type
+        mapping:
+          AVAILABLE: '#/components/schemas/Available1'
+          DELETED: '#/components/schemas/Deleted1'
     ScenarioActivityMetadata:
       title: ScenarioActivityMetadata
       type: object

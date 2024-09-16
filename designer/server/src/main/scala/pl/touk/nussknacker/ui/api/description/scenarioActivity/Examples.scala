@@ -62,7 +62,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
           comment = ScenarioActivityComment(
-            comment = Some("Deployment of scenario - task JIRA-1234"),
+            status = ScenarioActivityCommentStatus.Available("Deployment of scenario - task JIRA-1234"),
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           )
@@ -73,7 +73,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
           comment = ScenarioActivityComment(
-            comment = Some("Canceled because marketing campaign ended"),
+            status = ScenarioActivityCommentStatus.Available("Canceled because marketing campaign ended"),
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           )
@@ -84,7 +84,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
           comment = ScenarioActivityComment(
-            comment = Some("Added new processing step"),
+            status = ScenarioActivityCommentStatus.Available("Added new processing step"),
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           )
@@ -103,7 +103,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
           comment = ScenarioActivityComment(
-            comment = Some("Added new processing step"),
+            status = ScenarioActivityCommentStatus.Available("Added new processing step"),
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           )
@@ -114,7 +114,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
           comment = ScenarioActivityComment(
-            comment = None,
+            status = ScenarioActivityCommentStatus.Deleted,
             lastModifiedBy = "John Doe",
             lastModifiedAt = Instant.parse("2024-01-18T14:21:17Z")
           )
@@ -125,7 +125,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
           attachment = ScenarioActivityAttachment(
-            id = Some(10000001),
+            status = ScenarioActivityAttachmentStatus.Available(10000001),
             filename = "attachment01.png",
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
@@ -137,7 +137,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
           attachment = ScenarioActivityAttachment(
-            id = None,
+            status = ScenarioActivityAttachmentStatus.Deleted,
             filename = "attachment01.png",
             lastModifiedBy = "John Doe",
             lastModifiedAt = Instant.parse("2024-01-18T14:21:17Z")
@@ -165,7 +165,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
           comment = ScenarioActivityComment(
-            comment = Some("Added new processing step"),
+            status = ScenarioActivityCommentStatus.Available("Added new processing step"),
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
