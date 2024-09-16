@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ExpressionConfig}
+import pl.touk.nussknacker.engine.api.process.ExpressionConfig
 
 object ClassDefinitionSet {
 
@@ -20,6 +20,8 @@ object ClassDefinitionSet {
 }
 
 case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition]) {
+  val unknown: Option[ClassDefinition] =
+    classDefinitionsMap.get(classOf[Any])
 
   def all: Set[ClassDefinition] = classDefinitionsMap.values.toSet
 

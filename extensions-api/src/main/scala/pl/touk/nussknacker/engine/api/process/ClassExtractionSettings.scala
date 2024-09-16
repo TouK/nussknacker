@@ -352,6 +352,7 @@ object ClassExtractionSettings {
       ),
       Set("canCastTo", "castTo")
     ),
+    MemberNamePredicate(ExactClassPredicate(classOf[java.lang.Object]), Set("canCastTo", "castTo")),
   )
 
   lazy val DefaultTypingFunctionRules: List[TypingFunctionRule] =

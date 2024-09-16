@@ -21,16 +21,13 @@ sealed trait Cast {
   @Documentation(description = "Checks if a type can be casted to a given class")
   def canCastTo(clazzType: String): Boolean
 
-  @Documentation(description = "Casts a type to a given class")
+  @Documentation(description = "Casts a type to a given class or throws exception if type cannot be casted.")
   @GenericType(typingFunction = classOf[CastTyping.Typing])
   def castTo[T](clazzType: String): T
 
 }
 
 object CastTyping {
-  private lazy val castMethods = classOf[Cast].getMethods.map(_.getName).toSet
-
-  def isCastMethod(reference: MethodReference): Boolean = castMethods.contains(reference.methodName)
 
   class Typing extends TypingFunction {
 
@@ -52,7 +49,6 @@ object CastTyping {
 
   }
 
-  object Instance extends Typing
 }
 
 class CastImpl(target: Any) extends Cast {

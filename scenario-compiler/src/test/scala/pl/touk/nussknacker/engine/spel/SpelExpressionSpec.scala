@@ -44,7 +44,6 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.spel.Typer.SpelCompilationException
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -96,7 +95,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "mapValue"    -> Map("foo" -> "bar").asJava,
       "array"       -> Array("a", "b"),
       "intArray"    -> Array(1, 2, 3),
-      "nestedArray" -> Array(Array(1, 2), Array(3, 4))
+      "nestedArray" -> Array(Array(1, 2), Array(3, 4)),
+      "unknownObj"  -> Array("unknown".asInstanceOf[Any]),
     )
   )
 
@@ -1406,6 +1406,16 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     caught.getMessage should include(
       "Cannot cast: class pl.touk.nussknacker.engine.spel.SpelExpressionSpec$Test to: java.lang.String"
     )
+  }
+
+  test("should allow cast on unknown object") {
+    val parsed = parse[Any](
+      expr = "#unknownObj.![#this.castTo('java.lang.String')]",
+      context = ctx,
+      methodExecutionForUnknownAllowed = true
+    ).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass(classOf[Array[Object]], List(Typed.typedClass(classOf[String])))
+    parsed.expression.evaluateSync[Any](ctx) shouldBe Array("unknown")
   }
 
 }
