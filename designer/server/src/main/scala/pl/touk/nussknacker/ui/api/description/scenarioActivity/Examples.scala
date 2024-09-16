@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{NoComment, NoScenario}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
+  NoActivity,
+  NoComment,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import sttp.tapir.EndpointIO.Example
 
@@ -230,7 +234,12 @@ object Examples {
 
   val commentNotFoundError: Example[NoComment] = Example.of(
     summary = Some("Unable to edit comment with id: {commentId}"),
-    value = NoComment("a76d6eba-9b6c-4d97-aaa1-984a23f88019")
+    value = NoComment(123L)
+  )
+
+  val activityNotFoundError: Example[NoActivity] = Example.of(
+    summary = Some("Unable to edit comment for activity with id: {commentId}"),
+    value = NoActivity(UUID.fromString("a76d6eba-9b6c-4d97-aaa1-984a23f88019"))
   )
 
 }

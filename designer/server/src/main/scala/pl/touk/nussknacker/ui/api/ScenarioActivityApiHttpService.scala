@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
+  NoActivity,
   NoComment,
   NoPermission,
   NoScenario
@@ -178,9 +179,6 @@ class ScenarioActivityApiHttpService(
         } yield ()
       }
   }
-
-  private def notImplemented[T]: EitherT[Future, ScenarioActivityError, T] =
-    EitherT.leftT[Future, T](ScenarioActivityError.NotImplemented: ScenarioActivityError)
 
   private def getScenarioIdByName(scenarioName: ProcessName) = {
     EitherT.fromOptionF(
@@ -461,7 +459,7 @@ class ScenarioActivityApiHttpService(
       dbioActionRunner.run(
         scenarioActivityRepository.editComment(scenarioId, request.commentId, request.commentContent)
       )
-    ).leftMap(_ => NoComment(request.commentId.toString))
+    ).leftMap(_ => NoComment(request.commentId))
 
   private def editComment(request: EditCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
@@ -474,14 +472,14 @@ class ScenarioActivityApiHttpService(
           request.commentContent
         )
       )
-    ).leftMap(_ => NoComment(request.scenarioActivityId.toString))
+    ).leftMap(_ => NoActivity(request.scenarioActivityId))
 
   private def deleteComment(request: DeprecatedDeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, ScenarioActivityError, Unit] =
     EitherT(
       dbioActionRunner.run(scenarioActivityRepository.deleteComment(scenarioId, request.commentId))
-    ).leftMap(_ => NoComment(request.commentId.toString))
+    ).leftMap(_ => NoComment(request.commentId))
 
   private def deleteComment(request: DeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
@@ -490,7 +488,7 @@ class ScenarioActivityApiHttpService(
       dbioActionRunner.run(
         scenarioActivityRepository.deleteComment(scenarioId, ScenarioActivityId(request.scenarioActivityId))
       )
-    ).leftMap(_ => NoComment(request.scenarioActivityId.toString))
+    ).leftMap(_ => NoActivity(request.scenarioActivityId))
 
   private def fetchAttachments(scenarioId: ProcessId): EitherT[Future, ScenarioActivityError, ScenarioAttachments] = {
     EitherT

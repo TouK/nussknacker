@@ -21,10 +21,6 @@ object InputOutput {
             )
           )
       ),
-      oneOfVariantFromMatchType(
-        NotImplemented,
-        emptyOutputAs(ScenarioActivityError.NotImplemented),
-      )
     )
 
 }
