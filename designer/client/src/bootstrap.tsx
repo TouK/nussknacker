@@ -1,17 +1,17 @@
+import { css } from "@emotion/css";
 import React from "react";
+import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { ErrorBoundary } from "./components/common/error-boundary";
+import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
+import { BASE_PATH } from "./config";
+import { BuildInfoProvider } from "./containers/BuildInfoProvider";
 import NussknackerInitializer from "./containers/NussknackerInitializer";
+import rootRoutes from "./containers/RootRoutes";
 import { SettingsProvider } from "./containers/SettingsInitializer";
 import "./i18n";
-import { StoreProvider } from "./store/provider";
-import rootRoutes from "./containers/RootRoutes";
-import { BASE_PATH } from "./config";
-import { css } from "@emotion/css";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
-import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
-import { createRoot } from "react-dom/client";
-import { BuildInfoProvider } from "./containers/BuildInfoProvider";
-import { ErrorBoundary } from "./components/common/error-boundary";
+import { StoreProvider } from "./store/provider";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -25,25 +25,23 @@ const router = createBrowserRouter(rootRoutes, { basename: BASE_PATH.replace(/\/
 
 const root = createRoot(rootContainer);
 
-const Root = () => {
-    return (
-        <>
-            <NuThemeProvider>
-                <ErrorBoundary>
-                    <StoreProvider>
-                        <SettingsProvider>
-                            <NussknackerInitializer>
-                                <BuildInfoProvider>
-                                    <RouterProvider router={router} />
-                                </BuildInfoProvider>
-                            </NussknackerInitializer>
-                        </SettingsProvider>
-                    </StoreProvider>
-                </ErrorBoundary>
-            </NuThemeProvider>
-            <GlideGridPortal />
-        </>
-    );
-};
+const Root = () => (
+    <>
+        <NuThemeProvider>
+            <ErrorBoundary>
+                <StoreProvider>
+                    <SettingsProvider>
+                        <NussknackerInitializer>
+                            <BuildInfoProvider>
+                                <RouterProvider router={router} />
+                            </BuildInfoProvider>
+                        </NussknackerInitializer>
+                    </SettingsProvider>
+                </StoreProvider>
+            </ErrorBoundary>
+        </NuThemeProvider>
+        <GlideGridPortal />
+    </>
+);
 
 root.render(<Root />);
