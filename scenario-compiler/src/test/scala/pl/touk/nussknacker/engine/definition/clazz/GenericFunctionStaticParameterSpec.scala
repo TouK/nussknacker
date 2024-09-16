@@ -12,11 +12,11 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import scala.annotation.varargs
 
 class GenericFunctionStaticParametersSpec extends AnyFunSuite with Matchers with OptionValues {
-  implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
+  private val classDefinitionExtractor = ClassDefinitionExtractor.Default
 
   test("should accept valid static parameters") {
     def test(clazz: Class[_]) =
-      noException should be thrownBy ClassDefinitionExtractor.extract(clazz)
+      noException should be thrownBy classDefinitionExtractor.extract(clazz)
 
     test(classOf[Valid.Foo1])
     test(classOf[Valid.Foo2])
@@ -26,7 +26,7 @@ class GenericFunctionStaticParametersSpec extends AnyFunSuite with Matchers with
   test("should throw exception when trying to declare illegal parameter types") {
     def test(clazz: Class[_], message: String) = {
       intercept[IllegalArgumentException] {
-        ClassDefinitionExtractor.extract(clazz)
+        classDefinitionExtractor.extract(clazz)
       }.getMessage shouldBe message
     }
 

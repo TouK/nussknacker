@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ExpressionConfig}
+import pl.touk.nussknacker.engine.api.process.ExpressionConfig
 
 object ClassDefinitionSet {
 
@@ -10,13 +10,11 @@ object ClassDefinitionSet {
 
   // Below are for tests purpose mostly
   def forClasses(classes: Class[_]*): ClassDefinitionSet = ClassDefinitionSet(
-    ClassDefinitionDiscovery.discoverClasses(classes ++ ExpressionConfig.defaultAdditionalClasses)(
-      ClassExtractionSettings.Default
-    )
+    ClassDefinitionDiscovery.Default.discoverClasses(classes ++ ExpressionConfig.defaultAdditionalClasses)
   )
 
   def forDefaultAdditionalClasses: ClassDefinitionSet = ClassDefinitionSet(
-    ClassDefinitionDiscovery.discoverClasses(ExpressionConfig.defaultAdditionalClasses)(ClassExtractionSettings.Default)
+    ClassDefinitionDiscovery.Default.discoverClasses(ExpressionConfig.defaultAdditionalClasses)
   )
 
 }

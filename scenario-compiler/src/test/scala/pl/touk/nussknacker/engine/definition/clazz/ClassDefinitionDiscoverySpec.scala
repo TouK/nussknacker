@@ -145,7 +145,7 @@ class ClassDefinitionDiscoverySpec
 
     forAll(testTypes) { (clazz, clazzName) =>
       forAll(testClassPatterns) { classPattern =>
-        val infos = discoverClassesFromTypes(List(clazz))(
+        val infos = new ClassDefinitionDiscovery(
           ClassExtractionSettings.Default.copy(excludeClassMemberPredicates =
             ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
               MemberNamePatternPredicate(
@@ -166,7 +166,7 @@ class ClassDefinitionDiscoverySpec
               )
             )
           )
-        )
+        ).discoverClassesFromTypes(List(clazz))
         val sampleClassInfo = infos.find(_.getClazz.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
@@ -227,17 +227,19 @@ class ClassDefinitionDiscoverySpec
   test("should skip toString method when HideToString implemented") {
     val hiddenToStringClasses = Table("class", classOf[JavaBannedToStringClass], classOf[BannedToStringClass])
     forAll(hiddenToStringClasses) {
-      ClassDefinitionExtractor.extract(_)(ClassExtractionSettings.Default).methods.keys shouldNot contain("toString")
+      ClassDefinitionExtractor.Default.extract(_).methods.keys shouldNot contain(
+        "toString"
+      )
     }
   }
 
   test("should break recursive discovery if hidden class found") {
 
-    val extracted = ClassDefinitionDiscovery.discoverClassesFromTypes(List(Typed[Top]))(
+    val extracted = new ClassDefinitionDiscovery(
       ClassExtractionSettings.Default.copy(
         excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
       )
-    )
+    ).discoverClassesFromTypes(List(Typed[Top]))
     extracted.find(_.clazzName == Typed[Top]) shouldBe Symbol("defined")
     extracted.find(_.clazzName == Typed[Middle]) shouldBe Symbol("empty")
     extracted.find(_.clazzName == Typed[Bottom]) shouldBe Symbol("empty")
@@ -402,7 +404,7 @@ class ClassDefinitionDiscoverySpec
   }
 
   test("should handle generic params in maps") {
-    val javaMapDef = ClassDefinitionExtractor.extract(classOf[util.Map[_, _]])(ClassExtractionSettings.Default)
+    val javaMapDef = ClassDefinitionExtractor.Default.extract(classOf[util.Map[_, _]])
     val getMethodReturnType = javaMapDef.methods
       .get("get")
       .value
@@ -555,14 +557,16 @@ class ClassDefinitionDiscoverySpec
   ): Option[ClassDefinition] = {
     val ref = Typed.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    discoverClassesFromTypes(List(ref))(settings).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
+    new ClassDefinitionDiscovery(settings)
+      .discoverClassesFromTypes(List(ref))
+      .find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](
       settings: ClassExtractionSettings = ClassExtractionSettings.Default
   ) = {
     val ref = Typed.fromDetailedType[T]
-    discoverClassesFromTypes(List(ref))(settings)
+    new ClassDefinitionDiscovery(settings).discoverClassesFromTypes(List(ref))
   }
 
 }

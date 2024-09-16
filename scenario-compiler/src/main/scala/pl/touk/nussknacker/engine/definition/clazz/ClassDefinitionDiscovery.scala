@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.collection.mutable
 
-object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring {
+class ClassDefinitionDiscovery(settings: ClassExtractionSettings) extends LazyLogging with ExecutionTimeMeasuring {
+  private val classDefinitionExtractor = new ClassDefinitionExtractor(settings)
 
   // TODO: this should be somewhere in utils??
   private val primitiveTypes: List[Class[_]] = List(
@@ -40,13 +41,13 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
     // Literals for primitive types are wrapped to boxed representations
     primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(Typed(_))
 
-  def discoverClasses(classes: Iterable[Class[_]])(implicit settings: ClassExtractionSettings): Set[ClassDefinition] = {
+  def discoverClasses(classes: Iterable[Class[_]]): Set[ClassDefinition] = {
     discoverClassesFromTypes(classes.map(Typed(_)))
   }
 
   def discoverClassesFromTypes(
       types: Iterable[TypingResult]
-  )(implicit settings: ClassExtractionSettings): Set[ClassDefinition] = {
+  ): Set[ClassDefinition] = {
     // It's a deep first traversal - to avoid SOF we use mutable collection. It won't be easy to implement it using immutable collections
     val collectedSoFar = mutable.HashSet.empty[TypingResult]
     (types.flatMap(typesFromTypingResult) ++ mandatoryClasses).flatMap { cl =>
@@ -72,9 +73,7 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
 
   private def classAndItsChildrenDefinitionIfNotCollectedSoFar(
       typingResult: TypingResult
-  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)(
-      implicit settings: ClassExtractionSettings
-  ): Set[ClassDefinition] = {
+  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath): Set[ClassDefinition] = {
     if (collectedSoFar.contains(typingResult)) {
       Set.empty
     } else {
@@ -85,9 +84,7 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
 
   private def classAndItsChildrenDefinition(
       typingResult: TypingResult
-  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)(
-      implicit settings: ClassExtractionSettings
-  ): Set[ClassDefinition] = {
+  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath): Set[ClassDefinition] = {
     typingResult match {
       case e: TypedClass =>
         val definitionsForClass = if (settings.isHidden(e.klass)) {
@@ -104,9 +101,7 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
 
   private def definitionsFromGenericParameters(
       typedClass: TypedClass
-  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)(
-      implicit settings: ClassExtractionSettings
-  ): Set[ClassDefinition] = {
+  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath): Set[ClassDefinition] = {
     typedClass.params.zipWithIndex.flatMap {
       case (k: TypedClass, idx) =>
         classAndItsChildrenDefinitionIfNotCollectedSoFar(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
@@ -116,9 +111,7 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
 
   private def definitionsFromMethods(
       classDefinition: ClassDefinition
-  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)(
-      implicit settings: ClassExtractionSettings
-  ): Set[ClassDefinition] = {
+  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath): Set[ClassDefinition] = {
     def extractFromMethods(methods: Map[String, List[MethodDefinition]]) =
       methods.values.flatten
         .flatMap(_.signatures.toList.map(_.result))
@@ -134,10 +127,10 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
 
   private def extractDefinitionWithLogging(
       clazz: Class[_]
-  )(path: DiscoveryPath)(implicit settings: ClassExtractionSettings) = {
+  )(path: DiscoveryPath) = {
     def message = if (logger.underlying.isTraceEnabled) path.print else clazz.getName
     measure(message) {
-      ClassDefinitionExtractor.extract(clazz)
+      classDefinitionExtractor.extract(clazz)
     }
   }
 
@@ -177,4 +170,8 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
     override def print: String = s"${p.name}: ${classNameWithStrippedPackages(p.refClazz)}"
   }
 
+}
+
+object ClassDefinitionDiscovery {
+  val Default = new ClassDefinitionDiscovery(ClassExtractionSettings.Default)
 }

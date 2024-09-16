@@ -46,7 +46,7 @@ class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
 
   private val methodReferenceTyper = {
     val classDefinitionSet = ClassDefinitionSet(
-      ClassDefinitionDiscovery.discoverClassesFromTypes(List(Typed[Helper]))(ClassExtractionSettings.Default)
+      ClassDefinitionDiscovery.Default.discoverClassesFromTypes(List(Typed[Helper]))
     )
     new MethodReferenceTyper(classDefinitionSet, methodExecutionForUnknownAllowed = false)
   }
