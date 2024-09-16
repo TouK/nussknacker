@@ -227,13 +227,13 @@ class ScenarioActivityApiHttpService(
     scenarioComment match {
       case ScenarioComment.Available(comment, lastModifiedByUserName) =>
         Dtos.ScenarioActivityComment(
-          comment = Some(comment),
+          status = Dtos.ScenarioActivityCommentStatus.Available(comment),
           lastModifiedBy = lastModifiedByUserName.value,
           lastModifiedAt = Instant.now(),
         )
       case ScenarioComment.Deleted(deletedByUserName) =>
         Dtos.ScenarioActivityComment(
-          comment = None,
+          status = Dtos.ScenarioActivityCommentStatus.Deleted,
           lastModifiedBy = deletedByUserName.value,
           lastModifiedAt = Instant.now(),
         )
@@ -244,14 +244,14 @@ class ScenarioActivityApiHttpService(
     attachment match {
       case ScenarioAttachment.Available(attachmentId, attachmentFilename, lastModifiedByUserName) =>
         Dtos.ScenarioActivityAttachment(
-          id = Some(attachmentId.value),
+          status = Dtos.ScenarioActivityAttachmentStatus.Available(attachmentId.value),
           filename = attachmentFilename.value,
           lastModifiedBy = lastModifiedByUserName.value,
           lastModifiedAt = Instant.now()
         )
       case ScenarioAttachment.Deleted(attachmentFilename, deletedByUserName) =>
         Dtos.ScenarioActivityAttachment(
-          id = None,
+          status = Dtos.ScenarioActivityAttachmentStatus.Deleted,
           filename = attachmentFilename.value,
           lastModifiedBy = deletedByUserName.value,
           lastModifiedAt = Instant.now()
