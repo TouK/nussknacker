@@ -74,7 +74,7 @@ const Truncator = ({
     return (
         <TruncateButton {...trigger} className="truncator">
             <Visibility sx={{ fontSize: "18px" }} />
-            <Typography sx={{ mx: "4px", fontSize: "13px" }}>
+            <Typography sx={{ mx: "4px", fontSize: "13px" }} noWrap>
                 {itemsCount === hiddenItemsCount
                     ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
                     : t("truncator.someHidden", "{{hiddenItemsCount}} more...", { hiddenItemsCount })}
@@ -116,6 +116,10 @@ export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellPa
                 anchorOrigin={anchorOrigin}
                 transformOrigin={transformOrigin}
                 {...popoverProps}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
                 open={popoverProps.open}
                 anchorEl={ref.current || anchorEl}
             >
