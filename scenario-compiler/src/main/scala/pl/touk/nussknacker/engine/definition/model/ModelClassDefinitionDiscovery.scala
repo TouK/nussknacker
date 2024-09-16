@@ -13,7 +13,7 @@ object ModelClassDefinitionDiscovery {
     val classesToExtractDefinitions = componentsAndGlobalVariables.flatMap(
       _.definedTypes
     ) ++ definition.expressionConfig.additionalClasses.map(Typed(_))
-    ClassDefinitionDiscovery.discoverClassesFromTypes(classesToExtractDefinitions)(definition.settings)
+    new ClassDefinitionDiscovery(definition.settings).discoverClassesFromTypes(classesToExtractDefinitions)
   }
 
 }
