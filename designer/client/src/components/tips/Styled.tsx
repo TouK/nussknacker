@@ -38,3 +38,8 @@ export const TipPanelStyled = styled("div")<{
         outlineOffset: "-2px",
     }),
 }));
+
+export const SearchPanelStyled = styled("div")(({ theme }) => ({
+    width: "100%",
+    padding: theme.spacing(1, 1.25),
+}));
