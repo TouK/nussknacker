@@ -3,16 +3,9 @@ package pl.touk.nussknacker.engine.extension
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.Documentation
-import pl.touk.nussknacker.engine.api.generics.{
-  ExpressionParseError,
-  GenericFunctionTypingError,
-  GenericType,
-  TypingFunction
-}
+import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.GenericFunctionError
-import pl.touk.nussknacker.engine.spel.typer.MethodReference
 
 import scala.util.{Failure, Success, Try}
 
@@ -41,11 +34,6 @@ object CastTyping {
         }
       case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
-
-    def computeResultType(reference: MethodReference): Either[ExpressionParseError, typing.TypingResult] =
-      computeResultType(reference.params)
-        .leftMap(_ => GenericFunctionError("Provided class name is invalid"))
-        .toEither
 
   }
 

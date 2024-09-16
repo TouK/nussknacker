@@ -38,7 +38,7 @@ public class RuntimeConversionHandler {
 
     public static final class ConversionAwareMethodInvoker {
 
-        public Object invoke(Method method, Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException, ClassNotFoundException {
+        public Object invoke(Method method, Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
             if (target != null && target.getClass().isArray() && method.getDeclaringClass().isAssignableFrom(List.class)) {
                 return method.invoke(RuntimeConversionHandler.convert(target), arguments);
             } else if (ExtensionMethods.applies(method.getDeclaringClass())) {
