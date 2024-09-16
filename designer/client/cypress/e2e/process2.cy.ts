@@ -22,7 +22,7 @@ describe("Process view", () => {
     it("should have node search toolbar", () => {
         cy.get("[data-testid=search-panel]").should("be.visible");
         cy.get("[data-testid=search-panel]").contains(/^search$/i);
-        cy.get("[data-testid=search-panel] input").click();
+        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click();
         cy.realType("en");
         cy.get("[data-testid=search-panel]").contains(/sms/i).click();
         cy.getNode("enricher")
@@ -41,7 +41,7 @@ describe("Process view", () => {
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
             .click();
-        cy.get("[data-testid=search-panel] input").click().clear();
+        cy.get("[data-testid=search-panel]").find("input[data-selector='NODES_IN_SCENARIO']").click().clear();
         cy.realType("source");
         cy.wait(750); //wait for animation
         cy.getNode("enricher")
