@@ -114,6 +114,11 @@ class ExpressionSuggesterSpec
         Map("empty" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),
         Map.empty
       ),
+      ClassDefinition(
+        Unknown,
+        Map("canCastTo" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "canCastTo", None))),
+        Map.empty
+      ),
     )
   )
 
@@ -149,6 +154,7 @@ class ExpressionSuggesterSpec
     "listOfUnions" -> Typed.genericTypeClass[java.util.List[A]](List(Typed(Typed[A], Typed[B]))),
     "dictFoo"      -> DictInstance("dictFoo", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
     "dictBar"      -> DictInstance("dictBar", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
+    "unknown"      -> Unknown
   )
 
   private def spelSuggestionsFor(input: String, row: Int = 0, column: Int = -1): List[ExpressionSuggestion] = {
@@ -762,6 +768,12 @@ class ExpressionSuggesterSpec
     )
     spelTemplateSuggestionsFor(s"Hello #{!1 + a} and #{#in}", 0, "Hello #{!1 + a} and #{#in".length) shouldBe List(
       suggestion("#input", Typed[A]),
+    )
+  }
+
+  test("should suggest methods for unknown") {
+    spelSuggestionsFor("#unknown.") shouldBe List(
+      suggestion("canCastTo", Typed[Boolean]),
     )
   }
 

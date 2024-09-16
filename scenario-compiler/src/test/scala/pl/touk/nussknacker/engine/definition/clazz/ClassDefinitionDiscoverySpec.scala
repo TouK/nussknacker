@@ -68,7 +68,9 @@ class ClassDefinitionDiscoverySpec
   test("should extract public fields from scala case class") {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
-    sampleClassInfo.value.methods shouldBe Map(
+    sampleClassInfo.value
+      .assertContainsExtensionMethods()
+      .methodsWithoutExtensionMethods() shouldBe Map(
       "foo"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None)),
       "bar"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "bar", None)),
       "toString" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
@@ -80,7 +82,9 @@ class ClassDefinitionDiscoverySpec
 
   test("should extract generic types from Option") {
     val classInfo = singleClassDefinition[ClassWithOptions]()
-    classInfo.value.methods shouldBe Map(
+    classInfo.value
+      .assertContainsExtensionMethods()
+      .methodsWithoutExtensionMethods() shouldBe Map(
       // generic type of Java type is properly read
       "longJavaOption" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Long]), "longJavaOption", None)),
       // generic type of Scala type is erased - this case documents that behavior
@@ -102,7 +106,7 @@ class ClassDefinitionDiscoverySpec
     def methods(strategy: PropertyFromGetterExtractionStrategy) =
       singleClassDefinition[JavaSampleClass](
         ClassExtractionSettings.Default.copy(propertyExtractionStrategy = strategy)
-      ).value.methods.keys.toSet
+      ).value.methodsWithoutExtensionMethods().keys.toSet
 
     val methodsForAddPropertyNextToGetter = methods(AddPropertyNextToGetter)
     methodsForAddPropertyNextToGetter shouldEqual Set(
@@ -171,7 +175,7 @@ class ClassDefinitionDiscoverySpec
         ).discoverClassesFromTypes(List(clazz))
         val sampleClassInfo = infos.find(_.getClazz.getName.contains(clazzName)).get
 
-        sampleClassInfo.methods shouldBe Map(
+        sampleClassInfo.methodsWithoutExtensionMethods() shouldBe Map(
           "toString" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
           "foo"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None))
         )
@@ -183,7 +187,11 @@ class ClassDefinitionDiscoverySpec
 
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
-    typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(
+    typeUtils
+      .find(_.clazzName == Typed[TestEmbedded])
+      .value
+      .assertContainsExtensionMethods()
+      .withoutExtensionMethods() shouldBe
       ClassDefinition(
         Typed.typedClass[TestEmbedded],
         Map(
@@ -206,14 +214,13 @@ class ClassDefinitionDiscoverySpec
         ),
         Map.empty
       )
-    )
 
   }
 
   test("should not discover hidden fields") {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
-    typeUtils shouldBe Some(
+    typeUtils.value.assertContainsExtensionMethods().withoutExtensionMethods() shouldBe
       ClassDefinition(
         Typed.typedClass[ClassWithHiddenFields],
         Map(
@@ -223,7 +230,6 @@ class ClassDefinitionDiscoverySpec
         ),
         Map.empty
       )
-    )
   }
 
   test("should skip toString method when HideToString implemented") {
@@ -571,6 +577,21 @@ class ClassDefinitionDiscoverySpec
   ) = {
     val ref = Typed.fromDetailedType[T]
     new ClassDefinitionDiscovery(new ClassDefinitionExtractor(settings)).discoverClassesFromTypes(List(ref))
+  }
+
+  private implicit class ClassDefinitionAssertions(classDefinition: ClassDefinition) {
+    private val extensionMethodsNames = ExtensionMethods.registry.flatMap(_.getMethods).map(_.getName)
+
+    def methodsWithoutExtensionMethods(): Map[String, List[MethodDefinition]] =
+      classDefinition.methods.filter(e => !extensionMethodsNames.contains(e._1))
+
+    def withoutExtensionMethods(): ClassDefinition = classDefinition.copy(methods = methodsWithoutExtensionMethods())
+
+    def assertContainsExtensionMethods(): ClassDefinition = {
+      classDefinition.methods.keySet should contain allElementsOf (extensionMethodsNames)
+      classDefinition
+    }
+
   }
 
 }

@@ -8,7 +8,7 @@ import org.springframework.expression.TypedValue;
 import org.springframework.expression.spel.support.ReflectionHelper;
 import org.springframework.expression.spel.support.ReflectiveMethodExecutor;
 import org.springframework.util.ReflectionUtils;
-import pl.touk.nussknacker.engine.spel.internal.ArrayToListConversionHandler;
+import pl.touk.nussknacker.engine.spel.internal.RuntimeConversionHandler;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -19,8 +19,8 @@ import java.lang.reflect.Modifier;
 // As an additional feature we allow to invoke list methods on arrays and
 // in the point of the method invocation we convert an array to a list
 public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
-    private static final ArrayToListConversionHandler.ConversionAwareMethodInvoker methodInvoker =
-        new ArrayToListConversionHandler.ConversionAwareMethodInvoker();
+    private static final RuntimeConversionHandler.ConversionAwareMethodInvoker methodInvoker =
+        new RuntimeConversionHandler.ConversionAwareMethodInvoker();
 
     private final Method method;
 
