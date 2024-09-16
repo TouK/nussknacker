@@ -241,13 +241,18 @@ describe("Fragment", () => {
                 request.alias = "suggestions";
             }
         });
-        cy.get('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
+        cy.get("[data-testid=window]").find('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
         // We wait for validation result to be sure that red message below the form field will be visible
         cy.wait("@validation")
             .its("response.statusCode")
             .should("eq", 200)
             .then(() => {
-                cy.get("@window").get("[title='Value']").siblings().eq(0).find("[data-testid='form-helper-text']").should("exist");
+                cy.get("[data-testid=window]")
+                    .find("[title='Value']")
+                    .siblings()
+                    .eq(0)
+                    .find("[data-testid='form-helper-text']")
+                    .should("exist");
             });
         cy.wait("@suggestions").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
