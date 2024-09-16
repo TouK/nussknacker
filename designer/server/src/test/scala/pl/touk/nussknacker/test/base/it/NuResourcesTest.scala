@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
@@ -36,6 +37,7 @@ import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
@@ -55,14 +57,14 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
-import cats.effect.unsafe.implicits.global
-import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
+
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
     extends WithHsqlDbTesting
+    with WithClock
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with EitherValuesDetailedMessage
@@ -86,13 +88,13 @@ trait NuResourcesTest
 
   protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingScenarioRepository)
 
-  protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
+  protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef, clock)
 
   protected val fragmentRepository: DefaultFragmentRepository = newFragmentRepository(testDbRef)
 
-  protected val actionRepository: DbProcessActionRepository = newActionProcessRepository(testDbRef)
+  protected val actionRepository: DbScenarioActionRepository = newActionProcessRepository(testDbRef)
 
-  protected val scenarioActivityRepository: ScenarioActivityRepository = newScenarioActivityRepository(testDbRef)
+  protected val scenarioActivityRepository: ScenarioActivityRepository = newScenarioActivityRepository(testDbRef, clock)
 
   protected val processChangeListener = new TestProcessChangeListener()
 

@@ -10,9 +10,9 @@ import pl.touk.nussknacker.test.utils.domain.ScenarioHelper
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait WithBatchConfigScenarioHelper {
-  this: WithTestDb with WithBatchDesignerConfig =>
+  this: WithTestDb with WithClock with WithBatchDesignerConfig =>
 
-  private lazy val rawScenarioHelper = new ScenarioHelper(testDbRef, designerConfig)
+  private lazy val rawScenarioHelper = new ScenarioHelper(testDbRef, clock, designerConfig)
   private val usedCategory           = TestCategory.Category1
 
   def createSavedScenario(scenario: CanonicalProcess): ProcessId = {

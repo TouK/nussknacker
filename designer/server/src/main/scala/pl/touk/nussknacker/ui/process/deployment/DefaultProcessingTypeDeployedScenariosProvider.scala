@@ -85,7 +85,7 @@ object DefaultProcessingTypeDeployedScenariosProvider {
     val dumbModelInfoProvier = ProcessingTypeDataProvider.withEmptyCombinedData(
       Map(processingType -> ValueWithRestriction.anyUser(Map.empty[String, String]))
     )
-    val actionRepository        = new DbProcessActionRepository(dbRef, dumbModelInfoProvier)
+    val actionRepository        = new DbScenarioActionRepository(dbRef, dumbModelInfoProvier)
     val processRepository       = DBFetchingProcessRepository.create(dbRef, actionRepository)
     val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
     new DefaultProcessingTypeDeployedScenariosProvider(

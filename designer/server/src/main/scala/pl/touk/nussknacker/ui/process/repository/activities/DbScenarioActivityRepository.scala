@@ -23,11 +23,11 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
-class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
+class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: Clock)(
     implicit executionContext: ExecutionContext,
 ) extends DbioRepository
     with NuTables
@@ -42,24 +42,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     doFindActivities(scenarioId).map(_.map(_._2))
   }
 
-  private def doFindActivities(
-      scenarioId: ProcessId,
-  ): DB[Seq[(Long, ScenarioActivity)]] = {
-    scenarioActivityTable
-      .filter(_.scenarioId === scenarioId)
-      .result
-      .map(_.map(fromEntity))
-      .map {
-        _.flatMap {
-          case Left(error) =>
-            logger.warn(s"Ignoring invalid scenario activity: [$error]")
-            None
-          case Right(activity) =>
-            Some(activity)
-        }
-      }
-  }
-
   def addActivity(
       scenarioActivity: ScenarioActivity,
   )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
@@ -71,16 +53,18 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       processVersionId: VersionId,
       comment: String,
   )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
+    val now = clock.instant()
     insertActivity(
       ScenarioActivity.CommentAdded(
         scenarioId = ScenarioId(scenarioId.value),
         scenarioActivityId = ScenarioActivityId.random,
         user = toUser(user),
-        date = Instant.now(),
+        date = now,
         scenarioVersion = Some(ScenarioVersion(processVersionId.value)),
         comment = ScenarioComment.Available(
           comment = comment,
           lastModifiedByUserName = UserName(user.username),
+          lastModifiedAt = now,
         )
       ),
     ).map(_.activityId)
@@ -95,7 +79,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
       validateCurrentValue = validateCommentExists(scenarioId),
-      modify = _.copy(comment = Some(comment), lastModifiedByUserName = Some(user.username)),
+      modify = doEditComment(comment),
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
   }
@@ -109,7 +93,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
       validateCurrentValue = validateCommentExists(scenarioId),
-      modify = _.copy(comment = Some(comment), lastModifiedByUserName = Some(user.username)),
+      modify = doEditComment(comment),
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
   }
@@ -122,7 +106,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
       validateCurrentValue = validateCommentExists(scenarioId),
-      modify = _.copy(comment = None, lastModifiedByUserName = Some(user.username)),
+      modify = doDeleteComment,
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
   }
@@ -135,21 +119,15 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
       validateCurrentValue = validateCommentExists(scenarioId),
-      modify = _.copy(comment = None, lastModifiedByUserName = Some(user.username)),
+      modify = doDeleteComment,
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
-  }
-
-  private def validateCommentExists(scenarioId: ProcessId)(entity: ScenarioActivityEntityData) = {
-    for {
-      _ <- Either.cond(entity.scenarioId == scenarioId, (), ModifyCommentError.CommentDoesNotExist)
-      _ <- entity.comment.toRight(ModifyCommentError.CommentDoesNotExist)
-    } yield ()
   }
 
   def addAttachment(
       attachmentToAdd: AttachmentToAdd
   )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
+    val now = clock.instant()
     for {
       attachment <- attachmentInsertQuery += AttachmentEntityData(
         id = -1L,
@@ -160,19 +138,20 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
         user = user.username,
         impersonatedByIdentity = user.impersonatingUserId,
         impersonatedByUsername = user.impersonatingUserName,
-        createDate = Timestamp.from(Instant.now())
+        createDate = Timestamp.from(now)
       )
       activity <- insertActivity(
         ScenarioActivity.AttachmentAdded(
           scenarioId = ScenarioId(attachmentToAdd.scenarioId.value),
           scenarioActivityId = ScenarioActivityId.random,
           user = toUser(user),
-          date = Instant.now(),
+          date = now,
           scenarioVersion = Some(ScenarioVersion(attachmentToAdd.scenarioVersionId.value)),
           attachment = ScenarioAttachment.Available(
             attachmentId = AttachmentId(attachment.id),
             attachmentFilename = AttachmentFilename(attachmentToAdd.fileName),
             lastModifiedByUserName = UserName(user.username),
+            lastModifiedAt = now,
           )
         ),
       )
@@ -212,6 +191,42 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     )
   }
 
+  def getActivityStats: DB[Map[String, Int]] = {
+    val findScenarioProcessActivityStats = for {
+      attachmentsTotal <- attachmentsTable.length.result
+      commentsTotal    <- scenarioActivityTable.filter(_.comment.isDefined).length.result
+    } yield Map(
+      AttachmentsTotal -> attachmentsTotal,
+      CommentsTotal    -> commentsTotal,
+    ).map { case (k, v) => (k.toString, v) }
+    run(findScenarioProcessActivityStats)
+  }
+
+  private def doFindActivities(
+      scenarioId: ProcessId,
+  ): DB[Seq[(Long, ScenarioActivity)]] = {
+    scenarioActivityTable
+      .filter(_.scenarioId === scenarioId)
+      .result
+      .map(_.map(fromEntity))
+      .map {
+        _.flatMap {
+          case Left(error) =>
+            logger.warn(s"Ignoring invalid scenario activity: [$error]")
+            None
+          case Right(activity) =>
+            Some(activity)
+        }
+      }
+  }
+
+  private def validateCommentExists(scenarioId: ProcessId)(entity: ScenarioActivityEntityData) = {
+    for {
+      _ <- Either.cond(entity.scenarioId == scenarioId, (), ModifyCommentError.CommentDoesNotExist)
+      _ <- entity.comment.toRight(ModifyCommentError.CommentDoesNotExist)
+    } yield ()
+  }
+
   private def toComment(
       id: Long,
       scenarioActivity: ScenarioActivity,
@@ -221,8 +236,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     for {
       scenarioVersion <- scenarioActivity.scenarioVersion
       content <- comment match {
-        case ScenarioComment.Available(comment, _) => Some(comment)
-        case ScenarioComment.Deleted(_)            => None
+        case ScenarioComment.Available(comment, _, _) => Some(comment)
+        case ScenarioComment.Deleted(_, _)            => None
       }
     } yield Legacy.Comment(
       id = id,
@@ -253,7 +268,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
         toComment(
           id,
           activity,
-          ScenarioComment.Available(s"Rename: [${activity.oldName}] -> [${activity.newName}]", UserName("")),
+          ScenarioComment
+            .Available(s"Rename: [${activity.oldName}] -> [${activity.newName}]", UserName(""), activity.date),
           None
         )
       case activity: ScenarioActivity.CommentAdded =>
@@ -275,17 +291,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       case _: ScenarioActivity.CustomAction =>
         None
     }
-  }
-
-  def getActivityStats: DB[Map[String, Int]] = {
-    val findScenarioProcessActivityStats = for {
-      attachmentsTotal <- attachmentsTable.length.result
-      commentsTotal    <- scenarioActivityTable.filter(_.comment.isDefined).length.result
-    } yield Map(
-      AttachmentsTotal -> attachmentsTotal,
-      CommentsTotal    -> commentsTotal,
-    ).map { case (k, v) => (k.toString, v) }
-    run(findScenarioProcessActivityStats)
   }
 
   private def toUser(loggedUser: LoggedUser) = {
@@ -317,7 +322,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
   ): DB[Either[ERROR, Unit]] = {
     modifyActivity[ScenarioActivityId, ERROR](
       key = activityId,
-      pullRows = activityByIdCompiled(_).result.headOption,
+      fetchActivity = activityByIdCompiled(_).result.headOption,
       updateRow = (id: ScenarioActivityId, updatedEntity) => activityByIdCompiled(id).update(updatedEntity),
       activityDoesNotExistError = activityDoesNotExistError,
       validateCurrentValue = validateCurrentValue,
@@ -335,7 +340,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
   ): DB[Either[ERROR, Unit]] = {
     modifyActivity[Long, ERROR](
       key = rowId,
-      pullRows = activityByRowIdCompiled(_).result.headOption,
+      fetchActivity = activityByRowIdCompiled(_).result.headOption,
       updateRow = (id: Long, updatedEntity) => activityByRowIdCompiled(id).update(updatedEntity),
       activityDoesNotExistError = activityDoesNotExistError,
       validateCurrentValue = validateCurrentValue,
@@ -346,7 +351,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
 
   private def modifyActivity[KEY, ERROR](
       key: KEY,
-      pullRows: KEY => DB[Option[ScenarioActivityEntityData]],
+      fetchActivity: KEY => DB[Option[ScenarioActivityEntityData]],
       updateRow: (KEY, ScenarioActivityEntityData) => DB[Int],
       activityDoesNotExistError: ERROR,
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
@@ -354,10 +359,10 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, Unit]] = {
     val action = for {
-      dataPulled <- pullRows(key)
+      fetchedActivity <- fetchActivity(key)
       result <- {
         val modifiedEntity = for {
-          entity <- dataPulled.toRight(activityDoesNotExistError)
+          entity <- fetchedActivity.toRight(activityDoesNotExistError)
           _      <- validateCurrentValue(entity)
           modifiedEntity = modify(entity)
         } yield modifiedEntity
@@ -389,6 +394,32 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     }
   }
 
+  private def doEditComment(comment: String)(
+      entity: ScenarioActivityEntityData
+  )(implicit user: LoggedUser): ScenarioActivityEntityData = {
+    entity.copy(
+      comment = Some(comment),
+      lastModifiedByUserName = Some(user.username),
+      additionalProperties = entity.additionalProperties.withProperty(
+        key = s"comment_replaced_by_${user.username}_at_${clock.instant()}",
+        value = entity.comment.getOrElse(""),
+      )
+    )
+  }
+
+  private def doDeleteComment(
+      entity: ScenarioActivityEntityData
+  )(implicit user: LoggedUser): ScenarioActivityEntityData = {
+    entity.copy(
+      comment = None,
+      lastModifiedByUserName = Some(user.username),
+      additionalProperties = entity.additionalProperties.withProperty(
+        key = s"comment_deleted_by_${user.username}_at_${clock.instant()}",
+        value = entity.comment.getOrElse(""),
+      )
+    )
+  }
+
   private def createEntity(scenarioActivity: ScenarioActivity)(
       attachmentId: Option[Long] = None,
       comment: Option[String] = None,
@@ -399,6 +430,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       buildInfo: Option[String] = None,
       additionalProperties: AdditionalProperties = AdditionalProperties.empty,
   ): ScenarioActivityEntityData = {
+    val now = Timestamp.from(clock.instant())
     val activityType = scenarioActivity match {
       case _: ScenarioActivity.ScenarioCreated             => ScenarioActivityType.ScenarioCreated
       case _: ScenarioActivity.ScenarioArchived            => ScenarioActivityType.ScenarioArchived
@@ -428,7 +460,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
       impersonatedByUserId = scenarioActivity.user.impersonatedByUserId.map(_.value),
       impersonatedByUserName = scenarioActivity.user.impersonatedByUserName.map(_.value),
       lastModifiedByUserName = lastModifiedByUserName,
-      createdAt = Timestamp.from(Instant.now()),
+      lastModifiedAt = Some(now),
+      createdAt = now,
       scenarioVersion = scenarioActivity.scenarioVersion,
       comment = comment,
       attachmentId = attachmentId,
@@ -442,30 +475,30 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
 
   private def comment(scenarioComment: ScenarioComment): Option[String] = {
     scenarioComment match {
-      case ScenarioComment.Available(comment, _) => Some(comment.value)
-      case ScenarioComment.Deleted(_)            => None
+      case ScenarioComment.Available(comment, _, _) => Some(comment.value)
+      case ScenarioComment.Deleted(_, _)            => None
     }
   }
 
   private def lastModifiedByUserName(scenarioComment: ScenarioComment): Option[String] = {
     val userName = scenarioComment match {
-      case ScenarioComment.Available(_, lastModifiedByUserName) => lastModifiedByUserName
-      case ScenarioComment.Deleted(deletedByUserName)           => deletedByUserName
+      case ScenarioComment.Available(_, lastModifiedByUserName, _) => lastModifiedByUserName
+      case ScenarioComment.Deleted(deletedByUserName, _)           => deletedByUserName
     }
     Some(userName.value)
   }
 
   private def lastModifiedByUserName(scenarioAttachment: ScenarioAttachment): Option[String] = {
     val userName = scenarioAttachment match {
-      case ScenarioAttachment.Available(_, _, lastModifiedByUserName) =>
+      case ScenarioAttachment.Available(_, _, lastModifiedByUserName, _) =>
         Some(lastModifiedByUserName.value)
-      case ScenarioAttachment.Deleted(_, deletedByUserName) =>
+      case ScenarioAttachment.Deleted(_, deletedByUserName, _) =>
         Some(deletedByUserName.value)
     }
     Some(userName.value)
   }
 
-  def toEntity(scenarioActivity: ScenarioActivity): ScenarioActivityEntityData = {
+  private def toEntity(scenarioActivity: ScenarioActivity): ScenarioActivityEntityData = {
     scenarioActivity match {
       case _: ScenarioActivity.ScenarioCreated =>
         createEntity(scenarioActivity)()
@@ -510,8 +543,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
         )
       case activity: ScenarioActivity.AttachmentAdded =>
         val (attachmentId, attachmentFilename) = activity.attachment match {
-          case ScenarioAttachment.Available(id, filename, _) => (Some(id.value), Some(filename.value))
-          case ScenarioAttachment.Deleted(filename, _)       => (None, Some(filename.value))
+          case ScenarioAttachment.Available(id, filename, _, _) => (Some(id.value), Some(filename.value))
+          case ScenarioAttachment.Deleted(filename, _, _)       => (None, Some(filename.value))
         }
         createEntity(scenarioActivity)(
           attachmentId = attachmentId,
@@ -589,12 +622,20 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
   private def commentFromEntity(entity: ScenarioActivityEntityData): Either[String, ScenarioComment] = {
     for {
       lastModifiedByUserName <- entity.lastModifiedByUserName.toRight("Missing lastModifiedByUserName field")
+      lastModifiedAt         <- entity.lastModifiedAt.toRight("Missing lastModifiedAt field")
     } yield {
       entity.comment match {
         case Some(comment) =>
-          ScenarioComment.Available(comment = comment, lastModifiedByUserName = UserName(lastModifiedByUserName))
+          ScenarioComment.Available(
+            comment = comment,
+            lastModifiedByUserName = UserName(lastModifiedByUserName),
+            lastModifiedAt = lastModifiedAt.toInstant
+          )
         case None =>
-          ScenarioComment.Deleted(deletedByUserName = UserName(lastModifiedByUserName))
+          ScenarioComment.Deleted(
+            deletedByUserName = UserName(lastModifiedByUserName),
+            deletedAt = lastModifiedAt.toInstant
+          )
       }
     }
   }
@@ -603,18 +644,21 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     for {
       lastModifiedByUserName <- entity.lastModifiedByUserName.toRight("Missing lastModifiedByUserName field")
       filename               <- additionalPropertyFromEntity(entity, "attachmentFilename")
+      lastModifiedAt         <- entity.lastModifiedAt.toRight("Missing lastModifiedAt field")
     } yield {
       entity.attachmentId match {
         case Some(id) =>
           ScenarioAttachment.Available(
             attachmentId = AttachmentId(id),
             attachmentFilename = AttachmentFilename(filename),
-            lastModifiedByUserName = UserName(lastModifiedByUserName)
+            lastModifiedByUserName = UserName(lastModifiedByUserName),
+            lastModifiedAt = lastModifiedAt.toInstant,
           )
         case None =>
           ScenarioAttachment.Deleted(
             attachmentFilename = AttachmentFilename(filename),
-            deletedByUserName = UserName(lastModifiedByUserName)
+            deletedByUserName = UserName(lastModifiedByUserName),
+            deletedAt = lastModifiedAt.toInstant,
           )
       }
     }
@@ -624,7 +668,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef)(
     entity.additionalProperties.properties.get(name).toRight(s"Missing additional property $name")
   }
 
-  def fromEntity(entity: ScenarioActivityEntityData): Either[String, (Long, ScenarioActivity)] = {
+  private def fromEntity(entity: ScenarioActivityEntityData): Either[String, (Long, ScenarioActivity)] = {
     entity.activityType match {
       case ScenarioActivityType.ScenarioCreated =>
         ScenarioActivity

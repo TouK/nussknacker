@@ -144,7 +144,7 @@ object TestFactory {
   def newDummyDBIOActionRunner(): DBIOActionRunner =
     newDBIOActionRunner(dummyDbRef)
 
-  def newScenarioActivityRepository(dbRef: DbRef) = new DbScenarioActivityRepository(dbRef)
+  def newScenarioActivityRepository(dbRef: DbRef, clock: Clock) = new DbScenarioActivityRepository(dbRef, clock)
 
   def newFutureFetchingScenarioRepository(dbRef: DbRef) =
     new DBFetchingProcessRepository[Future](dbRef, newActionProcessRepository(dbRef)) with BasicRepository
@@ -152,15 +152,16 @@ object TestFactory {
   def newFetchingProcessRepository(dbRef: DbRef) =
     new DBFetchingProcessRepository[DB](dbRef, newActionProcessRepository(dbRef)) with DbioRepository
 
-  def newWriteProcessRepository(dbRef: DbRef, modelVersions: Option[Int] = Some(1)) =
+  def newWriteProcessRepository(dbRef: DbRef, clock: Clock, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(
       dbRef,
-      newScenarioActivityRepository(dbRef),
+      clock,
+      newScenarioActivityRepository(dbRef, clock),
       mapProcessingTypeDataProvider(modelVersions.map(Streaming.stringify -> _).toList: _*),
     )
 
   def newDummyWriteProcessRepository(): DBProcessRepository =
-    newWriteProcessRepository(dummyDbRef)
+    newWriteProcessRepository(dummyDbRef, Clock.systemUTC())
 
   def newScenarioGraphVersionService(dbRef: DbRef) = new ScenarioGraphVersionService(
     newScenarioGraphVersionRepository(dbRef),
@@ -175,12 +176,12 @@ object TestFactory {
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
-    new DbProcessActionRepository(
+    new DbScenarioActionRepository(
       dbRef,
       mapProcessingTypeDataProvider(Streaming.stringify -> buildInfo)
     ) with DbioRepository
 
-  def newDummyActionRepository(): DbProcessActionRepository =
+  def newDummyActionRepository(): DbScenarioActionRepository =
     newActionProcessRepository(dummyDbRef)
 
   def newScenarioMetadataRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)

@@ -7,16 +7,17 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.{DbTesting, WithHsqlDbTesting, WithPostgresDbTesting, WithTestDb}
+import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
-class InitializationOnHsqlItSpec extends InitializationOnDbItSpec with WithHsqlDbTesting
+class InitializationOnHsqlItSpec extends InitializationOnDbItSpec with WithHsqlDbTesting with WithClock
 
 @Slow
-class InitializationOnPostgresItSpec extends InitializationOnDbItSpec with WithPostgresDbTesting
+class InitializationOnPostgresItSpec extends InitializationOnDbItSpec with WithPostgresDbTesting with WithClock
 
 abstract class InitializationOnDbItSpec
     extends AnyFlatSpec
@@ -24,7 +25,7 @@ abstract class InitializationOnDbItSpec
     with PatientScalaFutures
     with BeforeAndAfterEach
     with BeforeAndAfterAll {
-  this: DbTesting with WithTestDb =>
+  this: DbTesting with WithTestDb with WithClock =>
 
   import Initialization.nussknackerUser
 
@@ -34,20 +35,20 @@ abstract class InitializationOnDbItSpec
 
   private val migrations = mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2))
 
-  private lazy val scenarioActivityRepository = TestFactory.newScenarioActivityRepository(testDbRef)
+  private lazy val scenarioActivityRepository = TestFactory.newScenarioActivityRepository(testDbRef, clock)
 
   private lazy val scenarioRepository = TestFactory.newFetchingProcessRepository(testDbRef)
 
   private lazy val dbioRunner = TestFactory.newDBIOActionRunner(testDbRef)
 
-  private lazy val writeRepository = TestFactory.newWriteProcessRepository(testDbRef)
+  private lazy val writeRepository = TestFactory.newWriteProcessRepository(testDbRef, clock)
 
   private def sampleCanonicalProcess(processName: ProcessName) = ProcessTestData.validProcessWithName(processName)
 
   it should "migrate processes" in {
     saveSampleProcess()
 
-    Initialization.init(migrations, testDbRef, scenarioRepository, scenarioActivityRepository, "env1")
+    Initialization.init(migrations, testDbRef, clock, scenarioRepository, scenarioActivityRepository, "env1")
 
     dbioRunner
       .runInTransaction(
@@ -66,7 +67,7 @@ abstract class InitializationOnDbItSpec
       saveSampleProcess(ProcessName(s"id$id"))
     }
 
-    Initialization.init(migrations, testDbRef, scenarioRepository, scenarioActivityRepository, "env1")
+    Initialization.init(migrations, testDbRef, clock, scenarioRepository, scenarioActivityRepository, "env1")
 
     dbioRunner
       .runInTransaction(
@@ -84,6 +85,7 @@ abstract class InitializationOnDbItSpec
       Initialization.init(
         mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2, 5)),
         testDbRef,
+        clock,
         scenarioRepository,
         scenarioActivityRepository,
         "env1"

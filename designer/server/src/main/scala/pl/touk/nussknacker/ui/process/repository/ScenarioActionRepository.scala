@@ -22,7 +22,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 //TODO: Add missing methods: markProcessAsDeployed and markProcessAsCancelled
-trait ProcessActionRepository {
+trait ScenarioActionRepository {
 
   def markProcessAsArchived(
       processId: ProcessId,
@@ -57,13 +57,13 @@ trait ProcessActionRepository {
 
 }
 
-class DbProcessActionRepository(
+class DbScenarioActionRepository(
     protected val dbRef: DbRef,
     buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
 )(implicit ec: ExecutionContext)
     extends DbioRepository
     with NuTables
-    with ProcessActionRepository
+    with ScenarioActionRepository
     with LazyLogging {
 
   import profile.api._
@@ -250,6 +250,7 @@ class DbProcessActionRepository(
       impersonatedByUserId = user.impersonatingUserId,
       impersonatedByUserName = user.impersonatingUserName,
       lastModifiedByUserName = Some(user.username),
+      lastModifiedAt = Some(Timestamp.from(createdAt)),
       createdAt = Timestamp.from(createdAt),
       scenarioVersion = processVersion.map(_.value).map(ScenarioVersion.apply),
       comment = comment.map(_.value),

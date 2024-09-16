@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: This service in the future should handle all activities that modify anything in application.
@@ -21,7 +21,8 @@ class ActivityService(
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     scenarioActivityRepository: ScenarioActivityRepository,
     deploymentService: DeploymentService,
-    dbioRunner: DBIOActionRunner
+    dbioRunner: DBIOActionRunner,
+    clock: Clock,
 )(implicit ec: ExecutionContext) {
 
   def processCommand[Command, ErrorType](command: Command, comment: Option[Comment])(
@@ -62,6 +63,7 @@ class ActivityService(
       scenarioGraphVersionId: VersionId,
       loggedUser: LoggedUser
   ): EitherT[Future, ActivityError[ErrorType], Unit] = {
+    val now = clock.instant()
     EitherT.right[ActivityError[ErrorType]](
       dbioRunner
         .run(
@@ -75,11 +77,11 @@ class ActivityService(
                 impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
                 impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
               ),
-              date = Instant.now(),
+              date = now,
               scenarioVersion = Some(ScenarioVersion(scenarioGraphVersionId.value)),
               comment = commentOpt match {
-                case Some(comment) => ScenarioComment.Available(comment.value, UserName(loggedUser.username))
-                case None          => ScenarioComment.Deleted(UserName(loggedUser.username))
+                case Some(comment) => ScenarioComment.Available(comment.value, UserName(loggedUser.username), now)
+                case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
               },
             )
           )(loggedUser)

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.Comment
@@ -37,21 +38,22 @@ class DBFetchingProcessRepositorySpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
+    with WithClock
     with PatientScalaFutures {
 
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
-  private val activities = new DbScenarioActivityRepository(testDbRef)
+  private val activities = new DbScenarioActivityRepository(testDbRef, clock)
 
   private val writingRepo =
-    new DBProcessRepository(testDbRef, activities, mapProcessingTypeDataProvider("Streaming" -> 0)) {
+    new DBProcessRepository(testDbRef, clock, activities, mapProcessingTypeDataProvider("Streaming" -> 0)) {
       override protected def now: Instant = currentTime
     }
 
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    new DbProcessActionRepository(
+    new DbScenarioActionRepository(
       testDbRef,
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )

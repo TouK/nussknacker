@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
+import java.time.Clock
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
@@ -27,11 +28,13 @@ object Initialization {
   def init(
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
       db: DbRef,
+      clock: Clock,
       fetchingRepository: DBFetchingProcessRepository[DB],
       scenarioActivityRepository: ScenarioActivityRepository,
       environment: String,
   )(implicit ec: ExecutionContext): Unit = {
-    val processRepository = new DBProcessRepository(db, scenarioActivityRepository, migrations.mapValues(_.version))
+    val processRepository =
+      new DBProcessRepository(db, clock, scenarioActivityRepository, migrations.mapValues(_.version))
 
     val operations: List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),

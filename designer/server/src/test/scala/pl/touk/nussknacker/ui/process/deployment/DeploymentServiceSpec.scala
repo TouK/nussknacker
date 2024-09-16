@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{CustomActionResult, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
@@ -49,6 +50,7 @@ class DeploymentServiceSpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
+    with WithClock
     with EitherValuesDetailedMessage {
 
   import VersionId._
@@ -63,9 +65,9 @@ class DeploymentServiceSpec
   override protected val dbioRunner: DBIOActionRunner  = newDBIOActionRunner(testDbRef)
   private val fetchingProcessRepository                = newFetchingProcessRepository(testDbRef)
   private val futureFetchingProcessRepository          = newFutureFetchingScenarioRepository(testDbRef)
-  private val writeProcessRepository                   = newWriteProcessRepository(testDbRef)
+  private val writeProcessRepository                   = newWriteProcessRepository(testDbRef, clock)
   private val actionRepository                         = newActionProcessRepository(testDbRef)
-  private val activityRepository                       = newScenarioActivityRepository(testDbRef)
+  private val activityRepository                       = newScenarioActivityRepository(testDbRef, clock)
 
   private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] =
     new ProcessingTypeDataProvider[DeploymentManager, Nothing] {

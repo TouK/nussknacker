@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
-  DbProcessActionRepository,
+  DbScenarioActionRepository,
   ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -61,10 +61,10 @@ class NotificationServiceTest
   private var currentInstant: Instant = Instant.ofEpochMilli(0)
   private val clock: Clock            = clockForInstant(() => currentInstant)
   private val processRepository       = TestFactory.newFetchingProcessRepository(testDbRef)
-  private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef)
+  private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef, clock)
 
   private val actionRepository =
-    new DbProcessActionRepository(
+    new DbScenarioActionRepository(
       testDbRef,
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )

@@ -2,7 +2,6 @@ package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_055__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
-import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition.logger
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc.JdbcProfile
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -52,6 +51,8 @@ object V1_055__CreateScenarioActivitiesDefinition {
 
       def lastModifiedByUserName: Rep[Option[String]] = column[Option[String]]("last_modified_by_user_name")
 
+      def lastModifiedAt: Rep[Option[Timestamp]] = column[Option[Timestamp]]("last_modified_at")
+
       def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
 
       def scenarioVersion: Rep[Option[Long]] = column[Option[Long]]("scenario_version")
@@ -70,6 +71,46 @@ object V1_055__CreateScenarioActivitiesDefinition {
 
       def additionalProperties: Rep[String] = column[String]("additional_properties", NotNull)
 
+      def tuple: (
+          Rep[String],
+          Rep[Long],
+          Rep[UUID],
+          Rep[Option[String]],
+          Rep[String],
+          Rep[Option[String]],
+          Rep[Option[String]],
+          Rep[Option[String]],
+          Rep[Option[Timestamp]],
+          Rep[Timestamp],
+          Rep[Option[Long]],
+          Rep[Option[String]],
+          Rep[Option[Long]],
+          Rep[Option[Timestamp]],
+          Rep[Option[String]],
+          Rep[Option[String]],
+          Rep[Option[String]],
+          Rep[String]
+      ) = (
+        activityType,
+        scenarioId,
+        activityId,
+        userId,
+        userName,
+        impersonatedByUserId,
+        impersonatedByUserName,
+        lastModifiedByUserName,
+        lastModifiedAt,
+        createdAt,
+        scenarioVersion,
+        comment,
+        attachmentId,
+        performedAt,
+        state,
+        errorMessage,
+        buildInfo,
+        additionalProperties,
+      )
+
       override def * =
         (
           id,
@@ -81,6 +122,7 @@ object V1_055__CreateScenarioActivitiesDefinition {
           impersonatedByUserId,
           impersonatedByUserName,
           lastModifiedByUserName,
+          lastModifiedAt,
           createdAt,
           scenarioVersion,
           comment,
@@ -108,6 +150,7 @@ object V1_055__CreateScenarioActivitiesDefinition {
       impersonatedByUserId: Option[String],
       impersonatedByUserName: Option[String],
       lastModifiedByUserName: Option[String],
+      lastModifiedAt: Option[Timestamp],
       createdAt: Timestamp,
       scenarioVersion: Option[Long],
       comment: Option[String],

@@ -21,24 +21,27 @@ import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRe
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
-private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implicit executionContext: ExecutionContext)
-    extends PatientScalaFutures {
+private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: Config)(
+    implicit executionContext: ExecutionContext
+) extends PatientScalaFutures {
 
   private implicit val user: LoggedUser = RealLoggedUser("admin", "admin", Map.empty, isAdmin = true)
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
-  private val actionRepository: DbProcessActionRepository = new DbProcessActionRepository(
+  private val actionRepository: DbScenarioActionRepository = new DbScenarioActionRepository(
     dbRef,
     mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
   ) with DbioRepository
 
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
-    new DbScenarioActivityRepository(dbRef),
+    clock,
+    new DbScenarioActivityRepository(dbRef, clock),
     mapProcessingTypeDataProvider(1)
   )
 

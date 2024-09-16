@@ -152,12 +152,13 @@ class AkkaHttpBasedRouteProvider(
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
       implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
-      val scenarioActivityRepository                    = new DbScenarioActivityRepository(dbRef)
-      val actionRepository                              = new DbProcessActionRepository(dbRef, modelBuildInfo)
+      val scenarioActivityRepository                    = new DbScenarioActivityRepository(dbRef, designerClock)
+      val actionRepository                              = new DbScenarioActionRepository(dbRef, modelBuildInfo)
       val processRepository                             = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
       val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
-      val writeProcessRepository  = ProcessRepository.create(dbRef, scenarioActivityRepository, migrations)
+      val writeProcessRepository =
+        ProcessRepository.create(dbRef, designerClock, scenarioActivityRepository, migrations)
 
       val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
@@ -234,12 +235,12 @@ class AkkaHttpBasedRouteProvider(
       // correct classloader and that won't cause further delays during handling requests
       processingTypeDataProvider.reloadAll().unsafeRunSync()
 
-      val processActivityRepository = new DbScenarioActivityRepository(dbRef)
+      val processActivityRepository = new DbScenarioActivityRepository(dbRef, designerClock)
 
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
       val authManager             = new AuthManager(authenticationResources)
 
-      Initialization.init(migrations, dbRef, processRepository, processActivityRepository, environment)
+      Initialization.init(migrations, dbRef, designerClock, processRepository, processActivityRepository, environment)
 
       val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
         new NewProcessPreparer(
@@ -402,7 +403,8 @@ class AkkaHttpBasedRouteProvider(
             featureTogglesConfig.deploymentCommentSettings,
             scenarioActivityRepository,
             deploymentService,
-            dbioRunner
+            dbioRunner,
+            designerClock,
           )
         new DeploymentApiHttpService(authManager, activityService, deploymentService)
       }

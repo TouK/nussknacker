@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
@@ -45,10 +45,11 @@ object ProcessRepository {
 
   def create(
       dbRef: DbRef,
+      clock: Clock,
       scenarioActivityRepository: ScenarioActivityRepository,
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
   ): DBProcessRepository =
-    new DBProcessRepository(dbRef, scenarioActivityRepository, migrations.mapValues(_.version))
+    new DBProcessRepository(dbRef, clock, scenarioActivityRepository, migrations.mapValues(_.version))
 
   final case class CreateProcessAction(
       processName: ProcessName,
@@ -90,6 +91,7 @@ trait ProcessRepository[F[_]] {
 
 class DBProcessRepository(
     protected val dbRef: DbRef,
+    clock: Clock,
     scenarioActivityRepository: ScenarioActivityRepository,
     modelVersion: ProcessingTypeDataProvider[Int, _],
 ) extends ProcessRepository[DB]
@@ -172,6 +174,7 @@ class DBProcessRepository(
               comment = ScenarioComment.Available(
                 comment = comment.value,
                 lastModifiedByUserName = UserName(loggedUser.username),
+                lastModifiedAt = clock.instant(),
               )
             )
           )

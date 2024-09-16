@@ -11,8 +11,6 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="db.migration" level="DEBUG"/>
-
     <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
     <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
     <logger name="slick.jdbc.JdbcBackend.statement" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>

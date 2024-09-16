@@ -47,7 +47,7 @@ import scala.util.{Failure, Success}
 class DeploymentService(
     dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
-    actionRepository: DbProcessActionRepository,
+    actionRepository: DbScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     processValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
     scenarioResolver: ProcessingTypeDataProvider[ScenarioResolver, _],

@@ -66,8 +66,6 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
     )
   }
 
-  testDbRef.db
-
   "The deployment requesting endpoint" - {
     "With validationPattern configured in deploymentCommentSettings" - {
       "When no deployment comment is passed should" - {

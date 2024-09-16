@@ -43,6 +43,8 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
     def lastModifiedByUserName: Rep[Option[String]] = column[Option[String]]("last_modified_by_user_name")
 
+    def lastModifiedAt: Rep[Option[Timestamp]] = column[Option[Timestamp]]("last_modified_at")
+
     def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
 
     def scenarioVersion: Rep[Option[ScenarioVersion]] = column[Option[ScenarioVersion]]("scenario_version")
@@ -72,6 +74,7 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
         impersonatedByUserId,
         impersonatedByUserName,
         lastModifiedByUserName,
+        lastModifiedAt,
         createdAt,
         scenarioVersion,
         comment,
@@ -162,7 +165,13 @@ object ScenarioActivityType extends Enum[ScenarioActivityType] {
 
 }
 
-final case class AdditionalProperties(properties: Map[String, String])
+final case class AdditionalProperties(properties: Map[String, String]) {
+
+  def withProperty(key: String, value: String): AdditionalProperties = {
+    AdditionalProperties(properties ++ Map((key, value)))
+  }
+
+}
 
 object AdditionalProperties {
   def empty: AdditionalProperties = AdditionalProperties(Map.empty)
@@ -178,6 +187,7 @@ final case class ScenarioActivityEntityData(
     impersonatedByUserId: Option[String],
     impersonatedByUserName: Option[String],
     lastModifiedByUserName: Option[String],
+    lastModifiedAt: Option[Timestamp],
     createdAt: Timestamp,
     scenarioVersion: Option[ScenarioVersion],
     comment: Option[String],

@@ -28,7 +28,6 @@ import sttp.model.MediaType
 
 import java.io.ByteArrayInputStream
 import java.net.URLConnection
-import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
@@ -225,36 +224,36 @@ class ScenarioActivityApiHttpService(
 
   private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
     scenarioComment match {
-      case ScenarioComment.Available(comment, lastModifiedByUserName) =>
+      case ScenarioComment.Available(comment, lastModifiedByUserName, lastModifiedAt) =>
         Dtos.ScenarioActivityComment(
           status = Dtos.ScenarioActivityCommentStatus.Available(comment),
           lastModifiedBy = lastModifiedByUserName.value,
-          lastModifiedAt = Instant.now(),
+          lastModifiedAt = lastModifiedAt,
         )
-      case ScenarioComment.Deleted(deletedByUserName) =>
+      case ScenarioComment.Deleted(deletedByUserName, deletedAt) =>
         Dtos.ScenarioActivityComment(
           status = Dtos.ScenarioActivityCommentStatus.Deleted,
           lastModifiedBy = deletedByUserName.value,
-          lastModifiedAt = Instant.now(),
+          lastModifiedAt = deletedAt,
         )
     }
   }
 
   private def toDto(attachment: ScenarioAttachment): Dtos.ScenarioActivityAttachment = {
     attachment match {
-      case ScenarioAttachment.Available(attachmentId, attachmentFilename, lastModifiedByUserName) =>
+      case ScenarioAttachment.Available(attachmentId, attachmentFilename, lastModifiedByUserName, lastModifiedAt) =>
         Dtos.ScenarioActivityAttachment(
           status = Dtos.ScenarioActivityAttachmentStatus.Available(attachmentId.value),
           filename = attachmentFilename.value,
           lastModifiedBy = lastModifiedByUserName.value,
-          lastModifiedAt = Instant.now()
+          lastModifiedAt = lastModifiedAt,
         )
-      case ScenarioAttachment.Deleted(attachmentFilename, deletedByUserName) =>
+      case ScenarioAttachment.Deleted(attachmentFilename, deletedByUserName, deletedAt) =>
         Dtos.ScenarioActivityAttachment(
           status = Dtos.ScenarioActivityAttachmentStatus.Deleted,
           filename = attachmentFilename.value,
           lastModifiedBy = deletedByUserName.value,
-          lastModifiedAt = Instant.now()
+          lastModifiedAt = deletedAt,
         )
     }
   }

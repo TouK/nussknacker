@@ -1,6 +1,9 @@
 package db.migration
 
-import db.migration.V1_055__CreateScenarioActivitiesDefinition.ScenarioActivityEntityData
+import db.migration.V1_055__CreateScenarioActivitiesDefinition.{
+  ScenarioActivitiesDefinitions,
+  ScenarioActivityEntityData
+}
 import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition._
 import io.circe.syntax.EncoderOps
 import org.scalatest.freespec.AnyFreeSpecLike
@@ -44,16 +47,20 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
       val migration                 = new Migration(HsqldbProfile)
       val processActionsDefinitions = new ProcessActionsDefinitions(profile)
       val commentsDefinitions       = new CommentsDefinitions(profile)
+      val activitiesDefinitions     = new ScenarioActivitiesDefinitions(profile)
 
       val now: Timestamp = Timestamp.from(Instant.now)
       val user           = "John Doe"
       val versionId      = VersionId(5L)
-      val actionId       = UUID.randomUUID()
-      val commentId      = 765L
 
-      val processInsertQuery = processesTable returning processesTable.map(_.id) into ((item, id) => item.copy(id = id))
+      val processInsertQuery = processesTable returning
+        processesTable.map(_.id) into ((item, id) => item.copy(id = id))
+      val commentInsertQuery = commentsDefinitions.table returning
+        commentsDefinitions.table.map(_.id) into ((item, id) => item.copy(id = id))
+      val actionInsertQuery = processActionsDefinitions.table returning
+        processActionsDefinitions.table.map(_.id) into ((item, id) => item.copy(id = id))
 
-      val processEntity = ProcessEntityData(
+      def processEntity() = ProcessEntityData(
         id = ProcessId(-1L),
         name = ProcessName("2024_Q3_6917_NETFLIX"),
         processCategory = "test-category",
@@ -91,19 +98,19 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
         componentsUsages = Some(ScenarioComponentsUsages.Empty),
       )
 
-      def commentEntity(processEntity: ProcessEntityData) = CommentEntityData(
+      def commentEntity(processEntity: ProcessEntityData, commentId: Long) = CommentEntityData(
         id = commentId,
         processId = processEntity.id.value,
         processVersionId = versionId.value,
-        content = "Very important change",
+        content = s"Very important change $commentId",
         user = user,
         impersonatedByIdentity = None,
         impersonatedByUsername = None,
         createDate = now,
       )
 
-      def processActionEntity(processEntity: ProcessEntityData) = ProcessActionEntityData(
-        id = actionId,
+      def processActionEntity(processEntity: ProcessEntityData, commentId: Long) = ProcessActionEntityData(
+        id = UUID.randomUUID(),
         processId = processEntity.id.value,
         processVersionId = Some(versionId.value),
         user = user,
@@ -118,38 +125,52 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
         buildInfo = None
       )
 
-      val dbOperations = for {
-        process <- processInsertQuery += processEntity
-        _       <- processVersionsTable += processVersionEntity(process)
-        _       <- commentsDefinitions.table += commentEntity(process)
-        _       <- processActionsDefinitions.table += processActionEntity(process)
-        result  <- migration.migrateActions
-      } yield (process, result._1)
+      val (createdProcess, migratedCount, actionsBeingMigrated, activitiesAfterMigration) = Await.result(
+        runner.run(
+          for {
+            process       <- processInsertQuery += processEntity()
+            _             <- processVersionsTable += processVersionEntity(process)
+            comments      <- commentInsertQuery ++= List.range(1L, 100001L).map(idx => commentEntity(process, idx))
+            actions       <- actionInsertQuery ++= comments.map(comment => processActionEntity(process, comment.id))
+            migratedCount <- migration.migrateActions
+            activities    <- activitiesDefinitions.scenarioActivitiesTable.result
+          } yield (process, migratedCount, actions, activities)
+        ),
+        Duration.Inf
+      )
 
-      val (createdProcess, insertedActivities) = Await.result(runner.run(dbOperations), Duration.Inf)
-      insertedActivities shouldBe
-        List(
-          ScenarioActivityEntityData(
-            id = -1,
-            activityType = "SCENARIO_DEPLOYED",
-            scenarioId = createdProcess.id.value,
-            activityId = actionId,
-            userId = None,
-            userName = user,
-            impersonatedByUserId = None,
-            impersonatedByUserName = None,
-            lastModifiedByUserName = Some(user),
-            createdAt = now,
-            scenarioVersion = Some(versionId.value),
-            comment = Some("Very important change"),
-            attachmentId = None,
-            finishedAt = None,
-            state = Some("IN_PROGRESS"),
-            errorMessage = None,
-            buildInfo = None,
-            additionalProperties = AdditionalProperties.empty.properties.asJson.noSpaces,
-          )
-        )
+      actionsBeingMigrated.length shouldBe 100000
+      migratedCount shouldBe 100000
+      activitiesAfterMigration.length shouldBe 100000
+
+      val headActivity =
+        activitiesAfterMigration.head
+      val expectedOldCommentIdForHeadActivity =
+        headActivity.comment.flatMap(_.filter(_.isDigit).toLongOption).get
+      val expectedActionIdForHeadActivity =
+        actionsBeingMigrated.find(_.commentId.contains(expectedOldCommentIdForHeadActivity)).map(_.id).get
+
+      headActivity shouldBe ScenarioActivityEntityData(
+        id = 1L,
+        activityType = "SCENARIO_DEPLOYED",
+        scenarioId = createdProcess.id.value,
+        activityId = expectedActionIdForHeadActivity,
+        userId = None,
+        userName = user,
+        impersonatedByUserId = None,
+        impersonatedByUserName = None,
+        lastModifiedByUserName = Some(user),
+        lastModifiedAt = Some(now),
+        createdAt = now,
+        scenarioVersion = Some(versionId.value),
+        comment = Some(s"Very important change $expectedOldCommentIdForHeadActivity"),
+        attachmentId = None,
+        finishedAt = None,
+        state = Some("IN_PROGRESS"),
+        errorMessage = None,
+        buildInfo = None,
+        additionalProperties = AdditionalProperties.empty.properties.asJson.noSpaces,
+      )
 
     }
   }

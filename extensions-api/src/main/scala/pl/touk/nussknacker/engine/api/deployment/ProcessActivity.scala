@@ -32,10 +32,12 @@ object ScenarioComment {
   final case class Available(
       comment: String,
       lastModifiedByUserName: UserName,
+      lastModifiedAt: Instant,
   ) extends ScenarioComment
 
   final case class Deleted(
       deletedByUserName: UserName,
+      deletedAt: Instant,
   ) extends ScenarioComment
 
 }
@@ -48,11 +50,13 @@ object ScenarioAttachment {
       attachmentId: AttachmentId,
       attachmentFilename: AttachmentFilename,
       lastModifiedByUserName: UserName,
+      lastModifiedAt: Instant,
   ) extends ScenarioAttachment
 
   final case class Deleted(
       attachmentFilename: AttachmentFilename,
-      deletedByUserName: UserName
+      deletedByUserName: UserName,
+      deletedAt: Instant,
   ) extends ScenarioAttachment
 
   final case class AttachmentId(value: Long)         extends AnyVal

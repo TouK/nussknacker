@@ -9,6 +9,7 @@ import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbRef}
 
+import java.time.Clock
 import scala.jdk.CollectionConverters._
 import scala.util.{Try, Using}
 
