@@ -3,19 +3,25 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
+import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection.BuildIntermediateSchemaCompatibilityResult
 
-case class TypedScalaMapTypeInformation(informations: Map[String, TypeInformation[_]])
-    extends TypedObjectBasedTypeInformation[Map[String, _ <: AnyRef]](informations) {
+case class TypedScalaMapTypeInformation(
+    informations: Map[String, TypeInformation[_]],
+    buildIntermediateSchemaCompatibilityResultFunction: BuildIntermediateSchemaCompatibilityResult
+) extends TypedObjectBasedTypeInformation[Map[String, _ <: AnyRef]](informations) {
 
   override def createSerializer(
       serializers: Array[(String, TypeSerializer[_])]
-  ): TypeSerializer[Map[String, _ <: AnyRef]] = TypedScalaMapSerializer(serializers)
+  ): TypeSerializer[Map[String, _ <: AnyRef]] =
+    TypedScalaMapSerializer(serializers, buildIntermediateSchemaCompatibilityResultFunction)
 
 }
 
 @SerialVersionUID(1L)
-case class TypedScalaMapSerializer(override val serializers: Array[(String, TypeSerializer[_])])
-    extends TypedObjectBasedTypeSerializer[Map[String, _ <: AnyRef]](serializers)
+case class TypedScalaMapSerializer(
+    override val serializers: Array[(String, TypeSerializer[_])],
+    override val buildIntermediateSchemaCompatibilityResultFunction: BuildIntermediateSchemaCompatibilityResult
+) extends TypedObjectBasedTypeSerializer[Map[String, _ <: AnyRef]](serializers)
     with LazyLogging {
 
   override def deserialize(values: Array[AnyRef]): Map[String, _ <: AnyRef] = {
@@ -30,17 +36,20 @@ case class TypedScalaMapSerializer(override val serializers: Array[(String, Type
   override def get(value: Map[String, _ <: AnyRef], k: String): AnyRef = value.getOrElse(k, null)
 
   override def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[Map[String, _ <: AnyRef]] =
-    TypedScalaMapSerializer(serializers)
+    TypedScalaMapSerializer(serializers, buildIntermediateSchemaCompatibilityResultFunction)
 
   override def createInstance(): Map[String, _ <: AnyRef] = Map.empty
 
   override def snapshotConfiguration(
       snapshots: Array[(String, TypeSerializerSnapshot[_])]
-  ): TypeSerializerSnapshot[Map[String, _ <: AnyRef]] = new TypedScalaMapSerializerSnapshot(snapshots)
+  ): TypeSerializerSnapshot[Map[String, _ <: AnyRef]] = new TypedScalaMapSerializerSnapshot(snapshots) {
+    override val buildIntermediateSchemaCompatibilityResult: BuildIntermediateSchemaCompatibilityResult =
+      buildIntermediateSchemaCompatibilityResultFunction
+  }
 
 }
 
-class TypedScalaMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot[Map[String, _ <: AnyRef]] {
+abstract class TypedScalaMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot[Map[String, _ <: AnyRef]] {
 
   def this(serializers: Array[(String, TypeSerializerSnapshot[_])]) = {
     this()
@@ -49,6 +58,7 @@ class TypedScalaMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot
 
   override protected def restoreSerializer(
       restored: Array[(String, TypeSerializer[_])]
-  ): TypeSerializer[Map[String, _ <: AnyRef]] = TypedScalaMapSerializer(restored)
+  ): TypeSerializer[Map[String, _ <: AnyRef]] =
+    TypedScalaMapSerializer(restored, buildIntermediateSchemaCompatibilityResult)
 
 }

@@ -6,7 +6,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSchemaCompatibility, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection.BuildIntermediateSchemaCompatibilityResult
 
 import scala.reflect.ClassTag
 
@@ -117,6 +117,8 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
   def get(value: T, name: String): AnyRef
 
   def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
+
+  val buildIntermediateSchemaCompatibilityResultFunction: BuildIntermediateSchemaCompatibilityResult
 }
 
 abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnapshot[T] with LazyLogging {
@@ -169,14 +171,10 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val newSerializersToUse = newSerializers.filter(k => commons.contains(k._1))
       val snapshotsToUse      = serializersSnapshots.filter(k => commons.contains(k._1))
 
-      val fieldsCompatibility = ScalaServiceLoader
-        .load[CompositeTypeSerializerUtilCompatibilityProvider](getClass.getClassLoader)
-        .headOption
-        .getOrElse(DefaultCompositeTypeSerializerUtil)
-        .constructIntermediateCompatibilityResult(
-          newSerializersToUse.map(_._2),
-          snapshotsToUse.map(_._2)
-        )
+      val fieldsCompatibility = buildIntermediateSchemaCompatibilityResult(
+        newSerializersToUse.map(_._2),
+        snapshotsToUse.map(_._2)
+      )
 
       // We construct detailed message to show when there are compatibility issues
       def fieldsCompatibilityMessage: String = newSerializersToUse
@@ -224,6 +222,8 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       }
     }
   }
+
+  val buildIntermediateSchemaCompatibilityResult: BuildIntermediateSchemaCompatibilityResult
 
   override def restoreSerializer(): TypeSerializer[T] = restoreSerializer(serializersSnapshots.map {
     case (k, snapshot) => (k, snapshot.restoreSerializer())

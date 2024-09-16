@@ -242,17 +242,20 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   private def assertNested(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_] => Assertion)*): Unit = {
-    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) { case TypedScalaMapSerializer(array) =>
-      array.zipAll(nested.toList, null, null).foreach { case ((name, serializer), (expectedName, expectedSerializer)) =>
-        name shouldBe expectedName
-        expectedSerializer(serializer)
-      }
+    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) {
+      case TypedScalaMapSerializer(array, _) =>
+        array.zipAll(nested.toList, null, null).foreach {
+          case ((name, serializer), (expectedName, expectedSerializer)) =>
+            name shouldBe expectedName
+            expectedSerializer(serializer)
+        }
     }
   }
 
   private def assertMapSerializers(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_])*) = {
-    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) { case TypedScalaMapSerializer(array) =>
-      array.toList shouldBe nested.toList
+    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) {
+      case TypedScalaMapSerializer(array, _) =>
+        array.toList shouldBe nested.toList
     }
   }
 
