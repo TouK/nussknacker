@@ -4,14 +4,26 @@ import { getScenario, getSelectionState } from "../../../reducers/selectors/grap
 import { MenuItem, MenuList } from "@mui/material";
 import { FoundNode } from "./FoundNode";
 import React, { useCallback, useEffect, useState } from "react";
-import { useFilteredNodes } from "./utils";
+import { resolveSearchQuery, useFilteredNodes } from "./utils";
 import { useGraph } from "../../graph/GraphContext";
 import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { resetSelection } from "../../../actions/nk";
 import { useWindows } from "../../../windowManager";
 
-export function SearchResults({ filterValues = [] }: { filter?: string; filterValues?: string[] }) {
-    const nodes = useFilteredNodes(filterValues);
+export type SearchQuery = {
+    id?: string[];
+    description?: string[];
+    type?: string[];
+    paramName?: string[];
+    paramValue?: string[];
+    outputValue?: string[];
+    edgeExpression?: string[];
+    plainQuery?: string;
+};
+
+export function SearchResults({ filterRawText }: { filterRawText?: string }) {
+    const searchQuery: SearchQuery = resolveSearchQuery(filterRawText);
+    const nodes = useFilteredNodes(searchQuery);
 
     const [hasFocus, setHasFocus] = useState(false);
     const [hoveredNodes, setHoveredNodes] = useState<string[]>([]);
@@ -83,7 +95,7 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
                     disableGutters
                     divider
                 >
-                    <FoundNode node={node} highlights={filterValues} fields={groups} />
+                    <FoundNode node={node} highlights={[searchQuery.plainQuery]} fields={groups} />
                 </MenuItem>
             ))}
         </MenuList>

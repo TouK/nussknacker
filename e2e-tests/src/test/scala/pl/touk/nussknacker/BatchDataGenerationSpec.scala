@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScena
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
-    with DockerBasedInstallationExampleNuEnvironment
+    with BaseE2eSpec
     with Matchers
     with VeryPatientScalaFutures
     with NuRestAssureExtensions
@@ -22,7 +22,7 @@ class BatchDataGenerationSpec
 
   private val simpleBatchTableScenario = ScenarioBuilder
     .streaming("SumTransactions")
-    .source("sourceId", "table", "Table" -> "'transactions'".spel)
+    .source("sourceId", "table", "Table" -> "'`default_catalog`.`default_database`.`transactions`'".spel)
     .emptySink("end", "dead-end")
 
   private val designerServiceUrl = "http://localhost:8080"

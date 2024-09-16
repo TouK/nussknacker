@@ -1,9 +1,0 @@
-services:
-
-  spec-setup:
-    build:
-      context: ../../e2e-tests/src/test/resources/spec-setup/
-      dockerfile: Dockerfile
-    depends_on:
-      nginx:
-        condition: service_healthy

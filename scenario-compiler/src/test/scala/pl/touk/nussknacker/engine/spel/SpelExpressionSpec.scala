@@ -37,7 +37,8 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperation
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
   NoPropertyError,
   UnknownClassError,
-  UnknownMethodError
+  UnknownMethodError,
+  UnresolvedReferenceError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
@@ -490,8 +491,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("return invalid type if PropertyOrFieldReference does not exists") {
+    val parsed             = parse[Any]("#processHelper.unknownProperty", ctxWithGlobal)
+    val expectedValidation = Invalid("There is no property 'unknownProperty' in type: SampleGlobalObject")
+    parsed.isInvalid shouldBe true
+    parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
+  }
+
+  test("return invalid argument if arguments are not passed to method") {
     val parsed             = parse[Any]("#processHelper.add", ctxWithGlobal)
-    val expectedValidation = Invalid("There is no property 'add' in type: SampleGlobalObject")
+    val expectedValidation = Invalid("Mismatch parameter types. Found: add(). Required: add(Integer, Integer)")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
@@ -1274,6 +1282,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     )
   }
 
+  test("indexing on maps and lists should validate nodes inside indexer") {
+    List("#processHelper.stringOnStringMap[#invalidRef]", "{1,2,3}[#invalidRef]").map(expr =>
+      parse[Any](expr, ctxWithGlobal).invalidValue shouldBe NonEmptyList.one(
+        UnresolvedReferenceError("invalidRef")
+      )
+    )
+  }
+
   test("should return correct type in array projection") {
     parse[Any]("#array.![#this]", ctx).validExpression
       .evaluateSync[Any](ctx) shouldBe Array("a", "b")
@@ -1326,6 +1342,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should allow using list methods on nested arrays") {
     parse[Any]("#nestedArray.![#this.isEmpty()]", ctx).validExpression
       .evaluateSync[Any](ctx) shouldBe Array(false, false)
+  }
+
+  test("should check if method exists as a fallback of not found property") {
+    parse[Any]("{1, 2}.contains", ctx).invalidValue.toList should matchPattern {
+      case ArgumentTypeError("contains", _, _) :: Nil =>
+    }
+    parse[Any]("{1, 2}.contain", ctx).invalidValue.toList should matchPattern {
+      case NoPropertyError(_, "contain") :: Nil =>
+    }
   }
 
 }

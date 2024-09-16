@@ -76,11 +76,11 @@ class ManagementResourcesBatchBusinessSpec
 
   private lazy val exampleScenario = ScenarioBuilder
     .streaming(exampleScenarioName)
-    .source("sourceId", "table", "Table" -> Expression.spel("'transactions'"))
+    .source("sourceId", "table", "Table" -> Expression.spel("'`default_catalog`.`default_database`.`transactions`'"))
     .emptySink(
       "sinkId",
       "table",
-      "Table"      -> Expression.spel("'transactions'"),
+      "Table"      -> Expression.spel("'`default_catalog`.`default_database`.`transactions_summary`'"),
       "Raw editor" -> Expression.spel("true"),
       "Value"      -> Expression.spel("#input")
     )
