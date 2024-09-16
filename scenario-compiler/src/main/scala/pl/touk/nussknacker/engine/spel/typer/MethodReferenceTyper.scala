@@ -21,7 +21,9 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
       case TypedNull =>
         Left(IllegalInvocationError(TypedNull))
       case Unknown =>
-        if (methodExecutionForUnknownAllowed) Right(Unknown) else Left(IllegalInvocationError(Unknown))
+        // TODO: lbg Should we allow always access on Unknown to: canCastTo, castTo and toString?
+        if (methodExecutionForUnknownAllowed) typeFromClazzDefinitions(classDefinitionSet.unknown.toList)
+        else Left(IllegalInvocationError(Unknown))
     }
   }
 

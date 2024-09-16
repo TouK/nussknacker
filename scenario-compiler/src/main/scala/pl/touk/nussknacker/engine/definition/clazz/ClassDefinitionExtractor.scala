@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.{
   extractMethodReturnType,
   extractParameterType
 }
+import pl.touk.nussknacker.engine.extension.ExtensionMethods
 
 import java.lang.annotation.Annotation
 import java.lang.reflect._
@@ -33,6 +34,8 @@ import java.util.Optional
 class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
+
+  private lazy val extensionMethodsDefinitions = buildExtensionMethodsDefinitions()
 
   def extract(clazz: Class[_]): ClassDefinition =
     ClassDefinition(
@@ -50,8 +53,9 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
   ): Map[String, List[MethodDefinition]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods          = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
+    val extensionMethods = extractExtensionMethods(membersPredicate, staticMethodsAndFields)
     val fields           = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
-    filterHiddenParameterAndReturnType(methods ++ fields)
+    filterHiddenParameterAndReturnType(methods ++ fields ++ extensionMethods)
   }
 
   private def extractPublicMethods(
@@ -366,6 +370,29 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
       // TODO: Add new case for parameters.
       case _ => None
     })
+
+  private def extractExtensionMethods(
+      membersPredicate: VisibleMembersPredicate,
+      staticMethodsAndFields: Boolean
+  ): Map[String, List[MethodDefinition]] = {
+    if (staticMethodsAndFields) {
+      Map.empty
+    } else {
+      extensionMethodsDefinitions
+        .filter(definitionsByMethods => membersPredicate.shouldBeVisible(definitionsByMethods._1))
+        .flatMap(_._2)
+        .toList
+        .toGroupedMap
+    }
+  }
+
+  private def buildExtensionMethodsDefinitions(): Set[(Method, List[(String, MethodDefinition)])] =
+    ExtensionMethods.registry.flatMap { clazz =>
+      clazz.getMethods.toList
+        .filter(m => !Modifier.isStatic(m.getModifiers))
+        .filter(extractJavaVersionOfVarArgMethod(_).isEmpty)
+        .map(m => m -> extractMethod(clazz, m))
+    }
 
 }
 
