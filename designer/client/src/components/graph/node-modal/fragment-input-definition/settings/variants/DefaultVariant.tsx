@@ -31,14 +31,6 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                     label=""
                 />
             </FormControl>
-            <ValidationsFields
-                path={path}
-                onChange={onChange}
-                item={item}
-                variableTypes={variableTypes}
-                readOnly={readOnly}
-                errors={errors}
-            />
             <InitialValue
                 onChange={onChange}
                 item={item}
@@ -57,6 +49,14 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                     className={nodeInput}
                 />
             </FormControl>
+            <ValidationsFields
+                path={path}
+                onChange={onChange}
+                item={item}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                errors={errors}
+            />
         </SettingsWrapper>
     );
 };

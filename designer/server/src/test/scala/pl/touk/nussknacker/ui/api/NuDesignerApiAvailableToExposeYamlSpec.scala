@@ -50,8 +50,9 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
   }
 
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
-    // todo NU-1772: OpenAPI differs when generated on Scala 2.12 and Scala 2.13 (order of endpoints is different)
-    // test is for now ignored on Scala 2.12
+    // OpenAPI differs when generated on Scala 2.12 and Scala 2.13 (order of endpoints is different).
+    // - test is ignored on Scala 2.12,
+    // - it is probably not necessary to fix it, because we plan to remove Scala 2.12 support anyway
     if (scala.util.Properties.versionNumberString.startsWith("2.13")) {
       val currentNuDesignerOpenApiYamlContent =
         (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString

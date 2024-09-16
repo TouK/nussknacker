@@ -7,6 +7,7 @@
         "./Icon": "./src/components/UrlIcon",
         "./themeHelpers": "./src/containers/theme/helpers",
         "./eventTracking": "./src/containers/event-tracking/index",
-        "./DateUtils": "./src/common/DateUtils"
+        "./DateUtils": "./src/common/DateUtils",
+        "./nuThemeProvider": "./src/containers/theme/nuThemeProvider"
     }
 }

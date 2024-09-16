@@ -231,15 +231,63 @@ object Dtos {
   }
 
   @derive(encoder, decoder, schema)
-  final case class ScenarioActivityComment(comment: Option[String], lastModifiedBy: String, lastModifiedAt: Instant)
+  final case class ScenarioActivityComment(
+      status: ScenarioActivityCommentStatus,
+      lastModifiedBy: String,
+      lastModifiedAt: Instant
+  )
+
+  sealed trait ScenarioActivityCommentStatus
+
+  object ScenarioActivityCommentStatus {
+
+    implicit def scenarioActivityAttachmentStatusCodec: circe.Codec[ScenarioActivityCommentStatus] = {
+      implicit val configuration: extras.Configuration =
+        extras.Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
+      deriveConfiguredCodec
+    }
+
+    implicit def scenarioActivityAttachmentStatusSchema: Schema[ScenarioActivityCommentStatus] = {
+      implicit val configuration: Configuration =
+        Configuration.default.withDiscriminator("type").withScreamingSnakeCaseDiscriminatorValues
+      Schema.derived[ScenarioActivityCommentStatus]
+    }
+
+    final case class Available(comment: String) extends ScenarioActivityCommentStatus
+
+    case object Deleted extends ScenarioActivityCommentStatus
+
+  }
 
   @derive(encoder, decoder, schema)
   final case class ScenarioActivityAttachment(
-      id: Option[Long],
+      status: ScenarioActivityAttachmentStatus,
       filename: String,
       lastModifiedBy: String,
       lastModifiedAt: Instant
   )
+
+  sealed trait ScenarioActivityAttachmentStatus
+
+  object ScenarioActivityAttachmentStatus {
+
+    implicit def scenarioActivityAttachmentStatusCodec: circe.Codec[ScenarioActivityAttachmentStatus] = {
+      implicit val configuration: extras.Configuration =
+        extras.Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
+      deriveConfiguredCodec
+    }
+
+    implicit def scenarioActivityAttachmentStatusSchema: Schema[ScenarioActivityAttachmentStatus] = {
+      implicit val configuration: Configuration =
+        Configuration.default.withDiscriminator("type").withScreamingSnakeCaseDiscriminatorValues
+      Schema.derived[ScenarioActivityAttachmentStatus]
+    }
+
+    final case class Available(id: Long) extends ScenarioActivityAttachmentStatus
+
+    case object Deleted extends ScenarioActivityAttachmentStatus
+
+  }
 
   @derive(encoder, decoder, schema)
   final case class ScenarioActivities(activities: List[ScenarioActivity])
