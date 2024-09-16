@@ -138,9 +138,9 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       case (Schema.Type.NULL, None) =>
         Valid(null)
       case (_, null) =>
-        error(s"Not expected null for field: $fieldName with schema: $schema")
+        error(s"Not expected null for field: $fieldName with schema: ${schema.getFullName}")
       case (_, _) =>
-        error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+        error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: ${schema.getFullName}")
     }
   }
 
