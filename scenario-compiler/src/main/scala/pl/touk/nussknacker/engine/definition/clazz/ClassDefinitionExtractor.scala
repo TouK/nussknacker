@@ -30,7 +30,7 @@ import java.lang.annotation.Annotation
 import java.lang.reflect._
 import java.util.Optional
 
-class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLogging {
+class ClassDefinitionExtractor(val settings: ClassExtractionSettings) extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -367,7 +367,6 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
 }
 
 object ClassDefinitionExtractor {
-  lazy val Default = new ClassDefinitionExtractor(ClassExtractionSettings.Default)
 
   def extractMethodReturnType(method: Method): TypingResult = {
     extractGenericReturnType(method.getGenericReturnType)

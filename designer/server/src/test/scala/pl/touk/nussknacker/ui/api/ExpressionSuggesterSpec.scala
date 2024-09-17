@@ -6,16 +6,14 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
-  ClassDefinitionExtractor,
   ClassDefinitionSet,
+  ClassDefinitionTestUtils,
   StaticMethodDefinition
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -71,7 +69,7 @@ class ExpressionSuggesterSpec
     with Matchers
     with PatientScalaFutures
     with TableDrivenPropertyChecks {
-  private val classDefinitionExtractor = ClassDefinitionExtractor.Default
+  private val classDefinitionExtractor = ClassDefinitionTestUtils.DefaultExtractor
 
   private val dictRegistry = new SimpleDictRegistry(
     Map(

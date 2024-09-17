@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.model
 
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionDiscovery}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionDiscovery, ClassDefinitionExtractor}
 
 object ModelClassDefinitionDiscovery {
 
@@ -13,7 +13,8 @@ object ModelClassDefinitionDiscovery {
     val classesToExtractDefinitions = componentsAndGlobalVariables.flatMap(
       _.definedTypes
     ) ++ definition.expressionConfig.additionalClasses.map(Typed(_))
-    new ClassDefinitionDiscovery(definition.settings).discoverClassesFromTypes(classesToExtractDefinitions)
+    new ClassDefinitionDiscovery(new ClassDefinitionExtractor(definition.settings))
+      .discoverClassesFromTypes(classesToExtractDefinitions)
   }
 
 }

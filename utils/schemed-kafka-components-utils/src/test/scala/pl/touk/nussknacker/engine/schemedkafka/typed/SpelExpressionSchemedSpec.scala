@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.json.{JsonSchemaBuilder, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -25,7 +25,7 @@ class SpelExpressionSchemedSpec extends AnyFunSuite with Matchers with Validated
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
     Standard,
-    ClassDefinitionSet.forClasses(classOf[GenericRecord])
+    ClassDefinitionTestUtils.buildDefinitionForClasses(classOf[GenericRecord])
   )
 
   test("compute avro record's get type based on type of fields") {

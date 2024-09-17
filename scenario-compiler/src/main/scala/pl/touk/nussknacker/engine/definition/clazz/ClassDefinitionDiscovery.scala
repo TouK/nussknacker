@@ -3,15 +3,15 @@ package pl.touk.nussknacker.engine.definition.clazz
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.generics.Parameter
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.util.logging.ExecutionTimeMeasuring
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.collection.mutable
 
-class ClassDefinitionDiscovery(settings: ClassExtractionSettings) extends LazyLogging with ExecutionTimeMeasuring {
-  private val classDefinitionExtractor = new ClassDefinitionExtractor(settings)
+class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtractor)
+    extends LazyLogging
+    with ExecutionTimeMeasuring {
 
   // TODO: this should be somewhere in utils??
   private val primitiveTypes: List[Class[_]] = List(
@@ -87,7 +87,7 @@ class ClassDefinitionDiscovery(settings: ClassExtractionSettings) extends LazyLo
   )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath): Set[ClassDefinition] = {
     typingResult match {
       case e: TypedClass =>
-        val definitionsForClass = if (settings.isHidden(e.klass)) {
+        val definitionsForClass = if (classDefinitionExtractor.settings.isHidden(e.klass)) {
           Set.empty
         } else {
           val classDefinition = extractDefinitionWithLogging(e.klass)(path)
@@ -170,8 +170,4 @@ class ClassDefinitionDiscovery(settings: ClassExtractionSettings) extends LazyLo
     override def print: String = s"${p.name}: ${classNameWithStrippedPackages(p.refClazz)}"
   }
 
-}
-
-object ClassDefinitionDiscovery {
-  val Default = new ClassDefinitionDiscovery(ClassExtractionSettings.Default)
 }

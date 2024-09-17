@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
@@ -126,7 +126,7 @@ class SpelExpressionGenSpec
       new SimpleDictRegistry(Map.empty),
       enableSpelForceCompile = false,
       SpelExpressionParser.Standard,
-      ClassDefinitionSet.forDefaultAdditionalClasses
+      ClassDefinitionTestUtils.buildDefinitionForDefaultAdditionalClasses
     )
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
@@ -239,7 +239,7 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))),
         enableSpelForceCompile = true,
         Standard,
-        ClassDefinitionSet.forClasses(classOf[EnumSymbol])
+        ClassDefinitionTestUtils.buildDefinitionForClasses(classOf[EnumSymbol])
       )
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }

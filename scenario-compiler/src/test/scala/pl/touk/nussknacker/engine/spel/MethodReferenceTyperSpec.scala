@@ -7,9 +7,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.OtherError
 import pl.touk.nussknacker.engine.api.generics._
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionDiscovery, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.typer.MethodReferenceTyper
 
@@ -46,7 +45,7 @@ class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
 
   private val methodReferenceTyper = {
     val classDefinitionSet = ClassDefinitionSet(
-      ClassDefinitionDiscovery.Default.discoverClassesFromTypes(List(Typed[Helper]))
+      ClassDefinitionTestUtils.DefaultDiscovery.discoverClassesFromTypes(List(Typed[Helper]))
     )
     new MethodReferenceTyper(classDefinitionSet, methodExecutionForUnknownAllowed = false)
   }

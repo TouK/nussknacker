@@ -6,13 +6,12 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.generics._
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 import scala.annotation.varargs
 
 class GenericFunctionStaticParametersSpec extends AnyFunSuite with Matchers with OptionValues {
-  private val classDefinitionExtractor = ClassDefinitionExtractor.Default
+  private val classDefinitionExtractor = ClassDefinitionTestUtils.DefaultExtractor
 
   test("should accept valid static parameters") {
     def test(clazz: Class[_]) =
