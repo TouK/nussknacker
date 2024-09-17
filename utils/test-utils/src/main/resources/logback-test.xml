@@ -57,7 +57,7 @@
     <logger name="org.apache.zookeeper.server.PrepRequestProcessor" level="WARN"/>
     <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR"/>
 
-    <logger name="org.flywaydb" level="DEBUG"/>
+    <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
     <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>
     <logger name="org.apache.fop.apps.FOUserAgent" level="ERROR"/>
     <!-- skuber by default logs all requests to k8s on INFO -->

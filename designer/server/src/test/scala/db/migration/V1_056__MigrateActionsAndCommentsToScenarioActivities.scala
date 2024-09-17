@@ -146,7 +146,7 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
       val headActivity =
         activitiesAfterMigration.head
       val expectedOldCommentIdForHeadActivity =
-        headActivity.comment.flatMap(_.filter(_.isDigit).toLongOption).get
+        headActivity.comment.map(_.filter(_.isDigit).toLong).get
       val expectedActionIdForHeadActivity =
         actionsBeingMigrated.find(_.commentId.contains(expectedOldCommentIdForHeadActivity)).map(_.id).get
 
