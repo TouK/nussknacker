@@ -83,7 +83,7 @@ const Truncator = ({
     );
 };
 
-export function TruncateWrapper({ children }: PropsWithChildren): JSX.Element {
+export function TruncateWrapper<A>({ children }: PropsWithChildren<A>): JSX.Element {
     const popupState = usePopupState({ variant: "popover", popupId: "pop" });
     const { anchorEl, ...popoverProps } = bindPopover(popupState);
     const ref = useRef();
