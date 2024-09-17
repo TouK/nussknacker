@@ -47,6 +47,8 @@
   some types of unallowed expressions.
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
   - shorter message in logs
+* [#6886](https://github.com/TouK/nussknacker/pull/6886) Fix for "Illegal table name:$nuCatalog" error when using Apache Iceberg catalog.
+  Internal Nussknacker catalog is now named `_nu_catalog`
 
 ## 1.17
 

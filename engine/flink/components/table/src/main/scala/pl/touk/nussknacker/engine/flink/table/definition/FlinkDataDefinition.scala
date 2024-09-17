@@ -42,7 +42,9 @@ class FlinkDataDefinition private (
 
 object FlinkDataDefinition {
 
-  private[table] val internalCatalogName = "$nuCatalog"
+  // We can't user dollar ($) character in this name as some catalogs such as Apache Iceberg use it internally
+  // to split object paths
+  private[table] val internalCatalogName = "_nu_catalog"
 
   def create(
       sqlStatements: Option[List[String]],
