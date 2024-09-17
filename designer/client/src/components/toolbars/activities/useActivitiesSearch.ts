@@ -20,16 +20,29 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
                 continue;
             }
 
-            if (activity.activities.displayableName.toLowerCase().includes(value.toLowerCase())) {
+            if (value && activity.activities.displayableName.toLowerCase().includes(value.toLowerCase())) {
                 setFoundResults((prevState) => {
                     prevState.push(activity.id);
                     return prevState;
                 });
             }
         }
+
+        listRef.current.scrollToItem(
+            activities.findIndex((item) => item.id === foundResults[selectedResult]),
+            "center",
+        );
     };
 
     const changeResult = (selectedResultNewValue: number) => {
+        if (selectedResultNewValue < 0) {
+            selectedResultNewValue = foundResults.length - 1;
+        }
+
+        if (selectedResultNewValue >= foundResults.length) {
+            selectedResultNewValue = 0;
+        }
+
         const foundResult = foundResults[selectedResultNewValue];
         listRef.current.scrollToItem(
             activities.findIndex((item) => item.id === foundResult),
@@ -38,5 +51,10 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
         setSelectedResult(selectedResultNewValue);
     };
 
-    return { handleSearch, foundResults, selectedResult, searchQuery, changeResult };
+    const handleClearResults = () => {
+        handleSearch("");
+        setSelectedResult(0);
+    };
+
+    return { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults };
 };

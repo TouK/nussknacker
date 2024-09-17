@@ -140,7 +140,10 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     }, []);
 
     const [data, setData] = useState<Activity[]>([]);
-    const { handleSearch, foundResults, selectedResult, searchQuery, changeResult } = UseActivitiesSearch({ activities: data, listRef });
+    const { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults } = UseActivitiesSearch({
+        activities: data,
+        listRef,
+    });
 
     const handleHideRow = (index: number, sameItemOccurrence: number) => {
         setData((prevState) => {
@@ -218,6 +221,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                 foundResults={foundResults}
                 selectedResult={selectedResult}
                 searchQuery={searchQuery}
+                handleClearResults={handleClearResults}
             />
             <Box width={"100%"} height={"700px"} mt={1}>
                 <AutoSizer>

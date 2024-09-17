@@ -1,7 +1,17 @@
 import React from "react";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
 import i18next from "i18next";
-import { Box } from "@mui/material";
+import { Box, IconButton, styled, Typography } from "@mui/material";
+import { isEmpty } from "lodash";
+import { SearchIcon } from "../../table/SearchFilter";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
+
+const StyledIconButton = styled(IconButton)(() => ({
+    padding: 0,
+    "&:focus-within": {
+        outline: 0,
+    },
+}));
 
 interface Props {
     handleSearch: (value: string) => void;
@@ -9,20 +19,42 @@ interface Props {
     selectedResult: number;
     foundResults: string[];
     changeResult: (index: number) => void;
+    handleClearResults: () => void;
 }
 
-export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, foundResults, changeResult }: Props) => {
+export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, foundResults, changeResult, handleClearResults }: Props) => {
+    const areResults = foundResults.length > 0;
+
     return (
         <>
             <SearchInputWithIcon
                 placeholder={i18next.t("activities.search.placeholder", "type here to find past event")}
                 onChange={handleSearch}
                 value={searchQuery}
-            />
-            <Box>
-                Results {selectedResult + 1}/{foundResults.length}
-                <div onClick={() => changeResult(selectedResult - 1)}>-</div>
-                <div onClick={() => changeResult(selectedResult + 1)}>+</div>
+                onClear={handleClearResults}
+            >
+                <SearchIcon isEmpty={isEmpty(searchQuery)} />
+            </SearchInputWithIcon>
+            <Box display={"flex"} alignItems={"center"} justifyContent={"flex-end"}>
+                {searchQuery && (
+                    <>
+                        <Typography
+                            variant={"overline"}
+                            sx={() => ({
+                                color: "secondary",
+                                mr: 1,
+                            })}
+                        >
+                            {areResults ? `Result ${selectedResult + 1}/${foundResults.length}` : "Result 0"}
+                        </Typography>
+                        <StyledIconButton disabled={!areResults} color={"inherit"}>
+                            <ExpandLess sx={{ cursor: "pointer" }} onClick={() => changeResult(selectedResult - 1)} />
+                        </StyledIconButton>
+                        <StyledIconButton disabled={!areResults} color={"inherit"}>
+                            <ExpandMore sx={{ cursor: "pointer" }} onClick={() => changeResult(selectedResult + 1)} />
+                        </StyledIconButton>
+                    </>
+                )}
             </Box>
         </>
     );
