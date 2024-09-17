@@ -27,13 +27,13 @@ export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChan
     commands?: AceKeyCommand[];
 }
 
-const DEFAULT_OPTIONS: IAceOptions = {
+export const DEFAULT_OPTIONS: IAceOptions = {
     indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
     enableLiveAutocompletion: true,
     enableSnippets: false,
     fontSize: 14,
-    highlightGutterLine: false,
     highlightActiveLine: false,
+    highlightGutterLine: true,
 };
 
 const DEFAULF_EDITOR_PROPS: IEditorProps = {
@@ -183,7 +183,6 @@ export default forwardRef(function AceWrapper(
             className={readOnly ? " read-only" : ""}
             wrapEnabled={!!wrapEnabled}
             showGutter={!!showLineNumbers}
-            highlightActiveLine={false}
             editorProps={DEFAULF_EDITOR_PROPS}
             setOptions={{
                 ...DEFAULT_OPTIONS,
