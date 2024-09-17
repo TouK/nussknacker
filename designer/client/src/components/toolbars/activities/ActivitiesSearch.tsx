@@ -32,6 +32,11 @@ export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, fo
                 onChange={handleSearch}
                 value={searchQuery}
                 onClear={handleClearResults}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                        changeResult(selectedResult + 1);
+                    }
+                }}
             >
                 <SearchIcon isEmpty={isEmpty(searchQuery)} />
             </SearchInputWithIcon>
@@ -47,11 +52,11 @@ export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, fo
                         >
                             {areResults ? `Result ${selectedResult + 1}/${foundResults.length}` : "Result 0"}
                         </Typography>
-                        <StyledIconButton disabled={!areResults} color={"inherit"}>
-                            <ExpandLess sx={{ cursor: "pointer" }} onClick={() => changeResult(selectedResult - 1)} />
+                        <StyledIconButton disabled={!areResults} color={"inherit"} onClick={() => changeResult(selectedResult - 1)}>
+                            <ExpandLess />
                         </StyledIconButton>
-                        <StyledIconButton disabled={!areResults} color={"inherit"}>
-                            <ExpandMore sx={{ cursor: "pointer" }} onClick={() => changeResult(selectedResult + 1)} />
+                        <StyledIconButton disabled={!areResults} color={"inherit"} onClick={() => changeResult(selectedResult + 1)}>
+                            <ExpandMore />
                         </StyledIconButton>
                     </>
                 )}
