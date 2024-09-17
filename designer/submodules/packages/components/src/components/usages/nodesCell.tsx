@@ -72,7 +72,7 @@ export const NodesCell = ({
             matched={filterText ? match : -1}
         />
     ));
-    return <TruncateWrapper {...props}>{elements}</TruncateWrapper>;
+    return <TruncateWrapper>{elements}</TruncateWrapper>;
 };
 
 const HighlightNode = styled(Highlight)({

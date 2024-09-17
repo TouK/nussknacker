@@ -10,7 +10,7 @@ export function CategoriesCell(props: CellRendererParams): JSX.Element {
     const filterValue = useMemo(() => getFilter("CATEGORY", true), [getFilter]);
 
     return (
-        <TruncateWrapper {...props}>
+        <TruncateWrapper>
             {value.map((name) => (
                 <CategoryChip key={name} value={name} filterValue={filterValue} setFilter={setFilter("CATEGORY")} />
             ))}
