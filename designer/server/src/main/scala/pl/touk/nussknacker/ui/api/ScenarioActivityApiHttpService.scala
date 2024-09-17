@@ -5,13 +5,13 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
-import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints
-import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError.{
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   NoComment,
   NoPermission,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Endpoints
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -29,29 +29,48 @@ class ScenarioActivityApiHttpService(
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
     attachmentService: ScenarioAttachmentService,
-    streamEndpointProvider: TapirStreamEndpointProvider
+    streamEndpointProvider: TapirStreamEndpointProvider,
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val scenarioActivityApiEndpoints = new ScenarioActivityApiEndpoints(
-    authManager.authenticationEndpointInput()
-  )
+  private val securityInput = authManager.authenticationEndpointInput()
+
+  private val endpoints = new Endpoints(securityInput, streamEndpointProvider)
 
   expose {
-    scenarioActivityApiEndpoints.scenarioActivityEndpoint
+    endpoints.deprecatedScenarioActivityEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
         for {
-          scenarioId       <- getScenarioIdByName(scenarioName)
-          _                <- isAuthorized(scenarioId, Permission.Read)
-          scenarioActivity <- EitherT.right(scenarioActivityRepository.findActivity(scenarioId))
-        } yield ScenarioActivity(scenarioActivity)
+          scenarioId      <- getScenarioIdByName(scenarioName)
+          _               <- isAuthorized(scenarioId, Permission.Read)
+          processActivity <- EitherT.right(scenarioActivityRepository.findActivity(scenarioId))
+        } yield Legacy.ProcessActivity(
+          comments = processActivity.comments.map { comment =>
+            Legacy.Comment(
+              id = comment.id,
+              processVersionId = comment.processVersionId.value,
+              content = comment.content,
+              user = comment.user,
+              createDate = comment.createDate
+            )
+          },
+          attachments = processActivity.attachments.map { attachment =>
+            Legacy.Attachment(
+              id = attachment.id,
+              processVersionId = attachment.processVersionId.value,
+              fileName = attachment.fileName,
+              user = attachment.user,
+              createDate = attachment.createDate
+            )
+          }
+        )
       }
   }
 
   expose {
-    scenarioActivityApiEndpoints.addCommentEndpoint
+    endpoints.deprecatedAddCommentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: AddCommentRequest =>
         for {
@@ -63,9 +82,9 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    scenarioActivityApiEndpoints.deleteCommentEndpoint
+    endpoints.deprecatedDeleteCommentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => request: DeleteCommentRequest =>
+      .serverLogicEitherT { implicit loggedUser => request: DeprecatedDeleteCommentRequest =>
         for {
           scenarioId <- getScenarioIdByName(request.scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Write)
@@ -75,8 +94,7 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    scenarioActivityApiEndpoints
-      .addAttachmentEndpoint(streamEndpointProvider.streamBodyEndpointInput)
+    endpoints.addAttachmentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: AddAttachmentRequest =>
         for {
@@ -88,8 +106,7 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    scenarioActivityApiEndpoints
-      .downloadAttachmentEndpoint(streamEndpointProvider.streamBodyEndpointOutput)
+    endpoints.downloadAttachmentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
         for {
@@ -100,6 +117,81 @@ class ScenarioActivityApiHttpService(
         } yield response
       }
   }
+
+  expose {
+    endpoints.scenarioActivitiesEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
+        for {
+          scenarioId <- getScenarioIdByName(scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Read)
+          activities <- notImplemented[List[ScenarioActivity]]
+        } yield ScenarioActivities(activities)
+      }
+  }
+
+  expose {
+    endpoints.attachmentsEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => processName: ProcessName =>
+        for {
+          scenarioId  <- getScenarioIdByName(processName)
+          _           <- isAuthorized(scenarioId, Permission.Read)
+          attachments <- notImplemented[ScenarioAttachments]
+        } yield attachments
+      }
+  }
+
+  expose {
+    endpoints.scenarioActivitiesMetadataEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => scenarioName: ProcessName =>
+        for {
+          scenarioId <- getScenarioIdByName(scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Read)
+          metadata = ScenarioActivitiesMetadata.default
+        } yield metadata
+      }
+  }
+
+  expose {
+    endpoints.addCommentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: AddCommentRequest =>
+        for {
+          scenarioId <- getScenarioIdByName(request.scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- notImplemented[Unit]
+        } yield ()
+      }
+  }
+
+  expose {
+    endpoints.editCommentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: EditCommentRequest =>
+        for {
+          scenarioId <- getScenarioIdByName(request.scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- notImplemented[Unit]
+        } yield ()
+      }
+  }
+
+  expose {
+    endpoints.deleteCommentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: DeleteCommentRequest =>
+        for {
+          scenarioId <- getScenarioIdByName(request.scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- notImplemented[Unit]
+        } yield ()
+      }
+  }
+
+  private def notImplemented[T]: EitherT[Future, ScenarioActivityError, T] =
+    EitherT.leftT[Future, T](ScenarioActivityError.NotImplemented: ScenarioActivityError)
 
   private def getScenarioIdByName(scenarioName: ProcessName) = {
     EitherT.fromOptionF(
@@ -127,10 +219,10 @@ class ScenarioActivityApiHttpService(
       scenarioActivityRepository.addComment(scenarioId, request.versionId, UserComment(request.commentContent))
     )
 
-  private def deleteComment(request: DeleteCommentRequest): EitherT[Future, ScenarioActivityError, Unit] =
+  private def deleteComment(request: DeprecatedDeleteCommentRequest): EitherT[Future, ScenarioActivityError, Unit] =
     EitherT(
       scenarioActivityRepository.deleteComment(request.commentId)
-    ).leftMap(_ => NoComment(request.commentId))
+    ).leftMap(_ => NoComment(request.commentId.toString))
 
   private def saveAttachment(request: AddAttachmentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser

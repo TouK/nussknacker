@@ -2216,278 +2216,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/processes/{scenarioName}/{versionId}/activity/comments:
-    post:
-      tags:
-      - Scenario
-      summary: Add scenario comment service
-      operationId: postApiProcessesScenarionameVersionidActivityComments
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: versionId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          text/plain:
-            schema:
-              type: string
-        required: true
-      responses:
-        '200':
-          description: ''
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter versionId, Invalid value for: body'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
-  /api/processes/{scenarioName}/activity/comments/{commentId}:
-    delete:
-      tags:
-      - Scenario
-      summary: Delete process comment service
-      operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: commentId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        '200':
-          description: ''
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter commentId'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '500':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: 'Unable to delete comment with id: {commentId}'
-                  value: 'Unable to delete comment with id: 1'
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
-  /api/processes/{scenarioName}/activity:
-    get:
-      tags:
-      - Scenario
-      summary: Scenario activity service
-      operationId: getApiProcessesScenarionameActivity
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ScenarioActivity'
-              examples:
-                Example:
-                  summary: Display scenario activity
-                  value:
-                    comments:
-                    - id: 1
-                      processVersionId: 1
-                      content: some comment
-                      user: test
-                      createDate: '2024-01-17T14:21:17Z'
-                    attachments:
-                    - id: 1
-                      processVersionId: 1
-                      fileName: some_file.txt
-                      user: test
-                      createDate: '2024-01-17T14:21:17Z'
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
   /api/scenarioLabels:
     get:
       tags:
@@ -3012,6 +2740,1237 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/processes/{scenarioName}/{versionId}/activity/attachments:
+    post:
+      tags:
+      - Activities
+      summary: Add scenario attachment service
+      operationId: postApiProcessesScenarionameVersionidActivityAttachments
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: Content-Disposition
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter versionId, Invalid value for: body, Invalid
+            value for: header Content-Disposition'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/{versionId}/activity/comment:
+    post:
+      tags:
+      - Activities
+      summary: Add scenario comment service
+      operationId: postApiProcessesScenarionameVersionidActivityComment
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter versionId, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/attachments:
+    get:
+      tags:
+      - Activities
+      summary: Scenario attachments service
+      operationId: getApiProcessesScenarionameActivityAttachments
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioAttachments'
+              examples:
+                Example:
+                  summary: Display scenario activity
+                  value:
+                    attachments:
+                    - id: 1
+                      scenarioVersion: 1
+                      fileName: some_file.txt
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/comment/{scenarioActivityId}:
+    put:
+      tags:
+      - Activities
+      summary: Edit process comment service
+      operationId: putApiProcessesScenarionameActivityCommentScenarioactivityid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: scenarioActivityId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter scenarioActivityId, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: 'Unable to edit comment with id: {commentId}'
+                  value: 'Unable to delete comment with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+    delete:
+      tags:
+      - Activities
+      summary: Delete process comment service
+      operationId: deleteApiProcessesScenarionameActivityCommentScenarioactivityid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: scenarioActivityId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter scenarioActivityId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: 'Unable to edit comment with id: {commentId}'
+                  value: 'Unable to delete comment with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/{versionId}/activity/comments:
+    post:
+      tags:
+      - Activities
+      summary: Add scenario comment service
+      operationId: postApiProcessesScenarionameVersionidActivityComments
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter versionId, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      deprecated: true
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/comments/{commentId}:
+    delete:
+      tags:
+      - Activities
+      summary: Delete process comment service
+      operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter commentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: 'Unable to edit comment with id: {commentId}'
+                  value: 'Unable to delete comment with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      deprecated: true
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity:
+    get:
+      tags:
+      - Activities
+      summary: Scenario activity service
+      operationId: getApiProcessesScenarionameActivity
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessActivity'
+              examples:
+                Example:
+                  summary: Display scenario activity
+                  value:
+                    comments:
+                    - id: 1
+                      processVersionId: 1
+                      content: some comment
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+                    attachments:
+                    - id: 1
+                      processVersionId: 1
+                      fileName: some_file.txt
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      deprecated: true
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/attachments/{attachmentId}:
+    get:
+      tags:
+      - Activities
+      summary: Download attachment service
+      operationId: getApiProcessesScenarionameActivityAttachmentsAttachmentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Disposition:
+              required: false
+              schema:
+                type:
+                - string
+                - 'null'
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter attachmentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/activities:
+    get:
+      tags:
+      - Activities
+      summary: Scenario activities service
+      operationId: getApiProcessesScenarionameActivityActivities
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioActivities'
+              examples:
+                Example:
+                  summary: Display scenario actions
+                  value:
+                    activities:
+                    - id: 80c95497-3b53-4435-b2d9-ae73c5766213
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      type: SCENARIO_CREATED
+                    - id: 070a4e5c-21e5-4e63-acac-0052cf705a90
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      type: SCENARIO_ARCHIVED
+                    - id: fa35d944-fe20-4c4f-96c6-316b6197951a
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      type: SCENARIO_UNARCHIVED
+                    - id: 545b7d87-8cdf-4cb5-92c4-38ddbfca3d08
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      comment:
+                        status:
+                          comment: Deployment of scenario - task JIRA-1234
+                          type: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      type: SCENARIO_DEPLOYED
+                    - id: c354eba1-de97-455c-b977-074729c41ce7
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      comment:
+                        status:
+                          comment: Canceled because marketing campaign ended
+                          type: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      type: SCENARIO_CANCELED
+                    - id: 07b04d45-c7c0-4980-a3bc-3c7f66410f68
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      comment:
+                        status:
+                          comment: Added new processing step
+                          type: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      type: SCENARIO_MODIFIED
+                    - id: da3d1f78-7d73-4ed9-b0e5-95538e150d0d
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      oldName: marketing campaign
+                      newName: old marketing campaign
+                      type: SCENARIO_NAME_CHANGED
+                    - id: edf8b047-9165-445d-a173-ba61812dbd63
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      comment:
+                        status:
+                          comment: Added new processing step
+                          type: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      type: COMMENT_ADDED
+                    - id: 369367d6-d445-4327-ac23-4a94367b1d9e
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      comment:
+                        status:
+                          type: DELETED
+                        lastModifiedBy: John Doe
+                        lastModifiedAt: '2024-01-18T14:21:17Z'
+                      type: COMMENT_ADDED
+                    - id: b29916a9-34d4-4fc2-a6ab-79569f68c0b2
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      attachment:
+                        status:
+                          id: 10000001
+                          type: AVAILABLE
+                        filename: attachment01.png
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      type: ATTACHMENT_ADDED
+                    - id: d0a7f4a2-abcc-4ffa-b1ca-68f6da3e999a
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      attachment:
+                        status:
+                          type: DELETED
+                        filename: attachment01.png
+                        lastModifiedBy: John Doe
+                        lastModifiedAt: '2024-01-18T14:21:17Z'
+                      type: ATTACHMENT_ADDED
+                    - id: 683df470-0b33-4ead-bf61-fa35c63484f3
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      from: Request-Response
+                      to: Batch
+                      type: CHANGED_PROCESSING_MODE
+                    - id: 4da0f1ac-034a-49b6-81c9-8ee48ba1d830
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      sourceEnvironment: preprod
+                      sourceScenarioVersion: '23'
+                      type: INCOMING_MIGRATION
+                    - id: 49fcd45d-3fa6-48d4-b8ed-b3055910c7ad
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      comment:
+                        status:
+                          comment: Added new processing step
+                          type: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      destinationEnvironment: preprod
+                      type: OUTGOING_MIGRATION
+                    - id: 924dfcd3-fbc7-44ea-8763-813874382204
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      dateFinished: '2024-01-17T14:21:17Z'
+                      errorMessage: Execution error occurred
+                      type: PERFORMED_SINGLE_EXECUTION
+                    - id: 924dfcd3-fbc7-44ea-8763-813874382204
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      dateFinished: '2024-01-17T14:21:17Z'
+                      type: PERFORMED_SINGLE_EXECUTION
+                    - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      dateFinished: '2024-01-17T14:21:17Z'
+                      type: PERFORMED_SCHEDULED_EXECUTION
+                    - id: 33509d37-7657-4229-940f-b5736c82fb13
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersion: 1
+                      dateFinished: '2024-01-17T14:21:17Z'
+                      changes: JIRA-12345, JIRA-32146
+                      type: AUTOMATIC_UPDATE
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/activities/metadata:
+    get:
+      tags:
+      - Activities
+      summary: Scenario activities metadata service
+      operationId: getApiProcessesScenarionameActivityActivitiesMetadata
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioActivitiesMetadata'
+              example:
+                activities:
+                - type: SCENARIO_CREATED
+                  displayableName: Scenario created
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: SCENARIO_ARCHIVED
+                  displayableName: Scenario archived
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: SCENARIO_UNARCHIVED
+                  displayableName: Scenario unarchived
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: SCENARIO_DEPLOYED
+                  displayableName: Deployment
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: SCENARIO_PAUSED
+                  displayableName: Pause
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: SCENARIO_CANCELED
+                  displayableName: Cancel
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: SCENARIO_MODIFIED
+                  displayableName: New version saved
+                  icon: /assets/states/error.svg
+                  supportedActions:
+                  - compare
+                - type: SCENARIO_NAME_CHANGED
+                  displayableName: Scenario name changed
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: COMMENT_ADDED
+                  displayableName: Comment
+                  icon: /assets/states/error.svg
+                  supportedActions:
+                  - delete_comment
+                  - edit_comment
+                - type: ATTACHMENT_ADDED
+                  displayableName: Attachment
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: CHANGED_PROCESSING_MODE
+                  displayableName: Processing mode change
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: INCOMING_MIGRATION
+                  displayableName: Incoming migration
+                  icon: /assets/states/error.svg
+                  supportedActions:
+                  - compare
+                - type: OUTGOING_MIGRATION
+                  displayableName: Outgoing migration
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: PERFORMED_SINGLE_EXECUTION
+                  displayableName: Processing data
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: PERFORMED_SCHEDULED_EXECUTION
+                  displayableName: Processing data
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                - type: AUTOMATIC_UPDATE
+                  displayableName: Automatic update
+                  icon: /assets/states/error.svg
+                  supportedActions:
+                  - compare
+                - type: CUSTOM_ACTION
+                  displayableName: Custom action
+                  icon: /assets/states/error.svg
+                  supportedActions: []
+                actions:
+                - id: compare
+                  displayableName: Compare
+                  icon: /assets/states/error.svg
+                - id: delete_comment
+                  displayableName: Delete
+                  icon: /assets/states/error.svg
+                - id: edit_comment
+                  displayableName: Edit
+                  icon: /assets/states/error.svg
+                - id: download_attachment
+                  displayableName: Download
+                  icon: /assets/states/error.svg
+                - id: delete_attachment
+                  displayableName: Delete
+                  icon: /assets/states/error.svg
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
 components:
   schemas:
     AdditionalInfo:
@@ -3028,6 +3987,29 @@ components:
           type: integer
           format: int32
     Attachment:
+      title: Attachment
+      type: object
+      required:
+      - id
+      - scenarioVersion
+      - fileName
+      - user
+      - createDate
+      properties:
+        id:
+          type: integer
+          format: int64
+        scenarioVersion:
+          type: integer
+          format: int64
+        fileName:
+          type: string
+        user:
+          type: string
+        createDate:
+          type: string
+          format: date-time
+    Attachment1:
       title: Attachment
       type: object
       required:
@@ -3050,6 +4032,91 @@ components:
         createDate:
           type: string
           format: date-time
+    AttachmentAdded:
+      title: AttachmentAdded
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - attachment
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        attachment:
+          $ref: '#/components/schemas/ScenarioActivityAttachment'
+        type:
+          type: string
+    AutomaticUpdate:
+      title: AutomaticUpdate
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - dateFinished
+      - changes
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        dateFinished:
+          type: string
+          format: date-time
+        changes:
+          type: string
+        errorMessage:
+          type:
+          - string
+          - 'null'
+        type:
+          type: string
+    Available:
+      title: Available
+      type: object
+      required:
+      - id
+      - type
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+    Available1:
+      title: Available
+      type: object
+      required:
+      - comment
+      - type
+      properties:
+        comment:
+          type: string
+        type:
+          type: string
     BoolParameterEditor:
       title: BoolParameterEditor
       type: object
@@ -3128,6 +4195,36 @@ components:
           format: int32
         errorMessage:
           type: string
+    ChangedProcessingMode:
+      title: ChangedProcessingMode
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - from
+      - to
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        from:
+          type: string
+        to:
+          type: string
+        type:
+          type: string
     ColumnDefinition:
       title: ColumnDefinition
       type: object
@@ -3162,6 +4259,33 @@ components:
         createDate:
           type: string
           format: date-time
+    CommentAdded:
+      title: CommentAdded
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - comment
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
+        type:
+          type: string
     ComponentLink:
       title: ComponentLink
       type: object
@@ -3269,6 +4393,33 @@ components:
     CronParameterEditor:
       title: CronParameterEditor
       type: object
+    CustomAction:
+      title: CustomAction
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - actionName
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        actionName:
+          type: string
+        type:
+          type: string
     CustomActionRequest:
       title: CustomActionRequest
       type: object
@@ -3309,6 +4460,22 @@ components:
     DateTimeParameterEditor:
       title: DateTimeParameterEditor
       type: object
+    Deleted:
+      title: Deleted
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+    Deleted1:
+      title: Deleted
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
     Dict:
       title: Dict
       type: object
@@ -3684,6 +4851,36 @@ components:
           uniqueItems: true
           items:
             type: string
+    IncomingMigration:
+      title: IncomingMigration
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - sourceEnvironment
+      - sourceScenarioVersion
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        sourceEnvironment:
+          type: string
+        sourceScenarioVersion:
+          type: string
+        type:
+          type: string
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
@@ -4364,6 +5561,36 @@ components:
       - info
       - success
       - error
+    OutgoingMigration:
+      title: OutgoingMigration
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - comment
+      - destinationEnvironment
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
+        destinationEnvironment:
+          type: string
+        type:
+          type: string
     Parameter:
       title: Parameter
       type: object
@@ -4456,6 +5683,70 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
+    PerformedScheduledExecution:
+      title: PerformedScheduledExecution
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - dateFinished
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        dateFinished:
+          type: string
+          format: date-time
+        errorMessage:
+          type:
+          - string
+          - 'null'
+        type:
+          type: string
+    PerformedSingleExecution:
+      title: PerformedSingleExecution
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - dateFinished
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        dateFinished:
+          type: string
+          format: date-time
+        errorMessage:
+          type:
+          - string
+          - 'null'
+        type:
+          type: string
     PeriodParameterEditor:
       title: PeriodParameterEditor
       type: object
@@ -4530,6 +5821,18 @@ components:
       - FINISHED
       - FAILED
       - EXECUTION_FINISHED
+    ProcessActivity:
+      title: ProcessActivity
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
     ProcessAdditionalFields:
       title: ProcessAdditionalFields
       type: object
@@ -4593,18 +5896,261 @@ components:
           type:
           - string
           - 'null'
-    ScenarioActivity:
-      title: ScenarioActivity
+    ScenarioActivities:
+      title: ScenarioActivities
       type: object
       properties:
-        comments:
+        activities:
           type: array
           items:
-            $ref: '#/components/schemas/Comment'
+            $ref: '#/components/schemas/ScenarioActivity'
+    ScenarioActivitiesMetadata:
+      title: ScenarioActivitiesMetadata
+      type: object
+      properties:
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioActivityMetadata'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioActivityActionMetadata'
+    ScenarioActivity:
+      title: ScenarioActivity
+      oneOf:
+      - $ref: '#/components/schemas/AttachmentAdded'
+      - $ref: '#/components/schemas/AutomaticUpdate'
+      - $ref: '#/components/schemas/ChangedProcessingMode'
+      - $ref: '#/components/schemas/CommentAdded'
+      - $ref: '#/components/schemas/CustomAction'
+      - $ref: '#/components/schemas/IncomingMigration'
+      - $ref: '#/components/schemas/OutgoingMigration'
+      - $ref: '#/components/schemas/PerformedScheduledExecution'
+      - $ref: '#/components/schemas/PerformedSingleExecution'
+      - $ref: '#/components/schemas/ScenarioArchived'
+      - $ref: '#/components/schemas/ScenarioCanceled'
+      - $ref: '#/components/schemas/ScenarioCreated'
+      - $ref: '#/components/schemas/ScenarioDeployed'
+      - $ref: '#/components/schemas/ScenarioModified'
+      - $ref: '#/components/schemas/ScenarioNameChanged'
+      - $ref: '#/components/schemas/ScenarioPaused'
+      - $ref: '#/components/schemas/ScenarioUnarchived'
+      discriminator:
+        propertyName: type
+        mapping:
+          ATTACHMENT_ADDED: '#/components/schemas/AttachmentAdded'
+          AUTOMATIC_UPDATE: '#/components/schemas/AutomaticUpdate'
+          CHANGED_PROCESSING_MODE: '#/components/schemas/ChangedProcessingMode'
+          COMMENT_ADDED: '#/components/schemas/CommentAdded'
+          CUSTOM_ACTION: '#/components/schemas/CustomAction'
+          INCOMING_MIGRATION: '#/components/schemas/IncomingMigration'
+          OUTGOING_MIGRATION: '#/components/schemas/OutgoingMigration'
+          PERFORMED_SCHEDULED_EXECUTION: '#/components/schemas/PerformedScheduledExecution'
+          PERFORMED_SINGLE_EXECUTION: '#/components/schemas/PerformedSingleExecution'
+          SCENARIO_ARCHIVED: '#/components/schemas/ScenarioArchived'
+          SCENARIO_CANCELED: '#/components/schemas/ScenarioCanceled'
+          SCENARIO_CREATED: '#/components/schemas/ScenarioCreated'
+          SCENARIO_DEPLOYED: '#/components/schemas/ScenarioDeployed'
+          SCENARIO_MODIFIED: '#/components/schemas/ScenarioModified'
+          SCENARIO_NAME_CHANGED: '#/components/schemas/ScenarioNameChanged'
+          SCENARIO_PAUSED: '#/components/schemas/ScenarioPaused'
+          SCENARIO_UNARCHIVED: '#/components/schemas/ScenarioUnarchived'
+    ScenarioActivityActionMetadata:
+      title: ScenarioActivityActionMetadata
+      type: object
+      required:
+      - id
+      - displayableName
+      - icon
+      properties:
+        id:
+          type: string
+        displayableName:
+          type: string
+        icon:
+          type: string
+    ScenarioActivityAttachment:
+      title: ScenarioActivityAttachment
+      type: object
+      required:
+      - status
+      - filename
+      - lastModifiedBy
+      - lastModifiedAt
+      properties:
+        status:
+          $ref: '#/components/schemas/ScenarioActivityAttachmentStatus'
+        filename:
+          type: string
+        lastModifiedBy:
+          type: string
+        lastModifiedAt:
+          type: string
+          format: date-time
+    ScenarioActivityAttachmentStatus:
+      title: ScenarioActivityAttachmentStatus
+      oneOf:
+      - $ref: '#/components/schemas/Available'
+      - $ref: '#/components/schemas/Deleted'
+      discriminator:
+        propertyName: type
+        mapping:
+          AVAILABLE: '#/components/schemas/Available'
+          DELETED: '#/components/schemas/Deleted'
+    ScenarioActivityComment:
+      title: ScenarioActivityComment
+      type: object
+      required:
+      - status
+      - lastModifiedBy
+      - lastModifiedAt
+      properties:
+        status:
+          $ref: '#/components/schemas/ScenarioActivityCommentStatus'
+        lastModifiedBy:
+          type: string
+        lastModifiedAt:
+          type: string
+          format: date-time
+    ScenarioActivityCommentStatus:
+      title: ScenarioActivityCommentStatus
+      oneOf:
+      - $ref: '#/components/schemas/Available1'
+      - $ref: '#/components/schemas/Deleted1'
+      discriminator:
+        propertyName: type
+        mapping:
+          AVAILABLE: '#/components/schemas/Available1'
+          DELETED: '#/components/schemas/Deleted1'
+    ScenarioActivityMetadata:
+      title: ScenarioActivityMetadata
+      type: object
+      required:
+      - type
+      - displayableName
+      - icon
+      properties:
+        type:
+          type: string
+        displayableName:
+          type: string
+        icon:
+          type: string
+        supportedActions:
+          type: array
+          items:
+            type: string
+    ScenarioArchived:
+      title: ScenarioArchived
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        type:
+          type: string
+    ScenarioAttachments:
+      title: ScenarioAttachments
+      type: object
+      properties:
         attachments:
           type: array
           items:
             $ref: '#/components/schemas/Attachment'
+    ScenarioCanceled:
+      title: ScenarioCanceled
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - comment
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
+        type:
+          type: string
+    ScenarioCreated:
+      title: ScenarioCreated
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        type:
+          type: string
+    ScenarioDeployed:
+      title: ScenarioDeployed
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - comment
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
+        type:
+          type: string
     ScenarioLabels:
       title: ScenarioLabels
       type: object
@@ -4629,6 +6175,63 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValidationError'
+    ScenarioModified:
+      title: ScenarioModified
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - comment
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
+        type:
+          type: string
+    ScenarioNameChanged:
+      title: ScenarioNameChanged
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - oldName
+      - newName
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        oldName:
+          type: string
+        newName:
+          type: string
+        type:
+          type: string
     ScenarioParameters:
       title: ScenarioParameters
       type: object
@@ -4655,6 +6258,57 @@ components:
             $ref: '#/components/schemas/ScenarioParameters'
         engineSetupErrors:
           $ref: '#/components/schemas/Map_EngineSetupName_List_String'
+    ScenarioPaused:
+      title: ScenarioPaused
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - comment
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
+        type:
+          type: string
+    ScenarioUnarchived:
+      title: ScenarioUnarchived
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersion:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        type:
+          type: string
     ScenarioUsageData:
       title: ScenarioUsageData
       type: object
