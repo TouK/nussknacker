@@ -31,7 +31,7 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
     def scenarioId: Rep[ProcessId] = column[ProcessId]("scenario_id", NotNull)
 
-    def activityId: Rep[ScenarioActivityId] = column[ScenarioActivityId]("activity_id", NotNull)
+    def activityId: Rep[ScenarioActivityId] = column[ScenarioActivityId]("activity_id", NotNull, O.Unique)
 
     def userId: Rep[Option[String]] = column[Option[String]]("user_id")
 

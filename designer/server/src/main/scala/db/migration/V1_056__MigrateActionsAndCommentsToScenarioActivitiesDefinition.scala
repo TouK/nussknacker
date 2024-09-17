@@ -3,8 +3,6 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_055__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
 import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition.Migration
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
-import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc.JdbcProfile
@@ -64,26 +62,26 @@ object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
           }
 
       // Slick generates single "insert from select" query and operation is performed solely on db
-      scenarioActivitiesDefinitions.scenarioActivitiesTable.map(_.tuple).forceInsertQuery(insertQuery)
+      scenarioActivitiesDefinitions.scenarioActivitiesTable.map(_.tupleWithoutAutoIncId).forceInsertQuery(insertQuery)
     }
 
     def activityType(actionNameRep: Rep[String]): Rep[String] = {
       val customActionPrefix = s"CUSTOM_ACTION_["
       val customActionSuffix = "]"
       Case
-        .If(actionNameRep === ScenarioActionName.Deploy.value)
+        .If(actionNameRep === "DEPLOY")
         .Then(ScenarioActivityType.ScenarioDeployed.entryName)
-        .If(actionNameRep === ScenarioActionName.Cancel.value)
+        .If(actionNameRep === "CANCEL")
         .Then(ScenarioActivityType.ScenarioCanceled.entryName)
-        .If(actionNameRep === ScenarioActionName.Archive.value)
+        .If(actionNameRep === "ARCHIVE")
         .Then(ScenarioActivityType.ScenarioArchived.entryName)
-        .If(actionNameRep === ScenarioActionName.UnArchive.value)
+        .If(actionNameRep === "UNARCHIVE")
         .Then(ScenarioActivityType.ScenarioUnarchived.entryName)
-        .If(actionNameRep === ScenarioActionName.Pause.value)
+        .If(actionNameRep === "PAUSE")
         .Then(ScenarioActivityType.ScenarioPaused.entryName)
-        .If(actionNameRep === ScenarioActionName.Rename.value)
+        .If(actionNameRep === "RENAME")
         .Then(ScenarioActivityType.ScenarioNameChanged.entryName)
-        .If(actionNameRep === InstantBatchCustomAction.name.value)
+        .If(actionNameRep === "run now")
         .Then(ScenarioActivityType.PerformedSingleExecution.entryName)
         .Else(actionNameRep.reverseString.++(customActionPrefix.reverse).reverseString.++(customActionSuffix))
     }

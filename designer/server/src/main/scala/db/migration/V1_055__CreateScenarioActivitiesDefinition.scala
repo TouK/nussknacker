@@ -3,6 +3,7 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.V1_055__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
+import shapeless.syntax.std.tuple._
 import slick.jdbc.JdbcProfile
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -16,10 +17,13 @@ trait V1_055__CreateScenarioActivitiesDefinition extends SlickMigration with Laz
 
   private val definitions = new ScenarioActivitiesDefinitions(profile)
 
-  override def migrateActions: DBIOAction[Any, NoStream, _ <: Effect] = {
+  override def migrateActions: DBIOAction[Any, NoStream, Effect.All] = {
     logger.info("Starting migration V1_055__CreateScenarioActivitiesDefinition")
-    definitions.scenarioActivitiesTable.schema.create
-      .map(_ => logger.info("Execution finished for migration V1_055__CreateScenarioActivitiesDefinition"))
+    for {
+      _ <- definitions.scenarioActivitiesTable.schema.create
+      _ <-
+        sqlu"""ALTER TABLE "scenario_activities" ADD CONSTRAINT scenario_id_fk FOREIGN KEY ("scenario_id") REFERENCES "processes" ("id");"""
+    } yield logger.info("Execution finished for migration V1_055__CreateScenarioActivitiesDefinition")
   }
 
 }
@@ -39,7 +43,7 @@ object V1_055__CreateScenarioActivitiesDefinition {
 
       def scenarioId: Rep[Long] = column[Long]("scenario_id", NotNull)
 
-      def activityId: Rep[UUID] = column[UUID]("activity_id", NotNull)
+      def activityId: Rep[UUID] = column[UUID]("activity_id", NotNull, O.Unique)
 
       def userId: Rep[Option[String]] = column[Option[String]]("user_id")
 
@@ -71,26 +75,11 @@ object V1_055__CreateScenarioActivitiesDefinition {
 
       def additionalProperties: Rep[String] = column[String]("additional_properties", NotNull)
 
-      def tuple: (
-          Rep[String],
-          Rep[Long],
-          Rep[UUID],
-          Rep[Option[String]],
-          Rep[String],
-          Rep[Option[String]],
-          Rep[Option[String]],
-          Rep[Option[String]],
-          Rep[Option[Timestamp]],
-          Rep[Timestamp],
-          Rep[Option[Long]],
-          Rep[Option[String]],
-          Rep[Option[Long]],
-          Rep[Option[Timestamp]],
-          Rep[Option[String]],
-          Rep[Option[String]],
-          Rep[Option[String]],
-          Rep[String]
-      ) = (
+      def activityTypeIndex = index("activity_type_idx", activityType)
+      def createdAtIndex    = index("created_at_idx", activityType)
+      def scenarioIdIndex   = index("scenario_id_idx", activityType)
+
+      def tupleWithoutAutoIncId = (
         activityType,
         scenarioId,
         activityId,
@@ -112,27 +101,7 @@ object V1_055__CreateScenarioActivitiesDefinition {
       )
 
       override def * =
-        (
-          id,
-          activityType,
-          scenarioId,
-          activityId,
-          userId,
-          userName,
-          impersonatedByUserId,
-          impersonatedByUserName,
-          lastModifiedByUserName,
-          lastModifiedAt,
-          createdAt,
-          scenarioVersion,
-          comment,
-          attachmentId,
-          performedAt,
-          state,
-          errorMessage,
-          buildInfo,
-          additionalProperties,
-        ) <> (
+        (id :: tupleWithoutAutoIncId.productElements).tupled <> (
           ScenarioActivityEntityData.apply _ tupled, ScenarioActivityEntityData.unapply
         )
 
