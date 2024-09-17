@@ -4,7 +4,7 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class DetectLargeTransactionSpec extends AnyFreeSpecLike with BaseE2eSpec with Matchers with VeryPatientScalaFutures {
+class DetectLargeTransactionSpec extends AnyFreeSpecLike with BaseE2ESpec with Matchers with VeryPatientScalaFutures {
 
   "Large transactions should be properly detected" in {
     val smallAmountTransactions = List(
