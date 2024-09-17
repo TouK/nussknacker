@@ -42,7 +42,7 @@ class FlinkDataDefinition private (
 
 object FlinkDataDefinition {
 
-  private[definition] val internalCatalogName = "$nuCatalog"
+  private[table] val internalCatalogName = "$nuCatalog"
 
   def create(
       sqlStatements: Option[List[String]],
