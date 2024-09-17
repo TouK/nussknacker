@@ -9,10 +9,11 @@ import { ActionMetadata } from "../../../http/HttpService";
 import { blend } from "@mui/system";
 import { getBorderColor } from "../../../containers/theme/helpers";
 import UrlIcon from "../../UrlIcon";
-import { Activity } from "./ActivitiesPanel";
+import { Activity, UiItemActivity } from "./ActivitiesPanel";
 
-const StyledActivityRoot = styled("div")(({ theme }) => ({
-    padding: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(2)}`,
+const StyledActivityRoot = styled("div")<{ isActiveFound: boolean; isFound: boolean }>(({ theme, isActiveFound, isFound }) => ({
+    margin: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(2)}`,
+    outline: isActiveFound ? "1px solid green" : isFound ? "1px solid red" : "none",
 }));
 const StyledActivityHeader = styled("div")<{ isHighlighted: boolean; isActive: boolean }>(({ theme, isHighlighted, isActive }) => ({
     display: "flex",
@@ -64,13 +65,13 @@ const HeaderActivity = ({ activityAction }: { activityAction: ActionMetadata }) 
 };
 
 export const ActivityItem = forwardRef(
-    ({ activity, isActiveItem }: { activity: Activity; isActiveItem: boolean }, ref: ForwardedRef<HTMLDivElement>) => {
+    ({ activity, isActiveItem }: { activity: Activity<UiItemActivity>; isActiveItem: boolean }, ref: ForwardedRef<HTMLDivElement>) => {
         const commentSettings = useSelector(getCommentSettings);
 
         const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
 
         return (
-            <StyledActivityRoot ref={ref}>
+            <StyledActivityRoot ref={ref} isActiveFound={activity.ui.isActiveFound} isFound={activity.ui.isFound}>
                 <StyledActivityHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
                     <StyledHeaderIcon src={activity.activities.icon} />
                     <Typography variant={"caption"} sx={(theme) => ({ color: theme.palette.text.primary })}>

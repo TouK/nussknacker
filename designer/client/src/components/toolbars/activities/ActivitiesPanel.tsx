@@ -7,6 +7,9 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import moment from "moment";
 import { v4 as uuid4 } from "uuid";
 import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
+import { Box } from "@mui/material";
+import { UseActivitiesSearch } from "./useActivitiesSearch";
+import { ActivitiesSearch } from "./ActivitiesSearch";
 
 interface UiButtonActivity {
     type: "moreItemsButton";
@@ -19,15 +22,17 @@ interface UiDateActivity {
     value: string;
 }
 
-interface UiItemActivity {
+export interface UiItemActivity {
     type: "item";
     isDisabled: boolean;
+    isFound: boolean;
+    isActiveFound: boolean;
 }
 
-export type Activity = ActivitiesResponse["activities"][number] & {
+export type Activity<T = UiButtonActivity | UiDateActivity | UiItemActivity> = ActivitiesResponse["activities"][number] & {
     activities: ActivityMetadata;
     actions: ActionMetadata[];
-    ui?: UiButtonActivity | UiDateActivity | UiItemActivity;
+    ui?: T;
 };
 
 const estimatedItemSize = 150;
@@ -59,7 +64,7 @@ const handleDataToDisplayGeneration = (activitiesDataWithMetadata: Activity[]) =
                 id: uuid4(),
                 ui: {
                     type: "date",
-                    value: `${formatDate(activity.date)} - ${formatDate(previousActivity.date)}`,
+                    value: `${formatDate(previousActivity.date)} - ${formatDate(activity.date)}`,
                 },
             };
         }
@@ -135,6 +140,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     }, []);
 
     const [data, setData] = useState<Activity[]>([]);
+    const { handleSearch, foundResults, selectedResult, searchQuery, changeResult } = UseActivitiesSearch({ activities: data, listRef });
 
     const handleHideRow = (index: number, sameItemOccurrence: number) => {
         setData((prevState) => {
@@ -170,8 +176,28 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     };
 
     const dataToDisplay = useMemo(
-        () => data.filter((activity) => (activity.ui.type === "item" && !activity.ui.isDisabled) || activity.ui.type !== "item"),
-        [data],
+        () =>
+            data
+                .filter((activity) => (activity.ui.type === "item" && !activity.ui.isDisabled) || activity.ui.type !== "item")
+                .map((activity, index) => {
+                    if (activity.ui.type !== "item") {
+                        return activity;
+                    }
+
+                    activity.ui.isFound = false;
+                    activity.ui.isActiveFound = false;
+
+                    if (foundResults.some((foundResult) => foundResult === activity.id)) {
+                        activity.ui.isFound = true;
+                    }
+
+                    if (activity.id === foundResults[selectedResult]) {
+                        activity.ui.isActiveFound = true;
+                    }
+
+                    return activity;
+                }),
+        [data, foundResults, selectedResult],
     );
 
     useEffect(() => {
@@ -186,7 +212,14 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
 
     return (
         <ToolbarWrapper {...props} title={"Activities"}>
-            <div style={{ width: "100%", height: "700px" }}>
+            <ActivitiesSearch
+                handleSearch={handleSearch}
+                changeResult={changeResult}
+                foundResults={foundResults}
+                selectedResult={selectedResult}
+                searchQuery={searchQuery}
+            />
+            <Box width={"100%"} height={"700px"} mt={1}>
                 <AutoSizer>
                     {({ width, height }) => (
                         <VariableSizeList
@@ -213,7 +246,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                         </VariableSizeList>
                     )}
                 </AutoSizer>
-            </div>
+            </Box>
         </ToolbarWrapper>
     );
 };
