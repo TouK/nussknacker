@@ -608,11 +608,11 @@ class ProcessesResourcesSpec
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
       forScenarioReturned(processName) { scenario =>
-        scenario.labels shouldBe Some(List.empty[String])
+        scenario.labels shouldBe List.empty[String]
       }
       doUpdateProcess(command, processName) {
         forScenarioReturned(processName) { scenario =>
-          scenario.labels shouldBe Some(List("tag1", "tag2"))
+          scenario.labels shouldBe List("tag1", "tag2")
         }
         status shouldEqual StatusCodes.OK
       }
@@ -636,7 +636,7 @@ class ProcessesResourcesSpec
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
       forScenarioReturned(processName) { scenario =>
-        scenario.labels shouldBe Some(List.empty[String])
+        scenario.labels shouldBe List.empty[String]
       }
       val command1 = UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
@@ -646,7 +646,7 @@ class ProcessesResourcesSpec
       )
       doUpdateProcess(command1, processName) {
         forScenarioReturned(processName) { scenario =>
-          scenario.labels shouldBe Some(List("tag1", "tag2"))
+          scenario.labels shouldBe List("tag1", "tag2")
         }
         status shouldEqual StatusCodes.OK
       }
@@ -658,7 +658,7 @@ class ProcessesResourcesSpec
       )
       doUpdateProcess(command2, processName) {
         forScenarioReturned(processName) { scenario =>
-          scenario.labels shouldBe Some(List("tag1", "tag3", "tag4"))
+          scenario.labels shouldBe List("tag1", "tag3", "tag4")
         }
         status shouldEqual StatusCodes.OK
       }
@@ -670,7 +670,7 @@ class ProcessesResourcesSpec
       )
       doUpdateProcess(command3, processName) {
         forScenarioReturned(processName) { scenario =>
-          scenario.labels shouldBe Some(List("tag3"))
+          scenario.labels shouldBe List("tag3")
         }
         status shouldEqual StatusCodes.OK
       }

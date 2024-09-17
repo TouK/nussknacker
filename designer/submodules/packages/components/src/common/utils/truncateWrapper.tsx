@@ -2,7 +2,7 @@ import { Visibility } from "@mui/icons-material";
 import { Box, ClickAwayListener, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
-import React, { PropsWithChildren, useCallback, useRef } from "react";
+import React, { PropsWithChildren, ReactNode, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Truncate } from "./truncate";
 
@@ -83,7 +83,7 @@ const Truncator = ({
     );
 };
 
-export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellParams>): JSX.Element {
+export function TruncateWrapper({ children }: PropsWithChildren): JSX.Element {
     const popupState = usePopupState({ variant: "popover", popupId: "pop" });
     const { anchorEl, ...popoverProps } = bindPopover(popupState);
     const ref = useRef();
