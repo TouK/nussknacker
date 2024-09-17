@@ -7,14 +7,28 @@ import { createSelector } from "reselect";
 import { getFeatureSettings } from "../../../reducers/selectors/settings";
 import { ActionMetadata } from "../../../http/HttpService";
 import { blend } from "@mui/system";
-import { getBorderColor } from "../../../containers/theme/helpers";
+import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
 import UrlIcon from "../../UrlIcon";
 import { Activity, UiItemActivity } from "./ActivitiesPanel";
 
-const StyledActivityRoot = styled("div")<{ isActiveFound: boolean; isFound: boolean }>(({ theme, isActiveFound, isFound }) => ({
-    margin: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(2)}`,
-    outline: isActiveFound ? "1px solid green" : isFound ? "1px solid red" : "none",
+const StyledActivityRoot = styled("div")(({ theme }) => ({
+    padding: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(2)}`,
 }));
+
+const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: boolean }>(({ theme, isActiveFound, isFound }) => ({
+    border: isActiveFound
+        ? `0.5px solid ${blendLighten(theme.palette.primary.main, 0.7)}`
+        : isFound
+        ? `0.5px solid ${blendLighten(theme.palette.primary.main, 0.6)}`
+        : "none",
+    borderRadius: "4px",
+    backgroundColor: isActiveFound
+        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.16)
+        : isFound
+        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.08)
+        : "none",
+}));
+
 const StyledActivityHeader = styled("div")<{ isHighlighted: boolean; isActive: boolean }>(({ theme, isHighlighted, isActive }) => ({
     display: "flex",
     alignItems: "center",
@@ -71,32 +85,34 @@ export const ActivityItem = forwardRef(
         const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
 
         return (
-            <StyledActivityRoot ref={ref} isActiveFound={activity.ui.isActiveFound} isFound={activity.ui.isFound}>
-                <StyledActivityHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
-                    <StyledHeaderIcon src={activity.activities.icon} />
-                    <Typography variant={"caption"} sx={(theme) => ({ color: theme.palette.text.primary })}>
-                        {activity.activities.displayableName}
-                    </Typography>
-                    {activity.actions.map((activityAction) => (
-                        <HeaderActivity key={activityAction.id} activityAction={activityAction} />
-                    ))}
-                </StyledActivityHeader>
-                <StyledActivityBody>
-                    <Typography mt={0.5} component={"p"} variant={"overline"}>
-                        {formatDateTime(activity.date)} | {activity.user}
-                    </Typography>
-                    {activity.scenarioVersionId && (
-                        <Typography component={"p"} variant={"overline"}>
-                            Version: {activity.scenarioVersionId}
+            <StyledActivityRoot ref={ref}>
+                <StyledActivityContent isActiveFound={activity.ui.isActiveFound} isFound={activity.ui.isFound}>
+                    <StyledActivityHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
+                        <StyledHeaderIcon src={activity.activities.icon} />
+                        <Typography variant={"caption"} sx={(theme) => ({ color: theme.palette.text.primary })}>
+                            {activity.activities.displayableName}
                         </Typography>
-                    )}
-                    {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
-                    {activity.additionalFields.map((additionalField, index) => (
-                        <Typography key={index} component={"p"} variant={"overline"}>
-                            {additionalField.name}: {additionalField.value}
+                        {activity.actions.map((activityAction) => (
+                            <HeaderActivity key={activityAction.id} activityAction={activityAction} />
+                        ))}
+                    </StyledActivityHeader>
+                    <StyledActivityBody>
+                        <Typography mt={0.5} component={"p"} variant={"overline"}>
+                            {formatDateTime(activity.date)} | {activity.user}
                         </Typography>
-                    ))}
-                </StyledActivityBody>
+                        {activity.scenarioVersionId && (
+                            <Typography component={"p"} variant={"overline"}>
+                                Version: {activity.scenarioVersionId}
+                            </Typography>
+                        )}
+                        {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
+                        {activity.additionalFields.map((additionalField, index) => (
+                            <Typography key={index} component={"p"} variant={"overline"}>
+                                {additionalField.name}: {additionalField.value}
+                            </Typography>
+                        ))}
+                    </StyledActivityBody>
+                </StyledActivityContent>
             </StyledActivityRoot>
         );
     },
