@@ -4,7 +4,7 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class DetermineOfferedPlanSpec extends AnyFreeSpecLike with BaseE2eSpec with Matchers with VeryPatientScalaFutures {
+class DetermineOfferedPlanSpec extends AnyFreeSpecLike with BaseE2ESpec with Matchers with VeryPatientScalaFutures {
 
   "Properly determine offers for customers" in {
     val customers = List(
