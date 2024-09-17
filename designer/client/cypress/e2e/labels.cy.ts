@@ -19,13 +19,15 @@ describe("Scenario labels", () => {
 
             cy.intercept("PUT", "/api/processes/*").as("save");
 
+            cy.intercept("POST", "/api/scenarioLabels/validation").as("labelvalidation");
+
             cy.get("[data-testid=AddLabel]").should("be.visible").click();
 
             cy.get("[data-testid=LabelInput]").as("labelInput");
 
             cy.get("@labelInput").should("be.visible").click().type("tagX");
 
-            cy.wait(1000); // wait for validation
+            cy.wait("@labelvalidation");
 
             cy.get('.MuiAutocomplete-popper li[data-option-index="0"]').contains('Add label "tagX"').click();
 
@@ -33,7 +35,9 @@ describe("Scenario labels", () => {
 
             cy.get("@labelInput").should("be.visible").click().type("tag2");
 
-            cy.wait(1000); // wait for validation
+            cy.wait("@labelvalidation");
+
+            cy.get('.MuiAutocomplete-popper li[data-option-index="0"]').contains('Add label "tag2"').click();
 
             cy.get("@labelInput").type("{enter}");
 
@@ -50,7 +54,7 @@ describe("Scenario labels", () => {
 
             cy.get("@labelInput").should("be.visible").click().type("very long tag");
 
-            cy.wait(1000); // wait for validation
+            cy.wait("@labelvalidation").then((_) => cy.wait(100));
 
             cy.get("@labelInput").should("be.visible").contains("Incorrect value 'very long tag'");
 

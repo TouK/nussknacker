@@ -97,13 +97,14 @@ function visitNewFragment(name?: string, fixture?: string, category?: string) {
 function addLabelsToNewProcess(name?: string, labels?: string[]) {
     return cy.visitProcess(name).then((processName) => {
         cy.intercept("PUT", "/api/processes/*").as("save");
+        cy.intercept("POST", "/api/scenarioLabels/validation").as("labelValidation");
         cy.get("[data-testid=AddLabel]").should("be.visible").click();
         cy.get("[data-testid=LabelInput]").should("be.visible").click().as("labelInput");
 
         labels.forEach((label) => {
             cy.get("@labelInput").type(label);
-            cy.wait(1000); // wait for validation
-            cy.get("@labelInput").type("{enter}");
+            cy.wait("@labelValidation");
+            cy.get('.MuiAutocomplete-popper li[data-option-index="0"]').contains(label).click();
         });
 
         cy.contains(/^save/i).should("be.enabled").click();

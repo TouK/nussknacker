@@ -139,7 +139,7 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
           .body(
             s"""
                |{
-               |  "labels": ["tag100", "tag2"]
+               |  "labels": ["tag12345678", "tag2"]
                |}""".stripMargin
           )
           .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
@@ -150,9 +150,9 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
                |{
                |  "validationErrors": [
                |    {
-               |      "label": "tag100",
+               |      "label": "tag12345678",
                |      "messages": [
-               |        "Scenario label can contain up to 5 characters"
+               |        "Scenario label can contain up to 10 characters"
                |      ]
                |    }
                |  ]
@@ -185,7 +185,7 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
           .body(
             s"""
                |{
-               |  "labels": ["tag100", "tag2"]
+               |  "labels": ["tag12345678", "tag2"]
                |}""".stripMargin
           )
           .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
@@ -196,9 +196,9 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
                |{
                |  "validationErrors": [
                |    {
-               |      "label": "tag100",
+               |      "label": "tag12345678",
                |      "messages": [
-               |        "Scenario label can contain up to 5 characters"
+               |        "Scenario label can contain up to 10 characters"
                |      ]
                |    }
                |  ]
@@ -219,7 +219,7 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
           .body(
             s"""
                |{
-               |  "labels": ["tag100", "tag2"]
+               |  "labels": ["tag12345678", "tag2"]
                |}""".stripMargin
           )
           .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
@@ -230,9 +230,9 @@ class ScenarioLabelsApiHttpServiceSecuritySpec
                |{
                |  "validationErrors": [
                |    {
-               |      "label": "tag100",
+               |      "label": "tag12345678",
                |      "messages": [
-               |        "Scenario label can contain up to 5 characters"
+               |        "Scenario label can contain up to 10 characters"
                |      ]
                |    }
                |  ]

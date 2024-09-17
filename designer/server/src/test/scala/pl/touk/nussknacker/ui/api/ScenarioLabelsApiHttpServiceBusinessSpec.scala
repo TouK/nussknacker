@@ -141,7 +141,7 @@ class ScenarioLabelsApiHttpServiceBusinessSpec
           .body(
             s"""
                |{
-               |  "labels": ["tooLongTag", "tag 1", "tag 12345"]
+               |  "labels": ["veryLongTag", "tag 1", "tag 12345678"]
                |}""".stripMargin
           )
           .post(s"$nuDesignerHttpAddress/api/scenarioLabels/validation")
@@ -152,22 +152,22 @@ class ScenarioLabelsApiHttpServiceBusinessSpec
                |{
                |  "validationErrors": [
                |    {
-               |      "label": "tooLongTag",
+               |      "label": "veryLongTag",
                |      "messages": [
-               |          "Scenario label can contain up to 5 characters"
+               |          "Scenario label can contain up to 10 characters"
                |      ]
                |    },
                |    {
                |      "label": "tag 1",
                |      "messages": [
-               |          "Scenario label can contain only alphanumeric characters"
+               |          "Scenario label can contain only alphanumeric characters, '-' and '_'"
                |      ]
                |    },
                |    {
-               |      "label": "tag 12345",
+               |      "label": "tag 12345678",
                |      "messages": [
-               |          "Scenario label can contain only alphanumeric characters",
-               |          "Scenario label can contain up to 5 characters"
+               |          "Scenario label can contain only alphanumeric characters, '-' and '_'",
+               |          "Scenario label can contain up to 10 characters"
                |      ]
                |    }
                |  ]
