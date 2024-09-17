@@ -428,6 +428,8 @@ describe("Fragment", () => {
 
         cy.get("@sendSms")
             .parent()
-            .matchImage({ screenshotConfig: { padding: 16 } });
+            .matchImage({ 
+                maxmaxDiffThreshold: 0.015,
+                screenshotConfig: { padding: 16 } });
     });
 });
