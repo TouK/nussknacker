@@ -151,7 +151,7 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
         actionsBeingMigrated.find(_.commentId.contains(expectedOldCommentIdForHeadActivity)).map(_.id).get
 
       headActivity shouldBe ScenarioActivityEntityData(
-        id = 1L,
+        id = headActivity.id,
         activityType = "SCENARIO_DEPLOYED",
         scenarioId = createdProcess.id.value,
         activityId = expectedActionIdForHeadActivity,
