@@ -9,44 +9,44 @@
 ### 1.18.0 (Not released yet)
 
 * Batch processing mode related improvements:
-  * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
-    are registered based on class of Serializer instead of instance of Serializer. Thanks to this change, it is possible to use `RAW<>`
-    data type in Table API components
-  * [#6552](https://github.com/TouK/nussknacker/pull/6552) Added aggregation functions to Batch aggregation component
-    (`Average`, `Count`, `Max`, `Min`, `Population standard deviation`, `Sample standard deviation`, `Population variance`, `Sample variance`)
-  * [#6734](https://github.com/TouK/nussknacker/pull/6734) Tables from external catalogs are now refreshed automatically
-    when entering into node form. Please be aware that changes in `tableDefinition.sql` are not refreshed.
-    To do this, use `/app/processingtype/reload` API
-  * [#6741](https://github.com/TouK/nussknacker/pull/6741) Added `catalogConfiguration` configuration option allowing to set up catalog
-    directly in config instead of by `tableDefinition.sql`
-  * [#6741](https://github.com/TouK/nussknacker/pull/6741) (Breaking change) Fully qualified table paths are used instead of table names
-    in table source and sink components in `Table` parameter
+    * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
+      are registered based on class of Serializer instead of instance of Serializer. Thanks to this change, it is possible to use `RAW<>`
+      data type in Table API components
+    * [#6552](https://github.com/TouK/nussknacker/pull/6552) Added aggregation functions to Batch aggregation component
+      (`Average`, `Count`, `Max`, `Min`, `Population standard deviation`, `Sample standard deviation`, `Population variance`, `Sample variance`)
+    * [#6734](https://github.com/TouK/nussknacker/pull/6734) Tables from external catalogs are now refreshed automatically
+      when entering into node form. Please be aware that changes in `tableDefinition.sql` are not refreshed.
+      To do this, use `/app/processingtype/reload` API
+    * [#6741](https://github.com/TouK/nussknacker/pull/6741) Added `catalogConfiguration` configuration option allowing to set up catalog
+      directly in config instead of by `tableDefinition.sql`
+    * [#6741](https://github.com/TouK/nussknacker/pull/6741) (Breaking change) Fully qualified table paths are used instead of table names
+      in table source and sink components in `Table` parameter
 * [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
-* [#6695](https://github.com/TouK/nussknacker/pull/6695) From now on, arrays on UI are visible as lists but on a 
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) From now on, arrays on UI are visible as lists but on a
   background they are stored as it is and SpeL converts them to lists in a runtime.
 * [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`.
 * [#6778](https://github.com/TouK/nussknacker/pull/6778) SpeL: check for methods if a property for a given name does not exist.
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
 * [#6807](https://github.com/TouK/nussknacker/pull/6807) Add conversion functions to primitives to: `#CONV`:
-  * toNumberOrNull
-  * toString
-  * toBoolean
-  * toBooleanOrNull
-  * toInteger
-  * toIntegerOrNull
-  * toLong
-  * toLongOrNull
-  * toDouble
-  * toDoubleOrNull
-  * toBigInteger
-  * toBigIntegerOrNull
-  * toBigDecimal
-  * toBigDecimalOrNull
-* [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside 
-  indexer for Maps and Lists (for example `{1,2,3}[#otherList.remove(1) == null ? 0 : 0]`). This allowed executing 
+    * toNumberOrNull
+    * toString
+    * toBoolean
+    * toBooleanOrNull
+    * toInteger
+    * toIntegerOrNull
+    * toLong
+    * toLongOrNull
+    * toDouble
+    * toDoubleOrNull
+    * toBigInteger
+    * toBigIntegerOrNull
+    * toBigDecimal
+    * toBigDecimalOrNull
+* [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside
+  indexer for Maps and Lists (for example `{1,2,3}[#otherList.remove(1) == null ? 0 : 0]`). This allowed executing
   some types of unallowed expressions.
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
-  - shorter message in logs
+    - shorter message in logs
 * [#6886](https://github.com/TouK/nussknacker/pull/6886) Fix for "Illegal table name:$nuCatalog" error when using Apache Iceberg catalog.
   Internal Nussknacker catalog is now named `_nu_catalog`
 
@@ -56,7 +56,7 @@
 
 (Not available yet)
 
-### 1.17.0 (Not released yet)
+### 1.17.0 (12 September 2024)
 
 * [#6658](https://github.com/TouK/nussknacker/pull/6658) Bump up circe-yaml lib to 0.15.2
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
@@ -124,6 +124,7 @@
   * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
   * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
 * [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
+* [#6797](https://github.com/TouK/nussknacker/pull/6797) [#6815](https://github.com/TouK/nussknacker/pull/6815) Performance optimization of Avro processing
 
 ## 1.16
 
