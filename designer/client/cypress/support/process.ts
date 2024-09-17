@@ -189,6 +189,7 @@ function importTestProcess(name: string, fixture = "testProcess") {
             cy.request("PUT", `/api/processes/${name}`, {
                 comment: "import test data",
                 scenarioGraph: response.scenarioGraph,
+                scenarioLabels: [],
             });
             return cy.wrap(name);
         });
