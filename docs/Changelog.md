@@ -4,6 +4,11 @@
 
 #### Highlights
 
+### 1.17.1 (Not released yet)
+
+* [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
+  - shorter message in logs
+
 ### 1.17.0 (12 September 2024)
 
 * [#6658](https://github.com/TouK/nussknacker/pull/6658) Bump up circe-yaml lib to 0.15.2
