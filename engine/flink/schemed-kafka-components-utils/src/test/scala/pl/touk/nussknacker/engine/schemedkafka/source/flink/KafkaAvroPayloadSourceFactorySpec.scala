@@ -361,9 +361,9 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
       Map(
         VariableConstants.InputVariableName -> Typed.record(
           ListMap(
-            "first"  -> AvroStringSettings.stringTypingResult,
-            "middle" -> AvroStringSettings.stringTypingResult,
-            "last"   -> AvroStringSettings.stringTypingResult
+            "first"  -> Typed[String],
+            "middle" -> Typed[String],
+            "last"   -> Typed[String]
           ),
           Typed.typedClass[GenericRecord]
         ),

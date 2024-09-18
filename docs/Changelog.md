@@ -57,7 +57,14 @@
 
 (Not available yet)
 
-### 1.17.0 (Not released yet)
+### 1.17.1 (Not released yet)
+
+* [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
+  - shorter message in logs
+
+* [#6877](https://github.com/TouK/nussknacker/pull/6877) Fix application crash on edit node details window open
+  
+### 1.17.0 (12 September 2024)
 
 * [#6658](https://github.com/TouK/nussknacker/pull/6658) Bump up circe-yaml lib to 0.15.2
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
@@ -125,6 +132,10 @@
   * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
   * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
 * [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
+* [#6797](https://github.com/TouK/nussknacker/pull/6797) [#6815](https://github.com/TouK/nussknacker/pull/6815) Performance optimization of Avro processing
+* [#6578](https://github.com/TouK/nussknacker/pull/6578) Introduced support for displaying a docsUrl with an icon in scenario properties. This feature is based on the processingType and is configurable via the model.conf file.
+* [#6725](https://github.com/TouK/nussknacker/pull/6725) Resolved an issue where properties were not saving when a fragment was in a different group than other fragments.
+* [#6697](https://github.com/TouK/nussknacker/pull/6697) Fix unhandled error when open survey
 
 ## 1.16
 

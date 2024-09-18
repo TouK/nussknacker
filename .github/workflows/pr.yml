@@ -487,7 +487,7 @@ jobs:
           if-no-files-found: ignore
       - name: Create Pull Request
         id: update_snapshots
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v7
         if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
           HASH: ${{ format('#{0}', github.event.number) }}
