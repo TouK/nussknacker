@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Pro
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.{DictRegistry, EngineDictRegistry}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -40,7 +41,8 @@ object ExpressionCompiler {
       dictRegistry: DictRegistry,
       expressionConfig: ExpressionConfigDefinition,
       classDefinitionSet: ClassDefinitionSet,
-      expressionEvaluator: ExpressionEvaluator
+      expressionEvaluator: ExpressionEvaluator,
+      settings: ClassExtractionSettings,
   ): ExpressionCompiler =
     default(
       loader,
@@ -48,7 +50,8 @@ object ExpressionCompiler {
       expressionConfig,
       expressionConfig.optimizeCompilation,
       classDefinitionSet,
-      expressionEvaluator
+      expressionEvaluator,
+      settings,
     )
 
   def withoutOptimization(
@@ -56,7 +59,8 @@ object ExpressionCompiler {
       dictRegistry: DictRegistry,
       expressionConfig: ExpressionConfigDefinition,
       classDefinitionSet: ClassDefinitionSet,
-      expressionEvaluator: ExpressionEvaluator
+      expressionEvaluator: ExpressionEvaluator,
+      settings: ClassExtractionSettings,
   ): ExpressionCompiler =
     default(
       loader,
@@ -64,7 +68,8 @@ object ExpressionCompiler {
       expressionConfig,
       optimizeCompilation = false,
       classDefinitionSet,
-      expressionEvaluator
+      expressionEvaluator,
+      settings,
     )
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
@@ -75,7 +80,8 @@ object ExpressionCompiler {
       modelData.modelDefinitionWithClasses.classDefinitions,
       ExpressionEvaluator.unOptimizedEvaluator(
         GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-      )
+      ),
+      modelData.modelDefinition.settings,
     )
   }
 
@@ -85,7 +91,8 @@ object ExpressionCompiler {
       expressionConfig: ExpressionConfigDefinition,
       optimizeCompilation: Boolean,
       classDefinitionSet: ClassDefinitionSet,
-      expressionEvaluator: ExpressionEvaluator
+      expressionEvaluator: ExpressionEvaluator,
+      settings: ClassExtractionSettings,
   ): ExpressionCompiler = {
     def spelParser(flavour: Flavour) =
       SpelExpressionParser.default(
@@ -94,7 +101,8 @@ object ExpressionCompiler {
         dictRegistry,
         optimizeCompilation,
         flavour,
-        classDefinitionSet
+        classDefinitionSet,
+        settings,
       )
 
     val defaultParsers =

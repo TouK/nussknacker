@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
+import pl.touk.nussknacker.engine.extension.ClassDefinitionSetExtensionMethodsAware
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
   ConstructionOfUnknown,
@@ -62,7 +64,7 @@ private[spel] class Typer(
     dictTyper: SpelDictTyper,
     strictMethodsChecking: Boolean,
     staticMethodInvocationsChecking: Boolean,
-    classDefinitionSet: ClassDefinitionSet,
+    classDefinitionSet: ClassDefinitionSetExtensionMethodsAware,
     evaluationContextPreparer: EvaluationContextPreparer,
     methodExecutionForUnknownAllowed: Boolean,
     dynamicPropertyAccessAllowed: Boolean
@@ -765,7 +767,21 @@ object Typer {
       classLoader: ClassLoader,
       expressionConfig: ExpressionConfigDefinition,
       spelDictTyper: SpelDictTyper,
-      classDefinitionSet: ClassDefinitionSet
+      classDefinitionSet: ClassDefinitionSet,
+      settings: ClassExtractionSettings,
+  ): Typer =
+    default(
+      classLoader,
+      expressionConfig,
+      spelDictTyper,
+      new ClassDefinitionSetExtensionMethodsAware(classDefinitionSet, settings)
+    )
+
+  def default(
+      classLoader: ClassLoader,
+      expressionConfig: ExpressionConfigDefinition,
+      spelDictTyper: SpelDictTyper,
+      classDefinitionSet: ClassDefinitionSetExtensionMethodsAware
   ): Typer = {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
 

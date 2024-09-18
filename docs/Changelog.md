@@ -60,6 +60,7 @@
   * [#6823](https://github.com/TouK/nussknacker/pull/6823) 
     * old process actions and comments migrated to new table in the db
     * Scenario Activity API implementation
+* [#6840](https://github.com/TouK/nussknacker/pull/6840) Introduce castTo and canCastTo extension methods in SpeL.
 
 ## 1.17
 

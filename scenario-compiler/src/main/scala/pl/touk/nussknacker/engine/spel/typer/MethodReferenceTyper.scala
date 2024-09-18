@@ -5,11 +5,16 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, MethodDefinition}
+import pl.touk.nussknacker.engine.extension.ClassDefinitionSetExtensionMethodsAware
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
 
-class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecutionForUnknownAllowed: Boolean) {
+// todo: lbg imports
+class MethodReferenceTyper(
+    classDefinitionSet: ClassDefinitionSetExtensionMethodsAware,
+    methodExecutionForUnknownAllowed: Boolean
+) {
 
   def typeMethodReference(reference: MethodReference): Either[ExpressionParseError, TypingResult] = {
     implicit val implicitReference: MethodReference = reference
@@ -21,9 +26,10 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
       case TypedNull =>
         Left(IllegalInvocationError(TypedNull))
       case Unknown =>
-        // TODO: lbg Should we allow always access on Unknown to: canCastTo, castTo and toString?
-        if (methodExecutionForUnknownAllowed) typeFromClazzDefinitions(classDefinitionSet.unknown.toList)
-        else Left(IllegalInvocationError(Unknown))
+        typeFromClazzDefinitions(classDefinitionSet.unknown.toList) match {
+          case Right(Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(Unknown))
+          case result @ _                                          => result
+        }
     }
   }
 

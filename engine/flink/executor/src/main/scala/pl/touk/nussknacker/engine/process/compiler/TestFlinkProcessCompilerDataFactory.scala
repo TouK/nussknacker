@@ -55,7 +55,8 @@ object TestFlinkProcessCompilerDataFactory {
               context.expressionConfig,
               context.dictRegistry,
               context.classDefinitions,
-              process.metaData
+              process.metaData,
+              modelData.modelDefinition.settings,
             ),
             scenarioTestData
           )

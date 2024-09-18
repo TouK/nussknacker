@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.OtherError
 import pl.touk.nussknacker.engine.api.generics._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.typer.MethodReferenceTyper
 
@@ -44,10 +44,10 @@ class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
   }
 
   private val methodReferenceTyper = {
-    val classDefinitionSet = ClassDefinitionSet(
-      ClassDefinitionTestUtils.DefaultDiscovery.discoverClassesFromTypes(List(Typed[Helper]))
+    new MethodReferenceTyper(
+      ClassDefinitionTestUtils.createDefaultDefinitionForTypesWithExtensions(List(Typed[Helper])),
+      methodExecutionForUnknownAllowed = false
     )
-    new MethodReferenceTyper(classDefinitionSet, methodExecutionForUnknownAllowed = false)
   }
 
   private def extractMethod(name: String, args: List[TypingResult]): Either[ExpressionParseError, TypingResult] = {

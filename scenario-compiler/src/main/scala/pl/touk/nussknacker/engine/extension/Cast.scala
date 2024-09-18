@@ -49,7 +49,7 @@ class CastImpl(target: Any) extends Cast {
     if (clazz.isInstance(target)) {
       clazz.cast(target).asInstanceOf[T]
     } else {
-      throw new IllegalArgumentException(s"Cannot cast: ${target.getClass} to: $clazzType")
+      throw new ClassCastException(s"Cannot cast: ${target.getClass} to: $clazzType")
     }
   }.get
 

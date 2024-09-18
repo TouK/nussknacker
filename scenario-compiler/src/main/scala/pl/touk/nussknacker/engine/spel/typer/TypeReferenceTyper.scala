@@ -7,12 +7,16 @@ import org.springframework.expression.{EvaluationContext, EvaluationException}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.extension.ClassDefinitionSetExtensionMethodsAware
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.TypeReferenceError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownClassError
 
 import scala.util.{Failure, Success, Try}
 
-class TypeReferenceTyper(evaluationContext: EvaluationContext, classDefinitionSet: ClassDefinitionSet) {
+class TypeReferenceTyper(
+    evaluationContext: EvaluationContext,
+    classDefinitionSet: ClassDefinitionSetExtensionMethodsAware
+) {
 
   def typeTypeReference(typeReference: TypeReference): Writer[List[ExpressionParseError], TypingResult] = {
 
