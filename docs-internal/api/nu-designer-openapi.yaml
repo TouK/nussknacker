@@ -1173,39 +1173,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MigrateScenarioRequestDto'
-            examples:
-              Example:
-                summary: Migrate given scenario to current Nu instance
-                value:
-                  version: 1
-                  sourceEnvironmentId: testEnv
-                  remoteUserName: testUser
-                  processingMode: Unbounded-Stream
-                  engineSetupName: Flink
-                  processCategory: Category1
-                  scenarioGraph:
-                    properties:
-                      additionalFields:
-                        properties:
-                          parallelism: ''
-                        metaDataType: LiteStreamMetaData
-                        showDescription: false
-                    nodes:
-                    - id: source
-                      ref:
-                        typ: csv-source-lite
-                        parameters: []
-                      type: Source
-                    - id: sink
-                      ref:
-                        typ: dead-end-lite
-                        parameters: []
-                      type: Sink
-                    edges:
-                    - from: source
-                      to: sink
-                  processName: test
-                  isFragment: false
         required: true
       responses:
         '200':
@@ -2199,6 +2166,193 @@ paths:
                     - state
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/scenarioLabels:
+    get:
+      tags:
+      - Scenario labels
+      summary: Service providing available scenario labels
+      operationId: getApiScenariolabels
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioLabels'
+              examples:
+                Example:
+                  summary: List of available scenario labels
+                  value:
+                    labels:
+                    - Label_1
+                    - Label_2
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/scenarioLabels/validation:
+    post:
+      tags:
+      - Scenario labels
+      summary: Service providing scenario labels validation
+      operationId: postApiScenariolabelsValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioLabelsValidationRequestDto'
+            examples:
+              Example0:
+                summary: List of valid scenario labels
+                value:
+                  labels:
+                  - Label_1
+                  - Label_2
+              Example1:
+                summary: List of scenario labels with invalid one
+                value:
+                  labels:
+                  - Label_1
+                  - Label_2
+                  - Label 3
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioLabelsValidationResponseDto'
+              examples:
+                Example0:
+                  summary: Validation response with no errors
+                  value:
+                    validationErrors: []
+                Example1:
+                  summary: Validation response with errors
+                  value:
+                    validationErrors:
+                    - label: Label 3
+                      messages:
+                      - Scenario label can contain only alphanumeric characters, '-'
+                        and '_'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -4836,10 +4990,12 @@ components:
       title: MigrateScenarioRequestDto
       oneOf:
       - $ref: '#/components/schemas/MigrateScenarioRequestDtoV1'
+      - $ref: '#/components/schemas/MigrateScenarioRequestDtoV2'
       discriminator:
         propertyName: version
         mapping:
           '1': MigrateScenarioRequestDtoV1
+          '2': MigrateScenarioRequestDtoV2
     MigrateScenarioRequestDtoV1:
       title: MigrateScenarioRequestDtoV1
       type: object
@@ -4867,6 +5023,43 @@ components:
           type: string
         processCategory:
           type: string
+        scenarioGraph:
+          type: object
+        processName:
+          type: string
+        isFragment:
+          type: boolean
+    MigrateScenarioRequestDtoV2:
+      title: MigrateScenarioRequestDtoV2
+      type: object
+      required:
+      - version
+      - sourceEnvironmentId
+      - remoteUserName
+      - processingMode
+      - engineSetupName
+      - processCategory
+      - scenarioGraph
+      - processName
+      - isFragment
+      properties:
+        version:
+          type: integer
+          format: int32
+        sourceEnvironmentId:
+          type: string
+        remoteUserName:
+          type: string
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        processCategory:
+          type: string
+        scenarioLabels:
+          type: array
+          items:
+            type: string
         scenarioGraph:
           type: object
         processName:
@@ -5973,6 +6166,30 @@ components:
           $ref: '#/components/schemas/ScenarioActivityComment'
         type:
           type: string
+    ScenarioLabels:
+      title: ScenarioLabels
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+    ScenarioLabelsValidationRequestDto:
+      title: ScenarioLabelsValidationRequestDto
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+    ScenarioLabelsValidationResponseDto:
+      title: ScenarioLabelsValidationResponseDto
+      type: object
+      properties:
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
     ScenarioModified:
       title: ScenarioModified
       type: object
@@ -6570,6 +6787,18 @@ components:
           anyOf:
           - $ref: '#/components/schemas/LayoutData'
           - type: 'null'
+    ValidationError:
+      title: ValidationError
+      type: object
+      required:
+      - label
+      properties:
+        label:
+          type: string
+        messages:
+          type: array
+          items:
+            type: string
     ValueInputWithDictEditor:
       title: ValueInputWithDictEditor
       type: object

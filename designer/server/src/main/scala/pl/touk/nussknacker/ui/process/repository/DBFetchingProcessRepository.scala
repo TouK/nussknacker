@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionSt
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
@@ -19,13 +20,21 @@ import scala.language.higherKinds
 
 object DBFetchingProcessRepository {
 
-  def create(dbRef: DbRef, actionRepository: ProcessActionRepository)(implicit ec: ExecutionContext) =
-    new DBFetchingProcessRepository[DB](dbRef, actionRepository) with DbioRepository
+  def create(
+      dbRef: DbRef,
+      actionRepository: ProcessActionRepository,
+      scenarioLabelsRepository: ScenarioLabelsRepository
+  )(implicit ec: ExecutionContext) =
+    new DBFetchingProcessRepository[DB](dbRef, actionRepository, scenarioLabelsRepository) with DbioRepository
 
-  def createFutureRepository(dbRef: DbRef, actionRepository: ProcessActionRepository)(
+  def createFutureRepository(
+      dbRef: DbRef,
+      actionRepository: ProcessActionRepository,
+      scenarioLabelsRepository: ScenarioLabelsRepository
+  )(
       implicit ec: ExecutionContext
   ) =
-    new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
+    new DBFetchingProcessRepository[Future](dbRef, actionRepository, scenarioLabelsRepository) with BasicRepository
 
 }
 
@@ -34,7 +43,8 @@ object DBFetchingProcessRepository {
 //       to the resource on the services side
 abstract class DBFetchingProcessRepository[F[_]: Monad](
     protected val dbRef: DbRef,
-    actionRepository: ProcessActionRepository
+    actionRepository: ProcessActionRepository,
+    scenarioLabelsRepository: ScenarioLabelsRepository,
 )(protected implicit val ec: ExecutionContext)
     extends FetchingProcessRepository[F]
     with LazyLogging {
@@ -90,18 +100,19 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       })
 
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
+      labels          <- scenarioLabelsRepository.getLabels
     } yield latestProcesses
       .map { case ((_, processVersion), process) =>
         createFullDetails(
-          process,
-          processVersion,
-          lastActionPerProcess.get(process.id),
-          lastStateActionPerProcess.get(process.id),
-          lastDeployedActionPerProcess.get(process.id),
+          process = process,
+          processVersion = processVersion,
+          lastActionData = lastActionPerProcess.get(process.id),
+          lastStateActionData = lastStateActionPerProcess.get(process.id),
+          lastDeployedActionData = lastDeployedActionPerProcess.get(process.id),
           isLatestVersion = true,
-          // For optimisation reasons we don't return history and tags when querying for list of processes
-          None,
-          None
+          labels = labels.getOrElse(process.id, List.empty),
+          // For optimisation reasons we don't return history when querying for list of processes
+          history = None
         )
       }).map(_.toList)
   }
@@ -183,7 +194,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         fetchProcessLatestVersionsQuery(id)(ScenarioShapeFetchStrategy.NotFetch).result
       )
       actions <- OptionT.liftF[DB, List[ProcessAction]](actionRepository.getFinishedProcessActions(id, None))
-      tags    <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
+      labels  <- OptionT.liftF(scenarioLabelsRepository.getLabels(id))
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
@@ -197,7 +208,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
           action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
         ),
       isLatestVersion = isLatestVersion,
-      tags = Some(tags),
+      labels = labels,
       history = Some(
         processVersions.map(v =>
           ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p.processVersionId == v.id))
@@ -213,7 +224,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       lastStateActionData: Option[ProcessAction],
       lastDeployedActionData: Option[ProcessAction],
       isLatestVersion: Boolean,
-      tags: Option[Seq[TagsEntityData]],
+      labels: List[ScenarioLabel],
       history: Option[Seq[ScenarioVersion]]
   ): ScenarioWithDetailsEntity[PS] = {
     repository.ScenarioWithDetailsEntity[PS](
@@ -229,7 +240,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       lastAction = lastActionData,
       lastStateAction = lastStateActionData,
       lastDeployedAction = lastDeployedActionData,
-      tags = tags.map(_.map(_.name).toList),
+      scenarioLabels = labels.map(_.value),
       modificationDate = processVersion.createDate.toInstant,
       modifiedAt = processVersion.createDate.toInstant,
       modifiedBy = processVersion.user,

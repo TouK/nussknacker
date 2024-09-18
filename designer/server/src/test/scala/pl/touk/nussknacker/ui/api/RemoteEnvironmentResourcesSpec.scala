@@ -218,6 +218,7 @@ class RemoteEnvironmentResourcesSpec
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,
+        scenarioLabels: List[String],
         scenarioGraph: ScenarioGraph,
         processName: ProcessName,
         isFragment: Boolean

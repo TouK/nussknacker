@@ -267,7 +267,8 @@ class NodeCompiler(
   }
 
   def compileFragmentInput(fragmentInput: FragmentInput, ctx: ValidationContext)(
-      implicit nodeId: NodeId, metaData: MetaData
+      implicit nodeId: NodeId,
+      metaData: MetaData
   ): NodeCompilationResult[List[CompiledParameter]] = {
 
     val ref            = fragmentInput.ref

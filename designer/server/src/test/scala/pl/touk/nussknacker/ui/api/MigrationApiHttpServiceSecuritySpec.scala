@@ -163,14 +163,15 @@ class MigrationApiHttpServiceSecuritySpec
   private def prepareRequestData(scenarioName: String, processCategory: TestCategory): String =
     s"""
        |{
-       |  "version": "1",
+       |  "version": "2",
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "remoteUserName": "remoteUser",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Mockable",
-       |  "processName": "${scenarioName}",
+       |  "processName": "$scenarioName",
        |  "isFragment": false,
        |  "processCategory": "${processCategory.stringify}",
+       |  "scenarioLabels": ["tag1", "tag2"],
        |  "scenarioGraph": ${exampleGraph.asJson.noSpaces}
        |}
        |""".stripMargin

@@ -81,8 +81,10 @@ import pl.touk.nussknacker.test.mock.{
 }
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.config.ScenarioLabelConfig
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
@@ -110,7 +112,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   private val validationExpressionForListWithMetadata =
     Expression.spel(s"#value[0] == #meta.processName.toLowerCase")
-
 
   private val validationExpressionForLocalDateTime =
     Expression.spel(
@@ -333,9 +334,130 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
+  test("validate scenario labels") {
+    val scenario = {
+      createGraph(
+        List(
+          Source("in", SourceRef(ProcessTestData.existingSourceFactory, List())),
+          Sink("out", SinkRef(ProcessTestData.existingSinkFactory, List()))
+        ),
+        List(Edge("in", "out", None)),
+      )
+    }
+
+    def createValidator(config: Option[ScenarioLabelConfig]) = {
+      ProcessTestData.testProcessValidator(
+        scenarioLabelsValidator = new ScenarioLabelsValidator(config),
+        scenarioProperties = FlinkStreamingPropertiesConfig.properties
+      )
+    }
+
+    def validate(processValidator: UIProcessValidator, labels: List[String]) = {
+      processValidator.validate(
+        scenario,
+        ProcessTestData.sampleProcessName,
+        isFragment = false,
+        labels = labels.map(ScenarioLabel.apply)
+      )
+    }
+
+    val validatorWithoutConfig = createValidator(None)
+
+    validate(validatorWithoutConfig, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(validatorWithoutConfig, List("tag1", "tag2", "tag100", "tag 100")) shouldBe withoutErrorsAndWarnings
+
+    val validatorWithNoValidationRules = createValidator(Some(ScenarioLabelConfig(validationRules = List.empty)))
+
+    validate(validatorWithNoValidationRules, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(
+      validatorWithNoValidationRules,
+      List("tag1", "tag2", "tag100", "tag 100")
+    ) shouldBe withoutErrorsAndWarnings
+
+    val validator = createValidator(
+      Some(
+        ScenarioLabelConfig(
+          validationRules = List(
+            ScenarioLabelConfig.ValidationRule("^[a-zA-z0-9]*$".r, "Only alphanumeric characters allowed"),
+            ScenarioLabelConfig.ValidationRule(".{0,5}$$".r, "Label '{label}' cannot have more than 5 characters"),
+          )
+        )
+      )
+    )
+
+    validate(validator, List.empty) shouldBe withoutErrorsAndWarnings
+    validate(validator, List("tag1", "tag2")) shouldBe withoutErrorsAndWarnings
+    validate(validator, List("tag100", "tag2")).errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario label: tag100",
+          description = "Label 'tag100' cannot have more than 5 characters",
+          fieldName = Some("tag100"),
+          errorType = NodeValidationErrorType.SaveAllowed,
+          details = None
+        ),
+        List.empty
+      )
+    )
+
+    validate(validator, List("tag 1", "tag2")).errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario label: tag 1",
+          description = "Only alphanumeric characters allowed",
+          fieldName = Some("tag 1"),
+          errorType = NodeValidationErrorType.SaveAllowed,
+          details = None
+        ),
+        List.empty
+      )
+    )
+
+    validate(validator, List("tag 100", "tag2")).errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario label: tag 100",
+          description = "Only alphanumeric characters allowed, Label 'tag 100' cannot have more than 5 characters",
+          fieldName = Some("tag 100"),
+          errorType = NodeValidationErrorType.SaveAllowed,
+          details = None
+        ),
+        List.empty
+      )
+    )
+
+    validate(validator, List("tag 100", "tag 200", "tag2")).errors.globalErrors shouldBe List(
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario label: tag 100",
+          description = "Only alphanumeric characters allowed, Label 'tag 100' cannot have more than 5 characters",
+          fieldName = Some("tag 100"),
+          errorType = NodeValidationErrorType.SaveAllowed,
+          details = None
+        ),
+        List.empty
+      ),
+      UIGlobalError(
+        NodeValidationError(
+          typ = "ScenarioLabelValidationError",
+          message = "Invalid scenario label: tag 200",
+          description = "Only alphanumeric characters allowed, Label 'tag 200' cannot have more than 5 characters",
+          fieldName = Some("tag 200"),
+          errorType = NodeValidationErrorType.SaveAllowed,
+          details = None
+        ),
+        List.empty
+      )
+    )
+  }
+
   test("validate missing required scenario properties") {
-    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      Map(
+    val processValidator = ProcessTestData.testProcessValidator(
+      scenarioProperties = Map(
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
@@ -354,7 +476,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
     def validate(scenarioGraph: ScenarioGraph) =
-      processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
+      processValidator.validate(
+        scenarioGraph,
+        ProcessTestData.sampleProcessName,
+        isFragment = false,
+        labels = List.empty
+      )
 
     validate(
       validScenarioGraphWithFields(Map("field1" -> "a", "field2" -> "b"))
@@ -392,10 +519,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("validate scenario properties according to validators from additional config provider") {
     val processValidator =
-      TestFactory.processValidator.withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
+      ProcessTestData.testProcessValidator(scenarioProperties = FlinkStreamingPropertiesConfig.properties)
 
     def validate(scenarioGraph: ScenarioGraph) =
-      processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
+      processValidator.validate(
+        scenarioGraph,
+        ProcessTestData.sampleProcessName,
+        isFragment = false,
+        labels = List.empty
+      )
 
     validate(
       validScenarioGraphWithFields(
@@ -424,8 +556,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("don't validate properties on fragment") {
-    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      Map(
+    val processValidator = ProcessTestData.testProcessValidator(
+      scenarioProperties = Map(
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
@@ -446,15 +578,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     processValidator.validate(
       validScenarioGraphWithFields(Map.empty),
       ProcessTestData.sampleFragmentName,
-      isFragment = true
+      isFragment = true,
+      labels = List.empty,
     ) shouldBe withoutErrorsAndWarnings
 
   }
 
   test("validate type scenario field") {
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
-    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      Map(
+    val processValidator = ProcessTestData.testProcessValidator(
+      scenarioProperties = Map(
         "field1" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = Some(FixedValuesParameterEditor(possibleValues)),
@@ -472,7 +605,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
     def validate(scenarioGraph: ScenarioGraph) =
-      processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
+      processValidator.validate(
+        scenarioGraph,
+        ProcessTestData.sampleProcessName,
+        isFragment = false,
+        labels = List.empty
+      )
 
     validate(validScenarioGraphWithFields(Map("field1" -> "true"))) shouldBe withoutErrorsAndWarnings
     validate(validScenarioGraphWithFields(Map("field1" -> "false"))) shouldBe withoutErrorsAndWarnings
@@ -484,8 +622,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("handle unknown properties validation") {
-    val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      Map(
+    val processValidator = ProcessTestData.testProcessValidator(
+      scenarioProperties = Map(
         "field2" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
@@ -500,7 +638,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       processValidator.validate(
         validScenarioGraphWithFields(Map("field1" -> "true")),
         ProcessTestData.sampleProcessName,
-        isFragment = false
+        isFragment = false,
+        labels = List.empty,
       )
 
     result.errors.processPropertiesErrors should matchPattern {
@@ -747,7 +886,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val validationResult = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
-    ).validate(fragmentGraph, sampleProcessName, isFragment = true)
+    ).validate(fragmentGraph, sampleProcessName, isFragment = true, labels = List.empty)
 
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
@@ -879,7 +1018,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
     val processValidator = mockedProcessValidator(Some(invalidFragment))
-    val validationResult = processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val validationResult =
+      processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     validationResult should matchPattern {
       case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
@@ -950,7 +1090,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
     val processValidation = mockedProcessValidator(Some(fragment))
-    val validationResult  = processValidation.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val validationResult =
+      processValidation.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("subIn1") should matchPattern {
@@ -1010,7 +1151,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val processValidator = mockedProcessValidator(Some(invalidFragment))
 
-    val validationResult = processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val validationResult =
+      processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
     validationResult.errors.globalErrors shouldBe Symbol("empty")
     validationResult.saveAllowed shouldBe true
@@ -1057,7 +1199,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
     val processValidator = mockedProcessValidator(Some(fragment))
-    val validationResult = processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val validationResult =
+      processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
@@ -1119,7 +1262,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1155,7 +1298,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1191,7 +1334,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1227,7 +1370,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1276,7 +1419,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1325,7 +1468,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1378,7 +1521,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1397,7 +1540,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     }
     result.warnings shouldBe ValidationWarnings.success
   }
-
 
   test(
     "validate List service parameter based on additional config from provider - ValidationExpressionParameterValidator with #meta variable"
@@ -1432,7 +1574,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1480,7 +1622,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1518,13 +1660,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
 
     val process = processWithOptionalParameterService("")
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1575,13 +1718,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       scenarioProperties = Map.empty,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
 
     val process = processWithOptionalParameterService("'Barabasz'")
 
-    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1609,7 +1753,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
     )
 
-    val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
+    val result =
+      processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1632,7 +1777,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   test("checks for unknown dictId in DictParameterEditor") {
     val process = processWithDictParameterEditorService(Expression.dictKeyWithLabel("someKey", Some("someLabel")))
 
-    val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
+    val result =
+      processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1658,7 +1804,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
-    ).validate(process, sampleProcessName, isFragment = false)
+    ).validate(process, sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -1683,7 +1829,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))
-    ).validate(process, sampleProcessName, isFragment = false)
+    ).validate(process, sampleProcessName, isFragment = false, labels = List.empty)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes shouldBe Map.empty
@@ -1772,7 +1918,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
     val processValidator = mockedProcessValidator(Some(fragment))
 
-    val validationResult = processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+    val validationResult =
+      processValidator.validate(process, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
     validationResult.errors.globalErrors shouldBe Symbol("empty")
     validationResult.saveAllowed shouldBe true
@@ -1784,7 +1931,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       processValidatorWithFragmentInAnotherProcessingType.validate(
         process,
         ProcessTestData.sampleProcessName,
-        isFragment = false
+        isFragment = false,
+        labels = List.empty
       )
     validationResultWithCategory2.errors.invalidNodes shouldBe Map(
       "subIn" -> List(PrettyValidationErrors.formatErrorMessage(UnknownFragment(fragment.name.value, "subIn")))
@@ -1806,7 +1954,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName("P1"), "123".spel)))
 
     val processValidator = mockedProcessValidator(Some(fragmentDefinition), configWithValidators)
-    val result = processValidator.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = processValidator.validate(
+      processWithFragment,
+      ProcessTestData.sampleProcessName,
+      isFragment = false,
+      labels = List.empty
+    )
     result.hasErrors shouldBe false
     result.errors.invalidNodes shouldBe Symbol("empty")
     result.errors.globalErrors shouldBe Symbol("empty")
@@ -1825,7 +1978,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName("P1"), "".spel)))
 
     val processValidator = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
-    val result = processValidator.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = processValidator.validate(
+      processWithFragment,
+      ProcessTestData.sampleProcessName,
+      isFragment = false,
+      labels = List.empty
+    )
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
@@ -1867,7 +2025,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
 
     val processValidator = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
-    val result = processValidator.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = processValidator.validate(
+      processWithFragment,
+      ProcessTestData.sampleProcessName,
+      isFragment = false,
+      labels = List.empty
+    )
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
@@ -1920,7 +2083,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     val processValidation = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
-    val result = processValidation.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = processValidation.validate(
+      processWithFragment,
+      ProcessTestData.sampleProcessName,
+      isFragment = false,
+      labels = List.empty
+    )
 
     result.hasErrors shouldBe false
     result.errors.invalidNodes shouldBe Symbol("empty")
@@ -1957,7 +2125,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     val processValidation = mockedProcessValidator(Some(fragmentDefinition), configWithValidators)
-    val result = processValidation.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
+    val result = processValidation.validate(
+      processWithFragment,
+      ProcessTestData.sampleProcessName,
+      isFragment = false,
+      labels = List.empty
+    )
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("subIn") should matchPattern {
@@ -1987,7 +2160,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       mockedProcessValidator(Some(process)).validate(
         scenarioGraph,
         SampleCustomProcessValidator.badName,
-        isFragment = false
+        isFragment = false,
+        labels = List.empty
       )
 
     result.errors.processPropertiesErrors shouldBe List(
@@ -1998,7 +2172,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   test("should validate invalid scenario id") {
     val blankValue = ProcessName(" ")
     val result = TestFactory.flinkProcessValidator
-      .validate(UIProcessValidatorSpec.validFlinkScenarioGraph, blankValue, isFragment = false)
+      .validate(UIProcessValidatorSpec.validFlinkScenarioGraph, blankValue, isFragment = false, labels = List.empty)
       .errors
       .processPropertiesErrors
     result shouldBe List(
@@ -2016,7 +2190,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       List(Edge(blankValue, "out", None))
     )
     val result = TestFactory.flinkProcessValidator
-      .validate(testedScenario, ProcessTestData.sampleProcessName, isFragment = false)
+      .validate(testedScenario, ProcessTestData.sampleProcessName, isFragment = false, labels = List.empty)
       .errors
       .invalidNodes
     val nodeErrors =
@@ -2032,7 +2206,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       List.empty
     )
     val result =
-      TestFactory.flinkProcessValidator.validate(incompleteScenarioWithBlankIds, ProcessName(" "), isFragment = false)
+      TestFactory.flinkProcessValidator.validate(
+        incompleteScenarioWithBlankIds,
+        ProcessName(" "),
+        isFragment = false,
+        labels = List.empty
+      )
     inside(result) { case ValidationResult(errors, _, _) =>
       inside(errors) { case ValidationErrors(nodeErrors, propertiesErrors, _) =>
         nodeErrors should contain key " "
@@ -2056,7 +2235,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentOutput("outNode2", duplicatedOutputName),
       )
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(fragment)
-    val result        = TestFactory.flinkProcessValidator.validate(scenarioGraph, ProcessName(" "), isFragment = true)
+    val result = TestFactory.flinkProcessValidator.validate(
+      scenarioGraph,
+      ProcessName(" "),
+      isFragment = true,
+      labels = List.empty
+    )
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         PrettyValidationErrors.formatErrorMessage(
@@ -2085,7 +2269,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
 
     val processValidator = mockedProcessValidator(Some(fragment), defaultConfig)
-    val result           = processValidator.validate(scenarioGraph, ProcessName(" "), isFragment = true)
+    val result = processValidator.validate(scenarioGraph, ProcessName(" "), isFragment = true, labels = List.empty)
 
     result.errors.invalidNodes shouldBe Map(
       "fragment" -> List(
@@ -2131,7 +2315,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       .split("split", GraphBuilder.split(invalidEndingNodeId1), GraphBuilder.split(invalidEndingNodeId2))
 
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(scenario)
-    val result        = processValidator.validate(scenarioGraph, ProcessName("name"), isFragment = false)
+    val result = processValidator.validate(scenarioGraph, ProcessName("name"), isFragment = false, labels = List.empty)
 
     inside(result.errors.globalErrors) { case UIGlobalError(error, nodeIds) :: Nil =>
       error shouldBe PrettyValidationErrors.formatErrorMessage(
@@ -2195,7 +2379,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     val processValidator = mockedProcessValidator(Some(fragment), defaultConfig)
-    val result           = processValidator.validate(processWithFragment, ProcessName("name"), isFragment = false)
+    val result =
+      processValidator.validate(processWithFragment, ProcessName("name"), isFragment = false, labels = List.empty)
 
     val nodeVariableTypes = result.nodeResults.mapValuesNow(_.variableTypes)
     nodeVariableTypes.get("sink").value shouldEqual Map("input" -> Unknown)
@@ -2203,14 +2388,19 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("return empty process error for empty scenario") {
     val emptyScenario = createGraph(List.empty, List.empty)
-    val result        = processValidator.validate(emptyScenario, ProcessName("name"), isFragment = false)
+    val result = processValidator.validate(emptyScenario, ProcessName("name"), isFragment = false, labels = List.empty)
     result.errors.globalErrors shouldBe List(
       UIGlobalError(PrettyValidationErrors.formatErrorMessage(EmptyProcess), List.empty)
     )
   }
 
   private def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
-    TestFactory.processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
+    TestFactory.processValidator.validate(
+      scenarioGraph,
+      ProcessTestData.sampleProcessName,
+      isFragment = false,
+      labels = List.empty
+    )
   }
 
 }
@@ -2226,8 +2416,8 @@ private object UIProcessValidatorSpec {
       c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
     )
 
-  private val configuredValidator: UIProcessValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-    Map(
+  private val configuredValidator: UIProcessValidator = ProcessTestData.testProcessValidator(
+    scenarioProperties = Map(
       "requiredStringProperty" -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(StringParameterEditor),
@@ -2255,9 +2445,10 @@ private object UIProcessValidatorSpec {
   def validateWithConfiguredProperties(
       scenario: ScenarioGraph,
       processName: ProcessName = ProcessTestData.sampleProcessName,
-      isFragment: Boolean = false
+      isFragment: Boolean = false,
+      labels: List[ScenarioLabel] = List.empty,
   ): ValidationResult =
-    configuredValidator.validate(scenario, processName, isFragment)
+    configuredValidator.validate(scenario, processName, isFragment, labels)
 
   val validFlinkScenarioGraph: ScenarioGraph = createGraph(
     List(
@@ -2505,6 +2696,7 @@ private object UIProcessValidatorSpec {
     scenarioProperties = Map.empty,
     scenarioPropertiesConfigFinalizer =
       new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+    scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
@@ -2537,6 +2729,7 @@ private object UIProcessValidatorSpec {
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
       scenarioPropertiesConfigFinalizer =
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, "Streaming"),
+      scenarioLabelsValidator = new ScenarioLabelsValidator(config = None),
       additionalValidators = List(SampleCustomProcessValidator),
       fragmentResolver = new FragmentResolver(
         new StubFragmentRepository(
@@ -2562,8 +2755,8 @@ private object UIProcessValidatorSpec {
     override def apply(left: ValidationResult): MatchResult = {
       MatchResult(
         !left.hasErrors && !left.hasWarnings,
-        "ValidationResult should has neither errors nor warnings",
-        "ValidationResult should has either errors or warnings"
+        s"ValidationResult should has neither errors nor warnings but was: ${left}",
+        s"ValidationResult should has either errors or warnings but was:${left}"
       )
     }
 

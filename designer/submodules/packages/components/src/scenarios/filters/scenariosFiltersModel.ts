@@ -8,6 +8,7 @@ export interface ScenariosFiltersModel extends SortableFiltersModel {
     TYPE?: string[];
     CREATED_BY?: string[];
     STATUS?: string[];
+    LABEL?: string[];
     PROCESSING_MODE?: ProcessingMode[];
 }
 
