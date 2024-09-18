@@ -4,6 +4,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps.ScenarioWithDetailsOps
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.newactivity.ActivityInfoService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -29,7 +30,12 @@ class ActivityInfoResources(
             complete {
               activityInfoService
                 .forProcessingTypeUnsafe(processDetails.processingType)
-                .getActivityParameters(scenarioGraph, processName, processDetails.isFragment)
+                .getActivityParameters(
+                  scenarioGraph,
+                  processName,
+                  processDetails.isFragment,
+                  processDetails.scenarioLabels
+                )
             }
           }
         }

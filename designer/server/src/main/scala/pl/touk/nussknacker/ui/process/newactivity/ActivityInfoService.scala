@@ -9,16 +9,22 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.activity.ActivityInfoProvider
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.ui.definition.DefinitionsService
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 // TODO: move to ActivityService? execute node compilation only once with ScenarioTestService?
 class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processResolver: UIProcessResolver) {
 
-  def getActivityParameters(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
+  def getActivityParameters(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean,
+      labels: List[ScenarioLabel]
+  )(
       implicit user: LoggedUser
   ): Map[String, List[UISourceParameters]] = {
-    val canonical = toCanonicalProcess(scenarioGraph, processName, isFragment)
+    val canonical = toCanonicalProcess(scenarioGraph, processName, isFragment, labels)
     activityInfoProvider
       .getActivityParameters(canonical)
       .map { case (activityName, nodeParamsMap) =>
@@ -35,9 +41,10 @@ class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processRes
   private def toCanonicalProcess(
       scenarioGraph: ScenarioGraph,
       processName: ProcessName,
-      isFragment: Boolean
+      isFragment: Boolean,
+      labels: List[ScenarioLabel]
   )(implicit user: LoggedUser): CanonicalProcess = {
-    processResolver.validateAndResolve(scenarioGraph, processName, isFragment)
+    processResolver.validateAndResolve(scenarioGraph, processName, isFragment, labels)
   }
 
   // copied from ScenarioTestService
