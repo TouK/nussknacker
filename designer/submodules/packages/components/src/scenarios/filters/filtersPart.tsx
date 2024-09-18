@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from "react";
 import { flatten, sortBy, uniq } from "lodash";
 import { useFilterContext } from "../../common";
 import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
-import { useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
+import { useScenarioLabelsQuery, useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
 import { SimpleOptionsStack } from "./simpleOptionsStack";
@@ -20,6 +20,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
     const { data: statusDefinitions = [] } = useStatusDefinitions();
+    const { data: availableLabels } = useScenarioLabelsQuery();
 
     const filterableKeys = useMemo(() => ["createdBy", "modifiedBy"], []);
     const filterableValues = useMemo(() => {
@@ -31,6 +32,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                 .map((v) => ({ name: v })),
             status: sortBy(statusDefinitions, (v) => v.displayableName),
             processCategory: (userData?.categories || []).map((name) => ({ name })),
+            label: (availableLabels?.labels || []).map((name) => ({ name })),
             processingMode: processingModeItems,
         };
     }, [data, filterableKeys, statusDefinitions, userData?.categories]);
@@ -108,6 +110,17 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             onChange={setFilter("CATEGORY")}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ScenariosByCategory,
+                            })}
+                        />
+                    </FilterMenu>
+                    <FilterMenu label={t("table.filter.LABEL", "Label")} count={getFilter("LABEL", true).length}>
+                        <SimpleOptionsStack
+                            label={t("table.filter.LABEL", "Label")}
+                            options={filterableValues.label}
+                            value={getFilter("LABEL", true)}
+                            onChange={setFilter("LABEL")}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ScenariosByLabel,
                             })}
                         />
                     </FilterMenu>

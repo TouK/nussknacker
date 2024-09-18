@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
@@ -34,6 +35,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   prepareTypingResultDecoder
 }
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -89,7 +91,7 @@ class NodesApiHttpService(
             modelData <- getModelData(scenario.processingType)
             nodeValidator = processingTypeToNodeValidator.forProcessingTypeUnsafe(scenario.processingType)
             nodeData   <- dtoToNodeRequest(nodeValidationRequestDto, modelData)
-            validation <- getNodeValidation(nodeValidator, scenarioName, nodeData)
+            validation <- getNodeValidation(nodeValidator, scenario.name, nodeData)
             validationDto = NodeValidationResultDto.apply(validation)
           } yield validationDto
         }
@@ -125,7 +127,12 @@ class NodesApiHttpService(
             scenario = ScenarioGraph(ProcessProperties(request.additionalFields), Nil, Nil)
             result = processingTypeToProcessValidator
               .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
-              .validate(scenario, request.name, scenarioWithDetails.isFragment)
+              .validate(
+                scenario,
+                request.name,
+                scenarioWithDetails.isFragment,
+                scenarioWithDetails.scenarioLabels,
+              )
             validation = NodeValidationResultDto(
               parameters = None,
               expressionType = None,

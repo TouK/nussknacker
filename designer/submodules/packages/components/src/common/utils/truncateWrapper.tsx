@@ -1,8 +1,8 @@
 import { Visibility } from "@mui/icons-material";
-import { Box, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
+import { Box, ClickAwayListener, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
-import React, { PropsWithChildren, useCallback, useRef } from "react";
+import React, { PropsWithChildren, ReactNode, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Truncate } from "./truncate";
 
@@ -56,10 +56,25 @@ const Truncator = ({
     popupState: PopupState;
 }) => {
     const { t } = useTranslation();
+
+    const baseTrigger = bindTrigger(popupState);
+    const trigger = {
+        ...baseTrigger,
+        onClick: (e) => {
+            baseTrigger.onClick(e);
+            e.stopPropagation();
+            e.preventDefault();
+        },
+        onTouchStart: (e) => {
+            baseTrigger.onTouchStart(e);
+            e.stopPropagation();
+            e.preventDefault();
+        },
+    };
     return (
-        <TruncateButton {...bindTrigger(popupState)} className="truncator">
+        <TruncateButton {...trigger} className="truncator">
             <Visibility sx={{ fontSize: "18px" }} />
-            <Typography sx={{ mx: "4px", fontSize: "13px" }}>
+            <Typography sx={{ mx: "4px", fontSize: "13px" }} noWrap>
                 {itemsCount === hiddenItemsCount
                     ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
                     : t("truncator.someHidden", "{{hiddenItemsCount}} more...", { hiddenItemsCount })}
@@ -68,7 +83,7 @@ const Truncator = ({
     );
 };
 
-export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellParams>): JSX.Element {
+export function TruncateWrapper({ children }: PropsWithChildren<NonNullable<unknown>>): JSX.Element {
     const popupState = usePopupState({ variant: "popover", popupId: "pop" });
     const { anchorEl, ...popoverProps } = bindPopover(popupState);
     const ref = useRef();
@@ -101,6 +116,10 @@ export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellPa
                 anchorOrigin={anchorOrigin}
                 transformOrigin={transformOrigin}
                 {...popoverProps}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
                 open={popoverProps.open}
                 anchorEl={ref.current || anchorEl}
             >

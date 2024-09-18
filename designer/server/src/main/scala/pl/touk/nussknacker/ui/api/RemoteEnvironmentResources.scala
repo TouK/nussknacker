@@ -75,6 +75,7 @@ class RemoteEnvironmentResources(
                     details.processingMode,
                     details.engineSetupName,
                     details.processCategory,
+                    details.labels,
                     details.scenarioGraphUnsafe,
                     details.name,
                     details.isFragment

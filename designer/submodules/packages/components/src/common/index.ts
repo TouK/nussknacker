@@ -12,3 +12,4 @@ export type { NkViewProps } from "./nkView";
 export { Highlight } from "./highlight";
 export { UnavailableViewPlaceholder } from "./unavailableViewPlaceholder";
 export { View } from "./view";
+export { Truncate, TruncateWrapper } from "./utils";

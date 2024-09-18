@@ -14,6 +14,7 @@ import sttp.tapir.Schema
     override val isFragment: Boolean,
     override val processingType: ProcessingType,
     override val processCategory: String,
+    override val labels: List[String],
     override val scenarioGraph: Option[ScenarioGraph],
     override val validationResult: Option[ValidationResult],
     override val history: Option[List[ScenarioVersion]],
@@ -36,6 +37,7 @@ trait BaseScenarioWithDetailsForMigrations {
   def isFragment: Boolean
   def processingType: ProcessingType
   def processCategory: String
+  def labels: List[String]
   def scenarioGraph: Option[ScenarioGraph]
   def validationResult: Option[ValidationResult]
   def history: Option[List[ScenarioVersion]]

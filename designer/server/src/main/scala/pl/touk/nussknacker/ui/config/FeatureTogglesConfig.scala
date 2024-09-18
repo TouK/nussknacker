@@ -19,6 +19,7 @@ final case class FeatureTogglesConfig(
     environmentAlert: Option[EnvironmentAlert],
     commentSettings: Option[CommentSettings],
     deploymentCommentSettings: Option[DeploymentCommentSettings],
+    scenarioLabelConfig: Option[ScenarioLabelConfig],
     scenarioStateTimeout: Option[FiniteDuration],
     surveySettings: Option[SurveySettings],
     tabs: Option[List[TopTab]],
@@ -45,6 +46,7 @@ object FeatureTogglesConfig extends LazyLogging {
     val remoteEnvironment         = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val commentSettings           = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploymentCommentSettings = parseDeploymentCommentSettings(config)
+    val scenarioLabelSettings     = ScenarioLabelConfig.create(config)
     val scenarioStateTimeout      = parseOptionalConfig[FiniteDuration](config, "scenarioStateTimeout")
     val surveySettings            = parseOptionalConfig[SurveySettings](config, "surveySettings")
 
@@ -61,6 +63,7 @@ object FeatureTogglesConfig extends LazyLogging {
       counts = counts,
       commentSettings = commentSettings,
       deploymentCommentSettings = deploymentCommentSettings,
+      scenarioLabelConfig = scenarioLabelSettings,
       scenarioStateTimeout = scenarioStateTimeout,
       surveySettings = surveySettings,
       tabs = tabs,

@@ -16,7 +16,11 @@ import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenar
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{ApiVersion, MigrateScenarioRequestDtoV1}
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
+  ApiVersion,
+  MigrateScenarioRequestDtoV1,
+  MigrateScenarioRequestDtoV2
+}
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -108,15 +112,7 @@ class StandardRemoteEnvironmentSpec
 
   }
 
-  /*
-
-  NOTE TO DEVELOPER:
-
-    These test cases are currently commented out. They should be enabled when MigrateScenarioRequestDtoV2 will be present
-
-    Remember to uncomment the test case(s) after review and modification.
-
-    it should "request to migrate valid scenario when remote scenario description version is lower than local scenario description version" in {
+  it should "request to migrate valid scenario when remote scenario description version is lower than local scenario description version" in {
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
     val remoteScenarioDescriptionVersion = localScenarioDescriptionVersion - 1
     val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
@@ -127,6 +123,7 @@ class StandardRemoteEnvironmentSpec
         ProcessTestData.sampleScenarioParameters.processingMode,
         ProcessTestData.sampleScenarioParameters.engineSetupName,
         ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.sampleScenarioLabels,
         ProcessTestData.validScenarioGraph,
         ProcessTestData.sampleProcessName,
         false
@@ -139,9 +136,9 @@ class StandardRemoteEnvironmentSpec
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
-  }*/
+  }
 
-  /*  it should "request to migrate valid scenario when remote scenario description version is the same as local scenario description version" in {
+  it should "request to migrate valid scenario when remote scenario description version is the same as local scenario description version" in {
     val localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
     val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
       remoteEnvironmentMock(scenarioDescriptionVersion = localScenarioDescriptionVersion)
@@ -151,6 +148,7 @@ class StandardRemoteEnvironmentSpec
         ProcessTestData.sampleScenarioParameters.processingMode,
         ProcessTestData.sampleScenarioParameters.engineSetupName,
         ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.sampleScenarioLabels,
         ProcessTestData.validScenarioGraph,
         ProcessTestData.sampleProcessName,
         false
@@ -163,9 +161,9 @@ class StandardRemoteEnvironmentSpec
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
-  }*/
+  }
 
-  /*  it should "request to migrate valid scenario when remote scenario description version is higher than local scenario description version" in {
+  it should "request to migrate valid scenario when remote scenario description version is higher than local scenario description version" in {
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
     val remoteScenarioDescriptionVersion = localScenarioDescriptionVersion + 1
     val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
@@ -176,6 +174,7 @@ class StandardRemoteEnvironmentSpec
         ProcessTestData.sampleScenarioParameters.processingMode,
         ProcessTestData.sampleScenarioParameters.engineSetupName,
         ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.sampleScenarioLabels,
         ProcessTestData.validScenarioGraph,
         ProcessTestData.sampleProcessName,
         false
@@ -188,7 +187,7 @@ class StandardRemoteEnvironmentSpec
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
-  }*/
+  }
 
   it should "test migration" in {
     val remoteEnvironment = environmentForTestMigration(
@@ -272,13 +271,7 @@ class StandardRemoteEnvironmentSpec
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>
-          /*
-
-          NOTE TO DEVELOPER:
-
-          This mock code block is currently commented out. It should be enabled when MigrateScenarioRequestV2 will be prsent
-
-            parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
+          parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
             case Right(migrateScenarioRequestDtoV2) if migrateScenarioRequestDtoV2.version == 2 =>
               lastlySentMigrateScenarioRequest = Some(
                 MigrateScenarioData.toDomain(migrateScenarioRequestDtoV2).rightValue
@@ -299,7 +292,7 @@ class StandardRemoteEnvironmentSpec
                   )
                 case Left(_) => lastlySentMigrateScenarioRequest = None
               }
-          }*/
+          }
 
           Marshal(Right[NuDesignerError, Unit](())).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)

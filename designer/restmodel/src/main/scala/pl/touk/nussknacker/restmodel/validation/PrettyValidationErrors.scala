@@ -155,6 +155,12 @@ object PrettyValidationErrors {
         node(s"Cannot disable fragment with multiple outputs", "Please check fragment definition")
       case DisablingNoOutputsFragment(_) =>
         node(s"Cannot disable fragment with no outputs", "Please check fragment definition")
+      case ScenarioLabelValidationError(label, description) =>
+        node(
+          message = s"Invalid scenario label: $label",
+          description = description,
+          paramName = Some(ParameterName(label)),
+        )
       case MissingRequiredProperty(paramName, label, _) => missingRequiredProperty(typ, paramName.value, label)
       case UnknownProperty(paramName, _)                => unknownProperty(typ, paramName.value)
       case InvalidPropertyFixedValue(paramName, label, value, values, _) =>
