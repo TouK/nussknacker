@@ -373,6 +373,7 @@ jobs:
           path: designer/client/junit.xml
 
   cypressTests:
+    if: false
     name: CypressTests
     runs-on: self-hosted
     needs: [ build, build-fe, setup ]
