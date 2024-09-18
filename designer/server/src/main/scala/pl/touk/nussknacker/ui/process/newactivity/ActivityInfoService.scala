@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.newactivity
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.CanBeSubclassDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -16,7 +15,11 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 // TODO: move to ActivityService? execute node compilation only once with ScenarioTestService?
 class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processResolver: UIProcessResolver) {
 
-  def getActivityParameters(scenarioGraph: ScenarioGraph, processVersion: ProcessVersion, isFragment: Boolean)(
+  def getActivityParameters(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean
+  )(
       implicit user: LoggedUser
   ): Map[String, List[UISourceParameters]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
