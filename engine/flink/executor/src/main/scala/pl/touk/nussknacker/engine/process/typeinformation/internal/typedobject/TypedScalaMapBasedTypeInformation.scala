@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection.BuildIntermediateSchemaCompatibilityResult
+import pl.touk.nussknacker.engine.process.typeinformation.DefaultTypingResultAwareTypeInformationDetection.BuildIntermediateSchemaCompatibilityResult
 
 case class TypedScalaMapTypeInformation(
     informations: Map[String, TypeInformation[_]],

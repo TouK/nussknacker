@@ -6,7 +6,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSchemaCompatibility, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection.BuildIntermediateSchemaCompatibilityResult
+import pl.touk.nussknacker.engine.process.typeinformation.DefaultTypingResultAwareTypeInformationDetection.BuildIntermediateSchemaCompatibilityResult
 
 import scala.reflect.ClassTag
 
