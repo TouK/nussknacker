@@ -19,7 +19,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#6766](https://github.com/TouK/nussknacker/pull/6766) 
   * Process API changes:
-      * PUT `/api/processes/{processName}` request requires `scenarioLabels` field
+      * PUT `/api/processes/{processName}` - optional `scenarioLabels` field added
   * Migration API changes:
       * POST `/api/migrate` supports v2 request format (with `scenarioLabels` field)
 

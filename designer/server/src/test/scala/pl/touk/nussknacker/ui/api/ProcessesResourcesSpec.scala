@@ -603,7 +603,7 @@ class ProcessesResourcesSpec
       nodes = List.empty,
       edges = List.empty
     )
-    val command = UpdateScenarioCommand(scenarioGraph, None, List("tag1", "tag2"), None)
+    val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")), None)
 
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
@@ -641,7 +641,7 @@ class ProcessesResourcesSpec
       val command1 = UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = None,
-        scenarioLabels = List("tag2", "tag1"),
+        scenarioLabels = Some(List("tag2", "tag1")),
         forwardedUserName = None
       )
       doUpdateProcess(command1, processName) {
@@ -653,7 +653,7 @@ class ProcessesResourcesSpec
       val command2 = UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = None,
-        scenarioLabels = List("tag3", "tag1", "tag4"),
+        scenarioLabels = Some(List("tag3", "tag1", "tag4")),
         forwardedUserName = None
       )
       doUpdateProcess(command2, processName) {
@@ -665,7 +665,7 @@ class ProcessesResourcesSpec
       val command3 = UpdateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = None,
-        scenarioLabels = List("tag3"),
+        scenarioLabels = Some(List("tag3")),
         forwardedUserName = None
       )
       doUpdateProcess(command3, processName) {
@@ -1384,7 +1384,7 @@ class ProcessesResourcesSpec
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
         comment.map(UpdateProcessComment(_)),
-        List.empty,
+        Some(List.empty),
         None
       ),
       process.name
@@ -1443,7 +1443,7 @@ class ProcessesResourcesSpec
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateScenarioCommand(process, comment = None, scenarioLabels = List.empty, forwardedUserName = None),
+      UpdateScenarioCommand(process, comment = None, scenarioLabels = Some(List.empty), forwardedUserName = None),
       name
     )(
       testCode

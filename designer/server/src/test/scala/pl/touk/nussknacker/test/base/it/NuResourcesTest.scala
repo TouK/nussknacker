@@ -295,7 +295,7 @@ trait NuResourcesTest
   protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, None, List.empty, None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, None, Some(List.empty), None), name)(testCode)
 
   protected def updateCanonicalProcessAndAssertSuccess(process: CanonicalProcess): Assertion =
     updateCanonicalProcess(process) {
@@ -309,7 +309,7 @@ trait NuResourcesTest
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
         comment.map(UpdateProcessComment(_)),
-        List.empty,
+        Some(List.empty),
         None
       ),
       process.name
