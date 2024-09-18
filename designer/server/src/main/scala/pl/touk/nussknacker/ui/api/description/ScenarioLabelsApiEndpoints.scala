@@ -8,7 +8,8 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.description.ScenarioLabelsApiEndpoints.Dtos.{
   ScenarioLabels,
   ScenarioLabelsValidationRequestDto,
-  ScenarioLabelsValidationResponseDto
+  ScenarioLabelsValidationResponseDto,
+  ValidationError
 }
 import sttp.model.StatusCode.Ok
 import sttp.tapir.EndpointIO.Example
@@ -31,7 +32,7 @@ class ScenarioLabelsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends B
               Example.of(
                 summary = Some("List of available scenario labels"),
                 value = ScenarioLabels(
-                  labels = List("Label 1", "Label 2")
+                  labels = List("Label_1", "Label_2")
                 )
               )
             )
@@ -48,11 +49,19 @@ class ScenarioLabelsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends B
       .in("scenarioLabels" / "validation")
       .in(
         jsonBody[ScenarioLabelsValidationRequestDto]
-          .example(
-            Example.of(
-              summary = Some("List of scenario labels"),
-              value = ScenarioLabelsValidationRequestDto(
-                labels = List("Label 1", "Label 2")
+          .examples(
+            List(
+              Example.of(
+                summary = Some("List of valid scenario labels"),
+                value = ScenarioLabelsValidationRequestDto(
+                  labels = List("Label_1", "Label_2")
+                )
+              ),
+              Example.of(
+                summary = Some("List of scenario labels with invalid one"),
+                value = ScenarioLabelsValidationRequestDto(
+                  labels = List("Label_1", "Label_2", "Label 3")
+                )
               )
             )
           )
@@ -60,11 +69,24 @@ class ScenarioLabelsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends B
       .out(
         statusCode(Ok).and(
           jsonBody[ScenarioLabelsValidationResponseDto]
-            .example(
-              Example.of(
-                summary = Some("Validation response"),
-                value = ScenarioLabelsValidationResponseDto(
-                  validationErrors = List.empty
+            .examples(
+              List(
+                Example.of(
+                  summary = Some("Validation response with no errors"),
+                  value = ScenarioLabelsValidationResponseDto(
+                    validationErrors = List.empty
+                  )
+                ),
+                Example.of(
+                  summary = Some("Validation response with errors"),
+                  value = ScenarioLabelsValidationResponseDto(
+                    validationErrors = List(
+                      ValidationError(
+                        label = "Label 3",
+                        messages = List("Scenario label can contain only alphanumeric characters, '-' and '_'")
+                      )
+                    )
+                  )
                 )
               )
             )

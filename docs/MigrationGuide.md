@@ -10,8 +10,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
   * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
 
-* [#6766](https://github.com/TouK/nussknacker/pull/6766) Process API changes:
-   * Field `ScenarioWithDetails.tags` was removed (it had the same value as `labels`)
+* [#6766](https://github.com/TouK/nussknacker/pull/6766)
+  * Process API changes:
+     * Field `ScenarioWithDetails.labels` was added
+     * Field `ScenarioWithDetails.tags` was removed (it had the same value as `labels` and was not used)
+
+### REST API changes
+
+* [#6766](https://github.com/TouK/nussknacker/pull/6766) 
+  * Process API changes:
+      * PUT `/api/processes/{processName}` request requires `scenarioLabels` field
+  * Migration API changes:
+      * POST `/api/migrate` supports v2 request format (with `scenarioLabels` field)
 
 ### Other changes
 

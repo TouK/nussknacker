@@ -159,7 +159,6 @@ object PrettyValidationErrors {
         node(
           message = s"Invalid scenario label: $label",
           description = description,
-          errorType = NodeValidationErrorType.SaveNotAllowed,
           paramName = Some(ParameterName(label)),
         )
       case MissingRequiredProperty(paramName, label, _) => missingRequiredProperty(typ, paramName.value, label)

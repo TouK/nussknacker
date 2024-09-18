@@ -195,7 +195,7 @@ class UIProcessValidator(
         ValidationResult.globalErrors(
           errors
             .map(ve =>
-              ScenarioLabelValidationError(label = ve.label, description = ve.validationMessages.toList.mkString(","))
+              ScenarioLabelValidationError(label = ve.label, description = ve.validationMessages.toList.mkString(", "))
             )
             .map(PrettyValidationErrors.formatErrorMessage)
             .map(UIGlobalError(_, nodeIds = List.empty))

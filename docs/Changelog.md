@@ -47,6 +47,7 @@
   some types of unallowed expressions.
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
   - shorter message in logs
+* [#6766](https://github.com/TouK/nussknacker/pull/6766) Scenario labels support - you can assign labels to scenarios and use them to filter the scenario list
 
 ## 1.17
 

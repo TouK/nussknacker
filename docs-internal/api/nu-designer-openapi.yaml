@@ -2242,8 +2242,8 @@ paths:
                   summary: List of available scenario labels
                   value:
                     labels:
-                    - Label 1
-                    - Label 2
+                    - Label_1
+                    - Label_2
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
@@ -2316,12 +2316,19 @@ paths:
             schema:
               $ref: '#/components/schemas/ScenarioLabelsValidationRequestDto'
             examples:
-              Example:
-                summary: List of scenario labels
+              Example0:
+                summary: List of valid scenario labels
                 value:
                   labels:
-                  - Label 1
-                  - Label 2
+                  - Label_1
+                  - Label_2
+              Example1:
+                summary: List of scenario labels with invalid one
+                value:
+                  labels:
+                  - Label_1
+                  - Label_2
+                  - Label 3
         required: true
       responses:
         '200':
@@ -2331,10 +2338,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ScenarioLabelsValidationResponseDto'
               examples:
-                Example:
-                  summary: Validation response
+                Example0:
+                  summary: Validation response with no errors
                   value:
                     validationErrors: []
+                Example1:
+                  summary: Validation response with errors
+                  value:
+                    validationErrors:
+                    - label: Label 3
+                      messages:
+                      - Scenario label can contain only alphanumeric characters, '-'
+                        and '_'
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'

@@ -394,7 +394,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           message = "Invalid scenario label: tag100",
           description = "Label 'tag100' cannot have more than 5 characters",
           fieldName = Some("tag100"),
-          errorType = NodeValidationErrorType.SaveNotAllowed,
+          errorType = NodeValidationErrorType.SaveAllowed,
           details = None
         ),
         List.empty
@@ -408,7 +408,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           message = "Invalid scenario label: tag 1",
           description = "Only alphanumeric characters allowed",
           fieldName = Some("tag 1"),
-          errorType = NodeValidationErrorType.SaveNotAllowed,
+          errorType = NodeValidationErrorType.SaveAllowed,
           details = None
         ),
         List.empty
@@ -420,9 +420,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         NodeValidationError(
           typ = "ScenarioLabelValidationError",
           message = "Invalid scenario label: tag 100",
-          description = "Only alphanumeric characters allowed,Label 'tag 100' cannot have more than 5 characters",
+          description = "Only alphanumeric characters allowed, Label 'tag 100' cannot have more than 5 characters",
           fieldName = Some("tag 100"),
-          errorType = NodeValidationErrorType.SaveNotAllowed,
+          errorType = NodeValidationErrorType.SaveAllowed,
           details = None
         ),
         List.empty
@@ -434,9 +434,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         NodeValidationError(
           typ = "ScenarioLabelValidationError",
           message = "Invalid scenario label: tag 100",
-          description = "Only alphanumeric characters allowed,Label 'tag 100' cannot have more than 5 characters",
+          description = "Only alphanumeric characters allowed, Label 'tag 100' cannot have more than 5 characters",
           fieldName = Some("tag 100"),
-          errorType = NodeValidationErrorType.SaveNotAllowed,
+          errorType = NodeValidationErrorType.SaveAllowed,
           details = None
         ),
         List.empty
@@ -445,9 +445,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         NodeValidationError(
           typ = "ScenarioLabelValidationError",
           message = "Invalid scenario label: tag 200",
-          description = "Only alphanumeric characters allowed,Label 'tag 200' cannot have more than 5 characters",
+          description = "Only alphanumeric characters allowed, Label 'tag 200' cannot have more than 5 characters",
           fieldName = Some("tag 200"),
-          errorType = NodeValidationErrorType.SaveNotAllowed,
+          errorType = NodeValidationErrorType.SaveAllowed,
           details = None
         ),
         List.empty
