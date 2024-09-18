@@ -347,7 +347,8 @@ object ProcessValidator {
       dictRegistry,
       modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions,
-      expressionEvaluator
+      expressionEvaluator,
+      definitionWithTypes.modelDefinition.settings
     )
 
     val nodeCompiler = new NodeCompiler(

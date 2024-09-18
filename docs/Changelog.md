@@ -62,6 +62,7 @@
 * [#6925](https://github.com/TouK/nussknacker/pull/6925) Fix situation when preset labels were presented as `null` when node didn't pass the validation.
 * [#6935](https://github.com/TouK/nussknacker/pull/6935) Spel: Scenario labels added to meta variable - `#meta.scenarioLabels`
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option
+* [#6840](https://github.com/TouK/nussknacker/pull/6840) Introduce castTo and canCastTo extension methods in SpeL.
 
 ## 1.17
 

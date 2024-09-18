@@ -19,24 +19,35 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
+
 import scala.collection.compat.immutable.LazyList
 import scala.jdk.CollectionConverters._
-
 import cats._
 import cats.implicits._
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.extension.ClassDefinitionSetExtensionMethodsAware
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+// todo: lbg imports
 class SpelExpressionSuggester(
     expressionConfig: ExpressionConfigDefinition,
     clssDefinitions: ClassDefinitionSet,
     uiDictServices: UiDictServices,
-    classLoader: ClassLoader
+    classLoader: ClassLoader,
+    settings: ClassExtractionSettings,
 ) {
-  private val successfulNil = Future.successful[List[ExpressionSuggestion]](Nil)
-  private val typer =
-    Typer.default(classLoader, expressionConfig, new LabelsDictTyper(uiDictServices.dictRegistry), clssDefinitions)
+  private val classDefinitionSet = new ClassDefinitionSetExtensionMethodsAware(clssDefinitions, settings)
+  private val successfulNil      = Future.successful[List[ExpressionSuggestion]](Nil)
+
+  private val typer = Typer.default(
+    classLoader,
+    expressionConfig,
+    new LabelsDictTyper(uiDictServices.dictRegistry),
+    classDefinitionSet
+  )
+
   private val nuSpelNodeParser = new NuSpelNodeParser(typer)
   private val dictQueryService = uiDictServices.dictQueryService
 
@@ -199,7 +210,7 @@ class SpelExpressionSuggester(
               .getOrElse(successfulNil)
           case TypingResultWithContext(Unknown, staticContext) =>
             Future.successful(
-              clssDefinitions.unknown
+              classDefinitionSet.unknown
                 .map(c => filterClassMethods(c, p.getName, staticContext))
                 .getOrElse(Nil)
             )

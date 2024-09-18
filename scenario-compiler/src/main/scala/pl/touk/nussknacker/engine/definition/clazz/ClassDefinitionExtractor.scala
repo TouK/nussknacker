@@ -20,12 +20,13 @@ import pl.touk.nussknacker.engine.api.process.{
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.{
+  MethodDefinitionsExtension,
+  MethodExtensions,
   extractClass,
   extractGenericReturnType,
-  extractMethodReturnType,
   extractParameterType
 }
-import pl.touk.nussknacker.engine.extension.ExtensionMethods
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.lang.annotation.Annotation
 import java.lang.reflect._
@@ -35,17 +36,21 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private lazy val extensionMethodsDefinitions = buildExtensionMethodsDefinitions()
-
   def extract(clazz: Class[_]): ClassDefinition =
     ClassDefinition(
       Typed(clazz),
-      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false),
-      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
+      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false).filterHiddenParameterAndReturnType(settings),
+      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true).filterHiddenParameterAndReturnType(settings)
     )
 
   def isHidden(clazz: Class[_]): Boolean =
     settings.isHidden(clazz)
+
+  def extractMethod(clazz: Class[_], method: Method): List[(String, MethodDefinition)] =
+    extractAnnotation(method, classOf[GenericType]) match {
+      case None             => extractRegularMethod(clazz, method)
+      case Some(annotation) => extractGenericMethod(method, annotation)
+    }
 
   private def extractPublicMethodsAndFields(
       clazz: Class[_],
@@ -53,9 +58,10 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
   ): Map[String, List[MethodDefinition]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods          = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
-    val extensionMethods = extractExtensionMethods(membersPredicate, staticMethodsAndFields)
-    val fields           = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
-    filterHiddenParameterAndReturnType(methods ++ fields ++ extensionMethods)
+//    val extensionMethods = extractExtensionMethods(membersPredicate, staticMethodsAndFields)
+    val fields = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
+//    filterHiddenParameterAndReturnType(methods ++ fields ++ extensionMethods)
+    methods ++ fields
   }
 
   private def extractPublicMethods(
@@ -85,7 +91,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
     // "varargs" annotation generates two methods - one with scala style varArgs
     // and one with java style varargs. We want only the second one so we have
     // to filter them.
-    val filteredMethods = methods.filter(extractJavaVersionOfVarArgMethod(_).isEmpty)
+    val filteredMethods = methods.filter(_.javaVersionOfVarArgMethod().isEmpty)
 
     val methodNameAndInfoList = filteredMethods
       .flatMap(extractMethod(clazz, _))
@@ -100,26 +106,6 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
     deduplicateMethodsWithGenericReturnType(staticMethodDefinitions)
       .asInstanceOf[Map[String, List[MethodDefinition]]]
       .combine(groupedFunctionalMethodDefinitions)
-  }
-
-  // We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
-  private def filterHiddenParameterAndReturnType(
-      infos: Map[String, List[MethodDefinition]]
-  ): Map[String, List[MethodDefinition]] = {
-    def typeResultVisible(t: TypingResult): Boolean = t match {
-      case str: SingleTypingResult =>
-        !settings.isHidden(str.typeHintsObjType.klass) && str.typeHintsObjType.params.forall(typeResultVisible)
-      case union: TypedUnion => union.possibleTypes.forall(typeResultVisible)
-      case TypedNull         => true
-      case Unknown           => true
-    }
-    def filterOneMethod(method: MethodDefinition): Boolean = {
-      val noVarArgTypes = method.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)
-      val varArgTypes   = method.signatures.toList.flatMap(_.varArg.toList).map(_.refClazz)
-      val resultTypes   = method.signatures.toList.map(_.result)
-      (noVarArgTypes ::: varArgTypes ::: resultTypes).forall(typeResultVisible)
-    }
-    infos.mapValuesNow(methodList => methodList.filter(filterOneMethod)).filter(_._2.nonEmpty)
   }
 
   /*
@@ -168,15 +154,6 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
       List(method.getName)
     }
   }
-
-  private def extractMethod(
-      clazz: Class[_],
-      method: Method
-  ): List[(String, MethodDefinition)] =
-    extractAnnotation(method, classOf[GenericType]) match {
-      case None             => extractRegularMethod(clazz, method)
-      case Some(annotation) => extractGenericMethod(method, annotation)
-    }
 
   private def getTypeFunctionInstanceFromAnnotation(method: Method, genericType: GenericType): TypingFunction = {
     val typeFunctionClass = genericType.typingFunction()
@@ -326,7 +303,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
         paramType        = extractParameterType(param)
       } yield Parameter(name, paramType),
       method.isVarArgs,
-      extractMethodReturnType(method)
+      method.returnType()
     )
   }
 
@@ -351,16 +328,6 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
     }
   }
 
-  private def extractJavaVersionOfVarArgMethod(method: Method): Option[Method] = {
-    method.getDeclaringClass.getMethods.find(m =>
-      m.isVarArgs && (m.getParameterTypes.toList match {
-        case noVarArgs :+ varArgArr if varArgArr.isArray =>
-          method.getParameterTypes.toList == noVarArgs :+ classOf[Seq[_]]
-        case _ => false
-      })
-    )
-  }
-
   // "varargs" annotation creates new function that has java style varArgs
   // but it disregards annotations, so we have to look for original function
   // to extract them.
@@ -371,38 +338,9 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
       case _ => None
     })
 
-  private def extractExtensionMethods(
-      membersPredicate: VisibleMembersPredicate,
-      staticMethodsAndFields: Boolean
-  ): Map[String, List[MethodDefinition]] = {
-    if (staticMethodsAndFields) {
-      Map.empty
-    } else {
-      extensionMethodsDefinitions
-        .filter(definitionsByMethods => membersPredicate.shouldBeVisible(definitionsByMethods._1))
-        .flatMap(_._2)
-        .toList
-        .toGroupedMap
-    }
-  }
-
-  private def buildExtensionMethodsDefinitions(): Set[(Method, List[(String, MethodDefinition)])] =
-    ExtensionMethods.registry.flatMap { clazz =>
-      clazz.getMethods.toList
-        .filter(m => !Modifier.isStatic(m.getModifiers))
-        .filter(extractJavaVersionOfVarArgMethod(_).isEmpty)
-        .map(m => m -> extractMethod(clazz, m))
-    }
-
 }
 
 object ClassDefinitionExtractor {
-
-  def extractMethodReturnType(method: Method): TypingResult = {
-    extractGenericReturnType(method.getGenericReturnType)
-      .orElse(extractClass(method.getGenericReturnType))
-      .getOrElse(Typed(method.getReturnType))
-  }
 
   def extractParameterType(javaParam: java.lang.reflect.Parameter): TypingResult = {
     extractClass(javaParam.getParameterizedType).getOrElse(Typed(javaParam.getType))
@@ -464,6 +402,48 @@ object ClassDefinitionExtractor {
       paramsRawType,
       paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown))
     )
+  }
+
+  implicit class MethodExtensions(method: Method) {
+
+    def returnType(): TypingResult = {
+      extractGenericReturnType(method.getGenericReturnType)
+        .orElse(extractClass(method.getGenericReturnType))
+        .getOrElse(Typed(method.getReturnType))
+    }
+
+    def javaVersionOfVarArgMethod(): Option[Method] = {
+      method.getDeclaringClass.getMethods.find(m =>
+        m.isVarArgs && (m.getParameterTypes.toList match {
+          case noVarArgs :+ varArgArr if varArgArr.isArray =>
+            method.getParameterTypes.toList == noVarArgs :+ classOf[Seq[_]]
+          case _ => false
+        })
+      )
+    }
+
+  }
+
+  implicit class MethodDefinitionsExtension(infos: Map[String, List[MethodDefinition]]) {
+
+    // We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
+    def filterHiddenParameterAndReturnType(settings: ClassExtractionSettings): Map[String, List[MethodDefinition]] = {
+      def typeResultVisible(t: TypingResult): Boolean = t match {
+        case str: SingleTypingResult =>
+          !settings.isHidden(str.typeHintsObjType.klass) && str.typeHintsObjType.params.forall(typeResultVisible)
+        case union: TypedUnion => union.possibleTypes.forall(typeResultVisible)
+        case TypedNull         => true
+        case Unknown           => true
+      }
+      def filterOneMethod(method: MethodDefinition): Boolean = {
+        val noVarArgTypes = method.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)
+        val varArgTypes   = method.signatures.toList.flatMap(_.varArg.toList).map(_.refClazz)
+        val resultTypes   = method.signatures.toList.map(_.result)
+        (noVarArgTypes ::: varArgTypes ::: resultTypes).forall(typeResultVisible)
+      }
+      infos.mapValuesNow(methodList => methodList.filter(filterOneMethod)).filter(_._2.nonEmpty)
+    }
+
   }
 
 }

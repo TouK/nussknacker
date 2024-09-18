@@ -18,7 +18,8 @@ import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.DefaultExtractor
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.MethodExtensions
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.{DefaultExtractor, createDiscovery}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -60,7 +61,7 @@ class ClassDefinitionDiscoverySpec
 
     val method = classOf[Returning].getMethod("futureOfList")
 
-    val extractedType = ClassDefinitionExtractor.extractMethodReturnType(method)
+    val extractedType = method.returnType()
 
     extractedType shouldBe Typed.fromDetailedType[Future[java.util.List[SampleClass]]]
   }
@@ -68,9 +69,7 @@ class ClassDefinitionDiscoverySpec
   test("should extract public fields from scala case class") {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
-    sampleClassInfo.value
-      .assertContainsExtensionMethods()
-      .methodsWithoutExtensionMethods() shouldBe Map(
+    sampleClassInfo.value.methods shouldBe Map(
       "foo"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None)),
       "bar"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "bar", None)),
       "toString" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
@@ -82,9 +81,7 @@ class ClassDefinitionDiscoverySpec
 
   test("should extract generic types from Option") {
     val classInfo = singleClassDefinition[ClassWithOptions]()
-    classInfo.value
-      .assertContainsExtensionMethods()
-      .methodsWithoutExtensionMethods() shouldBe Map(
+    classInfo.value.methods shouldBe Map(
       // generic type of Java type is properly read
       "longJavaOption" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Long]), "longJavaOption", None)),
       // generic type of Scala type is erased - this case documents that behavior
@@ -106,7 +103,7 @@ class ClassDefinitionDiscoverySpec
     def methods(strategy: PropertyFromGetterExtractionStrategy) =
       singleClassDefinition[JavaSampleClass](
         ClassExtractionSettings.Default.copy(propertyExtractionStrategy = strategy)
-      ).value.methodsWithoutExtensionMethods().keys.toSet
+      ).value.methods.keys.toSet
 
     val methodsForAddPropertyNextToGetter = methods(AddPropertyNextToGetter)
     methodsForAddPropertyNextToGetter shouldEqual Set(
@@ -149,33 +146,31 @@ class ClassDefinitionDiscoverySpec
 
     forAll(testTypes) { (clazz, clazzName) =>
       forAll(testClassPatterns) { classPattern =>
-        val infos = new ClassDefinitionDiscovery(
-          new ClassDefinitionExtractor(
-            ClassExtractionSettings.Default.copy(excludeClassMemberPredicates =
-              ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
-                MemberNamePatternPredicate(
-                  SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
-                  Pattern.compile("ba.*")
-                ),
-                MemberNamePatternPredicate(
-                  SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
-                  Pattern.compile("get.*")
-                ),
-                MemberNamePatternPredicate(
-                  SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
-                  Pattern.compile("is.*")
-                ),
-                ReturnMemberPredicate(
-                  ExactClassPredicate[Context],
-                  BasePackagePredicate("pl.touk.nussknacker.engine.definition.clazz")
-                )
+        val infos = createDiscovery(
+          ClassExtractionSettings.Default.copy(excludeClassMemberPredicates =
+            ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("ba.*")
+              ),
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("get.*")
+              ),
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("is.*")
+              ),
+              ReturnMemberPredicate(
+                ExactClassPredicate[Context],
+                BasePackagePredicate("pl.touk.nussknacker.engine.definition.clazz")
               )
             )
           )
         ).discoverClassesFromTypes(List(clazz))
         val sampleClassInfo = infos.find(_.getClazz.getName.contains(clazzName)).get
 
-        sampleClassInfo.methodsWithoutExtensionMethods() shouldBe Map(
+        sampleClassInfo.methods shouldBe Map(
           "toString" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
           "foo"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None))
         )
@@ -187,11 +182,7 @@ class ClassDefinitionDiscoverySpec
 
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
-    typeUtils
-      .find(_.clazzName == Typed[TestEmbedded])
-      .value
-      .assertContainsExtensionMethods()
-      .withoutExtensionMethods() shouldBe
+    typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(
       ClassDefinition(
         Typed.typedClass[TestEmbedded],
         Map(
@@ -214,13 +205,14 @@ class ClassDefinitionDiscoverySpec
         ),
         Map.empty
       )
+    )
 
   }
 
   test("should not discover hidden fields") {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
-    typeUtils.value.assertContainsExtensionMethods().withoutExtensionMethods() shouldBe
+    typeUtils shouldBe Some(
       ClassDefinition(
         Typed.typedClass[ClassWithHiddenFields],
         Map(
@@ -230,24 +222,20 @@ class ClassDefinitionDiscoverySpec
         ),
         Map.empty
       )
+    )
   }
 
   test("should skip toString method when HideToString implemented") {
     val hiddenToStringClasses = Table("class", classOf[JavaBannedToStringClass], classOf[BannedToStringClass])
     forAll(hiddenToStringClasses) {
-      DefaultExtractor.extract(_).methods.keys shouldNot contain(
-        "toString"
-      )
+      DefaultExtractor.extract(_).methods.keys shouldNot contain("toString")
     }
   }
 
   test("should break recursive discovery if hidden class found") {
-
-    val extracted = new ClassDefinitionDiscovery(
-      new ClassDefinitionExtractor(
-        ClassExtractionSettings.Default.copy(
-          excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
-        )
+    val extracted = createDiscovery(
+      ClassExtractionSettings.Default.copy(
+        excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
       )
     ).discoverClassesFromTypes(List(Typed[Top]))
     extracted.find(_.clazzName == Typed[Top]) shouldBe Symbol("defined")
@@ -567,31 +555,14 @@ class ClassDefinitionDiscoverySpec
   ): Option[ClassDefinition] = {
     val ref = Typed.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    new ClassDefinitionDiscovery(new ClassDefinitionExtractor(settings))
-      .discoverClassesFromTypes(List(ref))
-      .find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
+    createDiscovery(settings).discoverClassesFromTypes(List(ref)).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](
       settings: ClassExtractionSettings = ClassExtractionSettings.Default
   ) = {
     val ref = Typed.fromDetailedType[T]
-    new ClassDefinitionDiscovery(new ClassDefinitionExtractor(settings)).discoverClassesFromTypes(List(ref))
-  }
-
-  private implicit class ClassDefinitionAssertions(classDefinition: ClassDefinition) {
-    private val extensionMethodsNames = ExtensionMethods.registry.flatMap(_.getMethods).map(_.getName)
-
-    def methodsWithoutExtensionMethods(): Map[String, List[MethodDefinition]] =
-      classDefinition.methods.filter(e => !extensionMethodsNames.contains(e._1))
-
-    def withoutExtensionMethods(): ClassDefinition = classDefinition.copy(methods = methodsWithoutExtensionMethods())
-
-    def assertContainsExtensionMethods(): ClassDefinition = {
-      classDefinition.methods.keySet should contain allElementsOf (extensionMethodsNames)
-      classDefinition
-    }
-
+    createDiscovery(settings).discoverClassesFromTypes(List(ref))
   }
 
 }

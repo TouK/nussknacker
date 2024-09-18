@@ -126,7 +126,8 @@ class SpelExpressionGenSpec
       new SimpleDictRegistry(Map.empty),
       enableSpelForceCompile = false,
       SpelExpressionParser.Standard,
-      ClassDefinitionTestUtils.createDefinitionForDefaultAdditionalClasses
+      ClassDefinitionTestUtils.createDefinitionForDefaultAdditionalClasses,
+      ClassDefinitionTestUtils.DefaultSettings
     )
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty

@@ -4,9 +4,9 @@ import java.lang.reflect.Method
 
 object ExtensionMethods {
 
-  private val declarationsWithImplementations = Map(
-    classOf[Cast] -> CastImpl.apply _,
-  ).asInstanceOf[Map[Class[_], Any => Any]]
+  private val declarationsWithImplementations = Map[Class[_], Any => Any](
+    classOf[Cast] -> CastImpl.apply,
+  )
 
   val registry: Set[Class[_]] = declarationsWithImplementations.keySet
 

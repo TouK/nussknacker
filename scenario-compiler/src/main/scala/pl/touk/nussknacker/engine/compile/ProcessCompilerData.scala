@@ -47,7 +47,8 @@ object ProcessCompilerData {
       dictRegistry,
       definitionWithTypes.modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions,
-      expressionEvaluator
+      expressionEvaluator,
+      definitionWithTypes.modelDefinition.settings
     )
 
     // for testing environment it's important to take classloader from user jar

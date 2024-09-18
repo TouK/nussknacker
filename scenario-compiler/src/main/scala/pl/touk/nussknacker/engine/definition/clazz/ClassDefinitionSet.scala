@@ -9,8 +9,6 @@ object ClassDefinitionSet {
 }
 
 case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition]) {
-  val unknown: Option[ClassDefinition] =
-    classDefinitionsMap.get(classOf[Any])
 
   def all: Set[ClassDefinition] = classDefinitionsMap.values.toSet
 
