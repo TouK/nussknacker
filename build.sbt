@@ -2019,7 +2019,7 @@ lazy val designer = (project in file("designer/server"))
     }
   )
   .dependsOn(
-    scenarioCompiler,
+    scenarioCompiler                  % "compile;test->test;test->compile",
     processReports,
     security,
     deploymentManagerApi,

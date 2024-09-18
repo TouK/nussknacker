@@ -7,7 +7,7 @@ import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.GenericRecord
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
@@ -239,7 +239,7 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))),
         enableSpelForceCompile = true,
         Standard,
-        ClassDefinitionTestUtils.buildDefinitionForClasses(classOf[EnumSymbol])
+        ClassDefinitionTestUtils.createDefinitionForClasses(classOf[EnumSymbol])
       )
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }

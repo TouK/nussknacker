@@ -229,7 +229,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[SampleValue],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     )
-    ClassDefinitionTestUtils.buildDefinitionForClasses(typesFromGlobalVariables ++ customClasses: _*)
+    ClassDefinitionTestUtils.createDefinitionForClasses(typesFromGlobalVariables ++ customClasses: _*)
   }
 
   test("parsing first selection on array") {

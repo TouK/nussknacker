@@ -39,7 +39,7 @@ trait BaseSpelSpec {
     classDefinitions,
   )
 
-  private lazy val classDefinitions = ClassDefinitionTestUtils.buildDefinitionForClasses(
+  private lazy val classDefinitions = ClassDefinitionTestUtils.createDefinitionForClasses(
     collection.getClass,
     classOf[DateUtils],
     classOf[DateFormatUtils],

@@ -87,7 +87,7 @@ class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtracto
   )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath): Set[ClassDefinition] = {
     typingResult match {
       case e: TypedClass =>
-        val definitionsForClass = if (classDefinitionExtractor.settings.isHidden(e.klass)) {
+        val definitionsForClass = if (classDefinitionExtractor.isHidden(e.klass)) {
           Set.empty
         } else {
           val classDefinition = extractDefinitionWithLogging(e.klass)(path)

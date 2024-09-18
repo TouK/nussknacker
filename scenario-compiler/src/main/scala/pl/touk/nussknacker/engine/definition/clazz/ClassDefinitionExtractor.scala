@@ -30,7 +30,7 @@ import java.lang.annotation.Annotation
 import java.lang.reflect._
 import java.util.Optional
 
-class ClassDefinitionExtractor(val settings: ClassExtractionSettings) extends LazyLogging {
+class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -40,6 +40,9 @@ class ClassDefinitionExtractor(val settings: ClassExtractionSettings) extends La
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false),
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
     )
+
+  def isHidden(clazz: Class[_]): Boolean =
+    settings.isHidden(clazz)
 
   private def extractPublicMethodsAndFields(
       clazz: Class[_],

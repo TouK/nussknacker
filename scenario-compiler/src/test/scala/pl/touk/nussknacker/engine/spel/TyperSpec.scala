@@ -172,7 +172,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     dictTyper = new KeysDictTyper(new SimpleDictRegistry(Map.empty)),
     strictMethodsChecking = false,
     staticMethodInvocationsChecking = false,
-    classDefinitionSet = ClassDefinitionTestUtils.buildDefinitionForDefaultAdditionalClasses,
+    classDefinitionSet = ClassDefinitionTestUtils.createDefinitionForDefaultAdditionalClasses,
     evaluationContextPreparer = null,
     methodExecutionForUnknownAllowed = false,
     dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed

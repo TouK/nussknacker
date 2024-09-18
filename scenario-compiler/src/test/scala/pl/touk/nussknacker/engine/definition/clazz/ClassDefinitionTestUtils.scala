@@ -6,11 +6,11 @@ object ClassDefinitionTestUtils {
   val DefaultExtractor = new ClassDefinitionExtractor(ClassExtractionSettings.Default)
   val DefaultDiscovery = new ClassDefinitionDiscovery(DefaultExtractor)
 
-  def buildDefinitionForClasses(classes: Class[_]*): ClassDefinitionSet = ClassDefinitionSet(
+  def createDefinitionForClasses(classes: Class[_]*): ClassDefinitionSet = ClassDefinitionSet(
     DefaultDiscovery.discoverClasses(classes ++ ExpressionConfig.defaultAdditionalClasses)
   )
 
-  def buildDefinitionForDefaultAdditionalClasses: ClassDefinitionSet = ClassDefinitionSet(
+  def createDefinitionForDefaultAdditionalClasses: ClassDefinitionSet = ClassDefinitionSet(
     DefaultDiscovery.discoverClasses(ExpressionConfig.defaultAdditionalClasses)
   )
 

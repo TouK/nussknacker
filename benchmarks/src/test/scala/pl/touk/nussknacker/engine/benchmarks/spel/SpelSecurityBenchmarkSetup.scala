@@ -24,7 +24,7 @@ class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) 
     getClass.getClassLoader,
     new SimpleDictRegistry(Map.empty),
     expressionDefinition,
-    classDefinitionSet = ClassDefinitionTestUtils.buildDefinitionForDefaultAdditionalClasses,
+    classDefinitionSet = ClassDefinitionTestUtils.createDefinitionForDefaultAdditionalClasses,
     evaluator
   )
 
