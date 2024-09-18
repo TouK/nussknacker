@@ -12,7 +12,7 @@ describe("Fragment", () => {
     });
 
     beforeEach(() => {
-        cy.viewport(1440, 1200);
+        cy.viewport("macbook-16");
     });
 
     it("should allow adding input parameters and display used fragment graph in modal", () => {
@@ -419,10 +419,10 @@ describe("Fragment", () => {
                 },
                 force: true,
             });
+
+        cy.viewport("macbook-16");
         cy.layoutScenario();
 
-        cy.get("@sendSms")
-            .parent()
-            .matchImage({ screenshotConfig: { padding: 16 } });
+        cy.get('[joint-selector="layers"]').matchImage({ screenshotConfig: { padding: 16 } });
     });
 });

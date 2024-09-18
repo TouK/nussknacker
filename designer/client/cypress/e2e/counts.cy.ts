@@ -10,6 +10,9 @@ describe("Counts", () => {
     });
 
     it("should be available via button and modal", () => {
+        // There is no other way to make this test works as expected since we cannot mock dynamic date here,
+        // and blackout or response mock has a little no sense in this case
+        const maxDiffThreshold = 0.02;
         cy.viewport("macbook-15");
 
         // Collapse toolbar to make counts button visible
@@ -20,7 +23,7 @@ describe("Counts", () => {
 
         cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
         cy.contains(/^latest deploy$/i).should("not.exist");
-        cy.get("[data-testid=window]").matchImage();
+        cy.get("[data-testid=window]").matchImage({ maxDiffThreshold });
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
             .click();
@@ -29,7 +32,7 @@ describe("Counts", () => {
         cy.get("@button").click();
         cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
         cy.contains(/^latest deploy$/i).should("be.visible");
-        cy.get("[data-testid=window]").matchImage();
+        cy.get("[data-testid=window]").matchImage({ maxDiffThreshold });
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
             .click();
@@ -44,7 +47,7 @@ describe("Counts", () => {
         cy.contains(/^previous deployments...$/i)
             .should("be.visible")
             .click();
-        cy.get("[data-testid=window]").matchImage();
+        cy.get("[data-testid=window]").matchImage({ maxDiffThreshold });
         cy.get("[data-testid=window]").contains("no refresh").should("be.visible");
         cy.get("[data-testid=window]").contains("Latest deploy").click();
         cy.get("[data-testid=window]").contains("10 seconds").should("be.visible");
