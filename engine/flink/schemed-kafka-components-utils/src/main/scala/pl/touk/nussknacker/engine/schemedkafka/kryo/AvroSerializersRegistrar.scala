@@ -3,7 +3,9 @@ package pl.touk.nussknacker.engine.schemedkafka.kryo
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
+import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.java.typeutils.AvroUtils
 import pl.touk.nussknacker.engine.api.component.ComponentProviderConfig
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -11,7 +13,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClie
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 // We need it because we use avro records inside our Context class
 class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
@@ -23,12 +24,12 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
     registerGenericRecordSchemaIdSerializationForGlobalKafkaConfigIfNeed(resolvedKafkaConfig, executionConfig)
   }
 
-  private def registerAvroSerializers(executionConfig: ExecutionConfig): Unit = {
-    val avroUtilsProvider = ScalaServiceLoader
-      .load[AvroUtilsCompatibilityProvider](getClass.getClassLoader)
-      .headOption
-      .getOrElse(DefaultAvroUtils)
-    avroUtilsProvider.addAvroSerializersIfRequired(executionConfig)
+  // protected for overriding for compatibility with Flink < v.1.19
+  protected def registerAvroSerializers(executionConfig: ExecutionConfig): Unit = {
+    AvroUtils.getAvroUtils.addAvroSerializersIfRequired(
+      executionConfig.getSerializerConfig,
+      classOf[GenericData.Record]
+    )
   }
 
   private def resolveConfig(modelConfig: Config): Option[KafkaConfig] = {
