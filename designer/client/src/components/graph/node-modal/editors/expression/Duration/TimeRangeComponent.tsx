@@ -3,7 +3,7 @@ import { cx } from "@emotion/css";
 import { UnknownFunction } from "../../../../../../types/common";
 import { Duration } from "./DurationEditor";
 import { Period } from "./PeriodEditor";
-import { nodeInputWithError } from "../../../NodeDetailsContent/NodeTableStyled";
+import { nodeInput, nodeInputWithError } from "../../../NodeDetailsContent/NodeTableStyled";
 
 export type TimeRangeComponentType = {
     label: string;
@@ -67,6 +67,7 @@ export default function TimeRangeComponent(props: Props) {
                 value={value[component.fieldName] || ""}
                 onChange={(event) => onChange(component.fieldName, parseInt(event.target.value))}
                 className={cx([
+                    nodeInput,
                     "time-range-input",
                     showValidation && !isValid && nodeInputWithError,
                     isMarked && "marked",

@@ -9,9 +9,8 @@ import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
-import pl.touk.nussknacker.engine.schemedkafka.schema.AvroStringSettings.forceUsingStringForStringSchema
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -19,9 +18,9 @@ import java.time.chrono.ChronoZonedDateTime
 import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
 import java.util
 import java.util.UUID
+import scala.collection.compat.immutable.LazyList
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
-import scala.collection.compat.immutable.LazyList
 
 class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
 
@@ -49,9 +48,9 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       case (Schema.Type.RECORD, map: util.Map[String @unchecked, _]) =>
         encodeRecord(map, schema)
       case (Schema.Type.ENUM, symbol: CharSequence) =>
-        encodeEnumOrError(symbol.toString, schema, fieldName)
+        encodeEnum(symbol.toString, schema, fieldName)
       case (Schema.Type.ENUM, symbol: EnumSymbol) =>
-        encodeEnumOrError(symbol.toString, schema, fieldName)
+        encodeEnum(symbol.toString, schema, fieldName)
       case (Schema.Type.ARRAY, collection: Iterable[_]) =>
         encodeCollection(collection, schema)
       case (Schema.Type.ARRAY, collection: util.Collection[_]) =>
@@ -61,6 +60,8 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       case (Schema.Type.MAP, map: util.Map[_, _]) =>
         encodeMap(map.asScala, schema)
       case (Schema.Type.UNION, _) =>
+        // Note: calling 'toString' on Avro schema is expensive, especially when we reject some messages.
+        // Error messages should be lazily evaluated, and materialized only when exiting public functions.
         schema.getTypes.asScala
           .to(LazyList)
           .flatMap { subTypeSchema =>
@@ -85,7 +86,7 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       case (Schema.Type.STRING, uuid: String) if schema.getLogicalType == LogicalTypes.uuid() =>
         encodeUUIDorError(uuid)
       case (Schema.Type.STRING, str: String) =>
-        Valid(encodeString(str))
+        Valid(str)
       case (Schema.Type.STRING, str: CharSequence) =>
         Valid(str)
       case (Schema.Type.BYTES, str: CharSequence) =>
@@ -139,9 +140,9 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       case (Schema.Type.NULL, None) =>
         Valid(null)
       case (_, null) =>
-        error(s"Not expected null for field: $fieldName with schema: $schema")
+        error(s"Not expected null for field: $fieldName with schema: ${schema.getFullName}")
       case (_, _) =>
-        error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+        error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: ${schema.getFullName}")
     }
   }
 
@@ -150,11 +151,15 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
     decimal.setScale(decimalLogicalType.getScale, RoundingMode.DOWN).bigDecimal
   }
 
-  def encodeEnumOrError(symbol: String, schema: Schema, fieldName: Option[String]): WithError[EnumSymbol] =
-    if (!schema.hasEnumSymbol(symbol))
-      error(s"Not expected symbol: $symbol for field: $fieldName with schema: $schema")
-    else
+  private def encodeEnum(symbol: String, schema: Schema, fieldName: Option[String]): WithError[EnumSymbol] =
+    if (!schema.hasEnumSymbol(symbol)) {
+      val allowedEnumValues = schema.getEnumSymbols.asScala.mkString(", ")
+      error(
+        s"Not expected symbol: $symbol for field: $fieldName with schema: ${schema.getFullName}, allowed values: $allowedEnumValues"
+      )
+    } else {
       Valid(new EnumSymbol(schema, symbol))
+    }
 
   def encodeRecordOrError(fields: collection.Map[String, _], schema: Schema): GenericData.Record = {
     encodeRecordOrError(fields.asJava, schema)
@@ -205,7 +210,7 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       .asInstanceOf[collection.Map[AnyRef, AnyRef]]
       .map {
         case (k: String, v) =>
-          encode(v, schema.getValueType, Some(k)).map(encodeString(k) -> _)
+          encode(v, schema.getValueType, Some(k)).map(k -> _)
         case (k: CharSequence, v) =>
           encode(v, schema.getValueType, Some(k.toString)).map(k -> _)
         case (k, v) =>
@@ -222,7 +227,7 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
 
   private def encodeFixed(bytes: Array[Byte], schema: Schema): WithError[GenericData.Fixed] = {
     if (bytes.length != schema.getFixedSize) {
-      error(s"Fixed size not matches: ${bytes.length} != ${schema.getFixedSize} for schema: $schema")
+      error(s"Fixed size not matches: ${bytes.length} != ${schema.getFixedSize} for schema: ${schema.getFullName}")
     } else {
       val fixed = new GenericData.Fixed(schema)
       fixed.bytes(bytes)
@@ -238,10 +243,6 @@ class ToAvroSchemaBasedEncoder(avroSchemaEvolution: AvroSchemaEvolution, validat
       )
 
   private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
-
-  private def encodeString(str: String): CharSequence = {
-    if (forceUsingStringForStringSchema) str else new Utf8(str)
-  }
 
 }
 
