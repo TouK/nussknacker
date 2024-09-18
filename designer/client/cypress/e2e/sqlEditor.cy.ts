@@ -16,7 +16,7 @@ describe("Sql editor", () => {
         cy.get("[model-id=sql-source]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible");
         cy.get("#ace-editor").should("not.have.class", "tokenizer-working");
-        cy.wait(500);
+        cy.wait(1000);
         cy.get("#ace-editor").parent().matchImage({ maxDiffThreshold });
         cy.get("[data-testid=window]").matchImage();
     });
@@ -29,7 +29,7 @@ describe("Sql editor", () => {
         cy.wrap(["sql-source", "sql-source2", "sql-source3"]).each((name) => {
             cy.get(`[model-id=${name}]`).should("be.visible").trigger("dblclick");
             cy.get("#ace-editor").should("not.have.class", "tokenizer-working");
-            cy.wait(500);
+            cy.wait(1000);
             cy.get("#ace-editor").parent().matchImage({ maxDiffThreshold });
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
