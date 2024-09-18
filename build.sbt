@@ -862,12 +862,12 @@ lazy val benchmarks = (project in file("benchmarks"))
   .dependsOn(
     designer,
     extensionsApi,
-    scenarioCompiler,
+    scenarioCompiler % "test->test;test->compile",
     flinkSchemedKafkaComponentsUtils,
     flinkExecutor,
     flinkBaseComponents,
     flinkBaseUnboundedComponents,
-    testUtils % Test
+    testUtils        % Test
   )
 
 lazy val doExecuteMainFromTestSources = Seq(
@@ -958,7 +958,7 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
   .dependsOn(
     componentsUtils  % Provided,
     kafkaComponentsUtils,
-    scenarioCompiler % Test,
+    scenarioCompiler % "test->test;test->compile",
     kafkaTestUtils   % Test,
     jsonUtils
   )
@@ -1123,7 +1123,7 @@ lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(
     name := "nussknacker-default-helpers"
   )
-  .dependsOn(mathUtils, testUtils % Test, scenarioCompiler % Test)
+  .dependsOn(mathUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 
 lazy val testUtils = (project in utils("test-utils"))
   .settings(commonSettings)
@@ -2019,7 +2019,7 @@ lazy val designer = (project in file("designer/server"))
     }
   )
   .dependsOn(
-    scenarioCompiler,
+    scenarioCompiler                  % "compile;test->test;test->compile",
     processReports,
     security,
     deploymentManagerApi,

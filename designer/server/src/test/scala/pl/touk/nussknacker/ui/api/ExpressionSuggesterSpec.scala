@@ -6,16 +6,14 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
-  ClassDefinitionExtractor,
   ClassDefinitionSet,
+  ClassDefinitionTestUtils,
   StaticMethodDefinition
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -71,7 +69,7 @@ class ExpressionSuggesterSpec
     with Matchers
     with PatientScalaFutures
     with TableDrivenPropertyChecks {
-  implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
+  private val classDefinitionExtractor = ClassDefinitionTestUtils.DefaultExtractor
 
   private val dictRegistry = new SimpleDictRegistry(
     Map(
@@ -84,11 +82,11 @@ class ExpressionSuggesterSpec
 
   private val clazzDefinitions: ClassDefinitionSet = ClassDefinitionSet(
     Set(
-      ClassDefinitionExtractor.extract(classOf[A]),
-      ClassDefinitionExtractor.extract(classOf[B]),
-      ClassDefinitionExtractor.extract(classOf[C]),
-      ClassDefinitionExtractor.extract(classOf[AA]),
-      ClassDefinitionExtractor.extract(classOf[WithList]),
+      classDefinitionExtractor.extract(classOf[A]),
+      classDefinitionExtractor.extract(classOf[B]),
+      classDefinitionExtractor.extract(classOf[C]),
+      classDefinitionExtractor.extract(classOf[AA]),
+      classDefinitionExtractor.extract(classOf[WithList]),
       ClassDefinition(
         Typed.typedClass[String],
         Map(
@@ -109,8 +107,8 @@ class ExpressionSuggesterSpec
         ),
         Map.empty
       ),
-      ClassDefinitionExtractor.extract(classOf[Util]),
-      ClassDefinitionExtractor.extract(classOf[Duration]),
+      classDefinitionExtractor.extract(classOf[Util]),
+      classDefinitionExtractor.extract(classOf[Duration]),
       ClassDefinition(
         Typed.typedClass[java.util.Map[_, _]],
         Map("empty" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),
