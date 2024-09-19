@@ -62,8 +62,9 @@ trait UniversalSchemaSupport {
   }
 
   final def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
-    data =>
-      recordFormatterSupport(schemaRegistryClient).formatMessage(formValueEncoder(schema, ValidationMode.lax)(data))
+    val recordFormatter = recordFormatterSupport(schemaRegistryClient)
+    val encodeRecord    = formValueEncoder(schema, ValidationMode.lax)
+    (data: Any) => recordFormatter.formatMessage(encodeRecord(data))
   }
 
 }

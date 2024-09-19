@@ -19,14 +19,15 @@ import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
  * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
 class ReloadableProcessingTypeDataProvider(
-                                            loadMethod: IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]]
-                                          ) extends ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
-  with LazyLogging {
+    loadMethod: IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]]
+) extends ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
+    with LazyLogging {
 
   // We init state with dumb value instead of calling loadMethod() to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
   private var stateValue: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = emptyState
 
-  override private[processingtype] def state: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
+  override private[processingtype] def state
+      : ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     synchronized {
       stateValue
     }
@@ -35,17 +36,22 @@ class ReloadableProcessingTypeDataProvider(
   def reloadAll(): IO[Unit] = synchronized {
     for {
       beforeReload <- IO.pure(stateValue)
-      _ <- IO(logger.info(
-        s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted.mkString(", ")}] and identity [${beforeReload.stateIdentity}]"
-      ))
+      _ <- IO(
+        logger.info(
+          s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted
+              .mkString(", ")}] and identity [${beforeReload.stateIdentity}]"
+        )
+      )
       _ <- close(beforeReload)
       _ <- IO(
         logger.info("Reloading processing type data...")
       )
       newState <- loadMethod
-      _ <- IO(logger.info(
-        s"New state with processing types [${state.all.keys.toList.sorted.mkString(", ")}] and identity [${state.stateIdentity}] reloaded finished"
-      ))
+      _ <- IO(
+        logger.info(
+          s"New state with processing types [${state.all.keys.toList.sorted.mkString(", ")}] and identity [${state.stateIdentity}] reloaded finished"
+        )
+      )
     } yield {
       stateValue = newState
     }

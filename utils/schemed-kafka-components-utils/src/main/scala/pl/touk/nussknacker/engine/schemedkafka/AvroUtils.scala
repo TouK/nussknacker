@@ -10,8 +10,6 @@ import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
-import org.apache.avro.reflect.ReflectData
-import org.apache.avro.specific.{SpecificData, SpecificDatumWriter, SpecificRecord}
 import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
@@ -28,7 +26,7 @@ object AvroUtils extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
 
-  def genericData: GenericData = addLogicalTypeConversions(new GenericData(_) {
+  val genericData: GenericData = addLogicalTypeConversions(new GenericData(getClass.getClassLoader) {
 
     override def deepCopy[T](schema: Schema, value: T): T = {
       val copiedRecord = super.deepCopy(schema, value)
@@ -50,23 +48,7 @@ object AvroUtils extends LazyLogging {
     StringForcingDatumReaderProvider.genericDatumReader[T](writer, reader, genericData)
   }
 
-  def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_) {
-    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
-      .specificDatumReader(writer, reader, this.asInstanceOf[SpecificData])
-
-    override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
-  })
-
-  def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_) {
-    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
-      .reflectDatumReader(writer, reader, this.asInstanceOf[ReflectData])
-
-    override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
-
-  })
-
-  private def addLogicalTypeConversions[T <: GenericData](createData: ClassLoader => T): T = {
-    val data = createData(Thread.currentThread.getContextClassLoader)
+  private def addLogicalTypeConversions(data: GenericData): GenericData = {
     data.addLogicalTypeConversion(new TimeConversions.DateConversion)
     data.addLogicalTypeConversion(new TimeConversions.TimeMicrosConversion)
     data.addLogicalTypeConversion(new TimeConversions.TimeMillisConversion)
@@ -136,13 +118,7 @@ object AvroUtils extends LazyLogging {
       case v: Array[Byte] =>
         output.write(v)
       case v =>
-        val writer = data match {
-          case _: SpecificRecord =>
-            new SpecificDatumWriter[Any](container.getSchema, AvroUtils.specificData)
-          case _ =>
-            new GenericDatumWriter[Any](container.getSchema, AvroUtils.genericData)
-        }
-
+        val writer  = new GenericDatumWriter[Any](container.getSchema, AvroUtils.genericData)
         val encoder = EncoderFactory.get().binaryEncoder(output, null)
         writer.write(v, encoder)
         encoder.flush()

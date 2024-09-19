@@ -18,13 +18,8 @@ const mockWindowDate = () => {
     // let originalDate: DateConstructor;
 
     cy.on("window:before:load", (win) => {
-        // originalDate = win.Date;
         Object.assign(win, { Date: FakeDate });
     });
-
-    // cy.on("window:before:unload", (win) => {
-    //     Object.assign(win, { Date: originalDate });
-    // });
 };
 
 Cypress.Commands.add("mockWindowDate", mockWindowDate);

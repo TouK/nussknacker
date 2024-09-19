@@ -107,23 +107,19 @@ class TablesDefinitionDiscoveryTest
   }
 
   test("use catalog configuration in data definition") {
-    val catalogConfiguration = Configuration.fromMap(Map("type" -> "mockable").asJava)
-    val catalogTable = CatalogTable.of(
-      Schema.newBuilder().column("fooColumn", DataTypes.STRING()).build(),
-      null,
-      List.empty[String].asJava,
-      Map.empty[String, String].asJava
-    )
-    MockableCatalogFactory.resetCatalog()
-    MockableCatalogFactory.catalog.createTable(ObjectPath.fromString("default.fooTable"), catalogTable, false)
-    val flinkDataDefinition = FlinkDataDefinition.create(None, Some(catalogConfiguration)).validValue
+    val catalogConfiguration = Configuration.fromMap(Map("type" -> StubbedCatalogFactory.catalogName).asJava)
+    val flinkDataDefinition  = FlinkDataDefinition.create(None, Some(catalogConfiguration)).validValue
 
     val discovery = TablesDefinitionDiscovery.prepareDiscovery(flinkDataDefinition).validValue
 
     val tableDefinition = discovery.listTables.loneElement
 
-    tableDefinition.tableId.toString shouldBe s"`${FlinkDataDefinition.internalCatalogName}`.`default`.`fooTable`"
-    tableDefinition.schema shouldBe ResolvedSchema.of(Column.physical("fooColumn", DataTypes.STRING()))
+    tableDefinition.tableId.toString shouldBe s"`${FlinkDataDefinition.internalCatalogName}`." +
+      s"`${StubbedCatalogFactory.sampleBoundedTablePath.getDatabaseName}`." +
+      s"`${StubbedCatalogFactory.sampleBoundedTablePath.getObjectName}`"
+    tableDefinition.schema shouldBe ResolvedSchema.of(
+      Column.physical(StubbedCatalogFactory.sampleColumnName, DataTypes.STRING())
+    )
   }
 
 }

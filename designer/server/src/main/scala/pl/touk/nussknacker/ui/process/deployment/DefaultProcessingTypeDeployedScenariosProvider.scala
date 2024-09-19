@@ -86,8 +86,10 @@ object DefaultProcessingTypeDeployedScenariosProvider {
       Map(processingType -> ValueWithRestriction.anyUser(Map.empty[String, String]))
     )
     val actionRepository        = new DbScenarioActionRepository(dbRef, dumbModelInfoProvier)
-    val processRepository       = DBFetchingProcessRepository.create(dbRef, actionRepository)
-    val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
+    val scenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
+    val processRepository        = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
+    val futureProcessRepository =
+      DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
     new DefaultProcessingTypeDeployedScenariosProvider(
       processRepository,
       dbioRunner,

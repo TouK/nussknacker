@@ -4,6 +4,7 @@ import { NkApiContext } from "../settings/nkApiProvider";
 import { Scenario, StatusDefinitionType } from "nussknackerUi/components/Process/types";
 import { StatusesType } from "nussknackerUi/HttpService";
 import { useQuery, useQueryClient } from "react-query";
+import { AvailableScenarioLabels } from "nussknackerUi/components/Labels/types";
 import { UseQueryResult } from "react-query/types/react/types";
 import { DateTime } from "luxon";
 
@@ -75,6 +76,19 @@ export function useUserQuery(): UseQueryResult<UserData> {
         },
         enabled: !!api,
         refetchInterval: 900000,
+    });
+}
+
+export function useScenarioLabelsQuery(): UseQueryResult<AvailableScenarioLabels> {
+    const api = useContext(NkApiContext);
+    return useQuery({
+        queryKey: ["scenarioLabels"],
+        queryFn: async () => {
+            const { data } = await api.fetchScenarioLabels();
+            return data;
+        },
+        enabled: !!api,
+        refetchInterval: false,
     });
 }
 

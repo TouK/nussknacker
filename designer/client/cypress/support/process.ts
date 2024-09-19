@@ -14,6 +14,7 @@ declare global {
             importTestProcess: typeof importTestProcess;
             visitNewProcess: typeof visitNewProcess;
             visitNewFragment: typeof visitNewFragment;
+            addLabelsToNewProcess: typeof addLabelsToNewProcess;
             postFormData: typeof postFormData;
             visitProcess: typeof visitProcess;
             getNode: typeof getNode;
@@ -93,6 +94,26 @@ function visitNewFragment(name?: string, fixture?: string, category?: string) {
     });
 }
 
+function addLabelsToNewProcess(name?: string, labels?: string[]) {
+    return cy.visitProcess(name).then((processName) => {
+        cy.intercept("PUT", "/api/processes/*").as("save");
+        cy.intercept("POST", "/api/scenarioLabels/validation").as("labelValidation");
+        cy.get("[data-testid=AddLabel]").should("be.visible").click();
+        cy.get("[data-testid=LabelInput]").should("be.visible").click().as("labelInput");
+
+        labels.forEach((label) => {
+            cy.get("@labelInput").type(label);
+            cy.wait("@labelValidation");
+            cy.get('.MuiAutocomplete-popper li[data-option-index="0"]').contains(label).click();
+        });
+
+        cy.contains(/^save/i).should("be.enabled").click();
+        cy.contains(/^ok$/i).should("be.enabled").click();
+        cy.wait("@save").its("response.statusCode").should("eq", 200);
+        return cy.wrap(processName);
+    });
+}
+
 function deleteTestProcess(processName: string, force?: boolean) {
     const url = `/api/processes/${processName}`;
 
@@ -168,6 +189,7 @@ function importTestProcess(name: string, fixture = "testProcess") {
             cy.request("PUT", `/api/processes/${name}`, {
                 comment: "import test data",
                 scenarioGraph: response.scenarioGraph,
+                scenarioLabels: [],
             });
             return cy.wrap(name);
         });
@@ -292,6 +314,7 @@ Cypress.Commands.add("createTestFragment", createTestFragment);
 Cypress.Commands.add("importTestProcess", importTestProcess);
 Cypress.Commands.add("visitNewProcess", visitNewProcess);
 Cypress.Commands.add("visitNewFragment", visitNewFragment);
+Cypress.Commands.add("addLabelsToNewProcess", addLabelsToNewProcess);
 Cypress.Commands.add("postFormData", postFormData);
 Cypress.Commands.add("visitProcess", visitProcess);
 Cypress.Commands.add("getNode", getNode);

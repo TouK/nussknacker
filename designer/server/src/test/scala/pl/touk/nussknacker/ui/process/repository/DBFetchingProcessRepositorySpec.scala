@@ -45,8 +45,15 @@ class DBFetchingProcessRepositorySpec
 
   private val activities = new DbScenarioActivityRepository(testDbRef, clock)
 
+  private val scenarioLabelsRepository = new ScenarioLabelsRepository(testDbRef)
+
   private val writingRepo =
-    new DBProcessRepository(testDbRef, clock, activities, mapProcessingTypeDataProvider("Streaming" -> 0)) {
+    new DBProcessRepository(
+      testDbRef,
+      clock, activities,
+      scenarioLabelsRepository,
+      mapProcessingTypeDataProvider("Streaming" -> 0)
+    ) {
       override protected def now: Instant = currentTime
     }
 
@@ -58,7 +65,8 @@ class DBFetchingProcessRepositorySpec
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )
 
-  private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
+  private val fetching =
+    DBFetchingProcessRepository.createFutureRepository(testDbRef, actions, scenarioLabelsRepository)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 
@@ -297,6 +305,7 @@ class DBFetchingProcessRepositorySpec
       processId,
       canonicalProcess,
       comment = None,
+      labels = List.empty,
       increaseVersionWhenJsonNotChanged,
       forwardedUserName = None
     )

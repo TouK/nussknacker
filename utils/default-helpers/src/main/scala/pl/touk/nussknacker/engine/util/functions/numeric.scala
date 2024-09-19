@@ -62,7 +62,6 @@ trait NumericUtils extends MathUtils with HideToString {
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number = stringOrNumber match {
     case s: CharSequence =>
       val ss = s.toString
-
       // we pick the narrowest type as possible to reduce the amount of memory and computations overheads
       val tries: List[Try[java.lang.Number]] = List(
         Try(java.lang.Integer.parseInt(ss)),

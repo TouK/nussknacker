@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -584,6 +584,93 @@ class ProcessesResourcesSpec
       doUpdateProcess(command, processName) {
         forScenarioReturned(processName) { process =>
           process.history.map(_.size) shouldBe Some(1)
+        }
+        status shouldEqual StatusCodes.OK
+      }
+    }
+  }
+
+  test("update scenario labels when the scenario does not have any") {
+    val properties = ProcessProperties(
+      ProcessAdditionalFields(
+        description = None,
+        properties = Map.empty,
+        metaDataType = "StreamMetaData"
+      )
+    )
+    val scenarioGraph = ScenarioGraph(
+      properties = properties,
+      nodes = List.empty,
+      edges = List.empty
+    )
+    val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")), None)
+
+    createProcessRequest(processName, category = Category1, isFragment = false) { code =>
+      code shouldBe StatusCodes.Created
+      forScenarioReturned(processName) { scenario =>
+        scenario.labels shouldBe List.empty[String]
+      }
+      doUpdateProcess(command, processName) {
+        forScenarioReturned(processName) { scenario =>
+          scenario.labels shouldBe List("tag1", "tag2")
+        }
+        status shouldEqual StatusCodes.OK
+      }
+    }
+  }
+
+  test("update scenario labels when the scenario does have some") {
+    val properties = ProcessProperties(
+      ProcessAdditionalFields(
+        description = None,
+        properties = Map.empty,
+        metaDataType = "StreamMetaData"
+      )
+    )
+    val scenarioGraph = ScenarioGraph(
+      properties = properties,
+      nodes = List.empty,
+      edges = List.empty
+    )
+
+    createProcessRequest(processName, category = Category1, isFragment = false) { code =>
+      code shouldBe StatusCodes.Created
+      forScenarioReturned(processName) { scenario =>
+        scenario.labels shouldBe List.empty[String]
+      }
+      val command1 = UpdateScenarioCommand(
+        scenarioGraph = scenarioGraph,
+        comment = None,
+        scenarioLabels = Some(List("tag2", "tag1")),
+        forwardedUserName = None
+      )
+      doUpdateProcess(command1, processName) {
+        forScenarioReturned(processName) { scenario =>
+          scenario.labels shouldBe List("tag1", "tag2")
+        }
+        status shouldEqual StatusCodes.OK
+      }
+      val command2 = UpdateScenarioCommand(
+        scenarioGraph = scenarioGraph,
+        comment = None,
+        scenarioLabels = Some(List("tag3", "tag1", "tag4")),
+        forwardedUserName = None
+      )
+      doUpdateProcess(command2, processName) {
+        forScenarioReturned(processName) { scenario =>
+          scenario.labels shouldBe List("tag1", "tag3", "tag4")
+        }
+        status shouldEqual StatusCodes.OK
+      }
+      val command3 = UpdateScenarioCommand(
+        scenarioGraph = scenarioGraph,
+        comment = None,
+        scenarioLabels = Some(List("tag3")),
+        forwardedUserName = None
+      )
+      doUpdateProcess(command3, processName) {
+        forScenarioReturned(processName) { scenario =>
+          scenario.labels shouldBe List("tag3")
         }
         status shouldEqual StatusCodes.OK
       }
@@ -1297,6 +1384,7 @@ class ProcessesResourcesSpec
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
         comment.map(UpdateProcessComment(_)),
+        Some(List.empty),
         None
       ),
       process.name
@@ -1354,7 +1442,12 @@ class ProcessesResourcesSpec
   private def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, comment = None, forwardedUserName = None), name)(testCode)
+    doUpdateProcess(
+      UpdateScenarioCommand(process, comment = None, scenarioLabels = Some(List.empty), forwardedUserName = None),
+      name
+    )(
+      testCode
+    )
 
   private lazy val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
     TestFactory.newFutureFetchingScenarioRepository(testDbRef)

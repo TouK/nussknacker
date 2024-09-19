@@ -37,6 +37,8 @@ abstract class InitializationOnDbItSpec
 
   private lazy val scenarioActivityRepository = TestFactory.newScenarioActivityRepository(testDbRef, clock)
 
+  private lazy val scenarioLabelsRepository = TestFactory.newScenarioLabelsRepository(testDbRef)
+
   private lazy val scenarioRepository = TestFactory.newFetchingProcessRepository(testDbRef)
 
   private lazy val dbioRunner = TestFactory.newDBIOActionRunner(testDbRef)
@@ -48,7 +50,7 @@ abstract class InitializationOnDbItSpec
   it should "migrate processes" in {
     saveSampleProcess()
 
-    Initialization.init(migrations, testDbRef, clock, scenarioRepository, scenarioActivityRepository, "env1")
+    Initialization.init(migrations, testDbRef, clock, scenarioRepository, scenarioActivityRepository, scenarioLabelsRepository, "env1")
 
     dbioRunner
       .runInTransaction(
@@ -67,7 +69,7 @@ abstract class InitializationOnDbItSpec
       saveSampleProcess(ProcessName(s"id$id"))
     }
 
-    Initialization.init(migrations, testDbRef, clock, scenarioRepository, scenarioActivityRepository, "env1")
+    Initialization.init(migrations, testDbRef, clock, scenarioRepository, scenarioActivityRepository, scenarioLabelsRepository, "env1")
 
     dbioRunner
       .runInTransaction(
@@ -88,6 +90,7 @@ abstract class InitializationOnDbItSpec
         clock,
         scenarioRepository,
         scenarioActivityRepository,
+        scenarioLabelsRepository,
         "env1"
       )
     )

@@ -14,6 +14,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.ui.process.fragment.{FragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -48,7 +49,12 @@ class TestModelMigrations(
       val validationResult =
         validator
           .forProcessingTypeUnsafe(migrationDetails.processingType)
-          .validate(migrationDetails.newScenarioGraph, migrationDetails.processName, migrationDetails.isFragment)
+          .validate(
+            migrationDetails.newScenarioGraph,
+            migrationDetails.processName,
+            migrationDetails.isFragment,
+            migrationDetails.labels
+          )
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
         migrationDetails.processName,
@@ -76,6 +82,7 @@ class TestModelMigrations(
         scenarioWithDetails.name,
         scenarioWithDetails.processingType,
         scenarioWithDetails.isFragment,
+        scenarioWithDetails.labels.map(ScenarioLabel.apply),
         scenarioGraph,
         scenarioWithDetails.validationResultUnsafe
       )
@@ -153,6 +160,7 @@ private final case class MigratedProcessDetails(
     processName: ProcessName,
     processingType: ProcessingType,
     isFragment: Boolean,
+    labels: List[ScenarioLabel],
     newScenarioGraph: ScenarioGraph,
     oldProcessErrors: ValidationResult
 )

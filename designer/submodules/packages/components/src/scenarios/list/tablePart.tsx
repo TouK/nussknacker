@@ -63,6 +63,13 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 flex: 1,
             },
             {
+                field: "labels",
+                cellClassName: "stretch",
+                headerName: t("table.scenarios.title.LABEL", "Labels"),
+                renderCell: (props) => <FilterLinkCell<ScenariosFiltersModel> filterKey="LABEL" {...props} />,
+                flex: 1,
+            },
+            {
                 field: "modificationDate",
                 headerName: t("table.scenarios.title.MODIFICATION_DATE", "Modification date"),
                 type: "dateTime",
@@ -135,6 +142,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                                 (f === ScenariosFiltersModelType.FRAGMENTS && row.isFragment),
                         ),
                 CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
+                LABEL: (row, value) => !value?.length || [].concat(value).some((f) => row["labels"] === f),
                 CREATED_BY: (row, value) =>
                     !value?.length ||
                     [].concat(value).some((f) =>

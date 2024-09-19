@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
 import org.apache.avro.{LogicalType, LogicalTypes, Schema}
-import pl.touk.nussknacker.engine.schemedkafka.schema.AvroStringSettings
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
+
 import scala.jdk.CollectionConverters._
 
 object AvroSchemaOutputValidatorPrinter {
@@ -31,8 +31,8 @@ object AvroSchemaOutputValidatorPrinter {
   )
 
   private def schemaTypeMapping = Map(
-    Schema.Type.FIXED -> List(classOf[java.nio.ByteBuffer], AvroStringSettings.stringTypingResult.klass),
-    Schema.Type.ENUM  -> List(AvroStringSettings.stringTypingResult.klass),
+    Schema.Type.FIXED -> List(classOf[java.nio.ByteBuffer], classOf[String]),
+    Schema.Type.ENUM  -> List(classOf[String]),
   )
 
   // We try to keep this representation convention similar to TypingResult.display convention

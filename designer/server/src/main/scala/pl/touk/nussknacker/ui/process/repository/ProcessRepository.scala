@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
@@ -47,9 +48,10 @@ object ProcessRepository {
       dbRef: DbRef,
       clock: Clock,
       scenarioActivityRepository: ScenarioActivityRepository,
+      scenarioLabelsRepository: ScenarioLabelsRepository,
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
   ): DBProcessRepository =
-    new DBProcessRepository(dbRef, clock, scenarioActivityRepository, migrations.mapValues(_.version))
+    new DBProcessRepository(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations.mapValues(_.version))
 
   final case class CreateProcessAction(
       processName: ProcessName,
@@ -64,6 +66,7 @@ object ProcessRepository {
       private val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
       comment: Option[Comment],
+      labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
   ) {
@@ -93,6 +96,7 @@ class DBProcessRepository(
     protected val dbRef: DbRef,
     clock: Clock,
     scenarioActivityRepository: ScenarioActivityRepository,
+    scenarioLabelsRepository: ScenarioLabelsRepository,
     modelVersion: ProcessingTypeDataProvider[Int, _],
 ) extends ProcessRepository[DB]
     with NuTables
@@ -182,19 +186,26 @@ class DBProcessRepository(
       }.sequence
     }
 
-    updateProcessInternal(
-      updateProcessAction.id,
-      updateProcessAction.canonicalProcess,
-      updateProcessAction.increaseVersionWhenJsonNotChanged,
-      userName
-    ).flatMap {
-      // Comment should be added via ProcessService not to mix this repository responsibility.
-      case updateProcessRes @ ProcessUpdated(processId, _, Some(newVersion)) =>
-        addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
-      case updateProcessRes @ ProcessUpdated(processId, Some(oldVersion), _) =>
-        addNewCommentToVersion(processId, oldVersion).map(_ => updateProcessRes)
-      case a => DBIO.successful(a)
-    }
+    for {
+      updateProcessRes <- updateProcessInternal(
+        updateProcessAction.id,
+        updateProcessAction.canonicalProcess,
+        updateProcessAction.increaseVersionWhenJsonNotChanged,
+        userName
+      )
+      _ <- updateProcessRes match {
+        // Comment should be added via ProcessService not to mix this repository responsibility.
+        case updateProcessRes @ ProcessUpdated(processId, _, Some(newVersion)) =>
+          addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
+        case updateProcessRes @ ProcessUpdated(processId, Some(oldVersion), _) =>
+          addNewCommentToVersion(processId, oldVersion).map(_ => updateProcessRes)
+        case _ => dbMonad.unit
+      }
+      _ <- scenarioLabelsRepository.overwriteLabels(
+        updateProcessAction.id.id,
+        updateProcessAction.labels
+      )
+    } yield updateProcessRes
   }
 
   private def updateProcessInternal(

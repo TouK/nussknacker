@@ -298,7 +298,7 @@ trait NuResourcesTest
   protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, None, None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, None, Some(List.empty), None), name)(testCode)
 
   protected def updateCanonicalProcessAndAssertSuccess(process: CanonicalProcess): Assertion =
     updateCanonicalProcess(process) {
@@ -312,6 +312,7 @@ trait NuResourcesTest
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
         comment.map(UpdateProcessComment(_)),
+        Some(List.empty),
         None
       ),
       process.name
@@ -528,13 +529,19 @@ object ProcessJson extends OptionValues {
     val state      = process.hcursor.downField("state").as[Option[Json]].toOption.value
 
     new ProcessJson(
-      process.hcursor.downField("name").as[String].toOption.value,
-      lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
-      lastAction.map(_.hcursor.downField("actionName").as[String].toOption.value),
-      state.map(StateJson(_)),
-      process.hcursor.downField("processCategory").as[String].toOption.value,
-      process.hcursor.downField("isArchived").as[Boolean].toOption.value,
-      process.hcursor.downField("history").as[Option[List[Json]]].toOption.value.map(_.map(v => ProcessVersionJson(v)))
+      name = process.hcursor.downField("name").as[String].toOption.value,
+      lastActionVersionId = lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
+      lastActionType = lastAction.map(_.hcursor.downField("actionName").as[String].toOption.value),
+      state = state.map(StateJson(_)),
+      processCategory = process.hcursor.downField("processCategory").as[String].toOption.value,
+      isArchived = process.hcursor.downField("isArchived").as[Boolean].toOption.value,
+      labels = process.hcursor.downField("labels").as[List[String]].toOption.value,
+      history = process.hcursor
+        .downField("history")
+        .as[Option[List[Json]]]
+        .toOption
+        .value
+        .map(_.map(v => ProcessVersionJson(v)))
     )
   }
 
@@ -547,6 +554,7 @@ final case class ProcessJson(
     state: Option[StateJson],
     processCategory: String,
     isArchived: Boolean,
+    labels: List[String],
     // Process on list doesn't contain history
     history: Option[List[ProcessVersionJson]]
 ) {
