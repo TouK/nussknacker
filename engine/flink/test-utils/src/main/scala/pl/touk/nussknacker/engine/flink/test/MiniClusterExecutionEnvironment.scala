@@ -100,7 +100,6 @@ class MiniClusterExecutionEnvironment(
     Eventually.eventually {
       val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
       additionalChecks
-      executionGraph.getState.equals(expectedJobStatus)
       assert(
         executionGraph.getState.equals(expectedJobStatus),
         s"Job $name does not have expected status: $expectedJobStatus"

@@ -2,5 +2,5 @@ high-availability: NONE
 parallelism.default: 1
 taskmanager.memory.jvm-metaspace.size: 512m
 taskmanager.numberOfTaskSlots: <configured_by_flink_entrypoint>
-jobmanager.memory.process.size: 2gb
-taskmanager.memory.process.size: 2gb
+jobmanager.memory.process.size: 512m
+taskmanager.memory.process.size: 512m
