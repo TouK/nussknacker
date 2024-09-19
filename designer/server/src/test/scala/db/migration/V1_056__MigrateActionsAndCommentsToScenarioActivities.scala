@@ -8,10 +8,12 @@ import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinit
 import io.circe.syntax.EncoderOps
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.deployment.ScenarioComment.Available
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.NuItTest
@@ -19,6 +21,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newDBIOActionRunner
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity.{AdditionalProperties, ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import slick.jdbc.{HsqldbProfile, JdbcProfile}
 
 import java.sql.Timestamp
@@ -38,109 +41,46 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
 
   override protected val profile: JdbcProfile = HsqldbProfile
 
+  import profile.api._
+
+  private val runner = newDBIOActionRunner(testDbRef)
+
+  private val migration                 = new Migration(HsqldbProfile)
+  private val processActionsDefinitions = new ProcessActionsDefinitions(profile)
+  private val commentsDefinitions       = new CommentsDefinitions(profile)
+  private val activitiesDefinitions     = new ScenarioActivitiesDefinitions(profile)
+
+  private val processInsertQuery = processesTable returning
+    processesTable.map(_.id) into ((item, id) => item.copy(id = id))
+  private val commentInsertQuery = commentsDefinitions.table returning
+    commentsDefinitions.table.map(_.id) into ((item, id) => item.copy(id = id))
+  private val actionInsertQuery = processActionsDefinitions.table returning
+    processActionsDefinitions.table.map(_.id) into ((item, id) => item.copy(id = id))
+
+  private val scenarioActivityRepository = new DbScenarioActivityRepository(testDbRef, clock)
+
+  private val now: Timestamp   = Timestamp.from(Instant.now)
+  private val user             = "John Doe"
+  private val processVersionId = 5L
+
   "When data is present in old actions and comments tables" - {
-    "migrate data to scenario_activities table" in {
-      import HsqldbProfile.api._
-
-      val runner = newDBIOActionRunner(testDbRef)
-
-      val migration                 = new Migration(HsqldbProfile)
-      val processActionsDefinitions = new ProcessActionsDefinitions(profile)
-      val commentsDefinitions       = new CommentsDefinitions(profile)
-      val activitiesDefinitions     = new ScenarioActivitiesDefinitions(profile)
-
-      val now: Timestamp = Timestamp.from(Instant.now)
-      val user           = "John Doe"
-      val versionId      = VersionId(5L)
-
-      val processInsertQuery = processesTable returning
-        processesTable.map(_.id) into ((item, id) => item.copy(id = id))
-      val commentInsertQuery = commentsDefinitions.table returning
-        commentsDefinitions.table.map(_.id) into ((item, id) => item.copy(id = id))
-      val actionInsertQuery = processActionsDefinitions.table returning
-        processActionsDefinitions.table.map(_.id) into ((item, id) => item.copy(id = id))
-
-      def processEntity() = ProcessEntityData(
-        id = ProcessId(-1L),
-        name = ProcessName("2024_Q3_6917_NETFLIX"),
-        processCategory = "test-category",
-        description = None,
-        processingType = "BatchPeriodic",
-        isFragment = false,
-        isArchived = false,
-        createdAt = now,
-        createdBy = user,
-        impersonatedByIdentity = None,
-        impersonatedByUsername = None
-      )
-
-      def processVersionEntity(processEntity: ProcessEntityData) = ProcessVersionEntityData(
-        id = versionId,
-        processId = processEntity.id,
-        json = Some(
-          CanonicalProcess(
-            metaData = MetaData(
-              "test-id",
-              ProcessAdditionalFields(
-                description = None,
-                properties = Map.empty,
-                metaDataType = RequestResponseMetaData.typeName,
-                showDescription = true
-              )
-            ),
-            nodes = List.empty,
-            additionalBranches = List.empty
-          )
-        ),
-        createDate = now,
-        user = user,
-        modelVersion = None,
-        componentsUsages = Some(ScenarioComponentsUsages.Empty),
-      )
-
-      def commentEntity(processEntity: ProcessEntityData, commentId: Long) = CommentEntityData(
-        id = commentId,
-        processId = processEntity.id.value,
-        processVersionId = versionId.value,
-        content = s"Very important change $commentId",
-        user = user,
-        impersonatedByIdentity = None,
-        impersonatedByUsername = None,
-        createDate = now,
-      )
-
-      def processActionEntity(processEntity: ProcessEntityData, commentId: Long) = ProcessActionEntityData(
-        id = UUID.randomUUID(),
-        processId = processEntity.id.value,
-        processVersionId = Some(versionId.value),
-        user = user,
-        impersonatedByIdentity = None,
-        impersonatedByUsername = None,
-        createdAt = now,
-        performedAt = None,
-        actionName = ScenarioActionName.Deploy.value,
-        state = "IN_PROGRESS",
-        failureMessage = None,
-        commentId = Some(commentId),
-        buildInfo = None
-      )
-
-      val (createdProcess, migratedCount, actionsBeingMigrated, activitiesAfterMigration) = Await.result(
-        runner.run(
-          for {
-            process       <- processInsertQuery += processEntity()
-            _             <- processVersionsTable += processVersionEntity(process)
-            comments      <- commentInsertQuery ++= List.range(1L, 100001L).map(idx => commentEntity(process, idx))
-            actions       <- actionInsertQuery ++= comments.map(comment => processActionEntity(process, comment.id))
-            migratedCount <- migration.migrateActions
-            activities    <- activitiesDefinitions.scenarioActivitiesTable.result
-          } yield (process, migratedCount, actions, activities)
-        ),
-        Duration.Inf
+    "migrate 100000 DEPLOY actions with comments to scenario_activities table" in {
+      val (createdProcess, actionsBeingMigrated, activitiesAfterMigration) = run(
+        for {
+          process <- processInsertQuery += processEntity(user, now)
+          _       <- processVersionsTable += processVersionEntity(process)
+          comments <-
+            commentInsertQuery ++= List
+              .range(1L, 100001L)
+              .map(id => commentEntity(process, id, s"Deployment: Very important change $id"))
+          actions <-
+            actionInsertQuery ++= comments.map(c => processActionEntity(process, ScenarioActionName.Deploy, Some(c.id)))
+          _          <- migration.migrate
+          activities <- activitiesDefinitions.scenarioActivitiesTable.result
+        } yield (process, actions, activities)
       )
 
       actionsBeingMigrated.length shouldBe 100000
-      migratedCount shouldBe 100000
       activitiesAfterMigration.length shouldBe 100000
 
       val headActivity =
@@ -162,7 +102,7 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
         lastModifiedByUserName = Some(user),
         lastModifiedAt = Some(now),
         createdAt = now,
-        scenarioVersion = Some(versionId.value),
+        scenarioVersion = Some(processVersionId),
         comment = Some(s"Very important change $expectedOldCommentIdForHeadActivity"),
         attachmentId = None,
         finishedAt = None,
@@ -171,8 +111,252 @@ class V1_056__MigrateActionsAndCommentsToScenarioActivities
         buildInfo = None,
         additionalProperties = AdditionalProperties.empty.properties.asJson.noSpaces,
       )
+    }
+    "migrate DEPLOY action with comment to scenario_activities table" in {
+      testMigratingActionWithComment(
+        scenarioActionName = ScenarioActionName.Deploy,
+        actionComment = Some("Deployment: Deployment with scenario fix"),
+        expectedActivity = (sid, sad, user, date, sv) =>
+          ScenarioActivity.ScenarioDeployed(
+            scenarioId = sid,
+            scenarioActivityId = sad,
+            user = user,
+            date = date,
+            scenarioVersion = sv,
+            comment = Available("Deployment with scenario fix", user.name, date)
+          )
+      )
+    }
+    "migrate CANCEL action with comment to scenario_activities table" in {
+      testMigratingActionWithComment(
+        scenarioActionName = ScenarioActionName.Cancel,
+        actionComment = Some("Stop: I'm canceling this scenario, it causes problems"),
+        expectedActivity = (sid, sad, user, date, sv) =>
+          ScenarioActivity.ScenarioCanceled(
+            scenarioId = sid,
+            scenarioActivityId = sad,
+            user = user,
+            date = date,
+            scenarioVersion = sv,
+            comment = Available("I'm canceling this scenario, it causes problems", user.name, date)
+          )
+      )
+    }
+    "migrate ARCHIVE action with comment to scenario_activities table" in {
+      testMigratingActionWithComment(
+        scenarioActionName = ScenarioActionName.Archive,
+        actionComment = None,
+        expectedActivity = (sid, sad, user, date, sv) =>
+          ScenarioActivity.ScenarioArchived(
+            scenarioId = sid,
+            scenarioActivityId = sad,
+            user = user,
+            date = date,
+            scenarioVersion = sv,
+          )
+      )
+    }
+    "migrate UNARCHIVE action with comment to scenario_activities table" in {
+      testMigratingActionWithComment(
+        scenarioActionName = ScenarioActionName.UnArchive,
+        actionComment = None,
+        expectedActivity = (sid, sad, user, date, sv) =>
+          ScenarioActivity.ScenarioUnarchived(
+            scenarioId = sid,
+            scenarioActivityId = sad,
+            user = user,
+            date = date,
+            scenarioVersion = sv,
+          )
+      )
+    }
+    "migrate PAUSE action with comment to scenario_activities table" in {
+      testMigratingActionWithComment(
+        scenarioActionName = ScenarioActionName.Pause,
+        actionComment = Some("Paused because marketing campaign is paused for now"),
+        expectedActivity = (sid, sad, user, date, sv) =>
+          ScenarioActivity.ScenarioPaused(
+            scenarioId = sid,
+            scenarioActivityId = sad,
+            user = user,
+            date = date,
+            scenarioVersion = sv,
+            comment = Available("Paused because marketing campaign is paused for now", user.name, date)
+          )
+      )
+    }
+    "migrate RENAME action with comment to scenario_activities table" in {
+      testMigratingActionWithComment(
+        scenarioActionName = ScenarioActionName.Rename,
+        actionComment = Some("Rename: [marketing-campaign] -> [marketing-campaign-plus]"),
+        expectedActivity = (sid, sad, user, date, sv) =>
+          ScenarioActivity.ScenarioNameChanged(
+            scenarioId = sid,
+            scenarioActivityId = sad,
+            user = user,
+            date = date,
+            scenarioVersion = sv,
+            oldName = "marketing-campaign",
+            newName = "marketing-campaign-plus",
+          )
+      )
+    }
+    "migrate custom action 'run now' with comment to scenario_activities table" in {
+      testMigratingActionWithComment(
+        scenarioActionName = InstantBatchCustomAction.name,
+        actionComment = None,
+        expectedActivity = (sid, sad, user, date, sv) =>
+          ScenarioActivity.PerformedSingleExecution(
+            scenarioId = sid,
+            scenarioActivityId = sad,
+            user = user,
+            date = date,
+            scenarioVersion = sv,
+            dateFinished = None,
+            errorMessage = None
+          )
+      )
+    }
+    "migrate standalone comment (not assigned to any action) to scenario_activities table" in {
+      val comment = "ABC"
+      val (process, entities) = run(
+        for {
+          process  <- processInsertQuery += processEntity(user, now)
+          _        <- processVersionsTable += processVersionEntity(process)
+          _        <- commentInsertQuery += commentEntity(process, 1L, comment)
+          _        <- migration.migrate
+          entities <- activitiesDefinitions.scenarioActivitiesTable.result
+        } yield (process, entities)
+      )
+      val activities = run(scenarioActivityRepository.findActivities(process.id))
 
+      activities shouldBe Vector(
+        ScenarioActivity.CommentAdded(
+          scenarioId = ScenarioId(process.id.value),
+          scenarioActivityId = ScenarioActivityId(entities.head.activityId),
+          user = ScenarioUser(None, UserName("John Doe"), None, None),
+          date = now.toInstant,
+          scenarioVersion = Some(ScenarioVersion(processVersionId)),
+          comment = Available("ABC", UserName(user), now.toInstant)
+        )
+      )
     }
   }
+
+  private def testMigratingActionWithComment(
+      scenarioActionName: ScenarioActionName,
+      actionComment: Option[String],
+      expectedActivity: (
+          ScenarioId,
+          ScenarioActivityId,
+          ScenarioUser,
+          Instant,
+          Option[ScenarioVersion]
+      ) => ScenarioActivity,
+  ): Unit = {
+    val (process, action) = run(
+      for {
+        process <- processInsertQuery += processEntity(user, now)
+        _       <- processVersionsTable += processVersionEntity(process)
+        comment <- actionComment.map(commentInsertQuery += commentEntity(process, 1L, _)) match {
+          case Some(commentEntity) => commentEntity.map(Some(_))
+          case None                => DBIO.successful(None)
+        }
+        action <- actionInsertQuery += processActionEntity(process, scenarioActionName, comment.map(_.id))
+        _      <- migration.migrate
+        _      <- activitiesDefinitions.scenarioActivitiesTable.result
+      } yield (process, action)
+    )
+    val activities = run(scenarioActivityRepository.findActivities(process.id))
+
+    activities shouldBe Vector(
+      expectedActivity(
+        ScenarioId(process.id.value),
+        ScenarioActivityId(action.id),
+        ScenarioUser(None, UserName("John Doe"), None, None),
+        now.toInstant,
+        Some(ScenarioVersion(processVersionId)),
+      )
+    )
+  }
+
+  private def run[T](action: DBIO[T]): T = Await.result(runner.run(action), Duration.Inf)
+
+  private def processEntity(user: String, timestamp: Timestamp) = ProcessEntityData(
+    id = ProcessId(-1L),
+    name = ProcessName("2024_Q3_6917_NETFLIX"),
+    processCategory = "test-category",
+    description = None,
+    processingType = "BatchPeriodic",
+    isFragment = false,
+    isArchived = false,
+    createdAt = timestamp,
+    createdBy = user,
+    impersonatedByIdentity = None,
+    impersonatedByUsername = None
+  )
+
+  private def processVersionEntity(
+      processEntity: ProcessEntityData,
+  ) =
+    ProcessVersionEntityData(
+      id = VersionId(processVersionId),
+      processId = processEntity.id,
+      json = Some(
+        CanonicalProcess(
+          metaData = MetaData(
+            "test-id",
+            ProcessAdditionalFields(
+              description = None,
+              properties = Map.empty,
+              metaDataType = RequestResponseMetaData.typeName,
+              showDescription = true
+            )
+          ),
+          nodes = List.empty,
+          additionalBranches = List.empty
+        )
+      ),
+      createDate = now,
+      user = user,
+      modelVersion = None,
+      componentsUsages = Some(ScenarioComponentsUsages.Empty),
+    )
+
+  private def commentEntity(
+      processEntity: ProcessEntityData,
+      commentId: Long,
+      content: String,
+  ) =
+    CommentEntityData(
+      id = commentId,
+      processId = processEntity.id.value,
+      processVersionId = processVersionId,
+      content = content,
+      user = user,
+      impersonatedByIdentity = None,
+      impersonatedByUsername = None,
+      createDate = now,
+    )
+
+  private def processActionEntity(
+      processEntity: ProcessEntityData,
+      scenarioActionName: ScenarioActionName,
+      commentId: Option[Long],
+  ) = ProcessActionEntityData(
+    id = UUID.randomUUID(),
+    processId = processEntity.id.value,
+    processVersionId = Some(processVersionId),
+    user = user,
+    impersonatedByIdentity = None,
+    impersonatedByUsername = None,
+    createdAt = now,
+    performedAt = None,
+    actionName = scenarioActionName.value,
+    state = "IN_PROGRESS",
+    failureMessage = None,
+    commentId = commentId,
+    buildInfo = None
+  )
 
 }

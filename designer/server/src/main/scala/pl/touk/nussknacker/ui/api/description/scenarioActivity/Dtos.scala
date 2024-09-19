@@ -431,7 +431,7 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersion: Option[Long],
-        dateFinished: Instant,
+        dateFinished: Option[Instant],
         errorMessage: Option[String],
     ) extends ScenarioActivity
 
@@ -440,7 +440,7 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersion: Option[Long],
-        dateFinished: Instant,
+        dateFinished: Option[Instant],
         errorMessage: Option[String],
     ) extends ScenarioActivity
 
@@ -462,6 +462,7 @@ object Dtos {
         date: Instant,
         scenarioVersion: Option[Long],
         actionName: String,
+        comment: ScenarioActivityComment,
     ) extends ScenarioActivity
 
   }

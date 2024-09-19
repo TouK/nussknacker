@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 
 import java.sql.Timestamp
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -583,12 +583,12 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         )
       case activity: ScenarioActivity.PerformedSingleExecution =>
         createEntity(scenarioActivity)(
-          finishedAt = Some(Timestamp.from(activity.dateFinished)),
+          finishedAt = activity.dateFinished.map(Timestamp.from),
           errorMessage = activity.errorMessage,
         )
       case activity: ScenarioActivity.PerformedScheduledExecution =>
         createEntity(scenarioActivity)(
-          finishedAt = Some(Timestamp.from(activity.dateFinished)),
+          finishedAt = activity.dateFinished.map(Timestamp.from),
           errorMessage = activity.errorMessage,
         )
       case activity: ScenarioActivity.AutomaticUpdate =>
@@ -757,16 +757,15 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           .map((entity.id, _))
       case ScenarioActivityType.ScenarioNameChanged =>
         (for {
-          oldName <- additionalPropertyFromEntity(entity, "oldName")
-          newName <- additionalPropertyFromEntity(entity, "newName")
+          oldNameAndNewName <- extractOldNameAndNewNameForRename(entity)
         } yield ScenarioActivity.ScenarioNameChanged(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersion = entity.scenarioVersion,
-          oldName = oldName,
-          newName = newName
+          oldName = oldNameAndNewName._1,
+          newName = oldNameAndNewName._2
         )).map((entity.id, _))
       case ScenarioActivityType.CommentAdded =>
         (for {
@@ -836,29 +835,31 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           destinationEnvironment = Environment(destinationEnvironment),
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedSingleExecution =>
-        (for {
-          finishedAt <- entity.finishedAt.map(_.toInstant).toRight("Missing finishedAt")
-        } yield ScenarioActivity.PerformedSingleExecution(
-          scenarioId = scenarioIdFromEntity(entity),
-          scenarioActivityId = entity.activityId,
-          user = userFromEntity(entity),
-          date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
-          dateFinished = finishedAt,
-          errorMessage = entity.errorMessage,
-        )).map((entity.id, _))
+        ScenarioActivity
+          .PerformedSingleExecution(
+            scenarioId = scenarioIdFromEntity(entity),
+            scenarioActivityId = entity.activityId,
+            user = userFromEntity(entity),
+            date = entity.createdAt.toInstant,
+            scenarioVersion = entity.scenarioVersion,
+            dateFinished = entity.finishedAt.map(_.toInstant),
+            errorMessage = entity.errorMessage,
+          )
+          .asRight
+          .map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
-        (for {
-          finishedAt <- entity.finishedAt.map(_.toInstant).toRight("Missing finishedAt")
-        } yield ScenarioActivity.PerformedScheduledExecution(
-          scenarioId = scenarioIdFromEntity(entity),
-          scenarioActivityId = entity.activityId,
-          user = userFromEntity(entity),
-          date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
-          dateFinished = finishedAt,
-          errorMessage = entity.errorMessage,
-        )).map((entity.id, _))
+        ScenarioActivity
+          .PerformedScheduledExecution(
+            scenarioId = scenarioIdFromEntity(entity),
+            scenarioActivityId = entity.activityId,
+            user = userFromEntity(entity),
+            date = entity.createdAt.toInstant,
+            scenarioVersion = entity.scenarioVersion,
+            dateFinished = entity.finishedAt.map(_.toInstant),
+            errorMessage = entity.errorMessage,
+          )
+          .asRight
+          .map((entity.id, _))
       case ScenarioActivityType.AutomaticUpdate =>
         (for {
           finishedAt  <- entity.finishedAt.map(_.toInstant).toRight("Missing finishedAt")
@@ -875,7 +876,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         )).map((entity.id, _))
 
       case ScenarioActivityType.CustomAction(actionName) =>
-        ScenarioActivity
+        (for {
+          comment <- commentFromEntity(entity)
+        } yield ScenarioActivity
           .CustomAction(
             scenarioId = scenarioIdFromEntity(entity),
             scenarioActivityId = entity.activityId,
@@ -883,9 +886,35 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             date = entity.createdAt.toInstant,
             scenarioVersion = entity.scenarioVersion,
             actionName = actionName,
-          )
-          .asRight
-          .map((entity.id, _))
+            comment = comment,
+          )).map((entity.id, _))
+    }
+  }
+
+  // todo NU-1772: in next phase the legacy comments will be fully migrated to scenario activities,
+  //  until next PR is merged there is parsing from comment content to preserve full compatibility
+  private def extractOldNameAndNewNameForRename(
+      entity: ScenarioActivityEntityData
+  ): Either[String, (String, String)] = {
+    val fromAdditionalProperties = for {
+      oldName <- additionalPropertyFromEntity(entity, "oldName")
+      newName <- additionalPropertyFromEntity(entity, "newName")
+    } yield (oldName, newName)
+
+    val legacyCommentPattern = """Rename: \[(.+?)\] -> \[(.+?)\]""".r
+
+    val fromLegacyComment = for {
+      comment <- entity.comment.toRight("Legacy comment not present")
+      oldNameAndNewName <- comment match {
+        case legacyCommentPattern(oldName, newName) => Right((oldName, newName))
+        case _ => Left("Could not retrieve oldName and newName from legacy comment")
+      }
+    } yield oldNameAndNewName
+
+    (fromAdditionalProperties, fromLegacyComment) match {
+      case (Right(valuesFromAdditionalProperties), _) => Right(valuesFromAdditionalProperties)
+      case (Left(_), Right(valuesFromLegacyComment))  => Right(valuesFromLegacyComment)
+      case (Left(error), Left(legacyError))           => Left(s"$error, $legacyError")
     }
   }
 

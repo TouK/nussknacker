@@ -180,7 +180,7 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
-          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
+          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           errorMessage = Some("Execution error occurred"),
         ),
         ScenarioActivity.PerformedSingleExecution(
@@ -188,7 +188,7 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
-          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
+          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           errorMessage = None,
         ),
         ScenarioActivity.PerformedScheduledExecution(
@@ -196,7 +196,7 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
-          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
+          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           errorMessage = None,
         ),
         ScenarioActivity.AutomaticUpdate(

@@ -11,13 +11,14 @@ import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
   import profile.api._
 
   override def migrateActions: DBIOAction[Any, NoStream, Effect.All] = {
-    new Migration(profile).migrateActions
+    new Migration(profile).migrate
   }
 
 }
@@ -32,32 +33,38 @@ object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
     private val processActionsDefinitions     = new ProcessActionsDefinitions(profile)
     private val commentsDefinitions           = new CommentsDefinitions(profile)
 
-    def migrateActions: DBIOAction[Int, NoStream, Effect.All] = {
+    // Migrate old actions, with their corresponding comments
 
+    def migrate: DBIOAction[Unit, NoStream, Effect.All] = for {
+      _ <- migrateActions
+      _ <- migrateComments
+    } yield ()
+
+    private def migrateActions: DBIOAction[Int, NoStream, Effect.All] = {
       val insertQuery =
         processActionsDefinitions.table
           .joinLeft(commentsDefinitions.table)
           .on(_.commentId === _.id)
           .map { case (processAction, maybeComment) =>
             (
-              activityType(processAction.actionName), // activityType - converted from action name
-              processAction.processId,                // scenarioId
-              processAction.id,                       // activityId
-              None: Option[String],                   // userId - always absent in old actions
-              processAction.user,                     // userName
-              processAction.impersonatedByIdentity,   // impersonatedByUserId
-              processAction.impersonatedByUsername,   // impersonatedByUserName
-              processAction.user.?,                   // lastModifiedByUserName
-              processAction.createdAt.?,              // lastModifiedAt
-              processAction.createdAt,                // createdAt
-              processAction.processVersionId,         // scenarioVersion
-              maybeComment.map(_.content),            // comment
-              None: Option[Long],                     // attachmentId
-              processAction.performedAt,              // finishedAt
-              processAction.state.?,                  // state
-              processAction.failureMessage,           // errorMessage
-              None: Option[String],                   // buildInfo - always absent in old actions
-              "{}"                                    // additionalProperties - always empty in old actions
+              activityType(processAction.actionName),               // activityType - converted from action name
+              processAction.processId,                              // scenarioId
+              processAction.id,                                     // activityId
+              None: Option[String],                                 // userId - always absent in old actions
+              processAction.user,                                   // userName
+              processAction.impersonatedByIdentity,                 // impersonatedByUserId
+              processAction.impersonatedByUsername,                 // impersonatedByUserName
+              processAction.user.?,                                 // lastModifiedByUserName
+              processAction.createdAt.?,                            // lastModifiedAt
+              processAction.createdAt,                              // createdAt
+              processAction.processVersionId,                       // scenarioVersion
+              maybeComment.map(_.content).map(removeCommentPrefix), // comment
+              None: Option[Long],                                   // attachmentId
+              processAction.performedAt,                            // finishedAt
+              processAction.state.?,                                // state
+              processAction.failureMessage,                         // errorMessage
+              processAction.buildInfo,                              // buildInfo
+              "{}"                                                  // additionalProperties always empty in old actions
             )
           }
 
@@ -65,7 +72,42 @@ object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
       scenarioActivitiesDefinitions.scenarioActivitiesTable.map(_.tupleWithoutAutoIncId).forceInsertQuery(insertQuery)
     }
 
-    def activityType(actionNameRep: Rep[String]): Rep[String] = {
+    // Migrate old comments, that were standalone, not assigned to actions
+    def migrateComments: DBIOAction[Int, NoStream, Effect.All] = {
+      val insertQuery =
+        commentsDefinitions.table
+          .joinLeft(processActionsDefinitions.table)
+          .on(_.id === _.commentId)
+          .filter { case (_, action) => action.isEmpty }
+          .map(_._1)
+          .map { comment =>
+            (
+              ScenarioActivityType.CommentAdded.entryName, // activityType - converted from action name
+              comment.processId,                           // scenarioId
+              UUID.randomUUID(),                           // activityId
+              None: Option[String],                        // userId - always absent in old actions
+              comment.user,                                // userName
+              comment.impersonatedByIdentity,              // impersonatedByUserId
+              comment.impersonatedByUsername,              // impersonatedByUserName
+              comment.user.?,                              // lastModifiedByUserName
+              comment.createDate.?,                        // lastModifiedAt
+              comment.createDate,                          // createdAt
+              comment.processVersionId.?,                  // scenarioVersion
+              comment.content.?,                           // comment
+              None: Option[Long],                          // attachmentId
+              comment.createDate.?,                        // finishedAt
+              None: Option[String],                        // state
+              None: Option[String],                        // errorMessage
+              None: Option[String],                        // buildInfo - always absent in old actions
+              "{}"                                         // additionalProperties always empty in old actions
+            )
+          }
+
+      // Slick generates single "insert from select" query and operation is performed solely on db
+      scenarioActivitiesDefinitions.scenarioActivitiesTable.map(_.tupleWithoutAutoIncId).forceInsertQuery(insertQuery)
+    }
+
+    private def activityType(actionNameRep: Rep[String]): Rep[String] = {
       val customActionPrefix = s"CUSTOM_ACTION_["
       val customActionSuffix = "]"
       Case
@@ -84,6 +126,20 @@ object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
         .If(actionNameRep === "run now")
         .Then(ScenarioActivityType.PerformedSingleExecution.entryName)
         .Else(actionNameRep.reverseString.++(customActionPrefix.reverse).reverseString.++(customActionSuffix))
+    }
+
+    private def removeCommentPrefix(commentRep: Rep[String]): Rep[String] = {
+      val prefixDeploymentComment = "Deployment: "
+      val prefixCanceledComment   = "Stop: "
+      val prefixRunNowComment     = "Run now: "
+      Case
+        .If(commentRep.startsWith(prefixDeploymentComment))
+        .Then(commentRep.substring(LiteralColumn(prefixDeploymentComment.length)))
+        .If(commentRep.startsWith(prefixCanceledComment))
+        .Then(commentRep.substring(LiteralColumn(prefixCanceledComment.length)))
+        .If(commentRep.startsWith(prefixRunNowComment))
+        .Then(commentRep.substring(LiteralColumn(prefixRunNowComment.length)))
+        .Else(commentRep)
     }
 
   }

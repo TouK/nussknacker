@@ -432,13 +432,14 @@ class ScenarioActivityApiHttpService(
           changes = changes,
           errorMessage = errorMessage,
         )
-      case ScenarioActivity.CustomAction(_, scenarioActivityId, user, date, scenarioVersion, actionName) =>
+      case ScenarioActivity.CustomAction(_, scenarioActivityId, user, date, scenarioVersion, actionName, comment) =>
         Dtos.ScenarioActivity.CustomAction(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
           scenarioVersion = scenarioVersion.map(_.value),
           actionName = actionName,
+          comment = toDto(comment),
         )
     }
   }
