@@ -12,7 +12,7 @@ export function CategoriesCell(props: CellRendererParams): JSX.Element {
     return (
         <TruncateWrapper>
             {value.map((name) => (
-                <CategoryChip key={name} value={name} filterValue={filterValue} setFilter={setFilter("CATEGORY")} />
+                <CategoryChip key={name} category={name} filterValues={filterValue} setFilter={setFilter("CATEGORY")} />
             ))}
         </TruncateWrapper>
     );
