@@ -1,10 +1,10 @@
 package db.migration
 
-import db.migration.V1_055__CreateScenarioActivitiesDefinition.{
+import db.migration.V1_056__CreateScenarioActivitiesDefinition.{
   ScenarioActivitiesDefinitions,
   ScenarioActivityEntityData
 }
-import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition._
+import db.migration.V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition._
 import io.circe.syntax.EncoderOps
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
@@ -31,7 +31,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
-class V1_056__MigrateActionsAndCommentsToScenarioActivities
+class V1_057__MigrateActionsAndCommentsToScenarioActivities
     extends AnyFreeSpecLike
     with Matchers
     with NuItTest

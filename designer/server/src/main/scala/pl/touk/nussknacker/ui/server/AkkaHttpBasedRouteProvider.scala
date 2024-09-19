@@ -162,8 +162,8 @@ class AkkaHttpBasedRouteProvider(
       implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
       val scenarioActivityRepository                    = new DbScenarioActivityRepository(dbRef, designerClock)
       val actionRepository                              = new DbScenarioActionRepository(dbRef, modelBuildInfo)
-      val scenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
-      valprocessRepository                             = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
+      val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
+      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
       val futureProcessRepository =
         DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
@@ -251,7 +251,11 @@ class AkkaHttpBasedRouteProvider(
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
       val authManager             = new AuthManager(authenticationResources)
 
-      Initialization.init(migrations, dbRef, designerClock, processRepository,
+      Initialization.init(
+        migrations,
+        dbRef,
+        designerClock,
+        processRepository,
         processActivityRepository,
         scenarioLabelsRepository,
         environment

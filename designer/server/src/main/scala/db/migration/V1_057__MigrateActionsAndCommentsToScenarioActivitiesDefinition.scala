@@ -1,8 +1,8 @@
 package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
-import db.migration.V1_055__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
-import db.migration.V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition.Migration
+import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
+import db.migration.V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition.Migration
 import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc.JdbcProfile
@@ -13,7 +13,7 @@ import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
+trait V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
   import profile.api._
 
@@ -23,7 +23,7 @@ trait V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends Sl
 
 }
 
-object V1_056__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends LazyLogging {
+object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends LazyLogging {
 
   class Migration(val profile: JdbcProfile) extends ScenarioActivityEntityFactory {
 

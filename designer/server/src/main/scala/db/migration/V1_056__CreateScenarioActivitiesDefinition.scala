@@ -1,7 +1,7 @@
 package db.migration
 
 import com.typesafe.scalalogging.LazyLogging
-import db.migration.V1_055__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
+import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitiesDefinitions
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import shapeless.syntax.std.tuple._
 import slick.jdbc.JdbcProfile
@@ -11,24 +11,24 @@ import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait V1_055__CreateScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
+trait V1_056__CreateScenarioActivitiesDefinition extends SlickMigration with LazyLogging {
 
   import profile.api._
 
   private val definitions = new ScenarioActivitiesDefinitions(profile)
 
   override def migrateActions: DBIOAction[Any, NoStream, Effect.All] = {
-    logger.info("Starting migration V1_055__CreateScenarioActivitiesDefinition")
+    logger.info("Starting migration V1_056__CreateScenarioActivitiesDefinition")
     for {
       _ <- definitions.scenarioActivitiesTable.schema.create
       _ <-
         sqlu"""ALTER TABLE "scenario_activities" ADD CONSTRAINT scenario_id_fk FOREIGN KEY ("scenario_id") REFERENCES "processes" ("id") ON DELETE CASCADE;"""
-    } yield logger.info("Execution finished for migration V1_055__CreateScenarioActivitiesDefinition")
+    } yield logger.info("Execution finished for migration V1_056__CreateScenarioActivitiesDefinition")
   }
 
 }
 
-object V1_055__CreateScenarioActivitiesDefinition {
+object V1_056__CreateScenarioActivitiesDefinition {
 
   class ScenarioActivitiesDefinitions(val profile: JdbcProfile) {
     import profile.api._
