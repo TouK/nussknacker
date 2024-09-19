@@ -62,12 +62,12 @@ object TypeInformationDetection {
                 s"Ensure that your classpath is correctly configured, flinkExecutor.jar is probably missing"
             )
         }
-      case customizations @ _ :: rest if rest.nonEmpty =>
+      case custom :: Nil => custom
+      case mutlipleCustomizations =>
         throw new IllegalStateException(
-          s"More than one ${classOf[CustomTypeInformationDetection].getSimpleName} implementations on the classpath: $rest. " +
+          s"More than one ${classOf[CustomTypeInformationDetection].getSimpleName} implementations on the classpath: $mutlipleCustomizations. " +
             s"Classloader: ${printClassloaderDebugDetails(classloader)}"
         )
-      case custom :: Nil => custom
     }
   }
 
