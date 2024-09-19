@@ -4,6 +4,19 @@
 
 #### Highlights
 
+##### End-user
+
+* Flink Catalogs integration. Thanks to Catalogs, Nu can be used to act on data stored in Data Lakehouses.
+* Improvements in batch mode, including joins, testing (dry runs) and general usability.
+* Live counts. You can now watch counts of events as they flow through a scenario, with user defined update interval.
+* Autocompletion now works better in invalid expressions. When working on an expression you don't have to keep it valid all the time for autocompletion to work.
+* SpEL collections usability improvements. Arrays and Lists are now unified (no need for conversions) and we also added more collection manipulation functions.
+
+##### Administrator
+
+* Performance optimizations around Avro processing that reduce CPU utilization significantly.
+* Components configuration reloading without Designer restart. You can now reload Components configuration on demand, using an endpoint, without restarting the whole application.
+
 ### 1.17.1 (Not released yet)
 
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
@@ -40,7 +53,6 @@
 * [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
 * [#6436](https://github.com/TouK/nussknacker/pull/6436) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
   * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
-* [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
 * [#6570](https://github.com/TouK/nussknacker/pull/6570) Generic parameters of collection types are better typed now: e.g. `List[Integer]` can be passed to `List[Number]` but not the other way
 * Batch processing mode related improvements:
   * [#6353](https://github.com/TouK/nussknacker/pull/6353) [#6467](https://github.com/TouK/nussknacker/pull/6467) Added `join` component
@@ -63,7 +75,6 @@
   * [#6546](https://github.com/TouK/nussknacker/pull/6546) Error handling during saving data to table sink
   * [#6567](https://github.com/TouK/nussknacker/pull/6567) Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode)
     can now be set for Flink-based scenario types under `modelConfig.executionMode`.
-* [#6570](https://github.com/TouK/nussknacker/pull/6570) Generic parameters of collection types are better typed now: e.g. `List[Integer]` can be passed to `List[Number]` but not the other way
 * [#6615](https://github.com/TouK/nussknacker/pull/6615) Add encode/decode support for typed SpEL values of types: `java.time.LocalDateTime`, `java.time.LocalDate`, `java.time.LocalTime`, `java.time.Duration`, `java.time.Period`
 * [#6591](https://github.com/TouK/nussknacker/pull/6591) The whole model can be reloaded with `POST /api/app/processingtype/reload` now - you can use this endpoint to reconfigure Nu processing types without need to restart the app
 * [#6623](https://github.com/TouK/nussknacker/pull/6623) Added `sortedAscBy` and `reverse` functions to `#COLLECTION` helper
