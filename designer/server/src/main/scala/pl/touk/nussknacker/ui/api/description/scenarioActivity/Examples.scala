@@ -180,6 +180,11 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
+          comment = ScenarioActivityComment(
+            status = ScenarioActivityCommentStatus.Available("Run campaign"),
+            lastModifiedBy = "some user",
+            lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
+          ),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           errorMessage = Some("Execution error occurred"),
         ),
@@ -188,6 +193,11 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersion = Some(1),
+          comment = ScenarioActivityComment(
+            status = ScenarioActivityCommentStatus.Deleted,
+            lastModifiedBy = "some user",
+            lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
+          ),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           errorMessage = None,
         ),

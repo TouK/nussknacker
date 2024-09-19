@@ -3743,6 +3743,12 @@ paths:
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
+                      comment:
+                        status:
+                          comment: Run campaign
+                          type: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
                       dateFinished: '2024-01-17T14:21:17Z'
                       errorMessage: Execution error occurred
                       type: PERFORMED_SINGLE_EXECUTION
@@ -3750,6 +3756,11 @@ paths:
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
+                      comment:
+                        status:
+                          type: DELETED
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
                       dateFinished: '2024-01-17T14:21:17Z'
                       type: PERFORMED_SINGLE_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
@@ -5741,6 +5752,7 @@ components:
       - id
       - user
       - date
+      - comment
       - type
       properties:
         id:
@@ -5756,6 +5768,8 @@ components:
           - integer
           - 'null'
           format: int64
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
         dateFinished:
           type:
           - string

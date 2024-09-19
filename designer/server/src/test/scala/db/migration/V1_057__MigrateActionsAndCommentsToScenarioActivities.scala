@@ -204,7 +204,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
     "migrate custom action 'run now' with comment to scenario_activities table" in {
       testMigratingActionWithComment(
         scenarioActionName = InstantBatchCustomAction.name,
-        actionComment = None,
+        actionComment = Some("Run now: Deployed at the request of business"),
         expectedActivity = (sid, sad, user, date, sv) =>
           ScenarioActivity.PerformedSingleExecution(
             scenarioId = sid,
@@ -213,7 +213,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             date = date,
             scenarioVersion = sv,
             dateFinished = None,
-            errorMessage = None
+            errorMessage = None,
+            comment = Available("Deployed at the request of business", user.name, date)
           )
       )
     }

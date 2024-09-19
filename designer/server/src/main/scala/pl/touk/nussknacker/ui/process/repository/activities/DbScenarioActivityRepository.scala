@@ -835,18 +835,18 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           destinationEnvironment = Environment(destinationEnvironment),
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedSingleExecution =>
-        ScenarioActivity
-          .PerformedSingleExecution(
-            scenarioId = scenarioIdFromEntity(entity),
-            scenarioActivityId = entity.activityId,
-            user = userFromEntity(entity),
-            date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion,
-            dateFinished = entity.finishedAt.map(_.toInstant),
-            errorMessage = entity.errorMessage,
-          )
-          .asRight
-          .map((entity.id, _))
+        (for {
+          comment <- commentFromEntity(entity)
+        } yield ScenarioActivity.PerformedSingleExecution(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          scenarioVersion = entity.scenarioVersion,
+          comment = comment,
+          dateFinished = entity.finishedAt.map(_.toInstant),
+          errorMessage = entity.errorMessage,
+        )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
         ScenarioActivity
           .PerformedScheduledExecution(

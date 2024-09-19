@@ -385,6 +385,7 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersion,
+            comment,
             dateFinished,
             errorMessage
           ) =>
@@ -393,6 +394,7 @@ class ScenarioActivityApiHttpService(
           user = user.name.value,
           date = date,
           scenarioVersion = scenarioVersion.map(_.value),
+          comment = toDto(comment),
           dateFinished = dateFinished,
           errorMessage = errorMessage,
         )

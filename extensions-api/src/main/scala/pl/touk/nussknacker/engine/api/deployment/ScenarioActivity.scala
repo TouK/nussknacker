@@ -207,6 +207,7 @@ object ScenarioActivity {
       user: ScenarioUser,
       date: Instant,
       scenarioVersion: Option[ScenarioVersion],
+      comment: ScenarioComment,
       dateFinished: Option[Instant],
       errorMessage: Option[String],
   ) extends ScenarioActivity

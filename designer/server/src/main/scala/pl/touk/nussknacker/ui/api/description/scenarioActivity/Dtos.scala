@@ -431,6 +431,7 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersion: Option[Long],
+        comment: ScenarioActivityComment,
         dateFinished: Option[Instant],
         errorMessage: Option[String],
     ) extends ScenarioActivity
