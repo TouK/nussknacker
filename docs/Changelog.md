@@ -55,7 +55,18 @@
 
 #### Highlights
 
-(Not available yet)
+##### End-user
+
+* Flink Catalogs integration. Thanks to Catalogs, Nu can be used to act on data stored in Data Lakehouses.
+* Improvements in batch mode, including joins, testing (dry runs) and general usability.
+* Live counts. You can now watch counts of events as they flow through a scenario, with user defined update interval.
+* Autocompletion now works better in invalid expressions. When working on an expression you don't have to keep it valid all the time for autocompletion to work.
+* SpEL collections usability improvements. Arrays and Lists are now unified (no need for conversions) and we also added more collection manipulation functions.
+
+##### Administrator
+
+* Performance optimizations around Avro processing that reduce CPU utilization significantly.
+* Components configuration reloading without Designer restart. You can now reload Components configuration on demand, using an endpoint, without restarting the whole application.
 
 ### 1.17.1 (Not released yet)
 
