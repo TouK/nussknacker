@@ -2,7 +2,7 @@ import { History } from "@mui/icons-material";
 import { Divider, Stack, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoryChip, Highlight, useFilterContext } from "../../common";
+import { CategoryButton, Highlight, useFilterContext, TruncateWrapper } from "../../common";
 import { Author } from "./author";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
@@ -13,19 +13,24 @@ import { ScenarioStatus } from "./scenarioStatus";
 import { ProcessingModeItem } from "./processingMode";
 import { formatDateTime } from "nussknackerUi/DateUtils";
 import { LabelChip } from "../../common/labelChip";
-import { TruncateWrapper } from "../../common/utils";
 
-function Category({ value, filtersContext }: { value: string; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
+function Category({
+    category,
+    filtersContext,
+}: {
+    category: string;
+    filtersContext: FiltersContextType<ScenariosFiltersModel>;
+}): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
     const filterValue = useMemo(() => getFilter("CATEGORY", true), [getFilter]);
-    return <CategoryChip value={value} filterValue={filterValue} setFilter={setFilter("CATEGORY")} />;
+    return <CategoryButton category={category} filterValues={filterValue} setFilter={setFilter("CATEGORY")} />;
 }
 
 function Labels({ values, filtersContext }: { values: string[]; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
     const filterValue = useMemo(() => getFilter("LABEL", true), [getFilter]);
 
-    const elements = values.map((v) => <LabelChip key={v} value={v} filterValue={filterValue} setFilter={setFilter("LABEL")} />);
+    const elements = values.map((v) => <LabelChip key={v} id={v} value={v} filterValue={filterValue} setFilter={setFilter("LABEL")} />);
     return <TruncateWrapper>{elements}</TruncateWrapper>;
 }
 
@@ -52,9 +57,17 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
     const filtersContext = useFilterContext<ScenariosFiltersModel>();
 
     return (
-        <CopyTooltip text={row.name} title={t("scenario.copyName", "Copy name to clipboard")}>
-            <Highlight value={row.name} filterText={filtersContext.getFilter("NAME")} />
-        </CopyTooltip>
+        <div style={{ display: "flex" }}>
+            <Category category={row.processCategory} filtersContext={filtersContext} />
+            <span style={{ paddingLeft: 8, paddingRight: 8 }}>/</span>
+            <CopyTooltip text={row.name} title={t("scenario.copyName", "Copy name to clipboard")}>
+                <Highlight
+                    value={row.name}
+                    filterText={filtersContext.getFilter("NAME")}
+                    style={{ fontWeight: "bold", fontSize: "1rem" }}
+                />
+            </CopyTooltip>
+        </div>
     );
 }
 
@@ -84,7 +97,6 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
             </div>
             {!row.isFragment && !row.isArchived && <ScenarioStatus state={row.state} filtersContext={filtersContext} />}
             <ProcessingModeItem processingMode={row.processingMode} filtersContext={filtersContext} />
-            <Category value={row.processCategory} filtersContext={filtersContext} />
             <Labels values={row.labels} filtersContext={filtersContext} />
         </Stack>
     );
