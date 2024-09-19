@@ -55,7 +55,15 @@
 
 #### Highlights
 
-(Not available yet)
+##### End-user
+
+* Flink Catalogs integration. Thanks to Catalogs, Nu can be used to act on data stored in Data Lakehouses.
+* Improvments in batch mode, including joins, testing (dry runs) and general usability.
+* Suggestions and autocompletion now also work in invalid expressions. When working on an expression you don't have to keep it valid all the time for suggestions and autocompletion to work.
+
+##### Administrator
+
+* Components configuration reloading without Designer restart. You can now reload Components configuration on demand, using an endpoint, without restarting the whole application.
 
 ### 1.17.1 (Not released yet)
 
