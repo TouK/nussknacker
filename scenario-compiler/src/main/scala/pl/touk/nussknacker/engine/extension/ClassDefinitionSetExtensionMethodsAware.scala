@@ -30,17 +30,24 @@ final case class ClassDefinitionSetExtensionMethodsAware(set: ClassDefinitionSet
     set
       .get(clazz)
       .map(classDefinition =>
-        extensionMethodsMap.get(clazz) match {
-          case Some(ext) => classDefinition.copy(methods = classDefinition.methods ++ ext)
-          case None      => classDefinition
+        findMethodsForClass(clazz) match {
+          case ext if ext.isEmpty => classDefinition
+          case ext                => classDefinition.copy(methods = classDefinition.methods ++ ext)
         }
       )
 
-  private def extractExtensionMethods(): Map[Class[_], Map[String, List[MethodDefinition]]] = {
+  private def findMethodsForClass(clazz: Class[_]): Map[String, List[MethodDefinition]] = {
+    val membersPredicate = settings.visibleMembersPredicate(clazz)
+    extensionMethodsMap
+      .filterKeysNow(membersPredicate.shouldBeVisible)
+      .flatMap(_._2)
+  }
+
+  private def extractExtensionMethods(): Map[Method, Map[String, List[MethodDefinition]]] = {
     ExtensionMethods.registry
       .flatMap(extractMethodsWithDefinitions)
-      .groupBy(_._1.getDeclaringClass)
-      .mapValuesNow(filterByVisibilityOfMethodsAndParams)
+      .groupBy(_._1)
+      .mapValuesNow(filterByVisibilityOfParams)
   }
 
   private def extractMethodsWithDefinitions(clazz: Class[_]): List[(Method, List[(String, MethodDefinition)])] =
@@ -49,15 +56,10 @@ final case class ClassDefinitionSetExtensionMethodsAware(set: ClassDefinitionSet
       .filter(_.javaVersionOfVarArgMethod().isEmpty)
       .map(m => m -> extractor.extractMethod(clazz, m))
 
-  private def filterByVisibilityOfMethodsAndParams(
+  private def filterByVisibilityOfParams(
       methodsWithDefinitions: Set[(Method, List[(String, MethodDefinition)])]
   ): Map[String, List[MethodDefinition]] =
     methodsWithDefinitions
-      .filter(methodWithDefinitions =>
-        settings
-          .visibleMembersPredicate(methodWithDefinitions._1.getDeclaringClass)
-          .shouldBeVisible(methodWithDefinitions._1)
-      )
       .flatMap(_._2)
       .toList
       .toGroupedMap
