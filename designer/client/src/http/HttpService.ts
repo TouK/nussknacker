@@ -361,7 +361,7 @@ const activitiesMock: ActivitiesResponse = {
             user: "some user",
             date: "2024-01-17T11:01:17Z",
             scenarioVersionId: 1,
-            comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a>",
+            comment: "Deployment of scenario - task <a href='http://Jira-1234.com'>JIRA-1234</a> testing if it works",
             additionalFields: [],
         },
         {

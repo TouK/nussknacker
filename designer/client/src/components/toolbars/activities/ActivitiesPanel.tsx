@@ -245,6 +245,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                     handleShowRow={handleShowRow}
                                     handleHideRow={handleHideRow}
                                     activities={dataToDisplay}
+                                    searchQuery={searchQuery}
                                 />
                             )}
                         </VariableSizeList>

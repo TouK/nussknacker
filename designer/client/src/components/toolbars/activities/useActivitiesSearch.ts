@@ -1,6 +1,8 @@
 import { MutableRefObject, useState } from "react";
 import { Activity } from "./ActivitiesPanel";
 import { VariableSizeList } from "react-window";
+import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
+import { get } from "lodash";
 
 interface Props {
     activities: Activity[];
@@ -15,12 +17,23 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
         setSearchQuery(value);
         setFoundResults([]);
 
+        const fullSearchFields: NestedKeyOf<Activity>[] = ["date", "user", "comment", "activities.displayableName"];
+
         for (const activity of activities) {
             if (activity.ui.type !== "item") {
                 continue;
             }
 
-            if (value && activity.activities.displayableName.toLowerCase().includes(value.toLowerCase())) {
+            for (const fullSearchField of fullSearchFields) {
+                if (value && get(activity, fullSearchField, "").toLowerCase().includes(value.toLowerCase())) {
+                    setFoundResults((prevState) => {
+                        prevState.push(activity.id);
+                        return prevState;
+                    });
+                }
+            }
+
+            if (value && activity.date.toLowerCase().includes(value.toLowerCase())) {
                 setFoundResults((prevState) => {
                     prevState.push(activity.id);
                     return prevState;
@@ -30,7 +43,7 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
 
         listRef.current.scrollToItem(
             activities.findIndex((item) => item.id === foundResults[selectedResult]),
-            "center",
+            "start",
         );
     };
 

@@ -1,6 +1,6 @@
 import React, { ForwardedRef, forwardRef } from "react";
 import { useSelector } from "react-redux";
-import { styled, Typography } from "@mui/material";
+import { Box, styled, Typography } from "@mui/material";
 import { formatDateTime } from "../../../common/DateUtils";
 import CommentContent from "../../comment/CommentContent";
 import { createSelector } from "reselect";
@@ -10,6 +10,7 @@ import { blend } from "@mui/system";
 import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
 import UrlIcon from "../../UrlIcon";
 import { Activity, UiItemActivity } from "./ActivitiesPanel";
+import { SearchHighlighter } from "../creator/SearchHighlighter";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
     padding: `${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(2)}`,
@@ -79,38 +80,63 @@ const HeaderActivity = ({ activityAction }: { activityAction: ActionMetadata }) 
 };
 
 export const ActivityItem = forwardRef(
-    ({ activity, isActiveItem }: { activity: Activity<UiItemActivity>; isActiveItem: boolean }, ref: ForwardedRef<HTMLDivElement>) => {
+    (
+        { activity, isActiveItem, searchQuery }: { activity: Activity<UiItemActivity>; isActiveItem: boolean; searchQuery: string },
+        ref: ForwardedRef<HTMLDivElement>,
+    ) => {
         const commentSettings = useSelector(getCommentSettings);
 
         const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
+        const version = `Version: ${activity.scenarioVersionId}`;
 
         return (
             <StyledActivityRoot ref={ref}>
                 <StyledActivityContent isActiveFound={activity.ui.isActiveFound} isFound={activity.ui.isFound}>
                     <StyledActivityHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
                         <StyledHeaderIcon src={activity.activities.icon} />
-                        <Typography variant={"caption"} sx={(theme) => ({ color: theme.palette.text.primary })}>
+                        <Typography
+                            variant={"caption"}
+                            component={SearchHighlighter}
+                            highlights={[searchQuery]}
+                            sx={(theme) => ({ color: theme.palette.text.primary })}
+                        >
                             {activity.activities.displayableName}
                         </Typography>
+
                         {activity.actions.map((activityAction) => (
                             <HeaderActivity key={activityAction.id} activityAction={activityAction} />
                         ))}
                     </StyledActivityHeader>
                     <StyledActivityBody>
-                        <Typography mt={0.5} component={"p"} variant={"overline"}>
-                            {formatDateTime(activity.date)} | {activity.user}
-                        </Typography>
+                        <Box display={"flex"} alignItems={"center"} justifyContent={"flex-start"}>
+                            <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
+                                {formatDateTime(activity.date)}
+                            </Typography>
+                            <Box component={Typography} variant={"overline"} px={0.5}>
+                                |
+                            </Box>
+                            <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
+                                {activity.user}
+                            </Typography>
+                        </Box>
+
                         {activity.scenarioVersionId && (
-                            <Typography component={"p"} variant={"overline"}>
-                                Version: {activity.scenarioVersionId}
+                            <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
+                                {version}
                             </Typography>
                         )}
-                        {activity.comment && <CommentContent content={activity.comment} commentSettings={commentSettings} />}
-                        {activity.additionalFields.map((additionalField, index) => (
-                            <Typography key={index} component={"p"} variant={"overline"}>
-                                {additionalField.name}: {additionalField.value}
-                            </Typography>
-                        ))}
+                        {activity.comment && (
+                            <CommentContent content={activity.comment} commentSettings={commentSettings} searchWords={[searchQuery]} />
+                        )}
+                        {activity.additionalFields.map((additionalField, index) => {
+                            const additionalFieldText = `${additionalField.name}: ${additionalField.value}`;
+
+                            return (
+                                <Typography component={SearchHighlighter} highlights={[searchQuery]} key={index} variant={"overline"}>
+                                    {additionalFieldText}
+                                </Typography>
+                            );
+                        })}
                     </StyledActivityBody>
                 </StyledActivityContent>
             </StyledActivityRoot>

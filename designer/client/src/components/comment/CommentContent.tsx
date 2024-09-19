@@ -2,8 +2,9 @@ import React, { useMemo } from "react";
 import { isEmpty } from "lodash";
 import xss from "xss";
 import { PanelComment } from "./StyledComment";
-import { Link, ThemeProvider, Typography, useTheme } from "@mui/material";
-import ReactDOMServer from "react-dom/server";
+import { Link, Theme, ThemeProvider, Typography, useTheme } from "@mui/material";
+import ReactDOMServer, { renderToString } from "react-dom/server";
+import Highlighter from "react-highlight-words";
 
 interface Props {
     content: string;
@@ -11,9 +12,60 @@ interface Props {
         substitutionPattern?: string;
         substitutionLink?: string;
     };
+    searchWords?: string[];
 }
 
-function CommentContent({ commentSettings, content }: Props): JSX.Element {
+const withHighlightText = (text: string, searchWords: string[], theme: Theme) => {
+    const handleReplaceText = (textToReplace: string, valueToReplace: string) => {
+        return textToReplace.replace(
+            valueToReplace,
+            renderToString(
+                <Highlighter
+                    searchWords={searchWords}
+                    autoEscape={true}
+                    textToHighlight={valueToReplace}
+                    highlightTag={`span`}
+                    highlightStyle={{
+                        color: theme.palette.warning.main,
+                        background: theme.palette.background.paper,
+                        fontWeight: "bold",
+                    }}
+                />,
+            ),
+        );
+    };
+
+    let replacedText = text;
+    const beforeHtmlTagTextRegexp = /^(.*?)(?=<[a-zA-Z][^\s>]*\b[^>]*>)/;
+    const beforeHtmlTagText = text.match(beforeHtmlTagTextRegexp)?.[0];
+
+    if (beforeHtmlTagText) {
+        replacedText = handleReplaceText(replacedText, beforeHtmlTagText);
+    }
+
+    const htmlTagInsideTextRegexp = /<([a-zA-Z][^\s>]*)(?:\s[^>]*)?>(.*?)<\/\1>/;
+    const htmlTagInsideText = text.match(htmlTagInsideTextRegexp)?.[2];
+
+    if (htmlTagInsideText) {
+        replacedText = handleReplaceText(replacedText, htmlTagInsideText);
+    }
+
+    const afterHtmlTagTextRegexp = /<([a-zA-Z][^\s>]*)(?:\s[^>]*)?>(.*?)<\/\1>(\s.*)?/;
+    const afterHtmlTagText = text.match(afterHtmlTagTextRegexp)?.[3];
+
+    if (afterHtmlTagText) {
+        replacedText = handleReplaceText(replacedText, afterHtmlTagText);
+    }
+
+    if (!beforeHtmlTagText && !htmlTagInsideText && !afterHtmlTagText) {
+        replacedText = handleReplaceText(replacedText, text);
+    }
+
+    console.log(replacedText);
+    return replacedText;
+};
+
+function CommentContent({ commentSettings, content, searchWords }: Props): JSX.Element {
     const theme = useTheme();
     const newContent = useMemo(() => {
         if (isEmpty(commentSettings)) {
@@ -34,7 +86,7 @@ function CommentContent({ commentSettings, content }: Props): JSX.Element {
         }
     }, [commentSettings, content, theme]);
 
-    const __html = useMemo(
+    const sanitizedContent = useMemo(
         () =>
             xss(newContent, {
                 whiteList: {
@@ -43,6 +95,11 @@ function CommentContent({ commentSettings, content }: Props): JSX.Element {
                 },
             }),
         [newContent],
+    );
+
+    const __html = useMemo(
+        () => (searchWords ? withHighlightText(sanitizedContent, searchWords, theme) : sanitizedContent),
+        [sanitizedContent, searchWords, theme],
     );
 
     return (

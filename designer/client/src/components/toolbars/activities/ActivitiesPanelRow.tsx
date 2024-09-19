@@ -12,9 +12,10 @@ interface Props {
     handleShowRow(index: number, sameItemOccurrence: number): void;
     handleHideRow(index: number, sameItemOccurrence: number): void;
     activities: Activity[];
+    searchQuery: string;
 }
 
-export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShowRow, handleHideRow, activities }: Props) => {
+export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShowRow, handleHideRow, activities, searchQuery }: Props) => {
     const rowRef = useRef<HTMLDivElement>(null);
     const activity = useMemo(() => activities[index], [activities, index]);
     const firstDeployedIndex = useMemo(() => activities.findIndex((activeItem) => activeItem.type === "SCENARIO_DEPLOYED"), [activities]);
@@ -29,7 +30,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
     const itemToRender = useMemo(() => {
         switch (activity.ui.type) {
             case "item": {
-                return <ActivityItem activity={activity} ref={rowRef} isActiveItem={isActiveDeployedItem} />;
+                return <ActivityItem activity={activity} ref={rowRef} isActiveItem={isActiveDeployedItem} searchQuery={searchQuery} />;
             }
             case "date": {
                 return (
