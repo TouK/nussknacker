@@ -147,6 +147,8 @@
 * [#6578](https://github.com/TouK/nussknacker/pull/6578) Introduced support for displaying a docsUrl with an icon in scenario properties. This feature is based on the processingType and is configurable via the model.conf file.
 * [#6725](https://github.com/TouK/nussknacker/pull/6725) Resolved an issue where properties were not saving when a fragment was in a different group than other fragments.
 * [#6697](https://github.com/TouK/nussknacker/pull/6697) Fix unhandled error when open survey
+* [#6389](https://github.com/TouK/nussknacker/pull/6389) Added an option to define in the properties settings the refresh interval for automatic counts updates
+* [#6393](https://github.com/TouK/nussknacker/pull/6393) Added an option to show node description directly on the graph node and scenario description directly on the scenario with an option to show it on scenario open
 
 ## 1.16
 
