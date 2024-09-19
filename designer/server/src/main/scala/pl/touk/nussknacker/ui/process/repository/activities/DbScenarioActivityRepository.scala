@@ -282,8 +282,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         None
       case _: ScenarioActivity.OutgoingMigration =>
         None
-      case _: ScenarioActivity.PerformedSingleExecution =>
-        None
+      case activity: ScenarioActivity.PerformedSingleExecution =>
+        toComment(id, activity, activity.comment, Some("Run now: "))
       case _: ScenarioActivity.PerformedScheduledExecution =>
         None
       case _: ScenarioActivity.AutomaticUpdate =>
