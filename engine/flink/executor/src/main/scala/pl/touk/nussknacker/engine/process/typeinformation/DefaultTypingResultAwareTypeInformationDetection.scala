@@ -11,8 +11,15 @@ import pl.touk.nussknacker.engine.flink.api.TypedMultiset
 import pl.touk.nussknacker.engine.flink.api.typeinformation.DefaultTypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
-import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedScalaMapTypeInformation}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
+  TypedJavaMapTypeInformation,
+  TypedScalaMapTypeInformation
+}
 import pl.touk.nussknacker.engine.util.Implicits._
+
+class DefaultTypingResultAwareTypeInformationDetection
+    extends BaseTypingResultAwareTypeInformationDetection
+    with DefaultTypeInformationDetection
 
 // TODO: handle avro types - see FlinkConfluentUtils
 /*
@@ -24,7 +31,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
   Column types of query result and sink for '...' do not match.
   when we use non handled type of variable in table api component.
  */
-class DefaultTypingResultAwareTypeInformationDetection extends DefaultTypeInformationDetection {
+class BaseTypingResultAwareTypeInformationDetection {
 
   private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
     Typed.typedClass[String]                  -> Types.STRING,

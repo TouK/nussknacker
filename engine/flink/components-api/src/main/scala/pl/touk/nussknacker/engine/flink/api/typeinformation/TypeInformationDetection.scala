@@ -42,7 +42,7 @@ object TypeInformationDetection {
   // implementation classes available in flink-components-api module.
   val instance: TypeInformationDetection = {
     val classloader = Thread.currentThread().getContextClassLoader
-    val defaultTypeInfoDetection = ServiceLoader
+    def defaultTypeInfoDetection() = ServiceLoader
       .load(classOf[DefaultTypeInformationDetection], classloader)
       .asScala
       .headOption
@@ -51,22 +51,23 @@ object TypeInformationDetection {
       .asScala
       .toList
 
-    def multipleImplementationsException(impls: List[CustomTypeInformationDetection]) = new IllegalStateException(
-      s"More than one ${classOf[CustomTypeInformationDetection].getSimpleName} implementations on the classpath: $impls. " +
-        s"Classloader: ${printClassloaderDebugDetails(classloader)}"
-    )
-
-    def missingImplementationException() = new IllegalStateException(
-      s"Missing ${classOf[TypeInformationDetection].getSimpleName} implementation on the classpath. " +
-        s"Classloader: ${printClassloaderDebugDetails(classloader)}. " +
-        s"Ensure that your classpath is correctly configured, flinkExecutor.jar is probably missing"
-    )
-
-    (defaultTypeInfoDetection, customTypeInfoDetections) match {
-      case (Some(default), Nil) => default
-      case (_, custom :: Nil)   => custom
-      case (None, Nil)          => throw missingImplementationException()
-      case (_, customizations)  => throw multipleImplementationsException(customizations)
+    customTypeInfoDetections match {
+      case Nil =>
+        defaultTypeInfoDetection() match {
+          case Some(default) => default
+          case None =>
+            throw new IllegalStateException(
+              s"Missing ${classOf[TypeInformationDetection].getSimpleName} implementation on the classpath. " +
+                s"Classloader: ${printClassloaderDebugDetails(classloader)}. " +
+                s"Ensure that your classpath is correctly configured, flinkExecutor.jar is probably missing"
+            )
+        }
+      case customizations @ _ :: rest if rest.nonEmpty =>
+        throw new IllegalStateException(
+          s"More than one ${classOf[CustomTypeInformationDetection].getSimpleName} implementations on the classpath: $rest. " +
+            s"Classloader: ${printClassloaderDebugDetails(classloader)}"
+        )
+      case custom :: Nil => custom
     }
   }
 
