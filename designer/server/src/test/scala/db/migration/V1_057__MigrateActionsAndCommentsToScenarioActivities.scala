@@ -217,6 +217,22 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           )
       )
     }
+    "migrate custom action with comment to scenario_activities table" in {
+      testMigratingActionWithComment(
+        scenarioActionName = ScenarioActionName("special action"),
+        actionComment = Some("Special action needed to be executed"),
+        expectedActivity = (sid, sad, user, date, sv) =>
+          ScenarioActivity.CustomAction(
+            scenarioId = sid,
+            scenarioActivityId = sad,
+            user = user,
+            date = date,
+            scenarioVersion = sv,
+            actionName = "special action",
+            comment = Available("Special action needed to be executed", user.name, date)
+          )
+      )
+    }
     "migrate standalone comment (not assigned to any action) to scenario_activities table" in {
       val comment = "ABC"
       val (process, entities) = run(
