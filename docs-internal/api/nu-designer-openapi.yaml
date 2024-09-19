@@ -4262,6 +4262,7 @@ components:
       - user
       - date
       - actionName
+      - comment
       - type
       properties:
         id:
@@ -4279,6 +4280,8 @@ components:
           format: int64
         actionName:
           type: string
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
         type:
           type: string
     CustomActionRequest:
@@ -5512,7 +5515,6 @@ components:
       - id
       - user
       - date
-      - dateFinished
       - type
       properties:
         id:
@@ -5529,7 +5531,9 @@ components:
           - 'null'
           format: int64
         dateFinished:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
         errorMessage:
           type:
@@ -5544,7 +5548,6 @@ components:
       - id
       - user
       - date
-      - dateFinished
       - type
       properties:
         id:
@@ -5561,7 +5564,9 @@ components:
           - 'null'
           format: int64
         dateFinished:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
         errorMessage:
           type:
