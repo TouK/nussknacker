@@ -22,13 +22,14 @@ export function LabelChip({ id, value, filterValue, setFilter }: Props): JSX.Ele
 
     return (
         <Chip
-            variant={"outlined"}
             key={id}
-            tabIndex={0}
-            label={value}
-            size="small"
             color={isSelected ? "primary" : "default"}
+            size="small"
+            variant={"outlined"}
+            label={value}
+            tabIndex={0}
             onClick={onClick}
+            sx={{ borderRadius: "16px" }}
         />
     );
 }

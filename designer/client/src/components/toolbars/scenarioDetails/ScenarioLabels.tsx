@@ -340,6 +340,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                         variant="outlined"
                                         disabled={readOnly}
                                         label={option.title}
+                                        sx={{ borderRadius: "16px", m: "2px" }}
                                         {...props}
                                     />
                                 );
