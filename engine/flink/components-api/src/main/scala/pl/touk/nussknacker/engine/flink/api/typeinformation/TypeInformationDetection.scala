@@ -33,13 +33,14 @@ sealed trait TypeInformationDetection extends Serializable {
 
 }
 
+// We use DefaultTypeInformationDetection SPI to provide a implementation of TypeInformationDetection because we don't
+// want to make implementation classes available in flink-components-api module.
 trait DefaultTypeInformationDetection extends TypeInformationDetection
-trait CustomTypeInformationDetection  extends TypeInformationDetection
+// We use CustomTypeInformationDetection SPI to provide a compatibility layer for Flink API
+trait CustomTypeInformationDetection extends TypeInformationDetection
 
 object TypeInformationDetection {
 
-  // We use SPI to provide implementation of TypeInformationDetection because we don't want to make
-  // implementation classes available in flink-components-api module.
   val instance: TypeInformationDetection = {
     val classloader = Thread.currentThread().getContextClassLoader
     def defaultTypeInfoDetection() = ServiceLoader
@@ -65,8 +66,8 @@ object TypeInformationDetection {
       case custom :: Nil => custom
       case mutlipleCustomizations =>
         throw new IllegalStateException(
-          s"More than one ${classOf[CustomTypeInformationDetection].getSimpleName} implementations on the classpath: $mutlipleCustomizations. " +
-            s"Classloader: ${printClassloaderDebugDetails(classloader)}"
+          s"More than one ${classOf[CustomTypeInformationDetection].getSimpleName} implementations on the" +
+            s" classpath: $mutlipleCustomizations. Classloader: ${printClassloaderDebugDetails(classloader)}"
         )
     }
   }

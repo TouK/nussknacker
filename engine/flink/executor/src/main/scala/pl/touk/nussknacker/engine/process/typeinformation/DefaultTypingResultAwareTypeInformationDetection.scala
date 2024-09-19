@@ -19,7 +19,19 @@ import pl.touk.nussknacker.engine.util.Implicits._
 
 class DefaultTypingResultAwareTypeInformationDetection
     extends BaseTypingResultAwareTypeInformationDetection
-    with DefaultTypeInformationDetection
+    with DefaultTypeInformationDetection {
+
+  protected def constructIntermediateCompatibilityResult(
+      newNestedSerializers: Array[TypeSerializer[_]],
+      oldNestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
+  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing] = {
+    CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
+      newNestedSerializers.map(_.snapshotConfiguration()),
+      oldNestedSerializerSnapshots
+    )
+  }
+
+}
 
 // TODO: handle avro types - see FlinkConfluentUtils
 /*
@@ -31,7 +43,7 @@ class DefaultTypingResultAwareTypeInformationDetection
   Column types of query result and sink for '...' do not match.
   when we use non handled type of variable in table api component.
  */
-class BaseTypingResultAwareTypeInformationDetection {
+abstract class BaseTypingResultAwareTypeInformationDetection {
 
   private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
     Typed.typedClass[String]                  -> Types.STRING,
@@ -108,12 +120,7 @@ class BaseTypingResultAwareTypeInformationDetection {
   protected def constructIntermediateCompatibilityResult(
       newNestedSerializers: Array[TypeSerializer[_]],
       oldNestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
-  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing] = {
-    CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
-      newNestedSerializers.map(_.snapshotConfiguration()),
-      oldNestedSerializerSnapshots
-    )
-  }
+  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing]
 
   def forValueWithContext[T](
       validationContext: ValidationContext,
