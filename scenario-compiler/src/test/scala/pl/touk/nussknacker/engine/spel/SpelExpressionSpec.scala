@@ -43,7 +43,11 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
+  ArgumentTypeError,
+  ExpressionTypeError,
+  GenericFunctionError
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -1394,7 +1398,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should return an error if the cast return type cannot be determined at parse time") {
     parse[Any]("{11, 12}.castTo('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
-      case ArgumentTypeError("castTo", _, _) :: Nil =>
+      case GenericFunctionError("java.util.XYZ is not allowed") :: Nil =>
     }
     parse[Any]("{11, 12}.castTo(#obj.id)", ctx).invalidValue.toList should matchPattern {
       case ArgumentTypeError("castTo", _, _) :: Nil =>
@@ -1475,6 +1479,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       context = ctx,
       methodExecutionForUnknownAllowed = false
     ).invalidValue.toList should matchPattern { case IllegalInvocationError(Unknown) :: Nil =>
+    }
+  }
+
+  test("should not allow cast to disallowed classes") {
+    parse[Any](
+      "#hashMap.castTo('java.util.HashMap').remove('testKey')",
+      ctx.withVariable("hashMap", new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava))
+    ).invalidValue.toList should matchPattern {
+      case GenericFunctionError("java.util.HashMap is not allowed") :: IllegalInvocationError(Unknown) :: Nil =>
     }
   }
 

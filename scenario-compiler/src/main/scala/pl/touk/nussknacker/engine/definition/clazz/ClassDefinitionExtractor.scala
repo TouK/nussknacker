@@ -58,9 +58,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
   ): Map[String, List[MethodDefinition]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods          = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
-//    val extensionMethods = extractExtensionMethods(membersPredicate, staticMethodsAndFields)
-    val fields = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
-//    filterHiddenParameterAndReturnType(methods ++ fields ++ extensionMethods)
+    val fields           = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
     methods ++ fields
   }
 
