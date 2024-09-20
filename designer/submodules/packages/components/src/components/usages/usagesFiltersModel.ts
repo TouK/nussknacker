@@ -1,4 +1,4 @@
-import { StatusFilterOption } from "../../scenarios/filters/otherOptionsStack";
+import { StatusFilterOption } from "../../scenarios/filters/typeOptionsStack";
 import { ProcessingMode } from "../../scenarios/list/processingMode";
 
 export interface UsagesFiltersModel {

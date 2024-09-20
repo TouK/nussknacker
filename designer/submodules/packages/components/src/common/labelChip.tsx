@@ -1,14 +1,18 @@
 import React, { useCallback, useMemo } from "react";
-import { Chip } from "@mui/material";
+import { Chip, styled } from "@mui/material";
 
 interface Props {
-    key: string;
+    id: string;
     value: string;
     filterValue: string[];
     setFilter: (value: string[]) => void;
 }
 
-export function LabelChip({ key, value, filterValue, setFilter }: Props): JSX.Element {
+const StyledLabelChip = styled(Chip)({
+    borderRadius: "16px",
+});
+
+export function LabelChip({ id, value, filterValue, setFilter }: Props): JSX.Element {
     const isSelected = useMemo(() => filterValue.includes(value), [filterValue, value]);
 
     const onClick = useCallback(
@@ -21,13 +25,13 @@ export function LabelChip({ key, value, filterValue, setFilter }: Props): JSX.El
     );
 
     return (
-        <Chip
-            variant={"outlined"}
-            key={key}
-            tabIndex={0}
-            label={value}
-            size="small"
+        <StyledLabelChip
+            key={id}
             color={isSelected ? "primary" : "default"}
+            size="small"
+            variant={"outlined"}
+            label={value}
+            tabIndex={0}
             onClick={onClick}
         />
     );

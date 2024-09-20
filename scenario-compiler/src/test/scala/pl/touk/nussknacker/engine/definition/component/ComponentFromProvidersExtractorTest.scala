@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.Ficus._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.semver4j.Semver
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}

@@ -11,7 +11,7 @@ import ScanarioIcon from "../../assets/icons/scenario.svg";
 import FragmentIcon from "../../assets/icons/fragment.svg";
 import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
-export function OtherOptionsStack(): JSX.Element {
+export function TypeOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
     const otherFilters: Array<keyof ScenariosFiltersModel> = ["TYPE"];
@@ -19,7 +19,7 @@ export function OtherOptionsStack(): JSX.Element {
 
     return (
         <OptionsStack
-            label={t("table.filter.other", "Other")}
+            label={t("table.filter.TYPE", "Type")}
             options={otherFilters.map((name) => ({ name }))}
             value={otherFilters
                 .flatMap((k) => getFilter(k))
