@@ -54,6 +54,7 @@
   * Jackson 2.15.4 -> 2.17.2
   * cats 2.10 -> 2.12
 * [#6805](https://github.com/TouK/nussknacker/pull/6805) Support for Flink 1.19.1
+* [#6925](https://github.com/TouK/nussknacker/pull/6925) Fix situation when preset labels were presented as `null` when node didn't pass the validation.
 
 ## 1.17
 
