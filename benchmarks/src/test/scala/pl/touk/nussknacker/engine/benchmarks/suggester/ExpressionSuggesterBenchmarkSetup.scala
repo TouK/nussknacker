@@ -43,7 +43,8 @@ class ExpressionSuggesterBenchmarkSetup() {
     clazzDefinitions,
     dictServices,
     getClass.getClassLoader,
-    List.empty
+    List.empty,
+    ClassDefinitionTestUtils.DefaultSettings
   )
 
   private val variables: Map[String, TypingResult] = Map(

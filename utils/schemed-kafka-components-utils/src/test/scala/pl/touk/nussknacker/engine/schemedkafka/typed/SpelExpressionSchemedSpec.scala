@@ -25,7 +25,8 @@ class SpelExpressionSchemedSpec extends AnyFunSuite with Matchers with Validated
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
     Standard,
-    ClassDefinitionTestUtils.createDefinitionForClasses(classOf[GenericRecord])
+    ClassDefinitionTestUtils.createDefinitionForClasses(classOf[GenericRecord]),
+    ClassDefinitionTestUtils.DefaultSettings
   )
 
   test("compute avro record's get type based on type of fields") {

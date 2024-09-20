@@ -37,6 +37,7 @@ trait BaseSpelSpec {
     enableSpelForceCompile = false,
     SpelExpressionParser.Standard,
     classDefinitions,
+    ClassDefinitionTestUtils.DefaultSettings
   )
 
   private lazy val classDefinitions = ClassDefinitionTestUtils.createDefinitionForClasses(
