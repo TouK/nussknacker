@@ -458,7 +458,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process, isFragment = false).result
+    val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
     assert(validationResult.isInvalid)
   }
 
@@ -504,7 +504,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
-    val validationResult = processValidator.validate(process, isFragment = false).result
+    val validationResult = processValidator.validate(process, isFragment = false)(jobDataFor(process)).result
     assert(validationResult.isInvalid)
   }
 
@@ -528,6 +528,10 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   ) = {
     val creator = new ConfigCreatorWithCollectingListener(collectingListener)
     LocalModelData(ConfigFactory.empty(), prepareComponents(input1, input2), configCreator = creator)
+  }
+
+  private def jobDataFor(scenario: CanonicalProcess) = {
+    JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
   }
 
 }

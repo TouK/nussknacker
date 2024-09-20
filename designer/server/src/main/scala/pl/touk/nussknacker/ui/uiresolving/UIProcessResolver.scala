@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.uiresolving
 
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -23,14 +24,23 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
 
   def validateAndResolve(
       scenarioGraph: ScenarioGraph,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel]
   )(
       implicit loggedUser: LoggedUser
   ): CanonicalProcess = {
-    val validationResult = validateBeforeUiResolving(scenarioGraph, processName, isFragment, labels)
-    resolveExpressions(scenarioGraph, processName, validationResult.typingInfo)
+    val validationResult = validateBeforeUiResolving(scenarioGraph, processVersion, isFragment)
+    resolveExpressions(scenarioGraph, processVersion.processName, validationResult.typingInfo)
+  }
+
+  def validateBeforeUiResolving(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+  )(
+      implicit loggedUser: LoggedUser
+  ): ValidationResult = {
+    beforeUiResolvingValidator.validate(scenarioGraph, processVersion, isFragment)
   }
 
   def validateBeforeUiResolving(
@@ -55,12 +65,11 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
 
   def validateAndReverseResolve(
       canonical: CanonicalProcess,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel]
   )(implicit loggedUser: LoggedUser): ScenarioGraphWithValidationResult = {
     val validationResult = validateBeforeUiReverseResolving(canonical, isFragment)
-    reverseResolveExpressions(canonical, processName, isFragment, labels, validationResult)
+    reverseResolveExpressions(canonical, processVersion, isFragment, validationResult)
   }
 
   def validateBeforeUiReverseResolving(canonical: CanonicalProcess, isFragment: Boolean)(
@@ -70,14 +79,19 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
 
   private def reverseResolveExpressions(
       canonical: CanonicalProcess,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel],
       validationResult: ValidationResult
   ): ScenarioGraphWithValidationResult = {
     val substituted   = substitutor.reversed.substitute(canonical, validationResult.typingInfo)
     val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(substituted)
-    val uiValidations = uiValidator.uiValidation(scenarioGraph, processName, isFragment, labels)
+    val uiValidations =
+      uiValidator.uiValidation(
+        scenarioGraph,
+        processVersion.processName,
+        isFragment,
+        processVersion.labels.map(ScenarioLabel.apply)
+      )
     ScenarioGraphWithValidationResult(scenarioGraph, uiValidations.add(validationResult))
   }
 

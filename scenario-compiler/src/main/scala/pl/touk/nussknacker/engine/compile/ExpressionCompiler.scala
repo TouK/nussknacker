@@ -4,7 +4,7 @@ import cats.data.Validated.{Valid, invalid, invalidNel, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
@@ -124,7 +124,7 @@ class ExpressionCompiler(
       ctx: ValidationContext
   )(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): ValidatedNel[PartSubGraphCompilationError, List[CompiledParameter]] = {
     compileNodeParameters(
       parameterDefinitions,
@@ -151,7 +151,7 @@ class ExpressionCompiler(
       treatEagerParametersAsLazy: Boolean = false
   )(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): ValidatedNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
 
     val redundantMissingValidation = Validations.validateRedundantAndMissingParameters(
@@ -185,7 +185,7 @@ class ExpressionCompiler(
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ) =
     parameterDefinitions
       .map(p => p.name -> p.validators.map { v => compileValidator(v, p.name, p.typ, globalVariables) }.sequence)
@@ -275,7 +275,7 @@ class ExpressionCompiler(
       paramName: ParameterName,
       paramType: TypingResult,
       globalVariables: Map[String, TypingResult]
-  )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[PartSubGraphCompilationError, Validator] =
+  )(implicit nodeId: NodeId, jobData: JobData): ValidatedNel[PartSubGraphCompilationError, Validator] =
     validator match {
       case v: ValidationExpressionParameterValidatorToCompile =>
         compileValidationExpressionParameterValidator(
@@ -294,7 +294,7 @@ class ExpressionCompiler(
       globalVariables: Map[String, TypingResult]
   )(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): Validated[NonEmptyList[PartSubGraphCompilationError], ValidationExpressionParameterValidator] =
     compile(
       toCompileValidator.validationExpression,
@@ -330,7 +330,7 @@ class ExpressionCompiler(
               expression,
               toCompileValidator.validationFailedMessage,
               expressionEvaluator,
-              metaData
+              jobData
             )
           )
       }

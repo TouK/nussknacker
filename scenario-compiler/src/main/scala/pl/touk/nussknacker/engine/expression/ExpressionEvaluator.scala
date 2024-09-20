@@ -40,8 +40,8 @@ class ExpressionEvaluator(
     listeners: Seq[ProcessListener],
     cacheGlobalVariables: Boolean
 ) {
-  private def prepareGlobals(metaData: MetaData): Map[String, Any] =
-    globalVariablesPreparer.prepareGlobalVariables(metaData).mapValuesNow(_.obj)
+  private def prepareGlobals(jobData: JobData): Map[String, Any] =
+    globalVariablesPreparer.prepareGlobalVariables(jobData).mapValuesNow(_.obj)
 
   // We have an assumption, that ExpressionEvaluator will be used only with the same scenario
   private val optimizedGlobals: AtomicReference[Option[Map[String, Any]]] = new AtomicReference(None)
@@ -49,7 +49,7 @@ class ExpressionEvaluator(
   def evaluateParameters(
       params: List[CompiledParameter],
       ctx: Context
-  )(implicit nodeId: NodeId, metaData: MetaData): (Context, Map[ParameterName, AnyRef]) = {
+  )(implicit nodeId: NodeId, jobData: JobData): (Context, Map[ParameterName, AnyRef]) = {
     val (newCtx, evaluatedParams) = params.foldLeft((ctx, List.empty[(ParameterName, AnyRef)])) {
       case ((accCtx, accParams), param) =>
         val valueWithModifiedContext = evaluateParameter(param, accCtx)
@@ -63,7 +63,7 @@ class ExpressionEvaluator(
   def evaluateParameter(
       param: BaseCompiledParameter,
       ctx: Context
-  )(implicit nodeId: NodeId, metaData: MetaData): ValueWithContext[AnyRef] = {
+  )(implicit nodeId: NodeId, jobData: JobData): ValueWithContext[AnyRef] = {
     try {
       val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name.value, nodeId.id, ctx)
       valueWithModifiedContext.map { evaluatedValue =>
@@ -80,22 +80,22 @@ class ExpressionEvaluator(
   }
 
   def evaluate[R](expr: CompiledExpression, expressionId: String, nodeId: String, ctx: Context)(
-      implicit metaData: MetaData
+      implicit jobData: JobData
   ): ValueWithContext[R] = {
     val globalVariables = if (cacheGlobalVariables) {
       optimizedGlobals
         .updateAndGet { initializedVariablesOpt =>
-          Some(initializedVariablesOpt.getOrElse(prepareGlobals(metaData)))
+          Some(initializedVariablesOpt.getOrElse(prepareGlobals(jobData)))
         }
         .getOrElse {
           throw new IllegalStateException("Optimized global variables not initialized")
         }
     } else {
-      prepareGlobals(metaData)
+      prepareGlobals(jobData)
     }
 
     val value = expr.evaluate[R](ctx, globalVariables)
-    listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, value))
+    listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, jobData.metaData, value))
     ValueWithContext(value, ctx)
   }
 

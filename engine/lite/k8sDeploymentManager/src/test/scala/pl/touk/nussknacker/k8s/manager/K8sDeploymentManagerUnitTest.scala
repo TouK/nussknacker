@@ -19,7 +19,7 @@ import scala.collection.compat.immutable.LazyList.continually
 class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
 
   private def versionForName(name: String) =
-    ProcessVersion(VersionId(13), ProcessName(name), ProcessId(256), "user", None)
+    ProcessVersion(VersionId(13), ProcessName(name), ProcessId(256), List.empty, "user", None)
 
   private def nameOfLength(count: Int) = continually("a").take(count).mkString
 

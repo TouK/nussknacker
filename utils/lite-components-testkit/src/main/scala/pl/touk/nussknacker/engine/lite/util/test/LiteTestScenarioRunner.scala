@@ -96,13 +96,14 @@ class LiteTestScenarioRunner(
     val testSink   = ComponentDefinition(TestScenarioRunner.testResultSink, SimpleSinkFactory)
     val inputId    = scenario.nodes.head.id
     val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
+    val jobData    = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 
     val allComponents = testSource ::
       testSink ::
       LiteBaseComponentProvider.Components :::
       components
     val modelData = ModelWithTestExtensions(config, allComponents, globalVariables)
-    SynchronousLiteInterpreter.run(modelData, scenario, inputBatch, componentUseCase)
+    SynchronousLiteInterpreter.run(modelData, jobData, scenario, inputBatch, componentUseCase)
   }
 
 }

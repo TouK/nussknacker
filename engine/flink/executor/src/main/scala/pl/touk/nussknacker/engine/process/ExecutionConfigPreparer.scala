@@ -70,6 +70,7 @@ object ExecutionConfigPreparer extends LazyLogging {
         "buildInfo"    -> buildInfo,
         "versionId"    -> processVersion.versionId.value.toString,
         "processId"    -> processVersion.processId.value.toString,
+        "labels"       -> Encoder[List[String]].apply(processVersion.labels).noSpaces,
         "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
         "user"         -> processVersion.user,
         "deploymentId" -> deploymentData.deploymentId.value

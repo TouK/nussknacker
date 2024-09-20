@@ -301,9 +301,8 @@ class DBProcessService(
         val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(entity.processingType)
         processResolver.validateAndReverseResolve(
           canonical,
-          entity.name,
+          entity.toEngineProcessVersion,
           entity.isFragment,
-          entity.scenarioLabels.map(ScenarioLabel.apply)
         )
       },
       parameters
@@ -405,9 +404,8 @@ class DBProcessService(
         FatalValidationError.saveNotAllowedAsError(
           processResolver.validateBeforeUiResolving(
             action.scenarioGraph,
-            details.name,
+            details.processVersionUnsafe,
             details.isFragment,
-            scenarioLabels
           )
         )
       val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)

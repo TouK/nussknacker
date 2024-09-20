@@ -102,7 +102,7 @@ class NodeCompiler(
 
   def compileSource(
       nodeData: SourceNodeData
-  )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[Source] = nodeData match {
+  )(implicit jobData: JobData, nodeId: NodeId): NodeCompilationResult[Source] = nodeData match {
     case a @ Source(_, ref, _) =>
       definitions.getComponent(ComponentType.Source, ref.typ) match {
         case Some(definition) =>
@@ -215,7 +215,7 @@ class NodeCompiler(
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(
-      implicit metaData: MetaData,
+      implicit jobData: JobData,
       nodeId: NodeId
   ): NodeCompilationResult[AnyRef] = {
 
@@ -247,7 +247,7 @@ class NodeCompiler(
   def compileSink(
       sink: Sink,
       ctx: ValidationContext
-  )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[api.process.Sink] = {
+  )(implicit nodeId: NodeId, jobData: JobData): NodeCompilationResult[api.process.Sink] = {
     val ref = sink.ref
 
     definitions.getComponent(ComponentType.Sink, ref.typ) match {
@@ -268,7 +268,7 @@ class NodeCompiler(
 
   def compileFragmentInput(fragmentInput: FragmentInput, ctx: ValidationContext)(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): NodeCompilationResult[List[CompiledParameter]] = {
 
     val ref            = fragmentInput.ref
@@ -338,20 +338,20 @@ class NodeCompiler(
   def compileProcessor(
       n: Processor,
       ctx: ValidationContext
-  )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  )(implicit nodeId: NodeId, jobData: JobData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, None)
   }
 
   def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: OutputVar)(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, Some(outputVar))
   }
 
   private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
     definitions.getComponent(ComponentType.Service, n.id) match {
@@ -382,7 +382,7 @@ class NodeCompiler(
       componentDefinition: ComponentDefinitionWithImplementation,
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
-  )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  )(implicit nodeId: NodeId, jobData: JobData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     val defaultCtxForMethodBasedCreatedComponentExecutor
         : Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] = returnTypeOpt =>
       outputVar match {
@@ -422,8 +422,8 @@ class NodeCompiler(
     case a                         => a
   }).asInstanceOf[T]
 
-  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext =
-    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
+  private def contextWithOnlyGlobalVariables(implicit jobData: JobData): ValidationContext =
+    globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(jobData)
 
   private def defaultContextAfter(
       node: CustomNodeData,
@@ -431,7 +431,7 @@ class NodeCompiler(
       branchCtx: GenericValidationContext
   )(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): Option[TypingResult] => ValidatedNel[ProcessCompilationError, ValidationContext] =
     returnTypeOpt => {
       val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
@@ -461,7 +461,7 @@ class NodeCompiler(
         ValidationContext
       ]
   )(
-      implicit metaData: MetaData,
+      implicit jobData: JobData,
       nodeId: NodeId
   ): NodeCompilationResult[(ComponentExecutor, List[NodeParameter])] = {
     componentDefinition match {
@@ -545,7 +545,7 @@ class NodeCompiler(
       additionalDependencies: Seq[AnyRef]
   )(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, ComponentExecutor]) = {
     val ctx            = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
     val branchContexts = ctxOrBranches.getOrElse(Map.empty)
@@ -591,7 +591,7 @@ class NodeCompiler(
         ProcessCompilationError,
         ValidationContext
       ]
-  )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+  )(implicit nodeId: NodeId, jobData: JobData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
       val contextTransformationDefOpt = executor.cast[AbstractContextTransformation].map(_.definition)
       (contextTransformationDefOpt, validationContexts) match {
@@ -610,7 +610,7 @@ class NodeCompiler(
         case (None, _) =>
           handleNonContextTransformingExecutor(executor)
       }
-    }
+    }(nodeId, jobData.metaData)
   }
 
   private def validateDynamicTransformer(
@@ -619,7 +619,7 @@ class NodeCompiler(
       branchParameters: List[BranchParameters],
       outputVar: Option[String],
       dynamicDefinition: DynamicComponentDefinitionWithImplementation
-  )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
+  )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
     (dynamicDefinition.component, eitherSingleOrJoin) match {
       case (single: SingleInputDynamicComponent[_], Left(singleCtx)) =>
         dynamicNodeValidator.validateNode(
@@ -662,7 +662,7 @@ class NodeCompiler(
         outputVar: Option[OutputVar],
         objWithMethod: MethodBasedComponentDefinitionWithImplementation,
         ctx: ValidationContext
-    )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    )(implicit jobData: JobData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters =
         expressionCompiler.compileExecutorComponentNodeParameters(objWithMethod.parameters, n.parameters, ctx)
       val outputCtx = outputVar match {
@@ -675,10 +675,10 @@ class NodeCompiler(
       }
 
       val serviceRef = computedParameters.map { params =>
-        val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, metaData))
+        val evaluateParams = (c: Context) => Params(parametersEvaluator.evaluate(params, c)(nodeId, jobData))
         compiledgraph.service.ServiceRef(
           id = n.id,
-          invoker = new MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod, evaluateParams),
+          invoker = new MethodBasedServiceInvoker(jobData.metaData, nodeId, outputVar, objWithMethod, evaluateParams),
           resultCollector = resultCollector
         )
       }

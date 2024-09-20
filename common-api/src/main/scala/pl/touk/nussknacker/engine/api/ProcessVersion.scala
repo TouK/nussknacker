@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
     versionId: VersionId,
     processName: ProcessName,
     processId: ProcessId,
+    labels: List[String],
     user: String,
     modelVersion: Option[Int]
 )
@@ -19,6 +20,7 @@ object ProcessVersion {
     versionId = VersionId.initialVersionId,
     processName = ProcessName(""),
     processId = ProcessId(1),
+    labels = List.empty,
     user = "",
     modelVersion = None
   )

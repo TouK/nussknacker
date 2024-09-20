@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.process.version
 
 import cats.data.EitherT
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
-import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.process.ScenarioMetadata
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
@@ -20,7 +21,7 @@ class ScenarioGraphVersionService(
 )(implicit ec: ExecutionContext) {
 
   def getValidResolvedLatestScenarioGraphVersion(
-      scenarioMetadata: ProcessEntityData,
+      scenarioMetadata: ScenarioMetadata,
       user: LoggedUser
   ): Future[Either[ScenarioGraphValidationError, ProcessVersionEntityData]] = {
     (for {

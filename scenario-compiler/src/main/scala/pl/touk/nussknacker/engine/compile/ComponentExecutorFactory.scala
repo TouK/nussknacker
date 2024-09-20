@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params, Service}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, Params, Service}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, ParameterEvaluator}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -23,7 +23,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy
   )(
       implicit nodeId: NodeId,
-      metaData: MetaData
+      jobData: JobData
   ): ValidatedNel[ProcessCompilationError, ComponentExecutor] = {
     NodeValidationExceptionHandler.handleExceptions {
       doCreateComponentExecutor[ComponentExecutor](
@@ -34,7 +34,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         componentUseCase,
         nonServicesLazyParamStrategy
       )
-    }
+    }(nodeId, jobData.metaData)
   }
 
   private def doCreateComponentExecutor[ComponentExecutor](
@@ -45,7 +45,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       componentUseCase: ComponentUseCase,
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy
   )(
-      implicit processMetaData: MetaData,
+      implicit jobData: JobData,
       nodeId: NodeId
   ): ComponentExecutor = {
     implicit val lazyParameterCreationStrategy: LazyParameterCreationStrategy =
@@ -60,7 +60,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
       params.map { case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1 }.toMap
     )
     componentDefinition.implementationInvoker
-      .invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
+      .invokeMethod(paramsMap, outputVariableNameOpt, Seq(jobData.metaData, nodeId, componentUseCase) ++ additional)
       .asInstanceOf[ComponentExecutor]
   }
 

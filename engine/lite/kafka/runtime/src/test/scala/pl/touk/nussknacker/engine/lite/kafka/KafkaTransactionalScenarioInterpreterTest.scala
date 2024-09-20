@@ -258,11 +258,11 @@ class KafkaTransactionalScenarioInterpreterTest
 
     val scenario: CanonicalProcess = passThroughScenario(fixture)
     val modelDataToUse             = modelData(adjustConfig(fixture.errorTopic, config))
-    val jobData                    = JobData(scenario.metaData, ProcessVersion.empty)
-    val liteKafkaJobData           = LiteKafkaJobData(tasksCount = 1)
+    val jobData          = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+    val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
 
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+      .createInterpreter[Future, Input, Output](scenario, jobData, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(
       interpreter,
@@ -307,14 +307,14 @@ class KafkaTransactionalScenarioInterpreterTest
   test("detects fatal failure in run") { fixture =>
     val scenario: CanonicalProcess = passThroughScenario(fixture)
     val modelDataToUse             = modelData(adjustConfig(fixture.errorTopic, config))
-    val jobData                    = JobData(scenario.metaData, ProcessVersion.empty)
-    val liteKafkaJobData           = LiteKafkaJobData(tasksCount = 1)
+    val jobData          = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+    val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
 
     var initAttempts = 0
     var runAttempts  = 0
 
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+      .createInterpreter[Future, Input, Output](scenario, jobData, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(
       interpreter,
@@ -428,12 +428,12 @@ class KafkaTransactionalScenarioInterpreterTest
   private def runScenarioWithoutErrors[T](fixture: FixtureParam, scenario: CanonicalProcess, config: Config = config)(
       action: => T
   ): T = {
-    val jobData          = JobData(scenario.metaData, ProcessVersion.empty)
+    val jobData          = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
     val configToUse      = adjustConfig(fixture.errorTopic, config)
     val modelDataToUse   = modelData(configToUse)
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+      .createInterpreter[Future, Input, Output](scenario, ???, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     val (runResult, output) = Using.resource(
       new KafkaTransactionalScenarioInterpreter(

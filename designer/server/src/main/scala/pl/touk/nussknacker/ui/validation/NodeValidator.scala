@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -23,10 +23,11 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository) {
 
-  def validate(scenarioName: ProcessName, nodeData: NodeValidationRequest)(
+  def validate(processVersion: ProcessVersion, nodeData: NodeValidationRequest)(
       implicit loggedUser: LoggedUser
   ): NodeValidationResult = {
-    implicit val metaData: MetaData = nodeData.processProperties.toMetaData(scenarioName)
+    implicit val jobData: JobData =
+      JobData(nodeData.processProperties.toMetaData(processVersion.processName), processVersion)
 
     val nodeDataValidator = new NodeDataValidator(modelData)
 
@@ -76,9 +77,9 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
 
   private def prepareValidationContext(
       variableTypes: Map[String, TypingResult]
-  )(implicit metaData: MetaData): ValidationContext = {
+  )(implicit jobData: JobData): ValidationContext = {
     GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-      .prepareValidationContextWithGlobalVariablesOnly(metaData)
+      .prepareValidationContextWithGlobalVariablesOnly(jobData)
       .copy(localVariables = variableTypes)
   }
 

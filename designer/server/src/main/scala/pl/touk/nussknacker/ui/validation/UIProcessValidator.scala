@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessV
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeTypingData,
@@ -64,6 +65,15 @@ class UIProcessValidator(
 
   def validate(
       scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+  )(
+      implicit loggedUser: LoggedUser
+  ): ValidationResult =
+    validate(scenarioGraph, processVersion.processName, isFragment, processVersion.labels.map(ScenarioLabel.apply))
+
+  def validate(
+      scenarioGraph: ScenarioGraph,
       processName: ProcessName,
       isFragment: Boolean,
       labels: List[ScenarioLabel]
@@ -110,6 +120,8 @@ class UIProcessValidator(
       isFragment: Boolean
   )(implicit loggedUser: LoggedUser): ValidationResult = {
     def validateAndFormatResult(scenario: CanonicalProcess) = {
+      implicit val jobData: JobData =
+        JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
       val validated = validator.validate(scenario, isFragment)
       validated.result
         .fold(formatErrors, _ => ValidationResult.success)

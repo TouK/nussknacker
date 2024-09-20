@@ -188,7 +188,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     result.failed.futureValue.getCause.getMessage shouldBe "heeelo?"
   }
 
-  private val defaultVersion = ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), "user", None)
+  private val defaultVersion =
+    ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), List.empty, "user", None)
 
   test("refuse to deploy if slots exceeded") {
     statuses = Nil
@@ -488,7 +489,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         SimpleStateStatus.Finished,
         Some(DeploymentId(deploymentId)),
         Some(ExternalDeploymentId("2343")),
-        Some(ProcessVersion(VersionId(version), processName, processId, user, None)),
+        Some(ProcessVersion(VersionId(version), processName, processId, List.empty, user, None)),
         Some(10L)
       )
     )

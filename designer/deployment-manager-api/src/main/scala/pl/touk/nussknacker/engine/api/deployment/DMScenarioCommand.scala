@@ -74,7 +74,7 @@ case class DMCustomActionCommand(
 // TODO Commands below will be legacy in some future because they operate on the scenario level instead of deployment level -
 //      we should replace them by commands operating on deployment
 case class DMTestScenarioCommand(
-    scenarioName: ProcessName,
+    processVersion: ProcessVersion,
     canonicalProcess: CanonicalProcess,
     scenarioTestData: ScenarioTestData
 ) extends DMScenarioCommand[TestResults[Json]]

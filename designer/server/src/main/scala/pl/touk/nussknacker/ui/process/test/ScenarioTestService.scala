@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.test
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -35,25 +36,23 @@ class ScenarioTestService(
 
   def getTestingCapabilities(
       scenarioGraph: ScenarioGraph,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel]
   )(
       implicit user: LoggedUser
   ): TestingCapabilities = {
-    val canonical = toCanonicalProcess(scenarioGraph, processName, isFragment, labels)
-    testInfoProvider.getTestingCapabilities(canonical)
+    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
+    testInfoProvider.getTestingCapabilities(processVersion, canonical)
   }
 
   def testParametersDefinition(
       scenarioGraph: ScenarioGraph,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel],
   )(implicit user: LoggedUser): List[UISourceParameters] = {
-    val canonical = toCanonicalProcess(scenarioGraph, processName, isFragment, labels)
+    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     testInfoProvider
-      .getTestParameters(canonical)
+      .getTestParameters(processVersion, canonical)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
       .map { assignUserFriendlyEditor }
       .toList
@@ -61,14 +60,13 @@ class ScenarioTestService(
 
   def generateData(
       scenarioGraph: ScenarioGraph,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel],
       testSampleSize: Int
   )(
       implicit user: LoggedUser
   ): Either[String, RawScenarioTestData] = {
-    val canonical = toCanonicalProcess(scenarioGraph, processName, isFragment, labels)
+    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
 
     for {
       _ <- Either.cond(
@@ -76,28 +74,31 @@ class ScenarioTestService(
         (),
         s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}"
       )
-      generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize)
+      generatedData <- testInfoProvider.generateTestData(processVersion, canonical, testSampleSize)
       rawTestData   <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
     } yield rawTestData
   }
 
   def performTest(
-      idWithName: ProcessIdWithName,
       scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel],
       rawTestData: RawScenarioTestData,
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
     for {
       preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe
         .deserialize(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
-      canonical = toCanonicalProcess(scenarioGraph, idWithName.name, isFragment, labels)
+      canonical = toCanonicalProcess(
+        scenarioGraph,
+        processVersion,
+        isFragment
+      )
       scenarioTestData <- testInfoProvider
         .prepareTestData(preliminaryScenarioTestData, canonical)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       testResults <- testExecutorService.testProcess(
-        idWithName,
+        processVersion,
         canonical,
         scenarioTestData,
       )
@@ -108,16 +109,15 @@ class ScenarioTestService(
   }
 
   def performTest(
-      idWithName: ProcessIdWithName,
       scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel],
       parameterTestData: TestSourceParameters,
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
-    val canonical = toCanonicalProcess(scenarioGraph, idWithName.name, isFragment, labels)
+    val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     for {
       testResults <- testExecutorService.testProcess(
-        idWithName,
+        processVersion,
         canonical,
         ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
       )
@@ -138,11 +138,14 @@ class ScenarioTestService(
 
   private def toCanonicalProcess(
       scenarioGraph: ScenarioGraph,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      labels: List[ScenarioLabel]
   )(implicit user: LoggedUser): CanonicalProcess = {
-    processResolver.validateAndResolve(scenarioGraph, processName, isFragment, labels)
+    processResolver.validateAndResolve(
+      scenarioGraph,
+      processVersion,
+      isFragment,
+    )
   }
 
   private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {
