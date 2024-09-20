@@ -7,7 +7,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import moment from "moment";
 import { v4 as uuid4 } from "uuid";
 import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
-import { Box } from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 import { UseActivitiesSearch } from "./useActivitiesSearch";
 import { ActivitiesSearch } from "./ActivitiesSearch";
 
@@ -126,6 +126,7 @@ const handleDataToDisplayGeneration = (activitiesDataWithMetadata: Activity[]) =
 export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const listRef = useRef<VariableSizeList>(null);
     const rowHeights = useRef({});
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const setRowHeight = useCallback((index: number, height: number) => {
         if (listRef.current) {
@@ -204,14 +205,17 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     );
 
     useEffect(() => {
-        Promise.all([httpService.fetchActivitiesMetadata(), httpService.fetchActivities()]).then(([activitiesMetadata, { activities }]) => {
-            const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
+        setIsLoading(true);
+        Promise.all([httpService.fetchActivitiesMetadata(), httpService.fetchActivities()])
+            .then(([activitiesMetadata, { activities }]) => {
+                const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
 
-            setData(handleDataToDisplayGeneration(mergedActivitiesDataWithMetadata));
-        });
+                setData(handleDataToDisplayGeneration(mergedActivitiesDataWithMetadata));
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     }, []);
-
-    if (!dataToDisplay.length) return;
 
     return (
         <ToolbarWrapper {...props} title={"Activities"}>
@@ -223,34 +227,40 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                 searchQuery={searchQuery}
                 handleClearResults={handleClearResults}
             />
-            <Box width={"100%"} height={"700px"} mt={1}>
-                <AutoSizer>
-                    {({ width, height }) => (
-                        <VariableSizeList
-                            ref={listRef}
-                            itemCount={dataToDisplay.length}
-                            itemSize={getRowHeight}
-                            height={height}
-                            width={width}
-                            estimatedItemSize={estimatedItemSize}
-                            itemKey={(index) => {
-                                return dataToDisplay[index].id;
-                            }}
-                        >
-                            {({ index, style }) => (
-                                <ActivitiesPanelRow
-                                    index={index}
-                                    style={style}
-                                    setRowHeight={setRowHeight}
-                                    handleShowRow={handleShowRow}
-                                    handleHideRow={handleHideRow}
-                                    activities={dataToDisplay}
-                                    searchQuery={searchQuery}
-                                />
-                            )}
-                        </VariableSizeList>
-                    )}
-                </AutoSizer>
+            <Box width={"100%"} height={"500px"} mt={1}>
+                {isLoading ? (
+                    <Box display={"flex"} justifyContent={"center"} height={"100%"} alignItems={"center"}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <AutoSizer>
+                        {({ width, height }) => (
+                            <VariableSizeList
+                                ref={listRef}
+                                itemCount={dataToDisplay.length}
+                                itemSize={getRowHeight}
+                                height={height}
+                                width={width}
+                                estimatedItemSize={estimatedItemSize}
+                                itemKey={(index) => {
+                                    return dataToDisplay[index].id;
+                                }}
+                            >
+                                {({ index, style }) => (
+                                    <ActivitiesPanelRow
+                                        index={index}
+                                        style={style}
+                                        setRowHeight={setRowHeight}
+                                        handleShowRow={handleShowRow}
+                                        handleHideRow={handleHideRow}
+                                        activities={dataToDisplay}
+                                        searchQuery={searchQuery}
+                                    />
+                                )}
+                            </VariableSizeList>
+                        )}
+                    </AutoSizer>
+                )}
             </Box>
         </ToolbarWrapper>
     );

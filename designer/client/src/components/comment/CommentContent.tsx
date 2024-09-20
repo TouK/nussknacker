@@ -61,7 +61,6 @@ const withHighlightText = (text: string, searchWords: string[], theme: Theme) =>
         replacedText = handleReplaceText(replacedText, text);
     }
 
-    console.log(replacedText);
     return replacedText;
 };
 
