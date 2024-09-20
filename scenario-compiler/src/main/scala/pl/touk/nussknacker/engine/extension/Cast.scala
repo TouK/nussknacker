@@ -3,39 +3,42 @@ package pl.touk.nussknacker.engine.extension
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.Documentation
-import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
+@SkipAutoDiscovery
 sealed trait Cast {
 
   @Documentation(description = "Checks if a type can be casted to a given class")
   def canCastTo(clazzType: String): Boolean
 
   @Documentation(description = "Casts a type to a given class or throws exception if type cannot be casted.")
-  @GenericType(typingFunction = classOf[CastTyping.Typing])
   def castTo[T](clazzType: String): T
 
 }
 
 object CastTyping {
 
-  class Typing extends TypingFunction {
-
-    override def computeResultType(
-        arguments: List[typing.TypingResult]
-    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case TypedObjectWithValue(_, clazzName: String) :: Nil =>
-        Try(Class.forName(clazzName)) match {
-          case Success(clazz) => Typed.typedClass(clazz).validNel
-          case Failure(_)     => GenericFunctionTypingError.ArgumentTypeError.invalidNel
-        }
-      case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
-    }
-
+  def castToTyping(allowedClassNamesWithTyping: Map[String, TypingResult])(
+      instanceType: typing.TypingResult,
+      arguments: List[typing.TypingResult]
+  ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
+    case TypedObjectWithValue(_, clazzName: String) :: Nil =>
+      allowedClassNamesWithTyping.get(clazzName) match {
+        case Some(typing) => typing.validNel
+        case None         => GenericFunctionTypingError.OtherError(s"$clazzName is not allowed").invalidNel
+      }
+    case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }
+
+  def canCastToTyping(allowedClassNamesWithTyping: Map[String, TypingResult])(
+      instanceType: typing.TypingResult,
+      arguments: List[typing.TypingResult]
+  ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
+    castToTyping(allowedClassNamesWithTyping)(instanceType, arguments).map(_ => Typed.typedClass[Boolean])
 
 }
 
