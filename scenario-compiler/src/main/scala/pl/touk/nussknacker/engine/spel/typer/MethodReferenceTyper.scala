@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.spel.typer
 
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, MethodDefinition}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, MethodDefinition}
 import pl.touk.nussknacker.engine.extension.ClassDefinitionSetExtensionMethodsAware
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
 
-// todo: lbg imports
 class MethodReferenceTyper(
     classDefinitionSet: ClassDefinitionSetExtensionMethodsAware,
     methodExecutionForUnknownAllowed: Boolean
