@@ -35,14 +35,14 @@ export function CategoryButton({ category, filterValues, setFilter }: Props): JS
     );
 
     return (
-        <Button
+        <Typography
+            component={Button}
             color={isSelected ? "primary" : "inherit"}
             sx={{
                 textTransform: "capitalize",
                 display: "flex",
                 gap: 1,
                 alignItems: "center",
-                fontSize: "1rem",
                 minWidth: "unset",
                 p: 0,
                 mx: 0,
@@ -50,7 +50,7 @@ export function CategoryButton({ category, filterValues, setFilter }: Props): JS
             onClick={onClick}
             aria-selected={isSelected}
         >
-            <Typography>{category}</Typography>
-        </Button>
+            {category}
+        </Typography>
     );
 }

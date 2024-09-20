@@ -60,6 +60,11 @@ const StyledAutocomplete = styled(Autocomplete)<{ isEdited: boolean }>(({ isEdit
     },
 }));
 
+const StyledLabelChip = styled(Chip)({
+    borderRadius: "16px",
+    margin: "2px",
+});
+
 const filter = createFilterOptions<string | LabelOption>();
 
 type LabelOption = {
@@ -332,7 +337,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 const props = isEdited ? { ...tagProps } : {};
                                 const labelError = labelOptionsErrors.find((error) => error.label === toLabelValue(option));
                                 return (
-                                    <Chip
+                                    <StyledLabelChip
                                         key={key}
                                         data-testid={`scenario-label-${index}`}
                                         color={labelError ? "error" : "default"}
@@ -340,7 +345,6 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                         variant="outlined"
                                         disabled={readOnly}
                                         label={option.title}
-                                        sx={{ borderRadius: "16px", m: "2px" }}
                                         {...props}
                                     />
                                 );

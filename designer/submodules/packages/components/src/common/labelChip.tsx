@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { Chip } from "@mui/material";
+import { Chip, styled } from "@mui/material";
 
 interface Props {
     id: string;
@@ -7,6 +7,10 @@ interface Props {
     filterValue: string[];
     setFilter: (value: string[]) => void;
 }
+
+const StyledLabelChip = styled(Chip)({
+    borderRadius: "16px",
+});
 
 export function LabelChip({ id, value, filterValue, setFilter }: Props): JSX.Element {
     const isSelected = useMemo(() => filterValue.includes(value), [filterValue, value]);
@@ -21,7 +25,7 @@ export function LabelChip({ id, value, filterValue, setFilter }: Props): JSX.Ele
     );
 
     return (
-        <Chip
+        <StyledLabelChip
             key={id}
             color={isSelected ? "primary" : "default"}
             size="small"
@@ -29,7 +33,6 @@ export function LabelChip({ id, value, filterValue, setFilter }: Props): JSX.Ele
             label={value}
             tabIndex={0}
             onClick={onClick}
-            sx={{ borderRadius: "16px" }}
         />
     );
 }

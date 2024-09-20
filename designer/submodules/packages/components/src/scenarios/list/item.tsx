@@ -1,5 +1,5 @@
 import { History } from "@mui/icons-material";
-import { Divider, Stack, Typography } from "@mui/material";
+import { Divider, Stack, styled, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CategoryButton, Highlight, useFilterContext, TruncateWrapper } from "../../common";
@@ -52,6 +52,11 @@ export function LastAction({ lastAction }: { lastAction: ProcessActionType }): J
     ) : null;
 }
 
+const HighlightedName = styled(Highlight)({
+    fontWeight: "bold",
+    fontSize: "1rem",
+});
+
 export function FirstLine({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
     const filtersContext = useFilterContext<ScenariosFiltersModel>();
@@ -61,11 +66,7 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
             <Category category={row.processCategory} filtersContext={filtersContext} />
             <span style={{ paddingLeft: 8, paddingRight: 8 }}>/</span>
             <CopyTooltip text={row.name} title={t("scenario.copyName", "Copy name to clipboard")}>
-                <Highlight
-                    value={row.name}
-                    filterText={filtersContext.getFilter("NAME")}
-                    style={{ fontWeight: "bold", fontSize: "1rem" }}
-                />
+                <HighlightedName value={row.name} filterText={filtersContext.getFilter("NAME")} />
             </CopyTooltip>
         </div>
     );
