@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.ValidatedNel
+import cats.data.IorNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -24,7 +24,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
   )(
       implicit nodeId: NodeId,
       metaData: MetaData
-  ): ValidatedNel[ProcessCompilationError, ComponentExecutor] = {
+  ): IorNel[ProcessCompilationError, ComponentExecutor] = {
     NodeValidationExceptionHandler.handleExceptions {
       doCreateComponentExecutor[ComponentExecutor](
         component,
@@ -34,7 +34,7 @@ class ComponentExecutorFactory(parameterEvaluator: ParameterEvaluator) extends L
         componentUseCase,
         nonServicesLazyParamStrategy
       )
-    }
+    }.toIor
   }
 
   private def doCreateComponentExecutor[ComponentExecutor](
