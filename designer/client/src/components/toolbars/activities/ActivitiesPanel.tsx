@@ -57,7 +57,19 @@ const mergeActivityDataWithMetadata = (
 const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[]) => {
     const infiniteListData: UIActivities[] = [];
     const hideItemsOptionAvailableLimit = 4;
-    const formatDate = (date: string) => moment(date).format("YYYY-MM-DD");
+
+    function formatDate(date: string) {
+        const now = moment(); // Current date and time
+        const inputDate = moment(date); // Date to be formatted
+
+        if (inputDate.isSame(now, "day")) {
+            return "Today";
+        } else if (inputDate.isSame(moment().subtract(1, "days"), "day")) {
+            return "Yesterday";
+        } else {
+            return inputDate.format("YYYY-MM-DD");
+        }
+    }
 
     const recursiveDateLabelDesignation = (activity: Activity, index: number, occurrence = 0): DateActivity | undefined => {
         const nextActivity = activitiesDataWithMetadata[index + 1 + occurrence];

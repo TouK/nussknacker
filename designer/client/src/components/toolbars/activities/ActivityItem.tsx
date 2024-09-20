@@ -89,7 +89,6 @@ export const ActivityItem = forwardRef(
         const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
         const version = `Version: ${activity.scenarioVersionId}`;
 
-        console.log(activity);
         return (
             <StyledActivityRoot ref={ref}>
                 <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
