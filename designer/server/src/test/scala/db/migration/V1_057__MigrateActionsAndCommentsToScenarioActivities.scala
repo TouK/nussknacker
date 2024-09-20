@@ -301,7 +301,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
 
   private def processEntity(user: String, timestamp: Timestamp) = ProcessEntityData(
     id = ProcessId(-1L),
-    name = ProcessName("2024_Q3_6917_NETFLIX"),
+    name = ProcessName("2023_Q1_1234_STREAMING_SERVICE"),
     processCategory = "test-category",
     description = None,
     processingType = "BatchPeriodic",
