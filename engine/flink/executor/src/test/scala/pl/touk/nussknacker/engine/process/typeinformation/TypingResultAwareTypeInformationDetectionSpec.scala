@@ -36,7 +36,7 @@ class TypingResultAwareTypeInformationDetectionSpec
     with FlinkTypeInformationSerializationMixin
     with OptionValues {
 
-  private val detection = new DefaultTypingResultAwareTypeInformationDetection
+  private val detection = new TypingResultAwareTypeInformationDetection
 
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 import java.{util => jutil}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
-import pl.touk.nussknacker.engine.process.typeinformation.DefaultTypingResultAwareTypeInformationDetection.BuildIntermediateSchemaCompatibilityResult
+import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedObjectBasedTypeInformation.BuildIntermediateSchemaCompatibilityResult
 
 case class TypedJavaMapTypeInformation(
     informations: Map[String, TypeInformation[_]],

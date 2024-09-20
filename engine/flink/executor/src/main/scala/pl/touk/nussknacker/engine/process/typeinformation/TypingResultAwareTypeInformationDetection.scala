@@ -8,30 +8,12 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
-import pl.touk.nussknacker.engine.flink.api.typeinformation.DefaultTypeInformationDetection
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
-import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
-  TypedJavaMapTypeInformation,
-  TypedScalaMapTypeInformation
-}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedScalaMapTypeInformation}
 import pl.touk.nussknacker.engine.util.Implicits._
 
-class DefaultTypingResultAwareTypeInformationDetection
-    extends BaseTypingResultAwareTypeInformationDetection
-    with DefaultTypeInformationDetection {
-
-  protected def constructIntermediateCompatibilityResult(
-      newNestedSerializers: Array[TypeSerializer[_]],
-      oldNestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
-  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing] = {
-    CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
-      newNestedSerializers.map(_.snapshotConfiguration()),
-      oldNestedSerializerSnapshots
-    )
-  }
-
-}
 
 // TODO: handle avro types - see FlinkConfluentUtils
 /*
@@ -43,7 +25,7 @@ class DefaultTypingResultAwareTypeInformationDetection
   Column types of query result and sink for '...' do not match.
   when we use non handled type of variable in table api component.
  */
-abstract class BaseTypingResultAwareTypeInformationDetection {
+class TypingResultAwareTypeInformationDetection extends TypeInformationDetection {
 
   private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
     Typed.typedClass[String]                  -> Types.STRING,
@@ -120,7 +102,12 @@ abstract class BaseTypingResultAwareTypeInformationDetection {
   protected def constructIntermediateCompatibilityResult(
       newNestedSerializers: Array[TypeSerializer[_]],
       oldNestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
-  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing]
+  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing] = {
+    CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
+      newNestedSerializers.map(_.snapshotConfiguration()),
+      oldNestedSerializerSnapshots
+    )
+  }
 
   def forValueWithContext[T](
       validationContext: ValidationContext,
@@ -133,13 +120,5 @@ abstract class BaseTypingResultAwareTypeInformationDetection {
     )
   }
 
-}
-
-object DefaultTypingResultAwareTypeInformationDetection {
-
-  type BuildIntermediateSchemaCompatibilityResult = (
-      Array[TypeSerializer[_]],
-      Array[TypeSerializerSnapshot[_]]
-  ) => CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing]
-
+  override def priority: Int = Integer.MIN_VALUE
 }

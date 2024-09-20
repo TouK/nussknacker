@@ -4,9 +4,14 @@ import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSchemaCompatibility, TypeSerializerSnapshot}
+import org.apache.flink.api.common.typeutils.{
+  CompositeTypeSerializerUtil,
+  TypeSerializer,
+  TypeSerializerSchemaCompatibility,
+  TypeSerializerSnapshot
+}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
-import pl.touk.nussknacker.engine.process.typeinformation.DefaultTypingResultAwareTypeInformationDetection.BuildIntermediateSchemaCompatibilityResult
+import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedObjectBasedTypeInformation.BuildIntermediateSchemaCompatibilityResult
 
 import scala.reflect.ClassTag
 
@@ -50,6 +55,15 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
   override def canEqual(obj: Any): Boolean = obj.asInstanceOf[AnyRef].isInstanceOf[TypedObjectBasedTypeInformation[T]]
 
   def createSerializer(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
+}
+
+object TypedObjectBasedTypeInformation {
+
+  type BuildIntermediateSchemaCompatibilityResult = (
+      Array[TypeSerializer[_]],
+      Array[TypeSerializerSnapshot[_]]
+  ) => CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing]
+
 }
 
 //We use Array instead of List here, as we need access by index, which is faster for array
@@ -118,7 +132,7 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
 
   def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
 
-  val buildIntermediateSchemaCompatibilityResultFunction: BuildIntermediateSchemaCompatibilityResult
+  def buildIntermediateSchemaCompatibilityResultFunction: BuildIntermediateSchemaCompatibilityResult
 }
 
 abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnapshot[T] with LazyLogging {

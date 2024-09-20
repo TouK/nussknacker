@@ -14,7 +14,7 @@ import scala.jdk.CollectionConverters._
  * This is trait that allows for providing more details TypeInformation when ValidationContext is known,
  * by default generic Flink mechanisms are used
  */
-sealed trait TypeInformationDetection extends Serializable {
+trait TypeInformationDetection extends Serializable {
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context]
 
@@ -31,44 +31,28 @@ sealed trait TypeInformationDetection extends Serializable {
 
   def forType[T](typingResult: TypingResult): TypeInformation[T]
 
-}
+  def priority: Int
 
-// We use DefaultTypeInformationDetection SPI to provide a implementation of TypeInformationDetection because we don't
-// want to make implementation classes available in flink-components-api module.
-trait DefaultTypeInformationDetection extends TypeInformationDetection
-// We use CustomTypeInformationDetection SPI to provide a compatibility layer for Flink API
-trait CustomTypeInformationDetection extends TypeInformationDetection
+}
 
 object TypeInformationDetection {
 
+  // We use SPI to provide implementation of TypeInformationDetection because we don't want to make
+  // implementation classes available in flink-components-api module.
   val instance: TypeInformationDetection = {
     val classloader = Thread.currentThread().getContextClassLoader
-    def defaultTypeInfoDetection() = ServiceLoader
-      .load(classOf[DefaultTypeInformationDetection], classloader)
+    ServiceLoader
+      .load(classOf[TypeInformationDetection], classloader)
       .asScala
-      .headOption
-    val customTypeInfoDetections = ServiceLoader
-      .load(classOf[CustomTypeInformationDetection], classloader)
-      .asScala
-      .toList
-
-    customTypeInfoDetections match {
+      .toList match {
+      case only :: Nil => only
       case Nil =>
-        defaultTypeInfoDetection() match {
-          case Some(default) => default
-          case None =>
-            throw new IllegalStateException(
-              s"Missing ${classOf[TypeInformationDetection].getSimpleName} implementation on the classpath. " +
-                s"Classloader: ${printClassloaderDebugDetails(classloader)}. " +
-                s"Ensure that your classpath is correctly configured, flinkExecutor.jar is probably missing"
-            )
-        }
-      case custom :: Nil => custom
-      case mutlipleCustomizations =>
         throw new IllegalStateException(
-          s"More than one ${classOf[CustomTypeInformationDetection].getSimpleName} implementations on the" +
-            s" classpath: $mutlipleCustomizations. Classloader: ${printClassloaderDebugDetails(classloader)}"
+          s"Missing ${classOf[TypeInformationDetection].getSimpleName} implementation on the classpath. " +
+            s"Classloader: ${printClassloaderDebugDetails(classloader)}. " +
+            s"Ensure that your classpath is correctly configured, flinkExecutor.jar is probably missing"
         )
+      case moreThanOne => moreThanOne.maxBy(_.priority)
     }
   }
 

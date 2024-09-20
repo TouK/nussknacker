@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
-import pl.touk.nussknacker.engine.process.typeinformation.DefaultTypingResultAwareTypeInformationDetection
+import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
@@ -31,7 +31,7 @@ import scala.jdk.CollectionConverters._
 @State(Scope.Thread)
 class TypingResultBasedSerializationBenchmark {
 
-  private val detection = new DefaultTypingResultAwareTypeInformationDetection
+  private val detection = new TypingResultAwareTypeInformationDetection
 
   // we use TypedMap here to have TypedObjectTypingResult in Typed.fromInstance
   private val mapToSerialize = TypedMap(
