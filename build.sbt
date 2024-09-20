@@ -785,6 +785,7 @@ lazy val flinkExecutor = (project in flink("executor"))
         "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
         "org.apache.flink" % "flink-runtime"              % flinkV % Provided,
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided,
+        // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
         "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % Provided,
       )
     },
