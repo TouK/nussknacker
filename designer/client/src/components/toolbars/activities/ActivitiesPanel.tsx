@@ -11,29 +11,33 @@ import { Box, CircularProgress } from "@mui/material";
 import { UseActivitiesSearch } from "./useActivitiesSearch";
 import { ActivitiesSearch } from "./ActivitiesSearch";
 
-interface UiButtonActivity {
-    type: "moreItemsButton";
-    sameItemOccurrence: number;
-    isClicked: boolean;
-}
-
-interface UiDateActivity {
-    type: "date";
-    value: string;
-}
-
-export interface UiItemActivity {
-    type: "item";
-    isDisabled: boolean;
-    isFound: boolean;
-    isActiveFound: boolean;
-}
-
-export type Activity<T = UiButtonActivity | UiDateActivity | UiItemActivity> = ActivitiesResponse["activities"][number] & {
+export type Activity = ActivitiesResponse["activities"][number] & {
     activities: ActivityMetadata;
     actions: ActionMetadata[];
-    ui?: T;
 };
+
+export type ItemActivity = Activity & {
+    uiGeneratedId: string;
+    uiType: "item";
+    isHidden: boolean;
+    isFound: boolean;
+    isActiveFound: boolean;
+};
+
+export type ButtonActivity = {
+    uiGeneratedId: string;
+    uiType: "moreItemsButton";
+    sameItemOccurrence: number;
+    isClicked: boolean;
+};
+
+export type DateActivity = {
+    uiGeneratedId: string;
+    uiType: "date";
+    value: string;
+};
+
+export type UIActivities = ItemActivity | ButtonActivity | DateActivity;
 
 const estimatedItemSize = 150;
 const mergeActivityDataWithMetadata = (
@@ -50,22 +54,20 @@ const mergeActivityDataWithMetadata = (
     });
 };
 
-const handleDataToDisplayGeneration = (activitiesDataWithMetadata: Activity[]) => {
-    const infiniteListData = [];
+const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[]) => {
+    const infiniteListData: UIActivities[] = [];
     const hideItemsOptionAvailableLimit = 4;
     const formatDate = (date: string) => moment(date).format("YYYY-MM-DD");
 
-    const recursiveDateLabelDesignation = (activity: Activity, index: number, occurrence = 0) => {
+    const recursiveDateLabelDesignation = (activity: Activity, index: number, occurrence = 0): DateActivity | undefined => {
         const nextActivity = activitiesDataWithMetadata[index + 1 + occurrence];
         const previousActivity = activitiesDataWithMetadata[index - 1 + occurrence];
 
         if (occurrence > hideItemsOptionAvailableLimit && activity.type !== nextActivity?.type) {
             return {
-                id: uuid4(),
-                ui: {
-                    type: "date",
-                    value: `${formatDate(previousActivity.date)} - ${formatDate(activity.date)}`,
-                },
+                uiGeneratedId: uuid4(),
+                uiType: "date",
+                value: `${formatDate(previousActivity.date)} - ${formatDate(activity.date)}`,
             };
         }
 
@@ -80,25 +82,24 @@ const handleDataToDisplayGeneration = (activitiesDataWithMetadata: Activity[]) =
                 (previousActivity?.date ? moment(previousActivity.date).format("YYYY-MM-DD") : undefined)
         ) {
             return {
-                id: uuid4(),
-                ui: { value: formatDate(activity.date), type: "date" },
+                uiGeneratedId: uuid4(),
+                uiType: "date",
+                value: formatDate(activity.date),
             };
         }
 
         return undefined;
     };
 
-    const recursiveMoreItemsButtonDesignation = (activity: Activity, index: number, occurrence = 0) => {
-        const previousActivity = activitiesDataWithMetadata[index - 1 - occurrence];
-
+    const recursiveMoreItemsButtonDesignation = (activity: Activity, index: number, occurrence = 0): ButtonActivity | undefined => {
+        const previousActivityIndex = index - 1 - occurrence;
+        const previousActivity = activitiesDataWithMetadata[previousActivityIndex];
         if (occurrence > hideItemsOptionAvailableLimit && activity.type !== previousActivity?.type) {
             return {
-                id: uuid4(),
-                ui: {
-                    type: "moreItemsButton",
-                    sameItemOccurrence: occurrence,
-                    clicked: false,
-                },
+                uiGeneratedId: uuid4(),
+                uiType: "moreItemsButton",
+                sameItemOccurrence: occurrence,
+                isClicked: false,
             };
         }
 
@@ -110,14 +111,34 @@ const handleDataToDisplayGeneration = (activitiesDataWithMetadata: Activity[]) =
         return undefined;
     };
 
+    const initiallyHideItems = () => {
+        for (let i = infiniteListData.length - 1 - hideItemsOptionAvailableLimit; i < infiniteListData.length; i++) {
+            const item = infiniteListData[i];
+
+            if (item.uiType === "item") {
+                item.isHidden = true;
+            }
+        }
+    };
+
     activitiesDataWithMetadata
         .sort((a, b) => moment(b.date).diff(a.date))
         .forEach((activity, index) => {
             const dateLabel = recursiveDateLabelDesignation(activity, index);
             const moreItemsButton = recursiveMoreItemsButtonDesignation(activity, index);
             dateLabel && infiniteListData.push(dateLabel);
-            infiniteListData.push({ ...activity, id: uuid4(), ui: { type: "item", isDisabled: false } });
-            moreItemsButton && infiniteListData.push(moreItemsButton);
+            infiniteListData.push({
+                ...activity,
+                isActiveFound: false,
+                isFound: false,
+                uiGeneratedId: uuid4(),
+                uiType: "item",
+                isHidden: false,
+            });
+            if (moreItemsButton) {
+                initiallyHideItems();
+                infiniteListData.push(moreItemsButton);
+            }
         });
 
     return infiniteListData;
@@ -140,7 +161,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         return rowHeights.current[index] || estimatedItemSize;
     }, []);
 
-    const [data, setData] = useState<Activity[]>([]);
+    const [data, setData] = useState<UIActivities[]>([]);
     const { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults } = UseActivitiesSearch({
         activities: data,
         listRef,
@@ -150,11 +171,11 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         setData((prevState) => {
             return prevState.map((data, indx) => {
                 if (indx === index) {
-                    return { ...data, ui: { ...data.ui, isClicked: true } };
+                    return { ...data, isClicked: false };
                 }
 
                 if (indx <= index && indx > index - sameItemOccurrence - 1) {
-                    return { ...data, ui: { ...data.ui, isDisabled: true } };
+                    return { ...data, isHidden: true };
                 }
 
                 return data;
@@ -167,11 +188,11 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         setData((prevState) => {
             return prevState.map((data, indx) => {
                 if (indx === index + sameItemOccurrence) {
-                    return { ...data, ui: { ...data.ui, isClicked: false } };
+                    return { ...data, isClicked: true };
                 }
 
                 if (indx >= index && indx < index + sameItemOccurrence) {
-                    return { ...data, ui: { ...data.ui, isDisabled: false } };
+                    return { ...data, isHidden: false };
                 }
 
                 return data;
@@ -182,21 +203,21 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const dataToDisplay = useMemo(
         () =>
             data
-                .filter((activity) => (activity.ui.type === "item" && !activity.ui.isDisabled) || activity.ui.type !== "item")
-                .map((activity, index) => {
-                    if (activity.ui.type !== "item") {
+                .filter((activity) => (activity.uiType === "item" && !activity.isHidden) || activity.uiType !== "item")
+                .map((activity) => {
+                    if (activity.uiType !== "item") {
                         return activity;
                     }
 
-                    activity.ui.isFound = false;
-                    activity.ui.isActiveFound = false;
+                    activity.isFound = false;
+                    activity.isActiveFound = false;
 
-                    if (foundResults.some((foundResult) => foundResult === activity.id)) {
-                        activity.ui.isFound = true;
+                    if (foundResults.some((foundResult) => foundResult === activity.uiGeneratedId)) {
+                        activity.isFound = true;
                     }
 
-                    if (activity.id === foundResults[selectedResult]) {
-                        activity.ui.isActiveFound = true;
+                    if (activity.uiGeneratedId === foundResults[selectedResult]) {
+                        activity.isActiveFound = true;
                     }
 
                     return activity;
@@ -210,7 +231,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
             .then(([activitiesMetadata, { activities }]) => {
                 const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
 
-                setData(handleDataToDisplayGeneration(mergedActivitiesDataWithMetadata));
+                setData(extendActivitiesWithUIData(mergedActivitiesDataWithMetadata));
             })
             .finally(() => {
                 setIsLoading(false);
@@ -243,7 +264,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                 width={width}
                                 estimatedItemSize={estimatedItemSize}
                                 itemKey={(index) => {
-                                    return dataToDisplay[index].id;
+                                    return dataToDisplay[index].uiGeneratedId;
                                 }}
                             >
                                 {({ index, style }) => (

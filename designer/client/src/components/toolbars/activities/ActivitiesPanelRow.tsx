@@ -3,7 +3,7 @@ import { Box, Divider, Typography } from "@mui/material";
 import { MoreItemsButton } from "./MoreItemsButton";
 import { LessItemsButton } from "./LessItemsButton";
 import { ActivityItem } from "./ActivityItem";
-import { Activity } from "./ActivitiesPanel";
+import { UIActivities } from "./ActivitiesPanel";
 
 interface Props {
     index: number;
@@ -11,14 +11,17 @@ interface Props {
     setRowHeight: (index: number, height: number) => void;
     handleShowRow(index: number, sameItemOccurrence: number): void;
     handleHideRow(index: number, sameItemOccurrence: number): void;
-    activities: Activity[];
+    activities: UIActivities[];
     searchQuery: string;
 }
 
 export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShowRow, handleHideRow, activities, searchQuery }: Props) => {
     const rowRef = useRef<HTMLDivElement>(null);
     const activity = useMemo(() => activities[index], [activities, index]);
-    const firstDeployedIndex = useMemo(() => activities.findIndex((activeItem) => activeItem.type === "SCENARIO_DEPLOYED"), [activities]);
+    const firstDeployedIndex = useMemo(
+        () => activities.findIndex((activeItem) => activeItem.uiType === "item" && activeItem.type === "SCENARIO_DEPLOYED"),
+        [activities],
+    );
     const isActiveDeployedItem = firstDeployedIndex === index;
 
     useEffect(() => {
@@ -28,7 +31,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
     }, [index, rowRef, setRowHeight]);
 
     const itemToRender = useMemo(() => {
-        switch (activity.ui.type) {
+        switch (activity.uiType) {
             case "item": {
                 return <ActivityItem activity={activity} ref={rowRef} isActiveItem={isActiveDeployedItem} searchQuery={searchQuery} />;
             }
@@ -37,7 +40,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                     <Box display={"flex"} justifyContent={"center"} alignItems={"center"} px={1}>
                         <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white, mr: 1 })} />
                         <Typography component={"div"} variant={"caption"} ref={rowRef}>
-                            {activity.ui.value}
+                            {activity.value}
                         </Typography>
                         <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white, ml: 1 })} />
                     </Box>
@@ -46,18 +49,10 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
             case "moreItemsButton": {
                 return (
                     <div ref={rowRef}>
-                        {activity.ui.isClicked ? (
-                            <MoreItemsButton
-                                sameItemOccurrence={activity.ui.sameItemOccurrence}
-                                handleShowRow={handleShowRow}
-                                index={index}
-                            />
+                        {activity.isClicked ? (
+                            <LessItemsButton sameItemOccurrence={activity.sameItemOccurrence} handleHideRow={handleHideRow} index={index} />
                         ) : (
-                            <LessItemsButton
-                                sameItemOccurrence={activity.ui.sameItemOccurrence}
-                                handleHideRow={handleHideRow}
-                                index={index}
-                            />
+                            <MoreItemsButton sameItemOccurrence={activity.sameItemOccurrence} handleShowRow={handleShowRow} index={index} />
                         )}
                     </div>
                 );
@@ -66,10 +61,10 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return null;
             }
         }
-    }, [activity, handleHideRow, handleShowRow, index, isActiveDeployedItem]);
+    }, [activity, handleHideRow, handleShowRow, index, isActiveDeployedItem, searchQuery]);
 
     return (
-        <div key={activity.id} style={style}>
+        <div key={activity.uiGeneratedId} style={style}>
             {itemToRender}
         </div>
     );

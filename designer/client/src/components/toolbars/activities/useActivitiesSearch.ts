@@ -1,11 +1,11 @@
 import { MutableRefObject, useState } from "react";
-import { Activity } from "./ActivitiesPanel";
+import { Activity, UIActivities } from "./ActivitiesPanel";
 import { VariableSizeList } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
 import { get } from "lodash";
 
 interface Props {
-    activities: Activity[];
+    activities: UIActivities[];
     listRef: MutableRefObject<VariableSizeList>;
 }
 export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
@@ -20,14 +20,14 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
         const fullSearchFields: NestedKeyOf<Activity>[] = ["date", "user", "comment", "activities.displayableName"];
 
         for (const activity of activities) {
-            if (activity.ui.type !== "item") {
+            if (activity.uiType !== "item") {
                 continue;
             }
 
             for (const fullSearchField of fullSearchFields) {
                 if (value && get(activity, fullSearchField, "").toLowerCase().includes(value.toLowerCase())) {
                     setFoundResults((prevState) => {
-                        prevState.push(activity.id);
+                        prevState.push(activity.uiGeneratedId);
                         return prevState;
                     });
                 }
@@ -35,14 +35,14 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
 
             if (value && activity.date.toLowerCase().includes(value.toLowerCase())) {
                 setFoundResults((prevState) => {
-                    prevState.push(activity.id);
+                    prevState.push(activity.uiGeneratedId);
                     return prevState;
                 });
             }
         }
 
         listRef.current.scrollToItem(
-            activities.findIndex((item) => item.id === foundResults[selectedResult]),
+            activities.findIndex((item) => item.uiGeneratedId === foundResults[selectedResult]),
             "start",
         );
     };
@@ -58,7 +58,7 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
 
         const foundResult = foundResults[selectedResultNewValue];
         listRef.current.scrollToItem(
-            activities.findIndex((item) => item.id === foundResult),
+            activities.findIndex((item) => item.uiGeneratedId === foundResult),
             "center",
         );
         setSelectedResult(selectedResultNewValue);

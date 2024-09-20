@@ -9,7 +9,7 @@ import { ActionMetadata } from "../../../http/HttpService";
 import { blend } from "@mui/system";
 import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
 import UrlIcon from "../../UrlIcon";
-import { Activity, UiItemActivity } from "./ActivitiesPanel";
+import { ItemActivity } from "./ActivitiesPanel";
 import { SearchHighlighter } from "../creator/SearchHighlighter";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
@@ -81,7 +81,7 @@ const HeaderActivity = ({ activityAction }: { activityAction: ActionMetadata }) 
 
 export const ActivityItem = forwardRef(
     (
-        { activity, isActiveItem, searchQuery }: { activity: Activity<UiItemActivity>; isActiveItem: boolean; searchQuery: string },
+        { activity, isActiveItem, searchQuery }: { activity: ItemActivity; isActiveItem: boolean; searchQuery: string },
         ref: ForwardedRef<HTMLDivElement>,
     ) => {
         const commentSettings = useSelector(getCommentSettings);
@@ -89,9 +89,10 @@ export const ActivityItem = forwardRef(
         const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
         const version = `Version: ${activity.scenarioVersionId}`;
 
+        console.log(activity);
         return (
             <StyledActivityRoot ref={ref}>
-                <StyledActivityContent isActiveFound={activity.ui.isActiveFound} isFound={activity.ui.isFound}>
+                <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
                     <StyledActivityHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
                         <StyledHeaderIcon src={activity.activities.icon} />
                         <Typography
