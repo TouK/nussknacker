@@ -98,7 +98,7 @@ export function SecondLine({ row }: { row: RowType }): JSX.Element {
             </div>
             {!row.isFragment && !row.isArchived && <ScenarioStatus state={row.state} filtersContext={filtersContext} />}
             <ProcessingModeItem processingMode={row.processingMode} filtersContext={filtersContext} />
-            <Labels values={row.labels} filtersContext={filtersContext} />
+            {row.labels.length && <Labels values={row.labels} filtersContext={filtersContext} />}
         </Stack>
     );
 }
