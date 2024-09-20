@@ -53,6 +53,7 @@
 * [#6176](https://github.com/TouK/nussknacker/pull/6176) Update most dependencies to latest versions, most important ones:
   * Jackson 2.15.4 -> 2.17.2
   * cats 2.10 -> 2.12
+* [#6805](https://github.com/TouK/nussknacker/pull/6805) Support for Flink 1.19.1
 
 ## 1.17
 

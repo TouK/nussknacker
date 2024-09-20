@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -27,7 +28,6 @@ import pl.touk.nussknacker.engine.process.compiler.{
   FlinkProcessCompilerDataFactory,
   UsedNodes
 }
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkCompatibilityProvider, FlinkJobConfig}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
@@ -57,6 +57,7 @@ class FlinkProcessRegistrar(
 
   import FlinkProcessRegistrar._
 
+  @silent("deprecated")
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(

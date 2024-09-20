@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -10,6 +11,7 @@ import org.apache.flink.api.common.typeutils.{
   TypeSerializerSnapshot
 }
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedObjectBasedTypeInformation.BuildIntermediateSchemaCompatibilityResult
 
 import scala.reflect.ClassTag
 
@@ -44,6 +46,7 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
 
   override def isKeyType: Boolean = false
 
+  @silent("deprecated")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
     createSerializer(serializers = informations.map { case (k, v) =>
       (k, v.createSerializer(config))
@@ -52,6 +55,15 @@ abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[
   override def canEqual(obj: Any): Boolean = obj.asInstanceOf[AnyRef].isInstanceOf[TypedObjectBasedTypeInformation[T]]
 
   def createSerializer(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
+}
+
+object TypedObjectBasedTypeInformation {
+
+  type BuildIntermediateSchemaCompatibilityResult = (
+      Array[TypeSerializer[_]],
+      Array[TypeSerializerSnapshot[_]]
+  ) => CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing]
+
 }
 
 //We use Array instead of List here, as we need access by index, which is faster for array
@@ -119,6 +131,8 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
   def get(value: T, name: String): AnyRef
 
   def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
+
+  def buildIntermediateSchemaCompatibilityResultFunction: BuildIntermediateSchemaCompatibilityResult
 }
 
 abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnapshot[T] with LazyLogging {
@@ -157,6 +171,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
     if nonEqualKeysCompatible == false we require keys in new and old serializer are the same
 
    */
+  @silent("deprecated")
   override def resolveSchemaCompatibility(newSerializer: TypeSerializer[T]): TypeSerializerSchemaCompatibility[T] = {
     if (newSerializer.snapshotConfiguration().getClass != getClass) {
       TypeSerializerSchemaCompatibility.incompatible()
@@ -170,7 +185,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val newSerializersToUse = newSerializers.filter(k => commons.contains(k._1))
       val snapshotsToUse      = serializersSnapshots.filter(k => commons.contains(k._1))
 
-      val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
+      val fieldsCompatibility = buildIntermediateSchemaCompatibilityResult(
         newSerializersToUse.map(_._2),
         snapshotsToUse.map(_._2)
       )
@@ -221,6 +236,8 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       }
     }
   }
+
+  val buildIntermediateSchemaCompatibilityResult: BuildIntermediateSchemaCompatibilityResult
 
   override def restoreSerializer(): TypeSerializer[T] = restoreSerializer(serializersSnapshots.map {
     case (k, snapshot) => (k, snapshot.restoreSerializer())

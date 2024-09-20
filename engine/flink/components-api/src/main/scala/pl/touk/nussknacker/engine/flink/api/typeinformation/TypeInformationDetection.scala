@@ -31,6 +31,8 @@ trait TypeInformationDetection extends Serializable {
 
   def forType[T](typingResult: TypingResult): TypeInformation[T]
 
+  def priority: Int
+
 }
 
 object TypeInformationDetection {
@@ -50,11 +52,7 @@ object TypeInformationDetection {
             s"Classloader: ${printClassloaderDebugDetails(classloader)}. " +
             s"Ensure that your classpath is correctly configured, flinkExecutor.jar is probably missing"
         )
-      case moreThanOne =>
-        throw new IllegalStateException(
-          s"More than one ${classOf[TypeInformationDetection].getSimpleName} implementations on the classpath: $moreThanOne. " +
-            s"Classloader: ${printClassloaderDebugDetails(classloader)}"
-        )
+      case moreThanOne => moreThanOne.maxBy(_.priority)
     }
   }
 

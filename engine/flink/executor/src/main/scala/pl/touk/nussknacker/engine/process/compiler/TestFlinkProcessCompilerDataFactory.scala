@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.connector.source.Boundedness
 import pl.touk.nussknacker.engine.ModelData
@@ -138,6 +139,8 @@ class TestFlinkExceptionHandler(
     listeners: Seq[ProcessListener],
     classLoader: ClassLoader
 ) extends FlinkExceptionHandler(metaData, modelDependencies, listeners, classLoader) {
+
+  @silent("deprecated")
   override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 
   override val consumer: FlinkEspExceptionConsumer = _ => {}
