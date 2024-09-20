@@ -102,6 +102,7 @@ export function useScenariosWithStatus(): UseQueryResult<Scenario[]> {
             data: data.map((scenario) => ({
                 ...scenario,
                 state: statuses?.data?.[scenario.name] || scenario.state,
+                id: scenario.name, // required by DataGrid when table=true
             })),
         } as UseQueryResult<Scenario[]>;
     }, [scenarios, statuses]);

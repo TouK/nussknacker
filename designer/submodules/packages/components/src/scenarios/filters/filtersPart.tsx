@@ -6,7 +6,7 @@ import { useScenarioLabelsQuery, useStatusDefinitions, useUserQuery } from "../u
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
 import { SimpleOptionsStack } from "./simpleOptionsStack";
-import { OtherOptionsStack, StatusOptionsStack } from "./otherOptionsStack";
+import { TypeOptionsStack, StatusOptionsStack } from "./typeOptionsStack";
 import { SortOptionsStack } from "./sortOptionsStack";
 import { ActiveFilters } from "./activeFilters";
 import { RowType } from "../list/listPart";
@@ -135,8 +135,8 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             })}
                         />
                     </FilterMenu>
-                    <FilterMenu label={t("table.filter.other", "Type")} count={getFilter("TYPE", true).length}>
-                        <OtherOptionsStack />
+                    <FilterMenu label={t("table.filter.TYPE", "Type")} count={getFilter("TYPE", true).length}>
+                        <TypeOptionsStack />
                     </FilterMenu>
                     {withSort ? (
                         <FilterMenu label={t("table.filter.SORT_BY", "Sort")}>
