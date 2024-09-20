@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Valid, invalid, invalidNel, valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid, invalid, invalidNel, valid}
+import cats.data.{Ior, IorNel, NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
@@ -125,7 +125,7 @@ class ExpressionCompiler(
   )(
       implicit nodeId: NodeId,
       metaData: MetaData
-  ): ValidatedNel[PartSubGraphCompilationError, List[CompiledParameter]] = {
+  ): IorNel[PartSubGraphCompilationError, List[CompiledParameter]] = {
     compileNodeParameters(
       parameterDefinitions,
       nodeParameters,
@@ -152,7 +152,7 @@ class ExpressionCompiler(
   )(
       implicit nodeId: NodeId,
       metaData: MetaData
-  ): ValidatedNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
+  ): IorNel[PartSubGraphCompilationError, List[(TypedParameter, Parameter)]] = {
 
     val redundantMissingValidation = Validations.validateRedundantAndMissingParameters(
       parameterDefinitions,
@@ -178,9 +178,15 @@ class ExpressionCompiler(
     }
     val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
 
-    allCompiledParams
-      .andThen(allParams => Validations.validateWithCustomValidators(allParams, paramValidatorsMap))
-      .combine(redundantMissingValidation.map(_ => List()))
+    for {
+      compiledParams <- allCompiledParams.toIor
+      paramsAfterValidation = Validations.validateWithCustomValidators(compiledParams, paramValidatorsMap) match {
+        case Valid(a) => Ior.right(a)
+        // We want to preserve typing information from allCompiledParams even if custom validators give us some errors
+        case Invalid(e) => Ior.both(e, compiledParams)
+      }
+      combinedParams <- redundantMissingValidation.map(_ => List()).toIor.combine(paramsAfterValidation)
+    } yield combinedParams
   }
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(
