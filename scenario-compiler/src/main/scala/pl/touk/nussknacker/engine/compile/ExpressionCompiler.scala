@@ -186,7 +186,12 @@ class ExpressionCompiler(
           case Invalid(e) => Ior.both(e, allParams)
         }
       }
-      .combine(redundantMissingValidation.map(_ => List()).toIor)
+      .flatMap(allParams =>
+        redundantMissingValidation.map(_ => List()) match {
+          case Valid(a)   => Ior.right(a)
+          case Invalid(e) => Ior.both(e, allParams)
+        }
+      )
   }
 
   private def parameterValidatorsMap(parameterDefinitions: List[Parameter], globalVariables: Map[String, TypingResult])(
