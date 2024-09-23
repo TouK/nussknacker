@@ -11,6 +11,7 @@ import { getScenario, isSaveDisabled } from "../../../reducers/selectors/graph";
 import { useWindows } from "../../../windowManager";
 import { displayScenarioVersion } from "../../../actions/nk";
 import { ItemActivity } from "./ActivitiesPanel";
+import { handleOpenCompareVersionDialog } from "../../modals/CompareVersionsDialog";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -38,14 +39,14 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isActiv
     borderRadius: theme.spacing(1),
 }));
 
-const HeaderActivity = ({ activityAction }: { activityAction: ActionMetadata }) => {
+const HeaderActivity = ({ activityAction, scenarioVersionId }: { activityAction: ActionMetadata; scenarioVersionId: number }) => {
+    const { open } = useWindows();
+
     switch (activityAction.id) {
         case "compare": {
             return (
                 <StyledHeaderActionIcon
-                    onClick={() => {
-                        alert(`action called: ${activityAction.id}`);
-                    }}
+                    onClick={() => open(handleOpenCompareVersionDialog(scenarioVersionId.toString()))}
                     key={activityAction.id}
                     src={activityAction.icon}
                 />
@@ -133,14 +134,14 @@ const ActivityItemHeader = ({ activity, isActiveItem, searchQuery }: Props) => {
         }
 
         return headerTitle;
-    }, [activity.activities.displayableName, activity.scenarioVersionId, openVersionEnable, searchQuery]);
+    }, [activity.activities.displayableName, activity.overrideDisplayableName, activity.scenarioVersionId, openVersionEnable, searchQuery]);
 
     return (
         <StyledActivityItemHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
             <StyledHeaderIcon src={activity.activities.icon} />
             {getHeaderTitle}
             {activity.actions.map((activityAction) => (
-                <HeaderActivity key={activityAction.id} activityAction={activityAction} />
+                <HeaderActivity key={activityAction.id} activityAction={activityAction} scenarioVersionId={activity.scenarioVersionId} />
             ))}
         </StyledActivityItemHeader>
     );
