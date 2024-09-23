@@ -3105,8 +3105,8 @@ paths:
                 type: string
               examples:
                 Example:
-                  summary: 'Unable to edit comment with id: {commentId}'
-                  value: 'Unable to delete comment with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
+                  summary: 'Unable to edit comment for activity with id: {commentId}'
+                  value: 'Unable to delete comment for activity with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3195,8 +3195,8 @@ paths:
                 type: string
               examples:
                 Example:
-                  summary: 'Unable to edit comment with id: {commentId}'
-                  value: 'Unable to delete comment with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
+                  summary: 'Unable to edit comment for activity with id: {commentId}'
+                  value: 'Unable to delete comment for activity with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3374,8 +3374,8 @@ paths:
                 type: string
               examples:
                 Example:
-                  summary: 'Unable to edit comment with id: {commentId}'
-                  value: 'Unable to delete comment with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
+                  summary: 'Unable to edit comment for activity with id: {commentId}'
+                  value: 'Unable to delete comment for activity with id: a76d6eba-9b6c-4d97-aaa1-984a23f88019'
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3743,6 +3743,12 @@ paths:
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
+                      comment:
+                        status:
+                          comment: Run campaign
+                          type: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
                       dateFinished: '2024-01-17T14:21:17Z'
                       errorMessage: Execution error occurred
                       type: PERFORMED_SINGLE_EXECUTION
@@ -3750,6 +3756,11 @@ paths:
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersion: 1
+                      comment:
+                        status:
+                          type: DELETED
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
                       dateFinished: '2024-01-17T14:21:17Z'
                       type: PERFORMED_SINGLE_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
@@ -4416,6 +4427,7 @@ components:
       - user
       - date
       - actionName
+      - comment
       - type
       properties:
         id:
@@ -4433,6 +4445,8 @@ components:
           format: int64
         actionName:
           type: string
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
         type:
           type: string
     CustomActionRequest:
@@ -5705,7 +5719,6 @@ components:
       - id
       - user
       - date
-      - dateFinished
       - type
       properties:
         id:
@@ -5722,7 +5735,9 @@ components:
           - 'null'
           format: int64
         dateFinished:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
         errorMessage:
           type:
@@ -5737,7 +5752,7 @@ components:
       - id
       - user
       - date
-      - dateFinished
+      - comment
       - type
       properties:
         id:
@@ -5753,8 +5768,12 @@ components:
           - integer
           - 'null'
           format: int64
+        comment:
+          $ref: '#/components/schemas/ScenarioActivityComment'
         dateFinished:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
         errorMessage:
           type:

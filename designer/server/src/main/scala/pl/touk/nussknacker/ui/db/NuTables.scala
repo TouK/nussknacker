@@ -6,10 +6,9 @@ import slick.jdbc.JdbcProfile
 
 trait NuTables
     extends ProcessEntityFactory
-    with CommentEntityFactory
     with ProcessVersionEntityFactory
     with EnvironmentsEntityFactory
-    with ProcessActionEntityFactory
+    with ScenarioActivityEntityFactory
     with ScenarioLabelsEntityFactory
     with AttachmentEntityFactory
     with DeploymentEntityFactory {

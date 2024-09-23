@@ -20,9 +20,13 @@ abstract class BaseHttpService(
   private val allServerEndpoints = new AtomicReference(List.empty[NoRequirementServerEndpoint])
 
   protected def expose(serverEndpoint: NoRequirementServerEndpoint): Unit = {
+    expose(List(serverEndpoint))
+  }
+
+  protected def expose(serverEndpoints: List[NoRequirementServerEndpoint]): Unit = {
     allServerEndpoints
       .accumulateAndGet(
-        List(serverEndpoint),
+        serverEndpoints,
         (l1, l2) => l1 ::: l2
       )
   }
