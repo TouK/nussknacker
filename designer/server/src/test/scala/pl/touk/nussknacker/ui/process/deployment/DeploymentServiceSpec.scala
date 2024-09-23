@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{CustomActionResult, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
@@ -30,12 +31,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDat
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{
-  CommentValidationError,
-  DBIOActionRunner,
-  DeploymentComment,
-  UserComment
-}
+import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner, UserComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -54,6 +50,7 @@ class DeploymentServiceSpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
+    with WithClock
     with EitherValuesDetailedMessage {
 
   import VersionId._
@@ -68,9 +65,9 @@ class DeploymentServiceSpec
   override protected val dbioRunner: DBIOActionRunner  = newDBIOActionRunner(testDbRef)
   private val fetchingProcessRepository                = newFetchingProcessRepository(testDbRef)
   private val futureFetchingProcessRepository          = newFutureFetchingScenarioRepository(testDbRef)
-  private val writeProcessRepository                   = newWriteProcessRepository(testDbRef)
+  private val writeProcessRepository                   = newWriteProcessRepository(testDbRef, clock)
   private val actionRepository                         = newActionProcessRepository(testDbRef)
-  private val activityRepository                       = newProcessActivityRepository(testDbRef)
+  private val activityRepository                       = newScenarioActivityRepository(testDbRef, clock)
 
   private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] =
     new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
@@ -335,7 +332,7 @@ class DeploymentServiceSpec
     lastStateAction.state shouldBe ProcessActionState.ExecutionFinished
     // we want to hide finished deploys
     processDetails.lastDeployedAction shouldBe empty
-    activityRepository.findActivity(processId.id).futureValue.comments should have length 1
+    dbioRunner.run(activityRepository.findActivity(processId.id)).futureValue.comments should have length 1
 
     deploymentManager.withEmptyProcessState(processName) {
       val stateAfterJobRetention =
@@ -1025,7 +1022,7 @@ class DeploymentServiceSpec
   }
 
   private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
-    val comment = Some(DeploymentComment.unsafe(UserComment(actionName.toString.capitalize)).toComment(actionName))
+    val comment = Some(UserComment(actionName.toString.capitalize))
     actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
   }
 

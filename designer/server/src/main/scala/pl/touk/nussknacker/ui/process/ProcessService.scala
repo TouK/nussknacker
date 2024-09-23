@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessState, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -160,7 +160,7 @@ class DBProcessService(
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
-    processActionRepository: ProcessActionRepository,
+    scenarioActionRepository: ScenarioActionRepository,
     processRepository: ProcessRepository[DB]
 )(implicit ec: ExecutionContext)
     extends ProcessService
@@ -341,7 +341,7 @@ class DBProcessService(
           .runInTransaction(
             DBIOAction.seq(
               processRepository.archive(processId = process.idWithNameUnsafe, isArchived = false),
-              processActionRepository
+              scenarioActionRepository
                 .markProcessAsUnArchived(processId = process.processIdUnsafe, process.processVersionId)
             )
           )
@@ -480,7 +480,7 @@ class DBProcessService(
       .runInTransaction(
         DBIOAction.seq(
           processRepository.archive(processId = process.idWithNameUnsafe, isArchived = true),
-          processActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
+          scenarioActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
         )
       )
 
@@ -493,7 +493,7 @@ class DBProcessService(
   }
 
   override def getProcessActions(id: ProcessId): Future[List[ProcessAction]] = {
-    dbioRunner.runInTransaction(processActionRepository.getFinishedProcessActions(id, None))
+    dbioRunner.runInTransaction(scenarioActionRepository.getFinishedProcessActions(id, None))
   }
 
   private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =

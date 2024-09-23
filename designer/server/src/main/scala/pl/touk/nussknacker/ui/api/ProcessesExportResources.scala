@@ -8,15 +8,16 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps.ScenarioWithDetailsOps
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{
+  DBIOActionRunner,
   FetchingProcessRepository,
-  ProcessActivityRepository,
   ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -28,8 +29,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessesExportResources(
     processRepository: FetchingProcessRepository[Future],
     protected val processService: ProcessService,
-    processActivityRepository: ProcessActivityRepository,
-    processResolvers: ProcessingTypeDataProvider[UIProcessResolver, _]
+    scenarioActivityRepository: ScenarioActivityRepository,
+    processResolvers: ProcessingTypeDataProvider[UIProcessResolver, _],
+    dbioActionRunner: DBIOActionRunner,
 )(implicit val ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -74,7 +76,9 @@ class ProcessesExportResources(
         entity(as[String]) { svg =>
           complete {
             processRepository.fetchProcessDetailsForId[ScenarioGraph](processId.id, versionId).flatMap { process =>
-              processActivityRepository.findActivity(processId.id).map(exportProcessToPdf(svg, process, _))
+              dbioActionRunner.run {
+                scenarioActivityRepository.findActivity(processId.id).map(exportProcessToPdf(svg, process, _))
+              }
             }
           }
         }

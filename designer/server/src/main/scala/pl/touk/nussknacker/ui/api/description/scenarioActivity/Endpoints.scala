@@ -63,8 +63,9 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .out(statusCode(Ok))
       .errorOut(
         oneOf[ScenarioActivityError](
-          oneOfVariantFromMatchType(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
-          oneOfVariantFromMatchType(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError))
+          oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariant(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError)),
+          oneOfVariant(InternalServerError, plainBody[NoActivity].example(Examples.activityNotFoundError)),
         )
       )
       .withSecurity(auth)
@@ -121,8 +122,9 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .out(statusCode(Ok))
       .errorOut(
         oneOf[ScenarioActivityError](
-          oneOfVariantFromMatchType(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
-          oneOfVariantFromMatchType(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError))
+          oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariant(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError)),
+          oneOfVariant(InternalServerError, plainBody[NoActivity].example(Examples.activityNotFoundError)),
         )
       )
       .withSecurity(auth)
@@ -139,8 +141,9 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .out(statusCode(Ok))
       .errorOut(
         oneOf[ScenarioActivityError](
-          oneOfVariantFromMatchType(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
-          oneOfVariantFromMatchType(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError))
+          oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariant(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError)),
+          oneOfVariant(InternalServerError, plainBody[NoActivity].example(Examples.activityNotFoundError)),
         )
       )
       .withSecurity(auth)
