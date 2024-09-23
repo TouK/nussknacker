@@ -1406,12 +1406,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should throw exception if cast fails") {
     val caught = intercept[SpelExpressionEvaluationException] {
-      parse[Any]("#obj.castTo('java.lang.String')", ctx).validExpression.evaluateSync[Any](ctx)
+      parse[Any]("#arrayOfUnknown.castTo('java.lang.String')", ctx).validExpression.evaluateSync[Any](ctx)
     }
     caught.getCause shouldBe a[ClassCastException]
-    caught.getMessage should include(
-      "Cannot cast: class pl.touk.nussknacker.engine.spel.SpelExpressionSpec$Test to: java.lang.String"
-    )
+    caught.getMessage should include("Cannot cast: class [Ljava.lang.Object; to: java.lang.String")
   }
 
   test(
