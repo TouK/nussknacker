@@ -22,14 +22,14 @@ object DBFetchingProcessRepository {
 
   def create(
       dbRef: DbRef,
-      actionRepository: ProcessActionRepository,
+      actionRepository: ScenarioActionRepository,
       scenarioLabelsRepository: ScenarioLabelsRepository
   )(implicit ec: ExecutionContext) =
     new DBFetchingProcessRepository[DB](dbRef, actionRepository, scenarioLabelsRepository) with DbioRepository
 
   def createFutureRepository(
       dbRef: DbRef,
-      actionRepository: ProcessActionRepository,
+      actionRepository: ScenarioActionRepository,
       scenarioLabelsRepository: ScenarioLabelsRepository
   )(
       implicit ec: ExecutionContext
@@ -43,7 +43,7 @@ object DBFetchingProcessRepository {
 //       to the resource on the services side
 abstract class DBFetchingProcessRepository[F[_]: Monad](
     protected val dbRef: DbRef,
-    actionRepository: ProcessActionRepository,
+    actionRepository: ScenarioActionRepository,
     scenarioLabelsRepository: ScenarioLabelsRepository,
 )(protected implicit val ec: ExecutionContext)
     extends FetchingProcessRepository[F]

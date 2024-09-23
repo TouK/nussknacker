@@ -711,12 +711,10 @@ object Dtos {
 
   object ScenarioActivityError {
 
-    // todo NU-1772 - remove this error when API is implemented
-    final case object NotImplemented extends ScenarioActivityError
-
     final case class NoScenario(scenarioName: ProcessName) extends ScenarioActivityError
     final case object NoPermission                         extends ScenarioActivityError with CustomAuthorizationError
-    final case class NoComment(commentId: String)          extends ScenarioActivityError
+    final case class NoActivity(scenarioActivityId: UUID)  extends ScenarioActivityError
+    final case class NoComment(commentId: Long)            extends ScenarioActivityError
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
@@ -724,6 +722,11 @@ object Dtos {
     implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoComment](e =>
         s"Unable to delete comment with id: ${e.commentId}"
+      )
+
+    implicit val noActivityCodec: Codec[String, NoActivity, CodecFormat.TextPlain] =
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoActivity](e =>
+        s"Unable to delete comment for activity with id: ${e.scenarioActivityId.toString}"
       )
 
   }

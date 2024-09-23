@@ -2,17 +2,25 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.deployment.{
+  ScenarioActivity,
+  ScenarioActivityId,
+  ScenarioAttachment,
+  ScenarioComment
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
+  NoActivity,
   NoComment,
   NoPermission,
   NoScenario
 }
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Endpoints
-import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
@@ -25,11 +33,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
     authManager: AuthManager,
-    scenarioActivityRepository: ProcessActivityRepository,
+    scenarioActivityRepository: ScenarioActivityRepository,
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
     attachmentService: ScenarioAttachmentService,
     streamEndpointProvider: TapirStreamEndpointProvider,
+    dbioActionRunner: DBIOActionRunner,
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with LazyLogging {
@@ -45,27 +54,8 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId      <- getScenarioIdByName(scenarioName)
           _               <- isAuthorized(scenarioId, Permission.Read)
-          processActivity <- EitherT.right(scenarioActivityRepository.findActivity(scenarioId))
-        } yield Legacy.ProcessActivity(
-          comments = processActivity.comments.map { comment =>
-            Legacy.Comment(
-              id = comment.id,
-              processVersionId = comment.processVersionId.value,
-              content = comment.content,
-              user = comment.user,
-              createDate = comment.createDate
-            )
-          },
-          attachments = processActivity.attachments.map { attachment =>
-            Legacy.Attachment(
-              id = attachment.id,
-              processVersionId = attachment.processVersionId.value,
-              fileName = attachment.fileName,
-              user = attachment.user,
-              createDate = attachment.createDate
-            )
-          }
-        )
+          processActivity <- fetchProcessActivity(scenarioId)
+        } yield processActivity
       }
   }
 
@@ -88,7 +78,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(request.scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- deleteComment(request)
+          _          <- deleteComment(request, scenarioId)
         } yield ()
       }
   }
@@ -125,7 +115,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Read)
-          activities <- notImplemented[List[ScenarioActivity]]
+          activities <- fetchActivities(scenarioId)
         } yield ScenarioActivities(activities)
       }
   }
@@ -137,7 +127,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId  <- getScenarioIdByName(processName)
           _           <- isAuthorized(scenarioId, Permission.Read)
-          attachments <- notImplemented[ScenarioAttachments]
+          attachments <- fetchAttachments(scenarioId)
         } yield attachments
       }
   }
@@ -161,7 +151,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(request.scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- notImplemented[Unit]
+          _          <- addNewComment(request, scenarioId)
         } yield ()
       }
   }
@@ -173,7 +163,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(request.scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- notImplemented[Unit]
+          _          <- editComment(request, scenarioId)
         } yield ()
       }
   }
@@ -185,13 +175,10 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(request.scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- notImplemented[Unit]
+          _          <- deleteComment(request, scenarioId)
         } yield ()
       }
   }
-
-  private def notImplemented[T]: EitherT[Future, ScenarioActivityError, T] =
-    EitherT.leftT[Future, T](ScenarioActivityError.NotImplemented: ScenarioActivityError)
 
   private def getScenarioIdByName(scenarioName: ProcessName) = {
     EitherT.fromOptionF(
@@ -212,17 +199,316 @@ class ScenarioActivityApiHttpService(
         }
     )
 
+  private def fetchProcessActivity(
+      scenarioId: ProcessId
+  ): EitherT[Future, ScenarioActivityError, Legacy.ProcessActivity] =
+    EitherT
+      .right(
+        dbioActionRunner.run(
+          scenarioActivityRepository.findActivity(scenarioId)
+        )
+      )
+
+  private def fetchActivities(
+      scenarioId: ProcessId
+  ): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] =
+    EitherT
+      .right(
+        dbioActionRunner.run(
+          scenarioActivityRepository.findActivities(scenarioId)
+        )
+      )
+      .map(_.map(toDto).toList)
+
+  private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
+    scenarioComment match {
+      case ScenarioComment.Available(comment, lastModifiedByUserName, lastModifiedAt) =>
+        Dtos.ScenarioActivityComment(
+          status = Dtos.ScenarioActivityCommentStatus.Available(comment),
+          lastModifiedBy = lastModifiedByUserName.value,
+          lastModifiedAt = lastModifiedAt,
+        )
+      case ScenarioComment.Deleted(deletedByUserName, deletedAt) =>
+        Dtos.ScenarioActivityComment(
+          status = Dtos.ScenarioActivityCommentStatus.Deleted,
+          lastModifiedBy = deletedByUserName.value,
+          lastModifiedAt = deletedAt,
+        )
+    }
+  }
+
+  private def toDto(attachment: ScenarioAttachment): Dtos.ScenarioActivityAttachment = {
+    attachment match {
+      case ScenarioAttachment.Available(attachmentId, attachmentFilename, lastModifiedByUserName, lastModifiedAt) =>
+        Dtos.ScenarioActivityAttachment(
+          status = Dtos.ScenarioActivityAttachmentStatus.Available(attachmentId.value),
+          filename = attachmentFilename.value,
+          lastModifiedBy = lastModifiedByUserName.value,
+          lastModifiedAt = lastModifiedAt,
+        )
+      case ScenarioAttachment.Deleted(attachmentFilename, deletedByUserName, deletedAt) =>
+        Dtos.ScenarioActivityAttachment(
+          status = Dtos.ScenarioActivityAttachmentStatus.Deleted,
+          filename = attachmentFilename.value,
+          lastModifiedBy = deletedByUserName.value,
+          lastModifiedAt = deletedAt,
+        )
+    }
+  }
+
+  private def toDto(scenarioActivity: ScenarioActivity): Dtos.ScenarioActivity = {
+    scenarioActivity match {
+      case ScenarioActivity.ScenarioCreated(_, scenarioActivityId, user, date, scenarioVersion) =>
+        Dtos.ScenarioActivity.ScenarioCreated(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value)
+        )
+      case ScenarioActivity.ScenarioArchived(_, scenarioActivityId, user, date, scenarioVersion) =>
+        Dtos.ScenarioActivity.ScenarioArchived(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value)
+        )
+      case ScenarioActivity.ScenarioUnarchived(_, scenarioActivityId, user, date, scenarioVersion) =>
+        Dtos.ScenarioActivity.ScenarioUnarchived(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value)
+        )
+      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
+        Dtos.ScenarioActivity.ScenarioDeployed(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          comment = toDto(comment),
+        )
+      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
+        Dtos.ScenarioActivity.ScenarioPaused(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          comment = toDto(comment),
+        )
+      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
+        Dtos.ScenarioActivity.ScenarioCanceled(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          comment = toDto(comment),
+        )
+      case ScenarioActivity.ScenarioModified(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
+        Dtos.ScenarioActivity.ScenarioModified(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          comment = toDto(comment),
+        )
+      case ScenarioActivity.ScenarioNameChanged(_, id, user, date, version, oldName, newName) =>
+        Dtos.ScenarioActivity.ScenarioNameChanged(
+          id = id.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = version.map(_.value),
+          oldName = oldName,
+          newName = newName,
+        )
+      case ScenarioActivity.CommentAdded(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
+        Dtos.ScenarioActivity.CommentAdded(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          comment = toDto(comment),
+        )
+      case ScenarioActivity.AttachmentAdded(_, scenarioActivityId, user, date, scenarioVersion, attachment) =>
+        Dtos.ScenarioActivity.AttachmentAdded(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          attachment = toDto(attachment),
+        )
+      case ScenarioActivity.ChangedProcessingMode(_, scenarioActivityId, user, date, scenarioVersion, from, to) =>
+        Dtos.ScenarioActivity.ChangedProcessingMode(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          from = from.entryName,
+          to = to.entryName
+        )
+      case ScenarioActivity.IncomingMigration(
+            _,
+            scenarioActivityId,
+            user,
+            date,
+            scenarioVersion,
+            sourceEnvironment,
+            sourceScenarioVersion
+          ) =>
+        Dtos.ScenarioActivity.IncomingMigration(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          sourceEnvironment = sourceEnvironment.name,
+          sourceScenarioVersion = sourceScenarioVersion.value.toString,
+        )
+      case ScenarioActivity.OutgoingMigration(
+            _,
+            scenarioActivityId,
+            user,
+            date,
+            scenarioVersion,
+            comment,
+            destinationEnvironment
+          ) =>
+        Dtos.ScenarioActivity.OutgoingMigration(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          comment = toDto(comment),
+          destinationEnvironment = destinationEnvironment.name,
+        )
+      case ScenarioActivity.PerformedSingleExecution(
+            _,
+            scenarioActivityId,
+            user,
+            date,
+            scenarioVersion,
+            comment,
+            dateFinished,
+            errorMessage
+          ) =>
+        Dtos.ScenarioActivity.PerformedSingleExecution(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          comment = toDto(comment),
+          dateFinished = dateFinished,
+          errorMessage = errorMessage,
+        )
+      case ScenarioActivity.PerformedScheduledExecution(
+            _,
+            scenarioActivityId,
+            user,
+            date,
+            scenarioVersion,
+            dateFinished,
+            errorMessage
+          ) =>
+        Dtos.ScenarioActivity.PerformedScheduledExecution(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          dateFinished = dateFinished,
+          errorMessage = errorMessage,
+        )
+      case ScenarioActivity.AutomaticUpdate(
+            _,
+            scenarioActivityId,
+            user,
+            date,
+            scenarioVersion,
+            dateFinished,
+            changes,
+            errorMessage
+          ) =>
+        Dtos.ScenarioActivity.AutomaticUpdate(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          dateFinished = dateFinished,
+          changes = changes,
+          errorMessage = errorMessage,
+        )
+      case ScenarioActivity.CustomAction(_, scenarioActivityId, user, date, scenarioVersion, actionName, comment) =>
+        Dtos.ScenarioActivity.CustomAction(
+          id = scenarioActivityId.value,
+          user = user.name.value,
+          date = date,
+          scenarioVersion = scenarioVersion.map(_.value),
+          actionName = actionName,
+          comment = toDto(comment),
+        )
+    }
+  }
+
   private def addNewComment(request: AddCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT.right(
-      scenarioActivityRepository.addComment(scenarioId, request.versionId, UserComment(request.commentContent))
+      dbioActionRunner.run(
+        scenarioActivityRepository.addComment(scenarioId, request.versionId, request.commentContent)
+      )
     )
 
-  private def deleteComment(request: DeprecatedDeleteCommentRequest): EitherT[Future, ScenarioActivityError, Unit] =
+  private def editComment(request: DeprecatedEditCommentRequest, scenarioId: ProcessId)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, ScenarioActivityError, Unit] =
     EitherT(
-      scenarioActivityRepository.deleteComment(request.commentId)
-    ).leftMap(_ => NoComment(request.commentId.toString))
+      dbioActionRunner.run(
+        scenarioActivityRepository.editComment(scenarioId, request.commentId, request.commentContent)
+      )
+    ).leftMap(_ => NoComment(request.commentId))
+
+  private def editComment(request: EditCommentRequest, scenarioId: ProcessId)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, ScenarioActivityError, Unit] =
+    EitherT(
+      dbioActionRunner.run(
+        scenarioActivityRepository.editComment(
+          scenarioId,
+          ScenarioActivityId(request.scenarioActivityId),
+          request.commentContent
+        )
+      )
+    ).leftMap(_ => NoActivity(request.scenarioActivityId))
+
+  private def deleteComment(request: DeprecatedDeleteCommentRequest, scenarioId: ProcessId)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, ScenarioActivityError, Unit] =
+    EitherT(
+      dbioActionRunner.run(scenarioActivityRepository.deleteComment(scenarioId, request.commentId))
+    ).leftMap(_ => NoComment(request.commentId))
+
+  private def deleteComment(request: DeleteCommentRequest, scenarioId: ProcessId)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, ScenarioActivityError, Unit] =
+    EitherT(
+      dbioActionRunner.run(
+        scenarioActivityRepository.deleteComment(scenarioId, ScenarioActivityId(request.scenarioActivityId))
+      )
+    ).leftMap(_ => NoActivity(request.scenarioActivityId))
+
+  private def fetchAttachments(scenarioId: ProcessId): EitherT[Future, ScenarioActivityError, ScenarioAttachments] = {
+    EitherT
+      .right(
+        dbioActionRunner.run(scenarioActivityRepository.findAttachments(scenarioId))
+      )
+      .map(_.map { attachmentEntity =>
+        Attachment(
+          id = attachmentEntity.id,
+          scenarioVersion = attachmentEntity.processVersionId.value,
+          fileName = attachmentEntity.fileName,
+          user = attachmentEntity.user,
+          createDate = attachmentEntity.createDateTime,
+        )
+      }.toList)
+      .map(ScenarioAttachments.apply)
+  }
 
   private def saveAttachment(request: AddAttachmentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
