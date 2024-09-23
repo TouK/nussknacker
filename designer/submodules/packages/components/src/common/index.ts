@@ -3,7 +3,7 @@ export { useDefaultTheme } from "./defaultTheme";
 export { HistoryProvider, useHistory, useBackHref } from "./historyContext";
 export { NuIcon } from "./nuIcon";
 export { TextFieldWithClear, InputWithClear } from "./forms";
-export { CategoryChip } from "./categoryChip";
+export { CategoryButton, CategoryChip } from "./categoryChip";
 export { useFilterContext, FiltersContextProvider, createFilterRules } from "./filters";
 export { ExternalLink, NavigationProvider } from "./parentNavigationProvider";
 export { nodeHref, fragmentNodeHref, scenarioHref, metricsHref } from "./scenarioHref";

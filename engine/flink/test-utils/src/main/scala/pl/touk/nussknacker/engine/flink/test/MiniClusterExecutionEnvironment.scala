@@ -65,7 +65,9 @@ class MiniClusterExecutionEnvironment(
       jobName: String
   )(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
     val res = execute(jobName)
-    waitForJobStateWithNotFailingCheck(res.getJobID, jobName, ExecutionState.FINISHED)(patience)
+    waitForJobStatusWithAdditionalCheck(res.getJobID, jobName, assertJobNotFailing(res.getJobID), JobStatus.FINISHED)(
+      patience
+    )
     res
   }
 
@@ -85,6 +87,24 @@ class MiniClusterExecutionEnvironment(
       patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
   ): Unit = {
     waitForJobStateWithAdditionalCheck(jobID, name, {}, expectedState: _*)(patience)
+  }
+
+  def waitForJobStatusWithAdditionalCheck(
+      jobID: JobID,
+      name: String,
+      additionalChecks: => Unit,
+      expectedJobStatus: JobStatus
+  )(
+      patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
+  ): Unit = {
+    Eventually.eventually {
+      val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
+      additionalChecks
+      assert(
+        executionGraph.getState.equals(expectedJobStatus),
+        s"Job $name does not have expected status: $expectedJobStatus"
+      )
+    }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
   }
 
   def waitForJobStateWithAdditionalCheck(

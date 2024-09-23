@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.typeinformation
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -28,6 +29,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.Custom
 
 import scala.jdk.CollectionConverters._
 
+@silent("deprecated")
 class TypingResultAwareTypeInformationDetectionSpec
     extends AnyFunSuite
     with Matchers
@@ -240,17 +242,20 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   private def assertNested(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_] => Assertion)*): Unit = {
-    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) { case TypedScalaMapSerializer(array) =>
-      array.zipAll(nested.toList, null, null).foreach { case ((name, serializer), (expectedName, expectedSerializer)) =>
-        name shouldBe expectedName
-        expectedSerializer(serializer)
-      }
+    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) {
+      case TypedScalaMapSerializer(array, _) =>
+        array.zipAll(nested.toList, null, null).foreach {
+          case ((name, serializer), (expectedName, expectedSerializer)) =>
+            name shouldBe expectedName
+            expectedSerializer(serializer)
+        }
     }
   }
 
   private def assertMapSerializers(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_])*) = {
-    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) { case TypedScalaMapSerializer(array) =>
-      array.toList shouldBe nested.toList
+    inside(serializer.asInstanceOf[TypeSerializer[Map[String, _ <: AnyRef]]]) {
+      case TypedScalaMapSerializer(array, _) =>
+        array.toList shouldBe nested.toList
     }
   }
 

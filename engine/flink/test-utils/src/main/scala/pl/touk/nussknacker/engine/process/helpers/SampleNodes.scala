@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import com.github.ghik.silencer.silent
 import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -13,7 +14,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.apache.flink.streaming.runtime.streamrecord.{RecordAttributes, StreamRecord}
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
@@ -406,6 +407,8 @@ object SampleNodes {
             val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
             output.collect(outputResult)
           }
+          override def processRecordAttributes(recordAttributes: RecordAttributes): Unit =
+            super.processRecordAttributes(recordAttributes)
         }
         str.transform("collectTimestammp", ctx.valueWithContextInfo.forUnknown, streamOperator)
       }
@@ -482,6 +485,7 @@ object SampleNodes {
 
   object TransformerWithTime extends CustomStreamTransformer with Serializable {
 
+    @silent("deprecated")
     @MethodToInvoke
     def execute(@OutputVariableName outputVarName: String, @ParamName("seconds") seconds: Int)(
         implicit nodeId: NodeId

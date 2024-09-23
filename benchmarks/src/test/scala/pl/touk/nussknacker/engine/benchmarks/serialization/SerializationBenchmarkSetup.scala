@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.benchmarks.serialization
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import com.github.ghik.silencer.silent
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -21,6 +22,7 @@ class SerializationBenchmarkSetup[T](
 
   private val data = new ByteArrayOutputStream(10 * 1024)
 
+  @silent("deprecated")
   private val serializer = typeInfo.createSerializer(config)
 
   {

@@ -17,6 +17,7 @@
  */
 package pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.annotation.{Public, PublicEvolving}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.operators.Keys.ExpressionKeys
@@ -244,6 +245,7 @@ abstract class CaseClassTypeInfo[T <: Product](
       logicalKeyFields += fieldId
     }
 
+    @silent("deprecated")
     override def createTypeComparator(config: ExecutionConfig): TypeComparator[T] = {
       val maxIndex = logicalKeyFields.max
 

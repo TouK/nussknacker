@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.PartReference
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 import pl.touk.nussknacker.engine.process.typeinformation.internal.InterpretationResultMapTypeInfo
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
