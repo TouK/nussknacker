@@ -323,6 +323,7 @@ class ExpressionSuggesterSpec
   test("should suggest global meta variable") {
     spelSuggestionsFor("#meta.") shouldBe List(
       ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil),
+      suggestion("processLabels", Typed.genericTypeClass[java.util.List[String]](List(Typed[String]))),
       suggestion("processName", Typed[String]),
       suggestion("properties", Typed.record(Map("scenarioProperty" -> Typed[String]))),
     )

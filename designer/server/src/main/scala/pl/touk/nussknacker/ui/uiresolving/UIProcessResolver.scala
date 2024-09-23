@@ -68,14 +68,18 @@ class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDic
       processVersion: ProcessVersion,
       isFragment: Boolean,
   )(implicit loggedUser: LoggedUser): ScenarioGraphWithValidationResult = {
-    val validationResult = validateBeforeUiReverseResolving(canonical, isFragment)
+    val validationResult = validateBeforeUiReverseResolving(canonical, processVersion, isFragment)
     reverseResolveExpressions(canonical, processVersion, isFragment, validationResult)
   }
 
-  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, isFragment: Boolean)(
+  def validateBeforeUiReverseResolving(
+      canonical: CanonicalProcess,
+      processVersion: ProcessVersion,
+      isFragment: Boolean
+  )(
       implicit loggedUser: LoggedUser
   ): ValidationResult =
-    uiValidator.validateCanonicalProcess(canonical, isFragment)
+    uiValidator.validateCanonicalProcess(canonical, processVersion, isFragment)
 
   private def reverseResolveExpressions(
       canonical: CanonicalProcess,

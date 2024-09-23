@@ -127,8 +127,6 @@ class FlinkProcessRegistrar(
       resultCollector: ResultCollector,
       deploymentData: DeploymentData
   ): Unit = {
-
-    val metaData         = compilerData.metaData
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
 
     def nodeContext(
@@ -303,7 +301,7 @@ class FlinkProcessRegistrar(
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
       }
 
-      withSinkAdded.name(operatorName(metaData, part.node, "sink"))
+      withSinkAdded.name(operatorName(compilerData.jobData, part.node, "sink"))
       Map()
     }
 
@@ -344,8 +342,8 @@ class FlinkProcessRegistrar(
         case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
         case _                       => Map.empty
       })
+      val metaData                      = compilerData.jobData.metaData
       val asyncExecutionContextPreparer = compilerData.asyncExecutionContextPreparer
-      val metaData                      = compilerData.metaData
       val streamMetaData =
         MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](metaData, StreamMetaData())
 
@@ -442,11 +440,11 @@ object FlinkProcessRegistrar {
   }
 
   private[registrar] def operatorName(
-      metaData: MetaData,
+      jobData: JobData,
       splittedNode: splittednode.SplittedNode[NodeData],
       operation: String
   ) = {
-    s"${metaData.name}-${splittedNode.id}-$operation"
+    s"${jobData.metaData.name}-${splittedNode.id}-$operation"
   }
 
   private[registrar] def interpretationOperatorName(

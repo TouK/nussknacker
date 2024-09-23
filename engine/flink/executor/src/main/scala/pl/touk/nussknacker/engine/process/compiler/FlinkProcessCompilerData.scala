@@ -57,8 +57,6 @@ class FlinkProcessCompilerData(
 
   def jobData: JobData = compilerData.jobData
 
-  def metaData: MetaData = jobData.metaData
-
   def interpreter: Interpreter = compilerData.interpreter
 
   def lazyParameterDeps: EvaluableLazyParameterCreatorDeps = new EvaluableLazyParameterCreatorDeps(

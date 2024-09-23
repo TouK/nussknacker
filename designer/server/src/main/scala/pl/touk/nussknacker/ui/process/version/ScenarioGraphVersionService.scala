@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.version
 
 import cats.data.EitherT
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.ScenarioMetadata
@@ -30,10 +31,18 @@ class ScenarioGraphVersionService(
           scenarioGraphVersionRepository.getLatestScenarioGraphVersion(scenarioMetadata.id)
         )
       )
+      processVersion = ProcessVersion(
+        versionId = scenarioGraphVersion.id,
+        processName = scenarioMetadata.name,
+        processId = scenarioMetadata.id,
+        labels = scenarioMetadata.labels.map(_.value),
+        user = scenarioGraphVersion.user,
+        modelVersion = scenarioGraphVersion.modelVersion,
+      )
       _ <- EitherT.fromEither[Future] {
         val validationResult = scenarioValidator
           .forProcessingTypeUnsafe(scenarioMetadata.processingType)(user)
-          .validateCanonicalProcess(scenarioGraphVersion.jsonUnsafe, scenarioMetadata.isFragment)(user)
+          .validateCanonicalProcess(scenarioGraphVersion.jsonUnsafe, processVersion, scenarioMetadata.isFragment)(user)
         // TODO: what about warnings?
         Either.cond(!validationResult.hasErrors, (), ScenarioGraphValidationError(validationResult.errors))
       }

@@ -46,7 +46,7 @@ private[registrar] class AsyncInterpretationFunction(
       }
     )
 
-    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.metaData.name)
+    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.jobData.metaData.name)
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {

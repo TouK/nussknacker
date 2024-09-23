@@ -129,8 +129,9 @@ class NodesApiHttpService(
               .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
               .validate(
                 scenario,
-                scenarioWithDetails.processVersionUnsafe,
+                request.name,
                 scenarioWithDetails.isFragment,
+                scenarioWithDetails.scenarioLabels,
               )
             validation = NodeValidationResultDto(
               parameters = None,
