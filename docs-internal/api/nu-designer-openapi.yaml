@@ -3821,6 +3821,7 @@ paths:
                       additionalFields:
                       - name: actionName
                         value: special_execution
+                      overrideIcon: /assets/states/deploy-running-animated.svg
                       type: CUSTOM_ACTION
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
@@ -5777,6 +5778,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdditionalField'
+        overrideIcon:
+          type:
+          - string
+          - 'null'
         overrideDisplayableName:
           type:
           - string

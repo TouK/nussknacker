@@ -224,7 +224,8 @@ object Examples {
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
-          actionName = "special_execution"
+          actionName = "special_execution",
+          customIcon = Some("/assets/states/deploy-running-animated.svg")
         )
       ),
     )

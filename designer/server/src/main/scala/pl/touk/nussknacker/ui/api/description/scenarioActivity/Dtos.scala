@@ -303,6 +303,7 @@ object Dtos {
       comment: Option[ScenarioActivityComment],
       attachment: Option[ScenarioActivityAttachment],
       additionalFields: List[AdditionalField],
+      overrideIcon: Option[String] = None,
       overrideDisplayableName: Option[String] = None,
       overrideSupportedActions: Option[List[String]] = None,
       `type`: ScenarioActivityType,
@@ -628,6 +629,7 @@ object Dtos {
         scenarioVersion: Option[Long],
         comment: ScenarioActivityComment,
         actionName: String,
+        customIcon: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.CustomAction,
@@ -638,7 +640,8 @@ object Dtos {
       attachment = None,
       additionalFields = List(
         AdditionalField("actionName", actionName),
-      )
+      ),
+      overrideIcon = customIcon,
     )
 
   }
