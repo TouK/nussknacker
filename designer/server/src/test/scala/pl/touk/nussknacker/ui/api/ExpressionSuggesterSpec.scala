@@ -208,6 +208,7 @@ class ExpressionSuggesterSpec
       "#other",
       "#union",
       "#unionOfLists",
+      "#unknown",
       "#util"
     )
   }
@@ -225,6 +226,7 @@ class ExpressionSuggesterSpec
       "#other",
       "#union",
       "#unionOfLists",
+      "#unknown",
       "#util"
     )
   }

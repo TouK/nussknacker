@@ -12,6 +12,34 @@
       "refClazzName": "[Ljava.lang.Object;"
     },
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -2428,6 +2456,34 @@
   {
     "clazzName": {"type": "Unknown"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -4545,6 +4601,34 @@
   {
     "clazzName": {"refClazzName": "java.time.DayOfWeek"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -4786,6 +4870,34 @@
             ],
             "result": {"refClazzName": "java.time.temporal.Temporal"}
           }
+        }
+      ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "compareTo": [
@@ -5361,6 +5473,34 @@
           }
         }
       ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -5678,6 +5818,34 @@
             ],
             "result": {"refClazzName": "java.time.OffsetDateTime"}
           }
+        }
+      ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "compareTo": [
@@ -6213,6 +6381,34 @@
             ],
             "result": {"refClazzName": "java.time.ZonedDateTime"}
           }
+        }
+      ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "compareTo": [
@@ -7031,6 +7227,34 @@
           }
         }
       ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -7478,6 +7702,34 @@
   {
     "clazzName": {"refClazzName": "java.time.Month"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -7815,6 +8067,34 @@
             ],
             "result": {"refClazzName": "java.time.ZonedDateTime"}
           }
+        }
+      ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "compareTo": [
@@ -8582,6 +8862,34 @@
           }
         }
       ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -9031,6 +9339,34 @@
           }
         }
       ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "days": [
         {
           "name": "days",
@@ -9374,6 +9710,34 @@
   {
     "clazzName": {"refClazzName": "java.time.ZoneId"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "getDisplayName": [
         {
           "name": "getDisplayName",
@@ -9564,6 +9928,34 @@
   {
     "clazzName": {"refClazzName": "java.time.ZoneOffset"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -9855,6 +10247,34 @@
   {
     "clazzName": {"refClazzName": "java.time.ZonedDateTime"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -10697,6 +11117,34 @@
   {
     "clazzName": {"refClazzName": "java.time.format.DateTimeFormatter"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "decimalStyle": [
         {
           "name": "decimalStyle",
@@ -11092,6 +11540,34 @@
   {
     "clazzName": {"refClazzName": "java.time.format.DecimalStyle"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "decimalSeparator": [
         {
           "name": "decimalSeparator",
@@ -11291,6 +11767,34 @@
   {
     "clazzName": {"refClazzName": "java.time.format.ResolverStyle"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -11415,6 +11919,34 @@
   {
     "clazzName": {"refClazzName": "java.time.temporal.Temporal"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -11430,6 +11962,34 @@
   {
     "clazzName": {"refClazzName": "java.time.temporal.TemporalAccessor"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -11455,6 +12015,34 @@
       "refClazzName": "java.util.Collection"
     },
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "contains": [
         {
           "name": "contains",
@@ -11567,6 +12155,34 @@
       "refClazzName": "java.util.List"
     },
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "contains": [
         {
           "name": "contains",
@@ -11710,6 +12326,34 @@
       "refClazzName": "java.util.Map"
     },
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "containsKey": [
         {
           "name": "containsKey",
@@ -11853,6 +12497,34 @@
       "refClazzName": "java.util.Set"
     },
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "contains": [
         {
           "name": "contains",
@@ -12047,6 +12719,34 @@
   {
     "clazzName": {"refClazzName": "org.apache.avro.generic.GenericRecord"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "get": [
         {
           "name": "get",
@@ -12097,6 +12797,34 @@
   {
     "clazzName": {"refClazzName": "org.apache.kafka.common.record.TimestampType"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -12259,6 +12987,34 @@
           }
         }
       ],
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "countWhen": [
         {
           "name": "countWhen",
@@ -12376,6 +13132,34 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -12391,6 +13175,34 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -12506,6 +13318,34 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -12630,6 +13470,34 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -12745,6 +13613,34 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.Point"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "lat": [
         {
           "name": "lat",
@@ -15074,6 +15970,34 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.variables.MetaVariables"},
     "methods": {
+      "canCastTo": [
+        {
+          "description": "Checks if a type can be casted to a given class",
+          "name": "canCastTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "castTo": [
+        {
+          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "name": "castTo",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "clazzType", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "processName": [
         {
           "name": "processName",

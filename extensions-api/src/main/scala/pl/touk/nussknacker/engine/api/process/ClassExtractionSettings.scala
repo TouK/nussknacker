@@ -237,6 +237,10 @@ object ClassExtractionSettings {
         )
       ),
       Set("canCastTo", "castTo")
+    ),
+    MemberNamePredicate(
+      ClassPredicate(_.getName.contains("$")),
+      Set("canCastTo", "castTo")
     )
   )
 
