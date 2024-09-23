@@ -7,9 +7,26 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import moment from "moment";
 import { v4 as uuid4 } from "uuid";
 import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
-import { Box, CircularProgress } from "@mui/material";
+import { alpha, Box, CircularProgress, styled } from "@mui/material";
 import { UseActivitiesSearch } from "./useActivitiesSearch";
 import { ActivitiesSearch } from "./ActivitiesSearch";
+import { blendLighten } from "../../../containers/theme/helpers";
+
+const StyledVariableSizeList = styled(VariableSizeList)(({ theme }) => ({
+    "::-webkit-scrollbar": {
+        width: "5px",
+        height: "0",
+    },
+    "::-webkit-scrollbar-track": {
+        background: blendLighten(theme.palette.background.paper, 0.5),
+    },
+    "::-webkit-scrollbar-thumb": {
+        background: alpha(theme.palette.background.paper, 0.85),
+    },
+    "::-webkit-scrollbar-thumb:hover": {
+        background: alpha(theme.palette.background.paper, 0.85),
+    },
+}));
 
 export type Activity = ActivitiesResponse["activities"][number] & {
     activities: ActivityMetadata;
@@ -260,7 +277,26 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                 searchQuery={searchQuery}
                 handleClearResults={handleClearResults}
             />
-            <Box width={"100%"} height={"500px"} mt={1}>
+            <Box
+                width={"100%"}
+                height={"500px"}
+                mt={1}
+                sx={() => ({
+                    "::-webkit-scrollbar": {
+                        width: "5px",
+                        height: "0",
+                    },
+                    "::-webkit-scrollbar-track": {
+                        background: "red",
+                    },
+                    "::-webkit-scrollbar-thumb": {
+                        background: "red",
+                    },
+                    "::-webkit-scrollbar-thumb:hover": {
+                        background: "red",
+                    },
+                })}
+            >
                 {isLoading ? (
                     <Box display={"flex"} justifyContent={"center"} height={"100%"} alignItems={"center"}>
                         <CircularProgress />
@@ -268,7 +304,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                 ) : (
                     <AutoSizer>
                         {({ width, height }) => (
-                            <VariableSizeList
+                            <StyledVariableSizeList
                                 ref={listRef}
                                 itemCount={dataToDisplay.length}
                                 itemSize={getRowHeight}
@@ -290,7 +326,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                         searchQuery={searchQuery}
                                     />
                                 )}
-                            </VariableSizeList>
+                            </StyledVariableSizeList>
                         )}
                     </AutoSizer>
                 )}
