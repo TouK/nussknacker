@@ -25,7 +25,7 @@ sealed trait NodeDeploymentData
 
 final case class SqlFilteringExpression(sqlExpression: String) extends NodeDeploymentData
 
-final case class KafkaSourceOffset(offset: Long) extends NodeDeploymentData
+final case class KafkaSourceOffset(offsetResetStrategy: Long) extends NodeDeploymentData
 
 object NodeDeploymentData {
 
