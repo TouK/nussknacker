@@ -5,7 +5,7 @@ import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.Documentation
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue}
 
 import scala.util.Try
 
@@ -13,53 +13,47 @@ import scala.util.Try
 sealed trait Cast {
 
   @Documentation(description = "Checks if a type can be casted to a given class")
-  def canCastTo(clazzType: String): Boolean
+  def canCastTo(className: String): Boolean
 
   @Documentation(description = "Casts a type to a given class or throws exception if type cannot be casted.")
-  def castTo[T](clazzType: String): T
+  def castTo[T](className: String): T
 
 }
 
 object CastTyping {
 
-  def castToTyping(allowedClassNamesWithTyping: Map[String, TypingResult])(
+  def castToTyping(allowedClasses: AllowedClasses)(
       instanceType: typing.TypingResult,
       arguments: List[typing.TypingResult]
   ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
     case TypedObjectWithValue(_, clazzName: String) :: Nil =>
-      allowedClassNamesWithTyping.get(clazzName) match {
+      allowedClasses.get(clazzName) match {
         case Some(typing) => typing.validNel
         case None         => GenericFunctionTypingError.OtherError(s"$clazzName is not allowed").invalidNel
       }
     case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }
 
-  def canCastToTyping(allowedClassNamesWithTyping: Map[String, TypingResult])(
+  def canCastToTyping(allowedClasses: AllowedClasses)(
       instanceType: typing.TypingResult,
       arguments: List[typing.TypingResult]
   ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
-    castToTyping(allowedClassNamesWithTyping)(instanceType, arguments).map(_ => Typed.typedClass[Boolean])
+    castToTyping(allowedClasses)(instanceType, arguments).map(_ => Typed.typedClass[Boolean])
 
 }
 
-class CastImpl(target: Any) extends Cast {
+class CastImpl(target: Any, classLoader: ClassLoader) extends Cast {
 
-  override def canCastTo(clazzType: String): Boolean =
-    Class.forName(clazzType).isAssignableFrom(target.getClass)
+  override def canCastTo(className: String): Boolean =
+    classLoader.loadClass(className).isAssignableFrom(target.getClass)
 
-  override def castTo[T](clazzType: String): T = Try {
-    val clazz = Class.forName(clazzType)
+  override def castTo[T](className: String): T = Try {
+    val clazz = classLoader.loadClass(className)
     if (clazz.isInstance(target)) {
       clazz.cast(target).asInstanceOf[T]
     } else {
-      throw new ClassCastException(s"Cannot cast: ${target.getClass} to: $clazzType")
+      throw new ClassCastException(s"Cannot cast: ${target.getClass} to: $className")
     }
   }.get
 
-}
-
-object CastImpl {
-
-  def apply(target: Any): Cast =
-    new CastImpl(target)
 }

@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.MethodExtensions
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.{DefaultExtractor, createDiscovery}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage

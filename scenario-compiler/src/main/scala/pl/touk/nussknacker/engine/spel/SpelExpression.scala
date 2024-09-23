@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -251,8 +250,7 @@ object SpelExpressionParser extends LazyLogging {
       dictRegistry: DictRegistry,
       enableSpelForceCompile: Boolean,
       flavour: Flavour,
-      classDefinitionSet: ClassDefinitionSet,
-      settings: ClassExtractionSettings,
+      classDefinitionSet: ClassDefinitionSet
   ): SpelExpressionParser = {
 
     val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
@@ -261,7 +259,7 @@ object SpelExpressionParser extends LazyLogging {
     )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
     val validator = new SpelExpressionValidator(
-      Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), classDefinitionSet, settings)
+      Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), classDefinitionSet)
     )
     new SpelExpressionParser(
       parser,

@@ -133,8 +133,7 @@ class ExpressionSuggesterSpec
     clazzDefinitions,
     dictServices,
     getClass.getClassLoader,
-    List("scenarioProperty"),
-    ClassDefinitionTestUtils.DefaultSettings
+    List("scenarioProperty")
   )
 
   private val localVariables: Map[String, TypingResult] = Map(

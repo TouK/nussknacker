@@ -239,8 +239,7 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))),
         enableSpelForceCompile = true,
         Standard,
-        ClassDefinitionTestUtils.createDefinitionForClasses(classOf[EnumSymbol]),
-        ClassDefinitionTestUtils.DefaultSettings
+        ClassDefinitionTestUtils.createDefinitionForClasses(classOf[EnumSymbol])
       )
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }

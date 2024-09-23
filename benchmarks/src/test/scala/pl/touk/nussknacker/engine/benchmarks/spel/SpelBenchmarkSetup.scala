@@ -29,8 +29,7 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
     new SimpleDictRegistry(Map.empty),
     expressionConfig,
     classDefinitionSet = ClassDefinitionTestUtils.createDefinitionForDefaultAdditionalClasses,
-    evaluator,
-    ClassExtractionSettings.Default
+    evaluator
   )
 
   private val validationContext = ValidationContext(vars.mapValuesNow(Typed.fromInstance), Map.empty)

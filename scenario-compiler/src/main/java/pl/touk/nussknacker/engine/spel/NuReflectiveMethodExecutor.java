@@ -32,7 +32,9 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
 
     private boolean argumentConversionOccurred = false;
 
-    public NuReflectiveMethodExecutor(ReflectiveMethodExecutor original) {
+    private final ClassLoader classLoader;
+
+    public NuReflectiveMethodExecutor(ReflectiveMethodExecutor original, ClassLoader classLoader) {
         super(original.getMethod());
         this.method = original.getMethod();
         if (method.isVarArgs()) {
@@ -42,6 +44,7 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
         else {
             this.varargsPosition = null;
         }
+        this.classLoader = classLoader;
     }
 
     /**
@@ -98,7 +101,7 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
             }
             ReflectionUtils.makeAccessible(this.method);
             //Nussknacker: we use custom method invoker which is aware of array conversion
-            Object value = methodInvoker.invoke(this.method, target, arguments);
+            Object value = methodInvoker.invoke(this.method, target, arguments, this.classLoader);
             return new TypedValue(value, new TypeDescriptor(new MethodParameter(this.method, -1)).narrow(value));
         }
         catch (Exception ex) {
