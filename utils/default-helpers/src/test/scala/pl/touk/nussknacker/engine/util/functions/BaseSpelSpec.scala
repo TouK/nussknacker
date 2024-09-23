@@ -36,7 +36,7 @@ trait BaseSpelSpec {
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
     SpelExpressionParser.Standard,
-    classDefinitions
+    classDefinitions,
   )
 
   private lazy val classDefinitions = ClassDefinitionTestUtils.createDefinitionForClasses(
