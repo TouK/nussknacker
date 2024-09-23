@@ -166,7 +166,7 @@ services:
     build:
       context: flink/
       args:
-        FLINK_VERSION: "1.18.1-scala_2.12-java11"
+        FLINK_VERSION: "1.19.1-scala_2.12-java11"
     restart: unless-stopped
     command: jobmanager
     ports:
@@ -184,7 +184,7 @@ services:
     build:
       context: flink/
       args:
-        FLINK_VERSION: "1.18.1-scala_2.12-java11"
+        FLINK_VERSION: "1.19.1-scala_2.12-java11"
     restart: unless-stopped
     command: taskmanager
     environment:
