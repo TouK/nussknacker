@@ -85,8 +85,11 @@ case class ToJsonEncoder(
       case None            => Null
     }
 
-  private def encodeMap(map: Map[String, _]) = {
-    fromFields(map.mapValuesNow(encode))
+  private def encodeMap(map: Map[_, _]) = {
+    val mapWithStringKeys = map.view.map { case (k, v) =>
+      k.toString -> v
+    }.toMap
+    fromFields(mapWithStringKeys.mapValuesNow(encode))
   }
 
 }
