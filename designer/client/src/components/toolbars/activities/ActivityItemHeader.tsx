@@ -124,7 +124,7 @@ const ActivityItemHeader = ({ activity, isActiveItem, searchQuery }: Props) => {
                 highlights={[searchQuery]}
                 sx={(theme) => ({ color: theme.palette.text.primary })}
             >
-                {activity.activities.displayableName}
+                {activity.overrideDisplayableName || activity.activities.displayableName}
             </Typography>
         );
 
