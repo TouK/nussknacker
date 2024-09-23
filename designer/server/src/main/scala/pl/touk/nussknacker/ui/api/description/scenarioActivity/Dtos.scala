@@ -396,6 +396,23 @@ object Dtos {
       additionalFields = List.empty,
     )
 
+    def forScenarioPaused(
+        id: UUID,
+        user: String,
+        date: Instant,
+        scenarioVersion: Option[Long],
+        comment: ScenarioActivityComment,
+    ): ScenarioActivity = ScenarioActivity(
+      id = id,
+      `type` = ScenarioActivityType.ScenarioPaused,
+      user = user,
+      date = date,
+      scenarioVersion = scenarioVersion,
+      comment = Some(comment),
+      attachment = None,
+      additionalFields = List.empty,
+    )
+
     def forScenarioCanceled(
         id: UUID,
         user: String,
