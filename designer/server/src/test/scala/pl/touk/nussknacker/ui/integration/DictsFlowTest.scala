@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.integration
 
 import com.typesafe.config.Config
 import io.circe.Json
+import io.circe.parser._
 import io.circe.syntax.EncoderOps
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
@@ -117,7 +118,7 @@ class DictsFlowTest
   test("save process with expression using dicts and get it back") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
-    saveProcessAndExtractValidationResult(process, Some(expressionUsingDictWithLabel)) shouldBe Json.obj()
+    saveProcessAndExtractValidationResult(process, Some(expressionUsingDictWithLabel), None) shouldBe Json.obj()
   }
 
   test("save process with invalid expression using dicts and get it back with validation results") {
@@ -203,13 +204,67 @@ class DictsFlowTest
     returnedEndResultExpression shouldEqual expressionUsingDictWithKey
   }
 
+  test("should get dict with correct label when node does not pass the validation") {
+    val process = ScenarioBuilder
+      .streaming("processWithDictParameterEditor")
+      .source("source", "csv-source-lite")
+      .enricher(
+        "customNode",
+        "data",
+        "serviceWithDictParameterEditor",
+        "RGBDict"     -> Expression(Language.DictKeyWithLabel, ""), // This field is mandatory and we leave it empty
+        "BooleanDict" -> Expression.dictKeyWithLabel("true", Some("OLD LABEL")),
+        "LongDict"    -> Expression(Language.DictKeyWithLabel, ""),
+        "RGBDictRAW"  -> Expression.spel("'someOtherColour'"),
+      )
+      .emptySink(EndNodeId, "dead-end-lite")
+    val invalidNodeValidationResult = parse(
+      """
+        |{
+        |  "customNode" : [
+        |    {
+        |      "typ" : "EmptyMandatoryParameter",
+        |      "message" : "This field is mandatory and can not be empty",
+        |      "description" : "Please fill field for this parameter",
+        |      "fieldName" : "RGBDict",
+        |      "errorType" : "SaveAllowed",
+        |      "details" : null
+        |    }
+        |  ]
+        |}
+        |""".stripMargin
+    ).rightValue
+
+    saveProcessAndExtractValidationResult(process, None, Some(invalidNodeValidationResult))
+
+    val response2 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
+        .auth
+        .basic("admin", "admin")
+    )
+    response2.code shouldEqual StatusCode.Ok
+
+    response2.bodyAsJson.hcursor
+      .downField("scenarioGraph")
+      .downField("nodes")
+      .downAt(_.hcursor.get[String]("id").rightValue == "customNode")
+      .downField("service")
+      .downField("parameters")
+      .downAt(_.hcursor.get[String]("name").rightValue == "BooleanDict")
+      .downField("expression")
+      .downField("expression")
+      .as[String]
+      .rightValue shouldBe """{"key":"true","label":"ON"}"""
+  }
+
   private def saveProcessAndTestIt(
       process: CanonicalProcess,
       expressionUsingDictWithLabel: Option[String],
       expectedResult: String,
       variableToCheck: String = VariableName
   ) = {
-    saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel) shouldBe Json.obj()
+    saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel, None) shouldBe Json.obj()
 
     val response = httpClient.send(
       quickRequest
@@ -240,7 +295,8 @@ class DictsFlowTest
 
   private def saveProcessAndExtractValidationResult(
       process: CanonicalProcess,
-      endResultExpressionToPost: Option[String]
+      endResultExpressionToPost: Option[String],
+      validationResult: Option[Json]
   ): Json = {
     createEmptyScenario(process.name)
 
@@ -255,9 +311,9 @@ class DictsFlowTest
         .basic("admin", "admin")
     )
     response1.code shouldEqual StatusCode.Ok
-    response1.extractFieldJsonValue("errors", "invalidNodes").asObject.value shouldBe empty
+    response1.extractFieldJsonValue("errors", "invalidNodes").asJson shouldBe validationResult.getOrElse(Json.obj())
 
-    extractValidationResult(process).asObject.value shouldBe empty
+    extractValidationResult(process).asJson shouldBe validationResult.getOrElse(Json.obj())
 
     val response2 = httpClient.send(
       quickRequest
