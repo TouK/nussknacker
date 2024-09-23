@@ -433,7 +433,7 @@ class KafkaTransactionalScenarioInterpreterTest
     val configToUse      = adjustConfig(fixture.errorTopic, config)
     val modelDataToUse   = modelData(configToUse)
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, ???, modelDataToUse)
+      .createInterpreter[Future, Input, Output](scenario, jobData, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     val (runResult, output) = Using.resource(
       new KafkaTransactionalScenarioInterpreter(

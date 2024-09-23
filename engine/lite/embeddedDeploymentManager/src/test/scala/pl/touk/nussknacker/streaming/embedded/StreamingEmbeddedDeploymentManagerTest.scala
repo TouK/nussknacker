@@ -293,7 +293,7 @@ class StreamingEmbeddedDeploymentManagerTest
 
     val testData = testInfoProvider.prepareTestData(preliminaryTestData, scenario).rightValue
     val results = wrapInFailingLoader {
-      manager.processCommand(DMTestScenarioCommand(???, scenario, testData)).futureValue
+      manager.processCommand(DMTestScenarioCommand(processVersion, scenario, testData)).futureValue
     }
     results.nodeResults("sink") should have length 2
     val idGenerator       = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")
