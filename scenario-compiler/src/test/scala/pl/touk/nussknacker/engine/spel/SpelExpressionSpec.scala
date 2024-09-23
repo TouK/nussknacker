@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.api.generics.{
 }
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.{typedClass, typedListWithElementValues}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
@@ -199,8 +199,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       new SimpleDictRegistry(dictionaries),
       enableSpelForceCompile = true,
       flavour,
-      classDefinitionSetWithCustomClasses(globalVariableTypes),
-      ClassDefinitionTestUtils.DefaultSettings
+      classDefinitionSetWithCustomClasses(globalVariableTypes)
     )
   }
 
@@ -236,7 +235,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[SampleValue],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     )
-    ClassDefinitionTestUtils.createDefinitionForClasses(typesFromGlobalVariables ++ customClasses: _*)
+    ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
   }
 
   test("parsing first selection on array") {

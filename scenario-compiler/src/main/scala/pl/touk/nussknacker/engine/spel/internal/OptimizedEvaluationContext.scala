@@ -53,7 +53,7 @@ class EvaluationContextPreparer(
           null
         } else {
           spelExpressionExcludeList.blockExcluded(targetObject, name)
-          new NuReflectiveMethodExecutor(methodExecutor)
+          new NuReflectiveMethodExecutor(methodExecutor, classLoader)
         }
       }
 

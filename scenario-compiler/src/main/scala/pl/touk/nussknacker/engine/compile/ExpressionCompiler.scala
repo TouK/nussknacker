@@ -41,8 +41,7 @@ object ExpressionCompiler {
       dictRegistry: DictRegistry,
       expressionConfig: ExpressionConfigDefinition,
       classDefinitionSet: ClassDefinitionSet,
-      expressionEvaluator: ExpressionEvaluator,
-      settings: ClassExtractionSettings,
+      expressionEvaluator: ExpressionEvaluator
   ): ExpressionCompiler =
     default(
       loader,
@@ -50,8 +49,7 @@ object ExpressionCompiler {
       expressionConfig,
       expressionConfig.optimizeCompilation,
       classDefinitionSet,
-      expressionEvaluator,
-      settings,
+      expressionEvaluator
     )
 
   def withoutOptimization(
@@ -59,8 +57,7 @@ object ExpressionCompiler {
       dictRegistry: DictRegistry,
       expressionConfig: ExpressionConfigDefinition,
       classDefinitionSet: ClassDefinitionSet,
-      expressionEvaluator: ExpressionEvaluator,
-      settings: ClassExtractionSettings,
+      expressionEvaluator: ExpressionEvaluator
   ): ExpressionCompiler =
     default(
       loader,
@@ -68,8 +65,7 @@ object ExpressionCompiler {
       expressionConfig,
       optimizeCompilation = false,
       classDefinitionSet,
-      expressionEvaluator,
-      settings,
+      expressionEvaluator
     )
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
@@ -80,8 +76,7 @@ object ExpressionCompiler {
       modelData.modelDefinitionWithClasses.classDefinitions,
       ExpressionEvaluator.unOptimizedEvaluator(
         GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-      ),
-      modelData.modelDefinition.settings,
+      )
     )
   }
 
@@ -91,8 +86,7 @@ object ExpressionCompiler {
       expressionConfig: ExpressionConfigDefinition,
       optimizeCompilation: Boolean,
       classDefinitionSet: ClassDefinitionSet,
-      expressionEvaluator: ExpressionEvaluator,
-      settings: ClassExtractionSettings,
+      expressionEvaluator: ExpressionEvaluator
   ): ExpressionCompiler = {
     def spelParser(flavour: Flavour) =
       SpelExpressionParser.default(
@@ -101,8 +95,7 @@ object ExpressionCompiler {
         dictRegistry,
         optimizeCompilation,
         flavour,
-        classDefinitionSet,
-        settings,
+        classDefinitionSet
       )
 
     val defaultParsers =
