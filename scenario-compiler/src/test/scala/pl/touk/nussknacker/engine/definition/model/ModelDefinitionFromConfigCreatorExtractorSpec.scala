@@ -58,12 +58,12 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
 
   test("extract type info from classes from additional variables") {
     val classDefinition = modelDefinitionWithTypes(None).classDefinitions.get(classOf[OnlyUsedInAdditionalVariable])
-    classDefinition.map(_.methods.keySet) shouldBe Some(Set("someField", "toString", "canCastTo", "castTo"))
+    classDefinition.map(_.methods.keySet) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract type info from additional classes") {
     val classDefinition = modelDefinitionWithTypes(None).classDefinitions.get(classOf[AdditionalClass])
-    classDefinition.map(_.methods.keySet) shouldBe Some(Set("someField", "toString", "canCastTo", "castTo"))
+    classDefinition.map(_.methods.keySet) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract definition from WithExplicitMethodToInvoke") {

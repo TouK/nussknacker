@@ -239,7 +239,9 @@ object ClassExtractionSettings {
       Set("canCastTo", "castTo")
     ),
     MemberNamePredicate(
-      ClassPredicate(_.getName.contains("$")),
+      ClassPredicate { case clazz =>
+        clazz.getName.contains("$")
+      },
       Set("canCastTo", "castTo")
     )
   )
