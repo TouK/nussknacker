@@ -3793,11 +3793,15 @@ class HttpService {
         return api.get(`/processes/${encodeURIComponent(processName)}/activity`);
     }
 
-    addComment(processName, versionId, data) {
-        return api
-            .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/comments`, data)
-            .then(() => this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added")))
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error));
+    async addComment(processName: string, versionId: number, comment: string): Promise<"success" | "error"> {
+        try {
+            await api.post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/comment`, comment);
+            this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added"));
+            return "success" as const;
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error);
+            return "error" as const;
+        }
     }
 
     deleteComment(processName, commentId) {

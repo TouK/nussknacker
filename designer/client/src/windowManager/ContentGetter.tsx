@@ -48,6 +48,10 @@ const ScenarioDetailsDialog = loadable(() => import("../components/modals/MoreSc
     fallback: <LoaderSpinner show />,
 });
 
+const AddCommentDialog = loadable(() => import("../components/modals/AddCommentDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -86,6 +90,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <FrameDialog {...props} />;
         case WindowKind.scenarioDetails:
             return <ScenarioDetailsDialog {...props} />;
+        case WindowKind.addComment:
+            return <AddCommentDialog {...props} />;
         default:
             return (
                 <WindowContent {...props}>

@@ -11,6 +11,7 @@ import { alpha, Box, CircularProgress, styled } from "@mui/material";
 import { UseActivitiesSearch } from "./useActivitiesSearch";
 import { ActivitiesSearch } from "./ActivitiesSearch";
 import { blendLighten } from "../../../containers/theme/helpers";
+import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
 
 const StyledVariableSizeList = styled(VariableSizeList)(({ theme }) => ({
     "::-webkit-scrollbar": {
@@ -254,18 +255,24 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         [data, foundResults, selectedResult],
     );
 
-    useEffect(() => {
+    const handleFetchActivities = useCallback(async () => {
         setIsLoading(true);
-        Promise.all([httpService.fetchActivitiesMetadata(), httpService.fetchActivities()])
-            .then(([activitiesMetadata, { activities }]) => {
-                const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
+        try {
+            const [activitiesMetadata, { activities }] = await Promise.all([
+                httpService.fetchActivitiesMetadata(),
+                httpService.fetchActivities(),
+            ]);
+            const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
 
-                setData(extendActivitiesWithUIData(mergedActivitiesDataWithMetadata));
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
+            setData(extendActivitiesWithUIData(mergedActivitiesDataWithMetadata));
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        handleFetchActivities();
+    }, [handleFetchActivities]);
 
     return (
         <ToolbarWrapper {...props} title={"Activities"}>
@@ -331,6 +338,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                     </AutoSizer>
                 )}
             </Box>
+            <ActivitiesPanelFooter handleFetchActivities={handleFetchActivities} />
         </ToolbarWrapper>
     );
 };
