@@ -1,19 +1,19 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { g } from "jointjs";
 import { mapValues } from "lodash";
+import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenario, getLayout, getProcessCounts } from "../../reducers/selectors/graph";
-import { setLinksHovered } from "./utils/dragHelpers";
+import { bindActionCreators } from "redux";
+import { injectNode, layoutChanged, nodeAdded, nodesConnected, nodesDisconnected, resetSelection, toggleSelection } from "../../actions/nk";
+import { getLayout, getProcessCounts, getScenario } from "../../reducers/selectors/graph";
+import { Capabilities } from "../../reducers/selectors/other";
+import { NodeType } from "../../types";
+import { DndTypes } from "../toolbars/creator/Tool";
+import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
-import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
 import NodeUtils from "./NodeUtils";
-import { DndTypes } from "../toolbars/creator/Tool";
-import { injectNode, layoutChanged, nodeAdded, nodesConnected, nodesDisconnected, resetSelection, toggleSelection } from "../../actions/nk";
-import { NodeType } from "../../types";
-import { Capabilities } from "../../reducers/selectors/other";
-import { bindActionCreators } from "redux";
+import { setLinksHovered } from "./utils/dragHelpers";
 
 export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(function ProcessGraph(
     { capabilities },

@@ -7,7 +7,9 @@ type SettingsNames =
     | `${string}.noWrap`
     | `survey-panel(${string}).closed`
     | "debug.nodesAsJson"
-    | "debug.forceDisableModals";
+    | "debug.forceDisableModals"
+    | "debug.newGraph"
+    | "node.shortCounts";
 
 export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 

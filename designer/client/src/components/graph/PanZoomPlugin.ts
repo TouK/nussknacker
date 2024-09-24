@@ -1,11 +1,11 @@
 /* @refresh reset */
-import { dia, g } from "jointjs";
-import { throttle } from "lodash";
-import { GlobalCursor } from "./GlobalCursor";
 import { select, Selection } from "d3-selection";
 import { D3ZoomEvent, zoom, ZoomBehavior, ZoomedElementBaseType, zoomIdentity, ZoomTransform } from "d3-zoom";
-import { rafThrottle } from "./rafThrottle";
+import { dia, g } from "jointjs";
+import { throttle } from "lodash";
 import { isVisualTesting } from "../toolbarSettings/DEV_TOOLBARS";
+import { GlobalCursor } from "./GlobalCursor";
+import { rafThrottle } from "./rafThrottle";
 
 function isModified(event: MouseEvent | TouchEvent) {
     return event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
@@ -36,7 +36,7 @@ export class PanZoomPlugin {
     }, 250);
     private _enabled = true;
 
-    constructor(private paper: dia.Paper, viewport: Viewport) {
+    constructor(private paper: dia.Paper, viewport?: Viewport) {
         this.viewport = viewport;
         this.globalCursor = new GlobalCursor();
         this.paperSelection = select(this.paper.svg);
@@ -84,7 +84,7 @@ export class PanZoomPlugin {
         this._enabled = enabled;
     }
 
-    fitContent(content: g.Rect, updatedViewport?: Viewport, predefinedScale?: number | undefined): void {
+    fitContent(content: g.Rect = this.paper.getContentArea(), updatedViewport?: Viewport, predefinedScale?: number | undefined): void {
         this.viewport = updatedViewport;
 
         const zoomThreshold = 0.78;
