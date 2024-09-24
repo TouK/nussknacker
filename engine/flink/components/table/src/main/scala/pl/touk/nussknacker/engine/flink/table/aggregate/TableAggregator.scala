@@ -97,7 +97,7 @@ object TableAggregator extends Enum[TableAggregator] {
   case object Collect extends TableAggregator {
     override val displayName: String                                        = "Collect"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.COLLECT
-    override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
+    override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = None
   }
 
   private val minMaxAllowedTypes = List(
