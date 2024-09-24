@@ -29,7 +29,7 @@ const AddCommentDialog = (props: AddCommentWindowContentProps) => {
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.ok", "Ok"), action: () => confirmAction() },
+            { title: t("dialog.button.add", "Add"), action: () => confirmAction() },
         ],
         [confirmAction, props, t],
     );

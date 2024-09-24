@@ -2,6 +2,7 @@ import React, { useCallback } from "react";
 import { Box, Button, lighten, styled } from "@mui/material";
 import { useWindows, WindowKind } from "../../../windowManager";
 import { AddCommentWindowContentProps } from "../../modals/AddCommentDialog";
+import { AddAttachmentWindowContentProps } from "../../modals/AddAttachmentDialog";
 
 const StyledFooterButton = styled(Button)(({ theme }) => ({
     textTransform: "none",
@@ -33,12 +34,26 @@ export const ActivitiesPanelFooter = ({ handleFetchActivities }: Props) => {
         });
     }, [handleFetchActivities, open]);
 
+    const handleOpenAddAttachment = useCallback(() => {
+        open<AddAttachmentWindowContentProps["data"]["meta"]>({
+            title: "Add attachment",
+            isModal: true,
+            shouldCloseOnEsc: true,
+            kind: WindowKind.addAttachment,
+            meta: {
+                handleSuccess: handleFetchActivities,
+            },
+        });
+    }, [handleFetchActivities, open]);
+
     return (
         <Box my={2} mx={1} display={"flex"} justifyContent={"space-between"} gap={1.5}>
             <StyledFooterButton variant={"contained"} onClick={handleOpenAddComment}>
                 Add comment
             </StyledFooterButton>
-            <StyledFooterButton variant={"contained"}>Add attachment</StyledFooterButton>
+            <StyledFooterButton variant={"contained"} onClick={handleOpenAddAttachment}>
+                Add attachment
+            </StyledFooterButton>
         </Box>
     );
 };

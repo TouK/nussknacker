@@ -3811,15 +3811,17 @@ class HttpService {
             .catch((error) => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error));
     }
 
-    addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
-        return api
-            .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
+    async addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
+        try {
+            await api.post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
                 headers: { "Content-Disposition": `attachment; filename="${file.name}"` },
-            })
-            .then(() => this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added")))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true),
-            );
+            });
+            this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added"));
+            return "success" as const;
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true);
+            return "error" as const;
+        }
     }
 
     downloadAttachment(processName: ProcessName, attachmentId, fileName: string) {

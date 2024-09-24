@@ -6,7 +6,7 @@ import { isEmpty } from "lodash";
 import { SearchIcon } from "../../table/SearchFilter";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 
-const StyledIconButton = styled(IconButton)(() => ({
+export const StyledIconButton = styled(IconButton)(() => ({
     padding: 0,
     "&:focus-within": {
         outline: 0,
