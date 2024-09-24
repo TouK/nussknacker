@@ -3,32 +3,39 @@ import { useCallback, useEffect, useState } from "react";
 import { ActionValues } from "./GenericActionFormContext";
 import { validateGenericActionParameters } from "../../../actions/nk/genericAction";
 import { GenericAction } from "./GenericActionDialog";
+import { SourceWithParametersTest } from "../../../http/HttpService";
 
 export function useGenericActionValidation(
-    action: Pick<GenericAction, "processingType" | "parameters" | "variableTypes">,
+    action: Pick<GenericAction, "scenarioName" | "parameters" | "sourceId" | "scenarioGraph">,
     value: ActionValues,
 ): {
     isValid: boolean;
     errors: NodeValidationError[];
 } {
-    const { processingType, parameters, variableTypes } = action;
+    const { scenarioName, parameters, sourceId, scenarioGraph } = action;
     const [errors, setErrors] = useState<NodeValidationError[]>([]);
 
     const validate = useCallback(
         (value: ActionValues) => {
             validateGenericActionParameters(
-                processingType,
+                scenarioName,
                 {
-                    parameters: parameters.map((param) => ({
-                        ...param,
-                        expression: value[param.name],
-                    })),
-                    variableTypes,
+                    sourceParameters: {
+                        sourceId,
+                        parameterExpressions: parameters.reduce(
+                            (obj, param) => ({
+                                ...obj,
+                                [param.name]: value[param.name],
+                            }),
+                            {},
+                        ),
+                    },
+                    scenarioGraph: scenarioGraph,
                 },
                 ({ validationErrors }) => setErrors(validationErrors),
             );
         },
-        [parameters, processingType, variableTypes],
+        [parameters, scenarioName, scenarioGraph, sourceId],
     );
 
     useEffect(() => {

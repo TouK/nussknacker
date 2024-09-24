@@ -88,9 +88,12 @@ export function useTestWithFormAction(): GenericAction {
             parameters,
             variableTypes,
             processingType,
+            scenarioName,
             initialValues,
             onConfirmAction,
+            sourceId,
+            scenarioGraph,
         }),
-        [initialValues, onConfirmAction, parameters, processingType, variableTypes],
+        [initialValues, onConfirmAction, parameters, sourceId, scenarioGraph, processingType, scenarioName, variableTypes],
     );
 }

@@ -37,8 +37,10 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
@@ -52,6 +54,7 @@ class NodesApiHttpService(
     processingTypeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
     processingTypeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
+    processingTypeToScenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
@@ -154,6 +157,30 @@ class NodesApiHttpService(
             validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(processingType)
             requestWithTypingResult <- dtoToParameterRequest(request, modelData)
             validationResults = validator.validate(requestWithTypingResult)
+          } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
+        }
+      }
+  }
+
+  expose {
+    nodesApiEndpoints.adhocTestParametersValidationEndpoint
+      .serverSecurityLogic(authorizeKnownUser[NodesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, request) =>
+          for {
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
+            validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(scenarioWithDetails.processingType)
+            scenarioTestService = processingTypeToScenarioTestServices.forProcessingTypeUnsafe(
+              scenarioWithDetails.processingType
+            )
+            inputParameters = scenarioTestService.testParametersDefinition(
+              request.scenarioGraph,
+              scenarioName,
+              scenarioWithDetails.isFragment,
+              scenarioWithDetails.labels.map(ScenarioLabel)
+            )
+            metaData          = request.scenarioGraph.properties.toMetaData(scenarioName)
+            validationResults = validator.validate(request, inputParameters)(metaData)
           } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
         }
       }

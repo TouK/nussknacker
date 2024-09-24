@@ -48,7 +48,7 @@ class TestInfoResources(
               }
             } ~ path("testParameters") {
               complete {
-                scenarioTestService.testParametersDefinition(
+                scenarioTestService.testUISourceParametersDefinition(
                   scenarioGraph,
                   processName,
                   processDetails.isFragment,

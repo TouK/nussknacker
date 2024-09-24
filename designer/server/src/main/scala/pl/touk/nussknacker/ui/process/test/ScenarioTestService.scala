@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.test
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -50,10 +50,19 @@ class ScenarioTestService(
       processName: ProcessName,
       isFragment: Boolean,
       labels: List[ScenarioLabel],
-  )(implicit user: LoggedUser): List[UISourceParameters] = {
+  )(implicit user: LoggedUser): Map[String, List[Parameter]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processName, isFragment, labels)
     testInfoProvider
       .getTestParameters(canonical)
+  }
+
+  def testUISourceParametersDefinition(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean,
+      labels: List[ScenarioLabel],
+  )(implicit user: LoggedUser): List[UISourceParameters] = {
+    testParametersDefinition(scenarioGraph, processName, isFragment, labels)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
       .map { assignUserFriendlyEditor }
       .toList
