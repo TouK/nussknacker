@@ -42,7 +42,7 @@ public final class ScalaCaseClassSerializerSnapshot<T extends scala.Product>
     private Class<T> type;
 
     /** Used via reflection. */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "deprecation"})
     public ScalaCaseClassSerializerSnapshot() {
         super(ScalaCaseClassSerializer.class);
     }
@@ -85,6 +85,7 @@ public final class ScalaCaseClassSerializerSnapshot<T extends scala.Product>
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected CompositeTypeSerializerSnapshot.OuterSchemaCompatibility
     resolveOuterSchemaCompatibility(ScalaCaseClassSerializer<T> newSerializer) {
         return (Objects.equals(type, newSerializer.getTupleClass()))
