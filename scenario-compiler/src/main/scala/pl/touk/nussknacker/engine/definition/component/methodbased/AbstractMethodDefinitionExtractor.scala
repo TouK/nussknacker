@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, 
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{BranchParamName, MethodToInvoke, OutputVariableName, ParamName}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor.MethodExtensions
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterExtractor
 
 import java.lang.reflect.Method
@@ -70,7 +70,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
         .filterNot(_ == classOf[Object])
         .map[TypingResult](Typed(_))
     val typeFromSignature = {
-      val rawType = method.returnType()
+      val rawType = ClassDefinitionExtractor.extractMethodReturnType(method)
       (expectedReturnType, rawType) match {
         // uwrap Future, Source and so on
         case (Some(monadGenericType), TypedClass(cl, genericParam :: Nil)) if monadGenericType.isAssignableFrom(cl) =>

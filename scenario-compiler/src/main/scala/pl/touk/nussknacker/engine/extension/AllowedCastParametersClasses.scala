@@ -5,15 +5,15 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
 import scala.util.Try
 
-final case class AllowedClasses(namesWithTyping: Map[String, TypingResult]) {
+final case class AllowedCastParametersClasses(namesWithTyping: Map[String, TypingResult]) {
   def get(className: String): Option[TypingResult] =
     namesWithTyping.get(className)
 }
 
-object AllowedClasses {
+object AllowedCastParametersClasses {
 
-  def apply(set: ClassDefinitionSet): AllowedClasses =
-    new AllowedClasses(
+  def apply(set: ClassDefinitionSet): AllowedCastParametersClasses =
+    new AllowedCastParametersClasses(
       namesWithTyping = set.classDefinitionsMap
         .map { case (clazz, classDefinition) =>
           clazz.getName -> Try(classDefinition.clazzName).toOption

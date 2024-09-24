@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.{DefaultExtractor, createDiscovery}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -61,7 +60,7 @@ class ClassDefinitionDiscoverySpec
 
     val method = classOf[Returning].getMethod("futureOfList")
 
-    val extractedType = method.returnType()
+    val extractedType = ClassDefinitionExtractor.extractMethodReturnType(method)
 
     extractedType shouldBe Typed.fromDetailedType[Future[java.util.List[SampleClass]]]
   }
