@@ -50,7 +50,8 @@ class DBFetchingProcessRepositorySpec
   private val writingRepo =
     new DBProcessRepository(
       testDbRef,
-      clock, activities,
+      clock,
+      activities,
       scenarioLabelsRepository,
       mapProcessingTypeDataProvider("Streaming" -> 0)
     ) {

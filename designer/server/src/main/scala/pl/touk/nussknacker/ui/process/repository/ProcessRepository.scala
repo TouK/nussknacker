@@ -51,7 +51,13 @@ object ProcessRepository {
       scenarioLabelsRepository: ScenarioLabelsRepository,
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
   ): DBProcessRepository =
-    new DBProcessRepository(dbRef, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations.mapValues(_.version))
+    new DBProcessRepository(
+      dbRef,
+      clock,
+      scenarioActivityRepository,
+      scenarioLabelsRepository,
+      migrations.mapValues(_.version)
+    )
 
   final case class CreateProcessAction(
       processName: ProcessName,
