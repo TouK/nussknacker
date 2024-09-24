@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue}
 
 import scala.util.Try
 
-@SkipAutoDiscovery
 sealed trait Cast {
 
   @Documentation(description = "Checks if a type can be casted to a given class")
@@ -22,7 +21,7 @@ sealed trait Cast {
 
 object CastTyping {
 
-  def castToTyping(allowedClasses: AllowedClasses)(
+  def castToTyping(allowedClasses: AllowedCastParametersClasses)(
       instanceType: typing.TypingResult,
       arguments: List[typing.TypingResult]
   ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
@@ -34,7 +33,7 @@ object CastTyping {
     case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }
 
-  def canCastToTyping(allowedClasses: AllowedClasses)(
+  def canCastToTyping(allowedClasses: AllowedCastParametersClasses)(
       instanceType: typing.TypingResult,
       arguments: List[typing.TypingResult]
   ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
