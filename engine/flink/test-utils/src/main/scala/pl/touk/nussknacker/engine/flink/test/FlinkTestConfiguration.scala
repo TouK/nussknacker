@@ -22,6 +22,12 @@ object FlinkTestConfiguration {
     // which holds all needed jars/classes in case of running from Scala plugin in IDE.
     // but in case of running from sbt it contains only sbt-launcher.jar
     config.set(PipelineOptions.CLASSPATHS, List("http://dummy-classpath.invalid").asJava)
+
+    // This is to prevent memory problem in tests with mutliple Table API based aggregations. An IllegalArgExceptionon
+    // is thrown with message "The minBucketMemorySize is not valid!" in
+    // org.apache.flink.table.runtime.util.collections.binary.AbstractBytesHashMap.java:121 where memorySize is set
+    // inside code-generated operator (like LocalHashAggregateWithKeys).
+    config.set(TaskManagerOptions.MANAGED_MEMORY_SIZE, MemorySize.parse("100m"))
   }
 
 }
