@@ -36,7 +36,13 @@ object Initialization {
       environment: String,
   )(implicit ec: ExecutionContext): Unit = {
     val processRepository =
-      new DBProcessRepository(db, clock, scenarioActivityRepository, scenarioLabelsRepository, migrations.mapValues(_.version))
+      new DBProcessRepository(
+        db,
+        clock,
+        scenarioActivityRepository,
+        scenarioLabelsRepository,
+        migrations.mapValues(_.version)
+      )
 
     val operations: List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),

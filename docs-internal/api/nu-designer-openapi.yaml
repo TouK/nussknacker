@@ -3617,165 +3617,212 @@ paths:
                     - id: 80c95497-3b53-4435-b2d9-ae73c5766213
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
+                      additionalFields: []
                       type: SCENARIO_CREATED
                     - id: 070a4e5c-21e5-4e63-acac-0052cf705a90
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
+                      additionalFields: []
                       type: SCENARIO_ARCHIVED
                     - id: fa35d944-fe20-4c4f-96c6-316b6197951a
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
+                      additionalFields: []
                       type: SCENARIO_UNARCHIVED
                     - id: 545b7d87-8cdf-4cb5-92c4-38ddbfca3d08
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       comment:
-                        status:
-                          comment: Deployment of scenario - task JIRA-1234
-                          type: AVAILABLE
+                        content:
+                          value: Deployment of scenario - task JIRA-1234
+                          status: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
+                      additionalFields: []
                       type: SCENARIO_DEPLOYED
                     - id: c354eba1-de97-455c-b977-074729c41ce7
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       comment:
-                        status:
-                          comment: Canceled because marketing campaign ended
-                          type: AVAILABLE
+                        content:
+                          value: Canceled because marketing campaign ended
+                          status: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
+                      additionalFields: []
                       type: SCENARIO_CANCELED
                     - id: 07b04d45-c7c0-4980-a3bc-3c7f66410f68
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       comment:
-                        status:
-                          comment: Added new processing step
-                          type: AVAILABLE
+                        content:
+                          value: Added new processing step
+                          status: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
+                      additionalFields: []
+                      overrideDisplayableName: Version 1 saved
                       type: SCENARIO_MODIFIED
                     - id: da3d1f78-7d73-4ed9-b0e5-95538e150d0d
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
-                      oldName: marketing campaign
-                      newName: old marketing campaign
+                      scenarioVersionId: 1
+                      additionalFields:
+                      - name: oldName
+                        value: marketing campaign
+                      - name: newName
+                        value: old marketing campaign
                       type: SCENARIO_NAME_CHANGED
                     - id: edf8b047-9165-445d-a173-ba61812dbd63
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       comment:
-                        status:
-                          comment: Added new processing step
-                          type: AVAILABLE
+                        content:
+                          value: Added new processing step
+                          status: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
+                      additionalFields: []
                       type: COMMENT_ADDED
                     - id: 369367d6-d445-4327-ac23-4a94367b1d9e
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       comment:
-                        status:
-                          type: DELETED
+                        content:
+                          status: DELETED
                         lastModifiedBy: John Doe
                         lastModifiedAt: '2024-01-18T14:21:17Z'
+                      additionalFields: []
                       type: COMMENT_ADDED
                     - id: b29916a9-34d4-4fc2-a6ab-79569f68c0b2
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       attachment:
-                        status:
+                        file:
                           id: 10000001
-                          type: AVAILABLE
+                          status: AVAILABLE
                         filename: attachment01.png
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
+                      additionalFields: []
                       type: ATTACHMENT_ADDED
                     - id: d0a7f4a2-abcc-4ffa-b1ca-68f6da3e999a
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       attachment:
-                        status:
-                          type: DELETED
+                        file:
+                          status: DELETED
                         filename: attachment01.png
                         lastModifiedBy: John Doe
                         lastModifiedAt: '2024-01-18T14:21:17Z'
+                      additionalFields: []
                       type: ATTACHMENT_ADDED
                     - id: 683df470-0b33-4ead-bf61-fa35c63484f3
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
-                      from: Request-Response
-                      to: Batch
+                      scenarioVersionId: 1
+                      additionalFields:
+                      - name: from
+                        value: Request-Response
+                      - name: to
+                        value: Batch
                       type: CHANGED_PROCESSING_MODE
                     - id: 4da0f1ac-034a-49b6-81c9-8ee48ba1d830
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
-                      sourceEnvironment: preprod
-                      sourceScenarioVersion: '23'
+                      scenarioVersionId: 1
+                      additionalFields:
+                      - name: sourceEnvironment
+                        value: preprod
+                      - name: sourceScenarioVersionId
+                        value: '23'
                       type: INCOMING_MIGRATION
                     - id: 49fcd45d-3fa6-48d4-b8ed-b3055910c7ad
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       comment:
-                        status:
-                          comment: Added new processing step
-                          type: AVAILABLE
+                        content:
+                          value: Added new processing step
+                          status: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
-                      destinationEnvironment: preprod
+                      additionalFields:
+                      - name: destinationEnvironment
+                        value: preprod
                       type: OUTGOING_MIGRATION
                     - id: 924dfcd3-fbc7-44ea-8763-813874382204
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       comment:
-                        status:
-                          comment: Run campaign
-                          type: AVAILABLE
+                        content:
+                          value: Run campaign
+                          status: AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
-                      dateFinished: '2024-01-17T14:21:17Z'
-                      errorMessage: Execution error occurred
+                      additionalFields:
+                      - name: dateFinished
+                        value: '2024-01-17T14:21:17Z'
+                      - name: errorMessage
+                        value: Execution error occurred
                       type: PERFORMED_SINGLE_EXECUTION
                     - id: 924dfcd3-fbc7-44ea-8763-813874382204
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
+                      scenarioVersionId: 1
                       comment:
-                        status:
-                          type: DELETED
+                        content:
+                          status: DELETED
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
-                      dateFinished: '2024-01-17T14:21:17Z'
+                      additionalFields:
+                      - name: dateFinished
+                        value: '2024-01-17T14:21:17Z'
                       type: PERFORMED_SINGLE_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
-                      dateFinished: '2024-01-17T14:21:17Z'
+                      scenarioVersionId: 1
+                      additionalFields:
+                      - name: dateFinished
+                        value: '2024-01-17T14:21:17Z'
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersion: 1
-                      dateFinished: '2024-01-17T14:21:17Z'
-                      changes: JIRA-12345, JIRA-32146
+                      scenarioVersionId: 1
+                      additionalFields:
+                      - name: changes
+                        value: JIRA-12345, JIRA-32146
+                      - name: dateFinished
+                        value: '2024-01-17T14:21:17Z'
                       type: AUTOMATIC_UPDATE
+                    - id: 33509d37-7657-4229-940f-b5736c82fb13
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersionId: 1
+                      comment:
+                        content:
+                          value: Execute special execution of scenario
+                          status: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      additionalFields:
+                      - name: actionName
+                        value: special_execution
+                      overrideIcon: /assets/states/deploy-running-animated.svg
+                      type: CUSTOM_ACTION
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
@@ -3858,76 +3905,90 @@ paths:
                 activities:
                 - type: SCENARIO_CREATED
                   displayableName: Scenario created
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions: []
                 - type: SCENARIO_ARCHIVED
                   displayableName: Scenario archived
-                  icon: /assets/states/error.svg
+                  icon: /assets/process/archived.svg
                   supportedActions: []
                 - type: SCENARIO_UNARCHIVED
                   displayableName: Scenario unarchived
-                  icon: /assets/states/error.svg
+                  icon: /assets/process/success.svg
                   supportedActions: []
                 - type: SCENARIO_DEPLOYED
                   displayableName: Deployment
-                  icon: /assets/states/error.svg
-                  supportedActions: []
+                  icon: /assets/states/deploy.svg
+                  supportedActions:
+                  - delete_comment
+                  - edit_comment
                 - type: SCENARIO_PAUSED
                   displayableName: Pause
-                  icon: /assets/states/error.svg
-                  supportedActions: []
+                  icon: /assets/states/stopping.svg
+                  supportedActions:
+                  - delete_comment
+                  - edit_comment
                 - type: SCENARIO_CANCELED
                   displayableName: Cancel
-                  icon: /assets/states/error.svg
-                  supportedActions: []
+                  icon: /assets/states/stopping.svg
+                  supportedActions:
+                  - delete_comment
+                  - edit_comment
                 - type: SCENARIO_MODIFIED
                   displayableName: New version saved
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions:
+                  - delete_comment
+                  - edit_comment
                   - compare
                 - type: SCENARIO_NAME_CHANGED
                   displayableName: Scenario name changed
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions: []
                 - type: COMMENT_ADDED
                   displayableName: Comment
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: ATTACHMENT_ADDED
                   displayableName: Attachment
-                  icon: /assets/states/error.svg
-                  supportedActions: []
+                  icon: /assets/states/success.svg
+                  supportedActions:
+                  - download_attachment
+                  - delete_attachment
                 - type: CHANGED_PROCESSING_MODE
                   displayableName: Processing mode change
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions: []
                 - type: INCOMING_MIGRATION
                   displayableName: Incoming migration
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions:
                   - compare
                 - type: OUTGOING_MIGRATION
                   displayableName: Outgoing migration
-                  icon: /assets/states/error.svg
-                  supportedActions: []
+                  icon: /assets/states/success.svg
+                  supportedActions:
+                  - delete_comment
+                  - edit_comment
                 - type: PERFORMED_SINGLE_EXECUTION
                   displayableName: Processing data
-                  icon: /assets/states/error.svg
-                  supportedActions: []
+                  icon: /assets/states/success.svg
+                  supportedActions:
+                  - delete_comment
+                  - edit_comment
                 - type: PERFORMED_SCHEDULED_EXECUTION
                   displayableName: Processing data
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions: []
                 - type: AUTOMATIC_UPDATE
                   displayableName: Automatic update
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions:
                   - compare
                 - type: CUSTOM_ACTION
                   displayableName: Custom action
-                  icon: /assets/states/error.svg
+                  icon: /assets/states/success.svg
                   supportedActions: []
                 actions:
                 - id: compare
@@ -3999,6 +4060,17 @@ paths:
       - httpAuth: []
 components:
   schemas:
+    AdditionalField:
+      title: AdditionalField
+      type: object
+      required:
+      - name
+      - value
+      properties:
+        name:
+          type: string
+        value:
+          type: string
     AdditionalInfo:
       title: AdditionalInfo
       oneOf:
@@ -4058,90 +4130,28 @@ components:
         createDate:
           type: string
           format: date-time
-    AttachmentAdded:
-      title: AttachmentAdded
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - attachment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        attachment:
-          $ref: '#/components/schemas/ScenarioActivityAttachment'
-        type:
-          type: string
-    AutomaticUpdate:
-      title: AutomaticUpdate
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - dateFinished
-      - changes
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        dateFinished:
-          type: string
-          format: date-time
-        changes:
-          type: string
-        errorMessage:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
     Available:
       title: Available
       type: object
       required:
-      - id
-      - type
+      - value
+      - status
       properties:
-        id:
-          type: integer
-          format: int64
-        type:
+        value:
+          type: string
+        status:
           type: string
     Available1:
       title: Available
       type: object
       required:
-      - comment
-      - type
+      - id
+      - status
       properties:
-        comment:
-          type: string
-        type:
+        id:
+          type: integer
+          format: int64
+        status:
           type: string
     BoolParameterEditor:
       title: BoolParameterEditor
@@ -4221,36 +4231,6 @@ components:
           format: int32
         errorMessage:
           type: string
-    ChangedProcessingMode:
-      title: ChangedProcessingMode
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - from
-      - to
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        from:
-          type: string
-        to:
-          type: string
-        type:
-          type: string
     ColumnDefinition:
       title: ColumnDefinition
       type: object
@@ -4285,33 +4265,6 @@ components:
         createDate:
           type: string
           format: date-time
-    CommentAdded:
-      title: CommentAdded
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - comment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          $ref: '#/components/schemas/ScenarioActivityComment'
-        type:
-          type: string
     ComponentLink:
       title: ComponentLink
       type: object
@@ -4419,36 +4372,6 @@ components:
     CronParameterEditor:
       title: CronParameterEditor
       type: object
-    CustomAction:
-      title: CustomAction
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - actionName
-      - comment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        actionName:
-          type: string
-        comment:
-          $ref: '#/components/schemas/ScenarioActivityComment'
-        type:
-          type: string
     CustomActionRequest:
       title: CustomActionRequest
       type: object
@@ -4493,17 +4416,17 @@ components:
       title: Deleted
       type: object
       required:
-      - type
+      - status
       properties:
-        type:
+        status:
           type: string
     Deleted1:
       title: Deleted
       type: object
       required:
-      - type
+      - status
       properties:
-        type:
+        status:
           type: string
     Dict:
       title: Dict
@@ -4880,36 +4803,6 @@ components:
           uniqueItems: true
           items:
             type: string
-    IncomingMigration:
-      title: IncomingMigration
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - sourceEnvironment
-      - sourceScenarioVersion
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        sourceEnvironment:
-          type: string
-        sourceScenarioVersion:
-          type: string
-        type:
-          type: string
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
@@ -5590,36 +5483,6 @@ components:
       - info
       - success
       - error
-    OutgoingMigration:
-      title: OutgoingMigration
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - comment
-      - destinationEnvironment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          $ref: '#/components/schemas/ScenarioActivityComment'
-        destinationEnvironment:
-          type: string
-        type:
-          type: string
     Parameter:
       title: Parameter
       type: object
@@ -5712,75 +5575,6 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
-    PerformedScheduledExecution:
-      title: PerformedScheduledExecution
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        dateFinished:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        errorMessage:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
-    PerformedSingleExecution:
-      title: PerformedSingleExecution
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - comment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          $ref: '#/components/schemas/ScenarioActivityComment'
-        dateFinished:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        errorMessage:
-          type:
-          - string
-          - 'null'
-        type:
-          type: string
     PeriodParameterEditor:
       title: PeriodParameterEditor
       type: object
@@ -5952,44 +5746,72 @@ components:
             $ref: '#/components/schemas/ScenarioActivityActionMetadata'
     ScenarioActivity:
       title: ScenarioActivity
-      oneOf:
-      - $ref: '#/components/schemas/AttachmentAdded'
-      - $ref: '#/components/schemas/AutomaticUpdate'
-      - $ref: '#/components/schemas/ChangedProcessingMode'
-      - $ref: '#/components/schemas/CommentAdded'
-      - $ref: '#/components/schemas/CustomAction'
-      - $ref: '#/components/schemas/IncomingMigration'
-      - $ref: '#/components/schemas/OutgoingMigration'
-      - $ref: '#/components/schemas/PerformedScheduledExecution'
-      - $ref: '#/components/schemas/PerformedSingleExecution'
-      - $ref: '#/components/schemas/ScenarioArchived'
-      - $ref: '#/components/schemas/ScenarioCanceled'
-      - $ref: '#/components/schemas/ScenarioCreated'
-      - $ref: '#/components/schemas/ScenarioDeployed'
-      - $ref: '#/components/schemas/ScenarioModified'
-      - $ref: '#/components/schemas/ScenarioNameChanged'
-      - $ref: '#/components/schemas/ScenarioPaused'
-      - $ref: '#/components/schemas/ScenarioUnarchived'
-      discriminator:
-        propertyName: type
-        mapping:
-          ATTACHMENT_ADDED: '#/components/schemas/AttachmentAdded'
-          AUTOMATIC_UPDATE: '#/components/schemas/AutomaticUpdate'
-          CHANGED_PROCESSING_MODE: '#/components/schemas/ChangedProcessingMode'
-          COMMENT_ADDED: '#/components/schemas/CommentAdded'
-          CUSTOM_ACTION: '#/components/schemas/CustomAction'
-          INCOMING_MIGRATION: '#/components/schemas/IncomingMigration'
-          OUTGOING_MIGRATION: '#/components/schemas/OutgoingMigration'
-          PERFORMED_SCHEDULED_EXECUTION: '#/components/schemas/PerformedScheduledExecution'
-          PERFORMED_SINGLE_EXECUTION: '#/components/schemas/PerformedSingleExecution'
-          SCENARIO_ARCHIVED: '#/components/schemas/ScenarioArchived'
-          SCENARIO_CANCELED: '#/components/schemas/ScenarioCanceled'
-          SCENARIO_CREATED: '#/components/schemas/ScenarioCreated'
-          SCENARIO_DEPLOYED: '#/components/schemas/ScenarioDeployed'
-          SCENARIO_MODIFIED: '#/components/schemas/ScenarioModified'
-          SCENARIO_NAME_CHANGED: '#/components/schemas/ScenarioNameChanged'
-          SCENARIO_PAUSED: '#/components/schemas/ScenarioPaused'
-          SCENARIO_UNARCHIVED: '#/components/schemas/ScenarioUnarchived'
+      type: object
+      required:
+      - id
+      - user
+      - date
+      - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        scenarioVersionId:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          anyOf:
+          - $ref: '#/components/schemas/ScenarioActivityComment'
+          - type: 'null'
+        attachment:
+          anyOf:
+          - $ref: '#/components/schemas/ScenarioActivityAttachment'
+          - type: 'null'
+        additionalFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalField'
+        overrideIcon:
+          type:
+          - string
+          - 'null'
+        overrideDisplayableName:
+          type:
+          - string
+          - 'null'
+        overrideSupportedActions:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+        type:
+          type: string
+          enum:
+          - SCENARIO_CREATED
+          - SCENARIO_ARCHIVED
+          - SCENARIO_UNARCHIVED
+          - SCENARIO_DEPLOYED
+          - SCENARIO_PAUSED
+          - SCENARIO_CANCELED
+          - SCENARIO_MODIFIED
+          - SCENARIO_NAME_CHANGED
+          - COMMENT_ADDED
+          - ATTACHMENT_ADDED
+          - CHANGED_PROCESSING_MODE
+          - INCOMING_MIGRATION
+          - OUTGOING_MIGRATION
+          - PERFORMED_SINGLE_EXECUTION
+          - PERFORMED_SCHEDULED_EXECUTION
+          - AUTOMATIC_UPDATE
+          - CUSTOM_ACTION
     ScenarioActivityActionMetadata:
       title: ScenarioActivityActionMetadata
       type: object
@@ -6008,13 +5830,13 @@ components:
       title: ScenarioActivityAttachment
       type: object
       required:
-      - status
+      - file
       - filename
       - lastModifiedBy
       - lastModifiedAt
       properties:
-        status:
-          $ref: '#/components/schemas/ScenarioActivityAttachmentStatus'
+        file:
+          $ref: '#/components/schemas/ScenarioActivityAttachmentFile'
         filename:
           type: string
         lastModifiedBy:
@@ -6022,41 +5844,41 @@ components:
         lastModifiedAt:
           type: string
           format: date-time
-    ScenarioActivityAttachmentStatus:
-      title: ScenarioActivityAttachmentStatus
+    ScenarioActivityAttachmentFile:
+      title: ScenarioActivityAttachmentFile
       oneOf:
-      - $ref: '#/components/schemas/Available'
-      - $ref: '#/components/schemas/Deleted'
+      - $ref: '#/components/schemas/Available1'
+      - $ref: '#/components/schemas/Deleted1'
       discriminator:
-        propertyName: type
+        propertyName: status
         mapping:
-          AVAILABLE: '#/components/schemas/Available'
-          DELETED: '#/components/schemas/Deleted'
+          AVAILABLE: '#/components/schemas/Available1'
+          DELETED: '#/components/schemas/Deleted1'
     ScenarioActivityComment:
       title: ScenarioActivityComment
       type: object
       required:
-      - status
+      - content
       - lastModifiedBy
       - lastModifiedAt
       properties:
-        status:
-          $ref: '#/components/schemas/ScenarioActivityCommentStatus'
+        content:
+          $ref: '#/components/schemas/ScenarioActivityCommentContent'
         lastModifiedBy:
           type: string
         lastModifiedAt:
           type: string
           format: date-time
-    ScenarioActivityCommentStatus:
-      title: ScenarioActivityCommentStatus
+    ScenarioActivityCommentContent:
+      title: ScenarioActivityCommentContent
       oneOf:
-      - $ref: '#/components/schemas/Available1'
-      - $ref: '#/components/schemas/Deleted1'
+      - $ref: '#/components/schemas/Available'
+      - $ref: '#/components/schemas/Deleted'
       discriminator:
-        propertyName: type
+        propertyName: status
         mapping:
-          AVAILABLE: '#/components/schemas/Available1'
-          DELETED: '#/components/schemas/Deleted1'
+          AVAILABLE: '#/components/schemas/Available'
+          DELETED: '#/components/schemas/Deleted'
     ScenarioActivityMetadata:
       title: ScenarioActivityMetadata
       type: object
@@ -6075,30 +5897,6 @@ components:
           type: array
           items:
             type: string
-    ScenarioArchived:
-      title: ScenarioArchived
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        type:
-          type: string
     ScenarioAttachments:
       title: ScenarioAttachments
       type: object
@@ -6107,84 +5905,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Attachment'
-    ScenarioCanceled:
-      title: ScenarioCanceled
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - comment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          $ref: '#/components/schemas/ScenarioActivityComment'
-        type:
-          type: string
-    ScenarioCreated:
-      title: ScenarioCreated
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        type:
-          type: string
-    ScenarioDeployed:
-      title: ScenarioDeployed
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - comment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          $ref: '#/components/schemas/ScenarioActivityComment'
-        type:
-          type: string
     ScenarioLabels:
       title: ScenarioLabels
       type: object
@@ -6209,63 +5929,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValidationError'
-    ScenarioModified:
-      title: ScenarioModified
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - comment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          $ref: '#/components/schemas/ScenarioActivityComment'
-        type:
-          type: string
-    ScenarioNameChanged:
-      title: ScenarioNameChanged
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - oldName
-      - newName
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        oldName:
-          type: string
-        newName:
-          type: string
-        type:
-          type: string
     ScenarioParameters:
       title: ScenarioParameters
       type: object
@@ -6292,57 +5955,6 @@ components:
             $ref: '#/components/schemas/ScenarioParameters'
         engineSetupErrors:
           $ref: '#/components/schemas/Map_EngineSetupName_List_String'
-    ScenarioPaused:
-      title: ScenarioPaused
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - comment
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        comment:
-          $ref: '#/components/schemas/ScenarioActivityComment'
-        type:
-          type: string
-    ScenarioUnarchived:
-      title: ScenarioUnarchived
-      type: object
-      required:
-      - id
-      - user
-      - date
-      - type
-      properties:
-        id:
-          type: string
-          format: uuid
-        user:
-          type: string
-        date:
-          type: string
-          format: date-time
-        scenarioVersion:
-          type:
-          - integer
-          - 'null'
-          format: int64
-        type:
-          type: string
     ScenarioUsageData:
       title: ScenarioUsageData
       type: object

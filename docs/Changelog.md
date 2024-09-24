@@ -54,6 +54,12 @@
   * Jackson 2.15.4 -> 2.17.2
   * cats 2.10 -> 2.12
 * [#6805](https://github.com/TouK/nussknacker/pull/6805) Support for Flink 1.19.1
+* Scenario activities mechanism replacing old process actions:
+  * [#6822](https://github.com/TouK/nussknacker/pull/6822), [#6929](https://github.com/TouK/nussknacker/pull/6929)
+    * Scenario Activity API contract (without BE implementation)
+  * [#6823](https://github.com/TouK/nussknacker/pull/6823) 
+    * old process actions and comments migrated to new table in the db
+    * Scenario Activity API implementation
 * [#6935](https://github.com/TouK/nussknacker/pull/6935) Spel: Scenario labels added to meta variable - `#meta.processLabels`
 
 ## 1.17
