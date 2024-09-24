@@ -1,7 +1,7 @@
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { ElementType, ReactElement, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { UIParameter, VariableTypes } from "../../../types";
+import { ScenarioGraph, UIParameter, VariableTypes } from "../../../types";
 import { WindowContent, WindowKind } from "../../../windowManager";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
@@ -33,8 +33,11 @@ export interface GenericActionParameters {
 export interface GenericAction extends GenericActionParameters {
     variableTypes: VariableTypes;
     processingType: string;
+    scenarioName: string;
     initialValues: ActionValues;
     onConfirmAction: (values: ActionValues) => void;
+    sourceId: string;
+    scenarioGraph: ScenarioGraph;
 }
 
 export interface GenericActionData {

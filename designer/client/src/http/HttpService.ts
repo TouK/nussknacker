@@ -27,9 +27,9 @@ import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInf
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { GenericValidationRequest } from "../actions/nk/genericAction";
-import { EventTrackingSelector } from "../containers/event-tracking";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import { TestAdhocValidationRequest } from "../actions/nk/testAdhoc";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -472,6 +472,21 @@ class HttpService {
         const promise = api.post(`/parameters/${encodeURIComponent(processingType)}/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"), error, true),
+        );
+        return promise;
+    }
+
+    validateAdhocTestParameters(
+        scenarioName: string,
+        validationRequest: TestAdhocValidationRequest,
+    ): Promise<AxiosResponse<ValidationData>> {
+        const promise = api.post(`/parameters/${encodeURIComponent(scenarioName)}/validateAdhoc`, validationRequest);
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToValidateAdhocTestParameters", "Failed to validate parameters"),
+                error,
+                true,
+            ),
         );
         return promise;
     }

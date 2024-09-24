@@ -377,7 +377,8 @@ class AkkaHttpBasedRouteProvider(
         processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
           new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
-        scenarioService = processService
+        processingTypeToScenarioTestServices = scenarioTestService,
+        scenarioService = processService,
       )
 
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
