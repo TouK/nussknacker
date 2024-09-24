@@ -224,13 +224,13 @@ class ScenarioActivityApiHttpService(
     scenarioComment match {
       case ScenarioComment.Available(comment, lastModifiedByUserName, lastModifiedAt) =>
         Dtos.ScenarioActivityComment(
-          status = Dtos.ScenarioActivityCommentStatus.Available(comment),
+          content = Dtos.ScenarioActivityCommentContent.Available(comment),
           lastModifiedBy = lastModifiedByUserName.value,
           lastModifiedAt = lastModifiedAt,
         )
       case ScenarioComment.Deleted(deletedByUserName, deletedAt) =>
         Dtos.ScenarioActivityComment(
-          status = Dtos.ScenarioActivityCommentStatus.Deleted,
+          content = Dtos.ScenarioActivityCommentContent.Deleted,
           lastModifiedBy = deletedByUserName.value,
           lastModifiedAt = deletedAt,
         )
@@ -241,14 +241,14 @@ class ScenarioActivityApiHttpService(
     attachment match {
       case ScenarioAttachment.Available(attachmentId, attachmentFilename, lastModifiedByUserName, lastModifiedAt) =>
         Dtos.ScenarioActivityAttachment(
-          status = Dtos.ScenarioActivityAttachmentStatus.Available(attachmentId.value),
+          file = Dtos.ScenarioActivityAttachmentFile.Available(attachmentId.value),
           filename = attachmentFilename.value,
           lastModifiedBy = lastModifiedByUserName.value,
           lastModifiedAt = lastModifiedAt,
         )
       case ScenarioAttachment.Deleted(attachmentFilename, deletedByUserName, deletedAt) =>
         Dtos.ScenarioActivityAttachment(
-          status = Dtos.ScenarioActivityAttachmentStatus.Deleted,
+          file = Dtos.ScenarioActivityAttachmentFile.Deleted,
           filename = attachmentFilename.value,
           lastModifiedBy = deletedByUserName.value,
           lastModifiedAt = deletedAt,
@@ -258,90 +258,90 @@ class ScenarioActivityApiHttpService(
 
   private def toDto(scenarioActivity: ScenarioActivity): Dtos.ScenarioActivity = {
     scenarioActivity match {
-      case ScenarioActivity.ScenarioCreated(_, scenarioActivityId, user, date, scenarioVersion) =>
-        Dtos.ScenarioActivity.ScenarioCreated(
+      case ScenarioActivity.ScenarioCreated(_, scenarioActivityId, user, date, scenarioVersionId) =>
+        Dtos.ScenarioActivity.forScenarioCreated(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value)
+          scenarioVersionId = scenarioVersionId.map(_.value)
         )
-      case ScenarioActivity.ScenarioArchived(_, scenarioActivityId, user, date, scenarioVersion) =>
-        Dtos.ScenarioActivity.ScenarioArchived(
+      case ScenarioActivity.ScenarioArchived(_, scenarioActivityId, user, date, scenarioVersionId) =>
+        Dtos.ScenarioActivity.forScenarioArchived(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value)
+          scenarioVersionId = scenarioVersionId.map(_.value)
         )
-      case ScenarioActivity.ScenarioUnarchived(_, scenarioActivityId, user, date, scenarioVersion) =>
-        Dtos.ScenarioActivity.ScenarioUnarchived(
+      case ScenarioActivity.ScenarioUnarchived(_, scenarioActivityId, user, date, scenarioVersionId) =>
+        Dtos.ScenarioActivity.forScenarioUnarchived(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value)
+          scenarioVersionId = scenarioVersionId.map(_.value)
         )
-      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
-        Dtos.ScenarioActivity.ScenarioDeployed(
+      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+        Dtos.ScenarioActivity.forScenarioDeployed(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
-        Dtos.ScenarioActivity.ScenarioPaused(
+      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+        Dtos.ScenarioActivity.forScenarioPaused(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
-        Dtos.ScenarioActivity.ScenarioCanceled(
+      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+        Dtos.ScenarioActivity.forScenarioCanceled(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioModified(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
-        Dtos.ScenarioActivity.ScenarioModified(
+      case ScenarioActivity.ScenarioModified(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+        Dtos.ScenarioActivity.forScenarioModified(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
       case ScenarioActivity.ScenarioNameChanged(_, id, user, date, version, oldName, newName) =>
-        Dtos.ScenarioActivity.ScenarioNameChanged(
+        Dtos.ScenarioActivity.forScenarioNameChanged(
           id = id.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = version.map(_.value),
+          scenarioVersionId = version.map(_.value),
           oldName = oldName,
           newName = newName,
         )
-      case ScenarioActivity.CommentAdded(_, scenarioActivityId, user, date, scenarioVersion, comment) =>
-        Dtos.ScenarioActivity.CommentAdded(
+      case ScenarioActivity.CommentAdded(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+        Dtos.ScenarioActivity.forCommentAdded(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.AttachmentAdded(_, scenarioActivityId, user, date, scenarioVersion, attachment) =>
-        Dtos.ScenarioActivity.AttachmentAdded(
+      case ScenarioActivity.AttachmentAdded(_, scenarioActivityId, user, date, scenarioVersionId, attachment) =>
+        Dtos.ScenarioActivity.forAttachmentAdded(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           attachment = toDto(attachment),
         )
-      case ScenarioActivity.ChangedProcessingMode(_, scenarioActivityId, user, date, scenarioVersion, from, to) =>
-        Dtos.ScenarioActivity.ChangedProcessingMode(
+      case ScenarioActivity.ChangedProcessingMode(_, scenarioActivityId, user, date, scenarioVersionId, from, to) =>
+        Dtos.ScenarioActivity.forChangedProcessingMode(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           from = from.entryName,
           to = to.entryName
         )
@@ -350,32 +350,32 @@ class ScenarioActivityApiHttpService(
             scenarioActivityId,
             user,
             date,
-            scenarioVersion,
+            scenarioVersionId,
             sourceEnvironment,
-            sourceScenarioVersion
+            sourceScenarioVersionId
           ) =>
-        Dtos.ScenarioActivity.IncomingMigration(
+        Dtos.ScenarioActivity.forIncomingMigration(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           sourceEnvironment = sourceEnvironment.name,
-          sourceScenarioVersion = sourceScenarioVersion.value.toString,
+          sourceScenarioVersionId = sourceScenarioVersionId.value.toString,
         )
       case ScenarioActivity.OutgoingMigration(
             _,
             scenarioActivityId,
             user,
             date,
-            scenarioVersion,
+            scenarioVersionId,
             comment,
             destinationEnvironment
           ) =>
-        Dtos.ScenarioActivity.OutgoingMigration(
+        Dtos.ScenarioActivity.forOutgoingMigration(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
           destinationEnvironment = destinationEnvironment.name,
         )
@@ -384,16 +384,16 @@ class ScenarioActivityApiHttpService(
             scenarioActivityId,
             user,
             date,
-            scenarioVersion,
+            scenarioVersionId,
             comment,
             dateFinished,
             errorMessage
           ) =>
-        Dtos.ScenarioActivity.PerformedSingleExecution(
+        Dtos.ScenarioActivity.forPerformedSingleExecution(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
           dateFinished = dateFinished,
           errorMessage = errorMessage,
@@ -403,15 +403,15 @@ class ScenarioActivityApiHttpService(
             scenarioActivityId,
             user,
             date,
-            scenarioVersion,
+            scenarioVersionId,
             dateFinished,
             errorMessage
           ) =>
-        Dtos.ScenarioActivity.PerformedScheduledExecution(
+        Dtos.ScenarioActivity.forPerformedScheduledExecution(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           dateFinished = dateFinished,
           errorMessage = errorMessage,
         )
@@ -420,28 +420,29 @@ class ScenarioActivityApiHttpService(
             scenarioActivityId,
             user,
             date,
-            scenarioVersion,
+            scenarioVersionId,
             dateFinished,
             changes,
             errorMessage
           ) =>
-        Dtos.ScenarioActivity.AutomaticUpdate(
+        Dtos.ScenarioActivity.forAutomaticUpdate(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           dateFinished = dateFinished,
           changes = changes,
           errorMessage = errorMessage,
         )
-      case ScenarioActivity.CustomAction(_, scenarioActivityId, user, date, scenarioVersion, actionName, comment) =>
-        Dtos.ScenarioActivity.CustomAction(
+      case ScenarioActivity.CustomAction(_, scenarioActivityId, user, date, scenarioVersionId, actionName, comment) =>
+        Dtos.ScenarioActivity.forCustomAction(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersion = scenarioVersion.map(_.value),
+          scenarioVersionId = scenarioVersionId.map(_.value),
           actionName = actionName,
           comment = toDto(comment),
+          customIcon = None,
         )
     }
   }
