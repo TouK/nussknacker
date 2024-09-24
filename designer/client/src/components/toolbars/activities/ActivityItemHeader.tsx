@@ -1,13 +1,13 @@
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../creator/SearchHighlighter";
-import { ActionMetadata } from "../../../http/HttpService";
+import HttpService, { ActionMetadata, ActivityAdditionalFields } from "../../../http/HttpService";
 import UrlIcon from "../../UrlIcon";
 import { blend } from "@mui/system";
 import { getBorderColor } from "../../../containers/theme/helpers";
 import { unsavedProcessChanges } from "../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
-import { getScenario, isSaveDisabled } from "../../../reducers/selectors/graph";
+import { getProcessName, getScenario, isSaveDisabled } from "../../../reducers/selectors/graph";
 import { useWindows } from "../../../windowManager";
 import { displayScenarioVersion } from "../../../actions/nk";
 import { ItemActivity } from "./ActivitiesPanel";
@@ -39,8 +39,17 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isActiv
     borderRadius: theme.spacing(1),
 }));
 
-const HeaderActivity = ({ activityAction, scenarioVersionId }: { activityAction: ActionMetadata; scenarioVersionId: number }) => {
+const HeaderActivity = ({
+    activityAction,
+    scenarioVersionId,
+    additionalFields,
+}: {
+    activityAction: ActionMetadata;
+    scenarioVersionId: number;
+    additionalFields: ActivityAdditionalFields[];
+}) => {
     const { open } = useWindows();
+    const processName = useSelector(getProcessName);
 
     switch (activityAction.id) {
         case "compare": {
@@ -51,6 +60,13 @@ const HeaderActivity = ({ activityAction, scenarioVersionId }: { activityAction:
                     src={activityAction.icon}
                 />
             );
+        }
+        case "download_attachment": {
+            const attachmentId = additionalFields.find((additionalField) => additionalField.name === "attachmentId")?.value;
+            const attachmentName = additionalFields.find((additionalField) => additionalField.name === "attachmentFilename")?.value;
+
+            const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId, attachmentName);
+            return <StyledHeaderActionIcon onClick={handleDownloadAttachment} key={attachmentId} src={activityAction.icon} />;
         }
         default: {
             return null;
@@ -141,7 +157,12 @@ const ActivityItemHeader = ({ activity, isActiveItem, searchQuery }: Props) => {
             <StyledHeaderIcon src={activity.activities.icon} />
             {getHeaderTitle}
             {activity.actions.map((activityAction) => (
-                <HeaderActivity key={activityAction.id} activityAction={activityAction} scenarioVersionId={activity.scenarioVersionId} />
+                <HeaderActivity
+                    key={activityAction.id}
+                    activityAction={activityAction}
+                    scenarioVersionId={activity.scenarioVersionId}
+                    additionalFields={activity.additionalFields}
+                />
             ))}
         </StyledActivityItemHeader>
     );

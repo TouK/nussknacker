@@ -188,6 +188,8 @@ export interface ActionMetadata {
     icon: string;
 }
 
+export type ActivityAdditionalFields = { name: string; value: string };
+
 export interface ActivitiesResponse {
     activities: {
         id: string;
@@ -198,7 +200,7 @@ export interface ActivitiesResponse {
         comment?: string;
         overrideDisplayableName?: string;
         overrideSupportedActions?: string[];
-        additionalFields: { name: string; value: string }[];
+        additionalFields: ActivityAdditionalFields[];
     }[];
 }
 
@@ -261,7 +263,7 @@ const activitiesMetadataMock: { activities: ActivityMetadata[]; actions: ActionM
             type: "ATTACHMENT_ADDED",
             displayableName: "Attachment",
             icon: "/assets/states/error.svg",
-            supportedActions: [],
+            supportedActions: ["download_attachment", "delete_attachment"],
         },
         {
             type: "CHANGED_PROCESSING_MODE",
