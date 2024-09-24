@@ -11,7 +11,7 @@ import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -52,6 +52,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
   MalformedTypingResult,
@@ -345,6 +346,74 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
         )
       )
       .errorOut(scenarioNotFoundErrorOutput)
+      .withSecurity(auth)
+  }
+
+  lazy val adhocTestParametersValidationEndpoint: SecuredEndpoint[
+    (ProcessName, AdhocTestParametersRequest),
+    NodesError,
+    ParametersValidationResultDto,
+    Any
+  ] = {
+    baseNuApiEndpoint
+      .summary("Validate given parameters")
+      .tag("Nodes")
+      .post
+      .in("parameters" / path[ProcessName]("scenarioName") / "validateAdhoc")
+      .in(
+        jsonBody[AdhocTestParametersRequest]
+          .example(
+            Example.of(
+              summary = Some("TODO"),
+              value = AdhocTestParametersRequest(
+                TestSourceParameters("source", Map(ParameterName("name") -> Expression.spel("'Amadeus'"))),
+                ScenarioGraph(
+                  ProcessProperties(StreamMetaData()),
+                  List(),
+                  List(),
+                )
+              )
+            )
+          )
+      )
+      .out(
+        statusCode(Ok).and(
+          jsonBody[ParametersValidationResultDto]
+            .examples(
+              List(
+                Example.of(
+                  summary = Some("Validate correct parameters"),
+                  value = ParametersValidationResultDto(
+                    validationErrors = List.empty,
+                    validationPerformed = true
+                  )
+                ),
+                Example.of(
+                  summary = Some("Validate incorrect parameters"),
+                  value = ParametersValidationResultDto(
+                    List(
+                      NodeValidationError(
+                        "ExpressionParserCompilationError",
+                        "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
+                        "There is problem with expression in field Some(condition) - it could not be parsed.",
+                        Some("condition"),
+                        NodeValidationErrorType.SaveAllowed,
+                        details = None
+                      )
+                    ),
+                    validationPerformed = true
+                  ),
+                )
+              )
+            )
+        )
+      )
+      .errorOut(
+        oneOf[NodesError](
+          noScenarioExample,
+          malformedTypingResultExample
+        )
+      )
       .withSecurity(auth)
   }
 
@@ -1400,24 +1469,22 @@ object NodesApiEndpoints {
       new TypingResultDecoder(name => ClassUtils.forName(name, classLoader)).decodeTypingResults
     }
 
-    def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
-      implicit val parameterNameDecoder: KeyDecoder[ParameterName] = KeyDecoder.decodeKeyString.map(ParameterName.apply)
-      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(
-        modelData.modelClassLoader.classLoader
-      )
-      implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
-        deriveConfiguredDecoder[TestSourceParameters]
-      deriveConfiguredDecoder[TestFromParametersRequest]
-    }
+    implicit val parameterNameCodec: KeyEncoder[ParameterName]   = KeyEncoder.encodeKeyString.contramap(_.value)
+    implicit val parameterNameDecoder: KeyDecoder[ParameterName] = KeyDecoder.decodeKeyString.map(ParameterName.apply)
 
-    implicit val parameterNameCodec: KeyEncoder[ParameterName] = KeyEncoder.encodeKeyString.contramap(_.value)
+    implicit val mapParameterNameExpressionSchema: Typeclass[Map[ParameterName, Expression]] =
+      Schema.schemaForMap[ParameterName, Expression](_.value)
+    implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
+      deriveConfiguredDecoder[TestSourceParameters]
 
-    @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
+    @derive(schema, encoder, decoder)
+    final case class TestSourceParameters(
         sourceId: String,
         parameterExpressions: Map[ParameterName, Expression]
     )
 
-    @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
+    @derive(schema, encoder, decoder)
+    final case class AdhocTestParametersRequest(
         sourceParameters: TestSourceParameters,
         scenarioGraph: ScenarioGraph
     )

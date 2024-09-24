@@ -47,10 +47,10 @@ class TestInfoResources(
               }
             } ~ path("testParameters") {
               complete {
-                scenarioTestService.testParametersDefinition(
+                scenarioTestService.testUISourceParametersDefinition(
                   scenarioGraph,
                   processDetails.processVersionUnsafe,
-                  processDetails.isFragment,
+                  processDetails.isFragment
                 )
               }
             } ~ path("generate" / IntNumber) { testSampleSize =>
