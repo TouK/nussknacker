@@ -68,14 +68,14 @@ case class ToJsonEncoder(
           case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
           case a: UUID           => safeString(a.toString)
           case a: DisplayJson    => a.asJson
-          case a: scala.collection.Map[String @unchecked, _] => encodeMap(a.toMap)
-          case a: java.util.Map[String @unchecked, _]        => encodeMap(a.asScala.toMap)
-          case a: Iterable[_]                                => fromValues(a.map(encode))
-          case a: Enum[_]                                    => safeString(a.toString)
-          case a: java.util.Collection[_]                    => fromValues(a.asScala.map(encode))
-          case a: Array[_]                                   => fromValues(a.map(encode))
-          case _ if !failOnUnknown                           => safeString(any.toString)
-          case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
+          case a: scala.collection.Map[_, _] => encodeMap(a.toMap)
+          case a: java.util.Map[_, _]        => encodeMap(a.asScala.toMap)
+          case a: Iterable[_]                => fromValues(a.map(encode))
+          case a: Enum[_]                    => safeString(a.toString)
+          case a: java.util.Collection[_]    => fromValues(a.asScala.map(encode))
+          case a: Array[_]                   => fromValues(a.map(encode))
+          case _ if !failOnUnknown           => safeString(any.toString)
+          case a                             => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
         }
     )
 
@@ -85,6 +85,8 @@ case class ToJsonEncoder(
       case None            => Null
     }
 
+  // TODO: make encoder aware of NU Types to encode things like multiset differently. Right now its handled by calling
+  //  toString on keys.
   private def encodeMap(map: Map[_, _]) = {
     val mapWithStringKeys = map.view.map { case (k, v) =>
       k.toString -> v
