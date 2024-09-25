@@ -30,8 +30,8 @@ class DeploymentApiHttpService(
               RunDeploymentCommand(
                 id = deploymentId,
                 scenarioName = request.scenarioName,
-                nodesDeploymentData = NodesDeploymentData(request.nodesDeploymentData.map { case (n, p) =>
-                  (n, Map("sqlExpression" -> p))
+                nodesDeploymentData = NodesDeploymentData(request.nodesDeploymentData.map { case (nodeId, paramValue) =>
+                  (nodeId, Map("sqlExpression" -> paramValue))
                 }),
                 user = loggedUser
               ),

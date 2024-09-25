@@ -24,7 +24,6 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -113,7 +112,7 @@ class FlinkKafkaSource[T](
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
-    // TODO: handle deployment parameters -> offset
+    // TODO: use deployment parameters -> offsetResetStrategy
     val offsetResetStrategy =
       flinkNodeContext.nodeDeploymentData.flatMap(_.get(OFFSET_RESET_STRATEGY_PARAM_NAME)).getOrElse()
     topics.toList.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))

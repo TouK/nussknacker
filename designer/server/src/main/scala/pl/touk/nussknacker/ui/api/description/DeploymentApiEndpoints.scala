@@ -194,7 +194,7 @@ object DeploymentApiEndpoints {
     @derive(encoder, decoder, schema)
     final case class RunDeploymentRequest(
         scenarioName: ProcessName,
-        nodesDeploymentData: Map[NodeId, String], // nodeId -> single parameter value
+        nodesDeploymentData: Map[NodeId, String], // nodeId -> single parameter value (currently sqlExpression)
         comment: Option[ApiCallComment]
     )
 

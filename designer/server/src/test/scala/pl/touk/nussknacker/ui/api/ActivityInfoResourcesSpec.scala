@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.hamcrest.Matchers.{emptyOrNullString, equalTo, is, notNullValue}
+import org.hamcrest.Matchers.{equalTo, notNullValue}
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}

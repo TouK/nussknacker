@@ -95,6 +95,8 @@ export type SourceWithParametersTest = {
     parameterExpressions: { [paramName: string]: Expression };
 };
 
+export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
+
 export type NodeUsageData = {
     fragmentNodeId?: string;
     nodeId: string;
@@ -314,11 +316,7 @@ class HttpService {
             );
     }
 
-    deploy(
-        processName: string,
-        comment?: string,
-        nodesDeploymentData?: Record<NodeId, Record<string, string>>,
-    ): Promise<{ isSuccess: boolean }> {
+    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<{ isSuccess: boolean }> {
         const runDeploymentRequest = {
             ...(nodesDeploymentData && { nodesDeploymentData: nodesDeploymentData }),
             ...(comment && { comment: comment }),

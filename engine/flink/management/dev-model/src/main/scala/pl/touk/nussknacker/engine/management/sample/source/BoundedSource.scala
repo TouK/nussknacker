@@ -5,9 +5,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithActivityParameters}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
@@ -49,6 +48,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
                 "Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
               )
             ),
+            // TODO: remove offsetResetStrategy
             "offsetResetStrategy" -> ParameterConfig(
               defaultValue = Some("EARLIEST"),
               editor = fixedValuesEditor,
