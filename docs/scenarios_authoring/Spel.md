@@ -380,7 +380,7 @@ For full list of available format options take a look at [DateTimeFormatter api 
 ## Casting.
 
 When a type cannot be determined by parser, the type is presented as `Unknown`. When we know what the type will be on
-runtime, we can cast given type, and then we can operate on a cast type.
+runtime, we can cast a given type, and then we can operate on the cast type.
 
 E.g. having a variable `obj` of a type: `List[Unknown]` and we know the elements are strings then we can cast elements
 to String: `#obj.![#this.canCastTo('java.lang.String') ? #this.castTo('java.lang.String') : null]`.
