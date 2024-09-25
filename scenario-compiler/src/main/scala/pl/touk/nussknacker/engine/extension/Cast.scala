@@ -28,7 +28,7 @@ object CastTyping {
     case TypedObjectWithValue(_, clazzName: String) :: Nil =>
       allowedClasses.get(clazzName) match {
         case Some(typing) => typing.validNel
-        case None         => GenericFunctionTypingError.OtherError(s"$clazzName is not allowed").invalidNel
+        case None         => GenericFunctionTypingError.OtherError(s"'$clazzName' is not allowed").invalidNel
       }
     case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }

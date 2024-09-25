@@ -27,7 +27,7 @@ class AllowedCastParametersClassesSpec extends AnyFunSuite with Matchers {
             ),
             Map.empty
           ),
-          ClassDefinitionTestUtils.DefaultExtractor.extract(classOf[TestObj.type])
+          ClassDefinitionTestUtils.DefaultExtractor.extract(TestObj.getClass)
         )
       )
     ) shouldBe new AllowedCastParametersClasses(

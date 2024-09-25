@@ -1397,7 +1397,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should return an error if the cast return type cannot be determined at parse time") {
     parse[Any]("{11, 12}.castTo('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
-      case GenericFunctionError("java.util.XYZ is not allowed") :: Nil =>
+      case GenericFunctionError("'java.util.XYZ' is not allowed") :: Nil =>
     }
     parse[Any]("{11, 12}.castTo(#obj.id)", ctx).invalidValue.toList should matchPattern {
       case ArgumentTypeError("castTo", _, _) :: Nil =>
@@ -1484,7 +1484,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "#hashMap.castTo('java.util.HashMap').remove('testKey')",
       ctx.withVariable("hashMap", new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava))
     ).invalidValue.toList should matchPattern {
-      case GenericFunctionError("java.util.HashMap is not allowed") :: IllegalInvocationError(Unknown) :: Nil =>
+      case GenericFunctionError("'java.util.HashMap' is not allowed") :: IllegalInvocationError(Unknown) :: Nil =>
     }
   }
 
