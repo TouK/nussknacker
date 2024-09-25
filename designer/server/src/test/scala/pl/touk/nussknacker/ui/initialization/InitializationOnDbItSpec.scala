@@ -50,7 +50,15 @@ abstract class InitializationOnDbItSpec
   it should "migrate processes" in {
     saveSampleProcess()
 
-    Initialization.init(migrations, testDbRef, clock, scenarioRepository, scenarioActivityRepository, scenarioLabelsRepository, "env1")
+    Initialization.init(
+      migrations,
+      testDbRef,
+      clock,
+      scenarioRepository,
+      scenarioActivityRepository,
+      scenarioLabelsRepository,
+      "env1"
+    )
 
     dbioRunner
       .runInTransaction(
@@ -69,7 +77,15 @@ abstract class InitializationOnDbItSpec
       saveSampleProcess(ProcessName(s"id$id"))
     }
 
-    Initialization.init(migrations, testDbRef, clock, scenarioRepository, scenarioActivityRepository, scenarioLabelsRepository, "env1")
+    Initialization.init(
+      migrations,
+      testDbRef,
+      clock,
+      scenarioRepository,
+      scenarioActivityRepository,
+      scenarioLabelsRepository,
+      "env1"
+    )
 
     dbioRunner
       .runInTransaction(
