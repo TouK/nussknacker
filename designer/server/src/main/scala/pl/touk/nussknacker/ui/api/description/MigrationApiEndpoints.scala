@@ -7,7 +7,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -196,6 +196,7 @@ object MigrationApiEndpoints {
     final case class MigrateScenarioRequestDtoV2(
         override val version: Int,
         sourceEnvironmentId: String,
+        sourceScenarioVersionId: Option[VersionId],
         remoteUserName: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
@@ -268,6 +269,9 @@ object MigrationApiEndpoints {
         import pl.touk.nussknacker.ui.api.TapirCodecs.EngineSetupNameCodec._
         import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
         import pl.touk.nussknacker.ui.api.TapirCodecs.ProcessNameCodec._
+
+        implicit val versionIdSchema: Schema[VersionId] = Schema.schemaForLong.as[VersionId]
+
         implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestDtoV1] = Schema.derived
         implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.derived
 //        implicit val migrateScenarioRequestV3Schema: Schema[MigrateScenarioRequestDtoV3] = Schema.derived

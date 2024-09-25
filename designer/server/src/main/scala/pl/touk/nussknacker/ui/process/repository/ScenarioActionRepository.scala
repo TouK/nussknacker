@@ -252,7 +252,7 @@ class DbScenarioActionRepository(
       lastModifiedByUserName = Some(user.username),
       lastModifiedAt = Some(Timestamp.from(createdAt)),
       createdAt = Timestamp.from(createdAt),
-      scenarioVersion = processVersion.map(_.value).map(ScenarioVersion.apply),
+      scenarioVersion = processVersion.map(_.value).map(ScenarioVersionId.apply),
       comment = comment.map(_.value),
       attachmentId = None,
       finishedAt = performedAt.map(Timestamp.from),

@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
-  UpdateScenarioCommand
+  MigrateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
@@ -100,12 +100,15 @@ class MigrationService(
       }
     }
 
-    val updateScenarioCommand =
-      UpdateScenarioCommand(
+    val migrateScenarioCommand =
+      MigrateScenarioCommand(
         scenarioGraph = scenarioGraph,
         comment = Some(updateProcessComment),
         scenarioLabels = Some(scenarioLabels.map(_.value)),
-        forwardedUserName = forwardedUsernameO
+        forwardedUserName = forwardedUsernameO,
+        sourceEnvironment = sourceEnvironmentId,
+        targetEnvironment = targetEnvironmentId,
+        sourceScenarioVersionId = migrateScenarioData.sourceScenarioVersionId,
       )
 
     val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
@@ -135,7 +138,7 @@ class MigrationService(
       processId <- getProcessId(processName)
       processIdWithName = ProcessIdWithName(processId, processName)
       _ <- checkLoggedUserCanWriteToProcess(processId)
-      _ <- updateProcessAndNotifyListeners(updateScenarioCommand, processIdWithName)
+      _ <- migrateProcessAndNotifyListeners(migrateScenarioCommand, processIdWithName)
     } yield ()
 
     result.value
@@ -151,14 +154,14 @@ class MigrationService(
       .leftMap(MigrationError.from(_))
   }
 
-  private def updateProcessAndNotifyListeners(
-      updateScenarioCommand: UpdateScenarioCommand,
+  private def migrateProcessAndNotifyListeners(
+      migrateScenarioCommand: MigrateScenarioCommand,
       processIdWithName: ProcessIdWithName
   )(implicit loggedUser: LoggedUser) = {
     EitherT
       .liftF[Future, NuDesignerError, ValidationResults.ValidationResult](
         processService
-          .updateProcess(processIdWithName, updateScenarioCommand)
+          .migrateProcess(processIdWithName, migrateScenarioCommand)
           .withSideEffect(response =>
             response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
           )

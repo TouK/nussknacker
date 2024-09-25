@@ -9,6 +9,7 @@ import io.circe.generic.extras
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.requestresponse.openapi.OApiDocumentation.dropNulls
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.enumSchema
@@ -314,7 +315,11 @@ object Dtos {
     implicit def scenarioActivityCodec: circe.Codec[ScenarioActivity] = {
       implicit val configuration: extras.Configuration =
         extras.Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
-      deriveConfiguredCodec
+      val derivedCodec = deriveConfiguredCodec[ScenarioActivity]
+      circe.Codec.from(
+        decodeA = derivedCodec,
+        encodeA = dropNulls(derivedCodec)
+      )
     }
 
     implicit def scenarioActivitySchema: Schema[ScenarioActivity] = {
@@ -534,7 +539,9 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         sourceEnvironment: String,
-        sourceScenarioVersionId: String,
+        sourceUser: String,
+        sourceScenarioVersionId: Option[Long],
+        targetEnvironment: String,
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.IncomingMigration,
@@ -544,9 +551,11 @@ object Dtos {
       comment = None,
       attachment = None,
       additionalFields = List(
-        AdditionalField("sourceEnvironment", sourceEnvironment),
-        AdditionalField("sourceScenarioVersionId", sourceScenarioVersionId),
-      )
+        Some(AdditionalField("sourceEnvironment", sourceEnvironment)),
+        Some(AdditionalField("sourceUser", sourceUser)),
+        Some(AdditionalField("targetEnvironment", targetEnvironment)),
+        sourceScenarioVersionId.map(v => AdditionalField("sourceScenarioVersionId", v.toString)),
+      ).flatten
     )
 
     def forOutgoingMigration(

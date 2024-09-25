@@ -199,7 +199,7 @@ class DBFetchingProcessRepositorySpec
       scenarioActivities(0).scenarioActivityId,
       ScenarioUser(Some(UserId("1")), UserName("admin"), None, None),
       scenarioActivities(0).date,
-      Some(ScenarioVersion(1)),
+      Some(ScenarioVersionId(1)),
       oldName.value,
       newName.value,
     )

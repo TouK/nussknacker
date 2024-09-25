@@ -78,7 +78,7 @@ class ActivityService(
                 impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
               ),
               date = now,
-              scenarioVersion = Some(ScenarioVersion(scenarioGraphVersionId.value)),
+              scenarioVersionId = Some(ScenarioVersionId(scenarioGraphVersionId.value)),
               comment = commentOpt match {
                 case Some(comment) => ScenarioComment.Available(comment.value, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)

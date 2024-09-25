@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -190,6 +190,8 @@ object ProcessTestData {
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
   val validScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(validProcess)
+
+  val versionId: VersionId = VersionId(7L)
 
   val validScenarioDetailsForMigrations: ScenarioWithDetailsForMigrations =
     TestProcessUtil.wrapWithDetailsForMigration(validScenarioGraph)

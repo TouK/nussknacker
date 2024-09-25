@@ -7,7 +7,7 @@ import java.util.UUID
 
 final case class ScenarioId(value: Long) extends AnyVal
 
-final case class ScenarioVersion(value: Long) extends AnyVal
+final case class ScenarioVersionId(value: Long) extends AnyVal
 
 final case class ScenarioActivityId(value: UUID) extends AnyVal
 
@@ -70,7 +70,7 @@ sealed trait ScenarioActivity {
   def scenarioActivityId: ScenarioActivityId
   def user: ScenarioUser
   def date: Instant
-  def scenarioVersion: Option[ScenarioVersion]
+  def scenarioVersionId: Option[ScenarioVersionId]
 }
 
 object ScenarioActivity {
@@ -80,7 +80,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
   ) extends ScenarioActivity
 
   final case class ScenarioArchived(
@@ -88,7 +88,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
   ) extends ScenarioActivity
 
   final case class ScenarioUnarchived(
@@ -96,7 +96,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
   ) extends ScenarioActivity
 
   // Scenario deployments
@@ -106,7 +106,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
   ) extends ScenarioActivity
 
@@ -115,7 +115,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
   ) extends ScenarioActivity
 
@@ -124,7 +124,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
   ) extends ScenarioActivity
 
@@ -135,7 +135,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
   ) extends ScenarioActivity
 
@@ -144,7 +144,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       oldName: String,
       newName: String,
   ) extends ScenarioActivity
@@ -154,7 +154,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
   ) extends ScenarioActivity
 
@@ -163,7 +163,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       attachment: ScenarioAttachment,
   ) extends ScenarioActivity
 
@@ -172,7 +172,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       from: ProcessingMode,
       to: ProcessingMode,
   ) extends ScenarioActivity
@@ -184,9 +184,11 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       sourceEnvironment: Environment,
-      sourceScenarioVersion: ScenarioVersion,
+      sourceUser: UserName,
+      sourceScenarioVersionId: Option[ScenarioVersionId],
+      targetEnvironment: Environment,
   ) extends ScenarioActivity
 
   final case class OutgoingMigration(
@@ -194,7 +196,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
       destinationEnvironment: Environment,
   ) extends ScenarioActivity
@@ -206,7 +208,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
       dateFinished: Option[Instant],
       errorMessage: Option[String],
@@ -217,7 +219,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       dateFinished: Option[Instant],
       errorMessage: Option[String],
   ) extends ScenarioActivity
@@ -229,7 +231,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       dateFinished: Instant,
       changes: String,
       errorMessage: Option[String],
@@ -240,7 +242,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
-      scenarioVersion: Option[ScenarioVersion],
+      scenarioVersionId: Option[ScenarioVersionId],
       actionName: String,
       comment: ScenarioComment,
   ) extends ScenarioActivity

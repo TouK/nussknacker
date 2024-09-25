@@ -30,12 +30,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
   ProcessNotFoundError,
   ProcessVersionNotFoundError
 }
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
-  CreateProcessAction,
-  ProcessCreated,
-  RemoteUserName,
-  UpdateProcessAction
-}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -62,6 +57,16 @@ object ProcessService {
       comment: Option[UpdateProcessComment],
       scenarioLabels: Option[List[String]],
       forwardedUserName: Option[RemoteUserName]
+  )
+
+  final case class MigrateScenarioCommand(
+      scenarioGraph: ScenarioGraph,
+      comment: Option[UpdateProcessComment],
+      scenarioLabels: Option[List[String]],
+      forwardedUserName: Option[RemoteUserName],
+      sourceEnvironment: String,
+      targetEnvironment: String,
+      sourceScenarioVersionId: Option[VersionId],
   )
 
   object GetScenarioWithDetailsOptions {
@@ -138,6 +143,10 @@ trait ProcessService {
   ): Future[Validated[NuDesignerError, ProcessResponse]]
 
   def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateScenarioCommand)(
+      implicit user: LoggedUser
+  ): Future[UpdateProcessResponse]
+
+  def migrateProcess(processIdWithName: ProcessIdWithName, action: MigrateScenarioCommand)(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse]
 
@@ -430,6 +439,46 @@ class DBProcessService(
           )
         }
     }
+
+  override def migrateProcess(processIdWithName: ProcessIdWithName, action: MigrateScenarioCommand)(
+      implicit user: LoggedUser
+  ): Future[UpdateProcessResponse] = {
+    withNotArchivedProcess(processIdWithName, "Can't migrate graph archived scenario.") { details =>
+      val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
+      val scenarioLabels  = action.scenarioLabels.getOrElse(List.empty).map(ScenarioLabel.apply)
+      val validation =
+        FatalValidationError.saveNotAllowedAsError(
+          processResolver.validateBeforeUiResolving(
+            action.scenarioGraph,
+            details.name,
+            details.isFragment,
+            scenarioLabels
+          )
+        )
+      val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
+      val migrateProcessAction = MigrateProcessAction(
+        processId = processIdWithName.id,
+        canonicalProcess = substituted,
+        comment = action.comment,
+        labels = scenarioLabels,
+        increaseVersionWhenJsonNotChanged = false,
+        forwardedUserName = action.forwardedUserName,
+        sourceEnvironment = action.sourceEnvironment,
+        targetEnvironment = action.targetEnvironment,
+        sourceScenarioVersionId = action.sourceScenarioVersionId,
+      )
+      dbioRunner
+        .runInTransaction(processRepository.migrateProcess(migrateProcessAction))
+        .map { processUpdated =>
+          UpdateProcessResponse(
+            processUpdated.newVersion
+              .map(ProcessCreated(processIdWithName.id, _))
+              .map(toProcessResponse(processIdWithName.name, _)),
+            validation
+          )
+        }
+    }
+  }
 
   def importProcess(processId: ProcessIdWithName, jsonString: String)(
       implicit user: LoggedUser

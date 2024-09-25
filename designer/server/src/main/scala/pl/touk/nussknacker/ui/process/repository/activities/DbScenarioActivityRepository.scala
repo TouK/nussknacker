@@ -60,7 +60,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         scenarioActivityId = ScenarioActivityId.random,
         user = toUser(user),
         date = now,
-        scenarioVersion = Some(ScenarioVersion(processVersionId.value)),
+        scenarioVersionId = Some(ScenarioVersionId(processVersionId.value)),
         comment = ScenarioComment.Available(
           comment = comment,
           lastModifiedByUserName = UserName(user.username),
@@ -146,7 +146,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = ScenarioActivityId.random,
           user = toUser(user),
           date = now,
-          scenarioVersion = Some(ScenarioVersion(attachmentToAdd.scenarioVersionId.value)),
+          scenarioVersionId = Some(ScenarioVersionId(attachmentToAdd.scenarioVersionId.value)),
           attachment = ScenarioAttachment.Available(
             attachmentId = AttachmentId(attachment.id),
             attachmentFilename = AttachmentFilename(attachmentToAdd.fileName),
@@ -189,6 +189,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       comments = comments.toList,
       attachments = attachments.toList,
     )
+
   }
 
   def getActivityStats: DB[Map[String, Int]] = {
@@ -234,7 +235,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       prefix: Option[String]
   ): Option[Legacy.Comment] = {
     for {
-      scenarioVersion <- scenarioActivity.scenarioVersion
+      scenarioVersion <- scenarioActivity.scenarioVersionId
       content <- comment match {
         case ScenarioComment.Available(comment, _, _) => Some(comment)
         case ScenarioComment.Deleted(_, _)            => None
@@ -278,8 +279,17 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         None
       case _: ScenarioActivity.ChangedProcessingMode =>
         None
-      case _: ScenarioActivity.IncomingMigration =>
-        None
+      case activity: ScenarioActivity.IncomingMigration =>
+        toComment(
+          id,
+          activity,
+          ScenarioComment.Available(
+            comment = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}",
+            lastModifiedByUserName = activity.user.name,
+            lastModifiedAt = activity.date
+          ),
+          None,
+        )
       case _: ScenarioActivity.OutgoingMigration =>
         None
       case activity: ScenarioActivity.PerformedSingleExecution =>
@@ -462,7 +472,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       lastModifiedByUserName = lastModifiedByUserName,
       lastModifiedAt = Some(now),
       createdAt = now,
-      scenarioVersion = scenarioActivity.scenarioVersion,
+      scenarioVersion = scenarioActivity.scenarioVersionId,
       comment = comment,
       attachmentId = attachmentId,
       finishedAt = finishedAt,
@@ -565,10 +575,12 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case activity: ScenarioActivity.IncomingMigration =>
         createEntity(scenarioActivity)(
           additionalProperties = AdditionalProperties(
-            Map(
-              "sourceEnvironment"     -> activity.sourceEnvironment.name,
-              "sourceScenarioVersion" -> activity.sourceScenarioVersion.value.toString,
-            )
+            List(
+              Some("sourceEnvironment" -> activity.sourceEnvironment.name),
+              Some("sourceUser"        -> activity.sourceUser.value),
+              Some("targetEnvironment" -> activity.targetEnvironment.name),
+              activity.sourceScenarioVersionId.map(v => "sourceScenarioVersion" -> v.toString),
+            ).flatten.toMap
           )
         )
       case activity: ScenarioActivity.OutgoingMigration =>
@@ -665,7 +677,11 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   }
 
   private def additionalPropertyFromEntity(entity: ScenarioActivityEntityData, name: String): Either[String, String] = {
-    entity.additionalProperties.properties.get(name).toRight(s"Missing additional property $name")
+    optionalAdditionalPropertyFromEntity(entity, name).toRight(s"Missing additional property $name")
+  }
+
+  private def optionalAdditionalPropertyFromEntity(entity: ScenarioActivityEntityData, name: String): Option[String] = {
+    entity.additionalProperties.properties.get(name)
   }
 
   private def fromEntity(entity: ScenarioActivityEntityData): Either[String, (Long, ScenarioActivity)] = {
@@ -677,7 +693,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion
+            scenarioVersionId = entity.scenarioVersion
           )
           .asRight
           .map((entity.id, _))
@@ -688,7 +704,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion
+            scenarioVersionId = entity.scenarioVersion
           )
           .asRight
           .map((entity.id, _))
@@ -699,7 +715,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion
+            scenarioVersionId = entity.scenarioVersion
           )
           .asRight
           .map((entity.id, _))
@@ -711,7 +727,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
               scenarioActivityId = entity.activityId,
               user = userFromEntity(entity),
               date = entity.createdAt.toInstant,
-              scenarioVersion = entity.scenarioVersion,
+              scenarioVersionId = entity.scenarioVersion,
               comment = comment,
             )
           }
@@ -724,7 +740,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
               scenarioActivityId = entity.activityId,
               user = userFromEntity(entity),
               date = entity.createdAt.toInstant,
-              scenarioVersion = entity.scenarioVersion,
+              scenarioVersionId = entity.scenarioVersion,
               comment = comment,
             )
           }
@@ -737,7 +753,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
               scenarioActivityId = entity.activityId,
               user = userFromEntity(entity),
               date = entity.createdAt.toInstant,
-              scenarioVersion = entity.scenarioVersion,
+              scenarioVersionId = entity.scenarioVersion,
               comment = comment,
             )
           }
@@ -750,7 +766,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
               scenarioActivityId = entity.activityId,
               user = userFromEntity(entity),
               date = entity.createdAt.toInstant,
-              scenarioVersion = entity.scenarioVersion,
+              scenarioVersionId = entity.scenarioVersion,
               comment = comment,
             )
           }
@@ -763,7 +779,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           oldName = oldNameAndNewName._1,
           newName = oldNameAndNewName._2
         )).map((entity.id, _))
@@ -775,7 +791,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           comment = comment,
         )).map((entity.id, _))
       case ScenarioActivityType.AttachmentAdded =>
@@ -786,7 +802,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           attachment = attachment,
         )).map((entity.id, _))
       case ScenarioActivityType.ChangedProcessingMode =>
@@ -802,24 +818,28 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           from = from,
           to = to,
         )).map((entity.id, _))
       case ScenarioActivityType.IncomingMigration =>
         (for {
           sourceEnvironment <- additionalPropertyFromEntity(entity, "sourceEnvironment")
-          sourceScenarioVersion <- additionalPropertyFromEntity(entity, "sourceScenarioVersion").flatMap(
-            toLongOption(_).toRight("sourceScenarioVersion is not a valid Long")
+          sourceUser        <- additionalPropertyFromEntity(entity, "sourceUser")
+          targetEnvironment <- additionalPropertyFromEntity(entity, "targetEnvironment")
+          sourceScenarioVersion = optionalAdditionalPropertyFromEntity(entity, "sourceScenarioVersion").flatMap(
+            toLongOption
           )
         } yield ScenarioActivity.IncomingMigration(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           sourceEnvironment = Environment(sourceEnvironment),
-          sourceScenarioVersion = ScenarioVersion(sourceScenarioVersion)
+          sourceUser = UserName(sourceUser),
+          sourceScenarioVersionId = sourceScenarioVersion.map(ScenarioVersionId),
+          targetEnvironment = Environment(targetEnvironment),
         )).map((entity.id, _))
       case ScenarioActivityType.OutgoingMigration =>
         (for {
@@ -830,7 +850,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           comment = comment,
           destinationEnvironment = Environment(destinationEnvironment),
         )).map((entity.id, _))
@@ -842,7 +862,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           comment = comment,
           dateFinished = entity.finishedAt.map(_.toInstant),
           errorMessage = entity.errorMessage,
@@ -854,7 +874,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion,
+            scenarioVersionId = entity.scenarioVersion,
             dateFinished = entity.finishedAt.map(_.toInstant),
             errorMessage = entity.errorMessage,
           )
@@ -869,7 +889,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           dateFinished = finishedAt,
           errorMessage = entity.errorMessage,
           changes = description,
@@ -884,7 +904,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion,
+            scenarioVersionId = entity.scenarioVersion,
             actionName = actionName,
             comment = comment,
           )).map((entity.id, _))

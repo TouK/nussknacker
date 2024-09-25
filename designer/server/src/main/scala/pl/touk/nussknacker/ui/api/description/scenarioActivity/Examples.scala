@@ -161,7 +161,9 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           sourceEnvironment = "preprod",
-          sourceScenarioVersionId = "23",
+          sourceUser = "user-preprod",
+          sourceScenarioVersionId = Some(23L),
+          targetEnvironment = "prod",
         ),
         ScenarioActivity.forOutgoingMigration(
           id = UUID.fromString("49fcd45d-3fa6-48d4-b8ed-b3055910c7ad"),

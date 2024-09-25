@@ -125,6 +125,7 @@ class StandardRemoteEnvironmentSpec
         ProcessTestData.sampleScenarioParameters.category,
         ProcessTestData.sampleScenarioLabels,
         ProcessTestData.validScenarioGraph,
+        ProcessTestData.versionId,
         ProcessTestData.sampleProcessName,
         false
       )
@@ -150,6 +151,7 @@ class StandardRemoteEnvironmentSpec
         ProcessTestData.sampleScenarioParameters.category,
         ProcessTestData.sampleScenarioLabels,
         ProcessTestData.validScenarioGraph,
+        ProcessTestData.versionId,
         ProcessTestData.sampleProcessName,
         false
       )
@@ -176,6 +178,7 @@ class StandardRemoteEnvironmentSpec
         ProcessTestData.sampleScenarioParameters.category,
         ProcessTestData.sampleScenarioLabels,
         ProcessTestData.validScenarioGraph,
+        ProcessTestData.versionId,
         ProcessTestData.sampleProcessName,
         false
       )
