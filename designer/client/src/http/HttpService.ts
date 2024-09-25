@@ -592,6 +592,21 @@ class HttpService {
         return promise;
     }
 
+    getActivityParameters(processName: string, scenarioGraph: ScenarioGraph) {
+        const promise = api.post(
+            `/activityInfo/${encodeURIComponent(processName)}/activityParameters`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGetTestParameters", "Failed to get activity parameters definition"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
     generateTestData(processName: string, testSampleSize: string, scenarioGraph: ScenarioGraph): Promise<AxiosResponse> {
         const promise = api.post(
             `/testInfo/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
