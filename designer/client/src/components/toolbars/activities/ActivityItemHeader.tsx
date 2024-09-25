@@ -1,7 +1,7 @@
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../creator/SearchHighlighter";
-import HttpService, { ActionMetadata, ActivityAdditionalFields } from "../../../http/HttpService";
+import HttpService, { ActionMetadata, ActivityAdditionalFields, ActivityAttachment } from "../../../http/HttpService";
 import UrlIcon from "../../UrlIcon";
 import { blend } from "@mui/system";
 import { getBorderColor } from "../../../containers/theme/helpers";
@@ -42,11 +42,11 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isActiv
 const HeaderActivity = ({
     activityAction,
     scenarioVersionId,
-    additionalFields,
+    activityAttachment,
 }: {
     activityAction: ActionMetadata;
     scenarioVersionId: number;
-    additionalFields: ActivityAdditionalFields[];
+    activityAttachment: ActivityAttachment;
 }) => {
     const { open } = useWindows();
     const processName = useSelector(getProcessName);
@@ -62,8 +62,8 @@ const HeaderActivity = ({
             );
         }
         case "download_attachment": {
-            const attachmentId = additionalFields.find((additionalField) => additionalField.name === "attachmentId")?.value;
-            const attachmentName = additionalFields.find((additionalField) => additionalField.name === "attachmentFilename")?.value;
+            const attachmentId = activityAttachment.file.status === "AVAILABLE" && activityAttachment.file.id;
+            const attachmentName = activityAttachment.filename;
 
             const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId, attachmentName);
             return <StyledHeaderActionIcon onClick={handleDownloadAttachment} key={attachmentId} src={activityAction.icon} />;
@@ -161,7 +161,7 @@ const ActivityItemHeader = ({ activity, isActiveItem, searchQuery }: Props) => {
                     key={activityAction.id}
                     activityAction={activityAction}
                     scenarioVersionId={activity.scenarioVersionId}
-                    additionalFields={activity.additionalFields}
+                    activityAttachment={activity.attachment}
                 />
             ))}
         </StyledActivityItemHeader>

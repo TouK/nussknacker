@@ -12,6 +12,8 @@ import { UseActivitiesSearch } from "./useActivitiesSearch";
 import { ActivitiesSearch } from "./ActivitiesSearch";
 import { blendLighten } from "../../../containers/theme/helpers";
 import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
+import { useSelector } from "react-redux";
+import { getProcessName } from "../../../reducers/selectors/graph";
 
 const StyledVariableSizeList = styled(VariableSizeList)(({ theme }) => ({
     "::-webkit-scrollbar": {
@@ -178,6 +180,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const listRef = useRef<VariableSizeList>(null);
     const rowHeights = useRef({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const scenarioName = useSelector(getProcessName);
 
     const setRowHeight = useCallback((index: number, height: number) => {
         if (listRef.current) {
@@ -258,10 +261,13 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const handleFetchActivities = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [activitiesMetadata, { activities }] = await Promise.all([
-                httpService.fetchActivitiesMetadata(),
-                httpService.fetchActivities(),
-            ]);
+            const [
+                { data: activitiesMetadata },
+                {
+                    data: { activities },
+                },
+            ] = await Promise.all([httpService.fetchActivitiesMetadata(scenarioName), httpService.fetchActivities(scenarioName)]);
+
             const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
 
             setData(extendActivitiesWithUIData(mergedActivitiesDataWithMetadata));

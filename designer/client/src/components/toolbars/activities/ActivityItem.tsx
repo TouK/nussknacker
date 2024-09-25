@@ -72,7 +72,11 @@ export const ActivityItem = forwardRef(
                             </Typography>
                         )}
                         {activity.comment && (
-                            <CommentContent content={activity.comment} commentSettings={commentSettings} searchWords={[searchQuery]} />
+                            <CommentContent
+                                content={activity.comment.content.value}
+                                commentSettings={commentSettings}
+                                searchWords={[searchQuery]}
+                            />
                         )}
                         {activity.additionalFields.map((additionalField, index) => {
                             const additionalFieldText = `${additionalField.name}: ${additionalField.value}`;
