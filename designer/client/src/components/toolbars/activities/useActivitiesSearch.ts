@@ -1,14 +1,14 @@
-import { MutableRefObject, useState } from "react";
+import { useState } from "react";
 import { Activity, UIActivities } from "./ActivitiesPanel";
-import { VariableSizeList } from "react-window";
+import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
 import { get } from "lodash";
 
 interface Props {
     activities: UIActivities[];
-    listRef: MutableRefObject<VariableSizeList>;
+    handleScrollToItem: (index: number, align: Align) => void;
 }
-export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
+export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
@@ -17,7 +17,13 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
         setSearchQuery(value);
         setFoundResults([]);
 
-        const fullSearchFields: NestedKeyOf<Activity>[] = ["date", "user", "comment", "activities.displayableName"];
+        const fullSearchFields: NestedKeyOf<Activity>[] = [
+            "date",
+            "user",
+            "comment.content.value",
+            "activities.displayableName",
+            "overrideDisplayableName",
+        ];
 
         for (const activity of activities) {
             if (activity.uiType !== "item") {
@@ -25,23 +31,19 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
             }
 
             for (const fullSearchField of fullSearchFields) {
-                if (value && get(activity, fullSearchField, "").toLowerCase().includes(value.toLowerCase())) {
+                const searchFieldValue = get(activity, fullSearchField, "") || "";
+                if (value && searchFieldValue.toLowerCase().includes(value.toLowerCase())) {
                     setFoundResults((prevState) => {
-                        prevState.push(activity.uiGeneratedId);
+                        if (prevState.every((foundResult) => foundResult != activity.uiGeneratedId)) {
+                            prevState.push(activity.uiGeneratedId);
+                        }
                         return prevState;
                     });
                 }
             }
-
-            if (value && activity.date.toLowerCase().includes(value.toLowerCase())) {
-                setFoundResults((prevState) => {
-                    prevState.push(activity.uiGeneratedId);
-                    return prevState;
-                });
-            }
         }
 
-        listRef.current.scrollToItem(
+        handleScrollToItem(
             activities.findIndex((item) => item.uiGeneratedId === foundResults[selectedResult]),
             "start",
         );
@@ -57,7 +59,7 @@ export const UseActivitiesSearch = ({ activities, listRef }: Props) => {
         }
 
         const foundResult = foundResults[selectedResultNewValue];
-        listRef.current.scrollToItem(
+        handleScrollToItem(
             activities.findIndex((item) => item.uiGeneratedId === foundResult),
             "center",
         );

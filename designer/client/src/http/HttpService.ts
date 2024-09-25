@@ -165,6 +165,7 @@ type ActivityTypes =
     | "SCENARIO_DEPLOYED"
     | "SCENARIO_CANCELED"
     | "SCENARIO_MODIFIED"
+    | "SCENARIO_PAUSED"
     | "SCENARIO_NAME_CHANGED"
     | "COMMENT_ADDED"
     | "ATTACHMENT_ADDED"
@@ -173,7 +174,8 @@ type ActivityTypes =
     | "OUTGOING_MIGRATION"
     | "PERFORMED_SINGLE_EXECUTION"
     | "PERFORMED_SCHEDULED_EXECUTION"
-    | "AUTOMATIC_UPDATE";
+    | "AUTOMATIC_UPDATE"
+    | "CUSTOM_ACTION";
 
 export interface ActivityMetadata {
     type: ActivityTypes;
@@ -204,7 +206,7 @@ interface ActivityAttachmentDeleteStatus {
 }
 
 interface ActivityAttachmentAvailableStatus {
-    id: string;
+    id: number;
     status: "AVAILABLE";
 }
 
@@ -222,10 +224,11 @@ export interface ActivitiesResponse {
         user: string;
         date: string;
         scenarioVersionId?: number;
-        comment?: ActivityComment;
-        attachment?: ActivityAttachment;
-        overrideDisplayableName?: string;
-        overrideSupportedActions?: string[];
+        comment: ActivityComment | null;
+        attachment: ActivityAttachment | null;
+        overrideDisplayableName: string | null;
+        overrideSupportedActions: string[] | null;
+        overrideIcon: string | null;
         additionalFields: ActivityAdditionalFields[];
     }[];
 }

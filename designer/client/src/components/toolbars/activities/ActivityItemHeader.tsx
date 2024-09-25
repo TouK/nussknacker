@@ -1,7 +1,7 @@
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../creator/SearchHighlighter";
-import HttpService, { ActionMetadata, ActivityAdditionalFields, ActivityAttachment } from "../../../http/HttpService";
+import HttpService, { ActionMetadata, ActivityAttachment } from "../../../http/HttpService";
 import UrlIcon from "../../UrlIcon";
 import { blend } from "@mui/system";
 import { getBorderColor } from "../../../containers/theme/helpers";
