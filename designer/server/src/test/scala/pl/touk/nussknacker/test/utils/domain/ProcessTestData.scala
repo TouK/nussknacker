@@ -37,7 +37,7 @@ import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.validation.{ScenarioLabelsValidator, UIProcessValidator}
 
 object ProcessTestData {
@@ -405,7 +405,7 @@ object ProcessTestData {
   }
 
   def createEmptyUpdateProcessCommand(
-      comment: Option[UpdateProcessComment]
+      comment: Option[Comment]
   ): UpdateScenarioCommand = {
     val properties = ProcessProperties(
       ProcessAdditionalFields(

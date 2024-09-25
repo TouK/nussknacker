@@ -4,7 +4,7 @@ import cats.data.EitherT
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.RunDeploymentError
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
@@ -80,7 +80,7 @@ class ActivityService(
               date = now,
               scenarioVersionId = Some(ScenarioVersionId(scenarioGraphVersionId.value)),
               comment = commentOpt match {
-                case Some(comment) => ScenarioComment.Available(comment.value, UserName(loggedUser.username), now)
+                case Some(comment) => ScenarioComment.Available(comment.content, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
               },
             )

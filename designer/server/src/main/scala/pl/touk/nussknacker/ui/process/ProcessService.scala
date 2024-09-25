@@ -7,6 +7,7 @@ import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -54,14 +55,13 @@ object ProcessService {
 
   @JsonCodec final case class UpdateScenarioCommand(
       scenarioGraph: ScenarioGraph,
-      comment: Option[UpdateProcessComment],
+      comment: Option[Comment],
       scenarioLabels: Option[List[String]],
       forwardedUserName: Option[RemoteUserName]
   )
 
   final case class MigrateScenarioCommand(
       scenarioGraph: ScenarioGraph,
-      comment: Option[UpdateProcessComment],
       scenarioLabels: Option[List[String]],
       forwardedUserName: Option[RemoteUserName],
       sourceEnvironment: String,
@@ -459,7 +459,6 @@ class DBProcessService(
       val migrateProcessAction = MigrateProcessAction(
         processId = processIdWithName.id,
         canonicalProcess = substituted,
-        comment = action.comment,
         labels = scenarioLabels,
         increaseVersionWhenJsonNotChanged = false,
         forwardedUserName = action.forwardedUserName,

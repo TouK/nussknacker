@@ -296,8 +296,17 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         toComment(id, activity, activity.comment, Some("Run now: "))
       case _: ScenarioActivity.PerformedScheduledExecution =>
         None
-      case _: ScenarioActivity.AutomaticUpdate =>
-        None
+      case activity: ScenarioActivity.AutomaticUpdate =>
+        toComment(
+          id,
+          activity,
+          ScenarioComment.Available(
+            comment = s"Migrations applied: ${activity.changes}",
+            lastModifiedByUserName = activity.user.name,
+            lastModifiedAt = activity.date
+          ),
+          None,
+        )
       case _: ScenarioActivity.CustomAction =>
         None
     }
@@ -605,7 +614,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         )
       case activity: ScenarioActivity.AutomaticUpdate =>
         createEntity(scenarioActivity)(
-          finishedAt = Some(Timestamp.from(activity.dateFinished)),
           errorMessage = activity.errorMessage,
           additionalProperties = AdditionalProperties(
             Map(
@@ -674,6 +682,10 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           )
       }
     }
+  }
+
+  private def additionalPropertyListFromEntity(entity: ScenarioActivityEntityData, namePrefix: String): List[String] = {
+    entity.additionalProperties.properties.filter(_._1.startsWith(namePrefix)).values.toList
   }
 
   private def additionalPropertyFromEntity(entity: ScenarioActivityEntityData, name: String): Either[String, String] = {
@@ -882,7 +894,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           .map((entity.id, _))
       case ScenarioActivityType.AutomaticUpdate =>
         (for {
-          finishedAt  <- entity.finishedAt.map(_.toInstant).toRight("Missing finishedAt")
           description <- additionalPropertyFromEntity(entity, "description")
         } yield ScenarioActivity.AutomaticUpdate(
           scenarioId = scenarioIdFromEntity(entity),
@@ -890,7 +901,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
-          dateFinished = finishedAt,
           errorMessage = entity.errorMessage,
           changes = description,
         )).map((entity.id, _))

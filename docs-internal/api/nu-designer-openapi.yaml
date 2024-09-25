@@ -3744,6 +3744,10 @@ paths:
                       additionalFields:
                       - name: sourceEnvironment
                         value: preprod
+                      - name: sourceUser
+                        value: user-preprod
+                      - name: targetEnvironment
+                        value: prod
                       - name: sourceScenarioVersionId
                         value: '23'
                       type: INCOMING_MIGRATION
@@ -3805,8 +3809,6 @@ paths:
                       additionalFields:
                       - name: changes
                         value: JIRA-12345, JIRA-32146
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
                       type: AUTOMATIC_UPDATE
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user
@@ -4955,6 +4957,11 @@ components:
           format: int32
         sourceEnvironmentId:
           type: string
+        sourceScenarioVersionId:
+          type:
+          - integer
+          - 'null'
+          format: int64
         remoteUserName:
           type: string
         processingMode:

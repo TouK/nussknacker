@@ -425,16 +425,14 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersionId,
-            dateFinished,
             changes,
-            errorMessage
+            errorMessage,
           ) =>
         Dtos.ScenarioActivity.forAutomaticUpdate(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
-          dateFinished = dateFinished,
           changes = changes,
           errorMessage = errorMessage,
         )

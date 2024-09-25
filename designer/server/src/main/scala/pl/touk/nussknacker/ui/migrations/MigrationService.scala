@@ -26,7 +26,6 @@ import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, Migrati
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
-import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError}
@@ -91,19 +90,10 @@ class MigrationService(
     val scenarioLabels = migrateScenarioData.scenarioLabels.map(ScenarioLabel.apply)
     val forwardedUsernameO =
       if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioData.remoteUserName)) else None
-    val updateProcessComment = {
-      forwardedUsernameO match {
-        case Some(forwardedUsername) =>
-          UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${forwardedUsername.name}")
-        case None =>
-          UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by Unknown user")
-      }
-    }
 
     val migrateScenarioCommand =
       MigrateScenarioCommand(
         scenarioGraph = scenarioGraph,
-        comment = Some(updateProcessComment),
         scenarioLabels = Some(scenarioLabels.map(_.value)),
         forwardedUserName = forwardedUsernameO,
         sourceEnvironment = sourceEnvironmentId,

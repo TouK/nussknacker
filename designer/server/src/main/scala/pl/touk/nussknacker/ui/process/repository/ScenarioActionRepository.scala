@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{AdditionalProperties, ScenarioActivityEntityData, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -253,7 +253,7 @@ class DbScenarioActionRepository(
       lastModifiedAt = Some(Timestamp.from(createdAt)),
       createdAt = Timestamp.from(createdAt),
       scenarioVersion = processVersion.map(_.value).map(ScenarioVersionId.apply),
-      comment = comment.map(_.value),
+      comment = comment.map(_.content),
       attachmentId = None,
       finishedAt = performedAt.map(Timestamp.from),
       state = Some(state),
@@ -280,7 +280,7 @@ class DbScenarioActionRepository(
         .filter(_.activityId === activityId(actionId))
         .map(a => (a.performedAt, a.state, a.errorMessage, a.comment))
         .update(
-          (performedAt.map(Timestamp.from), Some(state), failure, comment.map(_.value))
+          (performedAt.map(Timestamp.from), Some(state), failure, comment.map(_.content))
         )
     } yield updateCount == 1
   }

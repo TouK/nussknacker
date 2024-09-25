@@ -53,7 +53,8 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
 }
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, UpdateProcessComment}
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -1437,7 +1438,7 @@ class ProcessesResourcesSpec
     doUpdateProcess(
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
-        comment.map(UpdateProcessComment(_)),
+        comment.map(Comment.apply),
         Some(List.empty),
         None
       ),

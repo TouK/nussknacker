@@ -630,7 +630,6 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersionId: Option[Long],
-        dateFinished: Instant,
         changes: String,
         errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
@@ -643,7 +642,6 @@ object Dtos {
       attachment = None,
       additionalFields = List(
         Some(AdditionalField("changes", changes)),
-        Some(AdditionalField("dateFinished", dateFinished.toString)),
         errorMessage.map(e => AdditionalField("errorMessage", e)),
       ).flatten
     )

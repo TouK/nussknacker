@@ -18,7 +18,8 @@ import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
-import pl.touk.nussknacker.ui.listener.{Comment, ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.ProcessStateProvider
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps

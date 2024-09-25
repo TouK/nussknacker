@@ -13,14 +13,14 @@
 | CommentAdded                |      | X     | old comments mechanism replaced with activities     | 
 | AttachmentAdded             |      | X     | old attachment logic replaced with activity         | 
 | ChangedProcessingMode       | X    |       |                                                     | 
-| IncomingMigration           | X    |       |                                                     | 
+| IncomingMigration           |      | X     | Migrated in phase 2                                 | 
 | OutgoingMigration           | X    |       |                                                     | 
 | PerformedSingleExecution    |      | X     | it was old process action - custom action "run now" | 
 | PerformedScheduledExecution | X    |       |                                                     |
-| AutomaticUpdate             | X    |       |                                                     |
+| AutomaticUpdate             |      | X     | Migrated in phase 2                                 |
 | CustomAction                |      | X     | it was old process action - custom action           |
 
-DONE 11/17
+DONE 13/17
 
 
 TODO: Migrate old comments to new activities for old operations, that were saved only as comments
