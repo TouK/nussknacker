@@ -37,7 +37,7 @@ export function loadProcessState(processName: ProcessName): ThunkAction {
         );
 }
 
-export function fetchActivityFormParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
+export function fetchActivityParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
         HttpService.getActivityParameters(processName, scenarioGraph).then(({ data }) => {
             dispatch({
