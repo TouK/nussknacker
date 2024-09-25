@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.activity
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.process.WithActivityParameters
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -12,7 +12,10 @@ class ModelDataActivityInfoProvider(modelData: ModelData)
     extends CommonModelDataInfoProvider(modelData)
     with ActivityInfoProvider {
 
-  override def getActivityParameters(processVersion: ProcessVersion,scenario: CanonicalProcess): Map[String, Map[String, List[Parameter]]] = {
+  override def getActivityParameters(
+      processVersion: ProcessVersion,
+      scenario: CanonicalProcess
+  ): Map[String, Map[String, Map[String, ParameterConfig]]] = {
     val jobData = JobData(scenario.metaData, processVersion)
     modelData.withThisAsContextClassLoader {
       val nodeToActivityToParameters = collectAllSources(scenario)
@@ -23,8 +26,8 @@ class ModelDataActivityInfoProvider(modelData: ModelData)
   }
 
   private def groupByActivity(
-      nodeToActivityToParameters: Map[String, Map[String, List[Parameter]]]
-  ): Map[String, Map[String, List[Parameter]]] = {
+      nodeToActivityToParameters: Map[String, Map[String, Map[String, ParameterConfig]]]
+  ): Map[String, Map[String, Map[String, ParameterConfig]]] = {
     val activityToNodeToParameters = for {
       (node, activityToParams) <- nodeToActivityToParameters.toList
       (activity, params)       <- activityToParams.toList
@@ -34,7 +37,10 @@ class ModelDataActivityInfoProvider(modelData: ModelData)
       .mapValuesNow(_.map(_._2).toMap)
   }
 
-  private def getActivityParameters(source: SourceNodeData, jobData: JobData): Map[String, List[Parameter]] = {
+  private def getActivityParameters(
+      source: SourceNodeData,
+      jobData: JobData
+  ): Map[String, Map[String, ParameterConfig]] = {
     modelData.withThisAsContextClassLoader {
       val compiledSource = prepareSourceObj(source)(jobData, NodeId(source.id))
       compiledSource match {

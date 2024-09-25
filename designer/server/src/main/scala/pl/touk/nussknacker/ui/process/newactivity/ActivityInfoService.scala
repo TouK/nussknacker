@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.ui.process.newactivity
 
+import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
+import pl.touk.nussknacker.engine.api.definition.RawParameterEditor
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.typed.CanBeSubclassDeterminer
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.activity.ActivityInfoProvider
-import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.ui.definition.DefinitionsService
+import pl.touk.nussknacker.restmodel.definition.UiActivityParameterConfig
+import pl.touk.nussknacker.ui.process.newactivity.ActivityInfoService.{ActivityName, UiActivityNodeParameters}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
@@ -21,17 +21,24 @@ class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processRes
       isFragment: Boolean
   )(
       implicit user: LoggedUser
-  ): Map[String, List[UISourceParameters]] = {
+  ): Map[ActivityName, List[UiActivityNodeParameters]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     activityInfoProvider
       .getActivityParameters(processVersion, canonical)
       .map { case (activityName, nodeParamsMap) =>
-        activityName -> nodeParamsMap
-          .map { case (nodeId, params) =>
-            UISourceParameters(nodeId, params.map(DefinitionsService.createUIParameter))
-          }
-          .map(assignUserFriendlyEditor)
-          .toList
+        activityName -> nodeParamsMap.map { case (nodeId, params) =>
+          UiActivityNodeParameters(
+            NodeId(nodeId),
+            params.map { case (name, value) =>
+              name -> UiActivityParameterConfig(
+                value.defaultValue,
+                value.editor.getOrElse(RawParameterEditor),
+                value.label,
+                value.hintText
+              )
+            }
+          )
+        }.toList
       }
   }
 
@@ -44,16 +51,9 @@ class ActivityInfoService(activityInfoProvider: ActivityInfoProvider, processRes
     processResolver.validateAndResolve(scenarioGraph, processVersion, isFragment)
   }
 
-  // copied from ScenarioTestService
-  private def assignUserFriendlyEditor(uiSourceParameter: UISourceParameters): UISourceParameters = {
-    val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
-      if (CanBeSubclassDeterminer.canBeSubclassOf(uiParameter.typ, Typed.apply(classOf[String])).isValid) {
-        uiParameter.copy(editor = StringParameterEditor)
-      } else {
-        uiParameter
-      }
-    }
-    uiSourceParameter.copy(parameters = adaptedParameters)
-  }
+}
 
+object ActivityInfoService {
+  type ActivityName = String
+  @JsonCodec case class UiActivityNodeParameters(nodeId: NodeId, parameters: Map[String, UiActivityParameterConfig])
 }

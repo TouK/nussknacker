@@ -1,14 +1,17 @@
 package pl.touk.nussknacker.engine.api.component
 
-import cats.syntax.functor._
 import io.circe.{Decoder, Encoder}
-import io.circe.generic.auto._
-import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData.NodeDeploymentData
 
 final case class NodesDeploymentData(dataByNodeId: Map[NodeId, NodeDeploymentData])
 
 object NodesDeploymentData {
+
+  // Raw deployment parameters (name -> value) that are used as additional node configuration during deployment.
+  // Each node can be provided with dedicated set of parameters.
+  // TODO: consider replacing NodeDeploymentData with Json
+  type NodeDeploymentData = Map[String, String]
 
   val empty: NodesDeploymentData = NodesDeploymentData(Map.empty)
 
@@ -18,27 +21,5 @@ object NodesDeploymentData {
 
   implicit val nodesDeploymentDataDecoder: Decoder[NodesDeploymentData] =
     Decoder.decodeMap[NodeId, NodeDeploymentData].map(NodesDeploymentData(_))
-
-}
-
-sealed trait NodeDeploymentData
-
-final case class SqlFilteringExpression(sqlExpression: String) extends NodeDeploymentData
-
-final case class KafkaSourceOffset(offsetResetStrategy: Long) extends NodeDeploymentData
-
-object NodeDeploymentData {
-
-  implicit val nodeDeploymentDataEncoder: Encoder[NodeDeploymentData] =
-    Encoder.instance {
-      case s: SqlFilteringExpression => s.asJson
-      case o: KafkaSourceOffset      => o.asJson
-    }
-
-  implicit val nodeDeploymentDataDecoder: Decoder[NodeDeploymentData] =
-    List[Decoder[NodeDeploymentData]](
-      Decoder[SqlFilteringExpression].widen,
-      Decoder[KafkaSourceOffset].widen
-    ).reduceLeft(_ or _)
 
 }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.{emptyOrNullString, equalTo, is, notNullValue}
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
@@ -38,12 +38,10 @@ class ActivityInfoResourcesSpec
         .Then()
         .statusCode(200)
         .body(
-          "DEPLOY[0].sourceId",
+          "DEPLOY[0].nodeId",
           equalTo("sourceWithParametersId"),
-          "DEPLOY[0].parameters[0].name",
-          equalTo("offset"),
-          "DEPLOY[0].parameters[0].typ.display",
-          equalTo("Long")
+          "DEPLOY[0].parameters.offset",
+          notNullValue(),
         )
     }
 
