@@ -18,7 +18,7 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -27,7 +27,6 @@ import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInf
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { GenericValidationRequest } from "../actions/nk/genericAction";
-import { EventTrackingSelector } from "../containers/event-tracking";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
 
@@ -315,9 +314,17 @@ class HttpService {
             );
     }
 
-    deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
+    deploy(
+        processName: string,
+        comment?: string,
+        nodesDeploymentData?: Record<NodeId, Record<string, string>>,
+    ): Promise<{ isSuccess: boolean }> {
+        const runDeploymentRequest = {
+            ...(nodesDeploymentData && { nodesDeploymentData: nodesDeploymentData }),
+            ...(comment && { comment: comment }),
+        };
         return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
+            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {
                 return { isSuccess: true };
             })

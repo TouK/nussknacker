@@ -6,14 +6,17 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
@@ -72,6 +75,11 @@ object ManagementResources {
 
   }
 
+  @JsonCodec final case class RunDeploymentRequest(
+      nodesDeploymentData: Option[NodesDeploymentData],
+      comment: Option[ApiCallComment]
+  )
+
 }
 
 class ManagementResources(
@@ -125,17 +133,16 @@ class ManagementResources(
           }
         } ~
         path("deploy" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]]) & parameters(Symbol("savepointPath"))) {
-            (processIdWithName, comment, savepointPath) =>
+          (post & processId(processName) & entity(as[RunDeploymentRequest]) & parameters(Symbol("savepointPath"))) {
+            (processIdWithName, request, savepointPath) =>
               canDeploy(processIdWithName) {
                 complete {
                   deploymentService
                     .processCommand(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
-                        commonData = CommonCommandData(processIdWithName, comment.map(ApiCallComment(_)), user),
-                        nodesDeploymentData =
-                          NodesDeploymentData.empty, // TODO: here goes map of parameters defined by activityParameters
+                        commonData = CommonCommandData(processIdWithName, request.comment, user),
+                        nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
                     )
@@ -149,16 +156,15 @@ class ManagementResources(
     pathPrefix("processManagement") {
 
       path("deploy" / ProcessNameSegment) { processName =>
-        (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+        (post & processId(processName) & entity(as[RunDeploymentRequest])) { (processIdWithName, request) =>
           canDeploy(processIdWithName) {
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
                   .processCommand(
                     RunDeploymentCommand(
-                      commonData = CommonCommandData(processIdWithName, comment.map(UserComment), user),
-                      nodesDeploymentData =
-                        NodesDeploymentData.empty, // TODO: here goes map of parameters defined by activityParameters
+                      commonData = CommonCommandData(processIdWithName, request.comment, user),
+                      nodesDeploymentData = request.nodesDeploymentData.getOrElse(NodesDeploymentData.empty),
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
                   )
