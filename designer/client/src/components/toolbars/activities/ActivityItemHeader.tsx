@@ -17,13 +17,15 @@ const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
     height: "16px",
     marginRight: theme.spacing(1),
+    color: theme.palette.primary.main,
 }));
 
-const StyledHeaderActionIcon = styled(UrlIcon)(() => ({
+const StyledHeaderActionIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
     height: "16px",
     marginLeft: "auto",
     cursor: "pointer",
+    color: theme.palette.text.secondary,
 }));
 
 const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isActive: boolean }>(({ theme, isHighlighted, isActive }) => ({
