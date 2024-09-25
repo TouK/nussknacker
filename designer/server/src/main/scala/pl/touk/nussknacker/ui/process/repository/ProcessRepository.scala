@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import akka.http.scaladsl.model.HttpHeader
-import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
@@ -167,29 +166,35 @@ class DBProcessRepository(
     val userName = updateProcessAction.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
 
     def addNewCommentToVersion(scenarioId: ProcessId, scenarioGraphVersionId: VersionId) = {
-      updateProcessAction.comment.map { comment =>
-        run(
-          scenarioActivityRepository.addActivity(
-            ScenarioActivity.ScenarioModified(
-              scenarioId = ScenarioId(scenarioId.value),
-              scenarioActivityId = ScenarioActivityId.random,
-              user = ScenarioUser(
-                id = Some(UserId(loggedUser.id)),
-                name = UserName(loggedUser.username),
-                impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-                impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-              ),
-              date = Instant.now(),
-              scenarioVersion = Some(ScenarioVersion(scenarioGraphVersionId.value)),
-              comment = ScenarioComment.Available(
-                comment = comment.value,
-                lastModifiedByUserName = UserName(loggedUser.username),
-                lastModifiedAt = clock.instant(),
-              )
-            )
+      run(
+        scenarioActivityRepository.addActivity(
+          ScenarioActivity.ScenarioModified(
+            scenarioId = ScenarioId(scenarioId.value),
+            scenarioActivityId = ScenarioActivityId.random,
+            user = ScenarioUser(
+              id = Some(UserId(loggedUser.id)),
+              name = UserName(loggedUser.username),
+              impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
+              impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
+            ),
+            date = Instant.now(),
+            scenarioVersion = Some(ScenarioVersion(scenarioGraphVersionId.value)),
+            comment = updateProcessAction.comment match {
+              case Some(comment) =>
+                ScenarioComment.Available(
+                  comment = comment.value,
+                  lastModifiedByUserName = UserName(loggedUser.username),
+                  lastModifiedAt = clock.instant(),
+                )
+              case None =>
+                ScenarioComment.Deleted(
+                  deletedByUserName = UserName(loggedUser.username),
+                  deletedAt = clock.instant(),
+                )
+            }
           )
         )
-      }.sequence
+      )
     }
 
     for {

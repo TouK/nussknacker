@@ -36,6 +36,13 @@ import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig,
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{Available, Deleted}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
+  ScenarioActivities,
+  ScenarioActivity,
+  ScenarioActivityComment,
+  ScenarioActivityType
+}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
@@ -695,9 +702,53 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    getActivity(processName) ~> check {
+    getDeprecatedActivity(processName) ~> check {
       val comments = responseAs[ProcessActivity].comments
       comments.loneElement.content shouldBe comment
+    }
+
+    getScenarioActivities(processName) ~> check {
+      val activities = responseAs[ScenarioActivities].activities
+
+      activities.length shouldBe 2
+      activities(0) shouldBe ScenarioActivity(
+        id = activities(0).id,
+        user = "allpermuser",
+        date = activities(0).date,
+        scenarioVersionId = Some(2L),
+        comment = Some(
+          ScenarioActivityComment(
+            content = Deleted,
+            lastModifiedBy = "allpermuser",
+            lastModifiedAt = activities(0).comment.get.lastModifiedAt
+          )
+        ),
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = Some("Version 2 saved"),
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioModified
+      )
+      activities(1) shouldBe ScenarioActivity(
+        id = activities(1).id,
+        user = "allpermuser",
+        date = activities(1).date,
+        scenarioVersionId = Some(2L),
+        comment = Some(
+          ScenarioActivityComment(
+            content = Available("Update the same version"),
+            lastModifiedBy = "allpermuser",
+            lastModifiedAt = activities(1).comment.get.lastModifiedAt
+          )
+        ),
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = Some("Version 2 saved"),
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioModified
+      )
     }
   }
 
@@ -1352,8 +1403,11 @@ class ProcessesResourcesSpec
   private def getProcess(processName: ProcessName): RouteTestResult =
     Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute
 
-  private def getActivity(processName: ProcessName): RouteTestResult =
+  private def getDeprecatedActivity(processName: ProcessName): RouteTestResult =
     Get(s"/api/processes/$processName/activity") ~> withAllPermUser() ~> applicationRoute
+
+  private def getScenarioActivities(processName: ProcessName): RouteTestResult =
+    Get(s"/api/processes/$processName/activity/activities") ~> withAllPermUser() ~> applicationRoute
 
   private def saveCanonicalProcessAndAssertSuccess(process: CanonicalProcess, category: TestCategory): Assertion =
     saveCanonicalProcess(process, category) {
