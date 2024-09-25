@@ -76,8 +76,8 @@ object V1_056__CreateScenarioActivitiesDefinition {
       def additionalProperties: Rep[String] = column[String]("additional_properties", NotNull)
 
       def activityTypeIndex = index("activity_type_idx", activityType)
-      def createdAtIndex    = index("created_at_idx", activityType)
-      def scenarioIdIndex   = index("scenario_id_idx", activityType)
+      def createdAtIndex    = index("created_at_idx", createdAt)
+      def scenarioIdIndex   = index("scenario_id_idx", scenarioId)
 
       def tupleWithoutAutoIncId = (
         activityType,
