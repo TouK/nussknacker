@@ -6,7 +6,6 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema}
 import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
 import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{
@@ -52,7 +51,8 @@ class TableSource(
     val selectQuery = tableEnv.from(tableDefinition.tableId.toString)
 
     val finalQuery = flinkNodeContext.nodeDeploymentData
-      .collect { case SqlFilteringExpression(sqlExpression) =>
+      .flatMap(_.get(SQL_EXPRESSION_PARAMETER_NAME))
+      .collect { case sqlExpression =>
         tableEnv.executeSql(
           s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM ${tableDefinition.tableId} WHERE $sqlExpression"
         )
@@ -126,5 +126,6 @@ class TableSource(
 }
 
 object TableSource {
+  val SQL_EXPRESSION_PARAMETER_NAME     = "sqlExpression"
   private val filteringInternalViewName = "filteringView"
 }

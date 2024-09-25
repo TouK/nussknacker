@@ -817,8 +817,7 @@ paths:
             example:
               scenarioName: scenario1
               nodesDeploymentData:
-                sourceNodeId1:
-                  sqlExpression: field1 = 'value'
+                sourceNodeId1: field1 = 'value'
         required: true
       responses:
         '202':
@@ -4807,15 +4806,6 @@ components:
     JsonParameterEditor:
       title: JsonParameterEditor
       type: object
-    KafkaSourceOffset:
-      title: KafkaSourceOffset
-      type: object
-      required:
-      - offset
-      properties:
-        offset:
-          type: integer
-          format: int64
     LayoutData:
       title: LayoutData
       type: object
@@ -4867,11 +4857,11 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeId_NodeDeploymentData:
-      title: Map_NodeId_NodeDeploymentData
+    Map_NodeId_String:
+      title: Map_NodeId_String
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/NodeDeploymentData'
+        type: string
     Map_String:
       title: Map_String
       type: object
@@ -5299,11 +5289,6 @@ components:
             type: string
           type:
             $ref: '#/components/schemas/NodeTypes12'
-    NodeDeploymentData:
-      title: NodeDeploymentData
-      oneOf:
-      - $ref: '#/components/schemas/KafkaSourceOffset'
-      - $ref: '#/components/schemas/SqlFilteringExpression'
     NodeTypes:
       title: NodeTypes
       type: string
@@ -5734,7 +5719,7 @@ components:
         scenarioName:
           type: string
         nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+          $ref: '#/components/schemas/Map_NodeId_String'
         comment:
           type:
           - string
@@ -6044,14 +6029,6 @@ components:
     SpelTemplateParameterEditor:
       title: SpelTemplateParameterEditor
       type: object
-    SqlFilteringExpression:
-      title: SqlFilteringExpression
-      type: object
-      required:
-      - sqlExpression
-      properties:
-        sqlExpression:
-          type: string
     SqlParameterEditor:
       title: SqlParameterEditor
       type: object
