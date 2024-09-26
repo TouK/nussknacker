@@ -4,6 +4,14 @@ import { ProcessVersionId } from "../components/Process/types";
 
 export type User = string;
 
+export type Attachment = {
+    processVersionId: ProcessVersionId;
+    id: string;
+    createDate: Instant;
+    user: User;
+    fileName: string;
+};
+
 export type Comment = {
     id: number;
     processVersionId: string;

@@ -2,8 +2,8 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { AttachmentEl } from "./AttachmentEl";
-import { AddAttachment } from "./AddAttachment";
+import { AttachmentEl } from "./AttachmentEl_deprecated";
+import { AddAttachment } from "./AddAttachment_deprecated";
 import { ProcessAttachmentsList, ProcessAttachmentsStyled } from "./StyledAttach";
 import { getProcessName } from "../../reducers/selectors/graph";
 
