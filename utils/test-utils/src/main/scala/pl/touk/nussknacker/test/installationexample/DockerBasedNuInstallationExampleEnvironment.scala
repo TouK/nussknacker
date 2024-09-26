@@ -27,7 +27,8 @@ class DockerBasedInstallationExampleNuEnvironment(
         "NUSSKNACKER_VERSION" -> nussknackerImageVersion
       ),
       logConsumers = Seq(
-        ServiceLogConsumer("bootstrap-setup", new Slf4jLogConsumer(slf4jLogger))
+        ServiceLogConsumer("bootstrap-setup", new Slf4jLogConsumer(slf4jLogger)),
+        ServiceLogConsumer("designer", new Slf4jLogConsumer(slf4jLogger)),
       ),
       waitingFor = Some(
         WaitingForService(
