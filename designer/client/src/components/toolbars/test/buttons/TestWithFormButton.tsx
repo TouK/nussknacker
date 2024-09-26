@@ -31,7 +31,7 @@ function TestWithFormButton({ disabled, name, title, icon, docs, markdownContent
     const sourcesFound = testParameters.length;
 
     const multipleSourcesTest = useCallback(() => {
-        inform({ text: `Testing with form support only one source - found ${sourcesFound}.` });
+        inform({ text: `Ad hoc testing is supported only for scenario with single source. Your scenario has ${sourcesFound} sources.` });
     }, [inform, sourcesFound]);
 
     const Icon = useCallback((props) => <UrlIcon src={icon} FallbackComponent={TestWFormIcon} {...props} />, [icon]);
