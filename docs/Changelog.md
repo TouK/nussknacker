@@ -60,6 +60,7 @@
   * [#6823](https://github.com/TouK/nussknacker/pull/6823) 
     * old process actions and comments migrated to new table in the db
     * Scenario Activity API implementation
+* [#6925](https://github.com/TouK/nussknacker/pull/6925) Fix situation when preset labels were presented as `null` when node didn't pass the validation.
 * [#6935](https://github.com/TouK/nussknacker/pull/6935) Spel: Scenario labels added to meta variable - `#meta.scenarioLabels`
 
 ## 1.17
