@@ -1,4 +1,4 @@
-import { GenericAction, GenericActionParameters } from "./GenericActionDialog";
+import { AdhocTestingParameters } from "./AdhocTestingDialog";
 import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getFindAvailableVariables } from "../../graph/node-modal/NodeDetailsContent/selectors";
@@ -6,10 +6,10 @@ import { getProcessingType, getProcessName, getScenarioGraph, getTestParameters 
 import { testProcessWithParameters } from "../../../actions/nk/displayTestResults";
 import { UIParameter } from "../../../types";
 import { head } from "lodash";
-import { ActionValues } from "./GenericActionFormContext";
+import { ActionValues } from "./AdhocTestingFormContext";
 
 export type SourceParameters = {
-    [key: string]: GenericActionParameters;
+    [key: string]: { parameters: UIParameter[] };
 };
 
 export function paramsListToRecord(parameters: UIParameter[]): ActionValues {
@@ -50,7 +50,7 @@ export function useSourceParameters() {
     };
 }
 
-export function useTestWithFormAction(): GenericAction {
+export function useAdhocTestingAction(): AdhocTestingParameters {
     const { sourceId, sourceParameters } = useSourceParameters();
 
     const parameters = useMemo<UIParameter[]>(() => sourceParameters[sourceId]?.parameters || [], [sourceId, sourceParameters]);
@@ -83,7 +83,7 @@ export function useTestWithFormAction(): GenericAction {
         [sourceId, dispatch, scenarioName, scenarioGraph],
     );
 
-    return useMemo<GenericAction>(
+    return useMemo<AdhocTestingParameters>(
         () => ({
             parameters,
             variableTypes,
