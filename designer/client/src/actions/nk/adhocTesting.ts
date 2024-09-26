@@ -1,8 +1,7 @@
-import HttpService from "../../http/HttpService";
-import { Expression, NodeValidationError, TypingResult, VariableTypes } from "../../types";
+import HttpService, { SourceWithParametersTest } from "../../http/HttpService";
+import { Expression, NodeValidationError, ScenarioGraph, TypingResult, VariableTypes } from "../../types";
 
 import { debounce } from "lodash";
-import { TestAdhocValidationRequest } from "./testAdhoc";
 
 export interface GenericValidationData {
     validationErrors: NodeValidationError[];
@@ -20,7 +19,12 @@ export interface GenericValidationRequest {
     variableTypes: VariableTypes;
 }
 
-export const validateGenericActionParameters = debounce(
+export interface TestAdhocValidationRequest {
+    sourceParameters: SourceWithParametersTest;
+    scenarioGraph: ScenarioGraph;
+}
+
+export const validateAdhocTestParameters = debounce(
     async (scenarioName: string, validationRequestData: TestAdhocValidationRequest, callback: (data: GenericValidationData) => void) => {
         const { data } = await HttpService.validateAdhocTestParameters(scenarioName, validationRequestData);
         callback(data);
