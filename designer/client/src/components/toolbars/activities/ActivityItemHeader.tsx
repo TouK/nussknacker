@@ -7,7 +7,7 @@ import { blend } from "@mui/system";
 import { getBorderColor } from "../../../containers/theme/helpers";
 import { unsavedProcessChanges } from "../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessName, getScenario, isSaveDisabled } from "../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../reducers/selectors/graph";
 import { useWindows } from "../../../windowManager";
 import { displayScenarioVersion } from "../../../actions/nk";
 import { ItemActivity } from "./ActivitiesPanel";
@@ -52,9 +52,15 @@ const HeaderActivity = ({
 }) => {
     const { open } = useWindows();
     const processName = useSelector(getProcessName);
+    const currentScenarioVersionId = useSelector(getProcessVersionId);
 
     switch (activityAction.id) {
         case "compare": {
+            const isCurrentVersionIsTheSameAsVersionFromActivity = currentScenarioVersionId === scenarioVersionId;
+            if (isCurrentVersionIsTheSameAsVersionFromActivity) {
+                return null;
+            }
+
             return (
                 <StyledHeaderActionIcon
                     data-testid={`compare-${scenarioVersionId}`}
