@@ -9,10 +9,12 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
@@ -41,10 +43,13 @@ class FlinkKafkaUniversalSink(
   override def registerSink(
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSink[_] = {
+  ): DataStreamSink[Value] = {
+    val schemaTypingResult =
+      schemaSupportDispatcher.forSchemaType(schema.getParsedSchema.schemaType()).typeDefinition(schema.getParsedSchema)
+
     val avroRecordFunctionType = KeyedValueType.info(
-      flinkNodeContext.typeInformationDetection.forType[AnyRef](key.returnType),
-      flinkNodeContext.typeInformationDetection.forType[AnyRef](value.returnType)
+      TypeInformationDetection.instance.forType[AnyRef](Typed(classOf[String])), // We support only String keys
+      TypeInformationDetection.instance.forType[AnyRef](schemaTypingResult)
     )
 
     dataStream
@@ -61,12 +66,12 @@ class FlinkKafkaUniversalSink(
     ds.flatMap(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value), typeInfo)
   }
 
-  private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] = {
+  private def toFlinkFunction: SinkFunction[Value] = {
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared, serializationSchema, clientId)
   }
 
   class EncodeAvroRecordFunction(flinkNodeContext: FlinkCustomNodeContext)
-      extends RichMapFunction[ValueWithContext[KeyedValue[AnyRef, AnyRef]], KeyedValue[AnyRef, AnyRef]]
+      extends RichMapFunction[ValueWithContext[Value], Value]
       with WithExceptionHandler {
 
     private val nodeId = flinkNodeContext.nodeId
@@ -83,7 +88,7 @@ class FlinkKafkaUniversalSink(
         .formValueEncoder(schema.getParsedSchema, validationMode)
     }
 
-    override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
+    override def map(ctx: ValueWithContext[Value]): Value = {
       ctx.value.mapValue { data =>
         exceptionHandler
           .handling(Some(NodeComponentInfo(nodeId, ComponentType.Sink, "flinkKafkaAvroSink")), ctx.context) {
