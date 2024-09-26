@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
+import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
@@ -40,11 +41,17 @@ class FlinkKafkaUniversalSink(
   override def registerSink(
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSink[_] =
+  ): DataStreamSink[_] = {
+    val avroRecordFunctionType = KeyedValueType.info(
+      flinkNodeContext.typeInformationDetection.forType[AnyRef](key.returnType),
+      flinkNodeContext.typeInformationDetection.forType[AnyRef](value.returnType)
+    )
+
     dataStream
-      .map(new EncodeAvroRecordFunction(flinkNodeContext))
+      .map(new EncodeAvroRecordFunction(flinkNodeContext), avroRecordFunctionType)
       .filter(_.value != null)
       .addSink(toFlinkFunction)
+  }
 
   def prepareValue(
       ds: DataStream[Context],
