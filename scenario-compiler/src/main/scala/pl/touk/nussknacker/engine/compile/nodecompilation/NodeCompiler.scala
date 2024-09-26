@@ -267,7 +267,8 @@ class NodeCompiler(
   }
 
   def compileFragmentInput(fragmentInput: FragmentInput, ctx: ValidationContext)(
-      implicit nodeId: NodeId, metaData: MetaData
+      implicit nodeId: NodeId,
+      metaData: MetaData
   ): NodeCompilationResult[List[CompiledParameter]] = {
 
     val ref            = fragmentInput.ref
@@ -280,16 +281,18 @@ class NodeCompiler(
       }
     val validParams =
       expressionCompiler.compileExecutorComponentNodeParameters(validParamDefs.value, ref.parameters, ctx)
-    val validParamsCombinedErrors = validParams.combine(
-      NonEmptyList
-        .fromList(validParamDefs.written)
-        .map(invalid)
-        .getOrElse(valid(List.empty[CompiledParameter]))
-    )
+    val validParamsCombinedErrors = validParams
+      .fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
+      .combine(
+        NonEmptyList
+          .fromList(validParamDefs.written)
+          .map(invalid)
+          .getOrElse(valid(List.empty[CompiledParameter]))
+      )
     val expressionTypingInfo =
       validParams
         .map(_.map(p => p.name.value -> p.typingInfo).toMap)
-        .valueOr(_ => Map.empty[String, ExpressionTypingInfo])
+        .getOrElse(Map.empty[String, ExpressionTypingInfo])
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParamsCombinedErrors)
   }
 
@@ -557,7 +560,7 @@ class NodeCompiler(
         ctx,
         branchContexts
       )
-      .andThen { compiledParameters =>
+      .flatMap { compiledParameters =>
         factory
           .createComponentExecutor[ComponentExecutor](
             componentDefinition,
@@ -580,7 +583,10 @@ class NodeCompiler(
             (typingInfo, componentExecutor)
           }
       }
-    (compiledObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), compiledObjectWithTypingInfo.map(_._2))
+    (
+      compiledObjectWithTypingInfo.map(_._1).getOrElse(Map.empty),
+      compiledObjectWithTypingInfo.map(_._2).fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
+    )
   }
 
   private def contextAfterMethodBasedCreatedComponentExecutor[ComponentExecutor](
@@ -682,7 +688,12 @@ class NodeCompiler(
         )
       }
       val nodeTypingInfo = computedParameters.map(_.map(p => p.name.value -> p.typingInfo).toMap).getOrElse(Map.empty)
-      NodeCompilationResult(nodeTypingInfo, None, outputCtx, serviceRef)
+      NodeCompilationResult(
+        nodeTypingInfo,
+        None,
+        outputCtx,
+        serviceRef.fold(Invalid(_), Valid(_), (a, _) => Invalid(a))
+      )
     }
 
   }

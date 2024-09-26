@@ -10,7 +10,7 @@
   - shorter message in logs
 * [#6877](https://github.com/TouK/nussknacker/pull/6877) Fix application crash on edit node details window open
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
-
+* [#6925](https://github.com/TouK/nussknacker/pull/6925) Fix situation when preset labels were presented as `null` when node didn't pass the validation.
   
 ### 1.17.0 (12 September 2024)
 
