@@ -28,7 +28,7 @@ class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: 
         .getBytes(StandardCharsets.UTF_8)
     val value           = KafkaExceptionInfo(metaData, exceptionInfo, consumerConfig)
     val serializedValue = value.asJson.spaces2.getBytes(StandardCharsets.UTF_8)
-    new ProducerRecord(consumerConfig.topic, key, serializedValue)
+    new ProducerRecord(consumerConfig.topic, null, timestamp, key, serializedValue)
   }
 
 }
