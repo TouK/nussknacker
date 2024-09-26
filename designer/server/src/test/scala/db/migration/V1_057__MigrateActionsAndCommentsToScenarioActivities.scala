@@ -234,13 +234,13 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           )
       )
     }
-    "migrate standalone comment (not assigned to any action) to scenario_activities table" in {
-      val comment = "ABC"
+    "migrate standalone comments (not assigned to any action) to scenario_activities table" in {
       val (process, entities) = run(
         for {
           process  <- processInsertQuery += processEntity(user, now)
           _        <- processVersionsTable += processVersionEntity(process)
-          _        <- commentInsertQuery += commentEntity(process, 1L, comment)
+          _        <- commentInsertQuery += commentEntity(process, 1L, "ABC1")
+          _        <- commentInsertQuery += commentEntity(process, 2L, "ABC2")
           _        <- migration.migrate
           entities <- activitiesDefinitions.scenarioActivitiesTable.result
         } yield (process, entities)
@@ -250,11 +250,19 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
       activities shouldBe Vector(
         ScenarioActivity.CommentAdded(
           scenarioId = ScenarioId(process.id.value),
-          scenarioActivityId = ScenarioActivityId(entities.head.activityId),
+          scenarioActivityId = activities(0).scenarioActivityId,
           user = ScenarioUser(None, UserName("John Doe"), None, None),
           date = now.toInstant,
           scenarioVersion = Some(ScenarioVersion(processVersionId)),
-          comment = Available("ABC", UserName(user), now.toInstant)
+          comment = Available("ABC1", UserName(user), now.toInstant)
+        ),
+        ScenarioActivity.CommentAdded(
+          scenarioId = ScenarioId(process.id.value),
+          scenarioActivityId = activities(1).scenarioActivityId,
+          user = ScenarioUser(None, UserName("John Doe"), None, None),
+          date = now.toInstant,
+          scenarioVersion = Some(ScenarioVersion(processVersionId)),
+          comment = Available("ABC2", UserName(user), now.toInstant)
         )
       )
     }

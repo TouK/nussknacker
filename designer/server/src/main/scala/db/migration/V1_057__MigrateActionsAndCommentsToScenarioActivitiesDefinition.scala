@@ -5,7 +5,9 @@ import db.migration.V1_056__CreateScenarioActivitiesDefinition.ScenarioActivitie
 import db.migration.V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition.Migration
 import pl.touk.nussknacker.ui.db.entity.{ScenarioActivityEntityFactory, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
+import slick.ast.Library.JdbcFunction
 import slick.jdbc.JdbcProfile
+import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -17,9 +19,10 @@ trait V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends Sl
 
   import profile.api._
 
-  override def migrateActions: DBIOAction[Any, NoStream, Effect.All] = {
-    new Migration(profile).migrate
-  }
+  override def migrateActions: DBIOAction[Any, NoStream, Effect.All] =
+    createGenerateRandomUuidFunction().flatMap[Any, NoStream, Effect.All](_ => new Migration(profile).migrate)
+
+  protected def createGenerateRandomUuidFunction(): DBIOAction[Any, NoStream, Effect.All]
 
 }
 
@@ -82,24 +85,24 @@ object V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinition extends L
           .map(_._1)
           .map { comment =>
             (
-              ScenarioActivityType.CommentAdded.entryName, // activityType - converted from action name
-              comment.processId,                           // scenarioId
-              UUID.randomUUID(),                           // activityId
-              None: Option[String],                        // userId - always absent in old actions
-              comment.user,                                // userName
-              comment.impersonatedByIdentity,              // impersonatedByUserId
-              comment.impersonatedByUsername,              // impersonatedByUserName
-              comment.user.?,                              // lastModifiedByUserName
-              comment.createDate.?,                        // lastModifiedAt
-              comment.createDate,                          // createdAt
-              comment.processVersionId.?,                  // scenarioVersion
-              comment.content.?,                           // comment
-              None: Option[Long],                          // attachmentId
-              comment.createDate.?,                        // finishedAt
-              None: Option[String],                        // state
-              None: Option[String],                        // errorMessage
-              None: Option[String],                        // buildInfo - always absent in old actions
-              "{}"                                         // additionalProperties always empty in old actions
+              ScenarioActivityType.CommentAdded.entryName,             // activityType - converted from action name
+              comment.processId,                                       // scenarioId
+              new JdbcFunction("generate_random_uuid").column[UUID](), // activityId
+              None: Option[String],                                    // userId - always absent in old actions
+              comment.user,                                            // userName
+              comment.impersonatedByIdentity,                          // impersonatedByUserId
+              comment.impersonatedByUsername,                          // impersonatedByUserName
+              comment.user.?,                                          // lastModifiedByUserName
+              comment.createDate.?,                                    // lastModifiedAt
+              comment.createDate,                                      // createdAt
+              comment.processVersionId.?,                              // scenarioVersion
+              comment.content.?,                                       // comment
+              None: Option[Long],                                      // attachmentId
+              comment.createDate.?,                                    // finishedAt
+              None: Option[String],                                    // state
+              None: Option[String],                                    // errorMessage
+              None: Option[String],                                    // buildInfo - always absent in old actions
+              "{}" // additionalProperties always empty in old actions
             )
           }
 
