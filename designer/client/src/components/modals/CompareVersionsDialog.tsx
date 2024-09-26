@@ -23,6 +23,13 @@ import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDeta
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import i18next from "i18next";
 
+const initState: State = {
+    otherVersion: null,
+    currentDiffId: null,
+    difference: null,
+    remoteVersions: [],
+};
+
 interface State {
     currentDiffId: string;
     otherVersion: string;
@@ -35,12 +42,6 @@ interface Props {
 }
 const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const remotePrefix = "remote-";
-    const initState: State = {
-        otherVersion: predefinedOtherVersion,
-        currentDiffId: null,
-        difference: null,
-        remoteVersions: [],
-    };
 
     const [state, setState] = useState<State>(initState);
     const processName = useSelector(getProcessName);
@@ -66,15 +67,24 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
         [state.difference],
     );
 
-    const loadVersion = (versionId: string) => {
-        if (versionId) {
-            HttpService.compareProcesses(processName, version, versionToPass(versionId), isRemote(versionId)).then((response) =>
-                setState((prevState) => ({ ...prevState, difference: response.data, otherVersion: versionId, currentDiffId: null })),
-            );
-        } else {
-            setState(initState);
+    const loadVersion = useCallback(
+        (versionId: string) => {
+            if (versionId) {
+                HttpService.compareProcesses(processName, version, versionToPass(versionId), isRemote(versionId)).then((response) =>
+                    setState((prevState) => ({ ...prevState, difference: response.data, otherVersion: versionId, currentDiffId: null })),
+                );
+            } else {
+                setState(initState);
+            }
+        },
+        [processName, version],
+    );
+
+    useEffect(() => {
+        if (predefinedOtherVersion) {
+            loadVersion(predefinedOtherVersion);
         }
-    };
+    }, [loadVersion, predefinedOtherVersion]);
 
     const isRemote = (versionId: string) => {
         return versionId.startsWith(remotePrefix);

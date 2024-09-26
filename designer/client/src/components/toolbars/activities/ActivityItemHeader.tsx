@@ -57,6 +57,7 @@ const HeaderActivity = ({
         case "compare": {
             return (
                 <StyledHeaderActionIcon
+                    data-testid={`compare-${scenarioVersionId}`}
                     onClick={() => open(handleOpenCompareVersionDialog(scenarioVersionId.toString()))}
                     key={activityAction.id}
                     src={activityAction.icon}
