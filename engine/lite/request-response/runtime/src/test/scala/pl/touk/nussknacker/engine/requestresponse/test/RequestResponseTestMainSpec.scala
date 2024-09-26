@@ -6,7 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
+import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -120,12 +120,14 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()".spel)
 
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
+    val jobData          = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
 
     val contextIds = contextIdGenForFirstSource(process)
     val firstId    = contextIds.nextContextId()
 
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
+      jobData = jobData,
       modelData = modelData,
       scenarioTestData = scenarioTestData,
     )
@@ -195,10 +197,12 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, nodeId)
 
   private def runTest(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
+    val jobData = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
-      process = process,
       modelData = modelData,
+      jobData = jobData,
       scenarioTestData = scenarioTestData,
+      process = process,
     )
   }
 

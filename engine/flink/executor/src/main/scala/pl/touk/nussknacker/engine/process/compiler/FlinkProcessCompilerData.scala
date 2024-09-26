@@ -28,7 +28,6 @@ import scala.concurrent.duration.FiniteDuration
  */
 class FlinkProcessCompilerData(
     compilerData: ProcessCompilerData,
-    val jobData: JobData,
     // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
     exceptionHandler: FlinkExceptionHandler,
     val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
@@ -48,7 +47,7 @@ class FlinkProcessCompilerData(
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compilerData.subPartCompiler.compile(node, validationContext)(jobData.metaData).result)
+    validateOrFail(compilerData.subPartCompiler.compile(node, validationContext)(jobData).result)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -56,14 +55,14 @@ class FlinkProcessCompilerData(
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  def metaData: MetaData = jobData.metaData
+  def jobData: JobData = compilerData.jobData
 
   def interpreter: Interpreter = compilerData.interpreter
 
   def lazyParameterDeps: EvaluableLazyParameterCreatorDeps = new EvaluableLazyParameterCreatorDeps(
     compilerData.expressionCompiler,
     compilerData.expressionEvaluator,
-    metaData
+    jobData
   )
 
   def compileProcess(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =

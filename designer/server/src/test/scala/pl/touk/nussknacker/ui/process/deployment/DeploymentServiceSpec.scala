@@ -566,6 +566,7 @@ class DeploymentServiceSpec
         versionId = VersionId(2),
         processId = ProcessId(1),
         processName = ProcessName(""),
+        labels = List.empty,
         user = "other",
         modelVersion = None
       )
@@ -590,6 +591,7 @@ class DeploymentServiceSpec
         versionId = VersionId(2),
         processId = ProcessId(1),
         processName = ProcessName(""),
+        labels = List.empty,
         user = "",
         modelVersion = None
       )

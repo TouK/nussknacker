@@ -91,7 +91,7 @@ class NodesApiHttpService(
             modelData <- getModelData(scenario.processingType)
             nodeValidator = processingTypeToNodeValidator.forProcessingTypeUnsafe(scenario.processingType)
             nodeData   <- dtoToNodeRequest(nodeValidationRequestDto, modelData)
-            validation <- getNodeValidation(nodeValidator, scenario.name, nodeData)
+            validation <- getNodeValidation(nodeValidator, scenario, nodeData)
             validationDto = NodeValidationResultDto.apply(validation)
           } yield validationDto
         }
@@ -197,14 +197,14 @@ class NodesApiHttpService(
 
   private def getNodeValidation(
       nodeValidator: NodeValidator,
-      scenarioName: ProcessName,
+      scenario: ScenarioWithDetails,
       nodeData: NodeValidationRequest
   )(
       implicit user: LoggedUser
   ): EitherT[Future, NodesError, NodeValidationResult] =
     EitherT.fromEither(
       try {
-        Right(nodeValidator.validate(scenarioName, nodeData))
+        Right(nodeValidator.validate(scenario.processVersionUnsafe, nodeData))
       } catch {
         case e: ProcessNotFoundError =>
           Left(NoScenario(ProcessName(e.name.value)))

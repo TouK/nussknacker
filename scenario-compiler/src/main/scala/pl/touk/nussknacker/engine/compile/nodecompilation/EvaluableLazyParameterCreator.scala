@@ -46,7 +46,7 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
       compiledParameter,
       deps.expressionEvaluator,
       nodeId,
-      deps.metaData,
+      deps.jobData,
       returnType
     )
   }
@@ -56,7 +56,7 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
 class EvaluableLazyParameterCreatorDeps(
     val expressionCompiler: ExpressionCompiler,
     val expressionEvaluator: ExpressionEvaluator,
-    val metaData: MetaData
+    val jobData: JobData
 )
 
 class DefaultToEvaluateFunctionConverter(deps: EvaluableLazyParameterCreatorDeps) extends ToEvaluateFunctionConverter {

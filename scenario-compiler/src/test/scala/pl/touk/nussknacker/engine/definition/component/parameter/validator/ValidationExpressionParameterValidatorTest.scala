@@ -6,7 +6,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{Context, MetaData, NodeId, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.TestSpelExpression.expressionConfig
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -22,6 +22,8 @@ import scala.jdk.CollectionConverters._
 class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableDrivenPropertyChecks with Matchers {
 
   private implicit val nodeId: NodeId = NodeId("someNode")
+  private val metaData                = MetaData("FooProcess", StreamMetaData())
+  private val jobData                 = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
   test("ValidationExpressionParameterValidator") {
     forAll(
@@ -49,7 +51,7 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
         new TestSpelExpression(validationExpression),
         None,
         ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig)),
-        MetaData("FooProcess", StreamMetaData())
+        jobData
       )
         .isValid(ParameterName(paramName), Expression.spel(inputExpression), value, None)(nodeId)
         .isValid shouldBe isValid

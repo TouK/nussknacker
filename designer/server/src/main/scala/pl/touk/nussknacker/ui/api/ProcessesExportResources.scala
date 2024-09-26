@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -56,9 +57,8 @@ class ProcessesExportResources(
             exportResolvedProcess(
               process,
               processDetails.processingType,
-              processDetails.name,
+              processDetails.processVersionUnsafe,
               processDetails.isFragment,
-              processDetails.scenarioLabels,
             )
           }
         }
@@ -98,13 +98,11 @@ class ProcessesExportResources(
   private def exportResolvedProcess(
       processWithDictLabels: ScenarioGraph,
       processingType: ProcessingType,
-      processName: ProcessName,
+      processVersion: ProcessVersion,
       isFragment: Boolean,
-      scenarioLabels: List[ScenarioLabel]
   )(implicit user: LoggedUser): HttpResponse = {
     val processResolver = processResolvers.forProcessingTypeUnsafe(processingType)
-    val resolvedProcess =
-      processResolver.validateAndResolve(processWithDictLabels, processName, isFragment, scenarioLabels)
+    val resolvedProcess = processResolver.validateAndResolve(processWithDictLabels, processVersion, isFragment)
     fileResponse(resolvedProcess)
   }
 

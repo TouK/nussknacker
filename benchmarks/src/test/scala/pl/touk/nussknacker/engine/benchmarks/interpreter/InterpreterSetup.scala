@@ -30,19 +30,20 @@ class InterpreterSetup[T: ClassTag] {
       process: CanonicalProcess,
       additionalComponents: List[ComponentDefinition]
   ): (Context, ServiceExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
-    val compilerData = prepareCompilerData(additionalComponents)
+    val jobData      = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    val compilerData = prepareCompilerData(jobData, additionalComponents)
     val interpreter  = compilerData.interpreter
     val parts        = failOnErrors(compilerData.compile(process))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compilerData.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
+      failOnErrors(compilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
 
     val compiled = compileNode(parts.sources.head)
-    (initialCtx: Context, ec: ServiceExecutionContext) =>
-      interpreter.interpret[F](compiled, process.metaData, initialCtx, ec)
+    (initialCtx: Context, ec: ServiceExecutionContext) => interpreter.interpret[F](compiled, jobData, initialCtx, ec)
   }
 
   def prepareCompilerData(
+      jobData: JobData,
       additionalComponents: List[ComponentDefinition],
   ): ProcessCompilerData = {
     val components = List(
@@ -59,6 +60,7 @@ class InterpreterSetup[T: ClassTag] {
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
     ProcessCompilerData.prepare(
+      jobData,
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
       List.empty,

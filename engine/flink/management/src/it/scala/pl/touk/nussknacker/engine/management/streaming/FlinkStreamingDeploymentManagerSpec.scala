@@ -35,7 +35,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   test("deploy scenario in running flink") {
     val processName = ProcessName("runningFlink")
 
-    val version = ProcessVersion(VersionId(15), processName, processId, "user1", Some(13))
+    val version = ProcessVersion(VersionId(15), processName, processId, List.empty, "user1", Some(13))
     val process = SampleProcess.prepareProcess(processName)
 
     deployProcessAndWaitIfRunning(process, version)
@@ -51,7 +51,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   ignore("continue on timeout exception during scenario deploy") {
     val processName = ProcessName("runningFlink")
     val process     = SampleProcess.prepareProcess(processName)
-    val version     = ProcessVersion(VersionId(15), processName, processId, "user1", Some(13))
+    val version     = ProcessVersion(VersionId(15), processName, processId, List.empty, "user1", Some(13))
 
     val deployedResponse =
       deploymentManager.processCommand(

@@ -288,11 +288,12 @@ class StreamingEmbeddedDeploymentManagerTest
     kafkaClient.sendMessage(inputTopic.name, message("1")).futureValue
     kafkaClient.sendMessage(inputTopic.name, message("2")).futureValue
 
-    val preliminaryTestData = testInfoProvider.generateTestData(scenario, 2).rightValue
+    val processVersion      = ProcessVersion.empty.copy(processName = scenario.metaData.name)
+    val preliminaryTestData = testInfoProvider.generateTestData(processVersion, scenario, 2).rightValue
 
     val testData = testInfoProvider.prepareTestData(preliminaryTestData, scenario).rightValue
     val results = wrapInFailingLoader {
-      manager.processCommand(DMTestScenarioCommand(name, scenario, testData)).futureValue
+      manager.processCommand(DMTestScenarioCommand(processVersion, scenario, testData)).futureValue
     }
     results.nodeResults("sink") should have length 2
     val idGenerator       = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -375,10 +375,11 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   private def validate(params: (String, Expression)*): TransformationResult = {
     val modelData = LocalModelData(ConfigFactory.empty(), List.empty)
     val validator = DynamicNodeValidator(modelData)
+    val metaData  = MetaData("processId", StreamMetaData())
 
-    implicit val meta: MetaData = MetaData("processId", StreamMetaData())
-    implicit val nodeId: NodeId = NodeId("id")
-    val paramsList              = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
+    implicit val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
+    implicit val nodeId: NodeId   = NodeId("id")
+    val paramsList                = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
     validator
       .validateNode(
         universalSourceFactory(useStringForKey = true),

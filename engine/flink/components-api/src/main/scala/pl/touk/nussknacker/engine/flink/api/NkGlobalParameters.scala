@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api
 
 import com.typesafe.config.Config
+import io.circe.{Decoder, Encoder}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
@@ -9,7 +10,6 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters.NkGlobalParametersToMapEncoder
-
 
 import _root_.java.util
 import scala.jdk.CollectionConverters._
@@ -92,6 +92,7 @@ object NkGlobalParameters {
         "versionId"    -> parameters.processVersion.versionId.value.toString,
         "processId"    -> parameters.processVersion.processId.value.toString,
         "modelVersion" -> parameters.processVersion.modelVersion.map(_.toString).orNull,
+        "labels"       -> Encoder.encodeList[String].apply(parameters.processVersion.labels).noSpaces,
         "user"         -> parameters.processVersion.user,
         "processName"  -> parameters.processVersion.processName.value
       )
@@ -120,10 +121,11 @@ object NkGlobalParameters {
         versionId   <- map.get("versionId").map(v => VersionId(v.toLong))
         processId   <- map.get("processId").map(pid => ProcessId(pid.toLong))
         processName <- map.get("processName").map(ProcessName(_))
+        labels      <- map.get("labels").flatMap(value => io.circe.parser.decode[List[String]](value).toOption)
         user        <- map.get("user")
       } yield {
         val modelVersion = map.get("modelVersion").map(_.toInt)
-        ProcessVersion(versionId, processName, processId, user, modelVersion)
+        ProcessVersion(versionId, processName, processId, labels, user, modelVersion)
       }
       val buildInfoOpt = map.get("buildInfo")
 

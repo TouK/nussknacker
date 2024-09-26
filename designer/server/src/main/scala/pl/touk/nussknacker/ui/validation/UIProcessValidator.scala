@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessV
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeTypingData,
@@ -70,16 +71,35 @@ class UIProcessValidator(
   )(
       implicit loggedUser: LoggedUser
   ): ValidationResult = {
-    val uiValidationResult = uiValidation(scenarioGraph, processName, isFragment, labels)
+    val processVersion = ProcessVersion.empty.copy(
+      processName = processName,
+      labels = labels.map(_.value)
+    )
+    validate(scenarioGraph, processVersion, isFragment)
+  }
+
+  def validate(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+  )(
+      implicit loggedUser: LoggedUser
+  ): ValidationResult = {
+    val uiValidationResult = uiValidation(
+      scenarioGraph,
+      processVersion.processName,
+      isFragment,
+      processVersion.labels.map(ScenarioLabel.apply)
+    )
 
     // TODO: Enable further validation when save is not allowed
     // The problem preventing further validation is that loose nodes and their children are skipped during conversion
     // and in case if the scenario has only loose nodes, it will be reported that the scenario is empty
     if (uiValidationResult.saveAllowed) {
-      val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
+      val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
       // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and
       // CanonicalProcess validation.
-      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, isFragment)))
+      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, processVersion, isFragment)))
     } else {
       uiValidationResult
     }
@@ -107,10 +127,12 @@ class UIProcessValidator(
 
   def validateCanonicalProcess(
       canonical: CanonicalProcess,
+      processVersion: ProcessVersion,
       isFragment: Boolean
   )(implicit loggedUser: LoggedUser): ValidationResult = {
     def validateAndFormatResult(scenario: CanonicalProcess) = {
-      val validated = validator.validate(scenario, isFragment)
+      implicit val jobData: JobData = JobData(scenario.metaData, processVersion)
+      val validated                 = validator.validate(scenario, isFragment)
       validated.result
         .fold(formatErrors, _ => ValidationResult.success)
         .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))

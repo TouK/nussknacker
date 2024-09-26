@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -56,6 +57,8 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     val testProcess =
       aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
     val processValidator = ProcessValidator.default(model)
+    implicit val jobData: JobData =
+      JobData(testProcess.metaData, ProcessVersion.empty.copy(processName = testProcess.metaData.name))
 
     val forEachResultValidationContext =
       processValidator.validate(testProcess, isFragment = false).typing(forEachNodeResultId)

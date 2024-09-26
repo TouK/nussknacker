@@ -59,6 +59,7 @@ object ScenarioInterpreterFactory {
 
   def createInterpreter[F[_]: Monad, Input, Res <: AnyRef](
       process: CanonicalProcess,
+      jobData: JobData,
       modelData: ModelData,
       additionalListeners: List[ProcessListener] = Nil,
       resultCollector: ResultCollector = ProductionServiceInvocationCollector,
@@ -83,6 +84,7 @@ object ScenarioInterpreterFactory {
       val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
 
       val compilerData = ProcessCompilerData.prepare(
+        jobData,
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,
@@ -99,7 +101,13 @@ object ScenarioInterpreterFactory {
         val lifecycle = compilerData.lifecycle(allNodes) ++ components.values.collect { case lifecycle: Lifecycle =>
           lifecycle
         }
-        InvokerCompiler[F, Input, Res](compiledProcess, compilerData, componentUseCase, capabilityTransformer).compile
+        InvokerCompiler[F, Input, Res](
+          compiledProcess,
+          compilerData,
+          componentUseCase,
+          capabilityTransformer,
+          jobData
+        ).compile
           .map(_.run)
           .map { case (sinkTypes, invoker) =>
             ScenarioInterpreterImpl(sources, sinkTypes, invoker, lifecycle, modelData)
@@ -158,7 +166,8 @@ object ScenarioInterpreterFactory {
       compiledProcess: CompiledProcessParts,
       processCompilerData: ProcessCompilerData,
       componentUseCase: ComponentUseCase,
-      capabilityTransformer: CapabilityTransformer[F]
+      capabilityTransformer: CapabilityTransformer[F],
+      jobData: JobData
   )(implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
     // we collect errors and also typing results of sinks
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
@@ -240,14 +249,16 @@ object ScenarioInterpreterFactory {
 
     private def compileWithCompilationErrors(
         node: SplittedNode[_],
-        validationContext: ValidationContext
+        validationContext: ValidationContext,
     ): ValidatedNel[ProcessCompilationError, Node] =
-      processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
+      processCompilerData.subPartCompiler.compile(node, validationContext)(jobData).result
 
     private def customComponentContext(nodeId: String) =
       CustomComponentContext[F](nodeId, capabilityTransformer)
 
-    private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[PartInterpreterType] =
+    private def compiledPartInvoker(
+        processPart: ProcessPart,
+    ): CompilationResult[PartInterpreterType] =
       processPart match {
         case SourcePart(_, node, validationContext, nextParts, _) =>
           compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
@@ -315,7 +326,7 @@ object ScenarioInterpreterFactory {
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
       processCompilerData.interpreter
-        .interpret[F](node, compiledProcess.metaData, ctx, ServiceExecutionContext(ec))
+        .interpret[F](node, jobData, ctx, ServiceExecutionContext(ec))
         .map(listOfResults => {
           val results = listOfResults.collect { case Left(value) =>
             value

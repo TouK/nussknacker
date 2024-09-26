@@ -56,6 +56,7 @@ object RequestResponseInterpreter {
     ScenarioInterpreterFactory
       .createInterpreter[Effect, Any, AnyRef](
         process,
+        JobData(process.metaData, processVersion),
         modelData,
         additionalListeners,
         resultCollector,

@@ -14,7 +14,7 @@ import scala.jdk.CollectionConverters._
 class IngressPreparerTest extends AnyFunSuite {
 
   val processVersion: ProcessVersion =
-    ProcessVersion(VersionId(10), ProcessName("some-name"), ProcessId(4), "user", None)
+    ProcessVersion(VersionId(10), ProcessName("some-name"), ProcessId(4), List.empty, "user", None)
   val nussknackerInstanceName = "foo-release"
 
   val serviceName                               = "my-service"

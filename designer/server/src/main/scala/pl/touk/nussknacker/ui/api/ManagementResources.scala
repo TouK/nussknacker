@@ -193,10 +193,9 @@ class ManagementResources(
                         scenarioTestServices
                           .forProcessingTypeUnsafe(details.processingType)
                           .performTest(
-                            details.idWithNameUnsafe,
                             scenarioGraph,
+                            details.processVersionUnsafe,
                             details.isFragment,
-                            details.scenarioLabels,
                             RawScenarioTestData(testDataContent)
                           )
                           .flatMap(mapResultsToHttpResponse)
@@ -220,19 +219,17 @@ class ManagementResources(
                         val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(details.processingType)
                         scenarioTestService.generateData(
                           scenarioGraph,
-                          processName,
+                          details.processVersionUnsafe,
                           details.isFragment,
-                          details.scenarioLabels,
                           testSampleSize
                         ) match {
                           case Left(error) => Future.failed(ProcessUnmarshallingError(error))
                           case Right(rawScenarioTestData) =>
                             scenarioTestService
                               .performTest(
-                                details.idWithNameUnsafe,
                                 scenarioGraph,
+                                details.processVersionUnsafe,
                                 details.isFragment,
-                                details.scenarioLabels,
                                 rawScenarioTestData
                               )
                               .flatMap(mapResultsToHttpResponse)
@@ -258,10 +255,9 @@ class ManagementResources(
                       scenarioTestServices
                         .forProcessingTypeUnsafe(process.processingType)
                         .performTest(
-                          process.idWithNameUnsafe,
                           testParametersRequest.scenarioGraph,
+                          process.processVersionUnsafe,
                           process.isFragment,
-                          process.scenarioLabels,
                           testParametersRequest.sourceParameters
                         )
                         .flatMap(mapResultsToHttpResponse)

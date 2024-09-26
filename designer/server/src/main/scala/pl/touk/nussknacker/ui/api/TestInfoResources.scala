@@ -41,27 +41,24 @@ class TestInfoResources(
               complete {
                 scenarioTestService.getTestingCapabilities(
                   scenarioGraph,
-                  processName,
+                  processDetails.processVersionUnsafe,
                   processDetails.isFragment,
-                  processDetails.scenarioLabels
                 )
               }
             } ~ path("testParameters") {
               complete {
                 scenarioTestService.testParametersDefinition(
                   scenarioGraph,
-                  processName,
+                  processDetails.processVersionUnsafe,
                   processDetails.isFragment,
-                  processDetails.scenarioLabels
                 )
               }
             } ~ path("generate" / IntNumber) { testSampleSize =>
               complete {
                 scenarioTestService.generateData(
                   scenarioGraph,
-                  processName,
+                  processDetails.processVersionUnsafe,
                   processDetails.isFragment,
-                  processDetails.scenarioLabels,
                   testSampleSize
                 ) match {
                   case Left(error) =>
