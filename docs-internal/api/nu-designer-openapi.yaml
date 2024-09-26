@@ -3905,107 +3905,107 @@ paths:
                 activities:
                 - type: SCENARIO_CREATED
                   displayableName: Scenario created
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/scenarioModified.svg
                   supportedActions: []
                 - type: SCENARIO_ARCHIVED
                   displayableName: Scenario archived
-                  icon: /assets/process/archived.svg
+                  icon: /assets/activities/archived.svg
                   supportedActions: []
                 - type: SCENARIO_UNARCHIVED
                   displayableName: Scenario unarchived
-                  icon: /assets/process/success.svg
+                  icon: /assets/activities/unarchived.svg
                   supportedActions: []
                 - type: SCENARIO_DEPLOYED
                   displayableName: Deployment
-                  icon: /assets/states/deploy.svg
+                  icon: /assets/activities/deployed.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: SCENARIO_PAUSED
                   displayableName: Pause
-                  icon: /assets/states/stopping.svg
+                  icon: /assets/activities/pause.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: SCENARIO_CANCELED
                   displayableName: Cancel
-                  icon: /assets/states/stopping.svg
+                  icon: /assets/activities/cancel.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: SCENARIO_MODIFIED
                   displayableName: New version saved
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/scenarioModified.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                   - compare
                 - type: SCENARIO_NAME_CHANGED
                   displayableName: Scenario name changed
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/scenarioModified.svg
                   supportedActions: []
                 - type: COMMENT_ADDED
                   displayableName: Comment
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/comment.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: ATTACHMENT_ADDED
                   displayableName: Attachment
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/attachment.svg
                   supportedActions:
                   - download_attachment
                   - delete_attachment
                 - type: CHANGED_PROCESSING_MODE
                   displayableName: Processing mode change
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/processingModeChange.svg
                   supportedActions: []
                 - type: INCOMING_MIGRATION
                   displayableName: Incoming migration
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/migration.svg
                   supportedActions:
                   - compare
                 - type: OUTGOING_MIGRATION
                   displayableName: Outgoing migration
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/migration.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: PERFORMED_SINGLE_EXECUTION
                   displayableName: Processing data
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/processingData.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: PERFORMED_SCHEDULED_EXECUTION
                   displayableName: Processing data
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/processingData.svg
                   supportedActions: []
                 - type: AUTOMATIC_UPDATE
                   displayableName: Automatic update
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/automaticUpdate.svg
                   supportedActions:
                   - compare
                 - type: CUSTOM_ACTION
                   displayableName: Custom action
-                  icon: /assets/states/success.svg
+                  icon: /assets/activities/customAction.svg
                   supportedActions: []
                 actions:
                 - id: compare
                   displayableName: Compare
-                  icon: /assets/states/error.svg
+                  icon: /assets/activities/actions/compare.svg
                 - id: delete_comment
                   displayableName: Delete
-                  icon: /assets/states/error.svg
+                  icon: /assets/activities/actions/delete.svg
                 - id: edit_comment
                   displayableName: Edit
-                  icon: /assets/states/error.svg
+                  icon: /assets/activities/actions/edit.svg
                 - id: download_attachment
                   displayableName: Download
-                  icon: /assets/states/error.svg
+                  icon: /assets/activities/actions/download.svg
                 - id: delete_attachment
                   displayableName: Delete
-                  icon: /assets/states/error.svg
+                  icon: /assets/activities/actions/delete.svg
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
