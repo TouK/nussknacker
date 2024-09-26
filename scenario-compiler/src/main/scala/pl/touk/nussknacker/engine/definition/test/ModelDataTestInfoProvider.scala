@@ -119,11 +119,13 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   }
 
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
-    val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
-      val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-      sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+    modelData.withThisAsContextClassLoader {
+      val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
+        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
+        sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+      }
+      ListUtil.mergeLists(sourceTestDataList.toList, size)
     }
-    ListUtil.mergeLists(sourceTestDataList.toList, size)
   }
 
   override def prepareTestData(
