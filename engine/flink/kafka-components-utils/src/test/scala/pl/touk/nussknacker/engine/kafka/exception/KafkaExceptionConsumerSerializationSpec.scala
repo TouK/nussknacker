@@ -44,7 +44,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
 
   // null as we don't test open here...
   private val consumer =
-    TempProducerKafkaExceptionConsumer(serializationSchema, MockProducerCreator(mockProducer), null)
+    TempProducerKafkaExceptionConsumer(metaData, serializationSchema, MockProducerCreator(mockProducer), null)
 
   test("records event") {
     consumer.consume(exception)

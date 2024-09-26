@@ -10,7 +10,7 @@ import java.{lang, util}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
-class KafkaErrorTopicInitializer(kafkaConfig: KafkaConfig, exceptionHandlerConfig: KafkaExceptionConsumerConfig)
+class KafkaErrorTopicInitializer(kafkaConfig: KafkaConfig, val exceptionHandlerConfig: KafkaExceptionConsumerConfig)
     extends LazyLogging {
 
   private val timeoutSeconds = 5
