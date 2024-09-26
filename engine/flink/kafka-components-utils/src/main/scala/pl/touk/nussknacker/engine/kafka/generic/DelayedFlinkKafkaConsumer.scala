@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import cats.data.NonEmptyList
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -108,6 +109,7 @@ class DelayedFlinkKafkaConsumer[T](
       nodeId
     ) {
 
+  @silent("deprecated")
   override def createFetcher(
       sourceContext: SourceFunction.SourceContext[T],
       assignedPartitionsWithInitialOffsets: util.Map[KafkaTopicPartition, lang.Long],

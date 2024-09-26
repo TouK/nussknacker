@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import org.apache.flink.api.common.typeutils.{CompositeTypeSerializerUtil, TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, MultisetTypeInfo, RowTypeInfo}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -77,10 +78,10 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
       // TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult
           if classOf[java.util.Map[String @unchecked, _]].isAssignableFrom(a.runtimeObjType.klass) =>
-        TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
+        createJavaMapTypeInformation(a)
       // We generally don't use scala Maps in our runtime, but it is useful for some internal type infos: TODO move it somewhere else
       case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Map[String, _]] =>
-        TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
+        createScalaMapTypeInformation(a)
       case a: SingleTypingResult if registeredTypeInfos.contains(a.runtimeObjType) =>
         registeredTypeInfos(a.runtimeObjType)
       // TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
@@ -94,6 +95,22 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
     }).asInstanceOf[TypeInformation[T]]
   }
 
+  private def createScalaMapTypeInformation(typingResult: TypedObjectTypingResult) =
+    TypedScalaMapTypeInformation(typingResult.fields.mapValuesNow(forType), constructIntermediateCompatibilityResult)
+
+  private def createJavaMapTypeInformation(typingResult: TypedObjectTypingResult) =
+    TypedJavaMapTypeInformation(typingResult.fields.mapValuesNow(forType), constructIntermediateCompatibilityResult)
+
+  protected def constructIntermediateCompatibilityResult(
+      newNestedSerializers: Array[TypeSerializer[_]],
+      oldNestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
+  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing] = {
+    CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
+      newNestedSerializers.map(_.snapshotConfiguration()),
+      oldNestedSerializerSnapshots
+    )
+  }
+
   def forValueWithContext[T](
       validationContext: ValidationContext,
       value: TypeInformation[T]
@@ -105,4 +122,5 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
     )
   }
 
+  override def priority: Int = Integer.MIN_VALUE
 }

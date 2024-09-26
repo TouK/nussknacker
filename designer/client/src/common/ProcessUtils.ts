@@ -16,12 +16,12 @@ import {
 import { RootState } from "../reducers";
 import { isProcessRenamed } from "../reducers/selectors/graph";
 import { Scenario } from "src/components/Process/types";
+import { ScenarioLabelValidationError } from "../components/Labels/types";
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
         const scenario = state.graphReducer.scenario;
         const savedProcessState = state.graphReducer.history.past[0]?.scenario || state.graphReducer.history.present.scenario;
-
         const omitValidation = (details: ScenarioGraph) => omit(details, ["validationResult"]);
         const processRenamed = isProcessRenamed(state);
 
@@ -33,7 +33,14 @@ class ProcessUtils {
             return true;
         }
 
-        return !savedProcessState || isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
+        const labelsFor = (scenario: Scenario): string[] => {
+            return scenario.labels ? scenario.labels.slice().sort((a, b) => a.localeCompare(b)) : [];
+        };
+
+        const isGraphUpdated = isEqual(omitValidation(scenario.scenarioGraph), omitValidation(savedProcessState.scenarioGraph));
+        const areScenarioLabelsUpdated = isEqual(labelsFor(scenario), labelsFor(savedProcessState));
+
+        return !savedProcessState || (isGraphUpdated && areScenarioLabelsUpdated);
     };
 
     canExport = (state: RootState): boolean => {
@@ -85,6 +92,12 @@ class ProcessUtils {
 
     hasNoPropertiesErrors = (scenario: Scenario) => {
         return isEmpty(this.getValidationErrors(scenario)?.processPropertiesErrors);
+    };
+
+    getLabelsErrors = (scenario: Scenario): ScenarioLabelValidationError[] => {
+        return this.getValidationResult(scenario)
+            .errors.globalErrors.filter((e) => e.error.typ == "ScenarioLabelValidationError")
+            .map((e) => <ScenarioLabelValidationError>{ label: e.error.fieldName, messages: [e.error.description] });
     };
 
     getValidationErrors(scenario: Scenario): ValidationErrors {

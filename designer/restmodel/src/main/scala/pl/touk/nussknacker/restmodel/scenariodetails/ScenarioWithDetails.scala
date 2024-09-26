@@ -31,7 +31,7 @@ final case class ScenarioWithDetails(
     modifiedBy: String,
     createdAt: Instant,
     createdBy: String,
-    tags: Option[List[String]],
+    override val labels: List[String],
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],

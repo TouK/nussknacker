@@ -4,6 +4,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessId
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
+// TODO tags table is unattached from code, but is left for backward compatibility in case of version rollback
+// table can be dropped after next version release
 trait TagsEntityFactory extends BaseEntityFactory {
 
   import profile.api._

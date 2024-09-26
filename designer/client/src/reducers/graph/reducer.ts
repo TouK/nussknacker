@@ -149,6 +149,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 unsavedNewName: action.name,
             };
         }
+        case "EDIT_LABELS": {
+            return {
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    labels: action.labels,
+                },
+            };
+        }
         case "DELETE_NODES": {
             return action.ids.reduce((state, idToDelete) => {
                 const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete);

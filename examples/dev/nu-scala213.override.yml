@@ -1,0 +1,27 @@
+x-flink-service-common: &common-flink
+  depends_on:
+    flink-scala213-downloader:
+      condition: service_completed_successfully
+  volumes:
+    - /tmp/flink-scala-2-13_2.13-1.1.1-assembly.jar:/opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar
+  entrypoint: [
+    "sh", "-c",
+    "rm -f /opt/flink/lib/flink-scala_2.12* && chown flink /opt/flink/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar && /ex-docker-entrypoint.sh \"$@\"", "--"
+  ]
+
+services:
+
+  flink-jobmanager:
+    <<: *common-flink
+
+  flink-taskmanager:
+    <<: *common-flink
+
+  flink-scala213-downloader:
+    image: curlimages/curl:7.85.0
+    volumes:
+      - /tmp:/data
+    entrypoint: [
+      "sh", "-c",
+      "curl -o /data/flink-scala-2-13_2.13-1.1.1-assembly.jar https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.1/flink-scala-2-13_2.13-1.1.1-assembly.jar"
+    ]

@@ -1,23 +1,32 @@
 package pl.touk.nussknacker.ui.process
 
+import db.util.DBIOActionInstances.DB
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, ScenarioActivityId}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
-import pl.touk.nussknacker.ui.listener.Comment
-import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import slick.dbio.DBIO
 
 import java.io.ByteArrayInputStream
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
 class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaFutures {
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   private implicit val user: LoggedUser             = RealLoggedUser("test user", "test user")
-  private val service = new ScenarioAttachmentService(AttachmentsConfig(10), TestProcessActivityRepository)
+
+  private val service = new ScenarioAttachmentService(
+    AttachmentsConfig(10),
+    TestProcessActivityRepository,
+    TestFactory.newDummyDBIOActionRunner()
+  )
 
   test("should respect size limit") {
     val random12bytes = new ByteArrayInputStream(nextBytes(12))
@@ -41,27 +50,43 @@ class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with Scala
 
 }
 
-private object TestProcessActivityRepository extends ProcessActivityRepository {
+private object TestProcessActivityRepository extends ScenarioActivityRepository {
 
-  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: Comment)(
-      implicit ec: ExecutionContext,
-      loggedUser: LoggedUser
-  ): Future[Unit] = ???
+  override def findActivities(scenarioId: ProcessId): DB[Seq[ScenarioActivity]] = ???
 
-  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]] = ???
+  override def addActivity(scenarioActivity: ScenarioActivity)(implicit user: LoggedUser): DB[ScenarioActivityId] = ???
 
-  override def findActivity(processId: ProcessId)(
-      implicit ec: ExecutionContext
-  ): Future[DbProcessActivityRepository.ProcessActivity] = ???
+  override def addComment(scenarioId: ProcessId, processVersionId: VersionId, comment: String)(
+      implicit user: LoggedUser
+  ): DB[ScenarioActivityId] = ???
 
-  override def addAttachment(
-      attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd
-  )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = Future.successful(())
+  override def addAttachment(attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd)(
+      implicit user: LoggedUser
+  ): DB[ScenarioActivityId] =
+    DBIO.successful(ScenarioActivityId.random)
 
-  override def findAttachment(attachmentId: Long, scenarioId: ProcessId)(
-      implicit ec: ExecutionContext
-  ): Future[Option[AttachmentEntityData]] =
-    ???
+  override def findAttachments(scenarioId: ProcessId): DB[Seq[AttachmentEntityData]] = ???
 
-  override def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]] = ???
+  override def findAttachment(scenarioId: ProcessId, attachmentId: Long): DB[Option[AttachmentEntityData]] = ???
+
+  override def findActivity(processId: ProcessId): DB[ProcessActivity] = ???
+
+  override def getActivityStats: DB[Map[String, Int]] = ???
+
+  override def editComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId, comment: String)(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+
+  override def editComment(scenarioId: ProcessId, commentId: Long, comment: String)(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+
+  override def deleteComment(scenarioId: ProcessId, commentId: Long)(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+
+  override def deleteComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId)(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+
 }

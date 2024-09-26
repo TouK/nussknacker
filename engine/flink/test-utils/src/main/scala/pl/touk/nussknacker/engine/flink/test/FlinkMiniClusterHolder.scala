@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import java.util.concurrent.CompletableFuture
+import com.github.ghik.silencer.silent
 
+import java.util.concurrent.CompletableFuture
 import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.client.program.ClusterClient
 import org.apache.flink.configuration._
@@ -87,11 +88,12 @@ object FlinkMiniClusterHolder {
       userFlinkClusterConfig: Configuration,
       envConfig: AdditionalEnvironmentConfig = AdditionalEnvironmentConfig()
   ): FlinkMiniClusterHolder = {
-    userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
+    userFlinkClusterConfig.set[java.lang.Boolean](CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
     val resource = prepareMiniClusterResource(userFlinkClusterConfig)
     new FlinkMiniClusterHolderImpl(resource, userFlinkClusterConfig, envConfig)
   }
 
+  @silent("deprecated")
   def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterWithClientResource = {
     val taskManagerNumber = ConfigOptions
       .key(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER)
@@ -112,7 +114,7 @@ object FlinkMiniClusterHolder {
       detachedClient: Boolean = true,
       // On the CI, 10 seconds is sometimes too low
       defaultWaitForStatePatience: PatienceConfig =
-        PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
+        PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(10, Millis)))
   )
 
 }

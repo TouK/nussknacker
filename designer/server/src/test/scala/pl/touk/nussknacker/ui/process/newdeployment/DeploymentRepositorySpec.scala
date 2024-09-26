@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
@@ -24,6 +25,7 @@ class DeploymentRepositorySpec
     extends AnyFunSuite
     with Matchers
     with WithHsqlDbTesting
+    with WithClock
     with DBIOActionValues
     with PatientScalaFutures
     with OptionValues
@@ -35,7 +37,7 @@ class DeploymentRepositorySpec
   private val deploymentRepository =
     new DeploymentRepository(testDbRef, Clock.fixed(Instant.ofEpochMilli(0), ZoneOffset.UTC))
 
-  private val scenarioRepository = TestFactory.newWriteProcessRepository(testDbRef)
+  private val scenarioRepository = TestFactory.newWriteProcessRepository(testDbRef, clock)
 
   private lazy val sampleScenarioId = scenarioRepository
     .saveNewProcess(

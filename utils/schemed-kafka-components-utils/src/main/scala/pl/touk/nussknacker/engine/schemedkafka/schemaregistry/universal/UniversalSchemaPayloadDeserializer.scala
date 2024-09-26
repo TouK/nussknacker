@@ -25,13 +25,11 @@ trait UniversalSchemaPayloadDeserializer {
 
 object AvroPayloadDeserializer {
   def apply(config: KafkaConfig) =
-    new AvroPayloadDeserializer(false, false, GenericRecordSchemaIdSerializationSupport(config), DecoderFactory.get())
+    new AvroPayloadDeserializer(GenericRecordSchemaIdSerializationSupport(config), DecoderFactory.get())
 }
 
 // This implementation is based on Confluent's one but currently deosn't use any Confluent specific things
 class AvroPayloadDeserializer(
-    useSchemaReflection: Boolean,
-    useSpecificAvroReader: Boolean,
     genericRecordSchemaIdSerializationSupport: GenericRecordSchemaIdSerializationSupport,
     decoderFactory: DecoderFactory
 ) extends DatumReaderWriterMixin
@@ -47,12 +45,7 @@ class AvroPayloadDeserializer(
     val avroExpectedSchemaData = expectedSchemaData.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]
     val avroWriterSchemaData   = writerSchemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
     val readerSchemaData       = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
-    val reader = createDatumReader(
-      avroWriterSchemaData.schema.rawSchema(),
-      readerSchemaData.schema.rawSchema(),
-      useSchemaReflection,
-      useSpecificAvroReader
-    )
+    val reader = createDatumReader(avroWriterSchemaData.schema.rawSchema(), readerSchemaData.schema.rawSchema())
     val result = recordDeserializer.deserializeRecord(readerSchemaData.schema.rawSchema(), reader, buffer)
     genericRecordSchemaIdSerializationSupport.wrapWithRecordWithSchemaIdIfNeeded(result, readerSchemaData)
   }

@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessState, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -59,6 +60,7 @@ object ProcessService {
   @JsonCodec final case class UpdateScenarioCommand(
       scenarioGraph: ScenarioGraph,
       comment: Option[UpdateProcessComment],
+      scenarioLabels: Option[List[String]],
       forwardedUserName: Option[RemoteUserName]
   )
 
@@ -158,7 +160,7 @@ class DBProcessService(
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
-    processActionRepository: ProcessActionRepository,
+    scenarioActionRepository: ScenarioActionRepository,
     processRepository: ProcessRepository[DB]
 )(implicit ec: ExecutionContext)
     extends ProcessService
@@ -297,7 +299,12 @@ class DBProcessService(
     ScenarioWithDetailsConversions.fromEntity(
       entity.mapScenario { canonical: CanonicalProcess =>
         val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(entity.processingType)
-        processResolver.validateAndReverseResolve(canonical, entity.name, entity.isFragment)
+        processResolver.validateAndReverseResolve(
+          canonical,
+          entity.name,
+          entity.isFragment,
+          entity.scenarioLabels.map(ScenarioLabel.apply)
+        )
       },
       parameters
     )
@@ -334,7 +341,7 @@ class DBProcessService(
           .runInTransaction(
             DBIOAction.seq(
               processRepository.archive(processId = process.idWithNameUnsafe, isArchived = false),
-              processActionRepository
+              scenarioActionRepository
                 .markProcessAsUnArchived(processId = process.processIdUnsafe, process.processVersionId)
             )
           )
@@ -393,15 +400,22 @@ class DBProcessService(
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
       val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
+      val scenarioLabels  = action.scenarioLabels.getOrElse(List.empty).map(ScenarioLabel.apply)
       val validation =
         FatalValidationError.saveNotAllowedAsError(
-          processResolver.validateBeforeUiResolving(action.scenarioGraph, details.name, details.isFragment)
+          processResolver.validateBeforeUiResolving(
+            action.scenarioGraph,
+            details.name,
+            details.isFragment,
+            scenarioLabels
+          )
         )
       val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
       val updateProcessAction = UpdateProcessAction(
-        processIdWithName.id,
-        substituted,
-        action.comment,
+        processId = processIdWithName.id,
+        canonicalProcess = substituted,
+        comment = action.comment,
+        labels = scenarioLabels,
         increaseVersionWhenJsonNotChanged = false,
         forwardedUserName = action.forwardedUserName
       )
@@ -466,7 +480,7 @@ class DBProcessService(
       .runInTransaction(
         DBIOAction.seq(
           processRepository.archive(processId = process.idWithNameUnsafe, isArchived = true),
-          processActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
+          scenarioActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
         )
       )
 
@@ -479,7 +493,7 @@ class DBProcessService(
   }
 
   override def getProcessActions(id: ProcessId): Future[List[ProcessAction]] = {
-    dbioRunner.runInTransaction(processActionRepository.getFinishedProcessActions(id, None))
+    dbioRunner.runInTransaction(scenarioActionRepository.getFinishedProcessActions(id, None))
   }
 
   private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =

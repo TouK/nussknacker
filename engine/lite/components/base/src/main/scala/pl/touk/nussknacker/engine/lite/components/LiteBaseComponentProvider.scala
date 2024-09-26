@@ -48,7 +48,7 @@ object LiteBaseComponentProvider {
         .withRelativeDocs("DataSourcesAndSinks#deadend")
         .withDesignerWideId("dead-end"),
       ComponentDefinition(name = "decision-table", component = DecisionTable)
-        .withRelativeDocs("BasicNodes#decisiontable")
+        .withRelativeDocs("Enrichers/#decision-table")
         .withDesignerWideId("decision-table")
     )
 

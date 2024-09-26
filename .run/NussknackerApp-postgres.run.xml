@@ -17,10 +17,10 @@
       <env name="USAGE_REPORTS_FINGERPRINT" value="development" />
       <env name="USAGE_REPORTS_SOURCE" value="sources" />
       <env name="INPUT_CONFIG_RESOLVE_ENV_VARIABLES" value="false" />
-      <env name="DB_URL" value="jdbc:postgresql://localhost:5432/world-db" />
+      <env name="DB_URL" value="jdbc:postgresql://localhost:5432/nu-db" />
       <env name="DB_DRIVER" value="org.postgresql.Driver" />
-      <env name="DB_USER" value="world" />
-      <env name="DB_PASSWORD" value="world123" />
+      <env name="DB_USER" value="nu" />
+      <env name="DB_PASSWORD" value="nupassword" />
       <env name="TABLES_DEFINITION_FILE" value="../../../nussknacker-dist/src/universal/conf/dev-tables-definition.sql" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />

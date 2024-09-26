@@ -45,14 +45,47 @@
 * [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside 
   indexer for Maps and Lists (for example `{1,2,3}[#otherList.remove(1) == null ? 0 : 0]`). This allowed executing 
   some types of unallowed expressions.
+* [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
+  - shorter message in logs
+* [#6886](https://github.com/TouK/nussknacker/pull/6886) Fix for "Illegal table name:$nuCatalog" error when using Apache Iceberg catalog.
+  Internal Nussknacker catalog is now named `_nu_catalog`
+* [#6766](https://github.com/TouK/nussknacker/pull/6766) Scenario labels support - you can assign labels to scenarios and use them to filter the scenario list
+* [#6176](https://github.com/TouK/nussknacker/pull/6176) Update most dependencies to latest versions, most important ones:
+  * Jackson 2.15.4 -> 2.17.2
+  * cats 2.10 -> 2.12
+* [#6805](https://github.com/TouK/nussknacker/pull/6805) Support for Flink 1.19.1
+* Scenario activities mechanism replacing old process actions:
+  * [#6822](https://github.com/TouK/nussknacker/pull/6822), [#6929](https://github.com/TouK/nussknacker/pull/6929)
+    * Scenario Activity API contract (without BE implementation)
+  * [#6823](https://github.com/TouK/nussknacker/pull/6823) 
+    * old process actions and comments migrated to new table in the db
+    * Scenario Activity API implementation
 
 ## 1.17
 
 #### Highlights
 
-(Not available yet)
+##### End-user
 
-### 1.17.0 (Not released yet)
+* Flink Catalogs integration. Thanks to Catalogs, Nu can be used to act on data stored in Data Lakehouses.
+* Improvements in batch mode, including joins, testing (dry runs) and general usability.
+* Live counts. You can now watch counts of events as they flow through a scenario, with user defined update interval.
+* Autocompletion now works better in invalid expressions. When working on an expression you don't have to keep it valid all the time for autocompletion to work.
+* SpEL collections usability improvements. Arrays and Lists are now unified (no need for conversions) and we also added more collection manipulation functions.
+
+##### Administrator
+
+* Performance optimizations around Avro processing that reduce CPU utilization significantly.
+* Components configuration reloading without Designer restart. You can now reload Components configuration on demand, using an endpoint, without restarting the whole application.
+
+### 1.17.1 (Not released yet)
+
+* [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
+  - shorter message in logs
+
+* [#6877](https://github.com/TouK/nussknacker/pull/6877) Fix application crash on edit node details window open
+  
+### 1.17.0 (12 September 2024)
 
 * [#6658](https://github.com/TouK/nussknacker/pull/6658) Bump up circe-yaml lib to 0.15.2
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
@@ -120,6 +153,12 @@
   * From now on it is possible to pass an array as a parameter of type List - e.g. `T(java.lang.String).join(',', #array)`.
   * Fix result type of projection (`.!`) - e.g. `#array.![#this]` returns a type array instead of a type List.
 * [#6685](https://github.com/TouK/nussknacker/pull/6685) Fixed an issue with dictionary parameter editor language being set to spel when no default value was present.
+* [#6797](https://github.com/TouK/nussknacker/pull/6797) [#6815](https://github.com/TouK/nussknacker/pull/6815) Performance optimization of Avro processing
+* [#6578](https://github.com/TouK/nussknacker/pull/6578) Introduced support for displaying a docsUrl with an icon in scenario properties. This feature is based on the processingType and is configurable via the model.conf file.
+* [#6725](https://github.com/TouK/nussknacker/pull/6725) Resolved an issue where properties were not saving when a fragment was in a different group than other fragments.
+* [#6697](https://github.com/TouK/nussknacker/pull/6697) Fix unhandled error when open survey
+* [#6389](https://github.com/TouK/nussknacker/pull/6389) Added an option to define in the properties settings the refresh interval for automatic counts updates
+* [#6393](https://github.com/TouK/nussknacker/pull/6393) Added an option to show node description directly on the graph node and scenario description directly on the scenario with an option to show it on scenario open
 
 ## 1.16
 

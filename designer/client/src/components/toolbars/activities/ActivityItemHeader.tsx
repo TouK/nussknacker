@@ -31,7 +31,7 @@ const StyledHeaderActionIcon = styled(UrlIcon)(({ theme }) => ({
 const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isActive: boolean }>(({ theme, isHighlighted, isActive }) => ({
     display: "flex",
     alignItems: "center",
-    padding: theme.spacing(0.5),
+    padding: `${theme.spacing(0.5)} ${theme.spacing(1)}`,
     backgroundColor: isActive
         ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.2)
         : isHighlighted

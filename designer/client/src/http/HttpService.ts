@@ -28,6 +28,7 @@ import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/E
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { GenericValidationRequest } from "../actions/nk/genericAction";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
+import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -355,6 +356,16 @@ class HttpService {
             );
     }
 
+    fetchScenarioLabels() {
+        return api
+            .get<AvailableScenarioLabels>(`/scenarioLabels`)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotFetchScenarioLabels", "Cannot fetch scenario labels"), error),
+                ),
+            );
+    }
+
     fetchProcessToolbarsConfiguration(processName) {
         const promise = api.get<WithId<ToolbarsConfig>>(`/processes/${encodeURIComponent(processName)}/toolbars`);
         promise.catch((error) =>
@@ -549,6 +560,17 @@ class HttpService {
         return promise;
     }
 
+    validateScenarioLabels(labels: string[]): Promise<AxiosResponse<ScenarioLabelsValidationResponse>> {
+        const data = { labels: labels };
+        return api
+            .post<ScenarioLabelsValidationResponse>(`/scenarioLabels/validation`, data)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotValidateScenarioLabels", "Cannot validate scenario labels"), error),
+                ),
+            );
+    }
+
     getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {
         const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, request);
         promise.catch((error) =>
@@ -677,8 +699,8 @@ class HttpService {
     }
 
     //to prevent closing edit node modal and corrupting graph display
-    saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string) {
-        const data = { scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph), comment: comment };
+    saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string, labels: string[]) {
+        const data = { scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph), comment: comment, scenarioLabels: labels };
         return api.put(`/processes/${encodeURIComponent(processName)}`, data).catch((error) => {
             this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true);
             return Promise.reject(error);

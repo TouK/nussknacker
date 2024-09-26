@@ -45,14 +45,6 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 name={item.name}
                 initialValue={item.initialValue}
             />
-            <ValidationsFields
-                path={path}
-                onChange={onChange}
-                item={item}
-                variableTypes={variableTypes}
-                readOnly={readOnly}
-                errors={errors}
-            />
             <InitialValue
                 path={path}
                 item={item}
@@ -72,6 +64,14 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                     className={nodeInput}
                 />
             </FormControl>
+            <ValidationsFields
+                path={path}
+                onChange={onChange}
+                item={item}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                errors={errors}
+            />
         </>
     );
 };

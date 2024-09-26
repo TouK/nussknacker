@@ -9,6 +9,7 @@ import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbRef}
 
+import java.time.Clock
 import scala.jdk.CollectionConverters._
 import scala.util.{Try, Using}
 
@@ -84,10 +85,11 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
 
   def cleanDB(): Try[Unit] = Using(testDbRef.db.createSession()) { session =>
     session.prepareStatement("""delete from "process_attachments"""").execute()
-    session.prepareStatement("""delete from "process_comments"""").execute()
     session.prepareStatement("""delete from "process_actions"""").execute()
+    session.prepareStatement("""delete from "process_comments"""").execute()
+    session.prepareStatement("""delete from "scenario_activities"""").execute()
     session.prepareStatement("""delete from "process_versions"""").execute()
-    session.prepareStatement("""delete from "tags"""").execute()
+    session.prepareStatement("""delete from "scenario_labels"""").execute()
     session.prepareStatement("""delete from "environments"""").execute()
     session.prepareStatement("""delete from "processes"""").execute()
     session.prepareStatement("""delete from "fingerprints"""").execute()

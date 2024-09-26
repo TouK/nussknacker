@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDto,
-  MigrateScenarioRequestDtoV1
+  MigrateScenarioRequestDtoV1,
+  MigrateScenarioRequestDtoV2
 }
 import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.util.VersionedData
@@ -15,7 +16,7 @@ sealed trait MigrateScenarioData extends VersionedData
 
 object MigrateScenarioData {
 
-  type CurrentMigrateScenarioData = MigrateScenarioDataV1
+  type CurrentMigrateScenarioData = MigrateScenarioDataV2
 
   def toDomain(migrateScenarioRequestDto: MigrateScenarioRequestDto): Either[MigrationError, MigrateScenarioData] =
     migrateScenarioRequestDto match {
@@ -42,13 +43,14 @@ object MigrateScenarioData {
             isFragment
           )
         )
-      /*      case MigrateScenarioRequestDtoV2(
+      case MigrateScenarioRequestDtoV2(
             2,
             sourceEnvironmentId,
             remoteUserName,
             processingMode,
             engineSetupName,
             processCategory,
+            scenarioLabels,
             scenarioGraph,
             processName,
             isFragment
@@ -60,11 +62,12 @@ object MigrateScenarioData {
             processingMode,
             engineSetupName,
             processCategory,
+            scenarioLabels,
             scenarioGraph,
             processName,
             isFragment
           )
-        )*/
+        )
       case _ => Left(MigrationError.CannotTransformMigrateScenarioRequestIntoMigrationDomain)
     }
 
@@ -91,12 +94,13 @@ object MigrateScenarioData {
           processName,
           isFragment
         )
-      /*      case dataV2 @ MigrateScenarioDataV2(
+      case dataV2 @ MigrateScenarioDataV2(
             sourceEnvironmentId,
             remoteUserName,
             processingMode,
             engineSetupName,
             processCategory,
+            scenarioLabels,
             scenarioGraph,
             processName,
             isFragment
@@ -108,10 +112,11 @@ object MigrateScenarioData {
           processingMode,
           engineSetupName,
           processCategory,
+          scenarioLabels,
           scenarioGraph,
           processName,
           isFragment
-        )*/
+        )
     }
 
 }
@@ -129,11 +134,25 @@ final case class MigrateScenarioDataV1(
   override val currentVersion: Int = 1
 }
 
+final case class MigrateScenarioDataV2(
+    sourceEnvironmentId: String,
+    remoteUserName: String,
+    processingMode: ProcessingMode,
+    engineSetupName: EngineSetupName,
+    processCategory: String,
+    scenarioLabels: List[String],
+    scenarioGraph: ScenarioGraph,
+    processName: ProcessName,
+    isFragment: Boolean,
+) extends MigrateScenarioData {
+  override val currentVersion: Int = 2
+}
+
 /*
 
 NOTE TO DEVELOPER:
 
-When implementing MigrateScenarioRequestDtoV2:
+When implementing MigrateScenarioRequestDtoV3:
 
 1. Review and update the parameter types and names if necessary.
 2. Consider backward compatibility with existing code.
@@ -143,7 +162,7 @@ When implementing MigrateScenarioRequestDtoV2:
 
 Remember to uncomment the class definition after implementation.
 
-final case class MigrateScenarioDataV2(
+final case class MigrateScenarioDataV3(
     sourceEnvironmentId: String,
     remoteUserName: String,
     processingMode: ProcessingMode,
@@ -153,5 +172,5 @@ final case class MigrateScenarioDataV2(
     processName: ProcessName,
     isFragment: Boolean,
 ) extends MigrateScenarioData {
-  override val currentVersion: Int = 2
+  override val currentVersion: Int = 3
 }*/

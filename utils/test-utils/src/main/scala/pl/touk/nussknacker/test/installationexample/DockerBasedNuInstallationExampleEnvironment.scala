@@ -3,6 +3,7 @@ package pl.touk.nussknacker.test.installationexample
 import com.dimafeng.testcontainers.{DockerComposeContainer, ServiceLogConsumer, WaitingForService}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.Logger
+import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
 import pl.touk.nussknacker.test.containers.ContainerExt.toContainerExt
@@ -29,7 +30,10 @@ class DockerBasedInstallationExampleNuEnvironment(
         ServiceLogConsumer("bootstrap-setup", new Slf4jLogConsumer(slf4jLogger))
       ),
       waitingFor = Some(
-        WaitingForService("bootstrap-setup", new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofSeconds(120)))
+        WaitingForService(
+          "bootstrap-setup",
+          new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofSeconds(120))
+        )
       ),
       // Change to 'true' to enable logging
       tailChildContainers = false

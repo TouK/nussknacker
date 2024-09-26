@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test.utils
 
-import com.networknt.schema.{InputFormat, JsonSchemaFactory, ValidationMessage}
+import com.networknt.schema.{InputFormat, JsonSchemaFactory, SchemaValidatorsConfig, ValidationMessage}
 import io.circe.yaml.{parser => YamlParser}
 import io.circe.{ACursor, Json}
 import org.scalactic.anyvals.NonEmptyList
@@ -13,7 +13,10 @@ class OpenAPIExamplesValidator private (schemaFactory: JsonSchemaFactory) {
 
   import OpenAPIExamplesValidator._
 
-  def validateExamples(specYaml: String): List[InvalidExample] = {
+  def validateExamples(
+      specYaml: String,
+      excludeResponseValidationForOperationIds: List[String] = List.empty
+  ): List[InvalidExample] = {
     val specJson = YamlParser.parse(specYaml).toOption.get
     val componentsSchemas =
       specJson.hcursor
@@ -26,7 +29,9 @@ class OpenAPIExamplesValidator private (schemaFactory: JsonSchemaFactory) {
       (_, operation) <- pathItem.asObject.map(_.toList).getOrElse(List.empty)
       operationId = operation.hcursor.downField("operationId").as[String].toTry.get
       invalidExample <- validateRequestExample(operation, operationId, componentsSchemas) :::
-        validateResponsesExamples(operation, operationId, componentsSchemas)
+        (if (!excludeResponseValidationForOperationIds.contains(operationId))
+           validateResponsesExamples(operation, operationId, componentsSchemas)
+         else List.empty)
     } yield invalidExample
   }
 

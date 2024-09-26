@@ -17,33 +17,39 @@ import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
-private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implicit executionContext: ExecutionContext)
-    extends PatientScalaFutures {
+private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: Config)(
+    implicit executionContext: ExecutionContext
+) extends PatientScalaFutures {
 
   private implicit val user: LoggedUser = RealLoggedUser("admin", "admin", Map.empty, isAdmin = true)
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
-  private val actionRepository: DbProcessActionRepository = new DbProcessActionRepository(
+  private val actionRepository: DbScenarioActionRepository = new DbScenarioActionRepository(
     dbRef,
-    new CommentRepository(dbRef),
     mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
   ) with DbioRepository
 
+  private val scenarioLabelsRepository: ScenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
+
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
-    new CommentRepository(dbRef),
+    clock,
+    new DbScenarioActivityRepository(dbRef, clock),
+    scenarioLabelsRepository,
     mapProcessingTypeDataProvider(1)
   )
 
   private val futureFetchingScenarioRepository: DBFetchingProcessRepository[Future] =
-    new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
+    new DBFetchingProcessRepository[Future](dbRef, actionRepository, scenarioLabelsRepository) with BasicRepository
 
   def createEmptyScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     val newProcessPreparer: NewProcessPreparer = new NewProcessPreparer(
@@ -131,7 +137,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
     val actionName = ScenarioActionName.Deploy
-    val comment    = DeploymentComment.unsafe(UserComment("Deploy comment")).toComment(actionName)
+    val comment    = UserComment("Deploy comment")
     dbioRunner.run(
       actionRepository.addInstantAction(
         scenarioId,
@@ -145,7 +151,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
 
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Cancel
-    val comment    = DeploymentComment.unsafe(UserComment("Cancel comment")).toComment(actionName)
+    val comment    = UserComment("Cancel comment")
     dbioRunner.run(
       actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )
@@ -153,7 +159,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
 
   private def prepareCustomAction(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName("Custom")
-    val comment    = DeploymentComment.unsafe(UserComment("Execute custom action")).toComment(actionName)
+    val comment    = UserComment("Execute custom action")
     dbioRunner.run(
       actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )

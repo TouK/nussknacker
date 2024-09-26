@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   GetScenarioWithDetailsOptions,
   UpdateScenarioCommand
 }
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -84,9 +85,10 @@ class MigrationService(
       migrateScenarioData.processCategory,
       migrateScenarioData.engineSetupName
     )
-    val scenarioGraph = migrateScenarioData.scenarioGraph
-    val processName   = migrateScenarioData.processName
-    val isFragment    = migrateScenarioData.isFragment
+    val scenarioGraph  = migrateScenarioData.scenarioGraph
+    val processName    = migrateScenarioData.processName
+    val isFragment     = migrateScenarioData.isFragment
+    val scenarioLabels = migrateScenarioData.scenarioLabels.map(ScenarioLabel.apply)
     val forwardedUsernameO =
       if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioData.remoteUserName)) else None
     val updateProcessComment = {
@@ -97,8 +99,14 @@ class MigrationService(
           UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by Unknown user")
       }
     }
+
     val updateScenarioCommand =
-      UpdateScenarioCommand(scenarioGraph, Some(updateProcessComment), forwardedUsernameO)
+      UpdateScenarioCommand(
+        scenarioGraph = scenarioGraph,
+        comment = Some(updateProcessComment),
+        scenarioLabels = Some(scenarioLabels.map(_.value)),
+        forwardedUserName = forwardedUsernameO
+      )
 
     val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
       Some(parameters.category),
@@ -109,7 +117,13 @@ class MigrationService(
     val result: EitherT[Future, MigrationError, Unit] = for {
       processingType <- EitherT.fromEither[Future](processingTypeValidated.toEither).leftMap(MigrationError.from(_))
       validationResult <-
-        validateProcessingTypeAndUIProcessResolver(scenarioGraph, processName, isFragment, processingType)
+        validateProcessingTypeAndUIProcessResolver(
+          scenarioGraph,
+          processName,
+          isFragment,
+          scenarioLabels,
+          processingType
+        )
       _ <- checkForValidationErrors(validationResult)
       _ <- checkOrCreateAndCheckArchivedProcess(
         processName,
@@ -209,6 +223,7 @@ class MigrationService(
       scenarioGraph: ScenarioGraph,
       processName: ProcessName,
       isFragment: Boolean,
+      labels: List[ScenarioLabel],
       processingType: ProcessingType
   )(implicit loggedUser: LoggedUser) = {
     EitherT
@@ -218,7 +233,7 @@ class MigrationService(
           case Left(e) => Left(e)
           case Right(uiProcessResolver) =>
             FatalValidationError.renderNotAllowedAsError(
-              uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
+              uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment, labels)
             )
         }
       )

@@ -70,7 +70,7 @@ public class TimeSerializers {
         addSerializer(config, Period.class, new PeriodSerializer());
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "deprecation"})
     private static <T, Y extends Serializer<T>> void addSerializer(ExecutionConfig config, Class<T> klass, Y serializer) {
         config.addDefaultKryoSerializer(klass, (Class<? extends Serializer<?>>) serializer.getClass());
     }

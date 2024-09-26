@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
@@ -38,11 +39,21 @@ class TestInfoResources(
             val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(processDetails.processingType)
             path("capabilities") {
               complete {
-                scenarioTestService.getTestingCapabilities(scenarioGraph, processName, processDetails.isFragment)
+                scenarioTestService.getTestingCapabilities(
+                  scenarioGraph,
+                  processName,
+                  processDetails.isFragment,
+                  processDetails.scenarioLabels
+                )
               }
             } ~ path("testParameters") {
               complete {
-                scenarioTestService.testParametersDefinition(scenarioGraph, processName, processDetails.isFragment)
+                scenarioTestService.testParametersDefinition(
+                  scenarioGraph,
+                  processName,
+                  processDetails.isFragment,
+                  processDetails.scenarioLabels
+                )
               }
             } ~ path("generate" / IntNumber) { testSampleSize =>
               complete {
@@ -50,6 +61,7 @@ class TestInfoResources(
                   scenarioGraph,
                   processName,
                   processDetails.isFragment,
+                  processDetails.scenarioLabels,
                   testSampleSize
                 ) match {
                   case Left(error) =>

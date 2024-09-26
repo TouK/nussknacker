@@ -3,14 +3,14 @@ import { useFilterContext } from "../../common";
 import { QuickFilter } from "../../scenarios/filters/quickFilter";
 import { FilterMenu } from "../../scenarios/filters/filterMenu";
 import { SimpleOptionsStack } from "../../scenarios/filters/simpleOptionsStack";
-import { StatusOptionsStack } from "../../scenarios/filters/otherOptionsStack";
+import { StatusOptionsStack } from "../../scenarios/filters/typeOptionsStack";
 import { OptionsStack } from "../../scenarios/filters/optionsStack";
 import { FilterListItem } from "../../scenarios/filters/filterListItem";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Divider, Stack } from "@mui/material";
 import { xor } from "lodash";
-import { EventTrackingType, EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 interface FiltersPartProps {
     isLoading: boolean;

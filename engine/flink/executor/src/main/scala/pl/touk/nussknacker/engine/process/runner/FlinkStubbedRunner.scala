@@ -55,11 +55,11 @@ trait FlinkStubbedRunner {
 
     val configuration: Configuration = new Configuration
     configuration.addAll(jobGraph.getJobConfiguration)
-    configuration.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, env.getParallelism)
-    configuration.setInteger(RestOptions.PORT, 0)
+    configuration.set[Integer](TaskManagerOptions.NUM_TASK_SLOTS, env.getParallelism)
+    configuration.set[Integer](RestOptions.PORT, 0)
 
     // FIXME: reversing flink default order
-    configuration.setString(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+    configuration.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
 
     // it is required for proper working of HadoopFileSystem
     FileSystem.initialize(configuration, null)
