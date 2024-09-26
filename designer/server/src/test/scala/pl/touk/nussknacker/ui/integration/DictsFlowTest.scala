@@ -85,7 +85,7 @@ class DictsFlowTest
 
     saveProcessAndTestIt(
       process,
-      expressionUsingDictWithLabel = None,
+      expectedExpressionUsingDictWithLabel = None,
       expectedResult = """RGBDict value to lowercase: h000000
          |LongDict value + 1: None
          |BooleanDict value negation: Some(false)
@@ -118,7 +118,7 @@ class DictsFlowTest
   test("save process with expression using dicts and get it back") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
-    saveProcessAndExtractValidationResult(process, Some(expressionUsingDictWithLabel), None) shouldBe Json.obj()
+    saveProcessAndExtractProcessValidationResult(process, Some(expressionUsingDictWithLabel), None) shouldBe Json.obj()
   }
 
   test("save process with invalid expression using dicts and get it back with validation results") {
@@ -235,7 +235,7 @@ class DictsFlowTest
         |""".stripMargin
     ).rightValue
 
-    saveProcessAndExtractValidationResult(process, None, Some(invalidNodeValidationResult))
+    saveProcessAndExtractProcessValidationResult(process, None, Some(invalidNodeValidationResult))
 
     val response2 = httpClient.send(
       quickRequest
@@ -260,11 +260,12 @@ class DictsFlowTest
 
   private def saveProcessAndTestIt(
       process: CanonicalProcess,
-      expressionUsingDictWithLabel: Option[String],
+      expectedExpressionUsingDictWithLabel: Option[String],
       expectedResult: String,
       variableToCheck: String = VariableName
   ) = {
-    saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel, None) shouldBe Json.obj()
+    saveProcessAndExtractProcessValidationResult(process, expectedExpressionUsingDictWithLabel, None) shouldBe Json
+      .obj()
 
     val response = httpClient.send(
       quickRequest
@@ -293,10 +294,10 @@ class DictsFlowTest
       .buildSimpleVariable(VariableNodeId, VariableName, variableExpression.spel)
       .emptySink(EndNodeId, "dead-end-lite")
 
-  private def saveProcessAndExtractValidationResult(
+  private def saveProcessAndExtractProcessValidationResult(
       process: CanonicalProcess,
-      endResultExpressionToPost: Option[String],
-      validationResult: Option[Json]
+      expectedEndResultExpressionToPost: Option[String],
+      expectedValidationResult: Option[Json]
   ): Json = {
     createEmptyScenario(process.name)
 
@@ -311,9 +312,11 @@ class DictsFlowTest
         .basic("admin", "admin")
     )
     response1.code shouldEqual StatusCode.Ok
-    response1.extractFieldJsonValue("errors", "invalidNodes").asJson shouldBe validationResult.getOrElse(Json.obj())
+    response1.extractFieldJsonValue("errors", "invalidNodes").asJson shouldBe expectedValidationResult.getOrElse(
+      Json.obj()
+    )
 
-    extractValidationResult(process).asJson shouldBe validationResult.getOrElse(Json.obj())
+    extractValidationResult(process).asJson shouldBe expectedValidationResult.getOrElse(Json.obj())
 
     val response2 = httpClient.send(
       quickRequest
@@ -322,9 +325,9 @@ class DictsFlowTest
         .basic("admin", "admin")
     )
     response2.code shouldEqual StatusCode.Ok
-    endResultExpressionToPost.foreach { endResultExpressionToPost =>
+    expectedEndResultExpressionToPost.foreach { expectedResult =>
       val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
-      returnedEndResultExpression shouldEqual endResultExpressionToPost
+      returnedEndResultExpression shouldEqual expectedResult
     }
     response2.extractFieldJsonValue("validationResult", "errors", "invalidNodes")
   }
