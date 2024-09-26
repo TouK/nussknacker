@@ -346,6 +346,12 @@ object aggregates {
       _.computeStoredType(_)
     )
 
+    def expand(newField: (String, Aggregator)): MapAggregator = {
+      val expandedMap: Map[String, Aggregator] = (scalaFields + newField)
+
+      new MapAggregator(expandedMap.asJava)
+    }
+
     private def computeTypeByFields(
         input: TypingResult,
         objType: TypedClass,
