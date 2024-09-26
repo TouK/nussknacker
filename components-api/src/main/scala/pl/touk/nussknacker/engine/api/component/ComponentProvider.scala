@@ -131,7 +131,11 @@ trait ComponentProvider {
 
 object NussknackerVersion {
 
-  val current: NussknackerVersion = NussknackerVersion(new Semver(BuildInfo.version))
+  val current: NussknackerVersion = parse(BuildInfo.version)
+
+  def parse(versionString: String): NussknackerVersion = {
+    NussknackerVersion(Semver.coerce(versionString))
+  }
 
 }
 
