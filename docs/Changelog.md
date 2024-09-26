@@ -17,10 +17,11 @@
   * [#6734](https://github.com/TouK/nussknacker/pull/6734) Tables from external catalogs are now refreshed automatically
     when entering into node form. Please be aware that changes in `tableDefinition.sql` are not refreshed.
     To do this, use `/app/processingtype/reload` API
-  * [#6741](https://github.com/TouK/nussknacker/pull/6741) Added `catalogConfiguration` configuration option allowing to set up catalog
+  * [#6741](https://github.com/TouK/nussknacker/pull/6741) [#6886](https://github.com/TouK/nussknacker/pull/6886) Added `catalogConfiguration` configuration option allowing to set up catalog
     directly in config instead of by `tableDefinition.sql`
   * [#6741](https://github.com/TouK/nussknacker/pull/6741) (Breaking change) Fully qualified table paths are used instead of table names
     in table source and sink components in `Table` parameter
+  * [#6950](https://github.com/TouK/nussknacker/pull/6950) Fix for testing mechanism for table sources: using full, model classpath instead of only flinkTable.jar
 * [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
 * [#6695](https://github.com/TouK/nussknacker/pull/6695) From now on, arrays on UI are visible as lists but on a 
   background they are stored as it is and SpeL converts them to lists in a runtime.
@@ -47,8 +48,6 @@
   some types of unallowed expressions.
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
   - shorter message in logs
-* [#6886](https://github.com/TouK/nussknacker/pull/6886) Fix for "Illegal table name:$nuCatalog" error when using Apache Iceberg catalog.
-  Internal Nussknacker catalog is now named `_nu_catalog`
 * [#6766](https://github.com/TouK/nussknacker/pull/6766) Scenario labels support - you can assign labels to scenarios and use them to filter the scenario list
 * [#6176](https://github.com/TouK/nussknacker/pull/6176) Update most dependencies to latest versions, most important ones:
   * Jackson 2.15.4 -> 2.17.2
