@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from "react";
-import { GenericActionFormContext } from "./GenericActionFormContext";
+import { AdhocTestingFormContext } from "./AdhocTestingFormContext";
 import { editors, ExtendedEditor, SimpleEditor } from "../../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../../graph/node-modal/editors/expression/Formatter";
@@ -10,7 +10,7 @@ import { nodeValue } from "../../graph/node-modal/NodeDetailsContent/NodeTableSt
 import { getValidationErrorsForField } from "../../graph/node-modal/editors/Validators";
 
 export function FormField({ name }: { name: string }) {
-    const { value, setValue, variableTypes, parameters = [], errors } = useContext(GenericActionFormContext);
+    const { value, setValue, variableTypes, parameters = [], errors } = useContext(AdhocTestingFormContext);
 
     const setParam = useCallback(
         (name: string) => (expression: string) => {

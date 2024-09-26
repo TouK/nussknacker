@@ -26,10 +26,9 @@ import { TestResults } from "../common/TestResultUtils";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { GenericValidationRequest } from "../actions/nk/genericAction";
+import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import { TestAdhocValidationRequest } from "../actions/nk/testAdhoc";
 
 type HealthCheckProcessDeploymentType = {
     status: string;

@@ -1,12 +1,12 @@
 import { NodeValidationError } from "../../../types";
 import { useCallback, useEffect, useState } from "react";
-import { ActionValues } from "./GenericActionFormContext";
-import { validateGenericActionParameters } from "../../../actions/nk/genericAction";
-import { GenericAction } from "./GenericActionDialog";
+import { ActionValues } from "./AdhocTestingFormContext";
+import { validateAdhocTestParameters } from "../../../actions/nk/adhocTesting";
+import { AdhocTestingParameters } from "./AdhocTestingDialog";
 import { SourceWithParametersTest } from "../../../http/HttpService";
 
-export function useGenericActionValidation(
-    action: Pick<GenericAction, "scenarioName" | "parameters" | "sourceId" | "scenarioGraph">,
+export function useAdhocTestingParametersValidation(
+    action: Pick<AdhocTestingParameters, "scenarioName" | "parameters" | "sourceId" | "scenarioGraph">,
     value: ActionValues,
 ): {
     isValid: boolean;
@@ -17,7 +17,7 @@ export function useGenericActionValidation(
 
     const validate = useCallback(
         (value: ActionValues) => {
-            validateGenericActionParameters(
+            validateAdhocTestParameters(
                 scenarioName,
                 {
                     sourceParameters: {
