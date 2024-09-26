@@ -15074,9 +15074,9 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.variables.MetaVariables"},
     "methods": {
-      "processLabels": [
+      "scenarioLabels": [
         {
-          "name": "processLabels",
+          "name": "scenarioLabels",
           "signature": {
             "noVarArgs": [],
             "result": {
@@ -15145,7 +15145,7 @@
             "noVarArgs": [
               {"name": "processName", "refClazz": {"refClazzName": "java.lang.String"}},
               {
-                "name": "processLabels",
+                "name": "scenarioLabels",
                 "refClazz": {
                   "refClazzName": "java.util.List",
                   "params" : [

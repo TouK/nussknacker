@@ -27,6 +27,9 @@ object ProcessVersion {
 
   implicit val encoder: Encoder[ProcessVersion] = io.circe.generic.semiauto.deriveEncoder
 
+  // decoder with fallback for labels
+  // legacy format handling required for K8s - there may be some deployed pods with `processVersion` without labels -
+  // newer NU should be able to decode the old version (for old pods status check etc.)
   implicit val decoder: Decoder[ProcessVersion] = {
     Decoder.instance { c =>
       for {

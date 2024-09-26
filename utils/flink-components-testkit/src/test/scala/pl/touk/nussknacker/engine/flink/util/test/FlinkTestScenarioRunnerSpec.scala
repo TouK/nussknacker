@@ -84,7 +84,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#meta.processLabels".spel)
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#meta.scenarioLabels".spel)
 
     val runResults =
       TestScenarioRunner

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.{Hidden, JobData, MetaData}
 import pl.touk.nussknacker.engine.definition.globalvariables.ObjectWithType
 import scala.jdk.CollectionConverters._
 
-final case class MetaVariables(processName: String, processLabels: java.util.List[String], properties: TypedMap)
+final case class MetaVariables(processName: String, scenarioLabels: java.util.List[String], properties: TypedMap)
 
 object MetaVariables {
 
@@ -25,9 +25,9 @@ object MetaVariables {
   @Hidden
   def typingResult(scenarioPropertiesNames: Iterable[String]): TypingResult = Typed.record(
     Map(
-      "processName"   -> Typed[String],
-      "processLabels" -> Typed.genericTypeClass[java.util.List[_]](List(Typed[String])),
-      "properties"    -> propertiesType(scenarioPropertiesNames)
+      "processName"    -> Typed[String],
+      "properties"     -> propertiesType(scenarioPropertiesNames),
+      "scenarioLabels" -> Typed.genericTypeClass[java.util.List[_]](List(Typed[String])),
     )
   )
 
