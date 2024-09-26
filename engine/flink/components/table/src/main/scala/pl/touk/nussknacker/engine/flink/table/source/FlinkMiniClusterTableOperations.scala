@@ -163,6 +163,11 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
 
     private lazy val streamEnvConfig = {
       val conf = new Configuration()
+
+      // parent-first - otherwise linkage error (loader constraint violation, a different class with the same name was
+      // previously loaded by 'app') for class 'org.apache.commons.math3.random.RandomDataGenerator'
+      conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+
       // Here is a hidden assumption that getClass.getClassLoader is the model classloader and another hidden assumuption that model classloader has all necessary jars (including connectors)
       // TODO: we should explicitly pass model classloader + we should split model classloader into libs that are only for
       //       testing mechanism purpose (in the real deployment, they are already available in Flink), for example table connectors
