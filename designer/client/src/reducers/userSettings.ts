@@ -5,6 +5,7 @@ import { Reducer } from "../actions/reduxTypes";
 type SettingsNames =
     | `${string}.showLines`
     | `${string}.noWrap`
+    | "node.shortCounts"
     | `survey-panel(${string}).closed`
     | "debug.nodesAsJson"
     | "debug.forceDisableModals";

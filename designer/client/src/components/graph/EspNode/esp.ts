@@ -1,10 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
 import { Theme } from "@mui/material";
 import { dia, shapes, util } from "jointjs";
+import { blendLighten, getBorderColor, getNodeBorderColor } from "../../../containers/theme/helpers";
+import { NodeType } from "../../../types";
 import { getStringWidth } from "./element";
 import { getRoundedRectPath } from "./getRoundedRectPath";
-import { NodeType } from "../../../types";
-import { blendLighten, getBorderColor, getNodeBorderColor } from "../../../containers/theme/helpers";
 
 export const RECT_WIDTH = 300;
 export const RECT_HEIGHT = 60;
@@ -100,6 +100,7 @@ const portMarkup = (theme: Theme, node: NodeType): dia.MarkupNodeJSON => ({
 const testResultsHeight = 24;
 const testResults: dia.MarkupNodeJSON = {
     tagName: "g",
+    selector: "testResultsGroup",
     children: [
         {
             selector: "testResults",
