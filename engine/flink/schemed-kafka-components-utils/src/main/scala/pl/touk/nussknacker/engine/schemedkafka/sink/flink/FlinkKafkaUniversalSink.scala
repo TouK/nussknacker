@@ -38,6 +38,7 @@ class FlinkKafkaUniversalSink(
 
   type Value = KeyedValue[AnyRef, AnyRef]
 
+  @transient
   private lazy val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaConfig)
 
   override def registerSink(
