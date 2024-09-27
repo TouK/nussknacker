@@ -75,7 +75,7 @@ object KafkaTransactionalScenarioInterpreter {
       engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer
   )(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[Future, Input, Output](scenario, modelData)
+      .createInterpreter[Future, Input, Output](scenario, jobData, modelData)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     new KafkaTransactionalScenarioInterpreter(
       interpreter,

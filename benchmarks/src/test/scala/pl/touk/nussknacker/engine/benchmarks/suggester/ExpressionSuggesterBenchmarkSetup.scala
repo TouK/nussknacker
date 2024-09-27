@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.benchmarks.suggester
 
-import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
-import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionExtractor, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils}
+import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.CaretPosition2d
+import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 import java.time.{Duration, LocalDateTime}
 import scala.concurrent.duration.{Duration => ScalaDuration}
@@ -18,8 +17,7 @@ import scala.concurrent.{Await, ExecutionContext}
 
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class ExpressionSuggesterBenchmarkSetup() {
-
-  implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
+  private val classDefinitionExtractor = ClassDefinitionTestUtils.DefaultExtractor
 
   private val dictRegistry = new SimpleDictRegistry(
     Map(
@@ -32,11 +30,11 @@ class ExpressionSuggesterBenchmarkSetup() {
 
   private val clazzDefinitions: ClassDefinitionSet = ClassDefinitionSet(
     Set(
-      ClassDefinitionExtractor.extract(classOf[Foo]),
-      ClassDefinitionExtractor.extract(classOf[Bar]),
-      ClassDefinitionExtractor.extract(classOf[String]),
-      ClassDefinitionExtractor.extract(classOf[LocalDateTime]),
-      ClassDefinitionExtractor.extract(classOf[Duration]),
+      classDefinitionExtractor.extract(classOf[Foo]),
+      classDefinitionExtractor.extract(classOf[Bar]),
+      classDefinitionExtractor.extract(classOf[String]),
+      classDefinitionExtractor.extract(classOf[LocalDateTime]),
+      classDefinitionExtractor.extract(classOf[Duration]),
     )
   )
 

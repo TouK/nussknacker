@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.ui.process.version
 
 import cats.data.EitherT
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
-import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.process.ScenarioMetadata
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
@@ -20,7 +22,7 @@ class ScenarioGraphVersionService(
 )(implicit ec: ExecutionContext) {
 
   def getValidResolvedLatestScenarioGraphVersion(
-      scenarioMetadata: ProcessEntityData,
+      scenarioMetadata: ScenarioMetadata,
       user: LoggedUser
   ): Future[Either[ScenarioGraphValidationError, ProcessVersionEntityData]] = {
     (for {
@@ -29,10 +31,18 @@ class ScenarioGraphVersionService(
           scenarioGraphVersionRepository.getLatestScenarioGraphVersion(scenarioMetadata.id)
         )
       )
+      processVersion = ProcessVersion(
+        versionId = scenarioGraphVersion.id,
+        processName = scenarioMetadata.name,
+        processId = scenarioMetadata.id,
+        labels = scenarioMetadata.labels.map(_.value),
+        user = scenarioGraphVersion.user,
+        modelVersion = scenarioGraphVersion.modelVersion,
+      )
       _ <- EitherT.fromEither[Future] {
         val validationResult = scenarioValidator
           .forProcessingTypeUnsafe(scenarioMetadata.processingType)(user)
-          .validateCanonicalProcess(scenarioGraphVersion.jsonUnsafe, scenarioMetadata.isFragment)(user)
+          .validateCanonicalProcess(scenarioGraphVersion.jsonUnsafe, processVersion, scenarioMetadata.isFragment)(user)
         // TODO: what about warnings?
         Either.cond(!validationResult.hasErrors, (), ScenarioGraphValidationError(validationResult.errors))
       }

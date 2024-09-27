@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import org.apache.avro.Schema
 import org.scalatest.LoneElement
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{
   DualParameterEditor,
@@ -153,6 +154,7 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
   private def prepareTestForTimestampField(topicName: String, schema: Schema) = {
     val topicConfig   = createAndRegisterTopicConfig(topicName, schema)
     val process       = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
+    val jobData       = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     val nodeValidator = new NodeDataValidator(modelData)
 
     val result = nodeValidator.validate(
@@ -161,7 +163,7 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec
       Map.empty,
       List.empty,
       FragmentResolver(_ => None)
-    )(process.metaData)
+    )(jobData)
 
     result
       .asInstanceOf[ValidationPerformed]

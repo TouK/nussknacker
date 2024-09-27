@@ -6,10 +6,12 @@ import org.apache.flink.types.Row
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodesDeploymentData, SqlFilteringExpression}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.definition.{FlinkDataDefinition, StubbedCatalogFactory}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -65,7 +67,7 @@ class TableSourceTest
     .withExtraComponents(tableComponents)
     .build()
 
-  test("be possible to user table declared inside a database other than the default one") {
+  test("be possible to use table declared inside a database other than the default one") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", "table", "Table" -> s"'`default_catalog`.`testdb`.`tablewithqualifiedname`'".spel)
@@ -74,6 +76,71 @@ class TableSourceTest
     val result = runner.runWithoutData[Row](scenario).validValue
     result.errors shouldBe empty
     result.successes.loneElement
+  }
+
+  test("be possible to use nodes deployment data") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'`default_catalog`.`testdb`.`tablewithqualifiedname`'".spel)
+      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
+
+    val result = runner
+      .runWithoutData[Row](
+        scenario,
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> SqlFilteringExpression("true = true")))
+      )
+      .validValue
+    result.errors shouldBe empty
+    result.successes.loneElement
+  }
+
+  test("be possible combine nodes deployment data with catalogs configuration") {
+    val configWithCatalogConfiguration = ConfigFactory.parseString(
+      s"""catalogConfiguration {
+        |  type: ${StubbedCatalogFactory.catalogName}
+        |}""".stripMargin
+    )
+
+    val tableComponentsBasedOnCatalogConfiguration: List[ComponentDefinition] =
+      new FlinkTableComponentProvider().create(
+        configWithCatalogConfiguration,
+        ProcessObjectDependencies.withConfig(configWithCatalogConfiguration)
+      )
+
+    val runnerWithCatalogConfiguration: FlinkTestScenarioRunner = TestScenarioRunner
+      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+      .withExecutionMode(ExecutionMode.Batch)
+      .withExtraComponents(tableComponentsBasedOnCatalogConfiguration)
+      .build()
+
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source(
+        "start",
+        "table",
+        "Table" -> (s"'`${FlinkDataDefinition.internalCatalogName}`." +
+          s"`${StubbedCatalogFactory.sampleBoundedTablePath.getDatabaseName}`." +
+          s"`${StubbedCatalogFactory.sampleBoundedTablePath.getObjectName}`'").spel
+      )
+      .emptySink(s"end", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
+
+    val resultWithoutFiltering = runnerWithCatalogConfiguration
+      .runWithoutData[Row](
+        scenario,
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> SqlFilteringExpression("true = true")))
+      )
+      .validValue
+    resultWithoutFiltering.errors shouldBe empty
+    resultWithoutFiltering.successes should have size StubbedCatalogFactory.sampleBoundedTableNumberOfRows
+
+    val resultWithFiltering = runnerWithCatalogConfiguration
+      .runWithoutData[Row](
+        scenario,
+        nodesData = NodesDeploymentData(Map(NodeId("start") -> SqlFilteringExpression("true = false")))
+      )
+      .validValue
+    resultWithFiltering.errors shouldBe empty
+    resultWithFiltering.successes shouldBe empty
   }
 
 }

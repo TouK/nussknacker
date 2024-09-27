@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessV
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeTypingData,
@@ -21,6 +22,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -29,6 +31,7 @@ class UIProcessValidator(
     validator: ProcessValidator,
     scenarioProperties: Map[String, ScenarioPropertyConfig],
     scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
+    scenarioLabelsValidator: ScenarioLabelsValidator,
     additionalValidators: List[CustomProcessValidator],
     fragmentResolver: FragmentResolver,
 ) {
@@ -44,6 +47,7 @@ class UIProcessValidator(
       validator,
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
+      scenarioLabelsValidator,
       additionalValidators,
       fragmentResolver
     )
@@ -54,34 +58,48 @@ class UIProcessValidator(
       transform(validator),
       scenarioProperties,
       scenarioPropertiesConfigFinalizer,
+      scenarioLabelsValidator,
       additionalValidators,
       fragmentResolver
     )
 
-  // TODO: It is used only in tests, remove it from the prodcution code
-  def withScenarioPropertiesConfig(scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]) =
-    new UIProcessValidator(
-      processingType,
-      validator,
-      scenarioPropertiesConfig,
-      scenarioPropertiesConfigFinalizer,
-      additionalValidators,
-      fragmentResolver
-    )
-
-  def validate(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
+  def validate(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean,
+      labels: List[ScenarioLabel]
+  )(
       implicit loggedUser: LoggedUser
   ): ValidationResult = {
-    val uiValidationResult = uiValidation(scenarioGraph, processName, isFragment)
+    val processVersion = ProcessVersion.empty.copy(
+      processName = processName,
+      labels = labels.map(_.value)
+    )
+    validate(scenarioGraph, processVersion, isFragment)
+  }
+
+  def validate(
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean,
+  )(
+      implicit loggedUser: LoggedUser
+  ): ValidationResult = {
+    val uiValidationResult = uiValidation(
+      scenarioGraph,
+      processVersion.processName,
+      isFragment,
+      processVersion.labels.map(ScenarioLabel.apply)
+    )
 
     // TODO: Enable further validation when save is not allowed
     // The problem preventing further validation is that loose nodes and their children are skipped during conversion
     // and in case if the scenario has only loose nodes, it will be reported that the scenario is empty
     if (uiValidationResult.saveAllowed) {
-      val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processName)
+      val canonical = CanonicalProcessConverter.fromScenarioGraph(scenarioGraph, processVersion.processName)
       // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and
       // CanonicalProcess validation.
-      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, isFragment)))
+      deduplicateErrors(uiValidationResult.add(validateCanonicalProcess(canonical, processVersion, isFragment)))
     } else {
       uiValidationResult
     }
@@ -91,8 +109,14 @@ class UIProcessValidator(
   // is an error preventing graph canonization. For example we want to display node and scenario id errors for scenarios
   // that have loose nodes. If you want to achieve this result, you need to add these validations here and deduplicate
   // resulting errors later.
-  def uiValidation(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean): ValidationResult = {
+  def uiValidation(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean,
+      labels: List[ScenarioLabel]
+  ): ValidationResult = {
     validateScenarioName(processName, isFragment)
+      .add(validateScenarioLabels(labels))
       .add(validateNodesId(scenarioGraph))
       .add(validateDuplicates(scenarioGraph))
       .add(validateLooseNodes(scenarioGraph))
@@ -103,10 +127,12 @@ class UIProcessValidator(
 
   def validateCanonicalProcess(
       canonical: CanonicalProcess,
+      processVersion: ProcessVersion,
       isFragment: Boolean
   )(implicit loggedUser: LoggedUser): ValidationResult = {
     def validateAndFormatResult(scenario: CanonicalProcess) = {
-      val validated = validator.validate(scenario, isFragment)
+      implicit val jobData: JobData = JobData(scenario.metaData, processVersion)
+      val validated                 = validator.validate(scenario, isFragment)
       validated.result
         .fold(formatErrors, _ => ValidationResult.success)
         .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))
@@ -180,6 +206,23 @@ class UIProcessValidator(
     nodeIdErrors match {
       case Some(value) => formatErrors(value)
       case None        => ValidationResult.success
+    }
+  }
+
+  private def validateScenarioLabels(labels: List[ScenarioLabel]): ValidationResult = {
+    scenarioLabelsValidator.validate(labels) match {
+      case Valid(()) =>
+        ValidationResult.success
+      case Invalid(errors) =>
+        ValidationResult.globalErrors(
+          errors
+            .map(ve =>
+              ScenarioLabelValidationError(label = ve.label, description = ve.validationMessages.toList.mkString(", "))
+            )
+            .map(PrettyValidationErrors.formatErrorMessage)
+            .map(UIGlobalError(_, nodeIds = List.empty))
+            .toList
+        )
     }
   }
 

@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.process.{
   ScenarioVersion,
   VersionId
 }
-import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.ui.listener.ListenerScenarioWithDetails
 
@@ -33,7 +32,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     modifiedBy: String,
     createdAt: Instant,
     createdBy: String,
-    tags: Option[List[String]],
+    scenarioLabels: List[String],
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[
       ProcessAction
@@ -55,6 +54,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     versionId = processVersionId,
     processName = name,
     processId = processId,
+    labels = scenarioLabels,
     user = modifiedBy,
     modelVersion = modelVersion
   )

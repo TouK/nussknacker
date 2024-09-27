@@ -10,13 +10,26 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
   * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
 
+* [#6766](https://github.com/TouK/nussknacker/pull/6766)
+  * Process API changes:
+     * Field `ScenarioWithDetails.labels` was added
+     * Field `ScenarioWithDetails.tags` was removed (it had the same value as `labels` and was not used)
+
+### REST API changes
+
+* [#6766](https://github.com/TouK/nussknacker/pull/6766) 
+  * Process API changes:
+      * PUT `/api/processes/{processName}` - optional `scenarioLabels` field added
+  * Migration API changes:
+      * POST `/api/migrate` supports v2 request format (with `scenarioLabels` field)
+
 ### Other changes
 
 * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
   are registered based on class of Serializer instead of instance of Serializer. If you have values that were
   serialized by these Serializers in some state, the state won't be restored after upgrade.
 
-## In version 1.17.0 (Not released yet)
+## In version 1.17.0
 
 ### Code API changes
 
@@ -99,6 +112,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Configuration changes
 * [#6635](https://github.com/TouK/nussknacker/pull/6635) `globalParameters.useTypingResultTypeInformation` parameter was removed.
   Now we always use TypingResultTypeInformation
+* [#6797](https://github.com/TouK/nussknacker/pull/6797) `AVRO_USE_STRING_FOR_STRING_TYPE` environment variable
+  is not supported anymore - we always use String for String type in Avro. If you didn't set up this
+  environment variable, no action is needed
+
 
 ## In version 1.16.3
 

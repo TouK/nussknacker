@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{AggregateFunction, RuntimeContext}
 import org.apache.flink.api.common.state.AggregatingStateDescriptor
 import org.apache.flink.configuration.Configuration
@@ -56,6 +57,7 @@ object OnEventTriggerWindowOperator {
 
 }
 
+@silent("deprecated")
 class OnEventTriggerWindowOperator[A](
     stream: KeyedStream[Input[A], String],
     fctx: FlinkCustomNodeContext,

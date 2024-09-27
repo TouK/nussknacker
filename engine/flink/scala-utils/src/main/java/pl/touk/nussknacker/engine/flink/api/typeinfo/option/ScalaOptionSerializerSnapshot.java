@@ -30,7 +30,7 @@ public final class ScalaOptionSerializerSnapshot<E>
 
     private static final int VERSION = 2;
 
-    @SuppressWarnings("WeakerAccess")
+    @SuppressWarnings({"WeakerAccess", "deprecation"})
     public ScalaOptionSerializerSnapshot() {
         super(OptionSerializer.class);
     }

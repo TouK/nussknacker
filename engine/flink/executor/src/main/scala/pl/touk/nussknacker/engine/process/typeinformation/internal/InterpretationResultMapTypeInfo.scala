@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.typeinformation.internal
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
@@ -22,6 +23,7 @@ case class InterpretationResultMapTypeInfo(ctx: Map[String, TypeInformation[Inte
 
   override def isKeyType: Boolean = false
 
+  @silent("deprecated")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[InterpretationResult] =
     InterpretationResultMapTypeSerializer(ctx.mapValuesNow(_.createSerializer(config)))
 

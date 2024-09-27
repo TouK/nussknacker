@@ -46,7 +46,7 @@ private[registrar] class AsyncInterpretationFunction(
       }
     )
 
-    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.metaData.name)
+    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.jobData.metaData.name)
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
@@ -75,12 +75,12 @@ private[registrar] class AsyncInterpretationFunction(
     if (useIOMonad) {
       implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.syncIoRuntime
       compilerData.interpreter
-        .interpret[IO](compiledNode, compilerData.metaData, input, serviceExecutionContext)
+        .interpret[IO](compiledNode, compilerData.jobData, input, serviceExecutionContext)
         .unsafeRunAsync(callback)
     } else {
       implicit val executionContext: ExecutionContext = SynchronousExecutionContextAndIORuntime.syncEc
       compilerData.interpreter
-        .interpret[Future](compiledNode, compilerData.metaData, input, serviceExecutionContext)
+        .interpret[Future](compiledNode, compilerData.jobData, input, serviceExecutionContext)
         .onComplete { result => callback(result.toEither) }
     }
   }

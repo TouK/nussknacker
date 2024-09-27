@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, Ver
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.{Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
 
 import java.io.FileOutputStream
 import java.time.Instant
@@ -36,7 +36,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
       .map(commentId =>
         Comment(
           commentId,
-          details.processVersionId,
+          details.processVersionId.value,
           "Jakiś taki dziwny ten proces??",
           "Wacław Wójcik",
           Instant.now()

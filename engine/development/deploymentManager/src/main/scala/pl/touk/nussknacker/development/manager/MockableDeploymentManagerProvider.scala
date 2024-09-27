@@ -113,15 +113,15 @@ object MockableDeploymentManagerProvider {
               .flatMap(MockableDeploymentManager.deploymentResults.get().get)
               .flatMap(_.get)
           }
-        case DMTestScenarioCommand(scenarioName, scenario, testData) =>
+        case DMTestScenarioCommand(processVersion, scenario, testData) =>
           MockableDeploymentManager.testResults
             .get()
-            .get(scenarioName.value)
+            .get(processVersion.processName.value)
             .map(Future.successful)
             .orElse(testRunnerOpt.map(_.test(scenario, testData)))
             .getOrElse(
               throw new IllegalArgumentException(
-                s"Tests results not mocked for scenario [${scenarioName.value}] and no model data provided"
+                s"Tests results not mocked for scenario [${processVersion.processName.value}] and no model data provided"
               )
             )
         case other =>

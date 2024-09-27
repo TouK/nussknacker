@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -27,7 +27,7 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
     getClass.getClassLoader,
     new SimpleDictRegistry(Map.empty),
     expressionConfig,
-    classDefinitionSet = ClassDefinitionSet.forDefaultAdditionalClasses,
+    classDefinitionSet = ClassDefinitionTestUtils.createDefinitionForDefaultAdditionalClasses,
     evaluator
   )
 

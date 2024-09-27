@@ -5,18 +5,20 @@ import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
+import java.time.Clock
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
@@ -27,11 +29,20 @@ object Initialization {
   def init(
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
       db: DbRef,
+      clock: Clock,
       fetchingRepository: DBFetchingProcessRepository[DB],
-      commentRepository: CommentRepository,
-      environment: String
+      scenarioActivityRepository: ScenarioActivityRepository,
+      scenarioLabelsRepository: ScenarioLabelsRepository,
+      environment: String,
   )(implicit ec: ExecutionContext): Unit = {
-    val processRepository = new DBProcessRepository(db, commentRepository, migrations.mapValues(_.version))
+    val processRepository =
+      new DBProcessRepository(
+        db,
+        clock,
+        scenarioActivityRepository,
+        scenarioLabelsRepository,
+        migrations.mapValues(_.version)
+      )
 
     val operations: List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),
@@ -107,7 +118,8 @@ class AutomaticMigration(
       .sequenceOption(for {
         migrator        <- migrators.forProcessingType(processDetails.processingType)
         migrationResult <- migrator.migrateProcess(processDetails, skipEmptyMigrations = true)
-        updateAction = migrationResult.toUpdateAction(processDetails.processId)
+        updateAction = migrationResult
+          .toUpdateAction(processDetails.processId, processDetails.scenarioLabels.map(ScenarioLabel.apply))
       } yield {
         processRepository.updateProcess(updateAction)
       })

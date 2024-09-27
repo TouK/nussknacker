@@ -47,7 +47,7 @@ import scala.util.{Failure, Success}
 class DeploymentService(
     dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
-    actionRepository: DbProcessActionRepository,
+    actionRepository: DbScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     processValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
     scenarioResolver: ProcessingTypeDataProvider[ScenarioResolver, _],
@@ -216,7 +216,7 @@ class DeploymentService(
 
   // TODO: this is temporary step: we want ParameterValidator here. The aim is to align deployment and custom actions
   //  and validate deployment comment (and other action parameters) the same way as in node expressions or additional properties.
-  private def validateDeploymentComment(comment: Option[Comment]): Future[Option[DeploymentComment]] =
+  private def validateDeploymentComment(comment: Option[Comment]): Future[Option[Comment]] =
     Future.fromTry(DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings).toEither.toTry)
 
   protected def validateBeforeDeploy(
@@ -229,7 +229,11 @@ class DeploymentService(
       _ <- Future {
         processValidator
           .forProcessingTypeUnsafe(processDetails.processingType)
-          .validateCanonicalProcess(processDetails.json, processDetails.isFragment)
+          .validateCanonicalProcess(
+            processDetails.json,
+            processDetails.toEngineProcessVersion,
+            processDetails.isFragment
+          )
       }.flatMap {
         case validationResult if validationResult.hasErrors =>
           Future.failed(DeployingInvalidScenarioError(validationResult.errors))
@@ -323,7 +327,7 @@ class DeploymentService(
 
   private def runActionAndHandleResults[T, PS: ScenarioShapeFetchStrategy](
       actionName: ScenarioActionName,
-      deploymentComment: Option[DeploymentComment],
+      deploymentComment: Option[Comment],
       ctx: CommandContext[PS]
   )(runAction: => Future[T])(implicit user: LoggedUser): Future[T] = {
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
@@ -353,12 +357,11 @@ class DeploymentService(
           .map { versionOnWhichActionIsDone =>
             logger.info(s"Finishing $actionString")
             val performedAt = clock.instant()
-            val comment     = deploymentComment.map(_.toComment(actionName))
             processChangeListener.handle(
               OnActionSuccess(
                 ctx.latestScenarioDetails.processId,
                 versionOnWhichActionIsDone,
-                comment,
+                deploymentComment,
                 performedAt,
                 actionName
               )
@@ -370,7 +373,7 @@ class DeploymentService(
                 actionName,
                 versionOnWhichActionIsDone,
                 performedAt,
-                comment,
+                deploymentComment,
                 ctx.buildInfoProcessingType
               )
             )

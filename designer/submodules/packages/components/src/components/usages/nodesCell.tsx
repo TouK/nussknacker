@@ -2,7 +2,7 @@ import { createFilterRules, ExternalLink, fragmentNodeHref, Highlight, nodeHref,
 import React, { memo, useCallback, useMemo } from "react";
 import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
 import { Chip, styled } from "@mui/material";
-import { TruncateWrapper } from "../utils";
+import { TruncateWrapper } from "../../common/utils";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { NodeUsageData } from "nussknackerUi/HttpService";
 import { UsageWithStatus } from "../useComponentsQuery";
@@ -72,7 +72,7 @@ export const NodesCell = ({
             matched={filterText ? match : -1}
         />
     ));
-    return <TruncateWrapper {...props}>{elements}</TruncateWrapper>;
+    return <TruncateWrapper>{elements}</TruncateWrapper>;
 };
 
 const HighlightNode = styled(Highlight)({

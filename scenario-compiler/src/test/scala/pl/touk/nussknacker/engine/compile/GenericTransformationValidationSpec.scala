@@ -67,7 +67,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )
 
-  private def validate(process: CanonicalProcess) = validator.validate(process, isFragment = false)
+  private def validate(process: CanonicalProcess) = {
+    implicit val jobData: JobData =
+      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    validator.validate(process, isFragment = false)
+  }
 
   private val expectedGenericParameters = List(
     Parameter[String](ParameterName("par1"))

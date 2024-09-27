@@ -4,16 +4,18 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{MigrationComment, ScenarioWithDetailsEntity}
 
 final case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
 
-  def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
+  def toUpdateAction(processId: ProcessId, labels: List[ScenarioLabel]): UpdateProcessAction = UpdateProcessAction(
     processId = processId,
     canonicalProcess = process,
     comment = Option(migrationsApplied).filter(_.nonEmpty).map(MigrationComment),
+    labels = labels,
     increaseVersionWhenJsonNotChanged = true,
     forwardedUserName = None
   )

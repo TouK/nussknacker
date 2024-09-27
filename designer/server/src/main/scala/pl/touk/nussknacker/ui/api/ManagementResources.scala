@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   TestFromParametersRequest,
   prepareTestFromParametersDecoder
 }
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -192,8 +193,8 @@ class ManagementResources(
                         scenarioTestServices
                           .forProcessingTypeUnsafe(details.processingType)
                           .performTest(
-                            details.idWithNameUnsafe,
                             scenarioGraph,
+                            details.processVersionUnsafe,
                             details.isFragment,
                             RawScenarioTestData(testDataContent)
                           )
@@ -218,7 +219,7 @@ class ManagementResources(
                         val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(details.processingType)
                         scenarioTestService.generateData(
                           scenarioGraph,
-                          processName,
+                          details.processVersionUnsafe,
                           details.isFragment,
                           testSampleSize
                         ) match {
@@ -226,8 +227,8 @@ class ManagementResources(
                           case Right(rawScenarioTestData) =>
                             scenarioTestService
                               .performTest(
-                                details.idWithNameUnsafe,
                                 scenarioGraph,
+                                details.processVersionUnsafe,
                                 details.isFragment,
                                 rawScenarioTestData
                               )
@@ -254,8 +255,8 @@ class ManagementResources(
                       scenarioTestServices
                         .forProcessingTypeUnsafe(process.processingType)
                         .performTest(
-                          process.idWithNameUnsafe,
                           testParametersRequest.scenarioGraph,
+                          process.processVersionUnsafe,
                           process.isFragment,
                           testParametersRequest.sourceParameters
                         )

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -31,7 +32,7 @@ final case class ScenarioWithDetails(
     modifiedBy: String,
     createdAt: Instant,
     createdBy: String,
-    tags: Option[List[String]],
+    override val labels: List[String],
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],
@@ -60,6 +61,15 @@ final case class ScenarioWithDetails(
     ProcessIdWithName(processIdUnsafe, name)
 
   def processIdUnsafe: ProcessId = processId.getOrElse(throw new IllegalStateException("Missing processId"))
+
+  def processVersionUnsafe: ProcessVersion = ProcessVersion(
+    versionId = processVersionId,
+    processName = name,
+    processId = processIdUnsafe,
+    labels = labels,
+    user = createdBy,
+    modelVersion = modelVersion
+  )
 
 }
 

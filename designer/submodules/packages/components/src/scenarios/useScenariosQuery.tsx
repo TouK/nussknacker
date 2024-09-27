@@ -4,6 +4,7 @@ import { NkApiContext } from "../settings/nkApiProvider";
 import { Scenario, StatusDefinitionType } from "nussknackerUi/components/Process/types";
 import { StatusesType } from "nussknackerUi/HttpService";
 import { useQuery, useQueryClient } from "react-query";
+import { AvailableScenarioLabels } from "nussknackerUi/components/Labels/types";
 import { UseQueryResult } from "react-query/types/react/types";
 import { DateTime } from "luxon";
 
@@ -78,6 +79,19 @@ export function useUserQuery(): UseQueryResult<UserData> {
     });
 }
 
+export function useScenarioLabelsQuery(): UseQueryResult<AvailableScenarioLabels> {
+    const api = useContext(NkApiContext);
+    return useQuery({
+        queryKey: ["scenarioLabels"],
+        queryFn: async () => {
+            const { data } = await api.fetchScenarioLabels();
+            return data;
+        },
+        enabled: !!api,
+        refetchInterval: false,
+    });
+}
+
 export function useScenariosWithStatus(): UseQueryResult<Scenario[]> {
     const scenarios = useScenariosQuery();
     const statuses = useScenariosStatusesQuery();
@@ -88,6 +102,7 @@ export function useScenariosWithStatus(): UseQueryResult<Scenario[]> {
             data: data.map((scenario) => ({
                 ...scenario,
                 state: statuses?.data?.[scenario.name] || scenario.state,
+                id: scenario.name, // required by DataGrid when table=true
             })),
         } as UseQueryResult<Scenario[]>;
     }, [scenarios, statuses]);

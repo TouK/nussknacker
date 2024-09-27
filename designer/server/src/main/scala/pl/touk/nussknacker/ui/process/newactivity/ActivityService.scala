@@ -1,26 +1,28 @@
 package pl.touk.nussknacker.ui.process.newactivity
 
 import cats.data.EitherT
-import cats.implicits.toTraverseOps
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.RunDeploymentError
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
-import pl.touk.nussknacker.ui.process.repository.{CommentRepository, DBIOActionRunner, DeploymentComment}
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: This service in the future should handle all activities that modify anything in application.
 //       These activities should be stored in the dedicated table (not in comments table)
 class ActivityService(
     deploymentCommentSettings: Option[DeploymentCommentSettings],
-    commentRepository: CommentRepository,
+    scenarioActivityRepository: ScenarioActivityRepository,
     deploymentService: DeploymentService,
-    dbioRunner: DBIOActionRunner
+    dbioRunner: DBIOActionRunner,
+    clock: Clock,
 )(implicit ec: ExecutionContext) {
 
   def processCommand[Command, ErrorType](command: Command, comment: Option[Comment])(
@@ -41,15 +43,14 @@ class ActivityService(
     }
   }
 
-  private def validateDeploymentCommentWhenPassed(comment: Option[Comment]) = {
-    EitherT
-      .fromEither[Future](
-        DeploymentComment
-          .createDeploymentComment(comment, deploymentCommentSettings)
-          .toEither
-      )
-      .map(_.map(_.toComment(ScenarioActionName.Deploy)))
-      .leftMap[ActivityError[RunDeploymentError]](err => CommentValidationError(err.message))
+  private def validateDeploymentCommentWhenPassed(
+      comment: Option[Comment]
+  ): EitherT[Future, ActivityError[RunDeploymentError], Option[Comment]] = EitherT.fromEither {
+    DeploymentComment
+      .createDeploymentComment(comment, deploymentCommentSettings)
+      .toEither
+      .left
+      .map[ActivityError[RunDeploymentError]](err => CommentValidationError(err.message))
   }
 
   private def runDeployment(command: RunDeploymentCommand) =
@@ -60,15 +61,34 @@ class ActivityService(
       commentOpt: Option[Comment],
       scenarioId: ProcessId,
       scenarioGraphVersionId: VersionId,
-      user: LoggedUser
-  ) =
+      loggedUser: LoggedUser
+  ): EitherT[Future, ActivityError[ErrorType], Unit] = {
+    val now = clock.instant()
     EitherT.right[ActivityError[ErrorType]](
-      commentOpt
-        .map(comment =>
-          dbioRunner.run(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, comment))
+      dbioRunner
+        .run(
+          scenarioActivityRepository.addActivity(
+            ScenarioActivity.ScenarioDeployed(
+              scenarioId = ScenarioId(scenarioId.value),
+              scenarioActivityId = ScenarioActivityId.random,
+              user = ScenarioUser(
+                id = Some(UserId(loggedUser.id)),
+                name = UserName(loggedUser.username),
+                impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
+                impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
+              ),
+              date = now,
+              scenarioVersion = Some(ScenarioVersion(scenarioGraphVersionId.value)),
+              comment = commentOpt match {
+                case Some(comment) => ScenarioComment.Available(comment.value, UserName(loggedUser.username), now)
+                case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
+              },
+            )
+          )(loggedUser)
         )
-        .sequence
+        .map(_ => ())
     )
+  }
 
 }
 

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
-import io.circe.Json.fromString
+import io.circe.Json.{fromString, fromValues}
 import org.apache.flink.api.common.JobStatus
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
@@ -188,7 +188,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     result.failed.futureValue.getCause.getMessage shouldBe "heeelo?"
   }
 
-  private val defaultVersion = ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), "user", None)
+  private val defaultVersion =
+    ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), List.empty, "user", None)
 
   test("refuse to deploy if slots exceeded") {
     statuses = Nil
@@ -316,7 +317,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
             "processId"    -> fromString("123"),
             "versionId"    -> fromString("1"),
             "deploymentId" -> fromString(deploymentId.value),
-            "user"         -> fromString("user1")
+            "user"         -> fromString("user1"),
+            "labels"       -> fromValues(List.empty)
           )
         )
       )
@@ -466,6 +468,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val deploymentId = "789"
     val user         = "user1"
     val processId    = ProcessId(6565L)
+    val labels       = List("tag1", "tag2")
 
     statuses =
       List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
@@ -477,7 +480,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           "processId"    -> fromString(processId.value.toString),
           "versionId"    -> fromString(version.toString),
           "deploymentId" -> fromString(deploymentId),
-          "user"         -> fromString(user)
+          "user"         -> fromString(user),
+          "labels"       -> fromValues(labels.map(fromString))
         )
       )
     )
@@ -488,7 +492,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         SimpleStateStatus.Finished,
         Some(DeploymentId(deploymentId)),
         Some(ExternalDeploymentId("2343")),
-        Some(ProcessVersion(VersionId(version), processName, processId, user, None)),
+        Some(ProcessVersion(VersionId(version), processName, processId, labels, user, None)),
         Some(10L)
       )
     )

@@ -22,8 +22,6 @@ object AvroGen {
   private val MaxStringLength = 16
   private val MapBaseKey      = "key"
 
-  private val random = new scala.util.Random
-
   def genSchema(config: ExcludedConfig): Gen[Schema] = genSchemaType(config).flatMap(genSchema(_, config.withoutRoot()))
 
   def genSchema(schemaType: Type, config: ExcludedConfig): Gen[Schema] = schemaType match {

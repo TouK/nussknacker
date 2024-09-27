@@ -76,6 +76,7 @@ enum FilterEventsSelector {
     ScenariosByProcessingMode = "SCENARIOS_BY_PROCESSING_MODE",
     ScenariosByCategory = "SCENARIOS_BY_CATEGORY",
     ScenariosByAuthor = "SCENARIOS_BY_AUTHOR",
+    ScenariosByLabel = "SCENARIOS_BY_LABEL",
     ComponentUsagesByAuthor = "COMPONENT_USAGES_BY_AUTHOR",
     ComponentUsagesByOther = "COMPONENT_USAGES_BY_OTHER",
     ComponentsByGroup = "COMPONENTS_BY_GROUP",

@@ -50,7 +50,7 @@ class ValidationResourcesSpec
 
   private val processValidatorByProcessingType = mapProcessingTypeDataProvider(
     Streaming.stringify -> new UIProcessResolver(
-      TestFactory.processValidator.withScenarioPropertiesConfig(
+      ProcessTestData.testProcessValidator(scenarioProperties =
         Map(
           "requiredStringProperty" -> ScenarioPropertyConfig(
             None,

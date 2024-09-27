@@ -21,7 +21,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDto,
-  MigrateScenarioRequestDtoV1
+  MigrateScenarioRequestDtoV1,
+  MigrateScenarioRequestDtoV2
 }
 import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError.{
@@ -52,22 +53,42 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .post
       .in("migrate")
       .in(
-        jsonBody[MigrateScenarioRequestDto].example(
-          Example.of(
-            summary = Some("Migrate given scenario to current Nu instance"),
-            value = MigrateScenarioRequestDtoV1(
-              version = 1,
-              sourceEnvironmentId = "testEnv",
-              remoteUserName = "testUser",
-              processingMode = ProcessingMode.UnboundedStream,
-              engineSetupName = EngineSetupName("Flink"),
-              processCategory = "Category1",
-              scenarioGraph = exampleGraph,
-              processName = ProcessName("test"),
-              isFragment = false
-            )
-          )
-        )
+        jsonBody[MigrateScenarioRequestDto]
+        // FIXME uncomment examples when discriminator validation will work in the NuDesignerApiAvailableToExposeYamlSpec -
+        // currently when examples are given, the validation in tests fails due to two schemas matching the example json
+//          .examples(
+//            List(
+//              Example.of(
+//                summary = Some("Migrate given scenario from version 2 to current Nu instance"),
+//                value = MigrateScenarioRequestDtoV2(
+//                  version = 2,
+//                  sourceEnvironmentId = "testEnv",
+//                  remoteUserName = "testUser",
+//                  processingMode = ProcessingMode.UnboundedStream,
+//                  engineSetupName = EngineSetupName("Flink"),
+//                  processCategory = "Category1",
+//                  scenarioLabels = List("tag1", "tag2"),
+//                  scenarioGraph = exampleGraph,
+//                  processName = ProcessName("test"),
+//                  isFragment = false
+//                )
+//              ),
+//              Example.of(
+//                summary = Some("Migrate given scenario from version 1 to current Nu instance"),
+//                value = MigrateScenarioRequestDtoV1(
+//                  version = 1,
+//                  sourceEnvironmentId = "testEnv",
+//                  remoteUserName = "testUser",
+//                  processingMode = ProcessingMode.UnboundedStream,
+//                  engineSetupName = EngineSetupName("Flink"),
+//                  processCategory = "Category1",
+//                  scenarioGraph = exampleGraph,
+//                  processName = ProcessName("test"),
+//                  isFragment = false
+//                )
+//              )
+//            )
+//          )
       )
       .out(statusCode(Ok))
       .errorOut(migrateEndpointErrorOutput)
@@ -171,10 +192,24 @@ object MigrationApiEndpoints {
         isFragment: Boolean,
     ) extends MigrateScenarioRequestDto
 
+    @derive(encoder, decoder)
+    final case class MigrateScenarioRequestDtoV2(
+        override val version: Int,
+        sourceEnvironmentId: String,
+        remoteUserName: String,
+        processingMode: ProcessingMode,
+        engineSetupName: EngineSetupName,
+        processCategory: String,
+        scenarioLabels: List[String],
+        scenarioGraph: ScenarioGraph,
+        processName: ProcessName,
+        isFragment: Boolean,
+    ) extends MigrateScenarioRequestDto
+
     /*
     NOTE TO DEVELOPER:
 
-    When implementing MigrateScenarioRequestDtoV2:
+    When implementing MigrateScenarioRequestDtoV3:
 
     1. Review and update the parameter types and names if necessary.
     2. Consider backward compatibility with existing code.
@@ -186,13 +221,14 @@ object MigrationApiEndpoints {
     Remember to uncomment the class definition after implementation.
 
     @derive(encoder, decoder)
-    final case class MigrateScenarioRequestDtoV2(
+    final case class MigrateScenarioRequestDtoV3(
         override val version: Int,
         sourceEnvironmentId: String,
         remoteUserName: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,
+        scenarioLabels: List[String],
         scenarioGraph: ScenarioGraph,
         processName: ProcessName,
         isFragment: Boolean,
@@ -233,17 +269,20 @@ object MigrationApiEndpoints {
         import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
         import pl.touk.nussknacker.ui.api.TapirCodecs.ProcessNameCodec._
         implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestDtoV1] = Schema.derived
-        // implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.derived
+        implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.derived
+//        implicit val migrateScenarioRequestV3Schema: Schema[MigrateScenarioRequestDtoV3] = Schema.derived
+
         val derived = Schema.derived[MigrateScenarioRequestDto]
         derived.schemaType match {
           case s: SchemaType.SCoproduct[_] =>
             derived.copy(schemaType =
               s.addDiscriminatorField(
                 FieldName("version"),
-                Schema.string,
+                Schema.schemaForInt,
                 Map(
                   "1" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV1].getSimpleName)),
-                  // "2" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV2].getSimpleName)),
+                  "2" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV2].getSimpleName)),
+//                  "3" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV2].getSimpleName)),
                 )
               )
             )
@@ -254,13 +293,15 @@ object MigrationApiEndpoints {
 
       implicit val encoder: Encoder[MigrateScenarioRequestDto] = Encoder.instance {
         case v1: MigrateScenarioRequestDtoV1 => v1.asJson
-        // case v2: MigrateScenarioRequestDtoV2 => v2.asJson
+        case v2: MigrateScenarioRequestDtoV2 => v2.asJson
+//        case v3: MigrateScenarioRequestDtoV3 => v3.asJson
       }
 
       implicit val decoder: Decoder[MigrateScenarioRequestDto] = Decoder.instance { cursor =>
         cursor.downField("version").as[Int].flatMap {
           case 1 => cursor.as[MigrateScenarioRequestDtoV1]
-          // case 2     => cursor.as[MigrateScenarioRequestDtoV2]
+          case 2 => cursor.as[MigrateScenarioRequestDtoV2]
+//          case 3     => cursor.as[MigrateScenarioRequestDtoV3]
           case other => throw new IllegalStateException(s"Cannot decode migration request for version [$other]")
         }
       }

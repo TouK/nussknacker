@@ -80,6 +80,7 @@ class FlinkProcessCompilerDataFactory(
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig)
     val compilerData =
       ProcessCompilerData.prepare(
+        JobData(metaData, processVersion),
         definitionWithTypes,
         dictRegistry,
         listenersToUse,
@@ -92,7 +93,6 @@ class FlinkProcessCompilerDataFactory(
 
     new FlinkProcessCompilerData(
       compilerData = compilerData,
-      jobData = JobData(metaData, processVersion),
       exceptionHandler = exceptionHandler(metaData, modelDependencies, listenersToUse, userCodeClassLoader),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
