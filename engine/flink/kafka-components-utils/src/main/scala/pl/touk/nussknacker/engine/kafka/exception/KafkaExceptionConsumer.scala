@@ -64,15 +64,18 @@ trait BaseKafkaExceptionConsumer extends FlinkEspExceptionConsumer with LazyLogg
   override final def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
     sendKafkaMessage(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))
       .recoverWith { case e: RecordTooLargeException =>
-        val scenario = metaData.id
-        val node     = exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("-")
-        val error    = exceptionInfo.throwable.message
-        logger.warn(
-          s"Cannot write to $topic, retrying with stripped context (scenario: $scenario, node: $node, error: $error). ${e.getMessage}"
-        )
-
+        // Try to reduce Kafka message size in hope that it will fit configured limits. It's practically impossible
+        // to correctly detect and handle this limit preemptively, because:
+        // * Kafka limits are imposed on compressed message sizes
+        // * there are limits on multiple levels: producer, topic, broker (access requires additional permissions)
         val lightExceptionInfo = exceptionInfo.copy(
-          context = exceptionInfo.context.copy(variables = Map.empty, parentContext = None)
+          context = exceptionInfo.context.copy(
+            variables = Map(
+              "warning"          -> s"variables truncated, they didn't fit within max allowed size of a Kafka message",
+              "truncationReason" -> e.getMessage
+            ),
+            parentContext = None
+          )
         )
 
         sendKafkaMessage(serializationSchema.serialize(lightExceptionInfo, System.currentTimeMillis()))

@@ -28,7 +28,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with OptionValues with Flin
     val message = runTest(s"testProcess-shortString", stringVariable = "'short string'".spel)
 
     val inputEvent = message.inputEvent.value
-    inputEvent.asObject.value.filterKeys(_ == "string").asJson shouldBe Json.obj(
+    inputEvent.asObject.value.filterKeys(_ != "input").asJson shouldBe Json.obj(
       "string" -> "short string".asJson
     )
   }
@@ -38,7 +38,10 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with OptionValues with Flin
     val message =
       runTest("testProcess-longString", stringVariable = ("'xxxxxxxx'" + ".replaceAll('x', 'xxxxxxxx')".repeat(6)).spel)
 
-    message.inputEvent.value shouldBe Json.obj()
+    val inputEvent = message.inputEvent.value
+    inputEvent.asObject.value.filterKeys(k => k != "input" && k != "truncationReason").asJson shouldBe Json.obj(
+      "warning" -> "variables truncated, they didn't fit within max allowed size of a Kafka message".asJson
+    )
   }
 
   private def runTest(scenarioName: String, stringVariable: Expression): KafkaExceptionInfo = {
