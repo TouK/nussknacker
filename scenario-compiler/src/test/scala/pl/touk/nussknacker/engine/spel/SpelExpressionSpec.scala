@@ -102,6 +102,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "intArray"       -> Array(1, 2, 3),
       "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
       "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"  -> ContainerOfUnknown("unknown")
     )
   )
 
@@ -127,6 +128,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       children: java.util.List[Test] = List[Test]().asJava,
       bigValue: BigDecimal = BigDecimal.valueOf(0L)
   )
+
+  case class ContainerOfUnknown(value: Any)
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -1363,8 +1366,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     forAll(
       Table(
         ("expression", "expectedResult"),
-        ("{a: 11}.canCastTo('java.util.Map')", true),
-        ("{11}.canCastTo('java.util.Map')", false),
+        ("#unknownString.value.canCastTo('java.lang.String')", true),
+        ("#unknownString.value.canCastTo('java.lang.Integer')", false),
       )
     ) { (expression, expectedResult) =>
       parse[Any](expression, ctx).validExpression.evaluateSync[Any](ctx) shouldBe expectedResult
@@ -1390,26 +1393,26 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should compute correct result type based on parameter") {
-    val parsed = parse[Any]("{11, 12}.castTo('java.util.Collection')", ctx).validValue
-    parsed.returnType shouldBe Typed.typedClass(classOf[java.util.Collection[_]])
-    parsed.expression.evaluateSync[Any](ctx) shouldBe a[java.util.Collection[_]]
+    val parsed = parse[Any]("#unknownString.value.castTo('java.lang.String')", ctx).validValue
+    parsed.returnType shouldBe Typed.typedClass[String]
+    parsed.expression.evaluateSync[Any](ctx) shouldBe a[java.lang.String]
   }
 
   test("should return an error if the cast return type cannot be determined at parse time") {
-    parse[Any]("{11, 12}.castTo('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
-      case GenericFunctionError("'java.util.XYZ' is not allowed") :: Nil =>
+    parse[Any]("#unknownString.value.castTo('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
+      case GenericFunctionError("Casting to 'java.util.XYZ' is not allowed") :: Nil =>
     }
-    parse[Any]("{11, 12}.castTo(#obj.id)", ctx).invalidValue.toList should matchPattern {
+    parse[Any]("#unknownString.value.castTo(#obj.id)", ctx).invalidValue.toList should matchPattern {
       case ArgumentTypeError("castTo", _, _) :: Nil =>
     }
   }
 
   test("should throw exception if cast fails") {
     val caught = intercept[SpelExpressionEvaluationException] {
-      parse[Any]("#arrayOfUnknown.castTo('java.lang.String')", ctx).validExpression.evaluateSync[Any](ctx)
+      parse[Any]("#unknownString.value.castTo('java.lang.Integer')", ctx).validExpression.evaluateSync[Any](ctx)
     }
     caught.getCause shouldBe a[ClassCastException]
-    caught.getMessage should include("Cannot cast: class [Ljava.lang.Object; to: java.lang.String")
+    caught.getMessage should include("Cannot cast: class java.lang.String to: java.lang.Integer")
   }
 
   test(
@@ -1420,6 +1423,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     forAll(
       Table(
         ("expression", "expectedType", "expectedResult", "methodExecutionForUnknownAllowed"),
+        ("#arrayOfUnknown", typedArray(Unknown), Array("unknown"), false),
         (
           "#arrayOfUnknown.![#this.castTo('java.lang.String')]",
           typedArray(Typed.typedClass[String]),
@@ -1481,10 +1485,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should not allow cast to disallowed classes") {
     parse[Any](
-      "#hashMap.castTo('java.util.HashMap').remove('testKey')",
-      ctx.withVariable("hashMap", new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava))
+      "#hashMap.value.castTo('java.util.HashMap').remove('testKey')",
+      ctx.withVariable("hashMap", ContainerOfUnknown(new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava)))
     ).invalidValue.toList should matchPattern {
-      case GenericFunctionError("'java.util.HashMap' is not allowed") :: IllegalInvocationError(Unknown) :: Nil =>
+      case GenericFunctionError("Casting to 'java.util.HashMap' is not allowed") :: IllegalInvocationError(
+            Unknown
+          ) :: Nil =>
     }
   }
 

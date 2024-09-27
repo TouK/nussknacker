@@ -159,11 +159,7 @@ object ClassExtractionSettings {
     )
 
   lazy val DefaultExcludedMembers: List[ClassMemberPredicate] =
-    CommonExcludedMembers ++
-      KafkaExcludedMembers ++
-      AvroExcludedMembers ++
-      JavaTimeExcludeMembers ++
-      ExtensionExcludedMembers :+
+    CommonExcludedMembers ++ KafkaExcludedMembers ++ AvroExcludedMembers ++ JavaTimeExcludeMembers :+
       ReturnMemberPredicate(
         SuperClassPredicate(
           ExactClassPredicate(
@@ -227,27 +223,8 @@ object ClassExtractionSettings {
       )
     )
 
-  lazy val ExtensionExcludedMembers: List[ClassMemberPredicate] = List(
-    MemberNamePredicate(
-      SuperClassPredicate(
-        ExactClassPredicate(
-          classOf[java.lang.Boolean],
-          classOf[Number],
-          classOf[CharSequence],
-        )
-      ),
-      Set("canCastTo", "castTo")
-    ),
-    MemberNamePredicate(
-      ClassPredicate { case clazz =>
-        clazz.getName.contains("$")
-      },
-      Set("canCastTo", "castTo")
-    )
-  )
-
   lazy val DefaultIncludedMembers: List[ClassMemberPredicate] =
-    IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers ++ IncludedExtensionMembers
+    IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers
 
   lazy val IncludedStdMembers: List[ClassMemberPredicate] =
     List(
@@ -343,22 +320,6 @@ object ClassExtractionSettings {
         Set("noSpaces", "noSpacesSortKeys", "spaces2", "spaces2SortKeys", "spaces4", "spaces4SortKeys", ToStringMethod)
       ),
     )
-
-  lazy val IncludedExtensionMembers: List[ClassMemberPredicate] = List(
-    MemberNamePredicate(
-      SuperClassPredicate(
-        ExactClassPredicate(
-          classOf[Iterable[_]],
-          classOf[Option[_]],
-          classOf[Map[_, _]],
-          classOf[java.util.Collection[_]],
-          classOf[java.util.Map[_, _]]
-        )
-      ),
-      Set("canCastTo", "castTo")
-    ),
-    MemberNamePredicate(ExactClassPredicate(classOf[java.lang.Object]), Set("canCastTo", "castTo")),
-  )
 
   lazy val DefaultTypingFunctionRules: List[TypingFunctionRule] =
     List(

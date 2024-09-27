@@ -4,17 +4,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.definition.clazz.{
-  ClassDefinition,
-  ClassDefinitionSet,
-  ClassDefinitionTestUtils,
-  StaticMethodDefinition
-}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, StaticMethodDefinition}
 
 class ClassDefinitionSetWithExtensionMethodsSpec extends AnyFunSuite with Matchers {
 
   test(
-    "should add extension methods to already existing definitions in ClassDefinitionSet based on ClassExtractionSettings.visibleMembersPredicate"
+    "should add extension methods to already existing definitions in ClassDefinitionSet"
   ) {
     val stringDefinition = ClassDefinition(
       Typed.typedClass[String],
@@ -32,12 +27,11 @@ class ClassDefinitionSetWithExtensionMethodsSpec extends AnyFunSuite with Matche
     )
     val definitionsSet = ClassDefinitionSet(Set(stringDefinition, unknownDefinition))
 
-    new ClassDefinitionSetWithExtensionMethods(
-      definitionsSet,
-      ClassDefinitionTestUtils.DefaultSettings
+    ClassDefinitionSetWithExtensionMethods(
+      definitionsSet
     ).value.classDefinitionsMap.map(e => e._1.getName -> e._2.methods.keys) shouldBe Map(
       "java.lang.String" -> Set("toUpperCase"),
-      "java.lang.Object" -> Set("toString", "canCastTo", "castTo"),
+      "java.lang.Object" -> Set("toString", "canCastTo", "castTo", "castToOrNull"),
     )
   }
 

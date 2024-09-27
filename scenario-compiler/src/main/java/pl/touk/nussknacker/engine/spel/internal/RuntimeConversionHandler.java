@@ -44,10 +44,15 @@ public class RuntimeConversionHandler {
                              ClassLoader classLoader) throws IllegalAccessException, InvocationTargetException {
             if (target != null && target.getClass().isArray() && method.getDeclaringClass().isAssignableFrom(List.class)) {
                 return method.invoke(RuntimeConversionHandler.convert(target), arguments);
-            } else if (ExtensionMethods.applies(method.getDeclaringClass())) {
-                return ExtensionMethods.invoke(method, target, arguments, classLoader);
             } else {
-                return method.invoke(target, arguments);
+                return ExtensionMethods.invoke(method, target, arguments, classLoader)
+                    .applyOrElse(method.getDeclaringClass(), (ignored) -> {
+                        try {
+                            return method.invoke(target, arguments);
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
             }
         }
     }

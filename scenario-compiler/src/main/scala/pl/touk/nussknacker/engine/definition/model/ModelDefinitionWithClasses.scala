@@ -5,9 +5,8 @@ import pl.touk.nussknacker.engine.extension.ClassDefinitionSetWithExtensionMetho
 
 case class ModelDefinitionWithClasses(modelDefinition: ModelDefinition) {
 
-  @transient lazy val classDefinitions: ClassDefinitionSet = new ClassDefinitionSetWithExtensionMethods(
-    ClassDefinitionSet(ModelClassDefinitionDiscovery.discoverClasses(modelDefinition)),
-    modelDefinition.settings
+  @transient lazy val classDefinitions: ClassDefinitionSet = ClassDefinitionSetWithExtensionMethods(
+    ClassDefinitionSet(ModelClassDefinitionDiscovery.discoverClasses(modelDefinition))
   ).value
 
 }

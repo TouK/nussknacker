@@ -21,13 +21,13 @@ object ClassDefinitionTestUtils {
     ClassDefinitionSet(DefaultDiscovery.discoverClassesFromTypes(types))
 
   def createDefinitionWithDefaultsAndExtensions: ClassDefinitionSet =
-    new ClassDefinitionSetWithExtensionMethods(createDefinitionForDefaultAdditionalClasses, DefaultSettings).value
+    ClassDefinitionSetWithExtensionMethods(createDefinitionForDefaultAdditionalClasses).value
 
   def createDefaultDefinitionForTypesWithExtensions(types: Iterable[TypingResult]): ClassDefinitionSet =
-    new ClassDefinitionSetWithExtensionMethods(createDefaultDefinitionForTypes(types), DefaultSettings).value
+    ClassDefinitionSetWithExtensionMethods(createDefaultDefinitionForTypes(types)).value
 
   def createDefinitionForClassesWithExtensions(classes: Class[_]*): ClassDefinitionSet =
-    new ClassDefinitionSetWithExtensionMethods(createDefinitionForClasses(classes: _*), DefaultSettings).value
+    ClassDefinitionSetWithExtensionMethods(createDefinitionForClasses(classes: _*)).value
 
   def createDiscovery(settings: ClassExtractionSettings = DefaultSettings): ClassDefinitionDiscovery =
     new ClassDefinitionDiscovery(new ClassDefinitionExtractor(settings))

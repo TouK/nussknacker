@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.benchmarks.spel
 import cats.data.Validated.{Invalid, Valid}
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
