@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class TestDataPreparer(
@@ -50,7 +51,11 @@ class TestDataPreparer(
       case Nil => List.empty
       case _ =>
         source match {
-          case s: SourceTestSupport[T @unchecked] => s.testRecordParser.parse(jsonRecordList.map(_.record))
+          case s: SourceTestSupport[T @unchecked] =>
+            val parser = s.testRecordParser
+            ThreadUtils.withThisAsContextClassLoader(classloader) {
+              parser.parse(jsonRecordList.map(_.record))
+            }
           case other =>
             throw new IllegalArgumentException(
               s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser"
