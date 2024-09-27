@@ -25,7 +25,7 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
     val consumerConfig        = exceptionHandlerConfig.rootAs[KafkaExceptionConsumerConfig]
     val producerCreator       = kafkaProducerCreator(kafkaConfig)
     val serializationSchema   = createSerializationSchema(metaData, consumerConfig)
-    val errorTopicInitializer = new KafkaErrorTopicInitializer(kafkaConfig, consumerConfig)
+    val errorTopicInitializer = new DefaultKafkaErrorTopicInitializer(kafkaConfig, consumerConfig)
     if (consumerConfig.useSharedProducer) {
       SharedProducerKafkaExceptionConsumer(metaData, serializationSchema, producerCreator, errorTopicInitializer)
     } else {
@@ -52,9 +52,7 @@ trait BaseKafkaExceptionConsumer extends FlinkEspExceptionConsumer with LazyLogg
   protected val kafkaErrorTopicInitializer: KafkaErrorTopicInitializer
   protected val metaData: MetaData
 
-  // can be null in tests
-  private val topic: String =
-    Option(kafkaErrorTopicInitializer).map(_.exceptionHandlerConfig.topic).getOrElse("-")
+  private val topic: String = kafkaErrorTopicInitializer.topicName
 
   protected def sendKafkaMessage(record: ProducerRecord[Array[Byte], Array[Byte]]): Future[_]
 
