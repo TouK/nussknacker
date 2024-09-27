@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.flink.table.utils.simulateddatatype.{
    TODO: add remaining aggregations functions:
      - LISTAGG
      - ARRAY_AGG
-     - COLLECT
 
    TODO: unify aggregator function definitions with unbounded-streaming ones. Current duplication may lead to
      inconsistency in naming and may be confusing for users
