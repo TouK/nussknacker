@@ -6,7 +6,7 @@
 
 ##### End-user
 
-* Flink Catalogs integration. Thanks to Catalogs, Nu can be used to act on data stored in Data Lakehouses.
+* Flink Catalogs integration. Thanks to Catalogs, Nu can be used to act on data stored in Data Lakehouses (check our [tutorial on Apache Iceberg integration](https://nussknacker.io/blog/nussknacker-iceberg-example/)).
 * Improvements in batch mode, including joins, testing (dry runs) and general usability.
 * Live counts. You can now watch counts of events as they flow through a scenario, with user defined update interval.
 * Autocompletion now works better in invalid expressions. When working on an expression you don't have to keep it valid all the time for autocompletion to work.
