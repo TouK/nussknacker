@@ -29,6 +29,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   are registered based on class of Serializer instead of instance of Serializer. If you have values that were
   serialized by these Serializers in some state, the state won't be restored after upgrade.
 
+* [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
+  If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
+
 ## In version 1.17.0
 
 ### Code API changes

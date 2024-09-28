@@ -6,6 +6,7 @@ import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation}
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.api.java.typeutils.runtime.NullableSerializer
+import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 
 import java.lang.reflect.Type
 import scala.reflect._
@@ -45,7 +46,13 @@ abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfo
     val fieldNames = fields.map(_.name.decodedName.toString)
     val fieldTypes = fields.map { field =>
       val fieldClass = mirror.runtimeClass(field.typeSignature)
-      TypeExtractor.getForClass(fieldClass)
+
+      if (classOf[Option[_]].isAssignableFrom(fieldClass)) {
+        val optionTypeClass = mirror.runtimeClass(field.typeSignature.typeArgs.head)
+        new OptionTypeInfo(TypeExtractor.getForClass(optionTypeClass))
+      } else {
+        TypeExtractor.getForClass(fieldClass)
+      }
     }
     (fieldNames, fieldTypes)
   }
