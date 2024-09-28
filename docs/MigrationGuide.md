@@ -2,6 +2,10 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.17-esp
+* [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
+  If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
+
 ## In version 1.17.0
 
 ### Code API changes

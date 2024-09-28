@@ -4,6 +4,9 @@
 
 #### Highlights
 
+### 1.17-esp
+* [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option
+
 ### 1.17.1 (Not released yet)
 
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
