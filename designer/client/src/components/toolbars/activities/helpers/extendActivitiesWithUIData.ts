@@ -1,46 +1,66 @@
 import moment from "moment/moment";
 import { v4 as uuid4 } from "uuid";
-import { Activity, ButtonActivity, DateActivity, UIActivities } from "../ActivitiesPanel";
+import { Activity, ButtonActivity, DateActivity, UIActivity } from "../ActivitiesPanel";
+import { formatDate } from "./date";
 
-export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[]) => {
-    const infiniteListData: UIActivities[] = [];
-    const hideItemsOptionAvailableLimit = 4;
+const getPreviousDateItem = (index: number, uiActivities: UIActivity[]) => {
+    let previousDateItem: DateActivity | undefined;
 
-    function formatDate(date: string) {
-        const now = moment(); // Current date and time
-        const inputDate = moment(date); // Date to be formatted
-
-        if (inputDate.isSame(now, "day")) {
-            return "Today";
-        } else if (inputDate.isSame(moment().subtract(1, "days"), "day")) {
-            return "Yesterday";
-        } else {
-            return inputDate.format("YYYY-MM-DD");
+    for (let prev = index; prev >= 0; prev--) {
+        const item = uiActivities[prev];
+        if (item?.uiType === "date") {
+            previousDateItem = item;
+            break;
         }
     }
 
-    const recursiveDateLabelDesignation = (activity: Activity, index: number, occurrence = 0): DateActivity | undefined => {
-        const nextActivity = activitiesDataWithMetadata[index + 1 + occurrence];
-        const previousActivity = activitiesDataWithMetadata[index - 1 + occurrence];
+    return previousDateItem;
+};
 
-        if (occurrence > hideItemsOptionAvailableLimit && activity.type !== nextActivity?.type) {
+export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[]) => {
+    const uiActivities: UIActivity[] = [];
+    const hideItemsOptionAvailableLimit = 4;
+
+    const recursiveDateLabelDesignation = (
+        activity: Activity,
+        index: number,
+        occurrences: string[] = [],
+        iteration = 0,
+    ): DateActivity | undefined => {
+        const nextActivity = activitiesDataWithMetadata[index + 1 + iteration];
+        const previousDateItem = getPreviousDateItem(index, uiActivities);
+
+        if (previousDateItem?.value?.includes?.(moment(activity.date).format("YYYY-MM-DD"))) {
+            return undefined;
+        }
+
+        const shouldAddDateRangeElement = occurrences.length > hideItemsOptionAvailableLimit && activity.type !== nextActivity?.type;
+
+        if (shouldAddDateRangeElement) {
+            const dates = occurrences.map((occurrence1) => moment(occurrence1));
             return {
                 uiGeneratedId: uuid4(),
                 uiType: "date",
-                value: `${formatDate(previousActivity.date)} - ${formatDate(activity.date)}`,
+                value: `${moment.min(dates).format("YYYY-MM-DD")} - ${moment.max(dates).format("YYYY-MM-DD")}`,
             };
         }
 
-        if (activity.type === nextActivity?.type) {
-            occurrence++;
-            return recursiveDateLabelDesignation(activity, index, occurrence);
+        const currentAndNextActivityDateAreTheSame =
+            moment(activity.date).format("YYYY-MM-DD") === (nextActivity && moment(nextActivity.date).format("YYYY-MM-DD"));
+        const currentAndNextActivityAreTheSame = activity.type === nextActivity?.type;
+
+        if (currentAndNextActivityDateAreTheSame || currentAndNextActivityAreTheSame) {
+            iteration++;
+
+            if (currentAndNextActivityAreTheSame) {
+                occurrences.push(activity.date);
+            }
+
+            return recursiveDateLabelDesignation(nextActivity, index, occurrences, iteration);
         }
 
-        if (
-            activity.type !== nextActivity?.type &&
-            moment(activity.date).format("YYYY-MM-DD") !==
-                (previousActivity?.date ? moment(previousActivity.date).format("YYYY-MM-DD") : undefined)
-        ) {
+        const isDateElementPreviouslyAdded = previousDateItem?.value?.includes?.(moment(activity.date).format("YYYY-MM-DD"));
+        if (!isDateElementPreviouslyAdded) {
             return {
                 uiGeneratedId: uuid4(),
                 uiType: "date",
@@ -54,7 +74,13 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
     const recursiveMoreItemsButtonDesignation = (activity: Activity, index: number, occurrence = 0): ButtonActivity | undefined => {
         const previousActivityIndex = index - 1 - occurrence;
         const previousActivity = activitiesDataWithMetadata[previousActivityIndex];
-        if (occurrence > hideItemsOptionAvailableLimit && activity.type !== previousActivity?.type) {
+        const nextActivity = activitiesDataWithMetadata[index + 1];
+
+        if (
+            occurrence > hideItemsOptionAvailableLimit &&
+            activity.type !== previousActivity?.type &&
+            activity.type !== nextActivity?.type
+        ) {
             return {
                 uiGeneratedId: uuid4(),
                 uiType: "moreItemsButton",
@@ -71,9 +97,9 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         return undefined;
     };
 
-    const initiallyHideItems = () => {
-        for (let i = infiniteListData.length - 1 - hideItemsOptionAvailableLimit; i < infiniteListData.length; i++) {
-            const item = infiniteListData[i];
+    const initiallyHideItems = (sameItemOccurrence: number) => {
+        for (let i = uiActivities.length - sameItemOccurrence; i < uiActivities.length; i++) {
+            const item = uiActivities[i];
 
             if (item.uiType === "item") {
                 item.isHidden = true;
@@ -86,8 +112,8 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         .forEach((activity, index) => {
             const dateLabel = recursiveDateLabelDesignation(activity, index);
             const moreItemsButton = recursiveMoreItemsButtonDesignation(activity, index);
-            dateLabel && infiniteListData.push(dateLabel);
-            infiniteListData.push({
+            dateLabel && uiActivities.push(dateLabel);
+            uiActivities.push({
                 ...activity,
                 isActiveFound: false,
                 isFound: false,
@@ -96,10 +122,10 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
                 isHidden: false,
             });
             if (moreItemsButton) {
-                initiallyHideItems();
-                infiniteListData.push(moreItemsButton);
+                initiallyHideItems(moreItemsButton.sameItemOccurrence);
+                uiActivities.push(moreItemsButton);
             }
         });
 
-    return infiniteListData;
+    return uiActivities;
 };

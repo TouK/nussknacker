@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Activity, UIActivities } from "./ActivitiesPanel";
+import { Activity, UIActivity } from "./ActivitiesPanel";
 import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
 import { get } from "lodash";
 
 interface Props {
-    activities: UIActivities[];
+    activities: UIActivity[];
     handleScrollToItem: (index: number, align: Align) => void;
 }
 export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) => {

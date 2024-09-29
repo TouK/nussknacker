@@ -57,7 +57,7 @@ export type DateActivity = {
     value: string;
 };
 
-export type UIActivities = ItemActivity | ButtonActivity | DateActivity;
+export type UIActivity = ItemActivity | ButtonActivity | DateActivity;
 
 const estimatedItemSize = 150;
 
@@ -79,7 +79,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         return rowHeights.current[index] || estimatedItemSize;
     }, []);
 
-    const [data, setData] = useState<UIActivities[]>([]);
+    const [data, setData] = useState<UIActivity[]>([]);
     const { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults } = useActivitiesSearch({
         activities: data,
         handleScrollToItem: (index, align) => listRef.current.scrollToItem(index, align),

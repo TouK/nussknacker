@@ -3,7 +3,9 @@ import { Box, Divider, Typography } from "@mui/material";
 import { MoreItemsButton } from "./MoreItemsButton";
 import { LessItemsButton } from "./LessItemsButton";
 import { ActivityItem } from "./ActivityItem";
-import { UIActivities } from "./ActivitiesPanel";
+import { UIActivity } from "./ActivitiesPanel";
+import moment from "moment";
+import { formatUiDate } from "./helpers/date";
 
 interface Props {
     index: number;
@@ -11,7 +13,7 @@ interface Props {
     setRowHeight: (index: number, height: number) => void;
     handleShowRow(index: number, sameItemOccurrence: number): void;
     handleHideRow(index: number, sameItemOccurrence: number): void;
-    activities: UIActivities[];
+    activities: UIActivity[];
     searchQuery: string;
 }
 
@@ -40,7 +42,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                     <Box display={"flex"} justifyContent={"center"} alignItems={"center"} px={1}>
                         <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white, mr: 1 })} />
                         <Typography component={"div"} variant={"caption"} ref={rowRef}>
-                            {activity.value}
+                            {formatUiDate(activity.value)}
                         </Typography>
                         <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white, ml: 1 })} />
                     </Box>
