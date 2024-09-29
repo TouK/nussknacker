@@ -31,7 +31,7 @@ class CastImpl(target: Any, classLoader: ClassLoader) extends Cast {
     }
   }
 
-  override def castToOrNull[T >: Null](className: String): T = Try { castTo(className) }.getOrElse(null)
+  override def castToOrNull[T >: Null](className: String): T = Try { castTo[T](className) }.getOrElse(null)
 }
 
 private[extension] object CastImpl extends ExtensionMethodsImplFactory {

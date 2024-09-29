@@ -6,6 +6,7 @@ import org.springframework.core.convert.converter.ConditionalGenericConverter;
 import org.springframework.lang.Nullable;
 import pl.touk.nussknacker.engine.extension.Cast;
 import pl.touk.nussknacker.engine.extension.ExtensionMethods;
+import scala.PartialFunction;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -42,17 +43,16 @@ public class RuntimeConversionHandler {
                              Object target,
                              Object[] arguments,
                              ClassLoader classLoader) throws IllegalAccessException, InvocationTargetException {
-            if (target != null && target.getClass().isArray() && method.getDeclaringClass().isAssignableFrom(List.class)) {
+            Class<?> methodDeclaringClass = method.getDeclaringClass();
+            if (target != null && target.getClass().isArray() && methodDeclaringClass.isAssignableFrom(List.class)) {
                 return method.invoke(RuntimeConversionHandler.convert(target), arguments);
+            }
+            PartialFunction<Class<?>, Object> extMethod =
+                ExtensionMethods.invoke(method, target, arguments, classLoader);
+            if (extMethod.isDefinedAt(methodDeclaringClass)) {
+                return extMethod.apply(methodDeclaringClass);
             } else {
-                return ExtensionMethods.invoke(method, target, arguments, classLoader)
-                    .applyOrElse(method.getDeclaringClass(), (ignored) -> {
-                        try {
-                            return method.invoke(target, arguments);
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                return method.invoke(target, arguments);
             }
         }
     }

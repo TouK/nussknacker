@@ -1494,6 +1494,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("should return null if castToOrNull fails") {
+    parse[Any](
+      expr = "#unknownString.value.castToOrNull('java.lang.Integer')",
+      context = ctx,
+      methodExecutionForUnknownAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) == null shouldBe true
+  }
+
+  test("should castToOrNull succeed") {
+    parse[Any](
+      expr = "#unknownString.value.castToOrNull('java.lang.String')",
+      context = ctx,
+      methodExecutionForUnknownAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) shouldBe "unknown"
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
