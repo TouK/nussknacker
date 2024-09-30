@@ -209,6 +209,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   ): DB[Seq[(Long, ScenarioActivity)]] = {
     scenarioActivityTable
       .filter(_.scenarioId === scenarioId)
+      .sortBy(_.createdAt)
       .result
       .map(_.map(fromEntity))
       .map {
