@@ -4,7 +4,6 @@ import { MoreItemsButton } from "./MoreItemsButton";
 import { LessItemsButton } from "./LessItemsButton";
 import { ActivityItem } from "./ActivityItem";
 import { UIActivity } from "./ActivitiesPanel";
-import moment from "moment";
 import { formatUiDate } from "./helpers/date";
 
 interface Props {
@@ -48,7 +47,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                     </Box>
                 );
             }
-            case "moreItemsButton": {
+            case "toggleItemsButton": {
                 return (
                     <div ref={rowRef}>
                         {activity.isClicked ? (

@@ -597,7 +597,7 @@ describe("extendActivitiesWithUIData", () => {
             {
                 isClicked: false,
                 sameItemOccurrence: 6,
-                uiType: "moreItemsButton",
+                uiType: "toggleItemsButton",
             },
             {
                 actions: [

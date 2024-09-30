@@ -46,7 +46,7 @@ export type ItemActivity = Activity & {
 
 export type ButtonActivity = {
     uiGeneratedId: string;
-    uiType: "moreItemsButton";
+    uiType: "toggleItemsButton";
     sameItemOccurrence: number;
     isClicked: boolean;
 };

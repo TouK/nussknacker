@@ -71,7 +71,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         return undefined;
     };
 
-    const recursiveMoreItemsButtonDesignation = (activity: Activity, index: number, occurrence = 0): ButtonActivity | undefined => {
+    const recursiveToggleItemsButtonDesignation = (activity: Activity, index: number, occurrence = 0): ButtonActivity | undefined => {
         const previousActivityIndex = index - 1 - occurrence;
         const previousActivity = activitiesDataWithMetadata[previousActivityIndex];
         const nextActivity = activitiesDataWithMetadata[index + 1];
@@ -83,7 +83,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         ) {
             return {
                 uiGeneratedId: uuid4(),
-                uiType: "moreItemsButton",
+                uiType: "toggleItemsButton",
                 sameItemOccurrence: occurrence,
                 isClicked: false,
             };
@@ -91,7 +91,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
 
         if (activity.type === previousActivity?.type) {
             occurrence++;
-            return recursiveMoreItemsButtonDesignation(activity, index, occurrence);
+            return recursiveToggleItemsButtonDesignation(activity, index, occurrence);
         }
 
         return undefined;
@@ -111,7 +111,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         .sort((a, b) => moment(b.date).diff(a.date))
         .forEach((activity, index) => {
             const dateLabel = recursiveDateLabelDesignation(activity, index);
-            const moreItemsButton = recursiveMoreItemsButtonDesignation(activity, index);
+            const toggleItemsButton = recursiveToggleItemsButtonDesignation(activity, index);
             dateLabel && uiActivities.push(dateLabel);
             uiActivities.push({
                 ...activity,
@@ -121,9 +121,9 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
                 uiType: "item",
                 isHidden: false,
             });
-            if (moreItemsButton) {
-                initiallyHideItems(moreItemsButton.sameItemOccurrence);
-                uiActivities.push(moreItemsButton);
+            if (toggleItemsButton) {
+                initiallyHideItems(toggleItemsButton.sameItemOccurrence);
+                uiActivities.push(toggleItemsButton);
             }
         });
 
