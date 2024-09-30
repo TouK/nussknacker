@@ -471,7 +471,6 @@ class ScenarioActivityApiHttpServiceBusinessSpec
       .basicAuthAllPermUser()
       .when()
       .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/comment")
-      .statusCode()
   }
 
   private def createAttachment(
