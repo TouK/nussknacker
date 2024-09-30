@@ -185,7 +185,7 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.11.0.17
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: build-target
       - name: Untar artifacts
@@ -239,7 +239,7 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: build-target
       - name: Untar artifacts
@@ -286,7 +286,7 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: build-target
       - name: Untar artifacts
@@ -415,7 +415,7 @@ jobs:
           npm ci --no-audit --prefix designer/client
           npm ci --no-audit --prefix designer/submodules
           rm -rf $npm_config_cache
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           name: build-target
@@ -423,7 +423,7 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
@@ -550,13 +550,13 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: build-target
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
