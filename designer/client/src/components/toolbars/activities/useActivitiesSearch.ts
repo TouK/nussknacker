@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Activity, UIActivity } from "./ActivitiesPanel";
 import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
 import { get } from "lodash";
+import { ActivityAdditionalFields } from "../../../http/HttpService";
 
 interface Props {
     activities: UIActivity[];
@@ -13,6 +14,15 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) =
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
 
+    const handleSetFoundResult = useCallback((activity: UIActivity) => {
+        setFoundResults((prevState) => {
+            if (prevState.every((foundResult) => foundResult != activity.uiGeneratedId)) {
+                return [...prevState, activity.uiGeneratedId];
+            }
+
+            return prevState;
+        });
+    }, []);
     const handleSearch = (value: string) => {
         setSearchQuery(value);
         setFoundResults([]);
@@ -23,6 +33,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) =
             "comment.content.value",
             "activities.displayableName",
             "overrideDisplayableName",
+            "additionalFields",
         ];
 
         for (const activity of activities) {
@@ -31,14 +42,22 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) =
             }
 
             for (const fullSearchField of fullSearchFields) {
-                const searchFieldValue = get(activity, fullSearchField, "") || "";
+                const searchFieldValue: string | ActivityAdditionalFields[] = get(activity, fullSearchField, "") || "";
+
+                if (Array.isArray(searchFieldValue)) {
+                    if (
+                        searchFieldValue.some(
+                            (searchValue) => `${searchValue.name.toLowerCase()} ${searchValue.value.toLowerCase()}` === value.toLowerCase(),
+                        )
+                    ) {
+                        handleSetFoundResult(activity);
+                    }
+
+                    continue;
+                }
+
                 if (value && searchFieldValue.toLowerCase().includes(value.toLowerCase())) {
-                    setFoundResults((prevState) => {
-                        if (prevState.every((foundResult) => foundResult != activity.uiGeneratedId)) {
-                            prevState.push(activity.uiGeneratedId);
-                        }
-                        return prevState;
-                    });
+                    handleSetFoundResult(activity);
                 }
             }
         }

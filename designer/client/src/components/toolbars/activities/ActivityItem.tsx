@@ -66,11 +66,7 @@ export const ActivityItem = forwardRef(
                             </Typography>
                         </Box>
 
-                        {activity.scenarioVersionId && (
-                            <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
-                                {version}
-                            </Typography>
-                        )}
+                        {activity.scenarioVersionId && <Typography variant={"overline"}>{version}</Typography>}
                         {activity.comment && (
                             <CommentContent
                                 content={activity.comment.content.value}

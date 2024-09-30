@@ -87,6 +87,28 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
         overrideSupportedActions: null,
         type: "SCENARIO_MODIFIED",
     },
+    {
+        id: "da3d1f78-7d73-4ed9-b0e5-95538e150d0d",
+        user: "some user",
+        date: "2022-12-17T14:21:17Z",
+        scenarioVersionId: 1,
+        comment: null,
+        attachment: null,
+        overrideDisplayableName: null,
+        overrideIcon: null,
+        overrideSupportedActions: null,
+        additionalFields: [
+            {
+                name: "oldName",
+                value: "marketing campaign",
+            },
+            {
+                name: "newName",
+                value: "old marketing campaign",
+            },
+        ],
+        type: "SCENARIO_NAME_CHANGED",
+    },
 ];
 
 const mockedActivities = extendActivitiesWithUIData(mergeActivityDataWithMetadata(sampleActivitiesResponse, sampleMetadataResponse));
@@ -95,8 +117,9 @@ describe(useActivitiesSearch.name, () => {
     it.each<[string, string[]]>([
         ["atta", [mockedActivities[3].uiGeneratedId]],
         ["3 saved", [mockedActivities[2].uiGeneratedId]],
-        ["2024-09-27", [mockedActivities[0].uiGeneratedId]],
+        ["2024-09-27", [mockedActivities[1].uiGeneratedId]],
         ["tests save", [mockedActivities[2].uiGeneratedId]],
+        ["newName old marketing campaign", [mockedActivities[6].uiGeneratedId]],
     ])("should find elements when query is '%s'", (searchQuery, expected) => {
         const handleScrollToItemMock = jest.fn();
         const { result } = renderHook(() =>
