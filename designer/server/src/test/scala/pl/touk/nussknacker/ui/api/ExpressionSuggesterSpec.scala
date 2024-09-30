@@ -779,6 +779,22 @@ class ExpressionSuggesterSpec
     )
   }
 
+  test("should suggest parameters for casts methods") {
+    spelSuggestionsFor("#unknown.canCastTo('')", column = 20).toSet shouldBe Set(
+      suggestion("java.lang.Object", Unknown),
+      suggestion("java.lang.String", Typed[String]),
+      suggestion("java.time.Duration", Typed[Duration]),
+      suggestion("java.time.LocalDateTime", Typed[LocalDateTime]),
+      suggestion("java.util.Map", Typed[java.util.Map[_, _]]),
+      suggestion("pl.touk.nussknacker.ui.api.A", Typed[A]),
+      suggestion("pl.touk.nussknacker.ui.api.AA", Typed[AA]),
+      suggestion("pl.touk.nussknacker.ui.api.B", Typed[B]),
+      suggestion("pl.touk.nussknacker.ui.api.C", Typed[C]),
+      suggestion("pl.touk.nussknacker.ui.api.Util", Typed[Util]),
+      suggestion("pl.touk.nussknacker.ui.api.WithList", Typed[WithList]),
+    )
+  }
+
 }
 
 object ExpressionSuggesterTestData {

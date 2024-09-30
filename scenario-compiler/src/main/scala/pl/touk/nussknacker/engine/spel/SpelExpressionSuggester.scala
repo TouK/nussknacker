@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import org.springframework.expression.common.TemplateParserContext
@@ -14,14 +13,17 @@ import pl.touk.nussknacker.engine.api.validation.Validations.isVariableNameValid
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
+import pl.touk.nussknacker.engine.extension.Cast
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
-
 import scala.collection.compat.immutable.LazyList
+
+import cats.implicits._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
@@ -255,10 +257,12 @@ class SpelExpressionSuggester(
         // property is typed (#foo.bar), so we need to return filtered list of all methods and fields from previous spel node type
         case p: PropertyOrFieldReference =>
           suggestionsForPropertyOrFieldReference(nodeInPosition, p)
-        // suggestions for dictionary with indexer notation - #dict['Foo']
-        // 1. caret is inside string
-        // 2. parent node is Indexer - []
-        // 3. parent's prev node is dictionary
+        // suggestions:
+        // 1. for dictionary with indexer notation - #dict['Foo']
+        //   1. caret is inside string
+        //   2. parent node is Indexer - []
+        //   3. parent's prev node is dictionary
+        // 2. for MethodReference and Cast methods - e.g. #variable.castTo('<here comes suggestions>')
         case s: StringLiteral =>
           val y = for {
             parent               <- nodeInPosition.parent.map(_.node)
@@ -279,6 +283,14 @@ class SpelExpressionSuggester(
                       .getOrElse(successfulNil)
                   case TypedObjectTypingResult(fields, _, _) =>
                     Future.successful(fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil)))
+                  case _ => successfulNil
+                }
+              case m: MethodReference if Cast.isCastMethod(m.getName) =>
+                parentPrevNodeTyping match {
+                  case Unknown =>
+                    castMethodsSuggestions(classOf[Object])
+                  case TypedClass(klass, _) =>
+                    castMethodsSuggestions(klass)
                   case _ => successfulNil
                 }
               case _ => successfulNil
@@ -322,6 +334,17 @@ class SpelExpressionSuggester(
     }
 
     suggestions
+  }
+
+  private def castMethodsSuggestions(klass: Class[_]): Future[Iterable[ExpressionSuggestion]] = {
+    val disallowedPackages = Set("pl.touk.nussknacker.engine.flink.util", "pl.touk.nussknacker.engine.util.functions")
+    val typesSuggestions = clssDefinitions.classDefinitionsMap
+      .filter(d =>
+        klass.isAssignableFrom(d._1) &&
+          !disallowedPackages.exists(dp => d._1.getName.startsWith(dp))
+      )
+      .map(d => ExpressionSuggestion(d._1.getName, d._2.clazzName, false, None, Nil))
+    Future.successful(typesSuggestions)
   }
 
   private def expressionContainOddNumberOfQuotesOrOddNumberOfDoubleQuotes(plainExpression: String): Boolean =

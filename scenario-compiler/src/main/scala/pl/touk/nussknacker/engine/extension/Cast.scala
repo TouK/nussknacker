@@ -17,6 +17,21 @@ sealed trait Cast {
   def castToOrNull[T >: Null](className: String): T
 }
 
+object Cast {
+  private[extension] val canCastToMethodName    = "canCastTo"
+  private[extension] val castToMethodName       = "castTo"
+  private[extension] val castToOrNullMethodName = "castToOrNull"
+
+  private val castMethodsNames = Set(
+    canCastToMethodName,
+    castToMethodName,
+    castToOrNullMethodName,
+  )
+
+  def isCastMethod(methodName: String): Boolean =
+    castMethodsNames.contains(methodName)
+}
+
 class CastImpl(target: Any, classLoader: ClassLoader) extends Cast {
 
   override def canCastTo(className: String): Boolean =
@@ -56,19 +71,19 @@ private[extension] class CastMethodDefinitions(private val classesWithTyping: Ma
       FunctionalMethodDefinition(
         (_, x) => canCastToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
-        "canCastTo",
+        Cast.canCastToMethodName,
         Some("Checks if a type can be casted to a given class")
       ),
       FunctionalMethodDefinition(
         (_, x) => castToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
-        "castTo",
+        Cast.castToMethodName,
         Some("Casts a type to a given class or throws exception if type cannot be casted.")
       ),
       FunctionalMethodDefinition(
         (_, x) => castToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
-        "castToOrNull",
+        Cast.castToOrNullMethodName,
         Some("Casts a type to a given class or return null if type cannot be casted.")
       ),
     ).groupBy(_.name)
