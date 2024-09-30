@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationErro
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
@@ -60,7 +60,7 @@ class NodeDataValidator(modelData: ModelData) {
       branchContexts: Map[String, ValidationContext],
       outgoingEdges: List[OutgoingEdge],
       fragmentResolver: FragmentResolver
-  )(implicit metaData: MetaData): ValidationResponse = {
+  )(implicit jobData: JobData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
@@ -121,7 +121,7 @@ class NodeDataValidator(modelData: ModelData) {
       outgoingEdges: List[OutgoingEdge],
       a: FragmentInput,
       fragmentResolver: FragmentResolver
-  )(implicit nodeId: NodeId, metaData: MetaData) = {
+  )(implicit nodeId: NodeId, jobData: JobData) = {
     fragmentResolver
       .resolveInput(a)
       .map { definition =>

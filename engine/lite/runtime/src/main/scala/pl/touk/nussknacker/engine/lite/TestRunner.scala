@@ -26,6 +26,7 @@ trait TestRunner {
 
   def runTest(
       modelData: ModelData,
+      jobData: JobData,
       scenarioTestData: ScenarioTestData,
       process: CanonicalProcess,
   ): TestResults[Json]
@@ -38,6 +39,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
 
   def runTest(
       modelData: ModelData,
+      jobData: JobData,
       scenarioTestData: ScenarioTestData,
       process: CanonicalProcess,
   ): TestResults[Json] = {
@@ -45,13 +47,14 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
     // TODO: probably we don't need statics here, we don't serialize stuff like in Flink
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     // in tests we don't send metrics anywhere
-    val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
+    val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(jobData)
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
     val testServiceInvocationCollector     = new TestServiceInvocationCollector(collectingListener)
 
     // FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](
       process,
+      jobData,
       modelData,
       additionalListeners = List(collectingListener),
       testServiceInvocationCollector,
@@ -74,7 +77,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
       )
     )
 
-    val testDataPreparer = TestDataPreparer(modelData, process)
+    val testDataPreparer = TestDataPreparer(modelData, jobData)
     val inputs = ScenarioInputBatch(
       scenarioTestData.testRecords
         .groupBy(_.sourceId)
@@ -99,12 +102,6 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
       scenarioInterpreter.close()
       testContext.close()
     }
-  }
-
-  private def testJobData(process: CanonicalProcess) = {
-    // testing process may be unreleased, so it has no version
-    val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
-    JobData(process.metaData, processVersion)
   }
 
   private def collectSinkResults(

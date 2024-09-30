@@ -1,10 +1,12 @@
-import { ThunkAction } from "../reduxTypes";
-import { ProcessDefinitionData, ScenarioGraph } from "../../types";
-import HttpService from "./../../http/HttpService";
-import { Scenario, ProcessName, ProcessVersionId } from "../../components/Process/types";
-import { displayProcessActivity } from "./displayProcessActivity";
+import { omit } from "lodash/fp";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
+import { ProcessName, ProcessVersionId, Scenario } from "../../components/Process/types";
+import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { ThunkAction } from "../reduxTypes";
+import HttpService from "./../../http/HttpService";
+import { displayProcessActivity } from "./displayProcessActivity";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
@@ -75,6 +77,7 @@ export function clearProcess(): ThunkAction {
 }
 
 export function hideRunProcessDetails() {
+    replaceSearchQuery(omit(["from", "to", "refresh"]));
     return { type: "HIDE_RUN_PROCESS_DETAILS" };
 }
 

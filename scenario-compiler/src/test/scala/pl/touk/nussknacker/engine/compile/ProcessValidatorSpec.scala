@@ -1734,6 +1734,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       definitions: ModelDefinition,
       isFragment: Boolean = false
   ): CompilationResult[Unit] = {
+    implicit val jobData: JobData =
+      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     ProcessValidator
       .default(
         ModelDefinitionWithClasses(definitions),

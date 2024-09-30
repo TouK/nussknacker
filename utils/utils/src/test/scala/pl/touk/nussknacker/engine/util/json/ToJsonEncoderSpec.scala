@@ -81,7 +81,10 @@ class ToJsonEncoderSpec extends AnyFunSpec with Matchers {
   it("should use custom encoders from classloader") {
 
     ClassLoaderWithServices.withCustomServices(
-      List(classOf[ToJsonEncoderCustomisation] -> classOf[CustomJsonEncoderCustomisation1], classOf[ToJsonEncoderCustomisation] -> classOf[CustomJsonEncoderCustomisation2])
+      List(
+        classOf[ToJsonEncoderCustomisation] -> classOf[CustomJsonEncoderCustomisation1],
+        classOf[ToJsonEncoderCustomisation] -> classOf[CustomJsonEncoderCustomisation2]
+      )
     ) { classLoader =>
       val encoder = ToJsonEncoder(failOnUnknown = true, classLoader)
 

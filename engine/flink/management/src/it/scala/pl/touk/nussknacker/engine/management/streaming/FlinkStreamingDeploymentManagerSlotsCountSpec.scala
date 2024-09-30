@@ -22,7 +22,7 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec
 
   test("deploy scenario with too low task manager slots counts") {
     val processName = ProcessName("processTestingTMSlots")
-    val version     = ProcessVersion(VersionId.initialVersionId, processName, ProcessId(12), "user1", Some(13))
+    val version = ProcessVersion(VersionId.initialVersionId, processName, ProcessId(12), List.empty, "user1", Some(13))
     val parallelism = 2
     val process     = SampleProcess.prepareProcess(processName, parallelism = Some(parallelism))
 

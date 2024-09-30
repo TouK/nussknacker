@@ -230,7 +230,11 @@ class DeploymentService(
       _ <- Future {
         processValidator
           .forProcessingTypeUnsafe(processDetails.processingType)
-          .validateCanonicalProcess(processDetails.json, processDetails.isFragment)
+          .validateCanonicalProcess(
+            processDetails.json,
+            processDetails.toEngineProcessVersion,
+            processDetails.isFragment
+          )
       }.flatMap {
         case validationResult if validationResult.hasErrors =>
           Future.failed(DeployingInvalidScenarioError(validationResult.errors))

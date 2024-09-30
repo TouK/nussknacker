@@ -80,6 +80,8 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       ConfigFactory.empty(),
       ComponentDefinition("typed-source", TypedSourceFactory) :: LiteBaseComponentProvider.Components
     )
+    implicit val jobData: JobData =
+      JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     val validator        = ProcessValidator.default(modelData)
     val validationResult = validator.validate(scenario, isFragment = false)
     validationResult

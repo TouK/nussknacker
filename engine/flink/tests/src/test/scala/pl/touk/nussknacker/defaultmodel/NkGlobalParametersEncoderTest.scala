@@ -16,6 +16,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
         VersionId.initialVersionId,
         ProcessName("aProcessName"),
         ProcessId("1"),
+        List("aLabel"),
         "aUser",
         Some(1)
       ),
@@ -30,6 +31,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
         VersionId.initialVersionId,
         ProcessName("aProcessName"),
         ProcessId("1"),
+        List("aLabel"),
         "aUser",
         None
       ),

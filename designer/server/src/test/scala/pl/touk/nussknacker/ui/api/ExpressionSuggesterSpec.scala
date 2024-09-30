@@ -325,6 +325,7 @@ class ExpressionSuggesterSpec
       ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil),
       suggestion("processName", Typed[String]),
       suggestion("properties", Typed.record(Map("scenarioProperty" -> Typed[String]))),
+      suggestion("scenarioLabels", Typed.genericTypeClass[java.util.List[String]](List(Typed[String]))),
     )
   }
 

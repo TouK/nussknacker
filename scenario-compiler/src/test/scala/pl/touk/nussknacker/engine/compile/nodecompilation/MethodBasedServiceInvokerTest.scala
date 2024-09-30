@@ -23,7 +23,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   private val context: Context                            = Context.withInitialId
 
   private val nodeId           = NodeId("id")
-  private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
+  private val jobData: JobData = JobData(metadata, ProcessVersion.empty.copy(processName = metadata.name))
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock       = new MockService(jobData)

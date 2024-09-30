@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
-import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.process.ScenarioMetadata
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.{DeploymentEntityData, WithModifiedAt}
@@ -81,7 +82,7 @@ class DeploymentService(
 
   private def getScenarioMetadata(
       command: RunDeploymentCommand
-  ): EitherT[Future, RunDeploymentError, ProcessEntityData] =
+  ): EitherT[Future, RunDeploymentError, ScenarioMetadata] =
     EitherT.fromOptionF(
       dbioRunner.run(scenarioMetadataRepository.getScenarioMetadata(command.scenarioName)),
       ScenarioNotFoundError(command.scenarioName)
@@ -89,7 +90,7 @@ class DeploymentService(
 
   private def saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(
       command: RunDeploymentCommand,
-      scenarioMetadata: ProcessEntityData
+      scenarioMetadata: ScenarioMetadata
   ): EitherT[Future, RunDeploymentError, Unit] = {
     EitherT(dbioRunner.runInSerializableTransactionWithRetry((for {
       nonFinishedDeployments <- getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata)
@@ -101,7 +102,7 @@ class DeploymentService(
     } yield ()).value))
   }
 
-  private def getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata: ProcessEntityData) = {
+  private def getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata: ScenarioMetadata) = {
     val nonPerformingDeploymentStatuses =
       Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, ProblemDeploymentStatus.name)
     EitherT.right(
@@ -128,7 +129,7 @@ class DeploymentService(
 
   private def saveDeployment(
       command: RunDeploymentCommand,
-      scenarioMetadata: ProcessEntityData
+      scenarioMetadata: ScenarioMetadata
   ): EitherT[DB, RunDeploymentError, Unit] = {
     val now = Timestamp.from(clock.instant())
     EitherT(
@@ -145,17 +146,11 @@ class DeploymentService(
   }
 
   private def validateUsingDeploymentManager(
-      scenarioMetadata: ProcessEntityData,
+      scenarioMetadata: ScenarioMetadata,
       scenarioGraphVersion: ProcessVersionEntityData,
       user: LoggedUser
   ): EitherT[Future, RunDeploymentError, Unit] = {
-    val runtimeVersionData = RuntimeVersionData(
-      versionId = scenarioGraphVersion.id,
-      processName = scenarioMetadata.name,
-      processId = scenarioMetadata.id,
-      user = scenarioGraphVersion.user,
-      modelVersion = scenarioGraphVersion.modelVersion
-    )
+    val runtimeVersionData = processVersionFor(scenarioMetadata, scenarioGraphVersion)
     // TODO: It shouldn't be needed
     val dumbDeploymentData = DeploymentData(
       LegacyDeploymentId(""),
@@ -185,17 +180,11 @@ class DeploymentService(
   }
 
   private def runDeploymentUsingDeploymentManagerAsync(
-      scenarioMetadata: ProcessEntityData,
+      scenarioMetadata: ScenarioMetadata,
       scenarioGraphVersion: ProcessVersionEntityData,
       command: RunDeploymentCommand
   ): EitherT[Future, RunDeploymentError, Unit] = {
-    val runtimeVersionData = RuntimeVersionData(
-      versionId = scenarioGraphVersion.id,
-      processName = scenarioMetadata.name,
-      processId = scenarioMetadata.id,
-      user = scenarioGraphVersion.user,
-      modelVersion = scenarioGraphVersion.modelVersion
-    )
+    val runtimeVersionData = processVersionFor(scenarioMetadata, scenarioGraphVersion)
     val deploymentData = DeploymentData(
       toLegacyDeploymentId(command.id),
       command.user.toManagerUser,
@@ -255,6 +244,17 @@ class DeploymentService(
       permission: Permission
   ): EitherT[F, Error, Unit] =
     EitherT.cond[F](user.can(category, permission), (), NoPermissionError)
+
+  private def processVersionFor(scenarioMetadata: ScenarioMetadata, scenarioGraphVersion: ProcessVersionEntityData) = {
+    RuntimeVersionData(
+      versionId = scenarioGraphVersion.id,
+      processName = scenarioMetadata.name,
+      processId = scenarioMetadata.id,
+      labels = scenarioMetadata.labels.map(_.value),
+      user = scenarioGraphVersion.user,
+      modelVersion = scenarioGraphVersion.modelVersion
+    )
+  }
 
 }
 

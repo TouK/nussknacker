@@ -9,6 +9,7 @@ import io.circe.Json
 import org.apache.commons.lang3.StringUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -41,12 +42,22 @@ class TestInfoResourcesSpec
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
-    override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities =
+    override def getTestingCapabilities(
+        processVersion: ProcessVersion,
+        scenario: CanonicalProcess
+    ): TestingCapabilities =
       TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
 
-    override def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = ???
+    override def getTestParameters(
+        processVersion: ProcessVersion,
+        scenario: CanonicalProcess
+    ): Map[String, List[Parameter]] = Map.empty
 
-    override def generateTestData(scenario: CanonicalProcess, size: Int): Either[String, PreliminaryScenarioTestData] =
+    override def generateTestData(
+        processVersion: ProcessVersion,
+        scenario: CanonicalProcess,
+        size: Int
+    ): Either[String, PreliminaryScenarioTestData] =
       Right(
         PreliminaryScenarioTestData(
           NonEmptyList(

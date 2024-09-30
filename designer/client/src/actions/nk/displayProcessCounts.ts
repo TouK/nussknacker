@@ -1,9 +1,10 @@
 import moment, { Moment } from "moment";
+import { replaceSearchQuery } from "../../containers/hooks/useSearchQuery";
 import HttpService from "../../http/HttpService";
-import { ThunkAction } from "../reduxTypes";
 import { ProcessCounts } from "../../reducers/graph";
-import { ScenarioGraph } from "../../types";
 import { getProcessCountsRefresh } from "../../reducers/selectors/graph";
+import { ScenarioGraph } from "../../types";
+import { ThunkAction } from "../reduxTypes";
 
 export type RefreshData = {
     last: number;
@@ -58,6 +59,12 @@ export function fetchAndDisplayProcessCounts(params: {
     const { processName, from, to, scenarioGraph, refreshIn = false } = params;
     return async (dispatch, getState) => {
         clearTimeout(refreshTimeout);
+        replaceSearchQuery((current) => ({
+            ...current,
+            from: from.toISOString(),
+            to: to.toISOString(),
+            refresh: refreshIn ? `${refreshIn}s` : undefined,
+        }));
 
         const counts = await HttpService.fetchProcessCounts(processName, from, to).then(({ data }) =>
             checkPossibleCountsToCalculate(data, scenarioGraph),

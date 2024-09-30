@@ -32,7 +32,7 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
     val metricRegistry = prepareMetricRegistry(runtimeConfig)
     val preparer       = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
     // TODO Pass correct ProcessVersion and DeploymentData
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty)
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
 
     prepareScenarioInterpreter(scenario, runtimeConfig, jobData, deploymentConfig, modelData, preparer)(system)
   }
