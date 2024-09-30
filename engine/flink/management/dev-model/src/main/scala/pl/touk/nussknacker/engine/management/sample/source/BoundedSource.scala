@@ -48,7 +48,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
               defaultValue = None,
               editor = Some(RawParameterEditor),
               validators = None,
-              label = None,
+              label = Some("Offset"),
               hintText = Some(
                 "Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
               )
@@ -58,7 +58,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
               defaultValue = Some("EARLIEST"),
               editor = fixedValuesEditor,
               validators = None,
-              label = None,
+              label = Some("Starting point strategy"),
               hintText = Some("Example of parameter with fixed values")
             ),
           )
@@ -95,7 +95,7 @@ object DummyBoundedSourceToDelete extends SourceFactory with UnboundedStreamComp
               defaultValue = None,
               editor = Some(BoolParameterEditor),
               validators = None,
-              label = Some("this is label"),
+              label = Some("Other parameter"),
               hintText = Some("this is hint")
             )
           )
