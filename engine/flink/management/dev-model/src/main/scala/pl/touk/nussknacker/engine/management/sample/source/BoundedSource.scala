@@ -3,7 +3,12 @@ package pl.touk.nussknacker.engine.management.sample.source
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, UnboundedStreamComponent}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, RawParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  BoolParameterEditor,
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  RawParameterEditor
+}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithActivityParameters}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -72,6 +77,29 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
         }
         super.createSourceStream(elementsWithOffset, env, flinkNodeContext)
       }
+
+    }
+
+}
+
+object DummyBoundedSourceToDelete extends SourceFactory with UnboundedStreamComponent {
+
+  @MethodToInvoke
+  def source(@ParamName("elements") elements: java.util.List[Any]) =
+    new CollectionSource[Any](elements.asScala.toList, None, Unknown) with WithActivityParameters {
+
+      override def activityParametersDefinition: Map[String, Map[String, ParameterConfig]] =
+        Map(
+          ScenarioActionName.Deploy.value -> Map(
+            "otherParameter" -> ParameterConfig(
+              defaultValue = None,
+              editor = Some(BoolParameterEditor),
+              validators = None,
+              label = Some("this is label"),
+              hintText = Some("this is hint")
+            )
+          )
+        )
 
     }
 
