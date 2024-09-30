@@ -179,7 +179,7 @@ class NodesApiHttpService(
               scenarioWithDetails.isFragment
             )
             metaData          = request.scenarioGraph.properties.toMetaData(scenarioName)
-            validationResults = validator.validate(request, inputParameters)(metaData)
+            validationResults = validator.validate(request.sourceParameters, inputParameters)(metaData)
           } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
         }
       }

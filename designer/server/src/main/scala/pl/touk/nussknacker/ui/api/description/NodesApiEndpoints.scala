@@ -356,15 +356,15 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
     Any
   ] = {
     baseNuApiEndpoint
-      .summary("Validate given parameters")
+      .summary("Validate adhoc parameters")
       .tag("Nodes")
       .post
-      .in("parameters" / path[ProcessName]("scenarioName") / "validateAdhoc")
+      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "adhoc" / "validate")
       .in(
         jsonBody[AdhocTestParametersRequest]
           .example(
             Example.of(
-              summary = Some("TODO"),
+              summary = Some("Valid example of minimalistic request"),
               value = AdhocTestParametersRequest(
                 TestSourceParameters("source", Map(ParameterName("name") -> Expression.spel("'Amadeus'"))),
                 ScenarioGraph(

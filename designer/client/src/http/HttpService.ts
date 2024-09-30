@@ -479,7 +479,7 @@ class HttpService {
         scenarioName: string,
         validationRequest: TestAdhocValidationRequest,
     ): Promise<AxiosResponse<ValidationData>> {
-        const promise = api.post(`/parameters/${encodeURIComponent(scenarioName)}/validateAdhoc`, validationRequest);
+        const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/adhoc/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToValidateAdhocTestParameters", "Failed to validate parameters"),
