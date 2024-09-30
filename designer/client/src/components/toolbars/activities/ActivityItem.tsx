@@ -75,6 +75,7 @@ export const ActivityItem = forwardRef(
                                 content={activity.comment.content.value}
                                 commentSettings={commentSettings}
                                 searchWords={[searchQuery]}
+                                variant={"overline"}
                             />
                         )}
                         {activity.additionalFields.map((additionalField, index) => {

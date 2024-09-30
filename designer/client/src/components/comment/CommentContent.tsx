@@ -5,6 +5,7 @@ import { PanelComment } from "./StyledComment";
 import { Link, Theme, ThemeProvider, Typography, useTheme } from "@mui/material";
 import ReactDOMServer, { renderToString } from "react-dom/server";
 import Highlighter from "react-highlight-words";
+import { Variant } from "@mui/material/styles/createTypography";
 
 interface Props {
     content: string;
@@ -13,6 +14,7 @@ interface Props {
         substitutionLink?: string;
     };
     searchWords?: string[];
+    variant?: Variant;
 }
 
 const withHighlightText = (text: string, searchWords: string[], theme: Theme) => {
@@ -64,7 +66,7 @@ const withHighlightText = (text: string, searchWords: string[], theme: Theme) =>
     return replacedText;
 };
 
-function CommentContent({ commentSettings, content, searchWords }: Props): JSX.Element {
+function CommentContent({ commentSettings, content, searchWords, variant = "overline" }: Props): JSX.Element {
     const theme = useTheme();
     const newContent = useMemo(() => {
         if (isEmpty(commentSettings)) {
@@ -103,7 +105,7 @@ function CommentContent({ commentSettings, content, searchWords }: Props): JSX.E
 
     return (
         <PanelComment>
-            <Typography variant={"caption"} dangerouslySetInnerHTML={{ __html }} />
+            <Typography variant={variant} dangerouslySetInnerHTML={{ __html }} />
         </PanelComment>
     );
 }

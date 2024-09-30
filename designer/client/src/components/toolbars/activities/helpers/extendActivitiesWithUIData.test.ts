@@ -62,7 +62,7 @@ describe("extendActivitiesWithUIData", () => {
             },
             {
                 uiType: "date",
-                value: "2024-09-22",
+                value: "2024-09-25",
             },
             {
                 actions: [
@@ -110,6 +110,10 @@ describe("extendActivitiesWithUIData", () => {
                 type: "SCENARIO_MODIFIED",
                 uiType: "item",
                 user: "admin",
+            },
+            {
+                uiType: "date",
+                value: "2024-09-22",
             },
             {
                 actions: [
