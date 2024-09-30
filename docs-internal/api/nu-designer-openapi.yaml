@@ -1303,12 +1303,12 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/parameters/{scenarioName}/validateAdhoc:
+  /api/scenarioTesting/{scenarioName}/adhoc/validate:
     post:
       tags:
       - Nodes
-      summary: Validate given parameters
-      operationId: postApiParametersScenarionameValidateadhoc
+      summary: Validate adhoc parameters
+      operationId: postApiScenariotestingScenarionameAdhocValidate
       parameters:
       - name: Nu-Impersonate-User-Identity
         in: header
@@ -1329,7 +1329,7 @@ paths:
               $ref: '#/components/schemas/AdhocTestParametersRequest'
             examples:
               Example:
-                summary: TODO
+                summary: Valid example of minimalistic request
                 value:
                   sourceParameters:
                     sourceId: source

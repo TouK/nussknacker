@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { ActionValues } from "./AdhocTestingFormContext";
 import { validateAdhocTestParameters } from "../../../actions/nk/adhocTesting";
 import { AdhocTestingParameters } from "./AdhocTestingDialog";
-import { SourceWithParametersTest } from "../../../http/HttpService";
 
 export function useAdhocTestingParametersValidation(
     action: Pick<AdhocTestingParameters, "scenarioName" | "parameters" | "sourceId" | "scenarioGraph">,
