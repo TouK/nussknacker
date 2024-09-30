@@ -3755,12 +3755,6 @@ paths:
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
-                      comment:
-                        content:
-                          value: Added new processing step
-                          status: AVAILABLE
-                        lastModifiedBy: some user
-                        lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
                       - name: destinationEnvironment
                         value: preprod

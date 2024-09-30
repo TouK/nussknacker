@@ -587,15 +587,13 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             List(
               Some("sourceEnvironment" -> activity.sourceEnvironment.name),
               Some("sourceUser"        -> activity.sourceUser.value),
-              Some("targetEnvironment" -> activity.targetEnvironment.name),
+              activity.targetEnvironment.map(v => "targetEnvironment" -> v.name),
               activity.sourceScenarioVersionId.map(v => "sourceScenarioVersion" -> v.toString),
             ).flatten.toMap
           )
         )
       case activity: ScenarioActivity.OutgoingMigration =>
         createEntity(scenarioActivity)(
-          comment = comment(activity.comment),
-          lastModifiedByUserName = lastModifiedByUserName(activity.comment),
           additionalProperties = AdditionalProperties(
             Map(
               "destinationEnvironment" -> activity.destinationEnvironment.name,
@@ -785,15 +783,16 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           .map((entity.id, _))
       case ScenarioActivityType.ScenarioNameChanged =>
         (for {
-          oldNameAndNewName <- extractOldNameAndNewNameForRename(entity)
+          oldName <- additionalPropertyFromEntity(entity, "oldName")
+          newName <- additionalPropertyFromEntity(entity, "newName")
         } yield ScenarioActivity.ScenarioNameChanged(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
-          oldName = oldNameAndNewName._1,
-          newName = oldNameAndNewName._2
+          oldName = oldName,
+          newName = newName,
         )).map((entity.id, _))
       case ScenarioActivityType.CommentAdded =>
         (for {
@@ -838,7 +837,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         (for {
           sourceEnvironment <- additionalPropertyFromEntity(entity, "sourceEnvironment")
           sourceUser        <- additionalPropertyFromEntity(entity, "sourceUser")
-          targetEnvironment <- additionalPropertyFromEntity(entity, "targetEnvironment")
+          targetEnvironment = optionalAdditionalPropertyFromEntity(entity, "targetEnvironment")
           sourceScenarioVersion = optionalAdditionalPropertyFromEntity(entity, "sourceScenarioVersion").flatMap(
             toLongOption
           )
@@ -851,11 +850,10 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           sourceEnvironment = Environment(sourceEnvironment),
           sourceUser = UserName(sourceUser),
           sourceScenarioVersionId = sourceScenarioVersion.map(ScenarioVersionId),
-          targetEnvironment = Environment(targetEnvironment),
+          targetEnvironment = targetEnvironment.map(Environment),
         )).map((entity.id, _))
       case ScenarioActivityType.OutgoingMigration =>
         (for {
-          comment                <- commentFromEntity(entity)
           destinationEnvironment <- additionalPropertyFromEntity(entity, "destinationEnvironment")
         } yield ScenarioActivity.OutgoingMigration(
           scenarioId = scenarioIdFromEntity(entity),
@@ -863,7 +861,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
-          comment = comment,
           destinationEnvironment = Environment(destinationEnvironment),
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedSingleExecution =>
@@ -918,33 +915,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             actionName = actionName,
             comment = comment,
           )).map((entity.id, _))
-    }
-  }
-
-  // todo NU-1772: in next phase the legacy comments will be fully migrated to scenario activities,
-  //  until next PR is merged there is parsing from comment content to preserve full compatibility
-  private def extractOldNameAndNewNameForRename(
-      entity: ScenarioActivityEntityData
-  ): Either[String, (String, String)] = {
-    val fromAdditionalProperties = for {
-      oldName <- additionalPropertyFromEntity(entity, "oldName")
-      newName <- additionalPropertyFromEntity(entity, "newName")
-    } yield (oldName, newName)
-
-    val legacyCommentPattern = """Rename: \[(.+?)\] -> \[(.+?)\]""".r
-
-    val fromLegacyComment = for {
-      comment <- entity.comment.toRight("Legacy comment not present")
-      oldNameAndNewName <- comment match {
-        case legacyCommentPattern(oldName, newName) => Right((oldName, newName))
-        case _ => Left("Could not retrieve oldName and newName from legacy comment")
-      }
-    } yield oldNameAndNewName
-
-    (fromAdditionalProperties, fromLegacyComment) match {
-      case (Right(valuesFromAdditionalProperties), _) => Right(valuesFromAdditionalProperties)
-      case (Left(_), Right(valuesFromLegacyComment))  => Right(valuesFromLegacyComment)
-      case (Left(error), Left(legacyError))           => Left(s"$error, $legacyError")
     }
   }
 

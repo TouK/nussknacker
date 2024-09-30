@@ -41,6 +41,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
+  def environmentId: String
+
   val passUsernameInMigration: Boolean = true
 
   def compare(

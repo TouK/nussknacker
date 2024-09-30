@@ -8,23 +8,29 @@ import cats.syntax.traverse._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioWithDetails, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
 
+import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteEnvironmentResources(
     remoteEnvironment: RemoteEnvironment,
     protected val processService: ProcessService,
-    val processAuthorizer: AuthorizeProcess
+    val processAuthorizer: AuthorizeProcess,
+    scenarioActivityRepository: ScenarioActivityRepository,
+    dbioActionRunner: DBIOActionRunner,
+    clock: Clock,
 )(implicit val ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -71,16 +77,30 @@ class RemoteEnvironmentResources(
                 processIdWithName,
                 version,
                 details =>
-                  remoteEnvironment.migrate(
-                    details.processingMode,
-                    details.engineSetupName,
-                    details.processCategory,
-                    details.labels,
-                    details.scenarioGraphUnsafe,
-                    details.processVersionId,
-                    details.name,
-                    details.isFragment
-                  )
+                  for {
+                    result <- remoteEnvironment.migrate(
+                      details.processingMode,
+                      details.engineSetupName,
+                      details.processCategory,
+                      details.labels,
+                      details.scenarioGraphUnsafe,
+                      details.processVersionId,
+                      details.name,
+                      details.isFragment
+                    )
+                    _ <- dbioActionRunner.run(
+                      scenarioActivityRepository.addActivity(
+                        ScenarioActivity.OutgoingMigration(
+                          scenarioId = ScenarioId(processIdWithName.id.value),
+                          scenarioActivityId = ScenarioActivityId.random,
+                          user = userFrom(user),
+                          date = clock.instant(),
+                          scenarioVersionId = Some(ScenarioVersionId(details.processVersionId.value)),
+                          destinationEnvironment = Environment(remoteEnvironment.environmentId)
+                        )
+                      )
+                    )
+                  } yield result
               )
             }
           }
@@ -93,6 +113,15 @@ class RemoteEnvironmentResources(
           }
         }
     }
+  }
+
+  private def userFrom(loggedUser: LoggedUser): ScenarioUser = {
+    ScenarioUser(
+      id = Some(UserId(loggedUser.id)),
+      name = UserName(loggedUser.username),
+      impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
+      impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply),
+    )
   }
 
   private def compareProcesses(

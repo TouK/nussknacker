@@ -52,7 +52,10 @@ class RemoteEnvironmentResourcesSpec
       new RemoteEnvironmentResources(
         remoteEnvironment,
         processService,
-        processAuthorizer
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
       ),
       Permission.Read,
       Permission.Write
@@ -81,7 +84,10 @@ class RemoteEnvironmentResourcesSpec
       new RemoteEnvironmentResources(
         remoteEnvironment,
         processService,
-        processAuthorizer
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
       ),
       Permission.Read,
       Permission.Write
@@ -120,7 +126,10 @@ class RemoteEnvironmentResourcesSpec
           )
         ),
         processService,
-        processAuthorizer
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
       ),
       Permission.Read
     )
@@ -153,7 +162,10 @@ class RemoteEnvironmentResourcesSpec
           )
         ),
         processService,
-        processAuthorizer
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
       ),
       Permission.Read
     )
@@ -177,6 +189,8 @@ class RemoteEnvironmentResourcesSpec
       testMigrationResults: List[TestMigrationResult] = List(),
       val mockDifferences: Map[ProcessName, Map[String, ScenarioGraphComparator.Difference]] = Map()
   ) extends RemoteEnvironment {
+
+    override def environmentId: String = "test-remote-env"
 
     var migrateInvocations = List[ScenarioGraph]()
     var compareInvocations = List[ScenarioGraph]()

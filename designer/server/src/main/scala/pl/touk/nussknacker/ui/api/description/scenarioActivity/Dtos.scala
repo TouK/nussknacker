@@ -541,7 +541,7 @@ object Dtos {
         sourceEnvironment: String,
         sourceUser: String,
         sourceScenarioVersionId: Option[Long],
-        targetEnvironment: String,
+        targetEnvironment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.IncomingMigration,
@@ -553,7 +553,7 @@ object Dtos {
       additionalFields = List(
         Some(AdditionalField("sourceEnvironment", sourceEnvironment)),
         Some(AdditionalField("sourceUser", sourceUser)),
-        Some(AdditionalField("targetEnvironment", targetEnvironment)),
+        targetEnvironment.map(v => AdditionalField("targetEnvironment", v)),
         sourceScenarioVersionId.map(v => AdditionalField("sourceScenarioVersionId", v.toString)),
       ).flatten
     )
@@ -563,7 +563,6 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersionId: Option[Long],
-        comment: ScenarioActivityComment,
         destinationEnvironment: String,
     ): ScenarioActivity = ScenarioActivity(
       id = id,
@@ -571,7 +570,7 @@ object Dtos {
       user = user,
       date = date,
       scenarioVersionId = scenarioVersionId,
-      comment = Some(comment),
+      comment = None,
       attachment = None,
       additionalFields = List(
         AdditionalField("destinationEnvironment", destinationEnvironment),

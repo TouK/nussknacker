@@ -188,7 +188,7 @@ object ScenarioActivity {
       sourceEnvironment: Environment,
       sourceUser: UserName,
       sourceScenarioVersionId: Option[ScenarioVersionId],
-      targetEnvironment: Environment,
+      targetEnvironment: Option[Environment],
   ) extends ScenarioActivity
 
   final case class OutgoingMigration(
@@ -197,7 +197,6 @@ object ScenarioActivity {
       user: ScenarioUser,
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
-      comment: ScenarioComment,
       destinationEnvironment: Environment,
   ) extends ScenarioActivity
 

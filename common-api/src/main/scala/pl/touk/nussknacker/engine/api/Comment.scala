@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.api
 
 import io.circe.{Decoder, Encoder}
 
-final case class Comment(content: String)
+final case class Comment(content: String) extends AnyVal {
+  override def toString: String = content
+}
 
 object Comment {
 

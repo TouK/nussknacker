@@ -364,7 +364,7 @@ class ScenarioActivityApiHttpService(
           sourceEnvironment = sourceEnvironment.name,
           sourceUser = sourceUser.value,
           sourceScenarioVersionId = sourceScenarioVersionId.map(_.value),
-          targetEnvironment = targetEnvironment.name,
+          targetEnvironment = targetEnvironment.map(_.name),
         )
       case ScenarioActivity.OutgoingMigration(
             _,
@@ -372,7 +372,6 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersionId,
-            comment,
             destinationEnvironment
           ) =>
         Dtos.ScenarioActivity.forOutgoingMigration(
@@ -380,7 +379,6 @@ class ScenarioActivityApiHttpService(
           user = user.name.value,
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
-          comment = toDto(comment),
           destinationEnvironment = destinationEnvironment.name,
         )
       case ScenarioActivity.PerformedSingleExecution(

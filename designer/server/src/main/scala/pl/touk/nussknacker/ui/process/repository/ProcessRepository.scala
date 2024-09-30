@@ -237,12 +237,12 @@ class DBProcessRepository(
             impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
             impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
           ),
-          date = Instant.now(),
+          date = clock.instant(),
           scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
           sourceEnvironment = Environment(migrateProcessAction.sourceEnvironment),
           sourceUser = UserName(user),
           sourceScenarioVersionId = migrateProcessAction.sourceScenarioVersionId.map(v => ScenarioVersionId(v.value)),
-          targetEnvironment = Environment(migrateProcessAction.targetEnvironment),
+          targetEnvironment = Some(Environment(migrateProcessAction.targetEnvironment)),
         )
     )
   }
