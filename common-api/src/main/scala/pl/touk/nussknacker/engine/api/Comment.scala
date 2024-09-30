@@ -7,9 +7,6 @@ final case class Comment(content: String) extends AnyVal {
 }
 
 object Comment {
-
   implicit val encoder: Encoder[Comment] = Encoder.encodeString.contramap(_.content)
-
   implicit val decoder: Decoder[Comment] = Decoder.decodeString.map(Comment.apply)
-
 }
