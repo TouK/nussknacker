@@ -4,19 +4,20 @@ import akka.http.scaladsl.model.HttpHeader
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
@@ -174,16 +175,24 @@ class DBProcessRepository(
         processesTable.filter(_.name === action.processName).result.headOption.flatMap {
           case Some(_) => DBIOAction.failed(ProcessAlreadyExists(action.processName.value))
           case None =>
-            (insertNew += processToSave)
-              .flatMap(entity =>
-                updateProcessInternal(
-                  ProcessIdWithName(entity.id, entity.name),
-                  action.canonicalProcess,
-                  increaseVersionWhenJsonNotChanged = false,
-                  userName = userName
+            for {
+              entity <- insertNew += processToSave
+              res <- updateProcessInternal(
+                ProcessIdWithName(entity.id, entity.name),
+                action.canonicalProcess,
+                increaseVersionWhenJsonNotChanged = false,
+                userName = userName
+              )
+              _ <- scenarioActivityRepository.addActivity(
+                ScenarioActivity.ScenarioCreated(
+                  scenarioId = ScenarioId(res.processId.value),
+                  scenarioActivityId = ScenarioActivityId.random,
+                  user = loggedUser.scenarioUser,
+                  date = clock.instant(),
+                  scenarioVersionId = res.newVersion.map(v => ScenarioVersionId(v.value))
                 )
               )
-              .map(res => res.newVersion.map(ProcessCreated(res.processId, _)))
+            } yield res.newVersion.map(ProcessCreated(res.processId, _))
         }
     }
   }
@@ -197,12 +206,7 @@ class DBProcessRepository(
         ScenarioActivity.ScenarioModified(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
-          user = ScenarioUser(
-            id = Some(UserId(loggedUser.id)),
-            name = UserName(loggedUser.username),
-            impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-            impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-          ),
+          user = loggedUser.scenarioUser,
           date = Instant.now(),
           scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
           comment = updateProcessAction.comment match {
@@ -231,12 +235,7 @@ class DBProcessRepository(
         ScenarioActivity.IncomingMigration(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
-          user = ScenarioUser(
-            id = Some(UserId(loggedUser.id)),
-            name = UserName(loggedUser.username),
-            impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-            impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-          ),
+          user = loggedUser.scenarioUser,
           date = clock.instant(),
           scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
           sourceEnvironment = Environment(migrateProcessAction.sourceEnvironment),
@@ -256,12 +255,7 @@ class DBProcessRepository(
         ScenarioActivity.AutomaticUpdate(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
-          user = ScenarioUser(
-            id = Some(UserId(loggedUser.id)),
-            name = UserName(loggedUser.username),
-            impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-            impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-          ),
+          user = loggedUser.scenarioUser,
           date = Instant.now(),
           scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
           changes = automaticProcessUpdateAction.migrationsApplies.map(_.description).mkString(", "),
@@ -387,10 +381,7 @@ class DBProcessRepository(
     val updateNameInProcess =
       processesTable.filter(_.id === process.id).map(_.name).update(newName)
 
-    // Comment relates to specific version (in this case last version). Last version could be extracted in one of the
-    // above queries, but for sake of readability we perform separate query for this matter
-    // TODO: remove this comment in favour of process-audit-log
-    val addCommentAction = processVersionsTableWithUnit
+    val addScenarioNameChangedActivity = processVersionsTableWithUnit
       .filter(_.processId === process.id)
       .sortBy(_.id.desc)
       .result
@@ -401,12 +392,7 @@ class DBProcessRepository(
             ScenarioActivity.ScenarioNameChanged(
               scenarioId = ScenarioId(process.id.value),
               scenarioActivityId = ScenarioActivityId.random,
-              user = ScenarioUser(
-                id = Some(UserId(loggedUser.id)),
-                name = UserName(loggedUser.username),
-                impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-                impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-              ),
+              user = loggedUser.scenarioUser,
               date = Instant.now(),
               scenarioVersionId = Some(ScenarioVersionId(version.id.value)),
               oldName = process.name.value,
@@ -423,7 +409,7 @@ class DBProcessRepository(
           .seq[Effect.All](
             updateNameInProcess,
             updateNameInProcessJson,
-            addCommentAction
+            addScenarioNameChangedActivity
           )
           .map(_ => ())
           .transactionally

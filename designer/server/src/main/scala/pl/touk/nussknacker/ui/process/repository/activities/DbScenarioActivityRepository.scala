@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.repository.DbioRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.sql.Timestamp
 import java.time.Clock
@@ -58,7 +59,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       ScenarioActivity.CommentAdded(
         scenarioId = ScenarioId(scenarioId.value),
         scenarioActivityId = ScenarioActivityId.random,
-        user = toUser(user),
+        user = user.scenarioUser,
         date = now,
         scenarioVersionId = Some(ScenarioVersionId(processVersionId.value)),
         comment = ScenarioComment.Available(
@@ -144,7 +145,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         ScenarioActivity.AttachmentAdded(
           scenarioId = ScenarioId(attachmentToAdd.scenarioId.value),
           scenarioActivityId = ScenarioActivityId.random,
-          user = toUser(user),
+          user = user.scenarioUser,
           date = now,
           scenarioVersionId = Some(ScenarioVersionId(attachmentToAdd.scenarioVersionId.value)),
           attachment = ScenarioAttachment.Available(
@@ -310,15 +311,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case _: ScenarioActivity.CustomAction =>
         None
     }
-  }
-
-  private def toUser(loggedUser: LoggedUser) = {
-    ScenarioUser(
-      id = Some(UserId(loggedUser.id)),
-      name = UserName(loggedUser.username),
-      impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-      impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-    )
   }
 
   private lazy val activityByRowIdCompiled = Compiled { rowId: Rep[Long] =>

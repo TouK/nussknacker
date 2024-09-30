@@ -44,7 +44,6 @@ trait WithScenarioActivitySpecAsserts
 
   def verifyIncomingMigrationActivityExists(
       scenarioName: String,
-      scenarioVersionId: Long,
       sourceEnvironment: String,
       sourceUser: String,
       targetEnvironment: String,
@@ -64,7 +63,15 @@ trait WithScenarioActivitySpecAsserts
              |      "id": "${regexes.looseUuidRegex}",
              |      "user": "allpermuser",
              |      "date": "${regexes.zuluDateRegex}",
-             |      "scenarioVersionId": $scenarioVersionId,
+             |      "scenarioVersionId": 1,
+             |      "additionalFields": [],
+             |      "type": "SCENARIO_CREATED"
+             |    },
+             |    {
+             |      "id": "${regexes.looseUuidRegex}",
+             |      "user": "allpermuser",
+             |      "date": "${regexes.zuluDateRegex}",
+             |      "scenarioVersionId": 2,
              |      "additionalFields": [
              |        {
              |          "name": "sourceEnvironment",

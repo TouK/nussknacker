@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import pl.touk.nussknacker.ui.util.{NuPathMatchers, ScenarioGraphComparator}
 
 import java.time.{Clock, Instant}
@@ -93,7 +94,7 @@ class RemoteEnvironmentResources(
                         ScenarioActivity.OutgoingMigration(
                           scenarioId = ScenarioId(processIdWithName.id.value),
                           scenarioActivityId = ScenarioActivityId.random,
-                          user = userFrom(user),
+                          user = user.scenarioUser,
                           date = clock.instant(),
                           scenarioVersionId = Some(ScenarioVersionId(details.processVersionId.value)),
                           destinationEnvironment = Environment(remoteEnvironment.environmentId)
@@ -113,15 +114,6 @@ class RemoteEnvironmentResources(
           }
         }
     }
-  }
-
-  private def userFrom(loggedUser: LoggedUser): ScenarioUser = {
-    ScenarioUser(
-      id = Some(UserId(loggedUser.id)),
-      name = UserName(loggedUser.username),
-      impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-      impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply),
-    )
   }
 
   private def compareProcesses(

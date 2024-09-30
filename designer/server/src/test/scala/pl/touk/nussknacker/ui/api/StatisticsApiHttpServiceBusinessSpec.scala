@@ -77,7 +77,7 @@ class StatisticsApiHttpServiceBusinessSpec
     override def answer(invocation: InvocationOnMock): Instant = Instant.now()
   })
 
-  override def clock: Clock = mockedClock
+  override val clock: Clock = mockedClock
 
   override def designerConfig: Config = super.designerConfig
     .withValue("questDbSettings.instanceId", fromAnyRef(questDbRelativePathString))

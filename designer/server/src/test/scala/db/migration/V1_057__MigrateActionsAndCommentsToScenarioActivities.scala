@@ -186,19 +186,43 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
       )
     }
     "migrate RENAME action with comment to scenario_activities table" in {
-      testMigratingActionWithComment(
-        scenarioActionName = ScenarioActionName.Rename,
-        actionComment = Some("Rename: [marketing-campaign] -> [marketing-campaign-plus]"),
-        expectedActivity = (sid, sad, user, date, sv) =>
-          ScenarioActivity.ScenarioNameChanged(
-            scenarioId = sid,
-            scenarioActivityId = sad,
-            user = user,
-            date = date,
-            scenarioVersionId = sv,
-            oldName = "marketing-campaign",
-            newName = "marketing-campaign-plus",
-          )
+      val actionComment = "Rename: [marketing-campaign] -> [marketing-campaign-plus]"
+
+      run(
+        for {
+          process <- processInsertQuery += processEntity(user, now)
+          _       <- processVersionsTable += processVersionEntity(process)
+          comment <- commentInsertQuery += commentEntity(process, 1L, actionComment)
+          _       <- actionInsertQuery += processActionEntity(process, ScenarioActionName.Rename, Some(comment.id))
+          _       <- migration.migrate
+          _       <- activitiesDefinitions.scenarioActivitiesTable.result
+        } yield ()
+      )
+
+      val entities = run(activitiesDefinitions.scenarioActivitiesTable.result)
+
+      entities shouldBe Vector(
+        ScenarioActivityEntityData(
+          id = 1,
+          activityType = "SCENARIO_NAME_CHANGED",
+          scenarioId = 1,
+          activityId = entities.head.activityId,
+          userId = None,
+          userName = "John Doe",
+          impersonatedByUserId = None,
+          impersonatedByUserName = None,
+          lastModifiedByUserName = Some("John Doe"),
+          lastModifiedAt = entities.head.lastModifiedAt,
+          createdAt = entities.head.createdAt,
+          scenarioVersion = Some(5),
+          comment = Some("Rename: [marketing-campaign] -> [marketing-campaign-plus]"),
+          attachmentId = None,
+          finishedAt = None,
+          state = Some("IN_PROGRESS"),
+          errorMessage = None,
+          buildInfo = None,
+          additionalProperties = "{}"
+        )
       )
     }
     "migrate custom action 'run now' with comment to scenario_activities table" in {

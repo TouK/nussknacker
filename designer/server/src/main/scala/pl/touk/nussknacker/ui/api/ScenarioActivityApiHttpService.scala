@@ -456,15 +456,6 @@ class ScenarioActivityApiHttpService(
       )
     )
 
-  private def editComment(request: DeprecatedEditCommentRequest, scenarioId: ProcessId)(
-      implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
-    EitherT(
-      dbioActionRunner.run(
-        scenarioActivityRepository.editComment(scenarioId, request.commentId, request.commentContent)
-      )
-    ).leftMap(_ => NoComment(request.commentId))
-
   private def editComment(request: EditCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, ScenarioActivityError, Unit] =

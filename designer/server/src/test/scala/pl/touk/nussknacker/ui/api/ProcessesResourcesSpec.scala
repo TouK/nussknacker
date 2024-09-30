@@ -711,17 +711,30 @@ class ProcessesResourcesSpec
     getScenarioActivities(processName) ~> check {
       val activities = responseAs[ScenarioActivities].activities
 
-      activities.length shouldBe 2
+      activities.length shouldBe 3
       activities(0) shouldBe ScenarioActivity(
         id = activities(0).id,
         user = "allpermuser",
         date = activities(0).date,
+        scenarioVersionId = Some(1L),
+        comment = None,
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = None,
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioCreated
+      )
+      activities(1) shouldBe ScenarioActivity(
+        id = activities(1).id,
+        user = "allpermuser",
+        date = activities(1).date,
         scenarioVersionId = Some(2L),
         comment = Some(
           ScenarioActivityComment(
             content = Deleted,
             lastModifiedBy = "allpermuser",
-            lastModifiedAt = activities(0).comment.get.lastModifiedAt
+            lastModifiedAt = activities(1).comment.get.lastModifiedAt
           )
         ),
         attachment = None,
@@ -731,16 +744,16 @@ class ProcessesResourcesSpec
         overrideSupportedActions = None,
         `type` = ScenarioActivityType.ScenarioModified
       )
-      activities(1) shouldBe ScenarioActivity(
-        id = activities(1).id,
+      activities(2) shouldBe ScenarioActivity(
+        id = activities(2).id,
         user = "allpermuser",
-        date = activities(1).date,
+        date = activities(2).date,
         scenarioVersionId = Some(2L),
         comment = Some(
           ScenarioActivityComment(
             content = Available("Update the same version"),
             lastModifiedBy = "allpermuser",
-            lastModifiedAt = activities(1).comment.get.lastModifiedAt
+            lastModifiedAt = activities(2).comment.get.lastModifiedAt
           )
         ),
         attachment = None,

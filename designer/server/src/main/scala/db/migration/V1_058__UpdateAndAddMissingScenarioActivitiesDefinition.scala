@@ -34,17 +34,25 @@ object V1_058__UpdateAndAddMissingScenarioActivitiesDefinition extends LazyLoggi
     private val processVersionsDefinitions    = new ProcessVersionsDefinitions(profile)
 
     def migrate: DBIOAction[Unit, NoStream, Effect.All] = for {
-      _ <- insertScenarioModifiedEventsForVersionsWithoutComments()
+      // Insert SCENARIO_MODIFIED activity for each scenario version, that did not have activity until now
+      _ <- insertScenarioModifiedActivityForEachVersionWithoutActivity()
+      // Modify SCENARIO_MODIFIED activity for first version of each scenario to SCENARIO_CREATED
       _ <- updateActivityOfFirstVersionModificationToScenarioCreated()
+      // Insert INCOMING_MIGRATION activities based on legacy comments
       _ <- insertModifiedIncomingMigrationActivities()
+      // Delete activities with legacy comment corresponding to INCOMING_MIGRATION
       _ <- deleteOldIncomingMigrationActivities()
+      // Insert AUTOMATIC_UPDATE activities based on legacy comments
       _ <- insertModifiedAutomaticUpdateActivities()
+      // Delete activities with legacy comment corresponding to AUTOMATIC_UPDATE
       _ <- deleteOldAutomaticUpdateActivities()
+      // Insert SCENARIO_NAME_CHANGED activities based on legacy comments
       _ <- insertModifiedScenarioRenameActivities()
+      // Delete activities with legacy comment corresponding to SCENARIO_NAME_CHANGED
       _ <- deleteOldScenarioRenameActivities()
     } yield ()
 
-    private def insertScenarioModifiedEventsForVersionsWithoutComments(): DBIOAction[Int, NoStream, Effect.All] = {
+    private def insertScenarioModifiedActivityForEachVersionWithoutActivity(): DBIOAction[Int, NoStream, Effect.All] = {
       val insertQuery =
         processVersionsDefinitions.table
           .joinLeft(scenarioActivitiesDefinitions.scenarioActivitiesTable)

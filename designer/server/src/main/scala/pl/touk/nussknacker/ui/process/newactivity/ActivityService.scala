@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeplo
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
@@ -71,12 +72,7 @@ class ActivityService(
             ScenarioActivity.ScenarioDeployed(
               scenarioId = ScenarioId(scenarioId.value),
               scenarioActivityId = ScenarioActivityId.random,
-              user = ScenarioUser(
-                id = Some(UserId(loggedUser.id)),
-                name = UserName(loggedUser.username),
-                impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-                impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-              ),
+              user = loggedUser.scenarioUser,
               date = now,
               scenarioVersionId = Some(ScenarioVersionId(scenarioGraphVersionId.value)),
               comment = commentOpt match {

@@ -193,12 +193,12 @@ class DBFetchingProcessRepositorySpec
       scenarioActivities <- dbioRunner.run(activities.findActivities(processId))
     } yield (processId, scenarioActivities)).futureValue
 
-    scenarioActivities.size shouldBe 1
-    scenarioActivities(0) shouldBe ScenarioActivity.ScenarioNameChanged(
+    scenarioActivities.size shouldBe 2
+    scenarioActivities(1) shouldBe ScenarioActivity.ScenarioNameChanged(
       ScenarioId(processId.value),
-      scenarioActivities(0).scenarioActivityId,
+      scenarioActivities(1).scenarioActivityId,
       ScenarioUser(Some(UserId("1")), UserName("admin"), None, None),
-      scenarioActivities(0).date,
+      scenarioActivities(1).date,
       Some(ScenarioVersionId(1)),
       oldName.value,
       newName.value,
