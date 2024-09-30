@@ -188,7 +188,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
     "migrate RENAME action with comment to scenario_activities table" in {
       val actionComment = "Rename: [marketing-campaign] -> [marketing-campaign-plus]"
 
-      run(
+      val scenario = run(
         for {
           process <- processInsertQuery += processEntity(user, now)
           _       <- processVersionsTable += processVersionEntity(process)
@@ -196,16 +196,16 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           _       <- actionInsertQuery += processActionEntity(process, ScenarioActionName.Rename, Some(comment.id))
           _       <- migration.migrate
           _       <- activitiesDefinitions.scenarioActivitiesTable.result
-        } yield ()
+        } yield process
       )
 
       val entities = run(activitiesDefinitions.scenarioActivitiesTable.result)
 
       entities shouldBe Vector(
         ScenarioActivityEntityData(
-          id = 1,
+          id = entities.head.id,
           activityType = "SCENARIO_NAME_CHANGED",
-          scenarioId = 1,
+          scenarioId = scenario.id.value,
           activityId = entities.head.activityId,
           userId = None,
           userName = "John Doe",
