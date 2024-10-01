@@ -52,7 +52,13 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
     }.toList
 
     expressionCompiler
-      .compileNodeParameters(parameterList, evaluatedParameters, Nil, context, Map.empty)
+      .compileNodeParameters(
+        parameterList,
+        evaluatedParameters,
+        nodeBranchParameters = Nil,
+        context,
+        branchContexts = Map.empty
+      )
       .left
       .fold(List.empty[NodeValidationError])(_.map(PrettyValidationErrors.formatErrorMessage).toList)
 
