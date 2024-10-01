@@ -30,7 +30,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         const nextActivity = activitiesDataWithMetadata[index + 1 + iteration];
         const previousDateItem = getLastDateItem(uiActivities);
 
-        if (previousDateItem?.value?.includes?.(moment(currentActivity.date).format("YYYY-MM-DD"))) {
+        if (previousDateItem?.value?.includes?.(formatDate(currentActivity.date))) {
             return undefined;
         }
 
@@ -41,12 +41,11 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
             return {
                 uiGeneratedId: uuid4(),
                 uiType: "date",
-                value: `${moment.min(dates).format("YYYY-MM-DD")} - ${moment.max(dates).format("YYYY-MM-DD")}`,
+                value: [formatDate(moment.min(dates)), formatDate(moment.max(dates))],
             };
         }
 
-        const currentAndNextActivityDateAreTheSame =
-            moment(currentActivity.date).format("YYYY-MM-DD") === (nextActivity && moment(nextActivity.date).format("YYYY-MM-DD"));
+        const currentAndNextActivityDateAreTheSame = formatDate(currentActivity.date) === (nextActivity && formatDate(nextActivity.date));
         const currentAndNextActivityAreTheSame = currentActivity.type === nextActivity?.type;
 
         if (currentAndNextActivityDateAreTheSame || currentAndNextActivityAreTheSame) {
@@ -61,7 +60,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
 
         const initialActivity = activitiesDataWithMetadata[index];
 
-        const isDateElementPreviouslyAdded = previousDateItem?.value?.includes?.(moment(initialActivity.date).format("YYYY-MM-DD"));
+        const isDateElementPreviouslyAdded = previousDateItem?.value?.includes?.(formatDate(initialActivity.date));
         if (!isDateElementPreviouslyAdded) {
             return {
                 uiGeneratedId: uuid4(),

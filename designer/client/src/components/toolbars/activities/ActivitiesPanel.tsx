@@ -53,7 +53,7 @@ export type ButtonActivity = {
 export type DateActivity = {
     uiGeneratedId: string;
     uiType: "date";
-    value: string;
+    value: string | [string, string];
 };
 
 export type UIActivity = ItemActivity | ButtonActivity | DateActivity;

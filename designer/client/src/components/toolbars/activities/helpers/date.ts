@@ -1,4 +1,5 @@
 import moment from "moment/moment";
+import { Moment } from "moment";
 
 export function formatUiDate(date: string) {
     const now = moment(); // Current date and time
@@ -13,6 +14,6 @@ export function formatUiDate(date: string) {
     }
 }
 
-export function formatDate(date: string) {
+export function formatDate(date: string | Moment) {
     return moment(date).format("YYYY-MM-DD");
 }
