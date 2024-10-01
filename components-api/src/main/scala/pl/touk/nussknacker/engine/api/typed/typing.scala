@@ -88,7 +88,7 @@ object typing {
         fields.map { case (fieldName, fieldType) =>
           fieldName -> fieldType.withoutValue
         },
-        runtimeObjType,
+        runtimeObjType.withoutValue,
         additionalInfo
       )
 
@@ -211,7 +211,7 @@ object typing {
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
     override val valueOpt: None.type = None
 
-    override def withoutValue: TypedClass = this
+    override def withoutValue: TypedClass = TypedClass(klass, params.map(_.withoutValue))
 
     override def display: String = {
       val className = ReflectUtils.simpleNameWithoutSuffix(typeHintsObjType.klass)

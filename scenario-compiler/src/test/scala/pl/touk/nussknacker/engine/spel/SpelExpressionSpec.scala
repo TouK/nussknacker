@@ -1510,6 +1510,151 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ).validExpression.evaluateSync[Any](ctx) shouldBe "unknown"
   }
 
+  test("should cast to record and filter out unwanted keys") {
+    val customCtx = ctx.withVariable(
+      "undiscoveredMap",
+      ContainerOfUnknown(Map("int1" -> 2, "str1" -> "str", "int2" -> 3).asJava)
+    )
+    parse[Any](expr = "#undiscoveredMap.value", context = customCtx).validValue.returnType shouldBe Unknown
+
+    val parsed = parse[Any]("#undiscoveredMap.value.castToRecord({int1: 999, int2: 999})", customCtx)
+
+    parsed.validValue.returnType shouldBe
+      Typed.record(List("int1" -> Typed.typedClass[Integer], "int2" -> Typed.typedClass[Integer]))
+    parsed.validExpression.evaluateSync[Any](customCtx) shouldBe Map("int1" -> 2, "int2" -> 3).asJava
+  }
+
+  test("should cast to record with missing field") {
+    val customCtx = ctx.withVariable(
+      "undiscoveredMap",
+      ContainerOfUnknown(Map("int1" -> 2).asJava)
+    )
+
+    val parsed = parse[Any]("#undiscoveredMap.value.castToRecord({int1: 999, int2: 999})", customCtx)
+
+    parsed.validValue.returnType shouldBe
+      Typed.record(List("int1" -> Typed.typedClass[Integer], "int2" -> Typed.typedClass[Integer]))
+    parsed.validExpression.evaluateSync[Any](customCtx) shouldBe Map("int1" -> 2, "int2" -> null).asJava
+  }
+
+  // todo: lbg - dont support map with key other than string?
+  test("should cast to record with primitive types and complex structures") {
+    val customCtx = ctx.withVariable(
+      "undiscoveredMap",
+      ContainerOfUnknown(
+        Map(
+          "int1"     -> 2,
+          "str1"     -> "str",
+          "boolean1" -> true,
+          "double1"  -> 1.0,
+          "map2"     -> Map("a" -> 1).asJava,
+          "list1"    -> List("a", "b").asJava,
+          "list2"    -> List(Map("a" -> "b").asJava).asJava,
+          "ignored"  -> "x"
+        ).asJava
+      )
+    )
+
+    val parsed = parse[Any](
+      "#undiscoveredMap.value.castToRecord({int1: 999, str1: 'x', boolean1: false," +
+        "double1: 2.0, map2: {a: 1}, list1: {'x'}, list2: {{a: 'x'}}})",
+      customCtx
+    )
+
+    parsed.validValue.returnType shouldBe Typed.record(
+      List(
+        "int1"     -> Typed.typedClass[Integer],
+        "str1"     -> Typed.typedClass[String],
+        "boolean1" -> Typed.typedClass[java.lang.Boolean],
+        "double1"  -> Typed.typedClass[Double],
+        "map2" -> Typed.record(
+          List(
+            "a" -> Typed.typedClass[Integer]
+          )
+        ),
+        "list1" -> Typed.genericTypeClass[util.List[_]](List(Typed.typedClass[String])),
+        "list2" -> Typed.genericTypeClass[util.List[_]](
+          List(
+            Typed.record(
+              List(
+                "a" -> Typed.typedClass[String]
+              )
+            )
+          )
+        ),
+      )
+    )
+    parsed.validExpression.evaluateSync[Any](customCtx) shouldBe Map(
+      "int1"     -> 2,
+      "str1"     -> "str",
+      "boolean1" -> true,
+      "double1"  -> 1.0,
+      "map2"     -> Map("a" -> 1).asJava,
+      "list1"    -> List("a", "b").asJava,
+      "list2"    -> List(Map("a" -> "b").asJava).asJava,
+    ).asJava
+  }
+
+  test("should throw exception if record field cannot be cast") {
+    val customCtx = ctx.withVariable("undiscoveredMap", ContainerOfUnknown(Map("int1" -> 2).asJava))
+
+    val caught = intercept[SpelExpressionEvaluationException] {
+      parse[Any]("#undiscoveredMap.value.castToRecord({int1: 'x'})", customCtx).validExpression
+        .evaluateSync[Any](customCtx)
+    }
+    caught.getCause shouldBe a[ClassCastException]
+    caught.getMessage should include("Cannot cast: {int1=2} to: {int1=x}")
+  }
+
+  test("should throw exception if nested record field cannot be cast") {
+    val customCtx = ctx.withVariable(
+      "undiscoveredMap",
+      ContainerOfUnknown(
+        Map(
+          "record1" -> Map("a" -> 1).asJava
+        ).asJava
+      )
+    )
+
+    val caught = intercept[SpelExpressionEvaluationException] {
+      parse[Any]("#undiscoveredMap.value.castToRecord({record1: {a: 'x'}})", customCtx).validExpression
+        .evaluateSync[Any](customCtx)
+    }
+    caught.getCause shouldBe a[ClassCastException]
+    caught.getMessage should include("Cannot cast: {record1={a=1}} to: {record1={a=x}}")
+  }
+
+  test("should check if given type can be cast to a record") {
+    val customCtx = ctx
+      .withVariable(
+        "undiscoveredNestedMap",
+        ContainerOfUnknown(
+          Map(
+            "record1" -> Map("a" -> 1).asJava
+          ).asJava
+        )
+      )
+      .withVariable(
+        "undiscoveredMap",
+        ContainerOfUnknown(
+          Map("a" -> 1).asJava
+        )
+      )
+    forAll(
+      Table(
+        ("expression", "expectedResult"),
+        ("#undiscoveredNestedMap.value.canCastToRecord({record1: {a: 9}})", true),
+        ("#undiscoveredNestedMap.value.canCastToRecord({a: 9})", false),
+        ("#undiscoveredMap.value.canCastToRecord({a: 9})", true),
+        ("#undiscoveredMap.value.canCastToRecord({a: 9, b: 1})", true),
+        ("#undiscoveredMap.value.canCastToRecord({a: 'x'})", false),
+        ("#undiscoveredMap.value.canCastToRecord({a: {a: 1}})", false),
+      )
+    ) { (expression, expectedResult) =>
+      parse[Any](expression, customCtx).validExpression.evaluateSync[Any](customCtx) shouldBe expectedResult
+    }
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
