@@ -1,5 +1,6 @@
 import { cx } from "@emotion/css";
 import { Box } from "@mui/material";
+import { get } from "lodash";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useArrayState } from "rooks";
@@ -30,7 +31,7 @@ export function appendUuid<T extends NonNullable<unknown>>(o: T): WithUuid<T> {
 
 export type AggregateValue = WithUuid<AggRow>;
 
-export function AggregatorField({ parameterDefinitions, node: { id }, isEditMode, showValidation }: FieldWrapperProps) {
+export function AggregatorField({ parameterDefinitions, node, isEditMode, showValidation }: FieldWrapperProps) {
     const aggregators = useMemo(() => {
         const definition = findParamDefinitionByName(parameterDefinitions, "aggregator");
         return definition.editor.simpleEditor.possibleValues;
@@ -74,11 +75,12 @@ export function AggregatorField({ parameterDefinitions, node: { id }, isEditMode
     );
 
     const findAvailableVariables = useSelector(getFindAvailableVariables);
-    const variableTypes = useMemo(() => findAvailableVariables?.(id), [findAvailableVariables, id]);
+    const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id]);
 
     const errors = showValidation ? fieldErrors : [];
 
     const [hovered, setHovered] = useState<number | null>(null);
+    const outputVariableName = useMemo(() => get(node, "outputVar"), [node]);
 
     const items = useMemo(() => {
         return data.map((item, index) => ({
@@ -91,11 +93,12 @@ export function AggregatorField({ parameterDefinitions, node: { id }, isEditMode
                         aggregators={aggregators}
                         variableTypes={variableTypes}
                         hovered={hovered === 0}
+                        outputVariableName={outputVariableName}
                     />
                 </FieldsRow>
             ),
         }));
-    }, [data, onChangeItem, aggregators, variableTypes, hovered]);
+    }, [data, onChangeItem, aggregators, variableTypes, hovered, outputVariableName]);
 
     useEffect(() => {
         onChange?.(data);
@@ -104,7 +107,7 @@ export function AggregatorField({ parameterDefinitions, node: { id }, isEditMode
     return (
         <NodeRowFieldsProvider
             path={null}
-            label="aggregator"
+            label="Aggregations"
             onFieldRemove={data.length > 1 && onRemove}
             onFieldAdd={() => onAdd()}
             readOnly={!isEditMode}

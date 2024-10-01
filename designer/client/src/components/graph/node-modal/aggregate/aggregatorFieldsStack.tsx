@@ -1,11 +1,12 @@
-import React, { useMemo } from "react";
-import { AggRow, WithUuid } from "./aggregatorField";
-import Input from "../editors/field/Input";
-import { TypeSelect } from "../fragment-input-definition/TypeSelect";
-import { EditableEditor } from "../editors/EditableEditor";
-import { ExpressionLang } from "../editors/expression/types";
+import React, { ChangeEvent, useCallback, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
+import { EditableEditor } from "../editors/EditableEditor";
+import { ExpressionLang, ExpressionObj } from "../editors/expression/types";
+import Input from "../editors/field/Input";
+import { FieldError } from "../editors/Validators";
+import { TypeSelect } from "../fragment-input-definition/TypeSelect";
 import { useFieldsContext } from "../node-row-fields-provider";
+import { AggRow, WithUuid } from "./aggregatorField";
 import { DynamicLabel } from "./dynamicLabel";
 
 export type PossibleValue = {
@@ -19,6 +20,7 @@ type AggregatorFieldsStackProps = {
     aggregators: PossibleValue[];
     variableTypes: VariableTypes;
     hovered?: boolean;
+    outputVariableName?: string;
 };
 
 const PRESETS = [
@@ -36,6 +38,7 @@ export function AggregatorFieldsStack({
     aggregators,
     variableTypes,
     hovered,
+    outputVariableName,
 }: AggregatorFieldsStackProps) {
     const { readOnly } = useFieldsContext();
     const options = useMemo<{ value: string; label: string; expression?: string }[]>(() => {
@@ -48,7 +51,11 @@ export function AggregatorFieldsStack({
 
     return (
         <>
-            <DynamicLabel flexBasis="35%" label="output variable field" hovered={hovered}>
+            <DynamicLabel
+                flexBasis="35%"
+                label={`${outputVariableName ? `#${outputVariableName}` : "output variable"} field`}
+                hovered={hovered}
+            >
                 <Input
                     onChange={(e) => {
                         onChange(uuid, { name: e.target.value.replaceAll(/["]/g, "") });
@@ -71,7 +78,7 @@ export function AggregatorFieldsStack({
                     readOnly={readOnly}
                 />
             </DynamicLabel>
-            <DynamicLabel flexBasis="70%" label="source" hovered={hovered}>
+            <DynamicLabel flexBasis="70%" label="aggregator input" hovered={hovered}>
                 <EditableEditor
                     variableTypes={variableTypes}
                     expressionObj={{
