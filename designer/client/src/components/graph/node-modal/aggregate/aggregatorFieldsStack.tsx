@@ -32,6 +32,16 @@ const PRESETS = [
     },
 ];
 
+function applyPreset(value: string) {
+    return PRESETS.find((p) => p.value === value) || { agg: value };
+}
+
+// use existing method to display only red border without any message
+const EMPTY_REQUIRED_ERROR: FieldError = {
+    message: "",
+    description: "",
+};
+
 export function AggregatorFieldsStack({
     value: { agg, name, uuid, expression },
     onChange,
@@ -49,6 +59,35 @@ export function AggregatorFieldsStack({
         return [...values, ...PRESETS];
     }, [aggregators]);
 
+    const onChangeName = useCallback(
+        ({ target }: ChangeEvent<HTMLInputElement>) => {
+            onChange(uuid, { name: target.value.replaceAll(/["]/g, "") });
+        },
+        [onChange, uuid],
+    );
+
+    const onChangeType = useCallback(
+        (value: string) => {
+            onChange(uuid, applyPreset(value));
+        },
+        [onChange, uuid],
+    );
+
+    const expressionObj: ExpressionObj = useMemo(
+        () => ({
+            expression,
+            language: ExpressionLang.SpEL,
+        }),
+        [expression],
+    );
+
+    const onChangeExpression = useCallback(
+        (value: string) => {
+            onChange(uuid, { expression: value });
+        },
+        [onChange, uuid],
+    );
+
     return (
         <>
             <DynamicLabel
@@ -57,22 +96,17 @@ export function AggregatorFieldsStack({
                 hovered={hovered}
             >
                 <Input
-                    onChange={(e) => {
-                        onChange(uuid, { name: e.target.value.replaceAll(/["]/g, "") });
-                    }}
+                    onChange={onChangeName}
                     value={name}
                     disabled={readOnly}
+                    showValidation
+                    fieldErrors={name ? [] : [EMPTY_REQUIRED_ERROR]}
+                    autoFocus={!name}
                 />
             </DynamicLabel>
             <DynamicLabel flexBasis="35%" label="aggregator" hovered={hovered}>
                 <TypeSelect
-                    onChange={(value) => {
-                        const preset = PRESETS.find((p) => p.value === value);
-                        if (preset) {
-                            return onChange(uuid, preset);
-                        }
-                        onChange(uuid, { agg: value });
-                    }}
+                    onChange={onChangeType}
                     value={options.find(({ value }) => value === agg)}
                     options={options}
                     readOnly={readOnly}
@@ -81,14 +115,11 @@ export function AggregatorFieldsStack({
             <DynamicLabel flexBasis="70%" label="aggregator input" hovered={hovered}>
                 <EditableEditor
                     variableTypes={variableTypes}
-                    expressionObj={{
-                        expression,
-                        language: ExpressionLang.SpEL,
-                    }}
-                    onValueChange={(value) => {
-                        onChange(uuid, { expression: value });
-                    }}
+                    expressionObj={expressionObj}
+                    onValueChange={onChangeExpression}
                     readOnly={readOnly}
+                    showValidation
+                    fieldErrors={expression ? [] : [EMPTY_REQUIRED_ERROR]}
                 />
             </DynamicLabel>
         </>

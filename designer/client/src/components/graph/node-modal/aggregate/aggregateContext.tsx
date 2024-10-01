@@ -41,10 +41,9 @@ export const AggregateContextProvider = ({ children, node, setProperty, errors }
     const onAggChange = useCallback(
         (values: AggregateValue[]) => {
             setAggValues(values);
-            const aggregator = Object.fromEntries(values.map(({ name, agg }) => (name && agg ? [name, agg] : null)).filter(Boolean));
-            const aggregateBy = Object.fromEntries(
-                values.map(({ name, expression }) => (name && expression ? [name, expression] : null)).filter(Boolean),
-            );
+            const validValues = values.filter(({ name, agg, expression }) => name && agg && expression);
+            const aggregator = Object.fromEntries(validValues.map(({ name, agg }) => [name, agg]));
+            const aggregateBy = Object.fromEntries(validValues.map(({ name, expression }) => [name, expression]));
             setProperty(aggregatorPath, serializeAggregate("aggregator", aggregator));
             setProperty(aggregateByPath, serializeAggregate("aggregateBy", aggregateBy));
         },
