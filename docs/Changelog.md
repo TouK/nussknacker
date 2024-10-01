@@ -8,10 +8,9 @@
 
 ### 1.18.0 (Not released yet)
 
-* [6944](https://github.com/TouK/nussknacker/pull/6944) AdhocTesting (old GenericAction/TestWithForm) changes
-  * GenericAction was used only to do adhoc testing - `GenericAction` was renamed to `AdhocTesting`
+* [6944](https://github.com/TouK/nussknacker/pull/6944) Changes around adhoc testing feature
   * `test-with-form` button was renamed to `adhoc-testing`
-  * AdhocTesting has custom validation endpoint to handle whole validation od parameters on backend
+  * Improved form validators inside adhoc tests (validation was moved to backend)
 * Batch processing mode related improvements:
   * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
     are registered based on class of Serializer instead of instance of Serializer. Thanks to this change, it is possible to use `RAW<>`
