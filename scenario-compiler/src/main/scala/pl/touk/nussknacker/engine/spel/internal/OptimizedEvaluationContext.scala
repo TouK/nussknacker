@@ -39,7 +39,7 @@ class EvaluationContextPreparer(
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      private val conversionAwareMethodsDiscovery = new ArrayToListConversionHandler.ConversionAwareMethodsDiscovery()
+      private val conversionAwareMethodsDiscovery = new RuntimeConversionHandler.ConversionAwareMethodsDiscovery()
 
       override def resolve(
           context: EvaluationContext,
@@ -53,7 +53,7 @@ class EvaluationContextPreparer(
           null
         } else {
           spelExpressionExcludeList.blockExcluded(targetObject, name)
-          new NuReflectiveMethodExecutor(methodExecutor)
+          new NuReflectiveMethodExecutor(methodExecutor, classLoader)
         }
       }
 
