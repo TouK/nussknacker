@@ -918,7 +918,7 @@
     "methods": {
       "canCastTo": [
         {
-          "description": "Checks if a type can be casted to a given class",
+          "description": "Checks if a type can be cast to a given class",
           "name": "canCastTo",
           "signatures": [
             {
@@ -932,7 +932,7 @@
       ],
       "castTo": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
           "name": "castTo",
           "signatures": [
             {
@@ -946,7 +946,7 @@
       ],
       "castToOrNull": [
         {
-          "description": "Casts a type to a given class or return null if type cannot be casted.",
+          "description": "Casts a type to a given class or return null if type cannot be cast.",
           "name": "castToOrNull",
           "signatures": [
             {
@@ -2867,7 +2867,7 @@
       ],
       "canCastTo": [
         {
-          "description": "Checks if a type can be casted to a given class",
+          "description": "Checks if a type can be cast to a given class",
           "name": "canCastTo",
           "signatures": [
             {
@@ -2881,7 +2881,7 @@
       ],
       "castTo": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
           "name": "castTo",
           "signatures": [
             {
@@ -2895,7 +2895,7 @@
       ],
       "castToOrNull": [
         {
-          "description": "Casts a type to a given class or return null if type cannot be casted.",
+          "description": "Casts a type to a given class or return null if type cannot be cast.",
           "name": "castToOrNull",
           "signatures": [
             {
@@ -2969,7 +2969,7 @@
     "methods": {
       "canCastTo": [
         {
-          "description": "Checks if a type can be casted to a given class",
+          "description": "Checks if a type can be cast to a given class",
           "name": "canCastTo",
           "signatures": [
             {
@@ -2983,7 +2983,7 @@
       ],
       "castTo": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
           "name": "castTo",
           "signatures": [
             {
@@ -2997,7 +2997,7 @@
       ],
       "castToOrNull": [
         {
-          "description": "Casts a type to a given class or return null if type cannot be casted.",
+          "description": "Casts a type to a given class or return null if type cannot be cast.",
           "name": "castToOrNull",
           "signatures": [
             {
@@ -9942,7 +9942,7 @@
     "methods": {
       "canCastTo": [
         {
-          "description": "Checks if a type can be casted to a given class",
+          "description": "Checks if a type can be cast to a given class",
           "name": "canCastTo",
           "signatures": [
             {
@@ -9956,7 +9956,7 @@
       ],
       "castTo": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
           "name": "castTo",
           "signatures": [
             {
@@ -9970,7 +9970,7 @@
       ],
       "castToOrNull": [
         {
-          "description": "Casts a type to a given class or return null if type cannot be casted.",
+          "description": "Casts a type to a given class or return null if type cannot be cast.",
           "name": "castToOrNull",
           "signatures": [
             {
@@ -11307,7 +11307,7 @@
     "methods": {
       "canCastTo": [
         {
-          "description": "Checks if a type can be casted to a given class",
+          "description": "Checks if a type can be cast to a given class",
           "name": "canCastTo",
           "signatures": [
             {
@@ -11321,7 +11321,7 @@
       ],
       "castTo": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
           "name": "castTo",
           "signatures": [
             {
@@ -11335,7 +11335,7 @@
       ],
       "castToOrNull": [
         {
-          "description": "Casts a type to a given class or return null if type cannot be casted.",
+          "description": "Casts a type to a given class or return null if type cannot be cast.",
           "name": "castToOrNull",
           "signatures": [
             {
@@ -11374,7 +11374,7 @@
     "methods": {
       "canCastTo": [
         {
-          "description": "Checks if a type can be casted to a given class",
+          "description": "Checks if a type can be cast to a given class",
           "name": "canCastTo",
           "signatures": [
             {
@@ -11388,7 +11388,7 @@
       ],
       "castTo": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be casted.",
+          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
           "name": "castTo",
           "signatures": [
             {
@@ -11402,7 +11402,7 @@
       ],
       "castToOrNull": [
         {
-          "description": "Casts a type to a given class or return null if type cannot be casted.",
+          "description": "Casts a type to a given class or return null if type cannot be cast.",
           "name": "castToOrNull",
           "signatures": [
             {
