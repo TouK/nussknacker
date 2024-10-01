@@ -58,19 +58,19 @@ private[extension] class CastMethodDefinitions(private val classesWithTyping: Ma
         (_, x) => canCastToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
         "canCastTo",
-        Some("Checks if a type can be casted to a given class")
+        Some("Checks if a type can be cast to a given class")
       ),
       FunctionalMethodDefinition(
         (_, x) => castToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
         "castTo",
-        Some("Casts a type to a given class or throws exception if type cannot be casted.")
+        Some("Casts a type to a given class or throws exception if type cannot be cast.")
       ),
       FunctionalMethodDefinition(
         (_, x) => castToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
         "castToOrNull",
-        Some("Casts a type to a given class or return null if type cannot be casted.")
+        Some("Casts a type to a given class or return null if type cannot be cast.")
       ),
     ).groupBy(_.name)
 
