@@ -7,24 +7,24 @@ import { useTranslation } from "react-i18next";
 import CommentInput from "../comment/CommentInput";
 import { Typography } from "@mui/material";
 import httpService from "../../http/HttpService";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 
-export type AddCommentWindowContentProps = WindowContentProps<number, { handleSuccess?: () => Promise<void> }>;
-
-const AddCommentDialog = (props: AddCommentWindowContentProps) => {
+const AddCommentDialog = (props: WindowContentProps) => {
     const [comment, setState] = useState("");
     const { t } = useTranslation();
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
+    const dispatch = useDispatch();
 
     const confirmAction = useCallback(async () => {
         const status = await httpService.addComment(processName, processVersionId, comment);
         if (status === "success") {
-            await props.data.meta?.handleSuccess();
+            await dispatch(await getScenarioActivities(processName));
             props.close();
         }
-    }, [comment, processName, processVersionId, props]);
+    }, [comment, dispatch, processName, processVersionId, props]);
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [

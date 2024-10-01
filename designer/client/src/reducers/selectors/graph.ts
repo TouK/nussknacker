@@ -81,3 +81,8 @@ export const getAdditionalFields = createSelector(getScenarioGraph, (p) => p.pro
 export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);
+
+export const getActivities = createSelector(
+    (state: RootState) => state.processActivity,
+    (state) => state.activities || [],
+);

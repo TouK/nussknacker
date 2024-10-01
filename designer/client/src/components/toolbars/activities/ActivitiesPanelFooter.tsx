@@ -1,8 +1,6 @@
 import React, { useCallback } from "react";
 import { Box, Button, lighten, styled } from "@mui/material";
 import { useWindows, WindowKind } from "../../../windowManager";
-import { AddCommentWindowContentProps } from "../../modals/AddCommentDialog";
-import { AddAttachmentWindowContentProps } from "../../modals/AddAttachmentDialog";
 
 const StyledFooterButton = styled(Button)(({ theme }) => ({
     textTransform: "none",
@@ -16,35 +14,26 @@ const StyledFooterButton = styled(Button)(({ theme }) => ({
     },
 }));
 
-interface Props {
-    handleFetchActivities: () => Promise<void>;
-}
-export const ActivitiesPanelFooter = ({ handleFetchActivities }: Props) => {
+export const ActivitiesPanelFooter = () => {
     const { open } = useWindows();
 
     const handleOpenAddComment = useCallback(() => {
-        open<AddCommentWindowContentProps["data"]["meta"]>({
+        open({
             title: "Add comment",
             isModal: true,
             shouldCloseOnEsc: true,
             kind: WindowKind.addComment,
-            meta: {
-                handleSuccess: handleFetchActivities,
-            },
         });
-    }, [handleFetchActivities, open]);
+    }, [open]);
 
     const handleOpenAddAttachment = useCallback(() => {
-        open<AddAttachmentWindowContentProps["data"]["meta"]>({
+        open({
             title: "Add attachment",
             isModal: true,
             shouldCloseOnEsc: true,
             kind: WindowKind.addAttachment,
-            meta: {
-                handleSuccess: handleFetchActivities,
-            },
         });
-    }, [handleFetchActivities, open]);
+    }, [open]);
 
     return (
         <Box my={2} mx={1} display={"flex"} justifyContent={"space-between"} gap={1.5}>

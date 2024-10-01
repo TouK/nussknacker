@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import httpService, { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "../../../http/HttpService";
+import { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "../../../http/HttpService";
 import { VariableSizeList } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
@@ -10,10 +10,9 @@ import { useActivitiesSearch } from "./useActivitiesSearch";
 import { ActivitiesSearch } from "./ActivitiesSearch";
 import { blendLighten } from "../../../containers/theme/helpers";
 import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
-import { useSelector } from "react-redux";
-import { getProcessName } from "../../../reducers/selectors/graph";
-import { extendActivitiesWithUIData } from "./helpers/extendActivitiesWithUIData";
-import { mergeActivityDataWithMetadata } from "./helpers/mergeActivityDataWithMetadata";
+import { useDispatch, useSelector } from "react-redux";
+import { getActivities, getProcessName } from "../../../reducers/selectors/graph";
+import { getScenarioActivities, updateScenarioActivities } from "../../../actions/nk/scenarioActivities";
 
 const StyledVariableSizeList = styled(VariableSizeList)(({ theme }) => ({
     "::-webkit-scrollbar": {
@@ -66,6 +65,9 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const rowHeights = useRef({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const scenarioName = useSelector(getProcessName);
+    const data = useSelector(getActivities);
+
+    const dispatch = useDispatch();
 
     const setRowHeight = useCallback((index: number, height: number) => {
         if (listRef.current) {
@@ -79,43 +81,46 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         return rowHeights.current[index] || estimatedItemSize;
     }, []);
 
-    const [data, setData] = useState<UIActivity[]>([]);
     const { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults } = useActivitiesSearch({
         activities: data,
         handleScrollToItem: (index, align) => listRef.current.scrollToItem(index, align),
     });
 
     const handleHideRow = (index: number, sameItemOccurrence: number) => {
-        setData((prevState) => {
-            return prevState.map((data, indx) => {
-                if (indx === index) {
-                    return { ...data, isClicked: false };
-                }
+        dispatch(
+            updateScenarioActivities((prevState) => {
+                return prevState.map((data, prevStateItemIndex) => {
+                    if (prevStateItemIndex === index) {
+                        return { ...data, isClicked: false };
+                    }
 
-                if (indx <= index && indx > index - sameItemOccurrence - 1) {
-                    return { ...data, isHidden: true };
-                }
+                    if (prevStateItemIndex <= prevStateItemIndex && prevStateItemIndex > index - sameItemOccurrence - 1) {
+                        return { ...data, isHidden: true };
+                    }
 
-                return data;
-            });
-        });
+                    return data;
+                });
+            }),
+        );
         listRef.current.scrollToItem(index - sameItemOccurrence - 2);
     };
 
     const handleShowRow = (index: number, sameItemOccurrence: number) => {
-        setData((prevState) => {
-            return prevState.map((data, indx) => {
-                if (indx === index + sameItemOccurrence) {
-                    return { ...data, isClicked: true };
-                }
+        dispatch(
+            updateScenarioActivities((prevState) => {
+                return prevState.map((data, prevStateItemIndex) => {
+                    if (prevStateItemIndex === index + sameItemOccurrence) {
+                        return { ...data, isClicked: true };
+                    }
 
-                if (indx >= index && indx < index + sameItemOccurrence) {
-                    return { ...data, isHidden: false };
-                }
+                    if (prevStateItemIndex >= index && prevStateItemIndex < index + sameItemOccurrence) {
+                        return { ...data, isHidden: false };
+                    }
 
-                return data;
-            });
-        });
+                    return data;
+                });
+            }),
+        );
     };
 
     const dataToDisplay = useMemo(
@@ -146,20 +151,11 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const handleFetchActivities = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [
-                { data: activitiesMetadata },
-                {
-                    data: { activities },
-                },
-            ] = await Promise.all([httpService.fetchActivitiesMetadata(scenarioName), httpService.fetchActivities(scenarioName)]);
-
-            const mergedActivitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, activitiesMetadata);
-
-            setData(extendActivitiesWithUIData(mergedActivitiesDataWithMetadata));
+            await dispatch(await getScenarioActivities(scenarioName));
         } finally {
             setIsLoading(false);
         }
-    }, [scenarioName]);
+    }, [dispatch, scenarioName]);
 
     useEffect(() => {
         handleFetchActivities();
@@ -229,7 +225,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                     </AutoSizer>
                 )}
             </Box>
-            <ActivitiesPanelFooter handleFetchActivities={handleFetchActivities} />
+            <ActivitiesPanelFooter />
         </ToolbarWrapper>
     );
 };

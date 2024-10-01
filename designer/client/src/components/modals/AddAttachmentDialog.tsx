@@ -6,18 +6,18 @@ import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { useTranslation } from "react-i18next";
 import { Typography } from "@mui/material";
 import httpService from "../../http/HttpService";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import { AddAttachment, Attachment } from "../processAttach/AddAttachment";
 import { AttachmentEl } from "../processAttach/AttachmentEl";
+import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 
-export type AddAttachmentWindowContentProps = WindowContentProps<number, { handleSuccess?: () => Promise<void> }>;
-
-const AddAttachmentDialog = (props: AddAttachmentWindowContentProps) => {
+const AddAttachmentDialog = (props: WindowContentProps) => {
     const [attachments, setAttachment] = useState<Attachment[]>([]);
     const { t } = useTranslation();
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
+    const dispatch = useDispatch();
 
     const confirmAction = useCallback(async () => {
         const attachmentPromises = attachments.map((attachment) =>
@@ -30,7 +30,7 @@ const AddAttachmentDialog = (props: AddAttachmentWindowContentProps) => {
         }
 
         if (results.some((result) => result === "success")) {
-            await props.data.meta?.handleSuccess();
+            await dispatch(await getScenarioActivities(processName));
         }
     }, [attachments, processName, processVersionId, props]);
 
