@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, StaticMethodDefinition}
 
-class ClassDefinitionSetWithExtensionMethodsSpec extends AnyFunSuite with Matchers {
+class ExtensionMethodsSpec extends AnyFunSuite with Matchers {
 
   test(
     "should add extension methods to already existing definitions in ClassDefinitionSet"
@@ -27,9 +27,9 @@ class ClassDefinitionSetWithExtensionMethodsSpec extends AnyFunSuite with Matche
     )
     val definitionsSet = ClassDefinitionSet(Set(stringDefinition, unknownDefinition))
 
-    ClassDefinitionSetWithExtensionMethods(
+    ExtensionMethods.enrichWithExtensionMethods(
       definitionsSet
-    ).value.classDefinitionsMap.map(e => e._1.getName -> e._2.methods.keys) shouldBe Map(
+    ).classDefinitionsMap.map(e => e._1.getName -> e._2.methods.keys) shouldBe Map(
       "java.lang.String" -> Set("toUpperCase"),
       "java.lang.Object" -> Set("toString", "canCastTo", "castTo", "castToOrNull"),
     )

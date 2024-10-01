@@ -41,15 +41,16 @@ private[extension] object CastImpl extends ExtensionMethodsImplFactory {
 
 private[extension] class CastMethodDefinitions(private val classesWithTyping: Map[Class[_], TypingResult]) {
 
-  def createDefinitions(clazz: Class[_]): Map[String, List[MethodDefinition]] =
-    classesWithTyping.filterKeysNow(c => isAssignable(clazz, c)) match {
+  def extractDefinitions(clazz: Class[_]): Map[String, List[MethodDefinition]] = {
+    val childTypes = classesWithTyping.filterKeysNow(targetClazz =>
+      clazz != targetClazz &&
+        clazz.isAssignableFrom(targetClazz)
+    )
+    childTypes match {
       case allowedClasses if allowedClasses.isEmpty => Map.empty
       case allowedClasses                           => definitions(allowedClasses)
     }
-
-  private def isAssignable(clazz: Class[_], targetClazz: Class[_]): Boolean =
-    clazz != targetClazz &&
-      clazz.isAssignableFrom(targetClazz)
+  }
 
   private def definitions(allowedClasses: Map[Class[_], TypingResult]): Map[String, List[MethodDefinition]] =
     List(
@@ -105,13 +106,7 @@ object CastMethodDefinitions {
   def apply(set: ClassDefinitionSet): CastMethodDefinitions =
     new CastMethodDefinitions(
       set.classDefinitionsMap
-        .map { case (clazz, classDefinition) =>
-          clazz -> Try(classDefinition.clazzName).toOption
-        }
-        .collect { case (clazz: Class[_], Some(t)) =>
-          clazz -> t
-        }
-        .toMap
+        .mapValuesNow(_.clazzName)
     )
 
 }

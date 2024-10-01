@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.clazz
 
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ExpressionConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.extension.ClassDefinitionSetWithExtensionMethods
+import pl.touk.nussknacker.engine.extension.ExtensionMethods
 
 object ClassDefinitionTestUtils {
   val DefaultSettings: ClassExtractionSettings   = ClassExtractionSettings.Default
@@ -21,13 +21,13 @@ object ClassDefinitionTestUtils {
     ClassDefinitionSet(DefaultDiscovery.discoverClassesFromTypes(types))
 
   def createDefinitionWithDefaultsAndExtensions: ClassDefinitionSet =
-    ClassDefinitionSetWithExtensionMethods(createDefinitionForDefaultAdditionalClasses).value
+    ExtensionMethods.enrichWithExtensionMethods(createDefinitionForDefaultAdditionalClasses)
 
   def createDefaultDefinitionForTypesWithExtensions(types: Iterable[TypingResult]): ClassDefinitionSet =
-    ClassDefinitionSetWithExtensionMethods(createDefaultDefinitionForTypes(types)).value
+    ExtensionMethods.enrichWithExtensionMethods(createDefaultDefinitionForTypes(types))
 
   def createDefinitionForClassesWithExtensions(classes: Class[_]*): ClassDefinitionSet =
-    ClassDefinitionSetWithExtensionMethods(createDefinitionForClasses(classes: _*)).value
+    ExtensionMethods.enrichWithExtensionMethods(createDefinitionForClasses(classes: _*))
 
   def createDiscovery(settings: ClassExtractionSettings = DefaultSettings): ClassDefinitionDiscovery =
     new ClassDefinitionDiscovery(new ClassDefinitionExtractor(settings))

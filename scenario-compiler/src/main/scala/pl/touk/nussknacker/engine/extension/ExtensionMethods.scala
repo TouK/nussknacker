@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.extension
 
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+
 import java.lang.reflect.Method
 
 object ExtensionMethods {
@@ -9,6 +11,15 @@ object ExtensionMethods {
   )
 
   private val registry: Set[Class[_]] = declarationsWithImplementations.keySet
+
+  def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {
+    val castMethodDefinitions = CastMethodDefinitions(set)
+    new ClassDefinitionSet(
+      set.classDefinitionsMap.map { case (clazz, definition) =>
+        clazz -> definition.copy(methods = definition.methods ++ castMethodDefinitions.extractDefinitions(clazz))
+      }.toMap // .toMap is needed by scala 2.12
+    )
+  }
 
   def invoke(
       method: Method,
