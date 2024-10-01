@@ -42,8 +42,8 @@ export default function DeployButton(props: ToolbarButtonProps) {
 
     const { open } = useWindows();
 
-    const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
-    const action = (p, c) => HttpService.deploy(p, c).finally(() => dispatch(loadProcessState(processName)));
+    const message = t("panels.actions.deploy.dialog", "Deploy scenario");
+    const action = (p, c, d) => HttpService.deploy(p, c, d).finally(() => dispatch(loadProcessState(processName)));
 
     return (
         <ToolbarButton
@@ -56,7 +56,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
                     title: message,
                     kind: WindowKind.deployProcess,
                     width: ACTION_DIALOG_WIDTH,
-                    meta: { action, displayWarnings: true },
+                    meta: { action, activityName: "DEPLOY", displayWarnings: true },
                 })
             }
             onMouseOver={deployMouseOver}

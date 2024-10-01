@@ -23,7 +23,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
 
     const { open } = useWindows();
     const action = (p, c) => HttpService.cancel(p, c).finally(() => dispatch(loadProcessState(processName)));
-    const message = t("panels.actions.deploy-canel.dialog", "Cancel scenario {{name}}", { name: processName });
+    const message = t("panels.actions.deploy-canel.dialog", "Cancel scenario");
 
     return (
         <ToolbarButton
@@ -35,7 +35,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
                     title: message,
                     kind: WindowKind.deployProcess,
                     width: ACTION_DIALOG_WIDTH,
-                    meta: { action },
+                    meta: { action, activityName: "CANCEL" },
                 })
             }
             type={type}

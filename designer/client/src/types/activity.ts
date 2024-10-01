@@ -7,11 +7,13 @@ export interface ActivityParameterConfig {
     hintText: string | null;
 }
 
+export type ActivityParameterName = string;
+
 export interface ActivityNodeParameters {
     nodeId: NodeId;
-    parameters: Record<string, ActivityParameterConfig>;
+    parameters: { [key: ActivityParameterName]: ActivityParameterConfig };
 }
 
 export type ActivityName = string;
 
-export type ActivityParameters = Record<ActivityName, ActivityNodeParameters[]>;
+export type ActivityParameters = { [key: ActivityName]: ActivityNodeParameters[] };
