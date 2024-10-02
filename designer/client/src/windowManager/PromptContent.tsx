@@ -19,6 +19,7 @@ export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JS
         return {
             footer: css({
                 justifyContent: "flex-end",
+                backgroundColor: "#1D2734",
             }),
             ...props.classnames,
             content,
