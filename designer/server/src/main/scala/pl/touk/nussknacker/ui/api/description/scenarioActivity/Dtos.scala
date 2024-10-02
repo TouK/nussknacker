@@ -586,7 +586,7 @@ object Dtos {
         scenarioVersionId: Option[Long],
         comment: ScenarioActivityComment,
         dateFinished: Option[Instant],
-        status: String,
+        status: Option[String],
         errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
@@ -597,7 +597,7 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List(
-        Some(AdditionalField("status", status)),
+        status.map(AdditionalField("status", _)),
         dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
         errorMessage.map(e => AdditionalField("errorMessage", e)),
       ).flatten

@@ -183,7 +183,7 @@ object Examples {
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
-          status = "Finished",
+          status = Some("IN_PROGRESS"),
           errorMessage = Some("Execution error occurred"),
         ),
         ScenarioActivity.forPerformedSingleExecution(
@@ -197,7 +197,7 @@ object Examples {
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
-          status = "Finished",
+          status = Some("FAILED"),
           errorMessage = None,
         ),
         ScenarioActivity.forPerformedScheduledExecution(

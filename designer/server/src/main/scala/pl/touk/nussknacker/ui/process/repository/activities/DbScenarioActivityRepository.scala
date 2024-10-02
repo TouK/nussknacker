@@ -866,7 +866,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioVersionId = entity.scenarioVersion,
           comment = comment,
           dateFinished = entity.finishedAt.map(_.toInstant),
-          status = "Finished",
+          status = entity.state.map(_.toString),
           errorMessage = entity.errorMessage,
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>

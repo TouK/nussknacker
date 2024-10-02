@@ -210,7 +210,7 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
       dateFinished: Option[Instant],
-      status: String,
+      status: Option[String],
       errorMessage: Option[String],
   ) extends ScenarioActivity
 
