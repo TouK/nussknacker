@@ -379,8 +379,6 @@ class PeriodicDeploymentManagerTest
       PeriodicProcessDeploymentStatus.Scheduled
     )
 
-    println(f.periodicDeploymentManager.managerSpecificScenarioActivities(idWithName).futureValue)
-
     val activities     = f.periodicDeploymentManager.managerSpecificScenarioActivities(idWithName).futureValue
     val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
