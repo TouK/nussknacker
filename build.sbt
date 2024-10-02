@@ -498,6 +498,7 @@ lazy val distribution: Project = sbt
         (liteKafkaComponents / assembly).value           -> "components/lite/liteKafka.jar",
         (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
         (openapiComponents / assembly).value             -> "components/common/openapi.jar",
+        (httpComponents / assembly).value                -> "components/common/http.jar",
         (sqlComponents / assembly).value                 -> "components/common/sql.jar",
       )
     },
@@ -1430,6 +1431,7 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app"))
       (liteKafkaComponents / assembly).value           -> "components/lite/liteKafka.jar",
       (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
       (openapiComponents / assembly).value             -> "components/common/openapi.jar",
+      (httpComponents / assembly).value                -> "components/common/http.jar",
       (sqlComponents / assembly).value                 -> "components/common/sql.jar",
     ),
     javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
@@ -1718,6 +1720,33 @@ lazy val openapiComponents = (project in component("openapi"))
     httpUtils,
     requestResponseComponentsUtils % "it,test",
     flinkComponentsTestkit         % "it,test"
+  )
+
+lazy val httpComponents = (project in component("http"))
+  .settings(commonSettings)
+  .settings(assemblyNoScala("http.jar"): _*)
+  .settings(publishAssemblySettings: _*)
+  .settings(
+    name := "nussknacker-http",
+    libraryDependencies ++= Seq(
+      "org.apache.flink"              % "flink-streaming-java" % flinkV      % Provided,
+      "com.beachape"                 %% "enumeratum"           % enumeratumV % Provided,
+      "org.scalatest"                %% "scalatest"            % scalaTestV  % Test,
+      "org.wiremock"                  % "wiremock"             % wireMockV   % Test,
+      "com.softwaremill.sttp.client" %% "circe"                % "2.2.0",
+      "io.swagger.core.v3"            % "swagger-integration"  % swaggerIntegrationV excludeAll (
+        ExclusionRule(organization = "jakarta.activation"),
+        ExclusionRule(organization = "jakarta.validation")
+      ),
+    ),
+  )
+  .dependsOn(
+    httpUtils,
+    componentsUtils                % Provided,
+    jsonUtils                      % Provided,
+    commonUtils                    % Provided,
+    requestResponseComponentsUtils % Test,
+    flinkComponentsTestkit         % Test
   )
 
 lazy val sqlComponents = (project in component("sql"))
@@ -2140,6 +2169,7 @@ lazy val modules = List[ProjectReference](
   flinkTableApiComponents,
   defaultModel,
   openapiComponents,
+  httpComponents,
   scenarioCompiler,
   benchmarks,
   kafkaUtils,
