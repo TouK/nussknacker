@@ -46,18 +46,23 @@ class CastImpl(target: Any, classLoader: ClassLoader) extends Cast {
 
   override def castToOrNull[T >: Null](className: String): T = Try { castTo[T](className) }.getOrElse(null)
 
-  override def canCastToRecord[T <: RecordType](record: T): Boolean =
-    (Typed.fromInstance(target).withoutValue, Typed.fromInstance(record).withoutValue) match {
+  override def canCastToRecord[T <: RecordType](record: T): Boolean = {
+    val targetType        = Typed.fromInstance(record).withoutValue
+    val transformedTarget = filterOutMapElements(target, targetType)
+    val currentType       = Typed.fromInstance(transformedTarget).withoutValue
+    (currentType, targetType) match {
       case (t1: TypedObjectTypingResult, t2: TypedObjectTypingResult) => t1.canBeSubclassOf(t2)
       case _                                                          => false
     }
+  }
 
   override def castToRecord[T <: RecordType](record: T): T = {
-    val currentType = Typed.fromInstance(target).withoutValue
-    val targetType  = Typed.fromInstance(record).withoutValue
+    val targetType        = Typed.fromInstance(record).withoutValue
+    val transformedTarget = filterOutMapElements(target, targetType)
+    val currentType       = Typed.fromInstance(transformedTarget).withoutValue
     (currentType, targetType) match {
       case (t1: TypedObjectTypingResult, t2: TypedObjectTypingResult) if t1.canBeSubclassOf(t2) =>
-        filterOutMapElements(target, targetType).asInstanceOf[T]
+        transformedTarget.asInstanceOf[T]
       case _ => throw new ClassCastException(s"Cannot cast: $target to: $record")
     }
   }
@@ -67,15 +72,11 @@ class CastImpl(target: Any, classLoader: ClassLoader) extends Cast {
 
   private def filterOutMapElements(target: Any, typingResult: TypingResult): Any =
     (target, typingResult) match {
-      case (m: util.Map[_, _], TypedObjectTypingResult(fields, runtime, _)) if runtime.klass.isInstance(m) =>
-        m.asScala
-          .map { case (k, v) =>
-            k -> fields.get(k.asInstanceOf[String]).map(t => filterOutMapElements(v, t))
-          }
-          .collect { case (k, Some(v)) =>
-            k -> v
-          }
-          .asJava
+      case (m: util.Map[String, Any] @unchecked, TypedObjectTypingResult(fields, runtime, _))
+          if runtime.klass.isInstance(m) =>
+        fields.map { case (key, typing) =>
+          key -> filterOutMapElements(m.get(key), typing)
+        }.asJava
       case (l: util.List[_], TypedClass(klass, param :: Nil)) if klass.isInstance(l) =>
         l.asScala
           .map(e => filterOutMapElements(e, param))

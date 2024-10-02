@@ -1524,6 +1524,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parsed.validExpression.evaluateSync[Any](customCtx) shouldBe Map("int1" -> 2, "int2" -> 3).asJava
   }
 
+  // todo: lbg - should we allow strict mode or not? If we accept that field can be missing or not
   test("should cast to record with missing field") {
     val customCtx = ctx.withVariable(
       "undiscoveredMap",
@@ -1644,7 +1645,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       Table(
         ("expression", "expectedResult"),
         ("#undiscoveredNestedMap.value.canCastToRecord({record1: {a: 9}})", true),
-        ("#undiscoveredNestedMap.value.canCastToRecord({a: 9})", false),
+        ("#undiscoveredNestedMap.value.canCastToRecord({a: 9})", true),
+        ("#undiscoveredNestedMap.value.canCastToRecord({record1: 9})", false),
         ("#undiscoveredMap.value.canCastToRecord({a: 9})", true),
         ("#undiscoveredMap.value.canCastToRecord({a: 9, b: 1})", true),
         ("#undiscoveredMap.value.canCastToRecord({a: 'x'})", false),
@@ -1653,6 +1655,24 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ) { (expression, expectedResult) =>
       parse[Any](expression, customCtx).validExpression.evaluateSync[Any](customCtx) shouldBe expectedResult
     }
+  }
+
+  test("should return null if castToRecordOrNull fails") {
+    val customCtx = ctx.withVariable("undiscoveredMap", ContainerOfUnknown(Map("a" -> 1).asJava))
+    parse[Any](
+      expr = "#undiscoveredMap.value.castToRecordOrNull({a: 'x'})",
+      context = customCtx,
+      methodExecutionForUnknownAllowed = true
+    ).validExpression.evaluateSync[Any](customCtx) == null shouldBe true
+  }
+
+  test("should castToRecordOrNull succeed") {
+    val customCtx = ctx.withVariable("undiscoveredMap", ContainerOfUnknown(Map("a" -> 1).asJava))
+    parse[Any](
+      expr = "#undiscoveredMap.value.castToRecordOrNull({a: 9})",
+      context = customCtx,
+      methodExecutionForUnknownAllowed = true
+    ).validExpression.evaluateSync[Any](customCtx) shouldBe Map("a" -> 1).asJava
   }
 
 }
