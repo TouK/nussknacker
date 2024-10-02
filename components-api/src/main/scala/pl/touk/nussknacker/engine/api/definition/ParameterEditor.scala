@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.api.definition
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.generic.semiauto.deriveEncoder
+import io.circe.{Decoder, Encoder, HCursor, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -74,7 +75,7 @@ object PeriodParameterEditor {
  */
 case object CronParameterEditor extends SimpleParameterEditor
 
-@JsonCodec case class FixedValuesParameterEditor(
+case class FixedValuesParameterEditor(
     possibleValues: List[FixedExpressionValue],
     mode: FixedValuesEditorMode = FixedValuesEditorMode.LIST
 ) extends SimpleParameterEditor
@@ -114,4 +115,22 @@ object FixedValuesParameterEditor {
 
   implicit val fixedValuesEditorModeDecoder: Decoder[FixedValuesEditorMode] =
     Decoder.decodeString.emapTry(name => Try(FixedValuesEditorMode.fromName(name)))
+
+  implicit val fixedValuesParameterEditorEncoder: Encoder[FixedValuesParameterEditor] =
+    deriveEncoder[FixedValuesParameterEditor]
+
+  implicit val fixedValuesParameterEditorDecoder: Decoder[FixedValuesParameterEditor] = { (c: HCursor) =>
+    {
+      for {
+        possibleValues <- c.downField("possibleValues").as[List[FixedExpressionValue]]
+        modeOpt        <- c.downField("mode").as[Option[String]]
+      } yield {
+        FixedValuesParameterEditor(
+          possibleValues,
+          modeOpt.map(FixedValuesEditorMode.fromName).getOrElse(FixedValuesEditorMode.LIST)
+        )
+      }
+    }
+  }
+
 }
