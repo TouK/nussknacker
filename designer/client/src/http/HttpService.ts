@@ -18,7 +18,7 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeId, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -27,7 +27,6 @@ import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInf
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { GenericValidationRequest } from "../actions/nk/genericAction";
-import { EventTrackingSelector } from "../containers/event-tracking";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
 
@@ -95,6 +94,8 @@ export type SourceWithParametersTest = {
     sourceId: string;
     parameterExpressions: { [paramName: string]: Expression };
 };
+
+export type NodesDeploymentData = Record<NodeId, Record<string, string>>;
 
 export type NodeUsageData = {
     fragmentNodeId?: string;
@@ -315,9 +316,13 @@ class HttpService {
             );
     }
 
-    deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
+    deploy(processName: string, comment?: string, nodesDeploymentData?: NodesDeploymentData): Promise<{ isSuccess: boolean }> {
+        const runDeploymentRequest = {
+            ...(nodesDeploymentData && { nodesDeploymentData: nodesDeploymentData }),
+            ...(comment && { comment: comment }),
+        };
         return api
-            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
+            .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, runDeploymentRequest)
             .then(() => {
                 return { isSuccess: true };
             })
@@ -578,6 +583,21 @@ class HttpService {
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    getActivityParameters(processName: string, scenarioGraph: ScenarioGraph) {
+        const promise = api.post(
+            `/activityInfo/${encodeURIComponent(processName)}/activityParameters`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToGetTestParameters", "Failed to get activity parameters definition"),
                 error,
                 true,
             ),

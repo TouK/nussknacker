@@ -1,9 +1,20 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.process.SourceFactory
+import org.apache.flink.streaming.api.datastream.DataStreamSource
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, UnboundedStreamComponent}
+import pl.touk.nussknacker.engine.api.definition.{
+  BoolParameterEditor,
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  RawParameterEditor
+}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
+import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithActivityParameters}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 import scala.jdk.CollectionConverters._
@@ -13,5 +24,85 @@ object BoundedSource extends SourceFactory with UnboundedStreamComponent {
   @MethodToInvoke
   def source(@ParamName("elements") elements: java.util.List[Any]) =
     new CollectionSource[Any](elements.asScala.toList, None, Unknown)
+
+}
+
+object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamComponent {
+
+  @MethodToInvoke
+  def source(@ParamName("elements") elements: java.util.List[Any]) =
+    new CollectionSource[Any](elements.asScala.toList, None, Unknown) with WithActivityParameters {
+
+      override def activityParametersDefinition: Map[String, Map[String, ParameterConfig]] = {
+        val fixedValuesEditor = Some(
+          FixedValuesParameterEditor(
+            List(
+              FixedExpressionValue("Continue", "Continue", Some("Resumes reading data where it previously stopped.")),
+              FixedExpressionValue("Reset", "Reset", Some("Starts reading new events only.")),
+              FixedExpressionValue("Restart", "Restart", Some("Rewinds reading from the earliest event.")),
+            ),
+            FixedValuesEditorMode.RADIO
+          )
+        )
+        Map(
+          ScenarioActionName.Deploy.value -> Map(
+            "offset" -> ParameterConfig(
+              defaultValue = None,
+              editor = Some(RawParameterEditor),
+              validators = None,
+              label = Some("Offset"),
+              hintText = Some(
+                "Set offset to setup source to emit elements from specified start point in input collection. Empty field resets collection to the beginning."
+              )
+            ),
+            // TODO: remove offsetResetStrategy
+            "offsetResetStrategy" -> ParameterConfig(
+              defaultValue = Some("Restart"),
+              editor = fixedValuesEditor,
+              validators = None,
+              label = Some("Starting point strategy"),
+              hintText = Some("Example of parameter with fixed values")
+            ),
+          )
+        )
+      }
+
+      override protected def createSourceStream[T](
+          list: List[T],
+          env: StreamExecutionEnvironment,
+          flinkNodeContext: FlinkCustomNodeContext
+      ): DataStreamSource[T] = {
+        val offsetOpt = flinkNodeContext.nodeDeploymentData.flatMap(_.get("offset"))
+        val elementsWithOffset = offsetOpt match {
+          case Some(offset) => list.drop(offset.toInt)
+          case _            => list
+        }
+        super.createSourceStream(elementsWithOffset, env, flinkNodeContext)
+      }
+
+    }
+
+}
+
+object DummyBoundedSourceToDelete extends SourceFactory with UnboundedStreamComponent {
+
+  @MethodToInvoke
+  def source(@ParamName("elements") elements: java.util.List[Any]) =
+    new CollectionSource[Any](elements.asScala.toList, None, Unknown) with WithActivityParameters {
+
+      override def activityParametersDefinition: Map[String, Map[String, ParameterConfig]] =
+        Map(
+          ScenarioActionName.Deploy.value -> Map(
+            "otherParameter" -> ParameterConfig(
+              defaultValue = None,
+              editor = Some(BoolParameterEditor),
+              validators = None,
+              label = Some("Other parameter"),
+              hintText = Some("this is hint")
+            )
+          )
+        )
+
+    }
 
 }

@@ -38,6 +38,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
+import pl.touk.nussknacker.ui.api.ManagementResources.RunDeploymentRequest
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
@@ -333,7 +334,10 @@ trait NuResourcesTest
   ): RouteTestResult =
     Post(
       s"/processManagement/deploy/$processName",
-      HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))
+      HttpEntity(
+        ContentTypes.`application/json`,
+        RunDeploymentRequest(None, comment.map(ApiCallComment(_))).asJson.noSpaces
+      )
     ) ~>
       withPermissions(deployRoute(), Permission.Deploy, Permission.Read)
 

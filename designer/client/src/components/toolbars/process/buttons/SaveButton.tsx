@@ -17,8 +17,8 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
     const unsavedNewName = useSelector(getProcessUnsavedNewName);
     const isRenamed = useSelector(isProcessRenamed);
     const title = isRenamed
-        ? t("saveProcess.renameTitle", "Save scenario as {{name}}", { name: unsavedNewName })
-        : t("saveProcess.title", "Save scenario {{name}}", { name: processName });
+        ? t("saveProcess.renameTitle", "Save scenario as", { name: unsavedNewName })
+        : t("saveProcess.title", "Save scenario", { name: processName });
 
     const { open } = useWindows();
     const onClick = () =>
