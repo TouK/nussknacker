@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
@@ -133,7 +133,7 @@ object MockableDeploymentManagerProvider {
     override def managerSpecificScenarioActivities(
         processIdWithName: ProcessIdWithName
     ): Future[List[ScenarioActivity]] =
-      Future.successful(Nil)
+      Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
 
     override def close(): Unit = {}
   }
@@ -142,10 +142,10 @@ object MockableDeploymentManagerProvider {
   //       improved, but there is no need to do it ATM.
   object MockableDeploymentManager {
 
-    private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
-    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
-    private val deploymentResults =
-      new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
+    private val scenarioStatuses  = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
+    private val testResults       = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
+    private val deploymentResults = new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
+    private val managerSpecificScenarioActivities = new AtomicReference[List[ScenarioActivity]](List.empty)
 
     def configureScenarioStatuses(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
       MockableDeploymentManager.scenarioStatuses.set(scenarioStates)
@@ -159,10 +159,15 @@ object MockableDeploymentManagerProvider {
       MockableDeploymentManager.testResults.set(scenarioTestResults)
     }
 
+    def configureManagerSpecificScenarioActivities(scenarioActivities: List[ScenarioActivity]): Unit = {
+      MockableDeploymentManager.managerSpecificScenarioActivities.set(scenarioActivities)
+    }
+
     def clean(): Unit = {
       MockableDeploymentManager.scenarioStatuses.set(Map.empty)
       MockableDeploymentManager.deploymentResults.set(Map.empty)
       MockableDeploymentManager.testResults.set(Map.empty)
+      MockableDeploymentManager.managerSpecificScenarioActivities.set(List.empty)
     }
 
   }
