@@ -340,8 +340,8 @@ class DbScenarioActionRepository(
         }
         .sortBy(_._1.performedAt)
         .result
-        .map(_.map { case (data, name) =>
-          (toFinishedProcessAction(data), name)
+        .map(_.flatMap { case (data, name) =>
+          toFinishedProcessAction(data).map((_, name)).toOption
         }.toList)
     )
   }
@@ -374,8 +374,8 @@ class DbScenarioActionRepository(
       .map { case ((scenarioId, _), activity) => scenarioId -> activity }
 
     run(
-      finalQuery.result.map(_.map { case (scenarioId, action) =>
-        (ProcessId(scenarioId.value), toFinishedProcessAction(action))
+      finalQuery.result.map(_.flatMap { case (scenarioId, action) =>
+        toFinishedProcessAction(action).map((ProcessId(scenarioId.value), _)).toOption
       }.toMap)
     )
   }
@@ -392,7 +392,7 @@ class DbScenarioActionRepository(
         )
         .result
         .headOption
-        .map(_.map(toFinishedProcessAction))
+        .map(_.flatMap(toFinishedProcessAction(_).toOption))
     )
 
   override def getFinishedProcessActions(
@@ -407,13 +407,7 @@ class DbScenarioActionRepository(
         .map(actionNames => query.filter { entity => entity.activityType.inSet(activityTypes(actionNames)) })
         .getOrElse(query)
         .result
-        .map(_.toList.map(toFinishedProcessAction).flatMap {
-          case Right(processAction) =>
-            Some(processAction)
-          case Left(error) =>
-            logger.error(s"Could not parse ScenarioActivity stored in the db to the ProcessAction: [$error]")
-            None
-        })
+        .map(_.toList.flatMap(toFinishedProcessAction(_).toOption))
     )
   }
 
@@ -444,6 +438,9 @@ class DbScenarioActionRepository(
       comment = activityEntity.comment.map(_.value),
       buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )
+  }.left.map { error =>
+    logger.error(s"Could not interpret ScenarioActivity stored in the db as ProcessAction: [$error]")
+    error
   }
 
   private def activityId(actionId: ProcessActionId) =
