@@ -45,5 +45,8 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
+  override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
+    Future.successful(List.empty)
+
   override def close(): Unit = ()
 }

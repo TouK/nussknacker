@@ -4,7 +4,8 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.deployment.{BaseDeploymentManager, DMTestScenarioCommand}
+import pl.touk.nussknacker.engine.api.deployment.{BaseDeploymentManager, DMTestScenarioCommand, ScenarioActivity}
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.testmode.TestProcess
 
@@ -29,5 +30,8 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
       }
     }
   }
+
+  override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
+    Future.successful(Nil)
 
 }

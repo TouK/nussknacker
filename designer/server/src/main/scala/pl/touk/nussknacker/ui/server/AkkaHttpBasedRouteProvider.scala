@@ -382,6 +382,7 @@ class AkkaHttpBasedRouteProvider(
 
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         authManager = authManager,
+        deploymentManagerDispatcher = dmDispatcher,
         scenarioActivityRepository = scenarioActivityRepository,
         scenarioService = processService,
         scenarioAuthorizer = processAuthorizer,

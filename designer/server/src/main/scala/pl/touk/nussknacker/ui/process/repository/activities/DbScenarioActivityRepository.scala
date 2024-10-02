@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.sql.Timestamp
-import java.time.Clock
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -601,7 +601,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case activity: ScenarioActivity.PerformedScheduledExecution =>
         createEntity(scenarioActivity)(
           finishedAt = activity.dateFinished.map(Timestamp.from),
-          errorMessage = activity.errorMessage,
         )
       case activity: ScenarioActivity.AutomaticUpdate =>
         createEntity(scenarioActivity)(
@@ -867,21 +866,29 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioVersionId = entity.scenarioVersion,
           comment = comment,
           dateFinished = entity.finishedAt.map(_.toInstant),
+          status = "Finished",
           errorMessage = entity.errorMessage,
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
-        ScenarioActivity
-          .PerformedScheduledExecution(
-            scenarioId = scenarioIdFromEntity(entity),
-            scenarioActivityId = entity.activityId,
-            user = userFromEntity(entity),
-            date = entity.createdAt.toInstant,
-            scenarioVersionId = entity.scenarioVersion,
-            dateFinished = entity.finishedAt.map(_.toInstant),
-            errorMessage = entity.errorMessage,
-          )
-          .asRight
-          .map((entity.id, _))
+        (for {
+          scheduleName <- additionalPropertyFromEntity(entity, "scheduleName")
+          retriesLeft <- additionalPropertyFromEntity(entity, "retriesLeft").flatMap { r =>
+            Try(r.toInt).toEither.left.map(_.getMessage)
+          }
+          status <- additionalPropertyFromEntity(entity, "status")
+          nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
+        } yield ScenarioActivity.PerformedScheduledExecution(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          scenarioVersionId = entity.scenarioVersion,
+          dateFinished = entity.finishedAt.map(_.toInstant),
+          scheduleName = scheduleName,
+          retriesLeft = retriesLeft,
+          status = status,
+          nextRetryAt = nextRetryAt,
+        )).map((entity.id, _))
       case ScenarioActivityType.AutomaticUpdate =>
         (for {
           description <- additionalPropertyFromEntity(entity, "description")
@@ -922,5 +929,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   }
 
   private def toLongOption(str: String) = Try(str.toLong).toOption
+
+  private def toIntOption(str: String) = Try(str.toInt).toOption
 
 }

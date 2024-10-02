@@ -7,7 +7,7 @@ import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
@@ -257,6 +257,9 @@ class MockDeploymentManager(
       case "hello" | "invalid-status" => Future.successful(CustomActionResult("Hi"))
       case _                          => Future.failed(new NotImplementedError())
     }
+
+  override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
+    Future.successful(List.empty)
 
   override def close(): Unit = {}
 

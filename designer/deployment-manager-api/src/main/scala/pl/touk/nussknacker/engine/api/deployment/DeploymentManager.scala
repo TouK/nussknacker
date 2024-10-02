@@ -73,6 +73,8 @@ trait DeploymentManager extends AutoCloseable {
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())
 
+  def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]]
+
 }
 
 sealed trait DeploymentSynchronisationSupport

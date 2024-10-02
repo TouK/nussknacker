@@ -210,6 +210,7 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
       dateFinished: Option[Instant],
+      status: String,
       errorMessage: Option[String],
   ) extends ScenarioActivity
 
@@ -220,7 +221,10 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       dateFinished: Option[Instant],
-      errorMessage: Option[String],
+      scheduleName: String,
+      retriesLeft: Int,
+      status: String,
+      nextRetryAt: Option[Instant],
   ) extends ScenarioActivity
 
   // Other/technical

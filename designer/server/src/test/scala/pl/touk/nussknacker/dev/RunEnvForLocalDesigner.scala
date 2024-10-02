@@ -41,7 +41,7 @@ object RunEnvForLocalDesigner extends IOApp with LazyLogging {
 
   private def log(message: => String) = IO.delay(logger.info(message))
 
-  final case class Config(scalaV: ScalaV = ScalaV.Scala213, customizeYaml: Option[JFile] = None)
+  final case class Config(scalaV: ScalaV = ScalaV.Scala212, customizeYaml: Option[JFile] = None)
 
   object Config {
 
@@ -93,7 +93,7 @@ object RunEnvForLocalDesigner extends IOApp with LazyLogging {
           WaitingForService("wait-for-all", new ShellStrategy().withCommand("pwd")),
         ),
         // Change to 'true' to enable logging
-        tailChildContainers = false
+        tailChildContainers = true
       )
 
 }

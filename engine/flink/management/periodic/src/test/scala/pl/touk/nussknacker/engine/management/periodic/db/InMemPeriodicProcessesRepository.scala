@@ -115,6 +115,15 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     id
   }
 
+  override def getSchedulesState(
+      processName: ProcessName
+  ): Action[SchedulesState] = {
+    val filteredProcesses = processEntities.filter { pe =>
+      pe.processName == processName && deploymentEntities.exists(d => d.periodicProcessId == pe.id)
+    }.toSeq
+    getLatestDeploymentsForPeriodicProcesses(filteredProcesses, deploymentsPerScheduleMaxCount = Int.MaxValue)
+  }
+
   override def markInactive(processId: PeriodicProcessId): Unit =
     processEntities.zipWithIndex
       .find { case (process, _) => process.id == processId }

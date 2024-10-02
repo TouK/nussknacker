@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ScenarioActivity}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -25,6 +25,18 @@ class DeploymentManagerDispatcher(
 
   def deploymentManagerUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): DeploymentManager = {
     managers.forProcessingTypeUnsafe(processingType)
+  }
+
+  def managerSpecificScenarioActivities(
+      processId: ProcessIdWithName
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[List[ScenarioActivity]] = {
+    for {
+      processingType <- processRepository.fetchProcessingType(processId)
+      result <- deploymentManager(processingType) match {
+        case Some(manager) => manager.managerSpecificScenarioActivities(processId)
+        case None          => Future.successful(List.empty)
+      }
+    } yield result
   }
 
 }

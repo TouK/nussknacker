@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   ScenarioAttachment,
   ScenarioComment
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 }
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
+import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
@@ -33,6 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
     authManager: AuthManager,
+    deploymentManagerDispatcher: DeploymentManagerDispatcher,
     scenarioActivityRepository: ScenarioActivityRepository,
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
@@ -115,7 +117,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Read)
-          activities <- fetchActivities(scenarioId)
+          activities <- fetchActivities(ProcessIdWithName(scenarioId, scenarioName))
         } yield ScenarioActivities(activities)
       }
   }
@@ -210,15 +212,16 @@ class ScenarioActivityApiHttpService(
       )
 
   private def fetchActivities(
-      scenarioId: ProcessId
-  ): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] =
-    EitherT
-      .right(
-        dbioActionRunner.run(
-          scenarioActivityRepository.findActivities(scenarioId)
-        )
+      processIdWithName: ProcessIdWithName
+  )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
+    val combined = for {
+      generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
+      deploymentManagerSpecificActivities <- deploymentManagerDispatcher.managerSpecificScenarioActivities(
+        processIdWithName
       )
-      .map(_.map(toDto).toList)
+    } yield generalActivities ++ deploymentManagerSpecificActivities
+    EitherT.right(combined).map(_.map(toDto).toList.sortBy(_.date))
+  }
 
   private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
     scenarioComment match {
@@ -389,7 +392,8 @@ class ScenarioActivityApiHttpService(
             scenarioVersionId,
             comment,
             dateFinished,
-            errorMessage
+            status,
+            errorMessage,
           ) =>
         Dtos.ScenarioActivity.forPerformedSingleExecution(
           id = scenarioActivityId.value,
@@ -398,6 +402,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
           dateFinished = dateFinished,
+          status = status,
           errorMessage = errorMessage,
         )
       case ScenarioActivity.PerformedScheduledExecution(
@@ -407,7 +412,10 @@ class ScenarioActivityApiHttpService(
             date,
             scenarioVersionId,
             dateFinished,
-            errorMessage
+            scheduleName,
+            retriesLeft,
+            status,
+            nextRetryAt,
           ) =>
         Dtos.ScenarioActivity.forPerformedScheduledExecution(
           id = scenarioActivityId.value,
@@ -415,7 +423,10 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           dateFinished = dateFinished,
-          errorMessage = errorMessage,
+          scheduleName = scheduleName,
+          retriesLeft = retriesLeft,
+          status = status,
+          nextRetryAt = nextRetryAt,
         )
       case ScenarioActivity.AutomaticUpdate(
             _,

@@ -222,4 +222,6 @@ class PeriodicDeploymentManager private[periodic] (
   //      We should move periodic mechanism to the core and reuse new synchronization mechanism also in this case.
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
+  override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
+    service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName)
 }

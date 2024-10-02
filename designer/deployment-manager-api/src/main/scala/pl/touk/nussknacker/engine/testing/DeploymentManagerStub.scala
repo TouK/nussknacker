@@ -2,14 +2,13 @@ package pl.touk.nussknacker.engine.testing
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
-import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
@@ -52,6 +51,9 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
   override def customActionsDefinitions: List[CustomActionDefinition] = Nil
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+  override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
+    Future.successful(Nil)
 
   override def close(): Unit = {}
 

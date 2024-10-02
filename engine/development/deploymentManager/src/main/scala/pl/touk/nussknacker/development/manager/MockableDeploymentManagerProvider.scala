@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
@@ -27,7 +27,6 @@ import scala.util.Try
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
   import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   override def createDeploymentManager(
       modelData: BaseModelData,
@@ -130,6 +129,11 @@ object MockableDeploymentManagerProvider {
     }
 
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+    override def managerSpecificScenarioActivities(
+        processIdWithName: ProcessIdWithName
+    ): Future[List[ScenarioActivity]] =
+      Future.successful(Nil)
 
     override def close(): Unit = {}
   }

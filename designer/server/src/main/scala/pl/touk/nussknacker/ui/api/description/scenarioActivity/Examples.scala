@@ -183,6 +183,7 @@ object Examples {
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
+          status = "Finished",
           errorMessage = Some("Execution error occurred"),
         ),
         ScenarioActivity.forPerformedSingleExecution(
@@ -196,6 +197,7 @@ object Examples {
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
+          status = "Finished",
           errorMessage = None,
         ),
         ScenarioActivity.forPerformedScheduledExecution(
@@ -204,7 +206,10 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
-          errorMessage = None,
+          scheduleName = "main-schedule",
+          retriesLeft = 2,
+          status = "FAILURE",
+          nextRetryAt = Some(Instant.parse("2024-01-17T15:21:17Z")),
         ),
         ScenarioActivity.forAutomaticUpdate(
           id = UUID.fromString("33509d37-7657-4229-940f-b5736c82fb13"),
