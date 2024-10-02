@@ -237,7 +237,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             date = date,
             scenarioVersionId = sv,
             dateFinished = None,
-            status = None,
+            status = Some("IN_PROGRESS"),
             errorMessage = None,
             comment = Available("Deployed at the request of business", user.name, date)
           )
