@@ -4,6 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 
 import java.time.temporal.ChronoUnit
@@ -73,8 +74,10 @@ object PeriodParameterEditor {
  */
 case object CronParameterEditor extends SimpleParameterEditor
 
-@JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
-    extends SimpleParameterEditor
+@JsonCodec case class FixedValuesParameterEditor(
+    possibleValues: List[FixedExpressionValue],
+    mode: FixedValuesEditorMode = FixedValuesEditorMode.LIST
+) extends SimpleParameterEditor
 
 @JsonCodec case class FixedValuesWithIconParameterEditor(possibleValues: List[FixedExpressionValueWithIcon])
     extends SimpleParameterEditor
@@ -99,4 +102,16 @@ object DualParameterEditor {
     Decoder.decodeString.emapTry(name => Try(DualEditorMode.fromName(name)))
   }
 
+}
+
+object FixedValuesParameterEditor {
+  def apply(possibleValues: List[FixedExpressionValue]): FixedValuesParameterEditor =
+    FixedValuesParameterEditor(possibleValues, mode = FixedValuesEditorMode.LIST)
+
+  implicit val fixedValuesEditorModeEncoder: Encoder[FixedValuesEditorMode] = new Encoder[FixedValuesEditorMode] {
+    override def apply(a: FixedValuesEditorMode): Json = Encoder.encodeString(a.name())
+  }
+
+  implicit val fixedValuesEditorModeDecoder: Decoder[FixedValuesEditorMode] =
+    Decoder.decodeString.emapTry(name => Try(FixedValuesEditorMode.fromName(name)))
 }

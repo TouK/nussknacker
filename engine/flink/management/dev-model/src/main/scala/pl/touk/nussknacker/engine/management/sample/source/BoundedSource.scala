@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   RawParameterEditor
 }
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.editor.FixedValuesEditorMode
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithActivityParameters}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
@@ -36,10 +37,11 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
         val fixedValuesEditor = Some(
           FixedValuesParameterEditor(
             List(
-              FixedExpressionValue("LATEST", "LATEST"),
-              FixedExpressionValue("EARLIEST", "EARLIEST"),
-              FixedExpressionValue("NONE", "NONE"),
-            )
+              FixedExpressionValue("Continue", "Continue", Some("Resumes reading data where it previously stopped.")),
+              FixedExpressionValue("Reset", "Reset", Some("Starts reading new events only.")),
+              FixedExpressionValue("Restart", "Restart", Some("Rewinds reading from the earliest event.")),
+            ),
+            FixedValuesEditorMode.RADIO
           )
         )
         Map(
@@ -55,7 +57,7 @@ object BoundedSourceWithOffset extends SourceFactory with UnboundedStreamCompone
             ),
             // TODO: remove offsetResetStrategy
             "offsetResetStrategy" -> ParameterConfig(
-              defaultValue = Some("EARLIEST"),
+              defaultValue = Some("Restart"),
               editor = fixedValuesEditor,
               validators = None,
               label = Some("Starting point strategy"),
