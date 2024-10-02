@@ -79,7 +79,7 @@ class PeriodicProcessService(
           nextRetryAt = deployment.nextRetryAt.map(_.toInstant(ZoneOffset.UTC)),
           retriesLeft = deployment.retriesLeft,
         )
-      }.toList)
+      }.toList.sortBy(_.date))
 
   def schedule(
       schedule: ScheduleProperty,
