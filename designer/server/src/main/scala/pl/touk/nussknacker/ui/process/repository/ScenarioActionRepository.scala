@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{AdditionalProperties, ScenarioActivityEntityData, ScenarioActivityType}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -203,7 +203,12 @@ class DbScenarioActionRepository(
         None,
         comment,
         buildInfoProcessingType
-      ).map(a => toFinishedProcessAction(a))
+      ).map(toFinishedProcessAction).map {
+        case Right(processAction) =>
+          processAction
+        case Left(error) =>
+          throw new IllegalArgumentException(s"Could not insert ProcessAction as ScenarioActivity [$error")
+      }
     )
   }
 
@@ -402,27 +407,38 @@ class DbScenarioActionRepository(
         .map(actionNames => query.filter { entity => entity.activityType.inSet(activityTypes(actionNames)) })
         .getOrElse(query)
         .result
-        .map(_.toList.map(toFinishedProcessAction))
+        .map(_.toList.map(toFinishedProcessAction).flatMap {
+          case Right(processAction) =>
+            Some(processAction)
+          case Left(error) =>
+            logger.error(s"Could not parse ScenarioActivity stored in the db to the ProcessAction: [$error]")
+            None
+        })
     )
   }
 
-  private def toFinishedProcessAction(activityEntity: ScenarioActivityEntityData): ProcessAction = {
-    ProcessAction(
-      id = ProcessActionId(activityEntity.activityId.value),
-      processId = ProcessId(activityEntity.scenarioId.value),
-      processVersionId = activityEntity.scenarioVersion
+  private def toFinishedProcessAction(activityEntity: ScenarioActivityEntityData): Either[String, ProcessAction] = {
+    for {
+      processVersionId <- activityEntity.scenarioVersion
         .map(_.value)
         .map(VersionId.apply)
-        .getOrElse(throw new AssertionError(s"Process version not available for finished action: $activityEntity")),
-      createdAt = activityEntity.createdAt.toInstant,
-      performedAt = activityEntity.finishedAt
+        .toRight(s"Process version not available for finished action: $activityEntity")
+      performedAt <- activityEntity.finishedAt
         .map(_.toInstant)
-        .getOrElse(throw new AssertionError(s"PerformedAt not available for finished action: $activityEntity")),
+        .toRight(s"PerformedAt not available for finished action: $activityEntity")
+      actionName <- actionName(activityEntity.activityType)
+        .toRight(s"ActionName not available for finished action: $activityEntity")
+      state <- activityEntity.state
+        .toRight(s"State not available for finished action: $activityEntity")
+    } yield ProcessAction(
+      id = ProcessActionId(activityEntity.activityId.value),
+      processId = ProcessId(activityEntity.scenarioId.value),
+      processVersionId = processVersionId,
+      createdAt = activityEntity.createdAt.toInstant,
+      performedAt = performedAt,
       user = activityEntity.userName.value,
-      actionName = actionName(activityEntity.activityType)
-        .getOrElse(throw new AssertionError(s"ActionName not available for finished action: $activityEntity")),
-      state = activityEntity.state
-        .getOrElse(throw new AssertionError(s"State not available for finished action: $activityEntity")),
+      actionName = actionName,
+      state = state,
       failureMessage = activityEntity.errorMessage,
       commentId = activityEntity.comment.map(_ => activityEntity.id),
       comment = activityEntity.comment.map(_.value),
@@ -462,7 +478,7 @@ class DbScenarioActionRepository(
       case ScenarioActivityType.OutgoingMigration =>
         None
       case ScenarioActivityType.PerformedSingleExecution =>
-        None
+        Some(InstantBatchCustomAction.name)
       case ScenarioActivityType.PerformedScheduledExecution =>
         None
       case ScenarioActivityType.AutomaticUpdate =>
