@@ -13,10 +13,10 @@ export function AdvancedParametersSection({ children, nodeId }: PropsWithChildre
     return (
         <Accordion disableGutters elevation={0} sx={{ border: 0, "&::before": { display: "none" } }}>
             <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
+                expandIcon={<ExpandMoreIcon sx={{ color: "inherit" }} />}
                 aria-controls={`${nodeId}-content`}
                 id={`${nodeId}-header`}
-                sx={{ flexDirection: "row-reverse", px: 0, border: 0 }}
+                sx={{ flexDirection: "row-reverse", border: 0 }}
             >
                 <Typography>{nodeId}</Typography>
             </AccordionSummary>

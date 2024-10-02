@@ -1,6 +1,6 @@
 import { useSelector } from "react-redux";
 import { getProcessName } from "../../reducers/selectors/graph";
-import { Box, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import React from "react";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 
@@ -12,22 +12,17 @@ interface Props {
 export function ActivityHeader(props: Props): JSX.Element {
     const processName = useSelector(getProcessName);
     return (
-        <Box>
-            <Typography variant={"inherit"} sx={{ width: "100%", "::after": { content: "':'" } }}>
+        <>
+            <Typography
+                variant={"body2"}
+                sx={{ width: "100%", "::after": { content: "':'" }, fontWeight: 600, fontSize: "16px", lineHeight: "24px" }}
+            >
                 {props.title}
             </Typography>
-            <Typography
-                variant={"h5"}
-                sx={{
-                    width: "100%",
-                    fontWeight: "bold",
-                    margin: 0,
-                    lineHeight: "2em",
-                }}
-            >
+            <Typography variant={"body2"} sx={{ width: "100%", fontWeight: 600, fontSize: "20px", lineHeight: "30px" }}>
                 {processName}
             </Typography>
             {props.displayWarnings && <ProcessDialogWarnings />}
-        </Box>
+        </>
     );
 }
