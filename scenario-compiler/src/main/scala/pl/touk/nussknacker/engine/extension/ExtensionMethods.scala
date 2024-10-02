@@ -4,33 +4,19 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
 import java.lang.reflect.Method
 
-object ExtensionMethods {
+class ExtensionMethods(classLoader: ClassLoader, classDefinitionSet: ClassDefinitionSet) {
 
   private val declarationsWithImplementations = Map[Class[_], ExtensionMethodsImplFactory](
-    classOf[Cast] -> CastImpl,
+    classOf[Cast] -> CastImplFactory(classLoader, classDefinitionSet),
   )
 
   private val registry: Set[Class[_]] = declarationsWithImplementations.keySet
 
-  def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {
-    val castMethodDefinitions = CastMethodDefinitions(set)
-    new ClassDefinitionSet(
-      set.classDefinitionsMap.map { case (clazz, definition) =>
-        clazz -> definition.copy(methods = definition.methods ++ castMethodDefinitions.extractDefinitions(clazz))
-      }.toMap // .toMap is needed by scala 2.12
-    )
-  }
-
-  def invoke(
-      method: Method,
-      target: Any,
-      arguments: Array[Object],
-      classLoader: ClassLoader
-  ): PartialFunction[Class[_], Any] = {
+  def invoke(method: Method, target: Object, arguments: Array[Object]): PartialFunction[Class[_], Any] = {
     case clazz if registry.contains(clazz) =>
       declarationsWithImplementations
         .get(method.getDeclaringClass)
-        .map(_.create(target, classLoader))
+        .map(_.create(target))
         .map(impl => method.invoke(impl, arguments: _*))
         .getOrElse {
           throw new IllegalArgumentException(s"Extension method: ${method.getName} is not implemented")
@@ -39,6 +25,19 @@ object ExtensionMethods {
 
 }
 
+object ExtensionMethods {
+
+  def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {
+    val castMethodDefinitions = new CastMethodDefinitions(set)
+    new ClassDefinitionSet(
+      set.classDefinitionsMap.map { case (clazz, definition) =>
+        clazz -> definition.copy(methods = definition.methods ++ castMethodDefinitions.extractDefinitions(clazz))
+      }.toMap // .toMap is needed by scala 2.12
+    )
+  }
+
+}
+
 trait ExtensionMethodsImplFactory {
-  def create(target: Any, classLoader: ClassLoader): Any
+  def create(target: Any): Any
 }
