@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
@@ -53,6 +54,11 @@ class OpenApiScenarioIntegrationTest
       test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
     }
 
+  def withRequestBody(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) =
+    new StubService("/enrichers-with-optional-fields.yaml").withCustomerService { port =>
+      test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
+    }
+
   val stubbedBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
     case request =>
       request.headers match {
@@ -91,6 +97,21 @@ class OpenApiScenarioIntegrationTest
       result.validValue shouldBe RunResult.success(
         TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD"))
       )
+  }
+
+  it should "call enricher with request body" in withRequestBody(stubbedBackend) { testScenarioRunner =>
+    // given
+    val data = List("10")
+    val scenario =
+      scenarioWithEnricher((SingleBodyParameter.name, """{{additionalKey:"sss", primaryKey:"dfgdf"}}""".spel))
+
+    // when
+    val result = testScenarioRunner.runWithData(scenario, data)
+
+    // then
+    result.validValue shouldBe RunResult.success(
+      TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD"))
+    )
   }
 
   it should "call enricher returning string" in withPrimitiveReturnType(

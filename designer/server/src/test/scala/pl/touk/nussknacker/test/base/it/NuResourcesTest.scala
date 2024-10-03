@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
@@ -17,6 +18,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
@@ -36,6 +38,7 @@ import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
@@ -49,19 +52,20 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfi
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
-import cats.effect.unsafe.implicits.global
-import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
+
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
     extends WithHsqlDbTesting
+    with WithClock
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with EitherValuesDetailedMessage
@@ -85,13 +89,13 @@ trait NuResourcesTest
 
   protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingScenarioRepository)
 
-  protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
+  protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef, clock)
 
   protected val fragmentRepository: DefaultFragmentRepository = newFragmentRepository(testDbRef)
 
-  protected val actionRepository: DbProcessActionRepository = newActionProcessRepository(testDbRef)
+  protected val actionRepository: DbScenarioActionRepository = newActionProcessRepository(testDbRef)
 
-  protected val processActivityRepository: DbProcessActivityRepository = newProcessActivityRepository(testDbRef)
+  protected val scenarioActivityRepository: ScenarioActivityRepository = newScenarioActivityRepository(testDbRef, clock)
 
   protected val processChangeListener = new TestProcessChangeListener()
 
@@ -170,7 +174,7 @@ trait NuResourcesTest
   )
 
   protected val processActivityRoute =
-    new TestResource.ProcessActivityResource(processActivityRepository, processService, processAuthorizer)
+    new TestResource.ProcessActivityResource(scenarioActivityRepository, processService, processAuthorizer, dbioRunner)
 
   protected val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
 
@@ -295,7 +299,7 @@ trait NuResourcesTest
   protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, None, None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, None, Some(List.empty), None), name)(testCode)
 
   protected def updateCanonicalProcessAndAssertSuccess(process: CanonicalProcess): Assertion =
     updateCanonicalProcess(process) {
@@ -308,7 +312,8 @@ trait NuResourcesTest
     doUpdateProcess(
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
-        comment.map(UpdateProcessComment(_)),
+        comment.map(Comment.apply),
+        Some(List.empty),
         None
       ),
       process.name
@@ -525,13 +530,19 @@ object ProcessJson extends OptionValues {
     val state      = process.hcursor.downField("state").as[Option[Json]].toOption.value
 
     new ProcessJson(
-      process.hcursor.downField("name").as[String].toOption.value,
-      lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
-      lastAction.map(_.hcursor.downField("actionName").as[String].toOption.value),
-      state.map(StateJson(_)),
-      process.hcursor.downField("processCategory").as[String].toOption.value,
-      process.hcursor.downField("isArchived").as[Boolean].toOption.value,
-      process.hcursor.downField("history").as[Option[List[Json]]].toOption.value.map(_.map(v => ProcessVersionJson(v)))
+      name = process.hcursor.downField("name").as[String].toOption.value,
+      lastActionVersionId = lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
+      lastActionType = lastAction.map(_.hcursor.downField("actionName").as[String].toOption.value),
+      state = state.map(StateJson(_)),
+      processCategory = process.hcursor.downField("processCategory").as[String].toOption.value,
+      isArchived = process.hcursor.downField("isArchived").as[Boolean].toOption.value,
+      labels = process.hcursor.downField("labels").as[List[String]].toOption.value,
+      history = process.hcursor
+        .downField("history")
+        .as[Option[List[Json]]]
+        .toOption
+        .value
+        .map(_.map(v => ProcessVersionJson(v)))
     )
   }
 
@@ -544,6 +555,7 @@ final case class ProcessJson(
     state: Option[StateJson],
     processCategory: String,
     isArchived: Boolean,
+    labels: List[String],
     // Process on list doesn't contain history
     history: Option[List[ProcessVersionJson]]
 ) {
@@ -655,9 +667,10 @@ object TestResource {
   //  The tests are still using akka based testing and it is not easy to integrate tapir route with this kind of tests.
   // should be replaced with rest call: GET /api/process/{scenarioName}/activity
   class ProcessActivityResource(
-      processActivityRepository: ProcessActivityRepository,
+      scenarioActivityRepository: ScenarioActivityRepository,
       protected val processService: ProcessService,
-      val processAuthorizer: AuthorizeProcess
+      val processAuthorizer: AuthorizeProcess,
+      dbioActionRunner: DBIOActionRunner,
   )(implicit val ec: ExecutionContext)
       extends Directives
       with FailFastCirceSupport
@@ -670,7 +683,7 @@ object TestResource {
       path("processes" / ProcessNameSegment / "activity") { processName =>
         (get & processId(processName)) { processId =>
           complete {
-            processActivityRepository.findActivity(processId.id)
+            dbioActionRunner.run(scenarioActivityRepository.findActivity(processId.id))
           }
         }
       }

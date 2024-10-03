@@ -3,10 +3,9 @@ package pl.touk.nussknacker.engine.schemedkafka.schema
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
-import org.apache.avro.util.Utf8
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.schemedkafka.{AvroStringSettingsInTests, AvroUtils, LogicalTypesGenericRecordBuilder}
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
@@ -19,29 +18,12 @@ class StringForcingDatumReaderSpec extends AnyFunSpec with Matchers {
     val builder = new LogicalTypesGenericRecordBuilder(schema)
     builder.set("foo", "bar")
     val givenRecord = builder.build()
+    givenRecord.get("foo") shouldBe a[String]
 
-    val readRecordWithUtf = AvroStringSettingsInTests.withStringEnabled(setting = false) {
-      roundTripWriteRead(givenRecord)
-    }
-    readRecordWithUtf.get("foo") shouldBe a[Utf8]
+    val readWhenStringForced = roundTripWriteRead(givenRecord)
 
-    val readWhenStringForced = roundTripWriteRead(readRecordWithUtf)
     readWhenStringForced.get("foo") shouldBe a[String]
     readWhenStringForced shouldEqual givenRecord
-  }
-
-  it("should use correct type in provided default value") {
-    val schema = wrapWithRecordSchema("""[
-        |  { "name": "foo", "type": "string", "default": "bar" }
-        |]""".stripMargin)
-
-    val record1 = new LogicalTypesGenericRecordBuilder(schema).build()
-    record1.get("foo") shouldBe a[String]
-
-    val record2 = AvroStringSettingsInTests.withStringEnabled(setting = false) {
-      new LogicalTypesGenericRecordBuilder(schema).build()
-    }
-    record2.get("foo") shouldBe a[Utf8]
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =

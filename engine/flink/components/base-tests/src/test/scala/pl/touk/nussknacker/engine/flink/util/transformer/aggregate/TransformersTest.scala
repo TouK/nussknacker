@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, JobData, MetaData, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
@@ -191,7 +191,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testProcess =
       sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val result = processValidator.validate(testProcess, isFragment = false)
+    val result = processValidator.validate(testProcess, isFragment = false)(jobDataFor(testProcess))
 
     inside(result.result) {
       case Invalid(
@@ -613,7 +613,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
-    processValidator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false), isFragment = false)
+    val scenario = sliding(aggregator, aggregateBy, emitWhenEventLeft = false)
+    processValidator.validate(scenario, isFragment = false)(jobDataFor(scenario))
   }
 
   private def tumbling(
@@ -769,6 +770,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     )
 
     FragmentResolver(List(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
+  }
+
+  private def jobDataFor(scenario: CanonicalProcess) = {
+    JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
   }
 
 }

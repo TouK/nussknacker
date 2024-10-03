@@ -18,17 +18,20 @@ object MigrationApiAdapters {
     6. Update StandardRemoteEnvironmentSpec, especially the Migrate endpoint mock
 
     Remember to uncomment the case object after implementation.
+   */
 
-    case object MigrationApiAdapterV1ToV2 extends ApiAdapter[MigrateScenarioData] {
+  case object MigrationApiAdapterV1ToV2 extends ApiAdapter[MigrateScenarioData] {
 
     override def liftVersion: MigrateScenarioData => MigrateScenarioData = {
       case v1: MigrateScenarioDataV1 =>
         MigrateScenarioDataV2(
           sourceEnvironmentId = v1.sourceEnvironmentId,
+          sourceScenarioVersionId = None,
           remoteUserName = v1.remoteUserName,
           processingMode = v1.processingMode,
           engineSetupName = v1.engineSetupName,
           processCategory = v1.processCategory,
+          scenarioLabels = List.empty,
           scenarioGraph = v1.scenarioGraph,
           processName = v1.processName,
           isFragment = v1.isFragment
@@ -51,8 +54,8 @@ object MigrationApiAdapters {
       case _ => throw new IllegalStateException("Expecting another value object")
     }
 
-  }*/
+  }
 
-  val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = Map.empty
+  val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = Map(1 -> MigrationApiAdapterV1ToV2)
 
 }

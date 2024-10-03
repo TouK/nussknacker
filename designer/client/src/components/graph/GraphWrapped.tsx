@@ -1,16 +1,17 @@
+import { useTheme } from "@mui/material";
 import React, { forwardRef, useRef } from "react";
-import { useWindows } from "../../windowManager";
-import { Graph } from "./Graph";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getUserSettings } from "../../reducers/selectors/userSettings";
+import { useForkRef } from "rooks";
+import { useEventTracking } from "../../containers/event-tracking";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
 import { getLoggedUser, getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { GraphProps } from "./types";
-import { useTheme } from "@mui/material";
-import { useEventTracking } from "../../containers/event-tracking";
+import { getUserSettings } from "../../reducers/selectors/userSettings";
+import { useWindows } from "../../windowManager";
+import { Graph } from "./Graph";
 import { GraphStyledWrapper } from "./graphStyledWrapper";
-import { useForkRef } from "rooks";
 import { NodeDescriptionPopover } from "./NodeDescriptionPopover";
+import { GraphProps } from "./types";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
 export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
@@ -22,6 +23,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const selectionState = useSelector(getSelectionState);
     const theme = useTheme();
+    const translation = useTranslation();
     const { trackEvent } = useEventTracking();
 
     const graphRef = useRef<Graph>();
@@ -41,6 +43,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
                     processDefinitionData={processDefinitionData}
                     selectionState={selectionState}
                     theme={theme}
+                    translation={translation}
                     handleStatisticsEvent={trackEvent}
                 />
             </GraphStyledWrapper>

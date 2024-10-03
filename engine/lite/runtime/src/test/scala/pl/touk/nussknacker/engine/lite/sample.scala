@@ -93,27 +93,33 @@ object sample {
       initialState: Map[String, Double],
       runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   ): ResultType[EndResult[AnyRef]] = {
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     val interpreter = ScenarioInterpreterFactory
       .createInterpreter[StateType, SampleInput, AnyRef](
         scenario,
+        jobData,
         modelData,
         Nil,
         ProductionServiceInvocationCollector,
         ComponentUseCase.EngineRuntime
       )
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
-    interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
+    interpreter.open(runtimeContextPreparer.prepare(jobData))
     val interpreterResult      = interpreter.invoke(data)
     val resultWithInitialState = interpreterResult.runA(initialState).value
     resultWithInitialState
   }
 
-  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[_] = {
+  def test(
+      scenario: CanonicalProcess,
+      processVersion: ProcessVersion,
+      scenarioTestData: ScenarioTestData
+  ): TestResults[_] = {
     implicit val effectUnwrapper: EffectUnwrapper[StateType] = new EffectUnwrapper[StateType] {
       override def apply[A](fa: StateType[A]): A = fa.runA(Map.empty).value
     }
     val testRunner = new InterpreterTestRunner[StateType, SampleInput, AnyRef]
-    testRunner.runTest(modelData, scenarioTestData, scenario)
+    testRunner.runTest(modelData, JobData(scenario.metaData, processVersion), scenarioTestData, scenario)
   }
 
   class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double])

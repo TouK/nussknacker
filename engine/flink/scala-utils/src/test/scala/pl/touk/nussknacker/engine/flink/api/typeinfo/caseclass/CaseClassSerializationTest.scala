@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInfo
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -48,8 +49,11 @@ class CaseClassSerializationTest extends AnyFunSuite with Matchers {
     deserialized shouldEqual input
   }
 
+  @silent("deprecated")
   private def getSerializer[T: ClassTag] =
-    TypeExtractor.getForClass(classTag[T].runtimeClass.asInstanceOf[Class[T]]).createSerializer(executionConfig)
+    TypeExtractor
+      .getForClass(classTag[T].runtimeClass.asInstanceOf[Class[T]])
+      .createSerializer(executionConfig)
 
   private def serializeAndDeserialize[T](serializer: TypeSerializer[T], in: T): T = {
     val outStream  = new ByteArrayOutputStream(bufferSize)

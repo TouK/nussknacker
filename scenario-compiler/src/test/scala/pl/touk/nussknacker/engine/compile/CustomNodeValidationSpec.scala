@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 import scala.collection.Set
@@ -61,7 +62,11 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )
 
-  private def validate(process: CanonicalProcess) = validator.validate(process, isFragment = false)
+  private def validate(process: CanonicalProcess) = {
+    implicit val jobData: JobData =
+      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    validator.validate(process, isFragment = false)
+  }
 
   test("valid scenario") {
     val validProcess = processBase

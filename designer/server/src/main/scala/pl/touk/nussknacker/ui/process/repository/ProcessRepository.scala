@@ -1,29 +1,27 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import akka.http.scaladsl.model.HttpHeader
-import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.migration.ProcessMigrations
+import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
-  CreateProcessAction,
-  ProcessCreated,
-  ProcessUpdated,
-  UpdateProcessAction
-}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
@@ -43,10 +41,18 @@ object ProcessRepository {
 
   def create(
       dbRef: DbRef,
-      commentRepository: CommentRepository,
-      migrations: ProcessingTypeDataProvider[ProcessMigrations, _]
+      clock: Clock,
+      scenarioActivityRepository: ScenarioActivityRepository,
+      scenarioLabelsRepository: ScenarioLabelsRepository,
+      migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
   ): DBProcessRepository =
-    new DBProcessRepository(dbRef, commentRepository, migrations.mapValues(_.version))
+    new DBProcessRepository(
+      dbRef,
+      clock,
+      scenarioActivityRepository,
+      scenarioLabelsRepository,
+      migrations.mapValues(_.version)
+    )
 
   final case class CreateProcessAction(
       processName: ProcessName,
@@ -57,15 +63,43 @@ object ProcessRepository {
       forwardedUserName: Option[RemoteUserName]
   )
 
-  final case class UpdateProcessAction(
-      private val processId: ProcessId,
-      canonicalProcess: CanonicalProcess,
-      comment: Option[Comment],
-      increaseVersionWhenJsonNotChanged: Boolean,
-      forwardedUserName: Option[RemoteUserName]
-  ) {
+  sealed trait ModifyProcessAction {
+    protected val processId: ProcessId
+    val canonicalProcess: CanonicalProcess
+    val increaseVersionWhenJsonNotChanged: Boolean
+    val labels: List[ScenarioLabel]
+    val forwardedUserName: Option[RemoteUserName]
     def id: ProcessIdWithName = ProcessIdWithName(processId, canonicalProcess.name)
   }
+
+  final case class UpdateProcessAction(
+      protected val processId: ProcessId,
+      canonicalProcess: CanonicalProcess,
+      comment: Option[Comment],
+      labels: List[ScenarioLabel],
+      increaseVersionWhenJsonNotChanged: Boolean,
+      forwardedUserName: Option[RemoteUserName]
+  ) extends ModifyProcessAction
+
+  final case class MigrateProcessAction(
+      protected val processId: ProcessId,
+      canonicalProcess: CanonicalProcess,
+      labels: List[ScenarioLabel],
+      increaseVersionWhenJsonNotChanged: Boolean,
+      forwardedUserName: Option[RemoteUserName],
+      sourceEnvironment: String,
+      targetEnvironment: String,
+      sourceScenarioVersionId: Option[VersionId],
+  ) extends ModifyProcessAction
+
+  final case class AutomaticProcessUpdateAction(
+      protected val processId: ProcessId,
+      canonicalProcess: CanonicalProcess,
+      labels: List[ScenarioLabel],
+      increaseVersionWhenJsonNotChanged: Boolean,
+      forwardedUserName: Option[RemoteUserName],
+      migrationsApplies: List[ProcessMigration]
+  ) extends ModifyProcessAction
 
   final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -78,6 +112,12 @@ trait ProcessRepository[F[_]] {
 
   def updateProcess(action: UpdateProcessAction)(implicit loggedUser: LoggedUser): F[ProcessUpdated]
 
+  def migrateProcess(action: MigrateProcessAction)(implicit loggedUser: LoggedUser): F[ProcessUpdated]
+
+  def performAutomaticUpdate(
+      automaticProcessUpdateAction: AutomaticProcessUpdateAction,
+  )(implicit loggedUser: LoggedUser): F[ProcessUpdated]
+
   def archive(processId: ProcessIdWithName, isArchived: Boolean): F[Unit]
 
   def deleteProcess(processId: ProcessIdWithName): F[Unit]
@@ -88,8 +128,10 @@ trait ProcessRepository[F[_]] {
 
 class DBProcessRepository(
     protected val dbRef: DbRef,
-    commentRepository: CommentRepository,
-    modelVersion: ProcessingTypeDataProvider[Int, _]
+    clock: Clock,
+    scenarioActivityRepository: ScenarioActivityRepository,
+    scenarioLabelsRepository: ScenarioLabelsRepository,
+    modelVersion: ProcessingTypeDataProvider[Int, _],
 ) extends ProcessRepository[DB]
     with NuTables
     with LazyLogging
@@ -133,16 +175,24 @@ class DBProcessRepository(
         processesTable.filter(_.name === action.processName).result.headOption.flatMap {
           case Some(_) => DBIOAction.failed(ProcessAlreadyExists(action.processName.value))
           case None =>
-            (insertNew += processToSave)
-              .flatMap(entity =>
-                updateProcessInternal(
-                  ProcessIdWithName(entity.id, entity.name),
-                  action.canonicalProcess,
-                  increaseVersionWhenJsonNotChanged = false,
-                  userName = userName
+            for {
+              entity <- insertNew += processToSave
+              res <- updateProcessInternal(
+                ProcessIdWithName(entity.id, entity.name),
+                action.canonicalProcess,
+                increaseVersionWhenJsonNotChanged = false,
+                userName = userName
+              )
+              _ <- scenarioActivityRepository.addActivity(
+                ScenarioActivity.ScenarioCreated(
+                  scenarioId = ScenarioId(res.processId.value),
+                  scenarioActivityId = ScenarioActivityId.random,
+                  user = loggedUser.scenarioUser,
+                  date = clock.instant(),
+                  scenarioVersionId = res.newVersion.map(v => ScenarioVersionId(v.value))
                 )
               )
-              .map(res => res.newVersion.map(ProcessCreated(res.processId, _)))
+            } yield res.newVersion.map(ProcessCreated(res.processId, _))
         }
     }
   }
@@ -150,27 +200,100 @@ class DBProcessRepository(
   def updateProcess(
       updateProcessAction: UpdateProcessAction
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
-    val userName = updateProcessAction.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
+    editProcess(
+      updateProcessAction,
+      (processId, versionId, _) =>
+        ScenarioActivity.ScenarioModified(
+          scenarioId = ScenarioId(processId.value),
+          scenarioActivityId = ScenarioActivityId.random,
+          user = loggedUser.scenarioUser,
+          date = Instant.now(),
+          scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
+          comment = updateProcessAction.comment match {
+            case Some(comment) =>
+              ScenarioComment.Available(
+                comment = comment.content,
+                lastModifiedByUserName = UserName(loggedUser.username),
+                lastModifiedAt = clock.instant(),
+              )
+            case None =>
+              ScenarioComment.Deleted(
+                deletedByUserName = UserName(loggedUser.username),
+                deletedAt = clock.instant(),
+              )
+          }
+        )
+    )
+  }
 
-    def addNewCommentToVersion(scenarioId: ProcessId, scenarioGraphVersionId: VersionId) = {
-      updateProcessAction.comment
-        .map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, loggedUser, _))
-        .sequence
+  def migrateProcess(
+      migrateProcessAction: MigrateProcessAction,
+  )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
+    editProcess(
+      migrateProcessAction,
+      (processId, versionId, user) =>
+        ScenarioActivity.IncomingMigration(
+          scenarioId = ScenarioId(processId.value),
+          scenarioActivityId = ScenarioActivityId.random,
+          user = loggedUser.scenarioUser,
+          date = clock.instant(),
+          scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
+          sourceEnvironment = Environment(migrateProcessAction.sourceEnvironment),
+          sourceUser = UserName(user),
+          sourceScenarioVersionId = migrateProcessAction.sourceScenarioVersionId.map(v => ScenarioVersionId(v.value)),
+          targetEnvironment = Some(Environment(migrateProcessAction.targetEnvironment)),
+        )
+    )
+  }
+
+  def performAutomaticUpdate(
+      automaticProcessUpdateAction: AutomaticProcessUpdateAction,
+  )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
+    editProcess(
+      automaticProcessUpdateAction,
+      (processId, versionId, _) =>
+        ScenarioActivity.AutomaticUpdate(
+          scenarioId = ScenarioId(processId.value),
+          scenarioActivityId = ScenarioActivityId.random,
+          user = loggedUser.scenarioUser,
+          date = Instant.now(),
+          scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
+          changes = automaticProcessUpdateAction.migrationsApplies.map(_.description).mkString(", "),
+          errorMessage = None,
+        )
+    )
+  }
+
+  def editProcess[ACTION <: ModifyProcessAction](
+      action: ACTION,
+      activityCreator: (ProcessId, VersionId, String) => ScenarioActivity,
+  )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
+    val userName = action.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
+
+    def addScenarioModifiedActivity(scenarioId: ProcessId, scenarioGraphVersionId: VersionId) = {
+      run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, scenarioGraphVersionId, userName)))
     }
 
-    updateProcessInternal(
-      updateProcessAction.id,
-      updateProcessAction.canonicalProcess,
-      updateProcessAction.increaseVersionWhenJsonNotChanged,
-      userName
-    ).flatMap {
-      // Comment should be added via ProcessService not to mix this repository responsibility.
-      case updateProcessRes @ ProcessUpdated(processId, _, Some(newVersion)) =>
-        addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
-      case updateProcessRes @ ProcessUpdated(processId, Some(oldVersion), _) =>
-        addNewCommentToVersion(processId, oldVersion).map(_ => updateProcessRes)
-      case a => DBIO.successful(a)
-    }
+    for {
+      updateProcessRes <- updateProcessInternal(
+        action.id,
+        action.canonicalProcess,
+        action.increaseVersionWhenJsonNotChanged,
+        userName
+      )
+      _ <- updateProcessRes match {
+        // Comment should be added via ProcessService not to mix this repository responsibility.
+        case updateProcessRes @ ProcessUpdated(processId, _, Some(newVersion)) =>
+          addScenarioModifiedActivity(processId, newVersion).map(_ => updateProcessRes)
+        case updateProcessRes @ ProcessUpdated(processId, Some(oldVersion), _) =>
+          addScenarioModifiedActivity(processId, oldVersion).map(_ => updateProcessRes)
+        case _ => dbMonad.unit
+      }
+      _ <- scenarioLabelsRepository.overwriteLabels(
+        action.id.id,
+        action.labels
+      )
+    } yield updateProcessRes
   }
 
   private def updateProcessInternal(
@@ -258,21 +381,23 @@ class DBProcessRepository(
     val updateNameInProcess =
       processesTable.filter(_.id === process.id).map(_.name).update(newName)
 
-    // Comment relates to specific version (in this case last version). Last version could be extracted in one of the
-    // above queries, but for sake of readability we perform separate query for this matter
-    // TODO: remove this comment in favour of process-audit-log
-    val addCommentAction = processVersionsTableWithUnit
+    val addScenarioNameChangedActivity = processVersionsTableWithUnit
       .filter(_.processId === process.id)
       .sortBy(_.id.desc)
       .result
       .headOption
       .flatMap {
         case Some(version) =>
-          commentRepository.saveComment(
-            process.id,
-            version.id,
-            loggedUser,
-            UpdateProcessComment(s"Rename: [${process.name}] -> [$newName]")
+          scenarioActivityRepository.addActivity(
+            ScenarioActivity.ScenarioNameChanged(
+              scenarioId = ScenarioId(process.id.value),
+              scenarioActivityId = ScenarioActivityId.random,
+              user = loggedUser.scenarioUser,
+              date = Instant.now(),
+              scenarioVersionId = Some(ScenarioVersionId(version.id.value)),
+              oldName = process.name.value,
+              newName = newName.value
+            )
           )
         case None => DBIO.successful(())
       }
@@ -284,7 +409,7 @@ class DBProcessRepository(
           .seq[Effect.All](
             updateNameInProcess,
             updateNameInProcessJson,
-            addCommentAction
+            addScenarioNameChangedActivity
           )
           .map(_ => ())
           .transactionally

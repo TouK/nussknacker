@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.DynamicPropertyAccessError
@@ -172,7 +172,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     dictTyper = new KeysDictTyper(new SimpleDictRegistry(Map.empty)),
     strictMethodsChecking = false,
     staticMethodInvocationsChecking = false,
-    classDefinitionSet = ClassDefinitionSet.forDefaultAdditionalClasses,
+    classDefinitionSet = ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
     evaluationContextPreparer = null,
     methodExecutionForUnknownAllowed = false,
     dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed

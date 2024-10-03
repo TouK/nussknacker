@@ -15,7 +15,7 @@ import java.util.Properties
 object TestReporterUtil {
 
   def configWithTestMetrics(name: String, c: Configuration = new Configuration()): Configuration = {
-    c.setString(MetricOptions.REPORTERS_LIST, "test")
+    c.set(MetricOptions.REPORTERS_LIST, "test")
     c.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.factory.class", classOf[TestReporterFactory].getName)
     c.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.name", name)
     c

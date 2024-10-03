@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
+import pl.touk.nussknacker.engine.api.{Context => NkContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 

@@ -26,10 +26,11 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, JavaClassWithVarargs}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
+  IllegalInvocationError,
   IllegalProjectionSelectionError,
   InvalidMethodReference,
   TypeReferenceError
@@ -42,7 +43,11 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.ArrayConstructorError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
+  ArgumentTypeError,
+  ExpressionTypeError,
+  GenericFunctionError
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -90,12 +95,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val ctx = Context("abc").withVariables(
     Map(
-      "obj"         -> testValue,
-      "strVal"      -> "",
-      "mapValue"    -> Map("foo" -> "bar").asJava,
-      "array"       -> Array("a", "b"),
-      "intArray"    -> Array(1, 2, 3),
-      "nestedArray" -> Array(Array(1, 2), Array(3, 4))
+      "obj"            -> testValue,
+      "strVal"         -> "",
+      "mapValue"       -> Map("foo" -> "bar").asJava,
+      "array"          -> Array("a", "b"),
+      "intArray"       -> Array(1, 2, 3),
+      "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
+      "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"  -> ContainerOfUnknown("unknown")
     )
   )
 
@@ -121,6 +128,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       children: java.util.List[Test] = List[Test]().asJava,
       bigValue: BigDecimal = BigDecimal.valueOf(0L)
   )
+
+  case class ContainerOfUnknown(value: Any)
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -229,7 +238,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[SampleValue],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     )
-    ClassDefinitionSet.forClasses(typesFromGlobalVariables ++ customClasses: _*)
+    ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
   }
 
   test("parsing first selection on array") {
@@ -1351,6 +1360,154 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("{1, 2}.contain", ctx).invalidValue.toList should matchPattern {
       case NoPropertyError(_, "contain") :: Nil =>
     }
+  }
+
+  test("should check if a type can be casted to a given type") {
+    forAll(
+      Table(
+        ("expression", "expectedResult"),
+        ("#unknownString.value.canCastTo('java.lang.String')", true),
+        ("#unknownString.value.canCastTo('java.lang.Integer')", false),
+      )
+    ) { (expression, expectedResult) =>
+      parse[Any](expression, ctx).validExpression.evaluateSync[Any](ctx) shouldBe expectedResult
+    }
+  }
+
+  test("should return unknownMethodError during invoke cast on simple types") {
+    forAll(
+      Table(
+        ("expression", "expectedMethod", "expectedType"),
+        ("11.canCastTo('java.lang.String')", "canCastTo", "Integer"),
+        ("true.canCastTo('java.lang.String')", "canCastTo", "Boolean"),
+        ("'true'.canCastTo('java.lang.String')", "canCastTo", "String"),
+        ("11.castTo('java.lang.String')", "castTo", "Integer"),
+        ("true.castTo('java.lang.String')", "castTo", "Boolean"),
+        ("'true'.castTo('java.lang.String')", "castTo", "String"),
+      )
+    ) { (expression, expectedMethod, expectedType) =>
+      parse[Any](expression, ctx).invalidValue.toList should matchPattern {
+        case UnknownMethodError(`expectedMethod`, `expectedType`) :: Nil =>
+      }
+    }
+  }
+
+  test("should compute correct result type based on parameter") {
+    val parsed = parse[Any]("#unknownString.value.castTo('java.lang.String')", ctx).validValue
+    parsed.returnType shouldBe Typed.typedClass[String]
+    parsed.expression.evaluateSync[Any](ctx) shouldBe a[java.lang.String]
+  }
+
+  test("should return an error if the cast return type cannot be determined at parse time") {
+    parse[Any]("#unknownString.value.castTo('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
+      case GenericFunctionError("Casting to 'java.util.XYZ' is not allowed") :: Nil =>
+    }
+    parse[Any]("#unknownString.value.castTo(#obj.id)", ctx).invalidValue.toList should matchPattern {
+      case ArgumentTypeError("castTo", _, _) :: Nil =>
+    }
+  }
+
+  test("should throw exception if cast fails") {
+    val caught = intercept[SpelExpressionEvaluationException] {
+      parse[Any]("#unknownString.value.castTo('java.lang.Integer')", ctx).validExpression.evaluateSync[Any](ctx)
+    }
+    caught.getCause shouldBe a[ClassCastException]
+    caught.getMessage should include("Cannot cast: class java.lang.String to: java.lang.Integer")
+  }
+
+  test(
+    "should allow invoke discovered methods for unknown objects - not matter how methodExecutionForUnknownAllowed is set"
+  ) {
+    def typedArray(elementTypingResult: TypingResult): TypingResult =
+      Typed.genericTypeClass(classOf[Array[Object]], List(elementTypingResult))
+    forAll(
+      Table(
+        ("expression", "expectedType", "expectedResult", "methodExecutionForUnknownAllowed"),
+        ("#arrayOfUnknown", typedArray(Unknown), Array("unknown"), false),
+        (
+          "#arrayOfUnknown.![#this.castTo('java.lang.String')]",
+          typedArray(Typed.typedClass[String]),
+          Array("unknown"),
+          false
+        ),
+        (
+          "#arrayOfUnknown.![#this.canCastTo('java.lang.String')]",
+          typedArray(Typed.typedClass[Boolean]),
+          Array(true),
+          false
+        ),
+        ("#arrayOfUnknown.![#this.toString()]", typedArray(Typed.typedClass[String]), Array("unknown"), false),
+        (
+          "#arrayOfUnknown.![#this.castTo('java.lang.String')]",
+          typedArray(Typed.typedClass[String]),
+          Array("unknown"),
+          true
+        ),
+        (
+          "#arrayOfUnknown.![#this.canCastTo('java.lang.String')]",
+          typedArray(Typed.typedClass[Boolean]),
+          Array(true),
+          true
+        ),
+        ("#arrayOfUnknown.![#this.toString()]", typedArray(Typed.typedClass[String]), Array("unknown"), true),
+      )
+    ) { (expression, expectedType, expectedResult, methodExecutionForUnknownAllowed) =>
+      val parsed = parse[Any](
+        expr = expression,
+        context = ctx,
+        methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed
+      ).validValue
+      parsed.returnType shouldBe expectedType
+      parsed.expression.evaluateSync[Any](ctx) shouldBe expectedResult
+    }
+  }
+
+  test(
+    "should allow invoke undiscovered methods for unknown objects when flag methodExecutionForUnknownAllowed is set to true"
+  ) {
+    parse[Any](
+      expr = "#arrayOfUnknown.![#this.indexOf('n')]",
+      context = ctx,
+      methodExecutionForUnknownAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) shouldBe Array(1)
+  }
+
+  test(
+    "should not allow invoke undiscovered methods for unknown objects when flag methodExecutionForUnknownAllowed is set to false"
+  ) {
+    parse[Any](
+      expr = "#arrayOfUnknown.![#this.indexOf('n')]",
+      context = ctx,
+      methodExecutionForUnknownAllowed = false
+    ).invalidValue.toList should matchPattern { case IllegalInvocationError(Unknown) :: Nil =>
+    }
+  }
+
+  test("should not allow cast to disallowed classes") {
+    parse[Any](
+      "#hashMap.value.castTo('java.util.HashMap').remove('testKey')",
+      ctx.withVariable("hashMap", ContainerOfUnknown(new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava)))
+    ).invalidValue.toList should matchPattern {
+      case GenericFunctionError("Casting to 'java.util.HashMap' is not allowed") :: IllegalInvocationError(
+            Unknown
+          ) :: Nil =>
+    }
+  }
+
+  test("should return null if castToOrNull fails") {
+    parse[Any](
+      expr = "#unknownString.value.castToOrNull('java.lang.Integer')",
+      context = ctx,
+      methodExecutionForUnknownAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) == null shouldBe true
+  }
+
+  test("should castToOrNull succeed") {
+    parse[Any](
+      expr = "#unknownString.value.castToOrNull('java.lang.String')",
+      context = ctx,
+      methodExecutionForUnknownAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) shouldBe "unknown"
   }
 
 }

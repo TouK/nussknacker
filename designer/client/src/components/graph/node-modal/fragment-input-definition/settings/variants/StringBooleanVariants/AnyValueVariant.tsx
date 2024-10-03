@@ -24,14 +24,6 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
 
     return (
         <>
-            <ValidationsFields
-                path={path}
-                item={item}
-                onChange={onChange}
-                variableTypes={variableTypes}
-                readOnly={readOnly}
-                errors={errors}
-            />
             <InitialValue
                 path={path}
                 item={item}
@@ -50,6 +42,14 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
                     className={nodeInput}
                 />
             </FormControl>
+            <ValidationsFields
+                path={path}
+                item={item}
+                onChange={onChange}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                errors={errors}
+            />
         </>
     );
 };

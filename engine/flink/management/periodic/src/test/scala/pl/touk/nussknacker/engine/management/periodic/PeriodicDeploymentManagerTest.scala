@@ -54,6 +54,7 @@ class PeriodicDeploymentManagerTest
     versionId = VersionId(42L),
     processName = processName,
     processId = processId,
+    labels = List.empty,
     user = "test user",
     modelVersion = None
   )

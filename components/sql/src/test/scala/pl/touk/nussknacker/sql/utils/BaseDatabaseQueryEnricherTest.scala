@@ -25,7 +25,7 @@ trait BaseDatabaseQueryEnricherTest extends AnyFunSuite with Matchers with Befor
   implicit val collector: ServiceInvocationCollector = EmptyInvocationCollector.Instance
   implicit val componentUseCase: ComponentUseCase    = ComponentUseCase.TestRuntime
 
-  val jobData: JobData = JobData(MetaData("", StreamMetaData()), ProcessVersion.empty)
+  val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
   val service: Service
 

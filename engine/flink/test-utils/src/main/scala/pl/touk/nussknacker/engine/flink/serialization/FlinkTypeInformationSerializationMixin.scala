@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.serialization
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -11,14 +12,17 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 trait FlinkTypeInformationSerializationMixin extends Matchers {
 
+  @silent("deprecated")
   protected val executionConfigWithoutKryo: ExecutionConfig = new ExecutionConfig {
     disableGenericTypes()
   }
 
+  @silent("deprecated")
   protected val executionConfigWithKryo: ExecutionConfig = new ExecutionConfig {
     enableGenericTypes()
   }
 
+  @silent("deprecated")
   protected def getSerializeRoundTrip[T](
       record: T,
       typeInfo: TypeInformation[T],

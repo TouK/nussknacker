@@ -51,13 +51,15 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       List(ComponentDefinition("one", new IncorrectService2))
     )
     val fragmentResolver = FragmentResolver(List.empty)
+    val metaData         = MetaData("scenario", StreamMetaData())
+    val jobData          = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
     val result = new NodeDataValidator(modelData).validate(
       node.Source("sid", SourceRef("one", NodeParameter(ParameterName("toFail"), "''".spel) :: Nil)),
       ValidationContext.empty,
       Map.empty,
       Nil,
       fragmentResolver
-    )(MetaData("scenario", StreamMetaData()))
+    )(jobData)
     result.asInstanceOf[ValidationPerformed].errors.distinct shouldBe CannotCreateObjectError(
       "AdditionalVariableWithFixedValue should not be used with LazyParameters",
       "sid"

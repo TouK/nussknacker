@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   TestFromParametersRequest,
   prepareTestFromParametersDecoder
 }
+import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -33,7 +34,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   RunDeploymentCommand
 }
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.{ApiCallComment, UserComment}
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -132,7 +133,7 @@ class ManagementResources(
                     .processCommand(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
-                        commonData = CommonCommandData(processIdWithName, comment.map(ApiCallComment(_)), user),
+                        commonData = CommonCommandData(processIdWithName, comment.map(Comment.apply), user),
                         nodesDeploymentData = NodesDeploymentData.empty,
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
@@ -154,7 +155,7 @@ class ManagementResources(
                 deploymentService
                   .processCommand(
                     RunDeploymentCommand(
-                      commonData = CommonCommandData(processIdWithName, comment.map(UserComment), user),
+                      commonData = CommonCommandData(processIdWithName, comment.map(Comment.apply), user),
                       nodesDeploymentData = NodesDeploymentData.empty,
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
@@ -172,7 +173,7 @@ class ManagementResources(
                 measureTime("cancel", metricRegistry) {
                   deploymentService.processCommand(
                     CancelScenarioCommand(commonData =
-                      CommonCommandData(processIdWithName, comment.map(UserComment), user)
+                      CommonCommandData(processIdWithName, comment.map(Comment.apply), user)
                     )
                   )
                 }
@@ -192,8 +193,8 @@ class ManagementResources(
                         scenarioTestServices
                           .forProcessingTypeUnsafe(details.processingType)
                           .performTest(
-                            details.idWithNameUnsafe,
                             scenarioGraph,
+                            details.processVersionUnsafe,
                             details.isFragment,
                             RawScenarioTestData(testDataContent)
                           )
@@ -218,7 +219,7 @@ class ManagementResources(
                         val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(details.processingType)
                         scenarioTestService.generateData(
                           scenarioGraph,
-                          processName,
+                          details.processVersionUnsafe,
                           details.isFragment,
                           testSampleSize
                         ) match {
@@ -226,8 +227,8 @@ class ManagementResources(
                           case Right(rawScenarioTestData) =>
                             scenarioTestService
                               .performTest(
-                                details.idWithNameUnsafe,
                                 scenarioGraph,
+                                details.processVersionUnsafe,
                                 details.isFragment,
                                 rawScenarioTestData
                               )
@@ -254,8 +255,8 @@ class ManagementResources(
                       scenarioTestServices
                         .forProcessingTypeUnsafe(process.processingType)
                         .performTest(
-                          process.idWithNameUnsafe,
                           testParametersRequest.scenarioGraph,
+                          process.processVersionUnsafe,
                           process.isFragment,
                           testParametersRequest.sourceParameters
                         )
@@ -273,7 +274,7 @@ class ManagementResources(
               deploymentService
                 .processCommand(
                   CustomActionCommand(
-                    commonData = CommonCommandData(processIdWithName, req.comment.map(UserComment), user),
+                    commonData = CommonCommandData(processIdWithName, req.comment.map(Comment.apply), user),
                     actionName = req.actionName,
                     params = req.params
                   )

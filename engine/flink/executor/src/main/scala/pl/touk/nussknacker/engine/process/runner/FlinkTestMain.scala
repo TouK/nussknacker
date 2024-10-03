@@ -4,7 +4,7 @@ import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -70,6 +70,7 @@ class FlinkTestMain(
         process,
         scenarioTestData,
         modelData,
+        JobData(process.metaData, processVersion),
         collectingListener
       ),
       FlinkJobConfig.parse(modelData.modelConfig).copy(rocksDB = None),

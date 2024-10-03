@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment.{DMScenarioCommand, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
-import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future

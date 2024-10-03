@@ -9,23 +9,18 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
-import pl.touk.nussknacker.restmodel.scenariodetails.{
-  ScenarioParameters,
-  ScenarioWithDetails,
-  ScenarioWithDetailsForMigrations
-}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
+import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.process.migrate.{
-  MissingScenarioGraphError,
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,
   TestMigrationResult
@@ -57,7 +52,10 @@ class RemoteEnvironmentResourcesSpec
       new RemoteEnvironmentResources(
         remoteEnvironment,
         processService,
-        processAuthorizer
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
       ),
       Permission.Read,
       Permission.Write
@@ -86,7 +84,10 @@ class RemoteEnvironmentResourcesSpec
       new RemoteEnvironmentResources(
         remoteEnvironment,
         processService,
-        processAuthorizer
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
       ),
       Permission.Read,
       Permission.Write
@@ -125,7 +126,10 @@ class RemoteEnvironmentResourcesSpec
           )
         ),
         processService,
-        processAuthorizer
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
       ),
       Permission.Read
     )
@@ -158,7 +162,10 @@ class RemoteEnvironmentResourcesSpec
           )
         ),
         processService,
-        processAuthorizer
+        processAuthorizer,
+        scenarioActivityRepository,
+        dbioRunner,
+        clock,
       ),
       Permission.Read
     )
@@ -182,6 +189,8 @@ class RemoteEnvironmentResourcesSpec
       testMigrationResults: List[TestMigrationResult] = List(),
       val mockDifferences: Map[ProcessName, Map[String, ScenarioGraphComparator.Difference]] = Map()
   ) extends RemoteEnvironment {
+
+    override def environmentId: String = "test-remote-env"
 
     var migrateInvocations = List[ScenarioGraph]()
     var compareInvocations = List[ScenarioGraph]()
@@ -218,7 +227,9 @@ class RemoteEnvironmentResourcesSpec
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,
+        scenarioLabels: List[String],
         scenarioGraph: ScenarioGraph,
+        localScenarioVersionId: VersionId,
         processName: ProcessName,
         isFragment: Boolean
     )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {

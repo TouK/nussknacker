@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.api.component
 
 import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
-import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
+import org.semver4j.Semver
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.version.BuildInfo
@@ -131,7 +131,11 @@ trait ComponentProvider {
 
 object NussknackerVersion {
 
-  val current: NussknackerVersion = NussknackerVersion(new Semver(BuildInfo.version))
+  val current: NussknackerVersion = parse(BuildInfo.version)
+
+  def parse(versionString: String): NussknackerVersion = {
+    NussknackerVersion(Semver.coerce(versionString))
+  }
 
 }
 

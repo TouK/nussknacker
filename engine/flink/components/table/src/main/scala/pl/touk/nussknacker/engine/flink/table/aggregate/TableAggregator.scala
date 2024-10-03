@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.flink.table.utils.simulateddatatype.{
    TODO: add remaining aggregations functions:
      - LISTAGG
      - ARRAY_AGG
-     - COLLECT
 
    TODO: unify aggregator function definitions with unbounded-streaming ones. Current duplication may lead to
      inconsistency in naming and may be confusing for users
@@ -92,6 +91,12 @@ object TableAggregator extends Enum[TableAggregator] {
     override val displayName: String                                        = "Sample variance"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.VAR_SAMP
     override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = Some(numericAggregationsAllowedTypes)
+  }
+
+  case object Collect extends TableAggregator {
+    override val displayName: String                                        = "Collect"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition         = BuiltInFunctionDefinitions.COLLECT
+    override def inputAllowedTypesConstraint: Option[List[LogicalTypeRoot]] = None
   }
 
   private val minMaxAllowedTypes = List(

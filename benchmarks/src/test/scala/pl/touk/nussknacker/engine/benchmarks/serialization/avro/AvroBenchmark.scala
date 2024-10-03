@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
 import com.typesafe.config.ConfigFactory
 import org.apache.avro.generic.GenericData
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup

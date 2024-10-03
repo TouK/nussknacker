@@ -21,7 +21,12 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
-import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV1, MigrationApiAdapterService}
+import pl.touk.nussknacker.ui.migrations.{
+  MigrateScenarioData,
+  MigrateScenarioDataV1,
+  MigrateScenarioDataV2,
+  MigrationApiAdapterService
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
@@ -35,6 +40,8 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait RemoteEnvironment {
+
+  def environmentId: String
 
   val passUsernameInMigration: Boolean = true
 
@@ -52,7 +59,9 @@ trait RemoteEnvironment {
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
       processCategory: String,
+      scenarioLabels: List[String],
       scenarioGraph: ScenarioGraph,
+      localScenarioVersionId: VersionId,
       processName: ProcessName,
       isFragment: Boolean
   )(
@@ -207,7 +216,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
       processCategory: String,
+      scenarioLabels: List[String],
       scenarioGraph: ScenarioGraph,
+      localScenarioVersionId: VersionId,
       processName: ProcessName,
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
@@ -216,12 +227,14 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       remoteScenarioDescriptionVersion <- fetchRemoteMigrationScenarioDescriptionVersion
       localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
       migrateScenarioRequest: MigrateScenarioData =
-        MigrateScenarioDataV1(
+        MigrateScenarioDataV2(
           environmentId,
+          Some(localScenarioVersionId),
           loggedUser.username,
           processingMode,
           engineSetupName,
           processCategory,
+          scenarioLabels,
           scenarioGraph,
           processName,
           isFragment

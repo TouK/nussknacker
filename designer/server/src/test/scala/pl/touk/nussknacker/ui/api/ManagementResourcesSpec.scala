@@ -12,7 +12,7 @@ import org.scalatest.matchers.BeMatcher
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName, ScenarioActivity}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -26,9 +26,9 @@ import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{withAllPermissions, withPermissions}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
 // TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
@@ -142,12 +142,16 @@ class ManagementResourcesSpec
       ) ~> check {
         status shouldBe StatusCodes.OK
         // TODO: remove Deployment:, Stop: after adding custom icons
-        val expectedDeployComment = "Deployment: deployComment"
-        val expectedStopComment   = "Stop: cancelComment"
+        val expectedDeployComment                = "deployComment"
+        val expectedStopComment                  = "cancelComment"
+        val expectedDeployCommentInLegacyService = s"Deployment: $expectedDeployComment"
+        val expectedStopCommentInLegacyService   = s"Stop: $expectedStopComment"
         getActivity(ProcessTestData.sampleScenario.name) ~> check {
-          val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
-          comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
-
+          val comments = responseAs[Dtos.Legacy.ProcessActivity].comments.sortBy(_.id)
+          comments.map(_.content) shouldBe List(
+            expectedDeployCommentInLegacyService,
+            expectedStopCommentInLegacyService
+          )
           val firstCommentId :: secondCommentId :: Nil = comments.map(_.id)
 
           Get(s"/processes/${ProcessTestData.sampleScenario.name}/deployments") ~> withAllPermissions(

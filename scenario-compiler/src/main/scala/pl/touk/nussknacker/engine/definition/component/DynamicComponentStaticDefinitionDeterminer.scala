@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
@@ -43,9 +43,10 @@ class DynamicComponentStaticDefinitionDeterminer(
     def inferParameters(transformer: DynamicComponent[_])(inputContext: transformer.InputContext) = {
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
-      val scenarioName                = ProcessName("fakeScenarioName")
-      implicit val metaData: MetaData = createMetaData(scenarioName)
-      implicit val nodeId: NodeId     = NodeId("fakeNodeId")
+      val scenarioName              = ProcessName("fakeScenarioName")
+      val metaData                  = createMetaData(scenarioName)
+      implicit val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = scenarioName))
+      implicit val nodeId: NodeId   = NodeId("fakeNodeId")
       nodeValidator
         .validateNode(
           transformer,

@@ -41,8 +41,9 @@ class ProcessesExportImportResourcesSpec
   private val processesExportResources = new ProcessesExportResources(
     futureFetchingScenarioRepository,
     processService,
-    processActivityRepository,
-    processResolverByProcessingType
+    scenarioActivityRepository,
+    processResolverByProcessingType,
+    dbioRunner,
   )
 
   private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~

@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.test.utils.domain
 
-import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingMode}
+import pl.touk.nussknacker.engine.{CustomProcessValidator, MetaDataInitializer}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ProcessingMode, ScenarioPropertyConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -37,8 +37,8 @@ import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.ui.validation.{ScenarioLabelsValidator, UIProcessValidator}
 
 object ProcessTestData {
 
@@ -139,30 +139,50 @@ object ProcessTestData {
     )
   }
 
-  def processValidator: UIProcessValidator = new UIProcessValidator(
-    processingType = Streaming.stringify,
-    validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
-    scenarioProperties = Map.empty,
-    scenarioPropertiesConfigFinalizer =
-      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-    additionalValidators = List.empty,
-    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+  private object ProcessValidatorDefaults {
+    val processingType: ProcessingType = Streaming.stringify
+    val processValidator: ProcessValidator =
+      ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition()))
+    val scenarioProperties: Map[String, ScenarioPropertyConfig] = Map.empty
+    val scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer =
+      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType)
+    val scenarioLabelsValidator: ScenarioLabelsValidator   = new ScenarioLabelsValidator(config = None)
+    val additionalValidators: List[CustomProcessValidator] = List.empty
+    val fragmentResolver: FragmentResolver                 = new FragmentResolver(new StubFragmentRepository(Map.empty))
+  }
+
+  def testProcessValidator(
+      processingType: ProcessingType = ProcessValidatorDefaults.processingType,
+      validator: ProcessValidator = ProcessValidatorDefaults.processValidator,
+      scenarioProperties: Map[String, ScenarioPropertyConfig] = ProcessValidatorDefaults.scenarioProperties,
+      scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer =
+        ProcessValidatorDefaults.scenarioPropertiesConfigFinalizer,
+      scenarioLabelsValidator: ScenarioLabelsValidator = ProcessValidatorDefaults.scenarioLabelsValidator,
+      additionalValidators: List[CustomProcessValidator] = ProcessValidatorDefaults.additionalValidators,
+      fragmentResolver: FragmentResolver = ProcessValidatorDefaults.fragmentResolver
+  ): UIProcessValidator = new UIProcessValidator(
+    processingType = processingType,
+    validator = validator,
+    scenarioProperties = scenarioProperties,
+    scenarioPropertiesConfigFinalizer = scenarioPropertiesConfigFinalizer,
+    scenarioLabelsValidator = scenarioLabelsValidator,
+    additionalValidators = additionalValidators,
+    fragmentResolver = fragmentResolver
   )
 
-  def processValidatorWithDicts(dictionaries: Map[String, DictDefinition]): UIProcessValidator = new UIProcessValidator(
-    processingType = Streaming.stringify,
-    validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinitionWithDicts(dictionaries))),
-    scenarioProperties = Map.empty,
-    scenarioPropertiesConfigFinalizer =
-      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
-    additionalValidators = List.empty,
-    fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
-  )
+  def processValidator: UIProcessValidator = testProcessValidator()
+
+  def processValidatorWithDicts(dictionaries: Map[String, DictDefinition]): UIProcessValidator =
+    testProcessValidator(
+      validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinitionWithDicts(dictionaries)))
+    )
 
   val sampleScenarioParameters: ScenarioParameters =
     ScenarioParameters(ProcessingMode.UnboundedStream, "Category1", EngineSetupName("Stub Engine"))
 
   val sampleProcessName: ProcessName = ProcessName("fooProcess")
+
+  val sampleScenarioLabels: List[String] = List("tag1", "tag2")
 
   val validProcess: CanonicalProcess = validProcessWithName(sampleProcessName)
 
@@ -170,6 +190,8 @@ object ProcessTestData {
     validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
   val validScenarioGraph: ScenarioGraph = CanonicalProcessConverter.toScenarioGraph(validProcess)
+
+  val versionId: VersionId = VersionId(7L)
 
   val validScenarioDetailsForMigrations: ScenarioWithDetailsForMigrations =
     TestProcessUtil.wrapWithDetailsForMigration(validScenarioGraph)
@@ -383,7 +405,7 @@ object ProcessTestData {
   }
 
   def createEmptyUpdateProcessCommand(
-      comment: Option[UpdateProcessComment]
+      comment: Option[Comment]
   ): UpdateScenarioCommand = {
     val properties = ProcessProperties(
       ProcessAdditionalFields(
@@ -406,7 +428,7 @@ object ProcessTestData {
       edges = List.empty
     )
 
-    UpdateScenarioCommand(scenarioGraph, comment, None)
+    UpdateScenarioCommand(scenarioGraph, comment, Some(List.empty), None)
   }
 
   def validProcessWithFragment(

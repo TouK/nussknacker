@@ -25,7 +25,8 @@ class RuntimeInjectedJobDataTest extends AnyFunSuite with Matchers {
 }
 
 object RuntimeInjectedJobDataTest {
-  val jobData: JobData = JobData(MetaData("", StreamMetaData()), ProcessVersion.empty)
+  private val metaData = MetaData("", StreamMetaData())
+  val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
   class Living extends RuntimeInjectedJobData
 }

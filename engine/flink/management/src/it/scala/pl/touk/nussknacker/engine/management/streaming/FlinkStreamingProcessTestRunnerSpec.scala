@@ -6,6 +6,7 @@ import io.circe.Json
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
@@ -47,11 +48,12 @@ class FlinkStreamingProcessTestRunnerSpec
     val deploymentManager =
       FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
 
-    val processName = ProcessName(UUID.randomUUID().toString)
+    val processName    = ProcessName(UUID.randomUUID().toString)
+    val processVersion = ProcessVersion.empty.copy(processName = processName)
 
     val process = SampleProcess.prepareProcess(processName)
 
-    whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processName, process, scenarioTestData))) { r =>
+    whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData))) { r =>
       r.nodeResults shouldBe Map(
         "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
         "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
@@ -61,10 +63,11 @@ class FlinkStreamingProcessTestRunnerSpec
   }
 
   it should "return correct error messages" in {
-    val processId = UUID.randomUUID().toString
+    val processName    = ProcessName(UUID.randomUUID().toString)
+    val processVersion = ProcessVersion.empty.copy(processName = processName)
 
     val process = ScenarioBuilder
-      .streaming(processId)
+      .streaming(processName.value)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
 
@@ -73,7 +76,7 @@ class FlinkStreamingProcessTestRunnerSpec
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(
-        deploymentManager.processCommand(DMTestScenarioCommand(ProcessName(processId), process, scenarioTestData)),
+        deploymentManager.processCommand(DMTestScenarioCommand(processVersion, process, scenarioTestData)),
         patienceConfig.timeout
       )
     }

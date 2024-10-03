@@ -869,7 +869,7 @@ class DefaultComponentServiceSpec
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
-      processActionRepository = TestFactory.newDummyActionRepository(),
+      scenarioActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 
