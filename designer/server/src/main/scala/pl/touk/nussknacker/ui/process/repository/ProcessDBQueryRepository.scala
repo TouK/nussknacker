@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioV
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.security.api._
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
 import java.sql.Timestamp
@@ -106,9 +106,6 @@ object ProcessDBQueryRepository {
     )
 
   final case class ProcessNotFoundError(name: ProcessName) extends NotFoundError(s"No scenario $name found")
-
-  final case class ProcessWithIdNotFoundError(id: ProcessId)
-      extends NotFoundError(s"No scenario with id ${id.value} found")
 
   final case class ProcessVersionNotFoundError(processName: ProcessName, version: VersionId)
       extends NotFoundError(s"Scenario $processName in version $version not found")
