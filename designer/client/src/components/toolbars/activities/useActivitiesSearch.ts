@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Activity, UIActivity } from "./ActivitiesPanel";
 import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
-import { get } from "lodash";
+import { get, uniq } from "lodash";
 import { ActivityAdditionalFields } from "../../../http/HttpService";
 
 interface Props {
@@ -14,18 +14,15 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) =
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
 
-    const handleSetFoundResult = useCallback((activity: UIActivity) => {
-        setFoundResults((prevState) => {
-            if (prevState.every((foundResult) => foundResult != activity.uiGeneratedId)) {
-                return [...prevState, activity.uiGeneratedId];
-            }
-
-            return prevState;
-        });
+    const handleSetFoundResults = useCallback((activities: UIActivity[]) => {
+        setFoundResults(uniq(activities).map((activity) => activity.uiGeneratedId));
     }, []);
+
     const handleSearch = (value: string) => {
         setSearchQuery(value);
         setFoundResults([]);
+
+        const foundActivities: UIActivity[] = [];
 
         const fullSearchFields: NestedKeyOf<Activity>[] = [
             "date",
@@ -46,26 +43,26 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) =
 
                 if (Array.isArray(searchFieldValue)) {
                     if (
-                        searchFieldValue.some(
-                            (searchValue) => `${searchValue.name.toLowerCase()} ${searchValue.value.toLowerCase()}` === value.toLowerCase(),
+                        searchFieldValue.some((searchValue) =>
+                            `${searchValue.name.toLowerCase()} ${searchValue.value.toLowerCase()}`.includes(value.toLowerCase()),
                         )
                     ) {
-                        handleSetFoundResult(activity);
+                        foundActivities.push(activity);
                     }
 
                     continue;
                 }
 
                 if (value && searchFieldValue.toLowerCase().includes(value.toLowerCase())) {
-                    handleSetFoundResult(activity);
+                    foundActivities.push(activity);
                 }
             }
         }
 
-        handleScrollToItem(
-            activities.findIndex((item) => item.uiGeneratedId === foundResults[selectedResult]),
-            "start",
-        );
+        handleSetFoundResults(foundActivities);
+
+        const indexToScroll = activities.findIndex((item) => item.uiGeneratedId === foundActivities[selectedResult]?.uiGeneratedId);
+        handleScrollToItem(indexToScroll, "center");
     };
 
     const changeResult = (selectedResultNewValue: number) => {

@@ -19,11 +19,7 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
             lastModifiedBy: "admin",
             lastModifiedAt: "2024-09-25T06:09:03.470213Z",
         },
-        attachment: null,
         additionalFields: [],
-        overrideIcon: null,
-        overrideDisplayableName: null,
-        overrideSupportedActions: null,
         type: "COMMENT_ADDED",
     },
     {
@@ -60,11 +56,8 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
             lastModifiedBy: "admin",
             lastModifiedAt: "2024-09-25T09:53:40.875721Z",
         },
-        attachment: null,
         additionalFields: [],
-        overrideIcon: null,
         overrideDisplayableName: "Version 3 saved",
-        overrideSupportedActions: null,
         type: "SCENARIO_MODIFIED",
     },
     {
@@ -80,11 +73,8 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
             lastModifiedBy: "admin",
             lastModifiedAt: "2024-09-27T09:55:04.309Z",
         },
-        attachment: null,
         additionalFields: [],
-        overrideIcon: null,
         overrideDisplayableName: "Version 4 saved",
-        overrideSupportedActions: null,
         type: "SCENARIO_MODIFIED",
     },
     {
@@ -92,11 +82,6 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
         user: "some user",
         date: "2022-12-17T14:21:17Z",
         scenarioVersionId: 1,
-        comment: null,
-        attachment: null,
-        overrideDisplayableName: null,
-        overrideIcon: null,
-        overrideSupportedActions: null,
         additionalFields: [
             {
                 name: "oldName",
@@ -115,11 +100,11 @@ const mockedActivities = extendActivitiesWithUIData(mergeActivityDataWithMetadat
 
 describe(useActivitiesSearch.name, () => {
     it.each<[string, string[]]>([
-        ["atta", [mockedActivities[3].uiGeneratedId]],
-        ["3 saved", [mockedActivities[2].uiGeneratedId]],
+        ["atta", [mockedActivities[4].uiGeneratedId]],
+        ["3 saved", [mockedActivities[3].uiGeneratedId]],
         ["2024-09-27", [mockedActivities[1].uiGeneratedId]],
-        ["tests save", [mockedActivities[2].uiGeneratedId]],
-        ["newName old marketing campaign", [mockedActivities[6].uiGeneratedId]],
+        ["tests save", [mockedActivities[3].uiGeneratedId]],
+        ["newName old marketing campaign", [mockedActivities[7].uiGeneratedId]],
     ])("should find elements when query is '%s'", (searchQuery, expected) => {
         const handleScrollToItemMock = jest.fn();
         const { result } = renderHook(() =>
@@ -133,6 +118,6 @@ describe(useActivitiesSearch.name, () => {
             result.current.handleSearch(searchQuery);
         });
 
-        expect(result.current.foundResults).toEqual(expected);
+        expect(result.current.foundResults).toMatchObject(expected);
     });
 });

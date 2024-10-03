@@ -82,7 +82,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     }, []);
 
     const { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults } = useActivitiesSearch({
-        activities: data,
+        activities: data.filter((activity) => (activity.uiType === "item" && !activity.isHidden) || activity.uiType !== "item"),
         handleScrollToItem: (index, align) => listRef.current.scrollToItem(index, align),
     });
 
@@ -94,7 +94,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                         return { ...data, isClicked: false };
                     }
 
-                    if (prevStateItemIndex <= prevStateItemIndex && prevStateItemIndex > index - sameItemOccurrence - 1) {
+                    if (prevStateItemIndex <= index && prevStateItemIndex > index - sameItemOccurrence - 1) {
                         return { ...data, isHidden: true };
                     }
 

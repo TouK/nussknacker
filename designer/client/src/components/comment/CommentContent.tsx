@@ -66,7 +66,7 @@ const withHighlightText = (text: string, searchWords: string[], theme: Theme) =>
     return replacedText;
 };
 
-function CommentContent({ commentSettings, content, searchWords, variant = "overline" }: Props): JSX.Element {
+function CommentContent({ commentSettings, content, searchWords, variant = "caption" }: Props): JSX.Element {
     const theme = useTheme();
     const newContent = useMemo(() => {
         if (isEmpty(commentSettings)) {

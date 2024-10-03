@@ -58,7 +58,12 @@ export const ActivityItem = forwardRef(
                     />
                     <StyledActivityBody>
                         <Box display={"flex"} alignItems={"center"} justifyContent={"flex-start"}>
-                            <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
+                            <Typography
+                                component={SearchHighlighter}
+                                highlights={[searchQuery]}
+                                variant={"overline"}
+                                data-testid={"activity-date"}
+                            >
                                 {formatDateTime(activity.date)}
                             </Typography>
                             <Box component={Typography} variant={"overline"} px={0.5}>
@@ -70,7 +75,7 @@ export const ActivityItem = forwardRef(
                         </Box>
 
                         {activity.scenarioVersionId && <Typography variant={"overline"}>{version}</Typography>}
-                        {activity.comment && (
+                        {activity?.comment?.content?.value && (
                             <CommentContent
                                 content={activity.comment.content.value}
                                 commentSettings={commentSettings}

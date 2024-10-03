@@ -34,7 +34,10 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
             return undefined;
         }
 
-        const shouldAddDateRangeElement = occurrences.length > hideItemsOptionAvailableLimit && currentActivity.type !== nextActivity?.type;
+        const shouldAddDateRangeElement =
+            occurrences.length > hideItemsOptionAvailableLimit &&
+            currentActivity.type !== nextActivity?.type &&
+            !occurrences.every((occurrence) => occurrence === occurrences[0]);
 
         if (shouldAddDateRangeElement) {
             const dates = occurrences.map((occurrence) => moment(occurrence));
@@ -52,7 +55,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
             iteration++;
 
             if (currentAndNextActivityAreTheSame) {
-                occurrences.push(currentActivity.date);
+                occurrences.push(formatDate(currentActivity.date));
             }
 
             return recursiveDateLabelDesignation(nextActivity, index, occurrences, iteration);

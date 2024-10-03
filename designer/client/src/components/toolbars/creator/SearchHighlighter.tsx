@@ -7,6 +7,7 @@ export function SearchHighlighter({
     highlights = [],
     className,
     typographyStyle = {},
+    ...props
 }: {
     children: string;
     highlights: string[];
@@ -28,6 +29,7 @@ export function SearchHighlighter({
                 background: theme.palette.background.paper,
                 fontWeight: "bold",
             }}
+            {...props}
         />
     );
 }

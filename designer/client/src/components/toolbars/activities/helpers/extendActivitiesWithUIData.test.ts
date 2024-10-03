@@ -2,6 +2,7 @@ import { extendActivitiesWithUIData } from "./extendActivitiesWithUIData";
 import { mergeActivityDataWithMetadata } from "./mergeActivityDataWithMetadata";
 import { sampleMetadataResponse } from "../../../../../__mocks__/fixtures/sampleMetadataResponse";
 import { sampleActivitiesResponse, sampleActivitiesWithRepetiveResponse } from "../../../../../__mocks__/fixtures/sampleActivitiesResponse";
+import { ActivitiesResponse } from "../../../../http/HttpService";
 
 describe("extendActivitiesWithUIData", () => {
     it("should render activities with metadata when items are not grouped", () => {
@@ -213,13 +214,13 @@ describe("extendActivitiesWithUIData", () => {
 
         expect(extendActivitiesWithUIData(activitiesDataWithMetadata)).toMatchObject(expected);
     });
-    it("should render activities with metadata when items are grouped and date range is visible", () => {
+    it("should render activities with metadata and date range when items are grouped in the date range", () => {
         const activitiesDataWithMetadata = mergeActivityDataWithMetadata(sampleActivitiesWithRepetiveResponse, sampleMetadataResponse);
 
         const expected = [
             {
                 uiType: "date",
-                value: "2024-09-25 - 2024-09-26",
+                value: ["2024-09-25", "2024-09-26"],
             },
             {
                 actions: [],
@@ -687,6 +688,350 @@ describe("extendActivitiesWithUIData", () => {
                 type: "COMMENT_ADDED",
                 uiType: "item",
                 user: "admin",
+            },
+        ];
+
+        expect(extendActivitiesWithUIData(activitiesDataWithMetadata)).toMatchObject(expected);
+    });
+
+    it("should render activities with metadata without date range when items are grouped in the same day", () => {
+        const activities: ActivitiesResponse["activities"] = [
+            {
+                id: "0a309251-9b98-4712-9d71-d5f31f0dd218",
+                user: "admin",
+                date: "2024-10-02T07:52:57.294963Z",
+                scenarioVersionId: 13,
+                comment: {
+                    content: {
+                        value: "test",
+                        status: "AVAILABLE",
+                    },
+                    lastModifiedBy: "admin",
+                    lastModifiedAt: "2024-10-02T07:52:57.294963Z",
+                },
+                additionalFields: [],
+                type: "COMMENT_ADDED",
+            },
+            {
+                id: "72ec0519-2b1e-4fa9-a589-ca41372f4b1d",
+                user: "admin",
+                date: "2024-10-02T08:41:02.637105Z",
+                scenarioVersionId: 13,
+                comment: {
+                    content: {
+                        value: "34",
+                        status: "AVAILABLE",
+                    },
+                    lastModifiedBy: "admin",
+                    lastModifiedAt: "2024-10-02T08:41:02.637105Z",
+                },
+                additionalFields: [],
+                type: "COMMENT_ADDED",
+            },
+            {
+                id: "c18a2e19-7a70-4150-bb12-eff61d21a2ed",
+                user: "admin",
+                date: "2024-10-02T08:48:39.822978Z",
+                scenarioVersionId: 13,
+                comment: {
+                    content: {
+                        value: "1",
+                        status: "AVAILABLE",
+                    },
+                    lastModifiedBy: "admin",
+                    lastModifiedAt: "2024-10-02T08:48:39.822978Z",
+                },
+                additionalFields: [],
+                type: "COMMENT_ADDED",
+            },
+            {
+                id: "c03cae2e-95e6-44ac-8d5d-6d253a8f669a",
+                user: "admin",
+                date: "2024-10-02T08:48:42.599853Z",
+                scenarioVersionId: 13,
+                comment: {
+                    content: {
+                        value: "2",
+                        status: "AVAILABLE",
+                    },
+                    lastModifiedBy: "admin",
+                    lastModifiedAt: "2024-10-02T08:48:42.599853Z",
+                },
+                additionalFields: [],
+                type: "COMMENT_ADDED",
+            },
+            {
+                id: "61f1c933-1c80-427f-b43d-39f5ae7a2b84",
+                user: "admin",
+                date: "2024-10-02T08:48:44.563111Z",
+                scenarioVersionId: 13,
+                comment: {
+                    content: {
+                        value: "3",
+                        status: "AVAILABLE",
+                    },
+                    lastModifiedBy: "admin",
+                    lastModifiedAt: "2024-10-02T08:48:44.563111Z",
+                },
+                additionalFields: [],
+                type: "COMMENT_ADDED",
+            },
+            {
+                id: "0bb4b537-6d17-4f65-999f-1ab3255621b6",
+                user: "admin",
+                date: "2024-10-02T08:48:46.816130Z",
+                scenarioVersionId: 13,
+                comment: {
+                    content: {
+                        value: "4",
+                        status: "AVAILABLE",
+                    },
+                    lastModifiedBy: "admin",
+                    lastModifiedAt: "2024-10-02T08:48:46.816130Z",
+                },
+                additionalFields: [],
+                type: "COMMENT_ADDED",
+            },
+        ];
+        const activitiesDataWithMetadata = mergeActivityDataWithMetadata(activities, sampleMetadataResponse);
+
+        const expected = [
+            {
+                uiType: "date",
+                value: "2024-10-02",
+            },
+            {
+                actions: [
+                    {
+                        displayableName: "Delete",
+                        icon: "/assets/states/error.svg",
+                        id: "delete_comment",
+                    },
+                    {
+                        displayableName: "Edit",
+                        icon: "/assets/states/error.svg",
+                        id: "edit_comment",
+                    },
+                ],
+                activities: {
+                    displayableName: "Comment",
+                    icon: "/assets/states/success.svg",
+                    supportedActions: ["delete_comment", "edit_comment"],
+                    type: "COMMENT_ADDED",
+                },
+                additionalFields: [],
+                comment: {
+                    content: {
+                        status: "AVAILABLE",
+                        value: "4",
+                    },
+                    lastModifiedAt: "2024-10-02T08:48:46.816130Z",
+                    lastModifiedBy: "admin",
+                },
+                date: "2024-10-02T08:48:46.816130Z",
+                id: "0bb4b537-6d17-4f65-999f-1ab3255621b6",
+                isActiveFound: false,
+                isFound: false,
+                isHidden: false,
+                scenarioVersionId: 13,
+                type: "COMMENT_ADDED",
+                uiType: "item",
+                user: "admin",
+            },
+            {
+                actions: [
+                    {
+                        displayableName: "Delete",
+                        icon: "/assets/states/error.svg",
+                        id: "delete_comment",
+                    },
+                    {
+                        displayableName: "Edit",
+                        icon: "/assets/states/error.svg",
+                        id: "edit_comment",
+                    },
+                ],
+                activities: {
+                    displayableName: "Comment",
+                    icon: "/assets/states/success.svg",
+                    supportedActions: ["delete_comment", "edit_comment"],
+                    type: "COMMENT_ADDED",
+                },
+                additionalFields: [],
+                comment: {
+                    content: {
+                        status: "AVAILABLE",
+                        value: "3",
+                    },
+                    lastModifiedAt: "2024-10-02T08:48:44.563111Z",
+                    lastModifiedBy: "admin",
+                },
+                date: "2024-10-02T08:48:44.563111Z",
+                id: "61f1c933-1c80-427f-b43d-39f5ae7a2b84",
+                isActiveFound: false,
+                isFound: false,
+                isHidden: true,
+                scenarioVersionId: 13,
+                type: "COMMENT_ADDED",
+                uiType: "item",
+                user: "admin",
+            },
+            {
+                actions: [
+                    {
+                        displayableName: "Delete",
+                        icon: "/assets/states/error.svg",
+                        id: "delete_comment",
+                    },
+                    {
+                        displayableName: "Edit",
+                        icon: "/assets/states/error.svg",
+                        id: "edit_comment",
+                    },
+                ],
+                activities: {
+                    displayableName: "Comment",
+                    icon: "/assets/states/success.svg",
+                    supportedActions: ["delete_comment", "edit_comment"],
+                    type: "COMMENT_ADDED",
+                },
+                additionalFields: [],
+                comment: {
+                    content: {
+                        status: "AVAILABLE",
+                        value: "2",
+                    },
+                    lastModifiedAt: "2024-10-02T08:48:42.599853Z",
+                    lastModifiedBy: "admin",
+                },
+                date: "2024-10-02T08:48:42.599853Z",
+                id: "c03cae2e-95e6-44ac-8d5d-6d253a8f669a",
+                isActiveFound: false,
+                isFound: false,
+                isHidden: true,
+                scenarioVersionId: 13,
+                type: "COMMENT_ADDED",
+                uiType: "item",
+                user: "admin",
+            },
+            {
+                actions: [
+                    {
+                        displayableName: "Delete",
+                        icon: "/assets/states/error.svg",
+                        id: "delete_comment",
+                    },
+                    {
+                        displayableName: "Edit",
+                        icon: "/assets/states/error.svg",
+                        id: "edit_comment",
+                    },
+                ],
+                activities: {
+                    displayableName: "Comment",
+                    icon: "/assets/states/success.svg",
+                    supportedActions: ["delete_comment", "edit_comment"],
+                    type: "COMMENT_ADDED",
+                },
+                additionalFields: [],
+                comment: {
+                    content: {
+                        status: "AVAILABLE",
+                        value: "1",
+                    },
+                    lastModifiedAt: "2024-10-02T08:48:39.822978Z",
+                    lastModifiedBy: "admin",
+                },
+                date: "2024-10-02T08:48:39.822978Z",
+                id: "c18a2e19-7a70-4150-bb12-eff61d21a2ed",
+                isActiveFound: false,
+                isFound: false,
+                isHidden: true,
+                scenarioVersionId: 13,
+                type: "COMMENT_ADDED",
+                uiType: "item",
+                user: "admin",
+            },
+            {
+                actions: [
+                    {
+                        displayableName: "Delete",
+                        icon: "/assets/states/error.svg",
+                        id: "delete_comment",
+                    },
+                    {
+                        displayableName: "Edit",
+                        icon: "/assets/states/error.svg",
+                        id: "edit_comment",
+                    },
+                ],
+                activities: {
+                    displayableName: "Comment",
+                    icon: "/assets/states/success.svg",
+                    supportedActions: ["delete_comment", "edit_comment"],
+                    type: "COMMENT_ADDED",
+                },
+                additionalFields: [],
+                comment: {
+                    content: {
+                        status: "AVAILABLE",
+                        value: "34",
+                    },
+                    lastModifiedAt: "2024-10-02T08:41:02.637105Z",
+                    lastModifiedBy: "admin",
+                },
+                date: "2024-10-02T08:41:02.637105Z",
+                id: "72ec0519-2b1e-4fa9-a589-ca41372f4b1d",
+                isActiveFound: false,
+                isFound: false,
+                isHidden: true,
+                scenarioVersionId: 13,
+                type: "COMMENT_ADDED",
+                uiType: "item",
+                user: "admin",
+            },
+            {
+                actions: [
+                    {
+                        displayableName: "Delete",
+                        icon: "/assets/states/error.svg",
+                        id: "delete_comment",
+                    },
+                    {
+                        displayableName: "Edit",
+                        icon: "/assets/states/error.svg",
+                        id: "edit_comment",
+                    },
+                ],
+                activities: {
+                    displayableName: "Comment",
+                    icon: "/assets/states/success.svg",
+                    supportedActions: ["delete_comment", "edit_comment"],
+                    type: "COMMENT_ADDED",
+                },
+                additionalFields: [],
+                comment: {
+                    content: {
+                        status: "AVAILABLE",
+                        value: "test",
+                    },
+                    lastModifiedAt: "2024-10-02T07:52:57.294963Z",
+                    lastModifiedBy: "admin",
+                },
+                date: "2024-10-02T07:52:57.294963Z",
+                id: "0a309251-9b98-4712-9d71-d5f31f0dd218",
+                isActiveFound: false,
+                isFound: false,
+                isHidden: true,
+                scenarioVersionId: 13,
+                type: "COMMENT_ADDED",
+                uiType: "item",
+                user: "admin",
+            },
+            {
+                isClicked: false,
+                sameItemOccurrence: 5,
+                uiType: "toggleItemsButton",
             },
         ];
 

@@ -224,12 +224,12 @@ export interface ActivitiesResponse {
         type: ActivityTypes;
         user: string;
         date: string;
-        scenarioVersionId?: number;
-        comment: ActivityComment | null;
-        attachment: ActivityAttachment | null;
-        overrideDisplayableName: string | null;
-        overrideSupportedActions: string[] | null;
-        overrideIcon: string | null;
+        scenarioVersionId: number;
+        comment?: ActivityComment;
+        attachment?: ActivityAttachment;
+        overrideDisplayableName?: string;
+        overrideSupportedActions?: string[];
+        overrideIcon?: string;
         additionalFields: ActivityAdditionalFields[];
     }[];
 }
