@@ -15,6 +15,6 @@ trait BaseDeploymentManager extends DeploymentManager {
   override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
 
   override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
-    Future.successful(Nil)
+    Future.successful(List.empty)
 
 }

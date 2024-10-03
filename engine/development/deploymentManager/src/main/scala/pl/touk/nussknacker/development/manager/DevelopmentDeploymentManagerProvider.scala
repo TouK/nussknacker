@@ -183,7 +183,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   }
 
   override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
-    Future.successful(Nil)
+    Future.successful(List.empty)
 
   override def close(): Unit = {}
 

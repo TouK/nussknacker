@@ -268,7 +268,7 @@ class FlinkRestManager(
   }
 
   override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
-    Future.successful(Nil)
+    Future.successful(List.empty)
 
   override def close(): Unit = {
     logger.info("Closing Flink REST manager")

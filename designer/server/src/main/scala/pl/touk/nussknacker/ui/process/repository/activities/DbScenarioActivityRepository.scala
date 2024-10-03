@@ -872,10 +872,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case ScenarioActivityType.PerformedScheduledExecution =>
         (for {
           scheduleName <- additionalPropertyFromEntity(entity, "scheduleName")
-          retriesLeft <- additionalPropertyFromEntity(entity, "retriesLeft").flatMap { r =>
-            Try(r.toInt).toEither.left.map(_.getMessage)
-          }
-          status <- additionalPropertyFromEntity(entity, "status")
+          retriesLeft  <- additionalPropertyFromEntity(entity, "retriesLeft").flatMap(toIntEither)
+          status       <- additionalPropertyFromEntity(entity, "status")
           nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
         } yield ScenarioActivity.PerformedScheduledExecution(
           scenarioId = scenarioIdFromEntity(entity),
@@ -930,6 +928,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
 
   private def toLongOption(str: String) = Try(str.toLong).toOption
 
-  private def toIntOption(str: String) = Try(str.toInt).toOption
+  private def toIntEither(str: String): Either[String, Int] = Try(str.toInt).toEither.left.map(_.getMessage)
 
 }

@@ -32,6 +32,6 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
   }
 
   override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
-    Future.successful(Nil)
+    Future.successful(List.empty)
 
 }
