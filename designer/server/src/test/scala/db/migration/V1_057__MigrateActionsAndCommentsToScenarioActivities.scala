@@ -122,7 +122,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioActivityId = sad,
             user = user,
             date = date,
-            scenarioVersion = sv,
+            scenarioVersionId = sv,
             comment = Available("Deployment with scenario fix", user.name, date)
           )
       )
@@ -137,7 +137,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioActivityId = sad,
             user = user,
             date = date,
-            scenarioVersion = sv,
+            scenarioVersionId = sv,
             comment = Available("I'm canceling this scenario, it causes problems", user.name, date)
           )
       )
@@ -152,7 +152,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioActivityId = sad,
             user = user,
             date = date,
-            scenarioVersion = sv,
+            scenarioVersionId = sv,
           )
       )
     }
@@ -166,7 +166,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioActivityId = sad,
             user = user,
             date = date,
-            scenarioVersion = sv,
+            scenarioVersionId = sv,
           )
       )
     }
@@ -180,25 +180,49 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioActivityId = sad,
             user = user,
             date = date,
-            scenarioVersion = sv,
+            scenarioVersionId = sv,
             comment = Available("Paused because marketing campaign is paused for now", user.name, date)
           )
       )
     }
     "migrate RENAME action with comment to scenario_activities table" in {
-      testMigratingActionWithComment(
-        scenarioActionName = ScenarioActionName.Rename,
-        actionComment = Some("Rename: [marketing-campaign] -> [marketing-campaign-plus]"),
-        expectedActivity = (sid, sad, user, date, sv) =>
-          ScenarioActivity.ScenarioNameChanged(
-            scenarioId = sid,
-            scenarioActivityId = sad,
-            user = user,
-            date = date,
-            scenarioVersion = sv,
-            oldName = "marketing-campaign",
-            newName = "marketing-campaign-plus",
-          )
+      val actionComment = "Rename: [marketing-campaign] -> [marketing-campaign-plus]"
+
+      val scenario = run(
+        for {
+          process <- processInsertQuery += processEntity(user, now)
+          _       <- processVersionsTable += processVersionEntity(process)
+          comment <- commentInsertQuery += commentEntity(process, 1L, actionComment)
+          _       <- actionInsertQuery += processActionEntity(process, ScenarioActionName.Rename, Some(comment.id))
+          _       <- migration.migrate
+          _       <- activitiesDefinitions.scenarioActivitiesTable.result
+        } yield process
+      )
+
+      val entities = run(activitiesDefinitions.scenarioActivitiesTable.result)
+
+      entities shouldBe Vector(
+        ScenarioActivityEntityData(
+          id = entities.head.id,
+          activityType = "SCENARIO_NAME_CHANGED",
+          scenarioId = scenario.id.value,
+          activityId = entities.head.activityId,
+          userId = None,
+          userName = "John Doe",
+          impersonatedByUserId = None,
+          impersonatedByUserName = None,
+          lastModifiedByUserName = Some("John Doe"),
+          lastModifiedAt = entities.head.lastModifiedAt,
+          createdAt = entities.head.createdAt,
+          scenarioVersion = Some(5),
+          comment = Some("Rename: [marketing-campaign] -> [marketing-campaign-plus]"),
+          attachmentId = None,
+          finishedAt = None,
+          state = Some("IN_PROGRESS"),
+          errorMessage = None,
+          buildInfo = None,
+          additionalProperties = "{}"
+        )
       )
     }
     "migrate custom action 'run now' with comment to scenario_activities table" in {
@@ -211,7 +235,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioActivityId = sad,
             user = user,
             date = date,
-            scenarioVersion = sv,
+            scenarioVersionId = sv,
             dateFinished = None,
             errorMessage = None,
             comment = Available("Deployed at the request of business", user.name, date)
@@ -228,7 +252,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioActivityId = sad,
             user = user,
             date = date,
-            scenarioVersion = sv,
+            scenarioVersionId = sv,
             actionName = "special action",
             comment = Available("Special action needed to be executed", user.name, date)
           )
@@ -253,7 +277,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           scenarioActivityId = activities(0).scenarioActivityId,
           user = ScenarioUser(None, UserName("John Doe"), None, None),
           date = now.toInstant,
-          scenarioVersion = Some(ScenarioVersion(processVersionId)),
+          scenarioVersionId = Some(ScenarioVersionId(processVersionId)),
           comment = Available("ABC1", UserName(user), now.toInstant)
         ),
         ScenarioActivity.CommentAdded(
@@ -261,7 +285,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           scenarioActivityId = activities(1).scenarioActivityId,
           user = ScenarioUser(None, UserName("John Doe"), None, None),
           date = now.toInstant,
-          scenarioVersion = Some(ScenarioVersion(processVersionId)),
+          scenarioVersionId = Some(ScenarioVersionId(processVersionId)),
           comment = Available("ABC2", UserName(user), now.toInstant)
         )
       )
@@ -276,7 +300,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           ScenarioActivityId,
           ScenarioUser,
           Instant,
-          Option[ScenarioVersion]
+          Option[ScenarioVersionId]
       ) => ScenarioActivity,
   ): Unit = {
     val (process, action) = run(
@@ -300,7 +324,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
         ScenarioActivityId(action.id),
         ScenarioUser(None, UserName("John Doe"), None, None),
         now.toInstant,
-        Some(ScenarioVersion(processVersionId)),
+        Some(ScenarioVersionId(processVersionId)),
       )
     )
   }

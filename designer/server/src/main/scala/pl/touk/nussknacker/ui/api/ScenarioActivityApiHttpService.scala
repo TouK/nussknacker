@@ -352,7 +352,9 @@ class ScenarioActivityApiHttpService(
             date,
             scenarioVersionId,
             sourceEnvironment,
-            sourceScenarioVersionId
+            sourceUser,
+            sourceScenarioVersionId,
+            targetEnvironment,
           ) =>
         Dtos.ScenarioActivity.forIncomingMigration(
           id = scenarioActivityId.value,
@@ -360,7 +362,9 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           sourceEnvironment = sourceEnvironment.name,
-          sourceScenarioVersionId = sourceScenarioVersionId.value.toString,
+          sourceUser = sourceUser.value,
+          sourceScenarioVersionId = sourceScenarioVersionId.map(_.value),
+          targetEnvironment = targetEnvironment.map(_.name),
         )
       case ScenarioActivity.OutgoingMigration(
             _,
@@ -368,7 +372,6 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersionId,
-            comment,
             destinationEnvironment
           ) =>
         Dtos.ScenarioActivity.forOutgoingMigration(
@@ -376,7 +379,6 @@ class ScenarioActivityApiHttpService(
           user = user.name.value,
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
-          comment = toDto(comment),
           destinationEnvironment = destinationEnvironment.name,
         )
       case ScenarioActivity.PerformedSingleExecution(
@@ -421,16 +423,14 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersionId,
-            dateFinished,
             changes,
-            errorMessage
+            errorMessage,
           ) =>
         Dtos.ScenarioActivity.forAutomaticUpdate(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
-          dateFinished = dateFinished,
           changes = changes,
           errorMessage = errorMessage,
         )
@@ -455,15 +455,6 @@ class ScenarioActivityApiHttpService(
         scenarioActivityRepository.addComment(scenarioId, request.versionId, request.commentContent)
       )
     )
-
-  private def editComment(request: DeprecatedEditCommentRequest, scenarioId: ProcessId)(
-      implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
-    EitherT(
-      dbioActionRunner.run(
-        scenarioActivityRepository.editComment(scenarioId, request.commentId, request.commentContent)
-      )
-    ).leftMap(_ => NoComment(request.commentId))
 
   private def editComment(request: EditCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser

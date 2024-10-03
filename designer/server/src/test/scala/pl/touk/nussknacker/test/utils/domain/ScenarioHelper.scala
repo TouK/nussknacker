@@ -2,7 +2,7 @@ package pl.touk.nussknacker.test.utils.domain
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -137,7 +137,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
     val actionName = ScenarioActionName.Deploy
-    val comment    = UserComment("Deploy comment")
+    val comment    = Comment("Deploy comment")
     dbioRunner.run(
       actionRepository.addInstantAction(
         scenarioId,
@@ -151,7 +151,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Cancel
-    val comment    = UserComment("Cancel comment")
+    val comment    = Comment("Cancel comment")
     dbioRunner.run(
       actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )
@@ -159,7 +159,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private def prepareCustomAction(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName("Custom")
-    val comment    = UserComment("Execute custom action")
+    val comment    = Comment("Execute custom action")
     dbioRunner.run(
       actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )

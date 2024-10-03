@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.migrations
 
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDto,
@@ -46,6 +46,7 @@ object MigrateScenarioData {
       case MigrateScenarioRequestDtoV2(
             2,
             sourceEnvironmentId,
+            sourceScenarioVersionId,
             remoteUserName,
             processingMode,
             engineSetupName,
@@ -58,6 +59,7 @@ object MigrateScenarioData {
         Right(
           MigrateScenarioDataV2(
             sourceEnvironmentId,
+            sourceScenarioVersionId,
             remoteUserName,
             processingMode,
             engineSetupName,
@@ -96,6 +98,7 @@ object MigrateScenarioData {
         )
       case dataV2 @ MigrateScenarioDataV2(
             sourceEnvironmentId,
+            sourceScenarioVersionId,
             remoteUserName,
             processingMode,
             engineSetupName,
@@ -108,6 +111,7 @@ object MigrateScenarioData {
         MigrateScenarioRequestDtoV2(
           version = dataV2.currentVersion,
           sourceEnvironmentId,
+          sourceScenarioVersionId,
           remoteUserName,
           processingMode,
           engineSetupName,
@@ -136,6 +140,7 @@ final case class MigrateScenarioDataV1(
 
 final case class MigrateScenarioDataV2(
     sourceEnvironmentId: String,
+    sourceScenarioVersionId: Option[VersionId],
     remoteUserName: String,
     processingMode: ProcessingMode,
     engineSetupName: EngineSetupName,

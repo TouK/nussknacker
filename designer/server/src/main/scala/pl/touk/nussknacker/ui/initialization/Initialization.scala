@@ -118,10 +118,10 @@ class AutomaticMigration(
       .sequenceOption(for {
         migrator        <- migrators.forProcessingType(processDetails.processingType)
         migrationResult <- migrator.migrateProcess(processDetails, skipEmptyMigrations = true)
-        updateAction = migrationResult
-          .toUpdateAction(processDetails.processId, processDetails.scenarioLabels.map(ScenarioLabel.apply))
+        automaticUpdateAction = migrationResult
+          .toAutomaticProcessUpdateAction(processDetails.processId, processDetails.scenarioLabels.map(ScenarioLabel.apply))
       } yield {
-        processRepository.updateProcess(updateAction)
+        processRepository.performAutomaticUpdate(automaticUpdateAction)
       })
       .map(_ => ())
   }

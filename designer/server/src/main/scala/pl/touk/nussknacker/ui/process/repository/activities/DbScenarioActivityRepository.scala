@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.repository.DbioRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.sql.Timestamp
 import java.time.Clock
@@ -58,9 +59,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       ScenarioActivity.CommentAdded(
         scenarioId = ScenarioId(scenarioId.value),
         scenarioActivityId = ScenarioActivityId.random,
-        user = toUser(user),
+        user = user.scenarioUser,
         date = now,
-        scenarioVersion = Some(ScenarioVersion(processVersionId.value)),
+        scenarioVersionId = Some(ScenarioVersionId(processVersionId.value)),
         comment = ScenarioComment.Available(
           comment = comment,
           lastModifiedByUserName = UserName(user.username),
@@ -144,9 +145,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         ScenarioActivity.AttachmentAdded(
           scenarioId = ScenarioId(attachmentToAdd.scenarioId.value),
           scenarioActivityId = ScenarioActivityId.random,
-          user = toUser(user),
+          user = user.scenarioUser,
           date = now,
-          scenarioVersion = Some(ScenarioVersion(attachmentToAdd.scenarioVersionId.value)),
+          scenarioVersionId = Some(ScenarioVersionId(attachmentToAdd.scenarioVersionId.value)),
           attachment = ScenarioAttachment.Available(
             attachmentId = AttachmentId(attachment.id),
             attachmentFilename = AttachmentFilename(attachmentToAdd.fileName),
@@ -189,6 +190,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       comments = comments.toList,
       attachments = attachments.toList,
     )
+
   }
 
   def getActivityStats: DB[Map[String, Int]] = {
@@ -207,6 +209,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   ): DB[Seq[(Long, ScenarioActivity)]] = {
     scenarioActivityTable
       .filter(_.scenarioId === scenarioId)
+      .sortBy(_.createdAt)
       .result
       .map(_.map(fromEntity))
       .map {
@@ -234,7 +237,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       prefix: Option[String]
   ): Option[Legacy.Comment] = {
     for {
-      scenarioVersion <- scenarioActivity.scenarioVersion
+      scenarioVersion <- scenarioActivity.scenarioVersionId
       content <- comment match {
         case ScenarioComment.Available(comment, _, _) => Some(comment)
         case ScenarioComment.Deleted(_, _)            => None
@@ -278,28 +281,37 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         None
       case _: ScenarioActivity.ChangedProcessingMode =>
         None
-      case _: ScenarioActivity.IncomingMigration =>
-        None
+      case activity: ScenarioActivity.IncomingMigration =>
+        toComment(
+          id,
+          activity,
+          ScenarioComment.Available(
+            comment = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}",
+            lastModifiedByUserName = activity.user.name,
+            lastModifiedAt = activity.date
+          ),
+          None,
+        )
       case _: ScenarioActivity.OutgoingMigration =>
         None
       case activity: ScenarioActivity.PerformedSingleExecution =>
         toComment(id, activity, activity.comment, Some("Run now: "))
       case _: ScenarioActivity.PerformedScheduledExecution =>
         None
-      case _: ScenarioActivity.AutomaticUpdate =>
-        None
+      case activity: ScenarioActivity.AutomaticUpdate =>
+        toComment(
+          id,
+          activity,
+          ScenarioComment.Available(
+            comment = s"Migrations applied: ${activity.changes}",
+            lastModifiedByUserName = activity.user.name,
+            lastModifiedAt = activity.date
+          ),
+          None,
+        )
       case _: ScenarioActivity.CustomAction =>
         None
     }
-  }
-
-  private def toUser(loggedUser: LoggedUser) = {
-    ScenarioUser(
-      id = Some(UserId(loggedUser.id)),
-      name = UserName(loggedUser.username),
-      impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-      impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-    )
   }
 
   private lazy val activityByRowIdCompiled = Compiled { rowId: Rep[Long] =>
@@ -462,7 +474,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       lastModifiedByUserName = lastModifiedByUserName,
       lastModifiedAt = Some(now),
       createdAt = now,
-      scenarioVersion = scenarioActivity.scenarioVersion,
+      scenarioVersion = scenarioActivity.scenarioVersionId,
       comment = comment,
       attachmentId = attachmentId,
       finishedAt = finishedAt,
@@ -565,16 +577,16 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case activity: ScenarioActivity.IncomingMigration =>
         createEntity(scenarioActivity)(
           additionalProperties = AdditionalProperties(
-            Map(
-              "sourceEnvironment"     -> activity.sourceEnvironment.name,
-              "sourceScenarioVersion" -> activity.sourceScenarioVersion.value.toString,
-            )
+            List(
+              Some("sourceEnvironment" -> activity.sourceEnvironment.name),
+              Some("sourceUser"        -> activity.sourceUser.value),
+              activity.targetEnvironment.map(v => "targetEnvironment" -> v.name),
+              activity.sourceScenarioVersionId.map(v => "sourceScenarioVersion" -> v.toString),
+            ).flatten.toMap
           )
         )
       case activity: ScenarioActivity.OutgoingMigration =>
         createEntity(scenarioActivity)(
-          comment = comment(activity.comment),
-          lastModifiedByUserName = lastModifiedByUserName(activity.comment),
           additionalProperties = AdditionalProperties(
             Map(
               "destinationEnvironment" -> activity.destinationEnvironment.name,
@@ -593,7 +605,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         )
       case activity: ScenarioActivity.AutomaticUpdate =>
         createEntity(scenarioActivity)(
-          finishedAt = Some(Timestamp.from(activity.dateFinished)),
           errorMessage = activity.errorMessage,
           additionalProperties = AdditionalProperties(
             Map(
@@ -664,8 +675,16 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     }
   }
 
+  private def additionalPropertyListFromEntity(entity: ScenarioActivityEntityData, namePrefix: String): List[String] = {
+    entity.additionalProperties.properties.filter(_._1.startsWith(namePrefix)).values.toList
+  }
+
   private def additionalPropertyFromEntity(entity: ScenarioActivityEntityData, name: String): Either[String, String] = {
-    entity.additionalProperties.properties.get(name).toRight(s"Missing additional property $name")
+    optionalAdditionalPropertyFromEntity(entity, name).toRight(s"Missing additional property $name")
+  }
+
+  private def optionalAdditionalPropertyFromEntity(entity: ScenarioActivityEntityData, name: String): Option[String] = {
+    entity.additionalProperties.properties.get(name)
   }
 
   private def fromEntity(entity: ScenarioActivityEntityData): Either[String, (Long, ScenarioActivity)] = {
@@ -677,7 +696,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion
+            scenarioVersionId = entity.scenarioVersion
           )
           .asRight
           .map((entity.id, _))
@@ -688,7 +707,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion
+            scenarioVersionId = entity.scenarioVersion
           )
           .asRight
           .map((entity.id, _))
@@ -699,7 +718,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion
+            scenarioVersionId = entity.scenarioVersion
           )
           .asRight
           .map((entity.id, _))
@@ -711,7 +730,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
               scenarioActivityId = entity.activityId,
               user = userFromEntity(entity),
               date = entity.createdAt.toInstant,
-              scenarioVersion = entity.scenarioVersion,
+              scenarioVersionId = entity.scenarioVersion,
               comment = comment,
             )
           }
@@ -724,7 +743,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
               scenarioActivityId = entity.activityId,
               user = userFromEntity(entity),
               date = entity.createdAt.toInstant,
-              scenarioVersion = entity.scenarioVersion,
+              scenarioVersionId = entity.scenarioVersion,
               comment = comment,
             )
           }
@@ -737,7 +756,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
               scenarioActivityId = entity.activityId,
               user = userFromEntity(entity),
               date = entity.createdAt.toInstant,
-              scenarioVersion = entity.scenarioVersion,
+              scenarioVersionId = entity.scenarioVersion,
               comment = comment,
             )
           }
@@ -750,22 +769,23 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
               scenarioActivityId = entity.activityId,
               user = userFromEntity(entity),
               date = entity.createdAt.toInstant,
-              scenarioVersion = entity.scenarioVersion,
+              scenarioVersionId = entity.scenarioVersion,
               comment = comment,
             )
           }
           .map((entity.id, _))
       case ScenarioActivityType.ScenarioNameChanged =>
         (for {
-          oldNameAndNewName <- extractOldNameAndNewNameForRename(entity)
+          oldName <- additionalPropertyFromEntity(entity, "oldName")
+          newName <- additionalPropertyFromEntity(entity, "newName")
         } yield ScenarioActivity.ScenarioNameChanged(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
-          oldName = oldNameAndNewName._1,
-          newName = oldNameAndNewName._2
+          scenarioVersionId = entity.scenarioVersion,
+          oldName = oldName,
+          newName = newName,
         )).map((entity.id, _))
       case ScenarioActivityType.CommentAdded =>
         (for {
@@ -775,7 +795,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           comment = comment,
         )).map((entity.id, _))
       case ScenarioActivityType.AttachmentAdded =>
@@ -786,7 +806,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           attachment = attachment,
         )).map((entity.id, _))
       case ScenarioActivityType.ChangedProcessingMode =>
@@ -802,36 +822,38 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           from = from,
           to = to,
         )).map((entity.id, _))
       case ScenarioActivityType.IncomingMigration =>
         (for {
           sourceEnvironment <- additionalPropertyFromEntity(entity, "sourceEnvironment")
-          sourceScenarioVersion <- additionalPropertyFromEntity(entity, "sourceScenarioVersion").flatMap(
-            toLongOption(_).toRight("sourceScenarioVersion is not a valid Long")
+          sourceUser        <- additionalPropertyFromEntity(entity, "sourceUser")
+          targetEnvironment = optionalAdditionalPropertyFromEntity(entity, "targetEnvironment")
+          sourceScenarioVersion = optionalAdditionalPropertyFromEntity(entity, "sourceScenarioVersion").flatMap(
+            toLongOption
           )
         } yield ScenarioActivity.IncomingMigration(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           sourceEnvironment = Environment(sourceEnvironment),
-          sourceScenarioVersion = ScenarioVersion(sourceScenarioVersion)
+          sourceUser = UserName(sourceUser),
+          sourceScenarioVersionId = sourceScenarioVersion.map(ScenarioVersionId),
+          targetEnvironment = targetEnvironment.map(Environment),
         )).map((entity.id, _))
       case ScenarioActivityType.OutgoingMigration =>
         (for {
-          comment                <- commentFromEntity(entity)
           destinationEnvironment <- additionalPropertyFromEntity(entity, "destinationEnvironment")
         } yield ScenarioActivity.OutgoingMigration(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
-          comment = comment,
+          scenarioVersionId = entity.scenarioVersion,
           destinationEnvironment = Environment(destinationEnvironment),
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedSingleExecution =>
@@ -842,7 +864,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
+          scenarioVersionId = entity.scenarioVersion,
           comment = comment,
           dateFinished = entity.finishedAt.map(_.toInstant),
           errorMessage = entity.errorMessage,
@@ -854,7 +876,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion,
+            scenarioVersionId = entity.scenarioVersion,
             dateFinished = entity.finishedAt.map(_.toInstant),
             errorMessage = entity.errorMessage,
           )
@@ -862,15 +884,13 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           .map((entity.id, _))
       case ScenarioActivityType.AutomaticUpdate =>
         (for {
-          finishedAt  <- entity.finishedAt.map(_.toInstant).toRight("Missing finishedAt")
           description <- additionalPropertyFromEntity(entity, "description")
         } yield ScenarioActivity.AutomaticUpdate(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
-          scenarioVersion = entity.scenarioVersion,
-          dateFinished = finishedAt,
+          scenarioVersionId = entity.scenarioVersion,
           errorMessage = entity.errorMessage,
           changes = description,
         )).map((entity.id, _))
@@ -884,37 +904,10 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             scenarioActivityId = entity.activityId,
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
-            scenarioVersion = entity.scenarioVersion,
+            scenarioVersionId = entity.scenarioVersion,
             actionName = actionName,
             comment = comment,
           )).map((entity.id, _))
-    }
-  }
-
-  // todo NU-1772: in next phase the legacy comments will be fully migrated to scenario activities,
-  //  until next PR is merged there is parsing from comment content to preserve full compatibility
-  private def extractOldNameAndNewNameForRename(
-      entity: ScenarioActivityEntityData
-  ): Either[String, (String, String)] = {
-    val fromAdditionalProperties = for {
-      oldName <- additionalPropertyFromEntity(entity, "oldName")
-      newName <- additionalPropertyFromEntity(entity, "newName")
-    } yield (oldName, newName)
-
-    val legacyCommentPattern = """Rename: \[(.+?)\] -> \[(.+?)\]""".r
-
-    val fromLegacyComment = for {
-      comment <- entity.comment.toRight("Legacy comment not present")
-      oldNameAndNewName <- comment match {
-        case legacyCommentPattern(oldName, newName) => Right((oldName, newName))
-        case _ => Left("Could not retrieve oldName and newName from legacy comment")
-      }
-    } yield oldNameAndNewName
-
-    (fromAdditionalProperties, fromLegacyComment) match {
-      case (Right(valuesFromAdditionalProperties), _) => Right(valuesFromAdditionalProperties)
-      case (Left(_), Right(valuesFromLegacyComment))  => Right(valuesFromLegacyComment)
-      case (Left(error), Left(legacyError))           => Left(s"$error, $legacyError")
     }
   }
 

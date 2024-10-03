@@ -4,7 +4,7 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.engine.api.Comment
 
 object DeploymentComment {
 
@@ -13,14 +13,14 @@ object DeploymentComment {
       deploymentCommentSettings: Option[DeploymentCommentSettings]
   ): Validated[CommentValidationError, Option[Comment]] = {
 
-    (comment.filterNot(_.value.isEmpty), deploymentCommentSettings) match {
+    (comment.filterNot(_.content.isEmpty), deploymentCommentSettings) match {
       case (None, Some(_)) =>
         Invalid(CommentValidationError("Comment is required."))
       case (None, None) =>
         Valid(None)
       case (Some(comment), Some(deploymentCommentSettings)) =>
         Validated.cond(
-          comment.value.matches(deploymentCommentSettings.validationPattern),
+          comment.content.matches(deploymentCommentSettings.validationPattern),
           Some(comment),
           CommentValidationError(comment, deploymentCommentSettings)
         )
@@ -42,7 +42,7 @@ object CommentValidationError {
       case None =>
         s"Validation pattern: ${deploymentCommentSettings.validationPattern}"
     }
-    new CommentValidationError(s"Bad comment format '${comment.value}'. " + suffix)
+    new CommentValidationError(s"Bad comment format '${comment.content}'. " + suffix)
   }
 
 }

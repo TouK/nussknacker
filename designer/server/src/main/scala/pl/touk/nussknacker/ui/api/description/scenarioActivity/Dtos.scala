@@ -9,6 +9,7 @@ import io.circe.generic.extras
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.requestresponse.openapi.OApiDocumentation.dropNulls
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.enumSchema
@@ -314,7 +315,11 @@ object Dtos {
     implicit def scenarioActivityCodec: circe.Codec[ScenarioActivity] = {
       implicit val configuration: extras.Configuration =
         extras.Configuration.default.withDiscriminator("type").withScreamingSnakeCaseConstructorNames
-      deriveConfiguredCodec
+      val derivedCodec = deriveConfiguredCodec[ScenarioActivity]
+      circe.Codec.from(
+        decodeA = derivedCodec,
+        encodeA = dropNulls(derivedCodec)
+      )
     }
 
     implicit def scenarioActivitySchema: Schema[ScenarioActivity] = {
@@ -534,7 +539,9 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         sourceEnvironment: String,
-        sourceScenarioVersionId: String,
+        sourceUser: String,
+        sourceScenarioVersionId: Option[Long],
+        targetEnvironment: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.IncomingMigration,
@@ -544,9 +551,11 @@ object Dtos {
       comment = None,
       attachment = None,
       additionalFields = List(
-        AdditionalField("sourceEnvironment", sourceEnvironment),
-        AdditionalField("sourceScenarioVersionId", sourceScenarioVersionId),
-      )
+        Some(AdditionalField("sourceEnvironment", sourceEnvironment)),
+        Some(AdditionalField("sourceUser", sourceUser)),
+        targetEnvironment.map(v => AdditionalField("targetEnvironment", v)),
+        sourceScenarioVersionId.map(v => AdditionalField("sourceScenarioVersionId", v.toString)),
+      ).flatten
     )
 
     def forOutgoingMigration(
@@ -554,7 +563,6 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersionId: Option[Long],
-        comment: ScenarioActivityComment,
         destinationEnvironment: String,
     ): ScenarioActivity = ScenarioActivity(
       id = id,
@@ -562,7 +570,7 @@ object Dtos {
       user = user,
       date = date,
       scenarioVersionId = scenarioVersionId,
-      comment = Some(comment),
+      comment = None,
       attachment = None,
       additionalFields = List(
         AdditionalField("destinationEnvironment", destinationEnvironment),
@@ -621,7 +629,6 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersionId: Option[Long],
-        dateFinished: Instant,
         changes: String,
         errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
@@ -634,7 +641,6 @@ object Dtos {
       attachment = None,
       additionalFields = List(
         Some(AdditionalField("changes", changes)),
-        Some(AdditionalField("dateFinished", dateFinished.toString)),
         errorMessage.map(e => AdditionalField("errorMessage", e)),
       ).flatten
     )

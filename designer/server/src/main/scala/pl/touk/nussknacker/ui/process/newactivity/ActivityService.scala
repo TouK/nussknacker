@@ -4,13 +4,14 @@ import cats.data.EitherT
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.RunDeploymentError
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
@@ -71,16 +72,11 @@ class ActivityService(
             ScenarioActivity.ScenarioDeployed(
               scenarioId = ScenarioId(scenarioId.value),
               scenarioActivityId = ScenarioActivityId.random,
-              user = ScenarioUser(
-                id = Some(UserId(loggedUser.id)),
-                name = UserName(loggedUser.username),
-                impersonatedByUserId = loggedUser.impersonatingUserId.map(UserId.apply),
-                impersonatedByUserName = loggedUser.impersonatingUserName.map(UserName.apply)
-              ),
+              user = loggedUser.scenarioUser,
               date = now,
-              scenarioVersion = Some(ScenarioVersion(scenarioGraphVersionId.value)),
+              scenarioVersionId = Some(ScenarioVersionId(scenarioGraphVersionId.value)),
               comment = commentOpt match {
-                case Some(comment) => ScenarioComment.Available(comment.value, UserName(loggedUser.username), now)
+                case Some(comment) => ScenarioComment.Available(comment.content, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
               },
             )
