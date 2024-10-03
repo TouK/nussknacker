@@ -90,19 +90,20 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   }
 
   test("aggregations should aggregate by integers") {
-    val input = List(1, 2)
+    val input = List(1, 1, 2)
     val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
       "Average"                       -> 1,
-      "Count"                         -> 2,
+      "Count"                         -> 3,
       "Min"                           -> 1,
       "Max"                           -> 2,
       "First"                         -> 1,
       "Last"                          -> 2,
-      "Sum"                           -> 3,
+      "Sum"                           -> 4,
       "Population standard deviation" -> 0,
-      "Sample standard deviation"     -> 1,
+      "Sample standard deviation"     -> 0,
       "Population variance"           -> 0,
-      "Sample variance"               -> 1,
+      "Sample variance"               -> 0,
+      "Collect"                       -> Map(1 -> 2, 2 -> 1).asJava
     ).map(a => AggregateByInputTestData(a._1, a._2))
     runMultipleAggregationTest(input, aggregatorWithExpectedResult)
   }
@@ -120,7 +121,8 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
       "Population standard deviation" -> 0.5,
       "Sample standard deviation"     -> 0.7071067811865476,
       "Population variance"           -> 0.25,
-      "Sample variance"               -> 0.5
+      "Sample variance"               -> 0.5,
+      "Collect"                       -> Map(2.0 -> 1, 1.0 -> 1).asJava
     ).map(a => AggregateByInputTestData(a._1, a._2))
     runMultipleAggregationTest(input, aggregatorWithExpectedResult)
   }
@@ -128,11 +130,12 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   test("aggregations should aggregate by strings") {
     val input = List("def", "abc")
     val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
-      "Count" -> 2,
-      "Min"   -> "abc",
-      "Max"   -> "def",
-      "First" -> "def",
-      "Last"  -> "abc",
+      "Count"   -> 2,
+      "Min"     -> "abc",
+      "Max"     -> "def",
+      "First"   -> "def",
+      "Last"    -> "abc",
+      "Collect" -> Map("def" -> 1, "abc" -> 1).asJava
     ).map(a => AggregateByInputTestData(a._1, a._2))
     runMultipleAggregationTest(input, aggregatorWithExpectedResult)
   }
@@ -150,7 +153,11 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
       "Population standard deviation" -> java.math.BigDecimal.valueOf(0.5).setScale(18),
       "Sample standard deviation"     -> java.math.BigDecimal.valueOf(0.7071067811865476).setScale(18),
       "Population variance"           -> java.math.BigDecimal.valueOf(0.25).setScale(18),
-      "Sample variance"               -> java.math.BigDecimal.valueOf(0.5).setScale(18)
+      "Sample variance"               -> java.math.BigDecimal.valueOf(0.5).setScale(18),
+      "Collect" -> Map(
+        java.math.BigDecimal.valueOf(1).setScale(18) -> 1,
+        java.math.BigDecimal.valueOf(2).setScale(18) -> 1
+      ).asJava
     ).map(a => AggregateByInputTestData(a._1, a._2))
     runMultipleAggregationTest(input, aggregatorWithExpectedResult)
   }
@@ -158,9 +165,10 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
   test("max, min and count aggregations should aggregate by date types") {
     val input = List(LocalDate.parse("2000-01-01"), LocalDate.parse("2000-01-02"))
     val aggregatorWithExpectedResult = List(
-      "Count" -> 2,
-      "Min"   -> LocalDate.parse("2000-01-01"),
-      "Max"   -> LocalDate.parse("2000-01-02"),
+      "Count"   -> 2,
+      "Min"     -> LocalDate.parse("2000-01-01"),
+      "Max"     -> LocalDate.parse("2000-01-02"),
+      "Collect" -> Map(LocalDate.parse("2000-01-01") -> 1, LocalDate.parse("2000-01-02") -> 1).asJava
     ).map(a => AggregateByInputTestData(a._1, a._2))
     runMultipleAggregationTest(input, aggregatorWithExpectedResult)
   }
@@ -210,18 +218,17 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     }
   }
 
-  test("count aggregation works when aggregating by type aligned to RAW") {
-    val scenario = buildMultipleAggregationsScenario(
-      List(
-        AggregationParameters(aggregator = "'Count'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
-      )
-    )
-    val result = runner.runWithData(
-      scenario,
-      List(OffsetDateTime.now()),
-      Boundedness.BOUNDED
-    )
-    result shouldBe Symbol("valid")
+  test("count and collect aggregation works when aggregating by type aligned to RAW") {
+    val input =
+      List(OffsetDateTime.parse("2024-01-01T23:59:30+03:00"), OffsetDateTime.parse("2024-01-02T23:59:30+04:00"))
+    val aggregatorWithExpectedResult: List[AggregateByInputTestData] = List(
+      "Count" -> 2,
+      "Collect" -> Map(
+        OffsetDateTime.parse("2024-01-01T23:59:30+03:00") -> 1,
+        OffsetDateTime.parse("2024-01-02T23:59:30+04:00") -> 1
+      ).asJava
+    ).map(a => AggregateByInputTestData(a._1, a._2))
+    runMultipleAggregationTest(input, aggregatorWithExpectedResult)
   }
 
   test("table aggregation should emit groupBy key and aggregated values as separate variables") {

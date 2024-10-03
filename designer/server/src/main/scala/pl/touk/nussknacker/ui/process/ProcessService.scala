@@ -7,6 +7,7 @@ import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -301,9 +302,8 @@ class DBProcessService(
         val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(entity.processingType)
         processResolver.validateAndReverseResolve(
           canonical,
-          entity.name,
+          entity.toEngineProcessVersion,
           entity.isFragment,
-          entity.scenarioLabels.map(ScenarioLabel.apply)
         )
       },
       parameters
@@ -405,9 +405,8 @@ class DBProcessService(
         FatalValidationError.saveNotAllowedAsError(
           processResolver.validateBeforeUiResolving(
             action.scenarioGraph,
-            details.name,
+            details.processVersionUnsafe,
             details.isFragment,
-            scenarioLabels
           )
         )
       val substituted = processResolver.resolveExpressions(action.scenarioGraph, details.name, validation.typingInfo)
@@ -443,7 +442,7 @@ class DBProcessService(
       val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(canonical)
       val validationResult = processResolverByProcessingType
         .forProcessingTypeUnsafe(process.processingType)
-        .validateBeforeUiReverseResolving(canonical, process.isFragment)
+        .validateBeforeUiReverseResolving(canonical, process.processVersionUnsafe, process.isFragment)
       Future.successful(ScenarioGraphWithValidationResult(scenarioGraph, validationResult))
     }
   }
@@ -453,10 +452,11 @@ class DBProcessService(
       processingType: ProcessingType,
       isFragment: Boolean
   )(implicit user: LoggedUser) = {
+    val newProcessVersion = ProcessVersion.empty.copy(processName = canonicalProcess.name)
     val validationResult =
       processResolverByProcessingType
         .forProcessingTypeUnsafe(processingType)
-        .validateBeforeUiReverseResolving(canonicalProcess, isFragment)
+        .validateBeforeUiReverseResolving(canonicalProcess, newProcessVersion, isFragment)
     validationResult.errors.processPropertiesErrors
   }
 

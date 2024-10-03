@@ -3,9 +3,11 @@ package pl.touk.nussknacker.engine.lite
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -37,7 +39,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       )
     )
 
-    val results = sample.test(scenario, scenarioTestData)
+    val results = sample.test(scenario, processVersionFor(scenario), scenarioTestData)
 
     results.nodeResults("start") shouldBe List(
       ResultContext("A", Map("input" -> variable(2))),
@@ -81,7 +83,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       )
     )
 
-    val results = sample.test(scenario, scenarioTestData)
+    val results = sample.test(scenario, processVersionFor(scenario), scenarioTestData)
 
     results.nodeResults("source1") shouldBe List(
       ResultContext("A", Map("input" -> variable(1))),
@@ -107,7 +109,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       ParameterName("additionalParams") -> Expression(Language.Spel, "{unoDosTres: 123}")
     )
     val scenarioTestData = ScenarioTestData("source1", parameterExpressions)
-    val results          = sample.test(scenario, scenarioTestData)
+    val results          = sample.test(scenario, processVersionFor(scenario), scenarioTestData)
 
     results.nodeResults("source1") shouldBe List(
       ResultContext(
@@ -142,7 +144,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       ParameterName("additionalParams") -> Expression(Language.Spel, "{extraValue: 100}")
     )
     val scenarioTestData = ScenarioTestData("source1", parameterExpressions)
-    val results          = sample.test(scenario, scenarioTestData)
+    val results          = sample.test(scenario, processVersionFor(scenario), scenarioTestData)
 
     results.nodeResults("source1") shouldBe List(
       ResultContext(
@@ -178,7 +180,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       ParameterName("in") -> Expression(Language.Spel, "'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
-    val results          = sample.test(fragment, scenarioTestData)
+    val results          = sample.test(fragment, processVersionFor(fragment), scenarioTestData)
 
     results.nodeResults("fragment1") shouldBe List(ResultContext("fragment1", Map("in" -> variable("some-text-id"))))
     results.nodeResults("fragmentEnd") shouldBe List(
@@ -199,7 +201,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       ParameterName("in") -> Expression(Language.Spel, "0")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
-    val results          = sample.test(fragment, scenarioTestData)
+    val results          = sample.test(fragment, processVersionFor(fragment), scenarioTestData)
 
     results.nodeResults("fragment1") shouldBe List(ResultContext("fragment1", Map("in" -> variable(0))))
     results.nodeResults("fragmentEnd") shouldBe List(ResultContext("fragment1", Map("in" -> variable(0))))
@@ -227,6 +229,10 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     }
 
     Json.obj("pretty" -> toJson(value))
+  }
+
+  private def processVersionFor(scenario: CanonicalProcess) = {
+    ProcessVersion.empty.copy(processName = scenario.metaData.name)
   }
 
 }

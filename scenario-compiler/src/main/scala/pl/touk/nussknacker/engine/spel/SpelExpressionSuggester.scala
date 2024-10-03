@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.spel
 
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import org.springframework.expression.common.TemplateParserContext
@@ -19,14 +20,10 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
+
 import scala.collection.compat.immutable.LazyList
-import scala.jdk.CollectionConverters._
-
-import cats._
-import cats.implicits._
-
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 
 class SpelExpressionSuggester(
     expressionConfig: ExpressionConfigDefinition,
@@ -197,6 +194,12 @@ class SpelExpressionSuggester(
               .queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
               .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil))))
               .getOrElse(successfulNil)
+          case TypingResultWithContext(Unknown, staticContext) =>
+            Future.successful(
+              clssDefinitions.unknown
+                .map(c => filterClassMethods(c, p.getName, staticContext))
+                .getOrElse(Nil)
+            )
         }
         .getOrElse(successfulNil)
     }

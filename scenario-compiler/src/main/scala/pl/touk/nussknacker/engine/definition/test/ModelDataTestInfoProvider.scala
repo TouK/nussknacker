@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{
   TestWithParametersSupport
 }
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
@@ -36,8 +36,12 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 
-  override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {
-    collectAllSources(scenario).map(getTestingCapabilities(_, scenario.metaData)) match {
+  override def getTestingCapabilities(
+      processVersion: ProcessVersion,
+      scenario: CanonicalProcess
+  ): TestingCapabilities = {
+    val jobData = JobData(scenario.metaData, processVersion)
+    collectAllSources(scenario).map(getTestingCapabilities(_, jobData)) match {
       case Nil => TestingCapabilities.Disabled
       case s =>
         s.reduce((tc1, tc2) =>
@@ -51,10 +55,10 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     }
   }
 
-  private def getTestingCapabilities(source: SourceNodeData, metaData: MetaData): TestingCapabilities =
+  private def getTestingCapabilities(source: SourceNodeData, jobData: JobData): TestingCapabilities =
     modelData.withThisAsContextClassLoader {
       val testingCapabilities = for {
-        sourceObj <- prepareSourceObj(source)(metaData, NodeId(source.id))
+        sourceObj <- prepareSourceObj(source)(jobData, NodeId(source.id))
         canTest         = sourceObj.isInstanceOf[SourceTestSupport[_]]
         canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
         canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
@@ -66,16 +70,21 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       testingCapabilities.getOrElse(TestingCapabilities.Disabled)
     }
 
-  override def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] =
+  override def getTestParameters(
+      processVersion: ProcessVersion,
+      scenario: CanonicalProcess
+  ): Map[String, List[Parameter]] = {
+    val jobData = JobData(scenario.metaData, processVersion)
     modelData.withThisAsContextClassLoader {
       collectAllSources(scenario)
-        .map(source => source.id -> getTestParameters(source, scenario.metaData))
+        .map(source => source.id -> getTestParameters(source, jobData))
         .toMap
     }
+  }
 
-  private def getTestParameters(source: SourceNodeData, metaData: MetaData): List[Parameter] =
+  private def getTestParameters(source: SourceNodeData, jobData: JobData): List[Parameter] =
     modelData.withThisAsContextClassLoader {
-      prepareSourceObj(source)(metaData, NodeId(source.id)) match {
+      prepareSourceObj(source)(jobData, NodeId(source.id)) match {
         case Some(s: TestWithParametersSupport[_]) => s.testParametersDefinition
         case _ =>
           throw new UnsupportedOperationException(
@@ -84,9 +93,13 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       }
     }
 
-  override def generateTestData(scenario: CanonicalProcess, size: Int): Either[String, PreliminaryScenarioTestData] = {
+  override def generateTestData(
+      processVersion: ProcessVersion,
+      scenario: CanonicalProcess,
+      size: Int
+  ): Either[String, PreliminaryScenarioTestData] = {
     for {
-      generators <- prepareTestDataGenerators(scenario)
+      generators <- prepareTestDataGenerators(processVersion, scenario)
       generatedData = generateTestData(generators, size)
       // Records without timestamp are put at the end of the list.
       sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
@@ -99,11 +112,13 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   }
 
   private def prepareTestDataGenerators(
+      processVersion: ProcessVersion,
       scenario: CanonicalProcess
   ): Either[String, NonEmptyList[(NodeId, TestDataGenerator)]] = {
+    val jobData = JobData(scenario.metaData, processVersion)
     val generatorsForSourcesSupportingTestDataGeneration = for {
       source            <- collectAllSources(scenario)
-      sourceObj         <- prepareSourceObj(source)(scenario.metaData, NodeId(source.id))
+      sourceObj         <- prepareSourceObj(source)(jobData, NodeId(source.id))
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
     NonEmptyList
@@ -114,16 +129,18 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private def prepareSourceObj(
       source: SourceNodeData
-  )(implicit metaData: MetaData, nodeId: NodeId): Option[process.Source] = {
+  )(implicit jobData: JobData, nodeId: NodeId): Option[process.Source] = {
     nodeCompiler.compileSource(source).compiledObject.toOption
   }
 
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
-    val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
-      val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-      sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+    modelData.withThisAsContextClassLoader {
+      val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
+        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
+        sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+      }
+      ListUtil.mergeLists(sourceTestDataList.toList, size)
     }
-    ListUtil.mergeLists(sourceTestDataList.toList, size)
   }
 
   override def prepareTestData(

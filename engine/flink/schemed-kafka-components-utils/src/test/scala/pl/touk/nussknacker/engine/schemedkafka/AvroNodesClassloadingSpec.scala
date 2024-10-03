@@ -4,6 +4,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
@@ -41,10 +42,11 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
   private lazy val modelData = LocalModelData(config, List.empty, configCreator = configCreator)
 
   test("should load classes correctly for tests") {
-
+    val processVersion = ProcessVersion.empty.copy(processName = scenario.metaData.name)
     // we're interested only in Kafka classes loading, not in data parsing, we don't use mocks as they do not load serializers...
     withFailingLoader {
-      new ModelDataTestInfoProvider(modelData).getTestingCapabilities(scenario) shouldBe TestingCapabilities.Disabled
+      new ModelDataTestInfoProvider(modelData)
+        .getTestingCapabilities(processVersion, scenario) shouldBe TestingCapabilities.Disabled
     }
   }
 

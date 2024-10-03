@@ -83,7 +83,8 @@ class K8sDeploymentManagerKafkaTest
           "Value"                 -> s"{ original: #input, version: $version }".spel
         )
 
-      val pversion = ProcessVersion(VersionId(version), scenario.name, ProcessId(1234), "testUser", Some(22))
+      val pversion =
+        ProcessVersion(VersionId(version), scenario.name, ProcessId(1234), List.empty, "testUser", Some(22))
       manager
         .processCommand(
           DMRunDeploymentCommand(
@@ -190,7 +191,7 @@ class K8sDeploymentManagerKafkaTest
     val f = createKafkaFixture()
 
     def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit = {
-      val version = ProcessVersion(VersionId(11), f.scenario.name, ProcessId(1234), "testUser", Some(22))
+      val version = ProcessVersion(VersionId(11), f.scenario.name, ProcessId(1234), List.empty, "testUser", Some(22))
       manager
         .processCommand(
           DMRunDeploymentCommand(
@@ -447,7 +448,7 @@ class K8sDeploymentManagerKafkaTest
         "Value"                 -> "#input".spel
       )
     logger.info(s"Running kafka test on ${scenario.name} $input - $output")
-    val version = ProcessVersion(VersionId(11), scenario.name, ProcessId(1234), "testUser", Some(22))
+    val version = ProcessVersion(VersionId(11), scenario.name, ProcessId(1234), List.empty, "testUser", Some(22))
     new KafkaTestFixture(
       inputTopic = input,
       outputTopic = output,

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -117,7 +118,8 @@ class AutomaticMigration(
       .sequenceOption(for {
         migrator        <- migrators.forProcessingType(processDetails.processingType)
         migrationResult <- migrator.migrateProcess(processDetails, skipEmptyMigrations = true)
-        updateAction = migrationResult.toUpdateAction(processDetails.processId)
+        updateAction = migrationResult
+          .toUpdateAction(processDetails.processId, processDetails.scenarioLabels.map(ScenarioLabel.apply))
       } yield {
         processRepository.updateProcess(updateAction)
       })

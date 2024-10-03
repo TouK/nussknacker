@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{CirceUtil, JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -154,14 +154,17 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   }
 
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): CompiledProcessParts = {
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
+
     val testCompilerFactory = TestFlinkProcessCompilerDataFactory(
       scenario,
       scenarioTestData,
       modelData,
+      jobData,
       ResultsCollectingListenerHolder.registerListener
     )
     testCompilerFactory
-      .prepareCompilerData(scenario.metaData, ProcessVersion.empty, PreventInvocationCollector)(
+      .prepareCompilerData(jobData.metaData, jobData.processVersion, PreventInvocationCollector)(
         UsedNodes.empty,
         getClass.getClassLoader
       )

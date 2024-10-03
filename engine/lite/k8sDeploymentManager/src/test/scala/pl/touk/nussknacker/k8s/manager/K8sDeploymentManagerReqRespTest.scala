@@ -327,7 +327,7 @@ class K8sDeploymentManagerReqRespTest
     val scenario     = preparePingPongScenario(givenScenarioName, givenVersion, givenSlug)
     logger.info(s"Running req-resp test on ${scenario.name}")
     val version =
-      ProcessVersion(VersionId(givenVersion), scenario.name, ProcessId(1234), "testUser", Some(22))
+      ProcessVersion(VersionId(givenVersion), scenario.name, ProcessId(1234), List.empty, "testUser", Some(22))
     new ReqRespTestFixture(manager = manager, scenario = scenario, version = version, extraClasses)
   }
 
