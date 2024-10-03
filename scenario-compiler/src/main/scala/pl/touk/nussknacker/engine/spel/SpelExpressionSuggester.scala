@@ -338,11 +338,11 @@ class SpelExpressionSuggester(
   }
 
   private def castMethodsSuggestions(klass: Class[_]): Future[Iterable[ExpressionSuggestion]] = {
-    val allowedClasses = Cast.allowedClasses(clssDefinitions, klass)
-    val suggestions = allowedClasses.keySet
+    val allowedClassesForParameter = Cast.allowedClassesForCastParameter(clssDefinitions, klass)
+    val suggestions = allowedClassesForParameter.keySet
       .classesBySimpleNames()
       .map { case (name, clazz) =>
-        ExpressionSuggestion(name, allowedClasses.getOrElse(clazz, Unknown), false, None, Nil)
+        ExpressionSuggestion(name, allowedClassesForParameter.getOrElse(clazz, Unknown), false, None, Nil)
       }
     Future.successful(suggestions)
   }

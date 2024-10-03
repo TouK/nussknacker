@@ -33,7 +33,7 @@ object Cast {
   def isCastMethod(methodName: String): Boolean =
     castMethodsNames.contains(methodName)
 
-  def allowedClasses(set: ClassDefinitionSet, clazz: Class[_]): Map[Class[_], TypingResult] = {
+  def allowedClassesForCastParameter(set: ClassDefinitionSet, clazz: Class[_]): Map[Class[_], TypingResult] = {
     val childTypes = set.classDefinitionsMap
       .filterKeysNow(targetClazz => targetClazz.isChildOf(clazz) && targetClazz.isNotFromNuUtilPackage())
       .mapValuesNow(_.clazzName)
@@ -82,7 +82,7 @@ private[extension] object CastImplFactory {
 private[extension] class CastMethodDefinitions(set: ClassDefinitionSet) {
 
   def extractDefinitions(clazz: Class[_]): Map[String, List[MethodDefinition]] = {
-    Cast.allowedClasses(set, clazz) match {
+    Cast.allowedClassesForCastParameter(set, clazz) match {
       case allowedClasses if allowedClasses.isEmpty => Map.empty
       case allowedClasses                           => definitions(allowedClasses)
     }
