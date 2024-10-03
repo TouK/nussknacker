@@ -8,7 +8,7 @@ import org.springframework.expression.TypedValue;
 import org.springframework.expression.spel.support.ReflectionHelper;
 import org.springframework.expression.spel.support.ReflectiveMethodExecutor;
 import org.springframework.util.ReflectionUtils;
-import pl.touk.nussknacker.engine.spel.internal.ArrayToListConversionHandler;
+import pl.touk.nussknacker.engine.spel.internal.RuntimeConversionHandler;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -19,8 +19,8 @@ import java.lang.reflect.Modifier;
 // As an additional feature we allow to invoke list methods on arrays and
 // in the point of the method invocation we convert an array to a list
 public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
-    private static final ArrayToListConversionHandler.ConversionAwareMethodInvoker methodInvoker =
-        new ArrayToListConversionHandler.ConversionAwareMethodInvoker();
+    private static final RuntimeConversionHandler.ConversionAwareMethodInvoker methodInvoker =
+        new RuntimeConversionHandler.ConversionAwareMethodInvoker();
 
     private final Method method;
 
@@ -32,7 +32,9 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
 
     private boolean argumentConversionOccurred = false;
 
-    public NuReflectiveMethodExecutor(ReflectiveMethodExecutor original) {
+    private final ClassLoader classLoader;
+
+    public NuReflectiveMethodExecutor(ReflectiveMethodExecutor original, ClassLoader classLoader) {
         super(original.getMethod());
         this.method = original.getMethod();
         if (method.isVarArgs()) {
@@ -42,6 +44,7 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
         else {
             this.varargsPosition = null;
         }
+        this.classLoader = classLoader;
     }
 
     /**
@@ -98,7 +101,7 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
             }
             ReflectionUtils.makeAccessible(this.method);
             //Nussknacker: we use custom method invoker which is aware of array conversion
-            Object value = methodInvoker.invoke(this.method, target, arguments);
+            Object value = methodInvoker.invoke(this.method, target, arguments, this.classLoader);
             return new TypedValue(value, new TypeDescriptor(new MethodParameter(this.method, -1)).narrow(value));
         }
         catch (Exception ex) {

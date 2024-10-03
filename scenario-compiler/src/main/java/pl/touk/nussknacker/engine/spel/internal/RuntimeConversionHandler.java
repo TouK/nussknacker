@@ -4,6 +4,9 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
 import org.springframework.lang.Nullable;
+import pl.touk.nussknacker.engine.extension.Cast;
+import pl.touk.nussknacker.engine.extension.ExtensionMethods;
+import scala.PartialFunction;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -13,23 +16,41 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
-public class ArrayToListConversionHandler {
+public class RuntimeConversionHandler {
     public static final class ConversionAwareMethodsDiscovery {
+        private static final Method[] CAST_METHODS = Cast.class.getMethods();
+        private static final Method[] LIST_AND_CAST_METHODS = concatArrays(List.class.getMethods(), CAST_METHODS);
 
         public Method[] discover(Class<?> type) {
             if (type.isArray()) {
-                return List.class.getMethods();
+                return LIST_AND_CAST_METHODS;
             }
-            return type.getMethods();
+            return concatArrays(type.getMethods(), CAST_METHODS);
+        }
+
+        private static Method[] concatArrays(Method[] a, Method[] b) {
+            return Stream
+                .concat(Arrays.stream(a), Arrays.stream(b))
+                .toArray(Method[]::new);
         }
     }
 
     public static final class ConversionAwareMethodInvoker {
 
-        public Object invoke(Method method, Object target, Object[] arguments) throws IllegalAccessException, InvocationTargetException {
-            if (target != null && target.getClass().isArray() && method.getDeclaringClass().isAssignableFrom(List.class)) {
-                return method.invoke(ArrayToListConversionHandler.convert(target), arguments);
+        public Object invoke(Method method,
+                             Object target,
+                             Object[] arguments,
+                             ClassLoader classLoader) throws IllegalAccessException, InvocationTargetException {
+            Class<?> methodDeclaringClass = method.getDeclaringClass();
+            if (target != null && target.getClass().isArray() && methodDeclaringClass.isAssignableFrom(List.class)) {
+                return method.invoke(RuntimeConversionHandler.convert(target), arguments);
+            }
+            PartialFunction<Class<?>, Object> extMethod =
+                ExtensionMethods.invoke(method, target, arguments, classLoader);
+            if (extMethod.isDefinedAt(methodDeclaringClass)) {
+                return extMethod.apply(methodDeclaringClass);
             } else {
                 return method.invoke(target, arguments);
             }
@@ -74,7 +95,7 @@ public class ArrayToListConversionHandler {
             if (source == null) {
                 return null;
             }
-            return ArrayToListConversionHandler.convert(source);
+            return RuntimeConversionHandler.convert(source);
         }
 
     }
