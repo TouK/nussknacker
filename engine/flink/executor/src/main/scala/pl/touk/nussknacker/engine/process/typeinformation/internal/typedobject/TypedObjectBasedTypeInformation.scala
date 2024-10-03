@@ -89,6 +89,11 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
   override def getLength: Int = -1
 
   override def serialize(record: T, target: DataOutputView): Unit = {
+    // todo: lbg, for: #clientData.t_arr?.![#this.castToRecordOrNull({a: 'b'})]
+    if (record == null) {
+      target.writeBoolean(true)
+      return
+    }
     serializers.foreach { case (key, serializer) =>
       val valueToSerialize = get(record, key)
       // We need marker to allow null values - see e.g. MapSerializer in Flink
