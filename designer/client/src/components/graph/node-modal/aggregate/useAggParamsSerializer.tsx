@@ -26,8 +26,6 @@ export function useAggParamsSerializer(): [
         const keyLength = entries.reduce((value, [key]) => Math.max(value, key.length), 0);
         const content = entries.map(([key, value]) => `  ${padStart(key, keyLength, " ")}: ${value}`).join(",\n");
 
-        if (!content) return "";
-
         switch (paramName) {
             case "aggregator":
                 return `#AGG.map({\n${content}\n})`;

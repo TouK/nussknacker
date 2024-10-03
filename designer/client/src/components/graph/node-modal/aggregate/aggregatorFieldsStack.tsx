@@ -23,18 +23,25 @@ type AggregatorFieldsStackProps = {
     outputVariableName?: string;
 };
 
-const PRESETS = [
+type Preset = {
+    label: string;
+    agg: string;
+    expression: string;
+};
+
+const PRESETS: Preset[] = [
     {
-        label: "(Count)",
-        value: "@COUNT",
+        label: "Count",
         agg: "#AGG.sum",
         expression: "1",
     },
 ];
 
-function applyPreset(value: string) {
-    return PRESETS.find((p) => p.value === value) || { agg: value };
-}
+type TypeOption = {
+    value: string;
+    label: string;
+    preset?: Preset;
+};
 
 // use existing method to display only red border without any message
 const EMPTY_REQUIRED_ERROR: FieldError = {
@@ -51,12 +58,18 @@ export function AggregatorFieldsStack({
     outputVariableName,
 }: AggregatorFieldsStackProps) {
     const { readOnly } = useFieldsContext();
-    const options = useMemo<{ value: string; label: string; expression?: string }[]>(() => {
+    const options = useMemo<TypeOption[]>(() => {
         const values = aggregators.map(({ expression: value, label }) => ({
             value,
             label,
         }));
-        return [...values, ...PRESETS];
+        const presets = PRESETS.map((preset) => ({
+            value: preset.label,
+            label: preset.label,
+            preset,
+        }));
+
+        return [...values, ...presets];
     }, [aggregators]);
 
     const onChangeName = useCallback(
@@ -66,11 +79,31 @@ export function AggregatorFieldsStack({
         [onChange, uuid],
     );
 
+    const selectedType = useMemo<TypeOption>(() => {
+        return (
+            options.find(({ preset }) => preset && preset.agg === agg && preset.expression === expression) ||
+            options.find(({ value }) => value === agg)
+        );
+    }, [options, agg, expression]);
+
     const onChangeType = useCallback(
         (value: string) => {
-            onChange(uuid, applyPreset(value));
+            const option = options.find((o) => o.value === value);
+            if (option.preset) {
+                return onChange(uuid, {
+                    agg: option.preset.agg,
+                    expression: option.preset.expression,
+                });
+            }
+            if (selectedType.preset) {
+                return onChange(uuid, {
+                    agg: option.value,
+                    expression: "",
+                });
+            }
+            return onChange(uuid, { agg: value });
         },
-        [onChange, uuid],
+        [onChange, options, selectedType.preset, uuid],
     );
 
     const expressionObj: ExpressionObj = useMemo(
@@ -105,22 +138,21 @@ export function AggregatorFieldsStack({
                 />
             </DynamicLabel>
             <DynamicLabel flexBasis="35%" label="aggregator" hovered={hovered}>
-                <TypeSelect
-                    onChange={onChangeType}
-                    value={options.find(({ value }) => value === agg)}
-                    options={options}
-                    readOnly={readOnly}
-                />
+                <TypeSelect onChange={onChangeType} value={selectedType} options={options} readOnly={readOnly} />
             </DynamicLabel>
             <DynamicLabel flexBasis="70%" label="aggregator input" hovered={hovered}>
-                <EditableEditor
-                    variableTypes={variableTypes}
-                    expressionObj={expressionObj}
-                    onValueChange={onChangeExpression}
-                    readOnly={readOnly}
-                    showValidation
-                    fieldErrors={expression ? [] : [EMPTY_REQUIRED_ERROR]}
-                />
+                {selectedType.preset ? (
+                    <Input disabled value="" />
+                ) : (
+                    <EditableEditor
+                        variableTypes={variableTypes}
+                        expressionObj={expressionObj}
+                        onValueChange={onChangeExpression}
+                        readOnly={readOnly}
+                        showValidation
+                        fieldErrors={expression ? [] : [EMPTY_REQUIRED_ERROR]}
+                    />
+                )}
             </DynamicLabel>
         </>
     );

@@ -41,19 +41,15 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
     const { values, onChange, isMarked, fieldErrors = [] } = aggregator;
     const [data, dataControls] = useArrayState<AggregateValue>(() => values);
 
-    const onAdd = useCallback(
-        (value?: Partial<AggRow>) => {
-            dataControls.push(
-                appendUuid({
-                    name: "",
-                    agg: aggregators[0].expression,
-                    expression: "",
-                    ...value,
-                }),
-            );
-        },
-        [aggregators, dataControls],
-    );
+    const onAdd = useCallback(() => {
+        dataControls.push(
+            appendUuid({
+                name: "",
+                agg: aggregators[0].expression,
+                expression: "",
+            }),
+        );
+    }, [aggregators, dataControls]);
 
     const onRemove = useCallback(
         (_: string, uuid: string) => {
@@ -82,23 +78,28 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
     const [hovered, setHovered] = useState<number | null>(null);
     const outputVariableName = useMemo(() => get(node, "outputVar"), [node]);
 
+    const getFieldsRow = useCallback(
+        (item: WithUuid<AggRow>, index: number) => (
+            <FieldsRow uuid={item.uuid} index={index}>
+                <AggregatorFieldsStack
+                    value={item}
+                    onChange={onChangeItem}
+                    aggregators={aggregators}
+                    variableTypes={variableTypes}
+                    hovered={hovered === 0}
+                    // outputVariableName={outputVariableName}
+                />
+            </FieldsRow>
+        ),
+        [aggregators, hovered, onChangeItem, outputVariableName, variableTypes],
+    );
+
     const items = useMemo(() => {
         return data.map((item, index) => ({
             item,
-            el: (
-                <FieldsRow uuid={item.uuid} index={index}>
-                    <AggregatorFieldsStack
-                        value={item}
-                        onChange={onChangeItem}
-                        aggregators={aggregators}
-                        variableTypes={variableTypes}
-                        hovered={hovered === 0}
-                        outputVariableName={outputVariableName}
-                    />
-                </FieldsRow>
-            ),
+            el: getFieldsRow(item, index),
         }));
-    }, [data, onChangeItem, aggregators, variableTypes, hovered, outputVariableName]);
+    }, [data, getFieldsRow]);
 
     useEffect(() => {
         onChange?.(data);
@@ -109,7 +110,7 @@ export function AggregatorField({ parameterDefinitions, node, isEditMode, showVa
             path={null}
             label="Aggregations"
             onFieldRemove={data.length > 1 && onRemove}
-            onFieldAdd={() => onAdd()}
+            onFieldAdd={onAdd}
             readOnly={!isEditMode}
             errors={errors}
         >
