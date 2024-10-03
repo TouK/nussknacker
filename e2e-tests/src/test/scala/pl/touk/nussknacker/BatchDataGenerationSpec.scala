@@ -44,7 +44,7 @@ class BatchDataGenerationSpec
         .basicAuthAdmin()
         .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
         .post(
-          s"$designerServiceUrl/api/testInfo/$randomDataGenScenarioName/generate/10"
+          s"$designerServiceUrl/api/scenarioTesting/$randomDataGenScenarioName/generate/10"
         )
         .Then()
         .statusCode(200)
@@ -69,7 +69,7 @@ class BatchDataGenerationSpec
         .basicAuthAdmin()
         .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
         .post(
-          s"$designerServiceUrl/api/testInfo/$liveDataGenScenarioName/generate/1"
+          s"$designerServiceUrl/api/scenarioTesting/$liveDataGenScenarioName/generate/1"
         )
         .Then()
         .statusCode(200)
