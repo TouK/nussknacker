@@ -82,7 +82,8 @@ trait DeploymentManager extends AutoCloseable {
   //  How can it be redesigned:
   //    - we could do it the other way round - we could provide the hook, that would allow the manager to save its custom activities to the main ScenarioActivity repository
   //    - only the ScenarioActivities repo would then be used, so it would require migrating old data from DeploymentManager-specific data source
-  //    - we may need to refactor PeriodicDeploymentManager data source first, that is why it was not implemented that way in the first place
+  //  Why not implemented that way in the first place?
+  //    - we may need to refactor PeriodicDeploymentManager data source first
   def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]]
 
 }
