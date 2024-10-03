@@ -9,6 +9,7 @@ object ClassDefinitionSet {
 }
 
 case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition]) {
+  lazy val unknown = get(classOf[java.lang.Object])
 
   def all: Set[ClassDefinition] = classDefinitionsMap.values.toSet
 

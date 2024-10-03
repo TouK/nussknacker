@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.DefaultExtractor
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils.{DefaultExtractor, createDiscovery}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -145,26 +145,24 @@ class ClassDefinitionDiscoverySpec
 
     forAll(testTypes) { (clazz, clazzName) =>
       forAll(testClassPatterns) { classPattern =>
-        val infos = new ClassDefinitionDiscovery(
-          new ClassDefinitionExtractor(
-            ClassExtractionSettings.Default.copy(excludeClassMemberPredicates =
-              ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
-                MemberNamePatternPredicate(
-                  SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
-                  Pattern.compile("ba.*")
-                ),
-                MemberNamePatternPredicate(
-                  SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
-                  Pattern.compile("get.*")
-                ),
-                MemberNamePatternPredicate(
-                  SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
-                  Pattern.compile("is.*")
-                ),
-                ReturnMemberPredicate(
-                  ExactClassPredicate[Context],
-                  BasePackagePredicate("pl.touk.nussknacker.engine.definition.clazz")
-                )
+        val infos = createDiscovery(
+          ClassExtractionSettings.Default.copy(excludeClassMemberPredicates =
+            ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("ba.*")
+              ),
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("get.*")
+              ),
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("is.*")
+              ),
+              ReturnMemberPredicate(
+                ExactClassPredicate[Context],
+                BasePackagePredicate("pl.touk.nussknacker.engine.definition.clazz")
               )
             )
           )
@@ -229,19 +227,14 @@ class ClassDefinitionDiscoverySpec
   test("should skip toString method when HideToString implemented") {
     val hiddenToStringClasses = Table("class", classOf[JavaBannedToStringClass], classOf[BannedToStringClass])
     forAll(hiddenToStringClasses) {
-      DefaultExtractor.extract(_).methods.keys shouldNot contain(
-        "toString"
-      )
+      DefaultExtractor.extract(_).methods.keys shouldNot contain("toString")
     }
   }
 
   test("should break recursive discovery if hidden class found") {
-
-    val extracted = new ClassDefinitionDiscovery(
-      new ClassDefinitionExtractor(
-        ClassExtractionSettings.Default.copy(
-          excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
-        )
+    val extracted = createDiscovery(
+      ClassExtractionSettings.Default.copy(
+        excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
       )
     ).discoverClassesFromTypes(List(Typed[Top]))
     extracted.find(_.clazzName == Typed[Top]) shouldBe Symbol("defined")
@@ -561,16 +554,14 @@ class ClassDefinitionDiscoverySpec
   ): Option[ClassDefinition] = {
     val ref = Typed.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    new ClassDefinitionDiscovery(new ClassDefinitionExtractor(settings))
-      .discoverClassesFromTypes(List(ref))
-      .find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
+    createDiscovery(settings).discoverClassesFromTypes(List(ref)).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](
       settings: ClassExtractionSettings = ClassExtractionSettings.Default
   ) = {
     val ref = Typed.fromDetailedType[T]
-    new ClassDefinitionDiscovery(new ClassDefinitionExtractor(settings)).discoverClassesFromTypes(List(ref))
+    createDiscovery(settings).discoverClassesFromTypes(List(ref))
   }
 
 }
