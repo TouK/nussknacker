@@ -1,3 +1,4 @@
+import { sortBy } from "lodash";
 import React, { ChangeEvent, useCallback, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { EditableEditor } from "../editors/EditableEditor";
@@ -69,7 +70,7 @@ export function AggregatorFieldsStack({
             preset,
         }));
 
-        return [...values, ...presets];
+        return sortBy([...values, ...presets], "label");
     }, [aggregators]);
 
     const onChangeName = useCallback(
