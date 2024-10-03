@@ -35,7 +35,7 @@ package object definition {
       expression: Expression
   )
 
-  @JsonCodec(encodeOnly = true) final case class UIParameter(
+  @JsonCodec final case class UIParameter(
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
@@ -74,7 +74,7 @@ package object definition {
       outputParameters: Option[List[String]]
   )
 
-  @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
+  @JsonCodec final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
   final case class UINodeEdges(
       componentId: ComponentId,

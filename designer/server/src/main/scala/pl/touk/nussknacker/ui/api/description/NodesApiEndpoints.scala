@@ -8,10 +8,9 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedExpressionValueWithIcon,
@@ -61,6 +60,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
 }
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Examples._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedDictSchemaHelper.typedDictTypeSchema
@@ -349,74 +349,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .withSecurity(auth)
   }
 
-  lazy val adhocTestParametersValidationEndpoint: SecuredEndpoint[
-    (ProcessName, AdhocTestParametersRequest),
-    NodesError,
-    ParametersValidationResultDto,
-    Any
-  ] = {
-    baseNuApiEndpoint
-      .summary("Validate adhoc parameters")
-      .tag("Nodes")
-      .post
-      .in("scenarioTesting" / path[ProcessName]("scenarioName") / "adhoc" / "validate")
-      .in(
-        jsonBody[AdhocTestParametersRequest]
-          .example(
-            Example.of(
-              summary = Some("Valid example of minimalistic request"),
-              value = AdhocTestParametersRequest(
-                TestSourceParameters("source", Map(ParameterName("name") -> Expression.spel("'Amadeus'"))),
-                ScenarioGraph(
-                  ProcessProperties(StreamMetaData()),
-                  List(),
-                  List(),
-                )
-              )
-            )
-          )
-      )
-      .out(
-        statusCode(Ok).and(
-          jsonBody[ParametersValidationResultDto]
-            .examples(
-              List(
-                Example.of(
-                  summary = Some("Validate correct parameters"),
-                  value = ParametersValidationResultDto(
-                    validationErrors = List.empty,
-                    validationPerformed = true
-                  )
-                ),
-                Example.of(
-                  summary = Some("Validate incorrect parameters"),
-                  value = ParametersValidationResultDto(
-                    List(
-                      NodeValidationError(
-                        "ExpressionParserCompilationError",
-                        "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
-                        "There is problem with expression in field Some(condition) - it could not be parsed.",
-                        Some("condition"),
-                        NodeValidationErrorType.SaveAllowed,
-                        details = None
-                      )
-                    ),
-                    validationPerformed = true
-                  ),
-                )
-              )
-            )
-        )
-      )
-      .errorOut(
-        oneOf[NodesError](
-          noScenarioExample,
-          malformedTypingResultExample
-        )
-      )
-      .withSecurity(auth)
-  }
-
   lazy val parametersValidationEndpoint: SecuredEndpoint[
     (ProcessingType, ParametersValidationRequestDto),
     NodesError,
@@ -611,47 +543,51 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       "StreamMetaData"
     )
 
-  private val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
-    oneOfVariantFromMatchType(
-      NotFound,
-      plainBody[NoScenario]
-        .example(
-          Example.of(
-            summary = Some("No scenario {scenarioName} found"),
-            value = NoScenario(ProcessName("'example scenario'"))
-          )
-        )
-    )
-
-  private val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
-    oneOfVariantFromMatchType(
-      BadRequest,
-      plainBody[MalformedTypingResult]
-        .example(
-          Example.of(
-            summary = Some("Malformed TypingResult sent in request"),
-            value = MalformedTypingResult(
-              "Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown"
-            )
-          )
-        )
-    )
-
-  private val noProcessingTypeExample: EndpointOutput.OneOfVariant[NoProcessingType] =
-    oneOfVariantFromMatchType(
-      NotFound,
-      plainBody[NoProcessingType]
-        .example(
-          Example.of(
-            summary = Some("ProcessingType type: {processingType} not found"),
-            value = NoProcessingType("'processingType'")
-          )
-        )
-    )
-
 }
 
 object NodesApiEndpoints {
+
+  object Examples {
+
+    val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoScenario]
+          .example(
+            Example.of(
+              summary = Some("No scenario {scenarioName} found"),
+              value = NoScenario(ProcessName("'example scenario'"))
+            )
+          )
+      )
+
+    val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[MalformedTypingResult]
+          .example(
+            Example.of(
+              summary = Some("Malformed TypingResult sent in request"),
+              value = MalformedTypingResult(
+                "Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown"
+              )
+            )
+          )
+      )
+
+    val noProcessingTypeExample: EndpointOutput.OneOfVariant[NoProcessingType] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoProcessingType]
+          .example(
+            Example.of(
+              summary = Some("ProcessingType type: {processingType} not found"),
+              value = NoProcessingType("'processingType'")
+            )
+          )
+      )
+
+  }
 
   object Dtos {
 

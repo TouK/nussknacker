@@ -56,6 +56,8 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
     if (scala.util.Properties.versionNumberString.startsWith("2.13")) {
       val currentNuDesignerOpenApiYamlContent =
         (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
+
+      println(NuDesignerApiAvailableToExpose.generateOpenApiYaml)
       NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
     } else {
       info("OpenAPI differs when generated on Scala 2.12 and Scala 2.13. Test is ignored on Scala 2.12")

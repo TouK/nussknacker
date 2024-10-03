@@ -580,7 +580,10 @@ class HttpService {
     //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
 
     getTestCapabilities(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(`/testInfo/${encodeURIComponent(processName)}/capabilities`, this.#sanitizeScenarioGraph(scenarioGraph));
+        const promise = api.post(
+            `/scenarioTesting/${encodeURIComponent(processName)}/capabilities`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true),
         );
@@ -588,7 +591,10 @@ class HttpService {
     }
 
     getTestFormParameters(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(`/testInfo/${encodeURIComponent(processName)}/testParameters`, this.#sanitizeScenarioGraph(scenarioGraph));
+        const promise = api.post(
+            `/scenarioTesting/${encodeURIComponent(processName)}/testParameters`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
@@ -601,7 +607,7 @@ class HttpService {
 
     generateTestData(processName: string, testSampleSize: string, scenarioGraph: ScenarioGraph): Promise<AxiosResponse> {
         const promise = api.post(
-            `/testInfo/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
+            `/scenarioTesting/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
             this.#sanitizeScenarioGraph(scenarioGraph),
             {
                 responseType: "blob",
@@ -698,7 +704,7 @@ class HttpService {
             scenarioGraph: sanitized,
         };
 
-        const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processName)}`, request);
+        const promise = api.post(`/scenarioTesting/${encodeURIComponent(processName)}/adhoc/test`, request);
         promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
         return promise;
     }

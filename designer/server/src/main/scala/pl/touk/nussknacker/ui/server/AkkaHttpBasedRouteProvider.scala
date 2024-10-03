@@ -89,7 +89,6 @@ import pl.touk.nussknacker.ui.validation.{
   UIProcessValidator
 }
 import pl.touk.nussknacker.ui.util._
-import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
@@ -377,6 +376,14 @@ class AkkaHttpBasedRouteProvider(
         processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
           new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
+        scenarioService = processService,
+      )
+
+      val testingApiHttpService = new TestingApiHttpService(
+        authManager = authManager,
+        processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
+          new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
+        ),
         processingTypeToScenarioTestServices = scenarioTestService,
         scenarioService = processService,
       )
@@ -479,7 +486,6 @@ class AkkaHttpBasedRouteProvider(
               )
             }
           ),
-          new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new StatusResources(stateDefinitionService),
         )
 
@@ -566,6 +572,7 @@ class AkkaHttpBasedRouteProvider(
           managementApiHttpService,
           migrationApiHttpService,
           nodesApiHttpService,
+          testingApiHttpService,
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioLabelsApiHttpService,
