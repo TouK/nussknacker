@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -143,8 +144,8 @@ class DBFetchingProcessRepositorySpec
     newAfter.toSet shouldBe Set(newName)
   }
 
-  // TODO: remove this in favour of process-audit-log
-  test("should add comment when renamed") {
+  // TODO: remove this test when deprecated endpoint is removed
+  test("deprecated - should add comment when renamed") {
     val oldName = ProcessName("oldName")
     val newName = ProcessName("newName")
 
@@ -167,6 +168,41 @@ class DBFetchingProcessRepositorySpec
     atLeast(1, comments) should matchPattern {
       case Comment(_, 1L, "Rename: [oldName] -> [newName]", user.username, _) =>
     }
+  }
+
+  test("should add scenario activity when renamed") {
+    val oldName = ProcessName("oldName")
+    val newName = ProcessName("newName")
+
+    saveProcess(
+      ScenarioBuilder
+        .streaming(oldName.value)
+        .source("s", "")
+        .emptySink("s2", ""),
+      Instant.now()
+    )
+
+    processExists(newName) shouldBe false
+
+    renameProcess(oldName, newName)
+
+    val (processId, scenarioActivities) = (for {
+      processId <- fetching
+        .fetchProcessId(newName)
+        .map(_.getOrElse(throw new IllegalStateException("Could not find process id")))
+      scenarioActivities <- dbioRunner.run(activities.findActivities(processId))
+    } yield (processId, scenarioActivities)).futureValue
+
+    scenarioActivities.size shouldBe 2
+    scenarioActivities(1) shouldBe ScenarioActivity.ScenarioNameChanged(
+      ScenarioId(processId.value),
+      scenarioActivities(1).scenarioActivityId,
+      ScenarioUser(Some(UserId("1")), UserName("admin"), None, None),
+      scenarioActivities(1).date,
+      Some(ScenarioVersionId(1)),
+      oldName.value,
+      newName.value,
+    )
   }
 
   test("should prevent rename to existing name") {

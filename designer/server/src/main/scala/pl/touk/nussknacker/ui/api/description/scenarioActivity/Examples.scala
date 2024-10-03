@@ -161,18 +161,15 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           sourceEnvironment = "preprod",
-          sourceScenarioVersionId = "23",
+          sourceUser = "user-preprod",
+          sourceScenarioVersionId = Some(23L),
+          targetEnvironment = Some("prod"),
         ),
         ScenarioActivity.forOutgoingMigration(
           id = UUID.fromString("49fcd45d-3fa6-48d4-b8ed-b3055910c7ad"),
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
-          comment = ScenarioActivityComment(
-            content = ScenarioActivityCommentContent.Available("Added new processing step"),
-            lastModifiedBy = "some user",
-            lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
-          ),
           destinationEnvironment = "preprod",
         ),
         ScenarioActivity.forPerformedSingleExecution(
@@ -214,7 +211,6 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
-          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
           changes = "JIRA-12345, JIRA-32146",
           errorMessage = None,
         ),

@@ -498,7 +498,10 @@ class AkkaHttpBasedRouteProvider(
               new RemoteEnvironmentResources(
                 remoteEnvironment,
                 processService,
-                processAuthorizer
+                processAuthorizer,
+                scenarioActivityRepository,
+                dbioRunner,
+                designerClock,
               )
             },
           countsReporter.map(reporter =>

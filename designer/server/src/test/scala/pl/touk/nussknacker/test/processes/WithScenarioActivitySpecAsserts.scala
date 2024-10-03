@@ -42,6 +42,59 @@ trait WithScenarioActivitySpecAsserts
       )
   }
 
+  def verifyIncomingMigrationActivityExists(
+      scenarioName: String,
+      sourceEnvironment: String,
+      sourceUser: String,
+      targetEnvironment: String,
+  ): Unit = {
+    given()
+      .when()
+      .basicAuthAllPermUser()
+      .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity/activities")
+      .Then()
+      .statusCode(200)
+      .body(
+        matchJsonWithRegexValues(
+          s"""
+             |{
+             |  "activities": [
+             |    {
+             |      "id": "${regexes.looseUuidRegex}",
+             |      "user": "allpermuser",
+             |      "date": "${regexes.zuluDateRegex}",
+             |      "scenarioVersionId": 1,
+             |      "additionalFields": [],
+             |      "type": "SCENARIO_CREATED"
+             |    },
+             |    {
+             |      "id": "${regexes.looseUuidRegex}",
+             |      "user": "allpermuser",
+             |      "date": "${regexes.zuluDateRegex}",
+             |      "scenarioVersionId": 2,
+             |      "additionalFields": [
+             |        {
+             |          "name": "sourceEnvironment",
+             |          "value": "$sourceEnvironment"
+             |        },
+             |        {
+             |          "name": "sourceUser",
+             |          "value": "$sourceUser"
+             |        },
+             |        {
+             |          "name": "targetEnvironment",
+             |          "value": "$targetEnvironment"
+             |        }
+             |      ],
+             |      "type": "INCOMING_MIGRATION"
+             |    }
+             |  ]
+             |}
+             |""".stripMargin
+        )
+      )
+  }
+
   def verifyEmptyCommentsAndAttachments(scenarioName: String): Unit = {
     given()
       .when()

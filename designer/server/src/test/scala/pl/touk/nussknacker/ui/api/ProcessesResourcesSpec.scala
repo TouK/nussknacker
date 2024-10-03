@@ -36,6 +36,13 @@ import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig,
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{Available, Deleted}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
+  ScenarioActivities,
+  ScenarioActivity,
+  ScenarioActivityComment,
+  ScenarioActivityType
+}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
@@ -46,7 +53,8 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
 }
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, UpdateProcessComment}
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -695,9 +703,66 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    getActivity(processName) ~> check {
+    getDeprecatedActivity(processName) ~> check {
       val comments = responseAs[ProcessActivity].comments
       comments.loneElement.content shouldBe comment
+    }
+
+    getScenarioActivities(processName) ~> check {
+      val activities = responseAs[ScenarioActivities].activities
+
+      activities.length shouldBe 3
+      activities(0) shouldBe ScenarioActivity(
+        id = activities(0).id,
+        user = "allpermuser",
+        date = activities(0).date,
+        scenarioVersionId = Some(1L),
+        comment = None,
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = None,
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioCreated
+      )
+      activities(1) shouldBe ScenarioActivity(
+        id = activities(1).id,
+        user = "allpermuser",
+        date = activities(1).date,
+        scenarioVersionId = Some(2L),
+        comment = Some(
+          ScenarioActivityComment(
+            content = Deleted,
+            lastModifiedBy = "allpermuser",
+            lastModifiedAt = activities(1).comment.get.lastModifiedAt
+          )
+        ),
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = Some("Version 2 saved"),
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioModified
+      )
+      activities(2) shouldBe ScenarioActivity(
+        id = activities(2).id,
+        user = "allpermuser",
+        date = activities(2).date,
+        scenarioVersionId = Some(2L),
+        comment = Some(
+          ScenarioActivityComment(
+            content = Available("Update the same version"),
+            lastModifiedBy = "allpermuser",
+            lastModifiedAt = activities(2).comment.get.lastModifiedAt
+          )
+        ),
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = Some("Version 2 saved"),
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioModified
+      )
     }
   }
 
@@ -1352,8 +1417,11 @@ class ProcessesResourcesSpec
   private def getProcess(processName: ProcessName): RouteTestResult =
     Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute
 
-  private def getActivity(processName: ProcessName): RouteTestResult =
+  private def getDeprecatedActivity(processName: ProcessName): RouteTestResult =
     Get(s"/api/processes/$processName/activity") ~> withAllPermUser() ~> applicationRoute
+
+  private def getScenarioActivities(processName: ProcessName): RouteTestResult =
+    Get(s"/api/processes/$processName/activity/activities") ~> withAllPermUser() ~> applicationRoute
 
   private def saveCanonicalProcessAndAssertSuccess(process: CanonicalProcess, category: TestCategory): Assertion =
     saveCanonicalProcess(process, category) {
@@ -1383,7 +1451,7 @@ class ProcessesResourcesSpec
     doUpdateProcess(
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
-        comment.map(UpdateProcessComment(_)),
+        comment.map(Comment.apply),
         Some(List.empty),
         None
       ),

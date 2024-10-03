@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.api
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.ui.listener.Comment
-import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DeploymentComment, UserComment}
+import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DeploymentComment}
 
 class DeploymentCommentSpec extends AnyFunSuite with Matchers {
 
@@ -19,8 +19,8 @@ class DeploymentCommentSpec extends AnyFunSuite with Matchers {
       exampleComment = None
     )
 
-  private val validComment   = UserComment("issues/123123")
-  private val invalidComment = UserComment("invalid_comment")
+  private val validComment   = Comment("issues/123123")
+  private val invalidComment = Comment("invalid_comment")
   private val emptyComment   = None
 
   private val emptyValidationPattern    = ""

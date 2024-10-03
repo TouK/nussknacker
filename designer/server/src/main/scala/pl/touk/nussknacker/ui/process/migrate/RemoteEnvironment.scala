@@ -41,6 +41,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
+  def environmentId: String
+
   val passUsernameInMigration: Boolean = true
 
   def compare(
@@ -59,6 +61,7 @@ trait RemoteEnvironment {
       processCategory: String,
       scenarioLabels: List[String],
       scenarioGraph: ScenarioGraph,
+      localScenarioVersionId: VersionId,
       processName: ProcessName,
       isFragment: Boolean
   )(
@@ -215,6 +218,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       processCategory: String,
       scenarioLabels: List[String],
       scenarioGraph: ScenarioGraph,
+      localScenarioVersionId: VersionId,
       processName: ProcessName,
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
@@ -225,6 +229,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       migrateScenarioRequest: MigrateScenarioData =
         MigrateScenarioDataV2(
           environmentId,
+          Some(localScenarioVersionId),
           loggedUser.username,
           processingMode,
           engineSetupName,

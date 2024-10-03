@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait WithAccessControlCheckingConfigScenarioHelper {
   this: WithTestDb with WithClock with WithAccessControlCheckingDesignerConfig =>
 
-  private val rawScenarioHelper = new ScenarioHelper(testDbRef, clock, designerConfig)
+  private lazy val rawScenarioHelper = new ScenarioHelper(testDbRef, clock, designerConfig)
 
   def createEmptyScenario(scenarioName: ProcessName, category: TestCategory): ProcessId = {
     rawScenarioHelper.createEmptyScenario(scenarioName, category.stringify, isFragment = false)

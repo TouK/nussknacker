@@ -297,7 +297,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
   }
 
   "The scenario activity endpoint when" - {
-    "return empty activities for existing process without them" in {
+    "return only SCENARIO_CREATED activity for existing process that has only been created" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -307,12 +307,23 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
         .Then()
         .statusCode(200)
-        .equalsJsonBody(
-          s"""
-             |{
-             |  "activities": []
-             |}
-             |""".stripMargin
+        .body(
+          matchJsonWithRegexValues(
+            s"""
+               |{
+               |  "activities": [
+               |    {
+               |      "id": "${regexes.looseUuidRegex}",
+               |      "user": "admin",
+               |      "date": "${regexes.zuluDateRegex}",
+               |      "scenarioVersionId": 1,
+               |      "additionalFields": [],
+               |      "type": "SCENARIO_CREATED"
+               |     }
+               |  ]
+               |}
+               |""".stripMargin
+          )
         )
     }
     "return 404 for no existing scenario" in {
@@ -374,7 +385,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .basicAuthAllPermUser()
         .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
         .Then()
-        .extractString("activities[0].id")
+        .extractString("activities[1].id") // First activity (0) is SCENARIO_CREATED, second (1) is COMMENT_ADDED
 
       given()
         .when()
@@ -418,7 +429,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .basicAuthAllPermUser()
         .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
         .Then()
-        .extractString("activities[0].id")
+        .extractString("activities[1].id") // First activity (0) is SCENARIO_CREATED, second (1) is COMMENT_ADDED
 
       given()
         .when()

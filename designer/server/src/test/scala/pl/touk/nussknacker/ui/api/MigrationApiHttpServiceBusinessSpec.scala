@@ -63,6 +63,12 @@ class MigrationApiHttpServiceBusinessSpec
           .verifyApplicationState {
             eventually {
               verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyIncomingMigrationActivityExists(
+                scenarioName = exampleProcessName.value,
+                sourceEnvironment = "DEV",
+                sourceUser = "remoteUser",
+                targetEnvironment = "test",
+              )
               verifyScenarioAfterMigration(
                 exampleProcessName.value,
                 processVersionId = 2,

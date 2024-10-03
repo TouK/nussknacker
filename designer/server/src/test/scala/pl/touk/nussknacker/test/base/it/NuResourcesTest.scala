@@ -18,6 +18,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
@@ -311,7 +312,7 @@ trait NuResourcesTest
     doUpdateProcess(
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
-        comment.map(UpdateProcessComment(_)),
+        comment.map(Comment.apply),
         Some(List.empty),
         None
       ),

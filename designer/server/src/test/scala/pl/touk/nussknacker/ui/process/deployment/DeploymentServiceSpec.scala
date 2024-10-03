@@ -31,7 +31,8 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDat
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner, UserComment}
+import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner}
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -191,7 +192,7 @@ class DeploymentServiceSpec
 
     deploymentServiceWithCommentSettings.processCommand(
       RunDeploymentCommand(
-        CommonCommandData(processIdWithName, Some(UserComment("samplePattern")), user),
+        CommonCommandData(processIdWithName, Some(Comment("samplePattern")), user),
         StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
         NodesDeploymentData.empty
       )
@@ -914,7 +915,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
     val actionName               = ScenarioActionName("hello")
-    val comment                  = UserComment("not empty comment")
+    val comment                  = Comment("not empty comment")
 
     val result =
       deploymentService
@@ -929,7 +930,7 @@ class DeploymentServiceSpec
         actionRepository.getFinishedProcessActions(processIdWithName.id, Some(Set(actionName))).dbioActionValues
 
       action.loneElement.state shouldBe ProcessActionState.Finished
-      action.loneElement.comment shouldBe Some(comment.value)
+      action.loneElement.comment shouldBe Some(comment.content)
       listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
     }
   }
@@ -1024,7 +1025,7 @@ class DeploymentServiceSpec
   }
 
   private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
-    val comment = Some(UserComment(actionName.toString.capitalize))
+    val comment = Some(Comment(actionName.toString.capitalize))
     actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
   }
 

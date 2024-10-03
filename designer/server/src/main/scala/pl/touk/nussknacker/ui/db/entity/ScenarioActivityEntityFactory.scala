@@ -47,7 +47,7 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
 
     def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
 
-    def scenarioVersion: Rep[Option[ScenarioVersion]] = column[Option[ScenarioVersion]]("scenario_version")
+    def scenarioVersion: Rep[Option[ScenarioVersionId]] = column[Option[ScenarioVersionId]]("scenario_version")
 
     def comment: Rep[Option[String]] = column[Option[String]]("comment")
 
@@ -105,8 +105,8 @@ trait ScenarioActivityEntityFactory extends BaseEntityFactory {
   implicit def scenarioActivityIdMapper: BaseColumnType[ScenarioActivityId] =
     MappedColumnType.base[ScenarioActivityId, UUID](_.value, ScenarioActivityId.apply)
 
-  implicit def scenarioVersionMapper: BaseColumnType[ScenarioVersion] =
-    MappedColumnType.base[ScenarioVersion, Long](_.value, ScenarioVersion.apply)
+  implicit def scenarioVersionIdMapper: BaseColumnType[ScenarioVersionId] =
+    MappedColumnType.base[ScenarioVersionId, Long](_.value, ScenarioVersionId.apply)
 
   implicit def additionalPropertiesMapper: BaseColumnType[AdditionalProperties] =
     MappedColumnType.base[AdditionalProperties, String](
@@ -189,7 +189,7 @@ final case class ScenarioActivityEntityData(
     lastModifiedByUserName: Option[String],
     lastModifiedAt: Option[Timestamp],
     createdAt: Timestamp,
-    scenarioVersion: Option[ScenarioVersion],
+    scenarioVersion: Option[ScenarioVersionId],
     comment: Option[String],
     attachmentId: Option[Long],
     finishedAt: Option[Timestamp],
