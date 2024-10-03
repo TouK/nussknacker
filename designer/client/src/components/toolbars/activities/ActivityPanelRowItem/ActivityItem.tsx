@@ -1,14 +1,14 @@
 import React, { ForwardedRef, forwardRef } from "react";
 import { useSelector } from "react-redux";
 import { Box, styled, Typography } from "@mui/material";
-import { formatDateTime } from "../../../common/DateUtils";
-import CommentContent from "../../comment/CommentContent";
+import { formatDateTime } from "../../../../common/DateUtils";
+import CommentContent from "../../../comment/CommentContent";
 import { createSelector } from "reselect";
-import { getFeatureSettings } from "../../../reducers/selectors/settings";
+import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { blend } from "@mui/system";
-import { blendLighten } from "../../../containers/theme/helpers";
-import { ItemActivity } from "./ActivitiesPanel";
-import { SearchHighlighter } from "../creator/SearchHighlighter";
+import { blendLighten } from "../../../../containers/theme/helpers";
+import { ItemActivity } from "../ActivitiesPanel";
+import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({

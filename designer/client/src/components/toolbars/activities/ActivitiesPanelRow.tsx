@@ -1,10 +1,6 @@
 import React, { CSSProperties, memo, useEffect, useMemo, useRef } from "react";
-import { Box, Divider, Typography } from "@mui/material";
-import { MoreItemsButton } from "./MoreItemsButton";
-import { LessItemsButton } from "./LessItemsButton";
-import { ActivityItem } from "./ActivityItem";
+import { DateItem, ActivityItem, ButtonItem } from "./ActivityPanelRowItem";
 import { UIActivity } from "./ActivitiesPanel";
-import { formatUiDate } from "./helpers/date";
 
 interface Props {
     index: number;
@@ -37,25 +33,17 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return <ActivityItem activity={activity} ref={rowRef} isActiveItem={isActiveDeployedItem} searchQuery={searchQuery} />;
             }
             case "date": {
-                return (
-                    <Box display={"flex"} justifyContent={"center"} alignItems={"center"} px={1}>
-                        <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white, mr: 1 })} />
-                        <Typography component={"div"} variant={"caption"} ref={rowRef}>
-                            {Array.isArray(activity.value)
-                                ? `${formatUiDate(activity.value[0])} - ${formatUiDate(activity.value[1])}`
-                                : formatUiDate(activity.value)}
-                        </Typography>
-                        <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white, ml: 1 })} />
-                    </Box>
-                );
+                return <DateItem activity={activity} ref={rowRef} />;
             }
             case "toggleItemsButton": {
                 return (
                     <div ref={rowRef}>
                         {activity.isClicked ? (
-                            <LessItemsButton sameItemOccurrence={activity.sameItemOccurrence} handleHideRow={handleHideRow} index={index} />
+                            <ButtonItem handleHideRow={() => handleHideRow(index, activity.sameItemOccurrence)}>Show less</ButtonItem>
                         ) : (
-                            <MoreItemsButton sameItemOccurrence={activity.sameItemOccurrence} handleShowRow={handleShowRow} index={index} />
+                            <ButtonItem handleHideRow={() => handleShowRow(index, activity.sameItemOccurrence)}>
+                                Show {activity.sameItemOccurrence} more
+                            </ButtonItem>
                         )}
                     </div>
                 );

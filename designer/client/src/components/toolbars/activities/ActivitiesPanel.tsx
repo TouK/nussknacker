@@ -59,13 +59,18 @@ export type DateActivity = {
 export type UIActivity = ItemActivity | ButtonActivity | DateActivity;
 
 const estimatedItemSize = 150;
+const panelHeight = "500px";
 
 export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const listRef = useRef<VariableSizeList>(null);
+
+    /*
+     * It's for a calculation of dynamic items size https://github.com/bvaughn/react-window/issues/582
+     **/
     const rowHeights = useRef({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const scenarioName = useSelector(getProcessName);
-    const data = useSelector(getActivities);
+    const uiActivities = useSelector(getActivities);
 
     const dispatch = useDispatch();
 
@@ -81,9 +86,22 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         return rowHeights.current[index] || estimatedItemSize;
     }, []);
 
+    /*
+     * To correctly display items in a react-window list, only the visible elements should be passed.
+     **/
+    const visibleUiActivities = useMemo(
+        () => uiActivities.filter((activity) => (activity.uiType === "item" && !activity.isHidden) || activity.uiType !== "item"),
+        [uiActivities],
+    );
+
+    const handleUpdateScenarioActivities = useCallback(
+        (activities: (activities: UIActivity[]) => UIActivity[]) => dispatch(updateScenarioActivities(activities)),
+        [dispatch],
+    );
     const { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults } = useActivitiesSearch({
-        activities: data.filter((activity) => (activity.uiType === "item" && !activity.isHidden) || activity.uiType !== "item"),
+        activities: visibleUiActivities,
         handleScrollToItem: (index, align) => listRef.current.scrollToItem(index, align),
+        handleUpdateScenarioActivities,
     });
 
     const handleHideRow = (index: number, sameItemOccurrence: number) => {
@@ -123,31 +141,6 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         );
     };
 
-    const dataToDisplay = useMemo(
-        () =>
-            data
-                .filter((activity) => (activity.uiType === "item" && !activity.isHidden) || activity.uiType !== "item")
-                .map((activity) => {
-                    if (activity.uiType !== "item") {
-                        return activity;
-                    }
-
-                    activity.isFound = false;
-                    activity.isActiveFound = false;
-
-                    if (foundResults.some((foundResult) => foundResult === activity.uiGeneratedId)) {
-                        activity.isFound = true;
-                    }
-
-                    if (activity.uiGeneratedId === foundResults[selectedResult]) {
-                        activity.isActiveFound = true;
-                    }
-
-                    return activity;
-                }),
-        [data, foundResults, selectedResult],
-    );
-
     const handleFetchActivities = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -171,26 +164,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                 searchQuery={searchQuery}
                 handleClearResults={handleClearResults}
             />
-            <Box
-                width={"100%"}
-                height={"500px"}
-                mt={1}
-                sx={() => ({
-                    "::-webkit-scrollbar": {
-                        width: "5px",
-                        height: "0",
-                    },
-                    "::-webkit-scrollbar-track": {
-                        background: "red",
-                    },
-                    "::-webkit-scrollbar-thumb": {
-                        background: "red",
-                    },
-                    "::-webkit-scrollbar-thumb:hover": {
-                        background: "red",
-                    },
-                })}
-            >
+            <Box width={"100%"} height={panelHeight} mt={1}>
                 {isLoading ? (
                     <Box display={"flex"} justifyContent={"center"} height={"100%"} alignItems={"center"}>
                         <CircularProgress />
@@ -200,13 +174,13 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                         {({ width, height }) => (
                             <StyledVariableSizeList
                                 ref={listRef}
-                                itemCount={dataToDisplay.length}
+                                itemCount={visibleUiActivities.length}
                                 itemSize={getRowHeight}
                                 height={height}
                                 width={width}
                                 estimatedItemSize={estimatedItemSize}
                                 itemKey={(index) => {
-                                    return dataToDisplay[index].uiGeneratedId;
+                                    return visibleUiActivities[index].uiGeneratedId;
                                 }}
                             >
                                 {({ index, style }) => (
@@ -216,7 +190,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                         setRowHeight={setRowHeight}
                                         handleShowRow={handleShowRow}
                                         handleHideRow={handleHideRow}
-                                        activities={dataToDisplay}
+                                        activities={visibleUiActivities}
                                         searchQuery={searchQuery}
                                     />
                                 )}

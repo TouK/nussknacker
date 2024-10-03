@@ -1,17 +1,17 @@
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
-import { SearchHighlighter } from "../creator/SearchHighlighter";
-import HttpService, { ActionMetadata, ActivityAttachment } from "../../../http/HttpService";
-import UrlIcon from "../../UrlIcon";
+import { SearchHighlighter } from "../../creator/SearchHighlighter";
+import HttpService, { ActionMetadata, ActivityAttachment } from "../../../../http/HttpService";
+import UrlIcon from "../../../UrlIcon";
 import { blend } from "@mui/system";
-import { getBorderColor } from "../../../containers/theme/helpers";
-import { unsavedProcessChanges } from "../../../common/DialogMessages";
+import { getBorderColor } from "../../../../containers/theme/helpers";
+import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../reducers/selectors/graph";
-import { useWindows } from "../../../windowManager";
-import { displayScenarioVersion } from "../../../actions/nk";
-import { ItemActivity } from "./ActivitiesPanel";
-import { handleOpenCompareVersionDialog } from "../../modals/CompareVersionsDialog";
+import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../../reducers/selectors/graph";
+import { useWindows } from "../../../../windowManager";
+import { displayScenarioVersion } from "../../../../actions/nk";
+import { ItemActivity } from "../ActivitiesPanel";
+import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",

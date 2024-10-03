@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Activity, UIActivity } from "./ActivitiesPanel";
 import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
@@ -8,8 +8,9 @@ import { ActivityAdditionalFields } from "../../../http/HttpService";
 interface Props {
     activities: UIActivity[];
     handleScrollToItem: (index: number, align: Align) => void;
+    handleUpdateScenarioActivities: (activities: (activities: UIActivity[]) => UIActivity[]) => void;
 }
-export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) => {
+export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpdateScenarioActivities }: Props) => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [foundResults, setFoundResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<number>(0);
@@ -24,7 +25,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) =
 
         const foundActivities: UIActivity[] = [];
 
-        const fullSearchFields: NestedKeyOf<Activity>[] = [
+        const fullSearchAllowedFields: NestedKeyOf<Activity>[] = [
             "date",
             "user",
             "comment.content.value",
@@ -38,8 +39,8 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) =
                 continue;
             }
 
-            for (const fullSearchField of fullSearchFields) {
-                const searchFieldValue: string | ActivityAdditionalFields[] = get(activity, fullSearchField, "") || "";
+            for (const fullSearchAllowedField of fullSearchAllowedFields) {
+                const searchFieldValue: string | ActivityAdditionalFields[] = get(activity, fullSearchAllowedField, "") || "";
 
                 if (Array.isArray(searchFieldValue)) {
                     if (
@@ -86,6 +87,29 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem }: Props) =
         handleSearch("");
         setSelectedResult(0);
     };
+
+    useEffect(() => {
+        handleUpdateScenarioActivities((prevState) => {
+            return prevState.map((activity) => {
+                if (activity.uiType !== "item") {
+                    return activity;
+                }
+
+                activity.isFound = false;
+                activity.isActiveFound = false;
+
+                if (foundResults.some((foundResult) => foundResult === activity.uiGeneratedId)) {
+                    activity.isFound = true;
+                }
+
+                if (activity.uiGeneratedId === foundResults[selectedResult]) {
+                    activity.isActiveFound = true;
+                }
+
+                return activity;
+            });
+        });
+    }, [foundResults, handleUpdateScenarioActivities, selectedResult]);
 
     return { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults };
 };

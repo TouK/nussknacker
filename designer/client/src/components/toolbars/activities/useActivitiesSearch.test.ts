@@ -107,10 +107,13 @@ describe(useActivitiesSearch.name, () => {
         ["newName old marketing campaign", [mockedActivities[7].uiGeneratedId]],
     ])("should find elements when query is '%s'", (searchQuery, expected) => {
         const handleScrollToItemMock = jest.fn();
+        const handleUpdateScenarioActivitiesMock = jest.fn();
+
         const { result } = renderHook(() =>
             useActivitiesSearch({
                 activities: mockedActivities,
                 handleScrollToItem: handleScrollToItemMock,
+                handleUpdateScenarioActivities: handleUpdateScenarioActivitiesMock,
             }),
         );
 
