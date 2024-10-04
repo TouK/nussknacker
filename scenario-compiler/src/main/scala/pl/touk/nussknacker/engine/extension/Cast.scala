@@ -41,7 +41,7 @@ object Cast extends ExtensionMethodsImplFactory with ExtensionMethodsDefinitions
     castMethodsNames.contains(methodName)
 
   override def create(target: Any, classLoader: ClassLoader, set: ClassDefinitionSet): Any =
-    new CastImpl(target, classLoader, set.classDefinitionsMap.keySet.classesBySimpleNames())
+    new CastImpl(target, classLoader, set.classDefinitionsMap.keySet.classesBySimpleNamesRegardingClashes())
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = clazz
     .findAllowedClassesForCastParameter(set)

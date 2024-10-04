@@ -346,7 +346,7 @@ class SpelExpressionSuggester(
         .findAllowedClassesForCastParameter(clssDefinitions)
         .mapValuesNow(_.clazzName)
       allowedClassesForCastParameter.keySet
-        .classesBySimpleNames()
+        .classesBySimpleNamesRegardingClashes()
         .map { case (name, clazz) =>
           ExpressionSuggestion(name, allowedClassesForCastParameter.getOrElse(clazz, Unknown), false, None, Nil)
         }

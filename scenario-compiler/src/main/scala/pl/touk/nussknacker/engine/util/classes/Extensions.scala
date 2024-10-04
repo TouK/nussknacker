@@ -29,7 +29,7 @@ object Extensions {
 
   implicit class ClassesExtensions(private val set: Set[Class[_]]) extends AnyVal {
 
-    def classesBySimpleNames(): Map[String, Class[_]] = {
+    def classesBySimpleNamesRegardingClashes(): Map[String, Class[_]] = {
       val nonUniqueClassNames = nonUniqueNames()
       set
         .map {
