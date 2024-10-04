@@ -104,7 +104,7 @@ describe(useActivitiesSearch.name, () => {
         ["3 saved", [mockedActivities[3].uiGeneratedId]],
         ["2024-09-27", [mockedActivities[1].uiGeneratedId]],
         ["tests save", [mockedActivities[3].uiGeneratedId]],
-        ["newName old marketing campaign", [mockedActivities[7].uiGeneratedId]],
+        ["newName: old marketing campaign", [mockedActivities[7].uiGeneratedId]],
     ])("should find elements when query is '%s'", (searchQuery, expected) => {
         const handleScrollToItemMock = jest.fn();
         const handleUpdateScenarioActivitiesMock = jest.fn();
