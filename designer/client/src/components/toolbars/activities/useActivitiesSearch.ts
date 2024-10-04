@@ -45,7 +45,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
                 if (Array.isArray(searchFieldValue)) {
                     if (
                         searchFieldValue.some((searchValue) =>
-                            `${searchValue.name.toLowerCase()} ${searchValue.value.toLowerCase()}`.includes(value.toLowerCase()),
+                            `${searchValue.name.toLowerCase()}: ${searchValue.value.toLowerCase()}`.includes(value.toLowerCase()),
                         )
                     ) {
                         foundActivities.push(activity);
