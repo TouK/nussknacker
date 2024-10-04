@@ -10,10 +10,8 @@ class ExtensionMethods(classLoader: ClassLoader, classDefinitionSet: ClassDefini
     classOf[Cast] -> CastImplFactory(classLoader, classDefinitionSet),
   )
 
-  private val registry: Set[Class[_]] = declarationsWithImplementations.keySet
-
   def invoke(method: Method, target: Object, arguments: Array[Object]): PartialFunction[Class[_], Any] = {
-    case clazz if registry.contains(clazz) =>
+    case clazz if declarationsWithImplementations.contains(clazz) =>
       declarationsWithImplementations
         .get(method.getDeclaringClass)
         .map(_.create(target))
