@@ -8,7 +8,7 @@ import { DATE_FORMAT } from "../../config";
 import moment from "moment";
 import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
-import { ProcessingMode } from "../../http/HttpService";
+import { getProcessingModeVariantName } from "../toolbars/scenarioDetails/getProcessingModeVariantName";
 import NuLogoIcon from "../../assets/img/nussknacker-logo-icon.svg";
 
 const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
@@ -38,20 +38,6 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
         ],
         [props, t],
     );
-
-    const processingModeVariantName = useMemo(() => {
-        switch (scenario.processingMode) {
-            case ProcessingMode.batch: {
-                return i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch");
-            }
-
-            case ProcessingMode.requestResponse: {
-                return i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response");
-            }
-            case ProcessingMode.streaming:
-                return i18next.t(`scenarioDetails.processingModeVariants.streaming`, "Streaming");
-        }
-    }, [scenario.processingMode]);
 
     const displayStatus = !scenario.isArchived && !scenario.isFragment;
     const displayLabels = scenario.labels.length !== 0;
@@ -85,7 +71,7 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
                             )}
                             <ItemWrapperStyled>
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.processingMode", "Processing mode")}</ItemLabelStyled>
-                                <Typography variant={"caption"}>{processingModeVariantName}</Typography>
+                                <Typography variant={"caption"}>{getProcessingModeVariantName(scenario.processingMode)}</Typography>
                             </ItemWrapperStyled>
                             <ItemWrapperStyled>
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.category", "Category")}</ItemLabelStyled>
