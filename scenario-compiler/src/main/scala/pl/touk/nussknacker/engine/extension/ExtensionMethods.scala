@@ -1,22 +1,18 @@
 package pl.touk.nussknacker.engine.extension
 
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
+import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensions
 
 import java.lang.reflect.Method
 
-class ExtensionMethods(classLoader: ClassLoader, classDefinitionSet: ClassDefinitionSet) {
+class ExtensionMethodsInvoker(classLoader: ClassLoader, classDefinitionSet: ClassDefinitionSet) {
+  private val extensionsByClass = extensions.map(e => e.clazz -> e).toMap[Class[_], Extension]
 
-  private val declarationsWithImplementations = Map[Class[_], ExtensionMethodsImplFactory](
-    classOf[Cast] -> CastImplFactory(classLoader, classDefinitionSet),
-  )
-
-  private val registry: Set[Class[_]] = declarationsWithImplementations.keySet
-
-  def invoke(method: Method, target: Object, arguments: Array[Object]): PartialFunction[Class[_], Any] = {
-    case clazz if registry.contains(clazz) =>
-      declarationsWithImplementations
+  def invoke(target: Object, arguments: Array[Object]): PartialFunction[Method, Any] = {
+    case method if extensionsByClass.contains(method.getDeclaringClass) =>
+      extensionsByClass
         .get(method.getDeclaringClass)
-        .map(_.create(target))
+        .map(_.implFactory.create(target, classLoader, classDefinitionSet))
         .map(impl => method.invoke(impl, arguments: _*))
         .getOrElse {
           throw new IllegalArgumentException(s"Extension method: ${method.getName} is not implemented")
@@ -27,11 +23,16 @@ class ExtensionMethods(classLoader: ClassLoader, classDefinitionSet: ClassDefini
 
 object ExtensionMethods {
 
+  private[extension] val extensions = List(
+    Extension(classOf[Cast], Cast, Cast)
+  )
+
   def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {
-    val castMethodDefinitions = new CastMethodDefinitions(set)
     new ClassDefinitionSet(
       set.classDefinitionsMap.map { case (clazz, definition) =>
-        clazz -> definition.copy(methods = definition.methods ++ castMethodDefinitions.extractDefinitions(clazz))
+        clazz -> definition.copy(
+          methods = definition.methods ++ extensions.flatMap(_.definitionsExtractor.extractDefinitions(clazz, set))
+        )
       }.toMap // .toMap is needed by scala 2.12
     )
   }
@@ -39,5 +40,15 @@ object ExtensionMethods {
 }
 
 trait ExtensionMethodsImplFactory {
-  def create(target: Any): Any
+  def create(target: Any, classLoader: ClassLoader, set: ClassDefinitionSet): Any
 }
+
+trait ExtensionMethodsDefinitionsExtractor {
+  def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
+}
+
+case class Extension(
+    clazz: Class[_],
+    implFactory: ExtensionMethodsImplFactory,
+    definitionsExtractor: ExtensionMethodsDefinitionsExtractor
+)

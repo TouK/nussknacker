@@ -23,7 +23,8 @@ import pl.touk.nussknacker.engine.util.CaretPosition2d
 
 import scala.collection.compat.immutable.LazyList
 import cats.implicits._
-import pl.touk.nussknacker.engine.util.classes.Extensions.ClassesExtensions
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
@@ -337,15 +338,19 @@ class SpelExpressionSuggester(
     suggestions
   }
 
-  private def castMethodsSuggestions(klass: Class[_]): Future[Iterable[ExpressionSuggestion]] = {
-    val allowedClassesForParameter = Cast.allowedClassesForCastParameter(clssDefinitions, klass)
-    val suggestions = allowedClassesForParameter.keySet
-      .classesBySimpleNames()
-      .map { case (name, clazz) =>
-        ExpressionSuggestion(name, allowedClassesForParameter.getOrElse(clazz, Unknown), false, None, Nil)
-      }
-    Future.successful(suggestions)
-  }
+  private def castMethodsSuggestions(
+      klass: Class[_]
+  )(implicit ec: ExecutionContext): Future[Iterable[ExpressionSuggestion]] =
+    Future {
+      val allowedClassesForCastParameter = klass
+        .findAllowedClassesForCastParameter(clssDefinitions)
+        .mapValuesNow(_.clazzName)
+      allowedClassesForCastParameter.keySet
+        .classesBySimpleNames()
+        .map { case (name, clazz) =>
+          ExpressionSuggestion(name, allowedClassesForCastParameter.getOrElse(clazz, Unknown), false, None, Nil)
+        }
+    }
 
   private def expressionContainOddNumberOfQuotesOrOddNumberOfDoubleQuotes(plainExpression: String): Boolean =
     plainExpression.count(
