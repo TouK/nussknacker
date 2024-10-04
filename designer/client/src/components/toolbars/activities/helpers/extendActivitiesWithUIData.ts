@@ -37,7 +37,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         const isDateRangeInOccurrences = occurrences.every((occurrence) => occurrence === occurrences[0]);
         const isNextOccurrence = currentActivity.type === nextActivity?.type;
         const shouldAddDateRangeElement =
-            occurrences.length > hideItemsOptionAvailableLimit && !isNextOccurrence && !isDateRangeInOccurrences;
+            occurrences.length >= hideItemsOptionAvailableLimit && !isNextOccurrence && !isDateRangeInOccurrences;
 
         if (shouldAddDateRangeElement) {
             const dates = occurrences.map((occurrence) => moment(occurrence));
@@ -55,6 +55,8 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
 
             if (isNextOccurrence) {
                 occurrences.push(formatDate(currentActivity.date));
+            } else {
+                occurrences = [];
             }
 
             return recursiveDateLabelDesignation(nextActivity, index, occurrences, iteration);
@@ -74,27 +76,27 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         return undefined;
     };
 
-    const recursiveToggleItemsButtonDesignation = (activity: Activity, index: number, occurrence = 0): ButtonActivity | undefined => {
-        const previousActivityIndex = index - 1 - occurrence;
+    const recursiveToggleItemsButtonDesignation = (activity: Activity, index: number, occurrences = 0): ButtonActivity | undefined => {
+        const previousActivityIndex = index - 1 - occurrences;
         const previousActivity = activitiesDataWithMetadata[previousActivityIndex];
         const nextActivity = activitiesDataWithMetadata[index + 1];
 
         if (
-            occurrence > hideItemsOptionAvailableLimit &&
+            occurrences >= hideItemsOptionAvailableLimit &&
             activity.type !== previousActivity?.type &&
             activity.type !== nextActivity?.type
         ) {
             return {
                 uiGeneratedId: uuid4(),
                 uiType: "toggleItemsButton",
-                sameItemOccurrence: occurrence,
+                sameItemOccurrence: occurrences,
                 isClicked: false,
             };
         }
 
         if (activity.type === previousActivity?.type) {
-            occurrence++;
-            return recursiveToggleItemsButtonDesignation(activity, index, occurrence);
+            occurrences++;
+            return recursiveToggleItemsButtonDesignation(activity, index, occurrences);
         }
 
         return undefined;

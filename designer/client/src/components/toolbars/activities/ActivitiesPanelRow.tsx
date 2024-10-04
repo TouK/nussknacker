@@ -6,13 +6,13 @@ interface Props {
     index: number;
     style?: CSSProperties | undefined;
     setRowHeight: (index: number, height: number) => void;
-    handleShowRow(index: number, sameItemOccurrence: number): void;
-    handleHideRow(index: number, sameItemOccurrence: number): void;
+    handleShowRows(uiGeneratedId: string, sameItemOccurrence: number): void;
+    handleHideRows(uiGeneratedId: string, sameItemOccurrence: number): void;
     activities: UIActivity[];
     searchQuery: string;
 }
 
-export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShowRow, handleHideRow, activities, searchQuery }: Props) => {
+export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShowRows, handleHideRows, activities, searchQuery }: Props) => {
     const rowRef = useRef<HTMLDivElement>(null);
     const activity = useMemo(() => activities[index], [activities, index]);
     const firstDeployedIndex = useMemo(
@@ -39,9 +39,11 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return (
                     <div ref={rowRef}>
                         {activity.isClicked ? (
-                            <ButtonItem handleHideRow={() => handleHideRow(index, activity.sameItemOccurrence)}>Show less</ButtonItem>
+                            <ButtonItem handleHideRow={() => handleHideRows(activity.uiGeneratedId, activity.sameItemOccurrence)}>
+                                Show less
+                            </ButtonItem>
                         ) : (
-                            <ButtonItem handleHideRow={() => handleShowRow(index, activity.sameItemOccurrence)}>
+                            <ButtonItem handleHideRow={() => handleShowRows(activity.uiGeneratedId, activity.sameItemOccurrence)}>
                                 Show {activity.sameItemOccurrence} more
                             </ButtonItem>
                         )}
@@ -52,7 +54,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return null;
             }
         }
-    }, [activity, handleHideRow, handleShowRow, index, isActiveDeployedItem, searchQuery]);
+    }, [activity, handleHideRows, handleShowRows, isActiveDeployedItem, searchQuery]);
 
     return (
         <div key={activity.uiGeneratedId} style={style}>

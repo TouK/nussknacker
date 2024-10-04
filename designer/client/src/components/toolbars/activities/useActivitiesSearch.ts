@@ -86,6 +86,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
     const handleClearResults = () => {
         handleSearch("");
         setSelectedResult(0);
+        setFoundResults([]);
     };
 
     useEffect(() => {

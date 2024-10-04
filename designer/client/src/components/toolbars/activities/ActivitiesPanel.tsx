@@ -104,15 +104,19 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         handleUpdateScenarioActivities,
     });
 
-    const handleHideRow = (index: number, sameItemOccurrence: number) => {
+    const handleHideRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
+        let buttonIndex: number;
+
         dispatch(
             updateScenarioActivities((prevState) => {
                 return prevState.map((data, prevStateItemIndex) => {
-                    if (prevStateItemIndex === index) {
+                    if (data.uiGeneratedId === uiGeneratedId) {
                         return { ...data, isClicked: false };
                     }
 
-                    if (prevStateItemIndex <= index && prevStateItemIndex > index - sameItemOccurrence - 1) {
+                    buttonIndex = prevState.findIndex((uiActivity) => uiActivity.uiGeneratedId === uiGeneratedId);
+
+                    if (prevStateItemIndex <= buttonIndex && prevStateItemIndex > buttonIndex - sameItemOccurrence - 1) {
                         return { ...data, isHidden: true };
                     }
 
@@ -120,22 +124,24 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                 });
             }),
         );
-        listRef.current.scrollToItem(index - sameItemOccurrence - 2);
+        listRef.current.scrollToItem(buttonIndex - sameItemOccurrence - 2);
     };
 
-    const handleShowRow = (index: number, sameItemOccurrence: number) => {
+    const handleShowRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
         dispatch(
             updateScenarioActivities((prevState) => {
-                return prevState.map((data, prevStateItemIndex) => {
-                    if (prevStateItemIndex === index + sameItemOccurrence) {
-                        return { ...data, isClicked: true };
+                return prevState.map((uiActivity, prevStateItemIndex) => {
+                    if (uiActivity.uiGeneratedId === uiGeneratedId) {
+                        return { ...uiActivity, isClicked: true };
                     }
 
-                    if (prevStateItemIndex >= index && prevStateItemIndex < index + sameItemOccurrence) {
-                        return { ...data, isHidden: false };
+                    const buttonIndex = prevState.findIndex((uiActivity) => uiActivity.uiGeneratedId === uiGeneratedId);
+
+                    if (prevStateItemIndex < buttonIndex && prevStateItemIndex >= buttonIndex - sameItemOccurrence) {
+                        return { ...uiActivity, isHidden: false };
                     }
 
-                    return data;
+                    return uiActivity;
                 });
             }),
         );
@@ -188,8 +194,8 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                         index={index}
                                         style={style}
                                         setRowHeight={setRowHeight}
-                                        handleShowRow={handleShowRow}
-                                        handleHideRow={handleHideRow}
+                                        handleShowRows={handleShowRows}
+                                        handleHideRows={handleHideRows}
                                         activities={visibleUiActivities}
                                         searchQuery={searchQuery}
                                     />
