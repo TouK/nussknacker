@@ -24,7 +24,7 @@ class ExtensionMethodsInvoker(classLoader: ClassLoader, classDefinitionSet: Clas
 object ExtensionMethods {
 
   private[extension] val extensions = List(
-    Extension(classOf[Cast], Cast, Cast)
+    new Extension(classOf[Cast], Cast, Cast)
   )
 
   def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {
@@ -39,7 +39,7 @@ object ExtensionMethods {
 
 }
 
-trait ExtensionMethodsImplFactory {
+trait ExtensionMethodsFactory {
   def create(target: Any, classLoader: ClassLoader, set: ClassDefinitionSet): Any
 }
 
@@ -47,8 +47,8 @@ trait ExtensionMethodsDefinitionsExtractor {
   def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
 }
 
-case class Extension(
-    clazz: Class[_],
-    implFactory: ExtensionMethodsImplFactory,
-    definitionsExtractor: ExtensionMethodsDefinitionsExtractor
+class Extension(
+    val clazz: Class[_],
+    val implFactory: ExtensionMethodsFactory,
+    val definitionsExtractor: ExtensionMethodsDefinitionsExtractor
 )

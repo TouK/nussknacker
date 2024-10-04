@@ -17,7 +17,7 @@ sealed trait Cast {
   def castToOrNull[T >: Null](className: String): T
 }
 
-object Cast extends ExtensionMethodsImplFactory with ExtensionMethodsDefinitionsExtractor {
+object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtractor {
   private val canCastToMethodName    = "canCastTo"
   private val castToMethodName       = "castTo"
   private val castToOrNullMethodName = "castToOrNull"
@@ -93,6 +93,7 @@ object Cast extends ExtensionMethodsImplFactory with ExtensionMethodsDefinitions
 
 }
 
+// todo: lbg consider comment: It looks like we don't need the interface. WDYT about removing the Cast trait and renaming CastImpl to Cast?
 class CastImpl(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[String, Class[_]]) extends Cast {
 
   override def canCastTo(className: String): Boolean =
