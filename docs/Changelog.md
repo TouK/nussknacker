@@ -63,6 +63,7 @@
 * [#6935](https://github.com/TouK/nussknacker/pull/6935) Spel: Scenario labels added to meta variable - `#meta.scenarioLabels`
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option
 * [#6840](https://github.com/TouK/nussknacker/pull/6840) Introduce canCastTo, castTo and castToOrNull extension methods in SpeL.
+* [#6974](https://github.com/TouK/nussknacker/pull/6974) Add SpeL suggestions for cast methods parameter.
 
 ## 1.17
 
