@@ -15,7 +15,9 @@ import { NodeValidationError } from "../types";
 import { isEmpty } from "lodash";
 import { Option, TypeSelect } from "./graph/node-modal/fragment-input-definition/TypeSelect";
 import { nodeValue } from "./graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { InfoOutlined } from "@mui/icons-material";
 import Input from "./graph/node-modal/editors/field/Input";
+import { formLabelWidth } from "../containers/theme/styles";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
@@ -28,7 +30,7 @@ interface AddProcessFormProps extends ChangeableValue<FormValue> {
     engines: string[];
     handleSetTouched: (touched: TouchedValue) => void;
     touched: TouchedValue;
-    isProcessingModeBatchAvailable?: boolean;
+    displayContactSupportMessage?: boolean;
 }
 
 export function AddProcessForm({
@@ -40,7 +42,7 @@ export function AddProcessForm({
     categories,
     engines,
     processingModes,
-    isProcessingModeBatchAvailable,
+    displayContactSupportMessage,
 }: AddProcessFormProps): JSX.Element {
     const { t } = useTranslation();
     const onFieldChange = useCallback(
@@ -101,16 +103,12 @@ export function AddProcessForm({
                                 Icon={RequestResponseIcon}
                                 active={value.processingMode === ProcessingMode.requestResponse}
                             />
-                            {/*TODO: Remove condition when batch processing mode ready */}
-                            {isProcessingModeBatchAvailable && (
-                                <CustomRadio
-                                    disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.batch)}
-                                    label={t("addProcessForm.label.batch", "Batch")}
-                                    value={ProcessingMode.batch}
-                                    Icon={BatchIcon}
-                                    active={value.processingMode === ProcessingMode.batch}
-                                />
-                            )}
+                            <CustomRadio
+                                label={t("addProcessForm.label.batch", "Batch")}
+                                value={ProcessingMode.batch}
+                                Icon={BatchIcon}
+                                active={value.processingMode === ProcessingMode.batch}
+                            />
                         </FormGroup>
                         <ValidationLabels
                             fieldErrors={touched.processingMode ? getValidationErrorsForField(validationErrors, "processingMode") : []}
@@ -130,87 +128,103 @@ export function AddProcessForm({
                         </Typography>
                     </span>
                 </FormControl>
-                <FormControl>
-                    <FormLabel required>{t("addProcessForm.label.name", "Name")}</FormLabel>
-                    <div className={nodeValue}>
-                        <Input
-                            type="text"
-                            id="newProcessName"
-                            value={value.processName}
-                            onChange={(e) => onFieldChange("processName", e.target.value)}
-                            onBlur={() => {
-                                onBlurChange("processName", true);
-                            }}
-                            fieldErrors={touched.processName ? getValidationErrorsForField(validationErrors, "processName") : []}
-                            showValidation={true}
-                        />
-                    </div>
-                </FormControl>
-                {!isEmpty(categories) && (
-                    <FormControl>
-                        <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
-                        <Box flex={1} width="100%">
-                            <TypeSelect
-                                id="processCategory"
-                                onChange={(value) => {
-                                    onFieldChange("processCategory", value);
-                                }}
-                                onBlur={() => {
-                                    onBlurChange("processCategory", true);
-                                }}
-                                value={categoryOptions.find((option) => option.value === value.processCategory)}
-                                options={categoryOptions}
-                                fieldErrors={
-                                    touched.processCategory ? getValidationErrorsForField(validationErrors, "processCategory") : []
-                                }
-                            />
-                            <Typography component={"div"} variant={"overline"} mt={1}>
-                                <Trans i18nKey={"addProcessForm.helperText.category"}>
-                                    To read more about categories,
-                                    <Link
-                                        sx={{ cursor: "pointer", ml: 0.5 }}
-                                        href="https://nussknacker.io/documentation/docs/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        click here.
-                                    </Link>
-                                </Trans>
-                            </Typography>
-                        </Box>
-                    </FormControl>
-                )}
-                {!isEmpty(engines) && (
-                    <FormControl>
-                        <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
-                        <Box flex={1} width="100%">
-                            <TypeSelect
-                                id="processEngine"
-                                onChange={(value) => {
-                                    onFieldChange("processEngine", value);
-                                }}
-                                onBlur={() => {
-                                    onBlurChange("processEngine", true);
-                                }}
-                                value={engineOptions.find((option) => option.value === value.processEngine)}
-                                options={engineOptions}
-                                fieldErrors={touched.processEngine ? getValidationErrorsForField(validationErrors, "processEngine") : []}
-                            />
-                            <Typography component={"div"} variant={"overline"} mt={1}>
-                                <Trans i18nKey={"addProcessForm.helperText.engine"}>
-                                    To read more about engines,
-                                    <Link
-                                        sx={{ cursor: "pointer", ml: 0.5 }}
-                                        href="https://nussknacker.io/documentation/docs/about/engines"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        click here.
-                                    </Link>
-                                </Trans>
-                            </Typography>
-                        </Box>
-                    </FormControl>
+                {displayContactSupportMessage ? (
+                    <Box ml={formLabelWidth} display={"flex"} mt={3}>
+                        <InfoOutlined />
+                        <Typography ml={1} variant={"body2"}>
+                            <Trans i18nKey={"addProcessForm.displayContactSupportMessage"}>
+                                Batch processing mode hasn&apos;t been set up yet. If you’d like to configuring it, please don’t hesitate to
+                                contact our team at <Link href={"mailto:enterprise@nussknacker.io"}>enterprise@nussknacker.io</Link>
+                            </Trans>
+                        </Typography>
+                    </Box>
+                ) : (
+                    <>
+                        <FormControl>
+                            <FormLabel required>{t("addProcessForm.label.name", "Name")}</FormLabel>
+                            <div className={nodeValue}>
+                                <Input
+                                    type="text"
+                                    id="newProcessName"
+                                    value={value.processName}
+                                    onChange={(e) => onFieldChange("processName", e.target.value)}
+                                    onBlur={() => {
+                                        onBlurChange("processName", true);
+                                    }}
+                                    fieldErrors={touched.processName ? getValidationErrorsForField(validationErrors, "processName") : []}
+                                    showValidation={true}
+                                />
+                            </div>
+                        </FormControl>
+                        {!isEmpty(categories) && (
+                            <FormControl>
+                                <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
+                                <Box flex={1} width="100%">
+                                    <TypeSelect
+                                        id="processCategory"
+                                        onChange={(value) => {
+                                            onFieldChange("processCategory", value);
+                                        }}
+                                        onBlur={() => {
+                                            onBlurChange("processCategory", true);
+                                        }}
+                                        value={categoryOptions.find((option) => option.value === value.processCategory)}
+                                        options={categoryOptions}
+                                        fieldErrors={
+                                            touched.processCategory ? getValidationErrorsForField(validationErrors, "processCategory") : []
+                                        }
+                                    />
+                                    <Typography component={"div"} variant={"overline"} mt={1}>
+                                        <Trans i18nKey={"addProcessForm.helperText.category"}>
+                                            To read more about categories,
+                                            <Link
+                                                sx={{ cursor: "pointer", ml: 0.5 }}
+                                                href="https://nussknacker.io/documentation/docs/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                click here.
+                                            </Link>
+                                        </Trans>
+                                    </Typography>
+                                </Box>
+                            </FormControl>
+                        )}
+                        {!isEmpty(engines) && (
+                            <FormControl>
+                                <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
+                                <Box flex={1} width="100%">
+                                    <TypeSelect
+                                        id="processEngine"
+                                        onChange={(value) => {
+                                            onFieldChange("processEngine", value);
+                                        }}
+                                        onBlur={() => {
+                                            onBlurChange("processEngine", true);
+                                        }}
+                                        value={engineOptions.find((option) => option.value === value.processEngine)}
+                                        options={engineOptions}
+                                        fieldErrors={
+                                            touched.processEngine ? getValidationErrorsForField(validationErrors, "processEngine") : []
+                                        }
+                                    />
+                                    <Typography component={"div"} variant={"overline"} mt={1}>
+                                        <Trans i18nKey={"addProcessForm.helperText.engine"}>
+                                            To read more about engines,
+                                            <Link
+                                                sx={{ cursor: "pointer", ml: 0.5 }}
+                                                href="https://nussknacker.io/documentation/docs/about/engines"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                click here.
+                                            </Link>
+                                        </Trans>
+                                    </Typography>
+                                </Box>
+                            </FormControl>
+                        )}
+                    </>
                 )}
             </NodeTable>
         </div>
