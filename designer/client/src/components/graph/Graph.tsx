@@ -1,13 +1,31 @@
+import { Theme } from "@mui/material";
 import { dia, g, shapes } from "jointjs";
 import "jointjs/dist/joint.min.css";
-import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
+import { cloneDeep, debounce, isEmpty, isEqual, keys, without } from "lodash";
 import React from "react";
-import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
+import { Layout, NodePosition, Position } from "../../actions/nk";
+import { isEdgeEditable } from "../../common/EdgeUtils";
+import User from "../../common/models/User";
+import ProcessUtils from "../../common/ProcessUtils";
+import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
+import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
+import { UserSettings } from "../../reducers/userSettings";
+import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { ComponentDragPreview } from "../ComponentDragPreview";
+import { Scenario } from "../Process/types";
+import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
+import { getDefaultLinkCreator } from "./EspNode/link";
 import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
-import { Events, GraphProps } from "./types";
+import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
+import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
+import { updateLayout } from "./GraphPartialsInTS/updateLayout";
+import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrapper";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
+import { PaperContainer } from "./paperContainer";
+import { rafThrottle } from "./rafThrottle";
 import {
     RangeSelectedEventData,
     RangeSelectEvents,
@@ -16,28 +34,10 @@ import {
     SelectionMode,
 } from "./RangeSelectPlugin";
 import { prepareSvg } from "./svg-export/prepareSvg";
+import { Events, GraphProps } from "./types";
+import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
-import { ComponentDragPreview } from "../ComponentDragPreview";
-import { rafThrottle } from "./rafThrottle";
-import { isEdgeEditable } from "../../common/EdgeUtils";
-import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
-import { Layout, NodePosition, Position } from "../../actions/nk";
-import { UserSettings } from "../../reducers/userSettings";
-import User from "../../common/models/User";
-import { updateLayout } from "./GraphPartialsInTS/updateLayout";
-import { getDefaultLinkCreator } from "./EspNode/link";
-import ProcessUtils from "../../common/ProcessUtils";
-import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
-import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
-import { createUniqueArrowMarker } from "./arrowMarker";
-import { Scenario } from "../Process/types";
-import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrapper";
-import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
-import { Theme } from "@mui/material";
-import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
-import { PaperContainer } from "./paperContainer";
-import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -648,13 +648,13 @@ export class Graph extends React.Component<Props> {
     changeLayoutIfNeeded = (): void => {
         if (this.props.isFragment === true) return;
 
-        const { layout, layoutChanged } = this.props;
+        const { layoutChanged } = this.props;
 
         const elements = this.graph.getElements().filter(isModelElement);
         const collection = elements.map((el) => {
             const { x, y } = el.get("position");
             return {
-                id: el.id,
+                id: el.id.toString(),
                 position: {
                     x,
                     y,
@@ -662,13 +662,7 @@ export class Graph extends React.Component<Props> {
             };
         });
 
-        const iteratee = (e) => e.id;
-        const newLayout = sortBy(collection, iteratee);
-        const oldLayout = sortBy(layout, iteratee);
-
-        if (!isEqual(oldLayout, newLayout)) {
-            layoutChanged(newLayout);
-        }
+        layoutChanged(collection);
     };
 
     hooverHandling(): void {

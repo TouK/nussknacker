@@ -1,3 +1,5 @@
+import { isEqual } from "lodash";
+import { sortBy } from "lodash/fp";
 import { getLayout } from "../../../reducers/selectors/layout";
 import { NodeId } from "../../../types";
 import { ThunkAction } from "../../reduxTypes";
@@ -13,6 +15,7 @@ export type NodePosition = {
 };
 export type Layout = NodePosition[];
 export type GraphLayoutFunction = () => void;
+
 export type LayoutChangedAction = {
     layout: Layout;
     type: "LAYOUT_CHANGED";
@@ -31,11 +34,23 @@ type TogglePanelAction = {
 export type PanelActions = WithConfigId<TogglePanelAction>;
 
 export function layoutChanged(layout?: Layout): ThunkAction {
+    const sortById = sortBy<NodePosition>(({ id }) => id);
     return (dispatch, getState) => {
-        dispatch({
-            type: "LAYOUT_CHANGED",
-            layout: layout || getLayout(getState()),
-        });
+        const currentLayout = sortById(getLayout(getState()));
+        if (layout) {
+            const nextLayout = sortById(layout);
+            if (!isEqual(currentLayout, nextLayout)) {
+                dispatch({
+                    type: "LAYOUT_CHANGED",
+                    layout: nextLayout,
+                });
+            }
+        } else {
+            dispatch({
+                type: "LAYOUT_CHANGED",
+                layout: currentLayout,
+            });
+        }
     };
 }
 

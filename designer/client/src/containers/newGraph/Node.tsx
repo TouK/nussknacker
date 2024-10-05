@@ -14,17 +14,20 @@ export function Node({ children, id, x = 0, y = 0, ...props }: NodeProps) {
     const shape = useRef<dia.Element>();
 
     useEffect(() => {
-        const rect = new shapes.standard.Rectangle({
-            id,
-            size: { width: 200, height: 50 },
-        });
-        shape.current = rect;
-        rect.addTo(graph);
-
-        return () => {
-            rect.remove();
-        };
+        shape.current = graph.replaceCell(
+            shape.current,
+            new shapes.standard.Rectangle({
+                id,
+                size: { width: 250, height: 50 },
+            }),
+        );
     }, [graph, id]);
+
+    useEffect(() => {
+        return () => {
+            shape.current?.remove();
+        };
+    }, []);
 
     useEffect(() => {
         shape.current.attr("label/text", children);

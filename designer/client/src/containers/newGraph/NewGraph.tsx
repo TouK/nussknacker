@@ -1,9 +1,10 @@
-import { dia } from "jointjs";
-import React, { useRef } from "react";
+import React, { useCallback } from "react";
+import { useDispatch } from "react-redux";
+import { layoutChanged } from "../../actions/nk";
 import { useUserSettings } from "../../common/userSettings";
 import { ScenarioGraph } from "../../types";
 import { Edge } from "./Edge";
-import { GraphProvider } from "./GraphProvider";
+import { GraphProvider, GraphProviderProps } from "./GraphProvider";
 import { Node } from "./Node";
 import { Paper } from "./Paper";
 
@@ -15,18 +16,27 @@ export const NewGraph = ({ scenarioGraph }: Props) => {
     const { nodes, edges } = scenarioGraph;
 
     const [userSettings] = useUserSettings();
-    const graphRef = useRef<dia.Graph>(null);
+    const dispatch = useDispatch();
+
+    const onLayoutChange = useCallback<GraphProviderProps["onLayoutChange"]>(
+        (layout) => {
+            dispatch(layoutChanged(layout.map(({ id, ...position }) => ({ id, position }))));
+        },
+        [dispatch],
+    );
 
     return (
-        <GraphProvider ref={graphRef}>
+        <GraphProvider onLayoutChange={onLayoutChange}>
             {nodes.map(({ additionalFields, id }) => (
                 <Node key={id} id={id} {...additionalFields.layoutData}>
                     {id}
                 </Node>
             ))}
-            {edges.map((edge) => (
-                <Edge key={`${edge.from}--${edge.to}`} {...edge} />
-            ))}
+            {edges
+                .filter(({ from, to }) => from && to)
+                .map((edge) => (
+                    <Edge key={`${edge.from}--${edge.to}`} {...edge} />
+                ))}
             <Paper
                 sx={{
                     background: "#CCFFCC",
