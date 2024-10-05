@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import React, { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { layoutChanged } from "../../actions/nk";
@@ -38,23 +39,11 @@ export const NewGraph = ({ scenarioGraph, children }: Props) => {
                     <Edge key={`${edge.from}--${edge.to}`} {...edge} />
                 ))}
             {userSettings["debug.newGraph"] ? (
-                <>
-                    <Paper
-                        interactive
-                        sx={{
-                            background: "#CCFFCC",
-                        }}
-                    />
-                </>
-            ) : (
-                <>
-                    {/*<Paper*/}
-                    {/*    sx={{*/}
-                    {/*        background: "#CCCCFF",*/}
-                    {/*    }}*/}
-                    {/*/>*/}
-                </>
-            )}
+                <Box sx={{ display: "grid" }}>
+                    <Paper sx={{ background: "#CCFFCC" }} interactive />
+                    <Paper sx={{ background: "#CCCCFF" }} />
+                </Box>
+            ) : null}
             {children}
         </GraphProvider>
     );

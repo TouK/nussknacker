@@ -6,19 +6,23 @@ import { PanZoomPlugin } from "../../../components/graph/PanZoomPlugin";
 import { useGraph } from "../GraphProvider";
 import { createContextHook, useContextForward } from "../utils";
 import { Canvas } from "./Canvas";
+import { usePanWithCellBehavior } from "./usePanWithCellBehavior";
 import { usePanZoomBehavior } from "./usePanZoomBehavior";
 
 export type PaperContextType = { paper: dia.Paper; panZoom: PanZoomPlugin };
 const PaperContext = React.createContext<PaperContextType>(null);
 
-export type PaperProps = BoxProps & {
+export type PaperBehaviorProps = {
     interactive?: boolean;
 };
+
+export type PaperProps = BoxProps & PaperBehaviorProps;
 
 export const Paper = React.forwardRef<PaperContextType, PaperProps>(function Paper(
     { children, interactive = false, ...props },
     forwardedRef,
 ) {
+    const behaviorProps: PaperBehaviorProps = { interactive };
     const [context, setContext] = useState<PaperContextType>({ paper: null, panZoom: null });
     const registerBehavior = useCallback(
         <K extends keyof Omit<PaperContextType, "paper">, B = K extends keyof PaperContextType ? PaperContextType[K] : never>(key: K) =>
@@ -49,7 +53,8 @@ export const Paper = React.forwardRef<PaperContextType, PaperProps>(function Pap
         };
     }, [model, setContext]);
 
-    usePanZoomBehavior(context, registerBehavior("panZoom"), { interactive });
+    usePanZoomBehavior([context, registerBehavior("panZoom")], behaviorProps);
+    usePanWithCellBehavior([context], behaviorProps);
 
     useEffect(() => {
         const { paper } = context;

@@ -1,11 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { PanZoomPlugin } from "../../../components/graph/PanZoomPlugin";
-import { PaperContextType } from "./Paper";
+import { PaperBehaviorProps, PaperContextType } from "./Paper";
 
 export function usePanZoomBehavior(
-    { paper }: PaperContextType,
-    register: (behavior: PanZoomPlugin) => void,
-    { interactive }: { interactive?: boolean },
+    [{ paper }, register]: [PaperContextType, (behavior: PanZoomPlugin) => void],
+    { interactive }: PaperBehaviorProps,
 ) {
     const [_register] = useState(() => register);
     const behavior = useMemo<PanZoomPlugin>(() => paper && new PanZoomPlugin(paper), [paper]);
