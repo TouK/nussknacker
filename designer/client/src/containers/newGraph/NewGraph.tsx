@@ -6,7 +6,7 @@ import { ScenarioGraph } from "../../types";
 import { Edge } from "./Edge";
 import { GraphProvider, GraphProviderProps } from "./GraphProvider";
 import { Node } from "./Node";
-import { Paper } from "./Paper";
+import { Paper } from "./paper/Paper";
 
 type Props = React.PropsWithChildren<{
     scenarioGraph: ScenarioGraph;
@@ -39,18 +39,22 @@ export const NewGraph = ({ scenarioGraph, children }: Props) => {
                     <Edge key={`${edge.from}--${edge.to}`} {...edge} />
                 ))}
             {userSettings["debug.newGraph"] ? (
-                <Paper
-                    interactive
-                    sx={{
-                        background: "#CCFFCC",
-                    }}
-                />
+                <>
+                    <Paper
+                        interactive
+                        sx={{
+                            background: "#CCFFCC",
+                        }}
+                    />
+                </>
             ) : (
-                <Paper
-                    sx={{
-                        background: "#CCCCFF",
-                    }}
-                />
+                <>
+                    {/*<Paper*/}
+                    {/*    sx={{*/}
+                    {/*        background: "#CCCCFF",*/}
+                    {/*    }}*/}
+                    {/*/>*/}
+                </>
             )}
             {children}
         </GraphProvider>
