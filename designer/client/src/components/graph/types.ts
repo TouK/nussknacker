@@ -1,4 +1,4 @@
-import { ProcessCounts } from "../../reducers/graph";
+import { ConnectDropTarget } from "react-dnd";
 import {
     injectNode,
     Layout,
@@ -9,6 +9,7 @@ import {
     resetSelection,
     toggleSelection,
 } from "../../actions/nk";
+import { ProcessCounts } from "../../reducers/graph";
 import { Capabilities } from "../../reducers/selectors/other";
 import { Scenario } from "../Process/types";
 
@@ -33,7 +34,7 @@ type ScenarioGraphProps = {
     isDraggingOver?: boolean;
     isFragment?: false | null;
 
-    connectDropTarget;
+    connectDropTarget: ConnectDropTarget;
 };
 
 type FragmentGraphProps = {

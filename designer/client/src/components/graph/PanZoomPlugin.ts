@@ -34,7 +34,7 @@ export class PanZoomPlugin {
     private zoomTo = throttle((scale: number): void => {
         this.paperSelection.transition().duration(750).call(this.zoomBehavior.scaleTo, scale);
     }, 250);
-    private _enabled = true;
+    private interactive = true;
 
     constructor(private paper: dia.Paper, viewport?: Viewport) {
         this.viewport = viewport;
@@ -53,8 +53,7 @@ export class PanZoomPlugin {
         const initialTranslate = this.getTranslatedCenter(center, this.viewport, initialScale);
         const zoomTransform = zoomIdentity.translate(initialTranslate.x, initialTranslate.y).scale(initialScale);
 
-        this.paperSelection.call(this.zoomBehavior.transform, zoomTransform);
-        this.enable();
+        this.paperSelection.call(this.zoomBehavior.transform, zoomTransform).call(this.zoomBehavior).on("dblclick.zoom", null);
     }
 
     private _zoom = 1;
@@ -78,10 +77,7 @@ export class PanZoomPlugin {
     }
 
     toggle(enabled: boolean) {
-        if (enabled === this._enabled) return;
-
-        enabled ? this.enable() : this.disable();
-        this._enabled = enabled;
+        this.interactive = enabled;
     }
 
     fitContent(content: g.Rect = this.paper.getContentArea(), updatedViewport?: Viewport, predefinedScale?: number | undefined): void {
@@ -119,16 +115,12 @@ export class PanZoomPlugin {
         return viewportRelativeCenter.translate(center.scale(-scale, -scale));
     };
 
-    private enable() {
-        this.paperSelection.call(this.zoomBehavior).on("dblclick.zoom", null);
-    }
-
-    private disable() {
+    remove() {
         this.paperSelection.on(".zoom", null);
     }
 
     private filterEvents(event: MouseEvent | TouchEvent | WheelEvent): boolean {
-        if (!this._enabled) {
+        if (!this.interactive) {
             return false;
         }
 
@@ -147,13 +139,6 @@ export class PanZoomPlugin {
         return event.target === this.paper.svg;
     }
 
-    private applyTransform<E extends ZoomedElementBaseType, D>(e: D3ZoomEvent<E, D>) {
-        if (this._enabled) {
-            this._zoom = e.transform.k;
-            this.layers.attr("transform", transformToCSSMatrix(e.transform)).style("transform", transformToCSSMatrix(e.transform));
-        }
-    }
-
     private initMove<E extends ZoomedElementBaseType, D>(e: D3ZoomEvent<E, D>): void {
         if (!e.sourceEvent) return;
 
@@ -163,5 +148,10 @@ export class PanZoomPlugin {
 
     private cleanup() {
         this.globalCursor.disable();
+    }
+
+    private applyTransform<E extends ZoomedElementBaseType, D>(e: D3ZoomEvent<E, D>) {
+        this._zoom = e.transform.k;
+        this.layers.attr("transform", transformToCSSMatrix(e.transform)).style("transform", transformToCSSMatrix(e.transform));
     }
 }

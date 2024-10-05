@@ -8,11 +8,12 @@ import { GraphProvider, GraphProviderProps } from "./GraphProvider";
 import { Node } from "./Node";
 import { Paper } from "./Paper";
 
-type Props = {
+type Props = React.PropsWithChildren<{
     scenarioGraph: ScenarioGraph;
-};
+}>;
 
-export const NewGraph = ({ scenarioGraph }: Props) => {
+const InteractivePaper = (props) => <Paper {...props} interactive />;
+export const NewGraph = ({ scenarioGraph, children }: Props) => {
     const { nodes, edges } = scenarioGraph;
 
     const [userSettings] = useUserSettings();
@@ -37,12 +38,21 @@ export const NewGraph = ({ scenarioGraph }: Props) => {
                 .map((edge) => (
                     <Edge key={`${edge.from}--${edge.to}`} {...edge} />
                 ))}
-            <Paper
-                sx={{
-                    background: "#CCFFCC",
-                    visibility: userSettings["debug.newGraph"] ? "visible" : "hidden",
-                }}
-            />
+            {userSettings["debug.newGraph"] ? (
+                <Paper
+                    interactive
+                    sx={{
+                        background: "#CCFFCC",
+                    }}
+                />
+            ) : (
+                <Paper
+                    sx={{
+                        background: "#CCCCFF",
+                    }}
+                />
+            )}
+            {children}
         </GraphProvider>
     );
 };

@@ -10,33 +10,44 @@ import { createContextHook, useContextForward } from "./utils";
 type ContextType = { paper: dia.Paper; panZoom: PanZoomPlugin };
 const PaperContext = React.createContext<ContextType>(null);
 
-export type PaperProps = BoxProps;
+export type PaperProps = BoxProps & {
+    interactive?: boolean;
+};
 
-export const Paper = React.forwardRef<ContextType, PaperProps>(function Paper({ children, ...props }, forwardedRef) {
+export const Paper = React.forwardRef<ContextType, PaperProps>(function Paper({ children, interactive = false, ...props }, forwardedRef) {
     const canvasRef = useRef<HTMLElement>(null);
     const model = useGraph();
 
     const [context, setContext] = useState<ContextType>({ paper: null, panZoom: null });
     useEffect(() => {
-        setContext(() => {
-            const paper = new dia.Paper({
-                width: "auto",
-                height: "auto",
-                el: canvasRef.current,
-                model,
-            });
-            return {
-                paper,
-                panZoom: new PanZoomPlugin(paper),
-            };
+        const paper = new dia.Paper({
+            width: "auto",
+            height: "auto",
+            el: canvasRef.current,
+            interactive: false,
+            model,
         });
+        const panZoom = new PanZoomPlugin(paper);
+
+        setContext({ paper, panZoom });
+
+        return () => {
+            paper.undelegateDocumentEvents();
+            paper.undelegateEvents();
+            panZoom.remove();
+        };
     }, [model]);
 
     useContextForward(forwardedRef, context);
 
     useEffect(() => {
-        context.panZoom?.fitContent();
-    }, [context.panZoom]);
+        const { paper, panZoom } = context;
+        if (paper) {
+            panZoom.fitContent();
+            panZoom.toggle(interactive);
+            paper.setInteractivity(interactive);
+        }
+    }, [context, interactive]);
 
     return (
         <Box position="relative" {...props}>
