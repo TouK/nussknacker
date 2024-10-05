@@ -12,7 +12,6 @@ type Props = React.PropsWithChildren<{
     scenarioGraph: ScenarioGraph;
 }>;
 
-const InteractivePaper = (props) => <Paper {...props} interactive />;
 export const NewGraph = ({ scenarioGraph, children }: Props) => {
     const { nodes, edges } = scenarioGraph;
 
