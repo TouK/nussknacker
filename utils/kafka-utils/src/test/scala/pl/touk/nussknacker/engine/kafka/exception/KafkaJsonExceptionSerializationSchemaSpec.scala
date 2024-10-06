@@ -62,7 +62,7 @@ class KafkaJsonExceptionSerializationSchemaSpec extends AnyFunSuite with Matcher
     val (record1, _)     = getSerializedJson(largeContext, maxMessageBytes = maxRecord1Length)
     val inputEvent1      = decode[KafkaExceptionInfo](record1).value.inputEvent.get.as[Map[String, String]].value
 
-    inputEvent1.removed("!warning").keySet shouldBe largeContext.removed("longVariable").keySet
+    (inputEvent1.keySet - "!warning") shouldBe (largeContext.keySet - "longVariable")
     inputEvent1("!warning") should startWith("inputEvent truncated")
     inputEvent1("!warning") should endWith(": longVariable")
     record1.length should be <= maxRecord1Length

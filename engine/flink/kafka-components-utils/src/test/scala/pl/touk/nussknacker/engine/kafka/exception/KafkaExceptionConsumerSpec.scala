@@ -32,7 +32,7 @@ class KafkaExceptionConsumerSpec
     val message = runTest(s"testProcess-shortString", stringVariable = "'short string'".spel)
 
     val inputEvent = extractInputEventMap(message)
-    inputEvent.view.filterKeys(_ != "input").toMap shouldBe Map(
+    (inputEvent - "input") shouldBe Map(
       "string" -> "short string"
     )
   }
