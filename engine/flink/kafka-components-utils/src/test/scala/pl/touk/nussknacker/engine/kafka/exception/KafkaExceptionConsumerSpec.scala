@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import io.circe.Json
-import io.circe.syntax.EncoderOps
-import org.scalatest.OptionValues
+import org.scalatest.{EitherValues, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -20,36 +18,51 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.util.Date
 
-class KafkaExceptionConsumerSpec extends AnyFunSuite with OptionValues with FlinkSpec with KafkaSpec with Matchers {
+class KafkaExceptionConsumerSpec
+    extends AnyFunSuite
+    with OptionValues
+    with FlinkSpec
+    with KafkaSpec
+    with Matchers
+    with EitherValues {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
   test("should record errors on topic") {
     val message = runTest(s"testProcess-shortString", stringVariable = "'short string'".spel)
 
-    val inputEvent = message.inputEvent.value
-    inputEvent.asObject.value.filterKeys(_ != "input").asJson shouldBe Json.obj(
-      "string" -> "short string".asJson
+    val inputEvent = extractInputEventMap(message)
+    inputEvent.view.filterKeys(_ != "input").toMap shouldBe Map(
+      "string" -> "short string"
     )
   }
 
   test("should record errors on topic - strips context from too large error input") {
     // long string variable: 8^7 = 2097152 = 2 MB
-    val message =
-      runTest("testProcess-longString", stringVariable = ("'xxxxxxxx'" + ".replaceAll('x', 'xxxxxxxx')".repeat(6)).spel)
+    val message = runTest(
+      "testProcess-longString",
+      stringVariable = ("'xxxxxxxx'" + ".replaceAll('x', 'xxxxxxxx')".repeat(6)).spel,
+      maxMessageBytes = 5242880
+    )
 
-    val inputEvent = message.inputEvent.value
-    inputEvent.asObject.value.filterKeys(k => k != "input" && k != "truncationReason").asJson shouldBe Json.obj(
-      "warning" -> "variables truncated, they didn't fit within max allowed size of a Kafka message".asJson
+    val inputEvent = extractInputEventMap(message)
+    inputEvent.keySet shouldBe Set("!warning")
+    inputEvent("!warning") should startWith(
+      "variables truncated, they didn't fit within max allowed size of a Kafka message:"
     )
   }
 
-  private def runTest(scenarioName: String, stringVariable: Expression): KafkaExceptionInfo = {
+  private def runTest(
+      scenarioName: String,
+      stringVariable: Expression,
+      maxMessageBytes: Int = 1048576
+  ): KafkaExceptionInfo = {
     val topicName = s"$scenarioName.errors"
 
     val configWithExceptionHandler = config
       .withValue("exceptionHandler.type", fromAnyRef("Kafka"))
       .withValue("exceptionHandler.topic", fromAnyRef(topicName))
+      .withValue("exceptionHandler.maxMessageBytes", fromAnyRef(maxMessageBytes))
       .withValue("exceptionHandler.includeInputEvent", fromAnyRef(true))
       .withValue("exceptionHandler.additionalParams.configurableKey", fromAnyRef("sampleValue"))
       .withValue("exceptionHandler.kafka", config.getConfig("kafka").root())
@@ -91,5 +104,8 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with OptionValues with Flin
 
     message
   }
+
+  def extractInputEventMap(message: KafkaExceptionInfo): Map[String, String] =
+    message.inputEvent.value.as[Map[String, String]].value
 
 }

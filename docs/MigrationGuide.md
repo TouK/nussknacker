@@ -23,6 +23,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Migration API changes:
       * POST `/api/migrate` supports v2 request format (with `scenarioLabels` field)
 
+### Configuration changes
+
+* [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
+  Its default value reflects Kafka's default size limit of 1 MB (`max.message.bytes`), you need to increase it if your
+  error topic allows for larger messages. Remember to add some margin for Kafka protocol overhead (100 bytes should be enough).
+
 ### Other changes
 
 * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
