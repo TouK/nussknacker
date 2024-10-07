@@ -1,6 +1,7 @@
 import React, { useCallback } from "react";
 import { Box, Button, lighten, styled } from "@mui/material";
 import { useWindows, WindowKind } from "../../../windowManager";
+import { useTranslation } from "react-i18next";
 
 const StyledFooterButton = styled(Button)(({ theme }) => ({
     textTransform: "none",
@@ -15,6 +16,7 @@ const StyledFooterButton = styled(Button)(({ theme }) => ({
 }));
 
 export const ActivitiesPanelFooter = () => {
+    const { t } = useTranslation();
     const { open } = useWindows();
 
     const handleOpenAddComment = useCallback(() => {
@@ -38,10 +40,10 @@ export const ActivitiesPanelFooter = () => {
     return (
         <Box my={2} mx={1} display={"flex"} justifyContent={"space-between"} gap={1.5}>
             <StyledFooterButton variant={"contained"} onClick={handleOpenAddComment}>
-                Add comment
+                {t("activities.footer.addComment", "Add comment")}
             </StyledFooterButton>
             <StyledFooterButton variant={"contained"} onClick={handleOpenAddAttachment}>
-                Add attachment
+                {t("activities.footer.addComment", "Add attachment")}
             </StyledFooterButton>
         </Box>
     );

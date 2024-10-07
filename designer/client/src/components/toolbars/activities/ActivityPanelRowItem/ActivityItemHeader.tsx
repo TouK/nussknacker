@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useCallback, useEffect, useMemo } from "react";
+import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService, { ActionMetadata, ActivityAttachment } from "../../../../http/HttpService";

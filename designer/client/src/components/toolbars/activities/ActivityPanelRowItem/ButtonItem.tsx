@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from "react";
 import { Button, Divider, styled } from "@mui/material";
 
-export const ToggleItemsRoot = styled("div")(({ theme }) => ({
+export const ToggleItemsRoot = styled("div")(() => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "flex-end",

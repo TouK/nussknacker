@@ -1,6 +1,7 @@
 import React, { CSSProperties, memo, useEffect, useMemo, useRef } from "react";
 import { DateItem, ActivityItem, ButtonItem } from "./ActivityPanelRowItem";
 import { UIActivity } from "./ActivitiesPanel";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     index: number;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShowRows, handleHideRows, activities, searchQuery }: Props) => {
+    const { t } = useTranslation();
     const rowRef = useRef<HTMLDivElement>(null);
     const activity = useMemo(() => activities[index], [activities, index]);
     const firstDeployedIndex = useMemo(
@@ -40,11 +42,13 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                     <div ref={rowRef}>
                         {activity.isClicked ? (
                             <ButtonItem handleHideRow={() => handleHideRows(activity.uiGeneratedId, activity.sameItemOccurrence)}>
-                                Show less
+                                {t("activitiesPanel.buttons.showLess", "Show less")}
                             </ButtonItem>
                         ) : (
                             <ButtonItem handleHideRow={() => handleShowRows(activity.uiGeneratedId, activity.sameItemOccurrence)}>
-                                Show {activity.sameItemOccurrence} more
+                                {t("activitiesPanel.buttons.showMore", "Show {{sameItemOccurrence}} more", {
+                                    sameItemOccurrence: activity.sameItemOccurrence,
+                                })}
                             </ButtonItem>
                         )}
                     </div>
@@ -54,7 +58,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return null;
             }
         }
-    }, [activity, handleHideRows, handleShowRows, isActiveDeployedItem, searchQuery]);
+    }, [activity, handleHideRows, handleShowRows, isActiveDeployedItem, searchQuery, t]);
 
     return <div style={style}>{itemToRender}</div>;
 });
