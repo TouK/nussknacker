@@ -39,6 +39,8 @@ object KafkaJsonExceptionSerializationSchema {
       return value
     }
 
+    // use a placeholder of the same length as the number of digits in valueBytes,
+    // because the final value will never be larger than that
     val removedBytesPlaceholder = "$" * valueBytes.toString.length
     // text below will increase JSON size, but we are working under the assumption that its size is much smaller
     // than the size of inputEvent keys that will get removed
@@ -81,12 +83,14 @@ object KafkaJsonExceptionSerializationSchema {
   }
 
   private[exception] def countVariableLengths(inputEvent: ACursor): List[(String, Int)] = {
-    // Each removed key will be moved to a message that enumerates all removed keys, so this:
+    // Each removed key will be moved to a message that enumerates all removed keys, e.g. when the variable
+    // 'my_variable_name' is removed from:
     // |  "inputEvent" : {
-    // |    "variable_name" : "value",
+    // |    "my_variable_name" : "value",
     // |  }
-    // will be transformed into a partial string: `, variable_name` (2-byte separator + variable name).
-    // Because of that counted size doesn't include `,\n`, as these bytes will be reused.
+    // it be transformed into a partial string: `, my_variable_name` (2-byte separator + variable name).
+    // Because of that the length of variable name and the last two characters (`,\n`) aren't added to counted size,
+    // as the space they take up will get reused.
     //
     // Assumption that all values are terminated by `,\n` may make us overestimate a single variable by one byte,
     // but it's safer to remove more and still fit within given size limit.
@@ -108,7 +112,7 @@ object KafkaJsonExceptionSerializationSchema {
       .toList
   }
 
-  private def calculateKeysToRemove(keysWithLength: List[(String, Int)], bytesToRecover: Int): (Set[String], Int) = {
+  private def calculateKeysToRemove(keysWithLength: List[(String, Int)], bytesToRemove: Int): (Set[String], Int) = {
     @tailrec
     def collectKeysToRemove(
         allKeys: List[(String, Int)],
@@ -116,7 +120,7 @@ object KafkaJsonExceptionSerializationSchema {
         bytesSoFar: Int
     ): (Set[String], Int) = {
       allKeys match {
-        case (key, bytes) :: tail if bytesSoFar < bytesToRecover =>
+        case (key, bytes) :: tail if bytesSoFar < bytesToRemove =>
           collectKeysToRemove(tail, key :: keysToRemove, bytes + bytesSoFar)
         case _ =>
           (keysToRemove.toSet, bytesSoFar)
