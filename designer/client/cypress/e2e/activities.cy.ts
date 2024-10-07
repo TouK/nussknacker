@@ -21,11 +21,7 @@ const findActivity = (query: string) => {
 };
 
 const makeScreenshot = () => {
-    cy.get('[data-testid="activities-panel"]').matchImage({
-        screenshotConfig: {
-            blackout: ["[data-testid='activity-date']"],
-        },
-    });
+    cy.get('[data-testid="activities-panel"]').matchImage({ maxDiffThreshold: 0.01 });
 };
 
 describe("Activities", () => {

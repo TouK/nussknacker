@@ -56,11 +56,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
         }
     }, [activity, handleHideRows, handleShowRows, isActiveDeployedItem, searchQuery]);
 
-    return (
-        <div key={activity.uiGeneratedId} style={style}>
-            {itemToRender}
-        </div>
-    );
+    return <div style={style}>{itemToRender}</div>;
 });
 
 ActivitiesPanelRow.displayName = "ActivitiesPanelRow";

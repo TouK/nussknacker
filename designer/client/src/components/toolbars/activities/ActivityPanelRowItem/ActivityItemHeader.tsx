@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useCallback, useMemo } from "react";
+import React, { PropsWithChildren, useCallback, useEffect, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService, { ActionMetadata, ActivityAttachment } from "../../../../http/HttpService";
@@ -163,7 +163,7 @@ const ActivityItemHeader = ({ activity, isActiveItem, searchQuery }: Props) => {
 
     return (
         <StyledActivityItemHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
-            <StyledHeaderIcon src={activity.activities.icon} />
+            <StyledHeaderIcon src={activity.activities.icon} id={activity.uiGeneratedId} />
             {getHeaderTitle}
             {activity.actions.map((activityAction) => (
                 <HeaderActivity
