@@ -391,8 +391,9 @@ class PeriodicDeploymentManagerTest
         scenarioVersionId = Some(ScenarioVersionId(1)),
         dateFinished = firstActivity.dateFinished,
         scheduleName = "[default]",
-        retriesLeft = 0,
-        status = "Finished",
+        status = ScheduledExecutionStatus.Finished,
+        createdAt = firstActivity.createdAt,
+        retriesLeft = None,
         nextRetryAt = None
       ),
       ScenarioActivity.PerformedScheduledExecution(
@@ -403,8 +404,9 @@ class PeriodicDeploymentManagerTest
         scenarioVersionId = Some(ScenarioVersionId(42)),
         dateFinished = secondActivity.dateFinished,
         scheduleName = "[default]",
-        retriesLeft = 0,
-        status = "Scheduled",
+        status = ScheduledExecutionStatus.Scheduled,
+        createdAt = secondActivity.createdAt,
+        retriesLeft = None,
         nextRetryAt = None
       )
     )
@@ -440,8 +442,9 @@ class PeriodicDeploymentManagerTest
         scenarioVersionId = Some(ScenarioVersionId(1)),
         dateFinished = headActivity.dateFinished,
         scheduleName = "[default]",
-        retriesLeft = 0,
-        status = "Failed",
+        status = ScheduledExecutionStatus.Failed,
+        createdAt = headActivity.createdAt,
+        retriesLeft = None,
         nextRetryAt = None
       )
     )

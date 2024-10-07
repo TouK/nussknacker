@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
+import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   NoActivity,
@@ -207,8 +208,21 @@ object Examples {
           scenarioVersionId = Some(1),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           scheduleName = "main-schedule",
-          retriesLeft = 2,
-          status = "FAILURE",
+          status = ScheduledExecutionStatus.Finished,
+          createdAt = Instant.parse("2024-01-17T13:21:17Z"),
+          retriesLeft = None,
+          nextRetryAt = None,
+        ),
+        ScenarioActivity.forPerformedScheduledExecution(
+          id = UUID.fromString("9b27797e-aa03-42ba-8406-d0ae8005a883"),
+          user = "some user",
+          date = Instant.parse("2024-01-17T14:21:17Z"),
+          scenarioVersionId = Some(1),
+          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
+          scheduleName = "main-schedule",
+          status = ScheduledExecutionStatus.DeploymentWillBeRetried,
+          createdAt = Instant.parse("2024-01-17T13:21:17Z"),
+          retriesLeft = Some(1),
           nextRetryAt = Some(Instant.parse("2024-01-17T15:21:17Z")),
         ),
         ScenarioActivity.forAutomaticUpdate(

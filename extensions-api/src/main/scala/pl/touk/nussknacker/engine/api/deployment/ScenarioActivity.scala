@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.time.Instant
 import java.util.UUID
@@ -8,6 +9,10 @@ import java.util.UUID
 final case class ScenarioId(value: Long) extends AnyVal
 
 final case class ScenarioVersionId(value: Long) extends AnyVal
+
+object ScenarioVersionId {
+  def from(versionId: VersionId): ScenarioVersionId = ScenarioVersionId(versionId.value)
+}
 
 final case class ScenarioActivityId(value: UUID) extends AnyVal
 
@@ -21,6 +26,10 @@ final case class ScenarioUser(
     impersonatedByUserId: Option[UserId],
     impersonatedByUserName: Option[UserName],
 )
+
+object ScenarioUser {
+  val internalNuUser: ScenarioUser = ScenarioUser(None, UserName("Nussknacker"), None, None)
+}
 
 final case class UserId(value: String)
 final case class UserName(value: String)
@@ -64,6 +73,22 @@ object ScenarioAttachment {
 }
 
 final case class Environment(name: String) extends AnyVal
+
+sealed trait ScheduledExecutionStatus
+
+object ScheduledExecutionStatus {
+  case object Scheduled extends ScheduledExecutionStatus
+
+  case object Deployed extends ScheduledExecutionStatus
+
+  case object Finished extends ScheduledExecutionStatus
+
+  case object Failed extends ScheduledExecutionStatus
+
+  case object DeploymentWillBeRetried extends ScheduledExecutionStatus
+
+  case object DeploymentFailed extends ScheduledExecutionStatus
+}
 
 sealed trait ScenarioActivity {
   def scenarioId: ScenarioId
@@ -222,9 +247,10 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       dateFinished: Option[Instant],
       scheduleName: String,
-      retriesLeft: Int,
-      status: String,
+      status: ScheduledExecutionStatus,
+      createdAt: Instant,
       nextRetryAt: Option[Instant],
+      retriesLeft: Option[Int],
   ) extends ScenarioActivity
 
   // Other/technical

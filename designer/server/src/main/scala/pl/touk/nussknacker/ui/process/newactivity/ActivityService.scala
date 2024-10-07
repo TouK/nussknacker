@@ -74,7 +74,7 @@ class ActivityService(
               scenarioActivityId = ScenarioActivityId.random,
               user = loggedUser.scenarioUser,
               date = now,
-              scenarioVersionId = Some(ScenarioVersionId(scenarioGraphVersionId.value)),
+              scenarioVersionId = Some(ScenarioVersionId.from(scenarioGraphVersionId)),
               comment = commentOpt match {
                 case Some(comment) => ScenarioComment.Available(comment.content, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)

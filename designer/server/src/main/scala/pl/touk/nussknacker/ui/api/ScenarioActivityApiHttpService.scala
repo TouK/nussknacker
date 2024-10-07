@@ -413,9 +413,10 @@ class ScenarioActivityApiHttpService(
             scenarioVersionId,
             dateFinished,
             scheduleName,
-            retriesLeft,
             status,
+            createdAt,
             nextRetryAt,
+            retriesLeft,
           ) =>
         Dtos.ScenarioActivity.forPerformedScheduledExecution(
           id = scenarioActivityId.value,
@@ -424,8 +425,9 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           dateFinished = dateFinished,
           scheduleName = scheduleName,
-          retriesLeft = retriesLeft,
           status = status,
+          createdAt = createdAt,
+          retriesLeft = retriesLeft,
           nextRetryAt = nextRetryAt,
         )
       case ScenarioActivity.AutomaticUpdate(

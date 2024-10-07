@@ -113,7 +113,7 @@ trait PeriodicProcessesRepository {
   def markInactive(processId: PeriodicProcessId): Action[Unit]
 
   def getSchedulesState(
-      processName: ProcessName
+      scenarioName: ProcessName
   ): Action[SchedulesState]
 
   def create(
@@ -188,10 +188,10 @@ class SlickPeriodicProcessesRepository(
   override def run[T](action: DBIOAction[T, NoStream, Effect.All]): Future[T] = db.run(action.transactionally)
 
   override def getSchedulesState(
-      processName: ProcessName
+      scenarioName: ProcessName
   ): Action[SchedulesState] = {
     PeriodicProcessesWithoutJson
-      .filter(_.processName === processName)
+      .filter(_.processName === scenarioName)
       .join(PeriodicProcessDeployments)
       .on(_.id === _.periodicProcessId)
       .result

@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.sql.Timestamp
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -61,7 +61,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         scenarioActivityId = ScenarioActivityId.random,
         user = user.scenarioUser,
         date = now,
-        scenarioVersionId = Some(ScenarioVersionId(processVersionId.value)),
+        scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
         comment = ScenarioComment.Available(
           comment = comment,
           lastModifiedByUserName = UserName(user.username),
@@ -147,7 +147,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = ScenarioActivityId.random,
           user = user.scenarioUser,
           date = now,
-          scenarioVersionId = Some(ScenarioVersionId(attachmentToAdd.scenarioVersionId.value)),
+          scenarioVersionId = Some(ScenarioVersionId.from(attachmentToAdd.scenarioVersionId)),
           attachment = ScenarioAttachment.Available(
             attachmentId = AttachmentId(attachment.id),
             attachmentFilename = AttachmentFilename(attachmentToAdd.fileName),
@@ -674,10 +674,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     }
   }
 
-  private def additionalPropertyListFromEntity(entity: ScenarioActivityEntityData, namePrefix: String): List[String] = {
-    entity.additionalProperties.properties.filter(_._1.startsWith(namePrefix)).values.toList
-  }
-
   private def additionalPropertyFromEntity(entity: ScenarioActivityEntityData, name: String): Either[String, String] = {
     optionalAdditionalPropertyFromEntity(entity, name).toRight(s"Missing additional property $name")
   }
@@ -841,7 +837,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioVersionId = entity.scenarioVersion,
           sourceEnvironment = Environment(sourceEnvironment),
           sourceUser = UserName(sourceUser),
-          sourceScenarioVersionId = sourceScenarioVersion.map(ScenarioVersionId),
+          sourceScenarioVersionId = sourceScenarioVersion.map(ScenarioVersionId.apply),
           targetEnvironment = targetEnvironment.map(Environment),
         )).map((entity.id, _))
       case ScenarioActivityType.OutgoingMigration =>
@@ -870,23 +866,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           errorMessage = entity.errorMessage,
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
-        (for {
-          scheduleName <- additionalPropertyFromEntity(entity, "scheduleName")
-          retriesLeft  <- additionalPropertyFromEntity(entity, "retriesLeft").flatMap(toIntEither)
-          status       <- additionalPropertyFromEntity(entity, "status")
-          nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
-        } yield ScenarioActivity.PerformedScheduledExecution(
-          scenarioId = scenarioIdFromEntity(entity),
-          scenarioActivityId = entity.activityId,
-          user = userFromEntity(entity),
-          date = entity.createdAt.toInstant,
-          scenarioVersionId = entity.scenarioVersion,
-          dateFinished = entity.finishedAt.map(_.toInstant),
-          scheduleName = scheduleName,
-          retriesLeft = retriesLeft,
-          status = status,
-          nextRetryAt = nextRetryAt,
-        )).map((entity.id, _))
+        Left(
+          "Activities of type [PerformedScheduledExecution] are stored in the periodic DeploymentManager data source, and not in the ScenarioActivity repository."
+        )
       case ScenarioActivityType.AutomaticUpdate =>
         (for {
           description <- additionalPropertyFromEntity(entity, "description")
@@ -927,7 +909,5 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   }
 
   private def toLongOption(str: String) = Try(str.toLong).toOption
-
-  private def toIntEither(str: String): Either[String, Int] = Try(str.toInt).toEither.left.map(_.getMessage)
 
 }
