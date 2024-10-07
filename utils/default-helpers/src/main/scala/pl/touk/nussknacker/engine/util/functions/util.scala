@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.functions
 
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
-import java.util.UUID
+import java.util.{Base64, UUID}
 import scala.jdk.CollectionConverters._
 
 object util extends UtilFunctions
@@ -22,4 +22,10 @@ trait UtilFunctions extends HideToString {
     text.split(regexp, -1).toList.asJava
   }
 
+  @Documentation(description = "???") // todo:
+  def toJson(@ParamName("text") text: String, @ParamName("regexp") regexp: String): java.util.List[String] = {
+    text.split(regexp, -1).toList.asJava
+  }
+
+  def parseToJson
 }
