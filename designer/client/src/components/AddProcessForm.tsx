@@ -133,8 +133,8 @@ export function AddProcessForm({
                         <InfoOutlined />
                         <Typography ml={1} variant={"body2"}>
                             <Trans i18nKey={"addProcessForm.displayContactSupportMessage"}>
-                                Batch processing mode hasn&apos;t been set up yet. If you’d like to configuring it, please don’t hesitate to
-                                contact our team at <Link href={"mailto:enterprise@nussknacker.io"}>enterprise@nussknacker.io</Link>
+                                Batch processing mode is an enteprise feature. If you are interested in this feature, contact us at{" "}
+                                <Link href={"mailto:enterprise@nussknacker.io"}>enterprise@nussknacker.io</Link>
                             </Trans>
                         </Typography>
                     </Box>
