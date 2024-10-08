@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.sql.Timestamp
-import java.time.Clock
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -601,6 +601,15 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case activity: ScenarioActivity.PerformedScheduledExecution =>
         createEntity(scenarioActivity)(
           finishedAt = activity.dateFinished.map(Timestamp.from),
+          additionalProperties = AdditionalProperties(
+            List(
+              Some("scheduleName" -> activity.scheduleName),
+              Some("status"       -> activity.status.entryName),
+              Some("createdAt"    -> activity.createdAt.toString),
+              activity.nextRetryAt.map(nra => "nextRetryAt" -> nra.toString),
+              activity.retriesLeft.map(rl => "retriesLeft" -> rl.toString)
+            ).flatten.toMap
+          )
         )
       case activity: ScenarioActivity.AutomaticUpdate =>
         createEntity(scenarioActivity)(
@@ -866,9 +875,27 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           errorMessage = entity.errorMessage,
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
-        Left(
-          "Activities of type [PerformedScheduledExecution] are stored in the periodic DeploymentManager data source, and not in the ScenarioActivity repository."
-        )
+        (for {
+          scheduleName <- additionalPropertyFromEntity(entity, "scheduleName")
+          status <- additionalPropertyFromEntity(entity, "status").flatMap(
+            ScheduledExecutionStatus.withNameEither(_).left.map(_.getMessage)
+          )
+          createdAt <- additionalPropertyFromEntity(entity, "createdAt").map(Instant.parse)
+          nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
+          retriesLeft = optionalAdditionalPropertyFromEntity(entity, "retriesLeft").flatMap(toIntOption)
+        } yield ScenarioActivity.PerformedScheduledExecution(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          scenarioVersionId = entity.scenarioVersion,
+          dateFinished = entity.finishedAt.map(_.toInstant),
+          scheduleName = scheduleName,
+          status = status,
+          createdAt = createdAt,
+          nextRetryAt = nextRetryAt,
+          retriesLeft = retriesLeft,
+        )).map((entity.id, _))
       case ScenarioActivityType.AutomaticUpdate =>
         (for {
           description <- additionalPropertyFromEntity(entity, "description")
@@ -909,5 +936,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   }
 
   private def toLongOption(str: String) = Try(str.toLong).toOption
+
+  private def toIntOption(str: String) = Try(str.toInt).toOption
 
 }

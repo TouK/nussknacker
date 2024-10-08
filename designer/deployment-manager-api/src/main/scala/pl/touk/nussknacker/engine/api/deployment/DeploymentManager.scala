@@ -70,21 +70,10 @@ trait DeploymentManager extends AutoCloseable {
 
   def customActionsDefinitions: List[CustomActionDefinition]
 
+  def scenarioActivityHandling: DeploymentManagerScenarioActivityHandling
+
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())
-
-  // todo NU-1772
-  //  In the current implementation:
-  //    - the DeploymentManager is a kind of plugin, and it may have its own data source (separate db, cache, etc.)
-  //    - the DeploymentManager may return (by implementing this method) custom ScenarioActivities, that are associated with operations performed internally by the manager
-  //  Why is it not the ideal solution:
-  //    - we have different data sources for ScenarioActivities, and merging data from two sources may be problematic, e.g. when paginating results
-  //  How can it be redesigned:
-  //    - we could do it the other way round - we could provide the hook, that would allow the manager to save its custom activities to the main ScenarioActivity repository
-  //    - only the ScenarioActivities repo would then be used, so it would require migrating old data from DeploymentManager-specific data source
-  //  Why not implemented that way in the first place?
-  //    - we may need to refactor PeriodicDeploymentManager data source first
-  def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]]
 
 }
 

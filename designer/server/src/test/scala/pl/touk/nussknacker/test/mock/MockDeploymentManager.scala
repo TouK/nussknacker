@@ -258,9 +258,6 @@ class MockDeploymentManager(
       case _                          => Future.failed(new NotImplementedError())
     }
 
-  override def managerSpecificScenarioActivities(processIdWithName: ProcessIdWithName): Future[List[ScenarioActivity]] =
-    Future.successful(List.empty)
-
   override def close(): Unit = {}
 
   override def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = Future.successful(())

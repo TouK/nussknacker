@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import enumeratum.EnumEntry.UpperSnakecase
+import enumeratum.{Enum, EnumEntry}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.time.Instant
 import java.util.UUID
+import scala.collection.immutable
 
 final case class ScenarioId(value: Long) extends AnyVal
 
@@ -74,9 +77,9 @@ object ScenarioAttachment {
 
 final case class Environment(name: String) extends AnyVal
 
-sealed trait ScheduledExecutionStatus
+sealed trait ScheduledExecutionStatus extends EnumEntry with UpperSnakecase
 
-object ScheduledExecutionStatus {
+object ScheduledExecutionStatus extends Enum[ScheduledExecutionStatus] {
   case object Scheduled extends ScheduledExecutionStatus
 
   case object Deployed extends ScheduledExecutionStatus
@@ -88,6 +91,8 @@ object ScheduledExecutionStatus {
   case object DeploymentWillBeRetried extends ScheduledExecutionStatus
 
   case object DeploymentFailed extends ScheduledExecutionStatus
+
+  override def values: immutable.IndexedSeq[ScheduledExecutionStatus] = findValues
 }
 
 sealed trait ScenarioActivity {
