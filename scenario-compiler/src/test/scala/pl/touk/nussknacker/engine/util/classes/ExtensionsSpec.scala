@@ -20,7 +20,7 @@ class ExtensionsSpec extends AnyFunSuite with Matchers {
     val ac = classOf[A.C]
     val bc = classOf[B.C]
     val d  = classOf[D]
-    Set[Class[_]](ac, bc, d).classesBySimpleNames() shouldBe Map(
+    Set[Class[_]](ac, bc, d).classesBySimpleNamesRegardingClashes() shouldBe Map(
       "pl.touk.nussknacker.engine.util.classes.ExtensionsSpec$A$C" -> ac,
       "pl.touk.nussknacker.engine.util.classes.ExtensionsSpec$B$C" -> bc,
       "D"                                                          -> d

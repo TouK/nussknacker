@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.util.classes
 
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object Extensions {
 
-  implicit class ClassExtensions(clazz: Class[_]) {
+  implicit class ClassExtensions(private val clazz: Class[_]) extends AnyVal {
 
     def isChildOf(targetClazz: Class[_]): Boolean =
       clazz != targetClazz &&
@@ -15,11 +17,19 @@ object Extensions {
       !(name.contains("nussknacker") && name.contains("util"))
     }
 
+    def equalsScalaClassNameIgnoringCase(clazzName: String): Boolean =
+      clazz.getName.equalsIgnoreCase(clazzName) ||
+        ReflectUtils.simpleNameWithoutSuffix(clazz).equalsIgnoreCase(clazzName)
+
+    def findAllowedClassesForCastParameter(set: ClassDefinitionSet): Map[Class[_], ClassDefinition] =
+      set.classDefinitionsMap
+        .filterKeysNow(targetClazz => targetClazz.isChildOf(clazz) && targetClazz.isNotFromNuUtilPackage())
+
   }
 
-  implicit class ClassesExtensions(set: Set[Class[_]]) {
+  implicit class ClassesExtensions(private val set: Set[Class[_]]) extends AnyVal {
 
-    def classesBySimpleNames(): Map[String, Class[_]] = {
+    def classesBySimpleNamesRegardingClashes(): Map[String, Class[_]] = {
       val nonUniqueClassNames = nonUniqueNames()
       set
         .map {
