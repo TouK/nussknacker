@@ -98,7 +98,8 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                     setOpen(false);
                 }}
                 onOpen={async () => {
-                    const fetchedOptions = await fetchProcessDefinitionDataDict(inputValue);
+                    // On open we show all the options
+                    const fetchedOptions = await fetchProcessDefinitionDataDict("");
                     setOptions(fetchedOptions);
                     setOpen(true);
                 }}
