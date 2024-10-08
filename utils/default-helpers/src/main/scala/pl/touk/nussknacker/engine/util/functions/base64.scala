@@ -18,4 +18,14 @@ trait Base64Utils {
     new String(Base64.getEncoder.encode(value.getBytes("UTF-8")))
   }
 
+  @Documentation(description = "Decode URL-safe Base64 value to String")
+  def urlSafeDecode(@ParamName("value") value: String): String = {
+    new String(Base64.getUrlDecoder.decode(value.getBytes("UTF-8")))
+  }
+
+  @Documentation(description = "Encode String value to URL-safe Base64")
+  def urlSafeEncode(@ParamName("value") value: String): String = {
+    new String(Base64.getUrlEncoder.withoutPadding().encode(value.getBytes("UTF-8")))
+  }
+
 }

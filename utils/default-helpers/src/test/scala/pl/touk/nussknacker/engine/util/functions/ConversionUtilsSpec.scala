@@ -154,7 +154,7 @@ class ConversionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       ("#CONV.toJson('1')", JBigDecimal.valueOf(1)),
       ("#CONV.toJson('true')", true),
       ("#CONV.toJson('[]')", JList.of()),
-      ("#CONV.toJson('[{}]')", JList.of(JMap.of())),
+      ("#CONV.toJson('[{}]')", JList.of[JMap[Nothing, Nothing]](JMap.of())),
       ("#CONV.toJson('[1, \"str\", true]')", JList.of(JBigDecimal.valueOf(1), "str", true)),
       ("#CONV.toJson('{}')", JMap.of()),
       (

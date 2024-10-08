@@ -15,4 +15,14 @@ class Base64UtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluate[String]("#BASE64.decode('')") shouldBe ""
   }
 
+  test("urlSafeEncode") {
+    evaluate[String]("#BASE64.urlSafeEncode('{\"foo\": 1}')") shouldBe "eyJmb28iOiAxfQ"
+    evaluate[String]("#BASE64.urlSafeEncode('')") shouldBe ""
+  }
+
+  test("urlSafeDecode") {
+    evaluate[String]("#BASE64.urlSafeDecode('eyJmb28iOiAxfQ')") shouldBe """{"foo": 1}"""
+    evaluate[String]("#BASE64.urlSafeDecode('')") shouldBe ""
+  }
+
 }
