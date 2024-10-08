@@ -57,7 +57,19 @@ export function prepareNewNodesWithLayout(
     const initialIds = nodesWithPositions.map((nodeWithPosition) => nodeWithPosition.node.id);
     const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
 
-    const updatedNodes = zipWith(nodesWithPositions, uniqueIds, ({ node }, id) => ({ ...node, id }));
+    const updatedNodes = zipWith(nodesWithPositions, uniqueIds, ({ node }, id) => {
+        const nodeCopy = cloneDeep(node);
+
+        if (nodeCopy.branchParameters) {
+            nodeCopy.branchParameters = nodeCopy.branchParameters.map((branchParameter) => {
+                branchParameter.branchId = uniqueIds.find((uniqueId) => uniqueId.includes(branchParameter.branchId));
+                return branchParameter;
+            });
+        }
+
+        nodeCopy.id = id;
+        return nodeCopy;
+    });
     const updatedLayout = zipWith(nodesWithPositions, uniqueIds, ({ position }, id) => ({ id, position }));
 
     return {
