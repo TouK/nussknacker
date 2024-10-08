@@ -33,7 +33,9 @@ describe("Process", () => {
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
             cy.contains(/^ok$/i).should("not.exist");
-            cy.contains(/scenario name changed/i).should("be.visible");
+            cy.get('[role="alert"]')
+                .contains(/scenario name changed/i)
+                .should("be.visible");
             cy.location("href").should("contain", "-renamed");
         });
 
@@ -55,7 +57,9 @@ describe("Process", () => {
             cy.wait("@save").its("response.statusCode").should("eq", 200);
 
             cy.contains(/^ok$/i).should("not.exist");
-            cy.contains(/scenario name changed/i).should("be.visible");
+            cy.get('[role="alert"]')
+                .contains(/scenario name changed/i)
+                .should("be.visible");
             cy.location("href").should("contain", "-renamed");
             cy.contains(/^properties/i)
                 .should("be.enabled")
