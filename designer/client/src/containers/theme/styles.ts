@@ -298,3 +298,5 @@ export const globalStyles = (theme: Theme) => ({
     ...aceEditorStyles(theme),
     ...DTPickerStyles(theme),
 });
+
+export const formLabelWidth = "20%";
