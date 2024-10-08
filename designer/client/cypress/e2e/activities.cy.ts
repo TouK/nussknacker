@@ -1,5 +1,4 @@
 const addCommentActivity = (comment: string) => {
-    cy.contains("Activities").should("exist").scrollIntoView();
     cy.intercept("/api/processes/*/*/activity/comment").as("comment");
     cy.contains(/add comment/i).click();
     cy.get("[data-testid=window]").should("be.visible").find("textarea").eq(0).click().type(comment);
@@ -8,7 +7,6 @@ const addCommentActivity = (comment: string) => {
 };
 
 const addAttachmentActivity = (path: string) => {
-    cy.contains("Activities").should("exist").scrollIntoView();
     cy.intercept("/api/processes/*/*/activity/attachments").as("attachment");
     cy.contains(/add attachment/i).click();
     cy.get("[data-testid=window]").should("be.visible").find("input").selectFile(path, { force: true });

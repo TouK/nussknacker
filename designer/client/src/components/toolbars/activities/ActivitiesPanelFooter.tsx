@@ -43,7 +43,7 @@ export const ActivitiesPanelFooter = () => {
                 {t("activities.footer.addComment", "Add comment")}
             </StyledFooterButton>
             <StyledFooterButton variant={"contained"} onClick={handleOpenAddAttachment}>
-                {t("activities.footer.addComment", "Add attachment")}
+                {t("activities.footer.addAttachment", "Add attachment")}
             </StyledFooterButton>
         </Box>
     );
