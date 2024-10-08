@@ -226,14 +226,14 @@ lazy val commonSettings =
       ),
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
-        // currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version
-        "org.apache.avro"    % "avro"          % avroV,
-        "com.typesafe"       % "config"        % configV,
-        "commons-io"         % "commons-io"    % flinkCommonsIOV,
-        "org.apache.commons" % "commons-text"  % flinkCommonsTextV, // dependency of commons-lang3
-        "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
-        "io.circe"          %% "circe-core"    % circeV,
-        "io.circe"          %% "circe-parser"  % circeV,
+        "org.apache.avro"    % "avro"             % avroV,
+        "com.typesafe"       % "config"           % configV,
+        "commons-io"         % "commons-io"       % flinkCommonsIOV,       // dependency of avro via commons-compress
+        "org.apache.commons" % "commons-compress" % flinkCommonsCompressV, // dependency of avro
+        "org.apache.commons" % "commons-text"     % flinkCommonsTextV,     // dependency of commons-lang3, avro via commons-compress
+        "org.apache.commons" % "commons-lang3"    % flinkCommonsLang3V,
+        "io.circe"          %% "circe-core"       % circeV,
+        "io.circe"          %% "circe-parser"     % circeV,
 
         // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
         "com.typesafe.akka"      %% "akka-http"          % akkaHttpV,
@@ -280,20 +280,21 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV               = "1.19.1"
-val flinkConnectorKafkaV = "3.2.0-1.19"
-val flinkCommonsLang3V   = "3.12.0"
-val flinkCommonsTextV    = "1.10.0"
-val flinkCommonsIOV      = "2.15.1"
-val avroV                = "1.11.4"
+val flinkV                = "1.19.1"
+val flinkConnectorKafkaV  = "3.2.0-1.19"
+val flinkCommonsCompressV = "1.26.0"
+val flinkCommonsLang3V    = "3.12.0"
+val flinkCommonsTextV     = "1.10.0"
+val flinkCommonsIOV       = "2.15.1"
+val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV               = "3.6.2"
+val kafkaV                = "3.6.2"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV              = "5.2.23.RELEASE"
-val scalaTestV           = "3.2.18"
-val scalaCheckV          = "1.17.1"
-val scalaCheckVshort     = scalaCheckV.take(4).replace(".", "-")
-val scalaTestPlusV       =
+val springV               = "5.2.23.RELEASE"
+val scalaTestV            = "3.2.18"
+val scalaCheckV           = "1.17.1"
+val scalaCheckVshort      = scalaCheckV.take(4).replace(".", "-")
+val scalaTestPlusV        =
   "3.2.18.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.13"
