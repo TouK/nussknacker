@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManagerScenarioActivityHandling.NoManagerSpecificScenarioActivities
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 
@@ -12,6 +12,6 @@ trait BaseDeploymentManager extends DeploymentManager {
 
   override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
 
-  override def scenarioActivityHandling: DeploymentManagerScenarioActivityHandling = NoManagerSpecificScenarioActivities
+  override def scenarioActivityHandling: ScenarioActivityHandling = AllScenarioActivitiesStoredByNussknacker
 
 }

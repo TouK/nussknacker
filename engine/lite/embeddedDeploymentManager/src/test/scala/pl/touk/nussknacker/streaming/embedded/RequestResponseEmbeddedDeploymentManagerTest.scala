@@ -17,7 +17,8 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   DeploymentUpdateStrategy,
   ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub
+  ProcessingTypeDeployedScenariosProviderStub,
+  ScenarioActivityManagerStub
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -53,6 +54,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
     val dependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
       new ProcessingTypeActionServiceStub,
+      new ScenarioActivityManagerStub,
       as.dispatcher,
       as,
       SttpBackendStub.asynchronousFuture

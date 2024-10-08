@@ -80,7 +80,7 @@ class ActivityService(
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
               },
             )
-          )(loggedUser)
+          )
         )
         .map(_ => ())
     )

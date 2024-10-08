@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManagerScenarioActivityHandling.ManagerSpecificScenarioActivitiesStoredByManager
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.ManagerSpecificScenarioActivitiesStoredByManager
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess

@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub
+  ProcessingTypeDeployedScenariosProviderStub,
+  ScenarioActivityManagerStub
 }
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.{
@@ -38,6 +39,7 @@ object FlinkStreamingDeploymentManagerProviderHelper {
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
+      new ScenarioActivityManagerStub,
       actorSystem.dispatcher,
       actorSystem,
       backend

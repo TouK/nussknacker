@@ -5,7 +5,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManagerScenarioActivityHandling.NoManagerSpecificScenarioActivities
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -52,8 +52,6 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
   override def customActionsDefinitions: List[CustomActionDefinition] = Nil
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
-
-  override def scenarioActivityHandling: DeploymentManagerScenarioActivityHandling = NoManagerSpecificScenarioActivities
 
   override def close(): Unit = {}
 

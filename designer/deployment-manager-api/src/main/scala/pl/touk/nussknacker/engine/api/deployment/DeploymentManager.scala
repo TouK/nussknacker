@@ -70,7 +70,7 @@ trait DeploymentManager extends AutoCloseable {
 
   def customActionsDefinitions: List[CustomActionDefinition]
 
-  def scenarioActivityHandling: DeploymentManagerScenarioActivityHandling
+  def scenarioActivityHandling: ScenarioActivityHandling
 
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())

@@ -49,6 +49,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   DefaultProcessingTypeDeployedScenariosProvider,
   DeploymentManagerDispatcher,
   DeploymentService => LegacyDeploymentService,
+  RepositoryBasedScenarioActivityManager,
   ScenarioResolver,
   ScenarioTestExecutorServiceImpl
 }
@@ -81,15 +82,13 @@ import pl.touk.nussknacker.ui.statistics.{
 }
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
+import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui.validation.{
   NodeValidator,
   ParametersValidator,
   ScenarioLabelsValidator,
   UIProcessValidator
 }
-import pl.touk.nussknacker.ui.util._
-import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
@@ -125,13 +124,17 @@ class AkkaHttpBasedRouteProvider(
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
       actionServiceSupplier      = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
+      deploymentRepository       = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
+      scenarioActivityRepository = new DbScenarioActivityRepository(dbRef, designerClock)
+      dbioRunner                 = DBIOActionRunner(dbRef)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         additionalUIConfigProvider,
         actionServiceSupplier,
+        scenarioActivityRepository,
+        dbioRunner,
         sttpBackend,
       )
-      deploymentRepository = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
-      dbioRunner           = DBIOActionRunner(dbRef)
+
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
         deploymentRepository,
         processingTypeDataProvider.mapValues(
@@ -246,8 +249,6 @@ class AkkaHttpBasedRouteProvider(
       // correct classloader and that won't cause further delays during handling requests
       processingTypeDataProvider.reloadAll().unsafeRunSync()
 
-      val processActivityRepository = new DbScenarioActivityRepository(dbRef, designerClock)
-
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
       val authManager             = new AuthManager(authenticationResources)
 
@@ -256,7 +257,7 @@ class AkkaHttpBasedRouteProvider(
         dbRef,
         designerClock,
         processRepository,
-        processActivityRepository,
+        scenarioActivityRepository,
         scenarioLabelsRepository,
         environment
       )
@@ -519,7 +520,7 @@ class AkkaHttpBasedRouteProvider(
         processService,
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
         fingerprintService,
-        processActivityRepository,
+        scenarioActivityRepository,
         componentService,
         feStatisticsRepository,
         processingTypeDataProvider
@@ -678,6 +679,8 @@ class AkkaHttpBasedRouteProvider(
   private def prepareProcessingTypeDataReload(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
+      scenarioActivityRepository: DbScenarioActivityRepository,
+      dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
   )(implicit executionContext: ExecutionContext): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
@@ -686,7 +689,13 @@ class AkkaHttpBasedRouteProvider(
           new ReloadableProcessingTypeDataProvider(
             processingTypeDataLoader.loadProcessingTypeData(
               getModelDependencies(additionalUIConfigProvider, _),
-              getDeploymentManagerDependencies(actionServiceProvider, sttpBackend, _),
+              getDeploymentManagerDependencies(
+                actionServiceProvider,
+                scenarioActivityRepository,
+                dbioActionRunner,
+                sttpBackend,
+                _
+              ),
             )
           )
         )
@@ -697,6 +706,8 @@ class AkkaHttpBasedRouteProvider(
 
   private def getDeploymentManagerDependencies(
       actionServiceProvider: Supplier[ActionService],
+      scenarioActivityRepository: DbScenarioActivityRepository,
+      dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
   )(implicit executionContext: ExecutionContext) = {
@@ -705,6 +716,10 @@ class AkkaHttpBasedRouteProvider(
       new DefaultProcessingTypeActionService(
         processingType,
         actionServiceProvider.get(),
+      ),
+      new RepositoryBasedScenarioActivityManager(
+        scenarioActivityRepository,
+        dbioActionRunner,
       ),
       system.dispatcher,
       system,

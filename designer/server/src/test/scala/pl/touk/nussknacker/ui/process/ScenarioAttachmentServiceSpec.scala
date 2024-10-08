@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.Proce
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyActivityError
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIO
 
@@ -54,7 +55,12 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
 
   override def findActivities(scenarioId: ProcessId): DB[Seq[ScenarioActivity]] = ???
 
-  override def addActivity(scenarioActivity: ScenarioActivity)(implicit user: LoggedUser): DB[ScenarioActivityId] = ???
+  override def addActivity(scenarioActivity: ScenarioActivity): DB[ScenarioActivityId] = ???
+
+  override def modifyActivity(
+      activityId: ScenarioActivityId,
+      modification: ScenarioActivity => ScenarioActivity,
+  ): DB[Either[ModifyActivityError, Unit]] = ???
 
   override def addComment(scenarioId: ProcessId, processVersionId: VersionId, comment: String)(
       implicit user: LoggedUser

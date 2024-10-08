@@ -18,7 +18,10 @@ import pl.touk.nussknacker.ui.db.entity.{
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  ModifyActivityError,
+  ModifyCommentError
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
@@ -45,8 +48,21 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
 
   def addActivity(
       scenarioActivity: ScenarioActivity,
-  )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
+  ): DB[ScenarioActivityId] = {
     insertActivity(scenarioActivity).map(_.activityId)
+  }
+
+  def modifyActivity(
+      activityId: ScenarioActivityId,
+      modification: ScenarioActivity => ScenarioActivity,
+  ): DB[Either[ModifyActivityError, Unit]] = {
+    modifyActivityByActivityId[ModifyActivityError, ScenarioActivity](
+      activityId = activityId,
+      activityDoesNotExistError = ModifyActivityError.ActivityDoesNotExist,
+      validateCurrentValue = validateActivityExistsForScenario,
+      modify = originalActivity => toEntity(modification(originalActivity)),
+      couldNotModifyError = ModifyActivityError.CouldNotModifyActivity,
+    )
   }
 
   def addComment(
@@ -227,7 +243,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     for {
       _ <- Either.cond(entity.scenarioId == scenarioId, (), ModifyCommentError.CommentDoesNotExist)
       _ <- entity.comment.toRight(ModifyCommentError.CommentDoesNotExist)
-    } yield ()
+    } yield entity
   }
 
   private def toComment(
@@ -325,14 +341,18 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private lazy val attachmentInsertQuery =
     attachmentsTable returning attachmentsTable.map(_.id) into ((item, id) => item.copy(id = id))
 
-  private def modifyActivityByActivityId[ERROR](
+  private def validateActivityExistsForScenario(entity: ScenarioActivityEntityData) = {
+    fromEntity(entity).left.map(_ => ModifyActivityError.CouldNotModifyActivity).map(_._2)
+  }
+
+  private def modifyActivityByActivityId[ERROR, T](
       activityId: ScenarioActivityId,
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
-      modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, T],
+      modify: T => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, Unit]] = {
-    modifyActivity[ScenarioActivityId, ERROR](
+    doModifyActivity[ScenarioActivityId, ERROR, T](
       key = activityId,
       fetchActivity = activityByIdCompiled(_).result.headOption,
       updateRow = (id: ScenarioActivityId, updatedEntity) => activityByIdCompiled(id).update(updatedEntity),
@@ -346,11 +366,11 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private def modifyActivityByRowId[ERROR](
       rowId: Long,
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, ScenarioActivityEntityData],
       modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, Unit]] = {
-    modifyActivity[Long, ERROR](
+    doModifyActivity[Long, ERROR, ScenarioActivityEntityData](
       key = rowId,
       fetchActivity = activityByRowIdCompiled(_).result.headOption,
       updateRow = (id: Long, updatedEntity) => activityByRowIdCompiled(id).update(updatedEntity),
@@ -361,22 +381,22 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     )
   }
 
-  private def modifyActivity[KEY, ERROR](
+  private def doModifyActivity[KEY, ERROR, VALIDATED](
       key: KEY,
       fetchActivity: KEY => DB[Option[ScenarioActivityEntityData]],
       updateRow: (KEY, ScenarioActivityEntityData) => DB[Int],
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
-      modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, VALIDATED],
+      modify: VALIDATED => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, Unit]] = {
     val action = for {
       fetchedActivity <- fetchActivity(key)
       result <- {
         val modifiedEntity = for {
-          entity <- fetchedActivity.toRight(activityDoesNotExistError)
-          _      <- validateCurrentValue(entity)
-          modifiedEntity = modify(entity)
+          entity    <- fetchedActivity.toRight(activityDoesNotExistError)
+          validated <- validateCurrentValue(entity)
+          modifiedEntity = modify(validated)
         } yield modifiedEntity
 
         modifiedEntity match {
@@ -466,7 +486,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       id = -1,
       activityType = activityType,
       scenarioId = ProcessId(scenarioActivity.scenarioId.value),
-      activityId = ScenarioActivityId.random,
+      activityId = scenarioActivity.scenarioActivityId,
       userId = scenarioActivity.user.id.map(_.value),
       userName = scenarioActivity.user.name.value,
       impersonatedByUserId = scenarioActivity.user.impersonatedByUserId.map(_.value),
@@ -620,8 +640,11 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             )
           )
         )
-      case _: ScenarioActivity.CustomAction =>
-        createEntity(scenarioActivity)()
+      case activity: ScenarioActivity.CustomAction =>
+        createEntity(scenarioActivity)(
+          comment = comment(activity.comment),
+          lastModifiedByUserName = lastModifiedByUserName(activity.comment),
+        )
     }
   }
 

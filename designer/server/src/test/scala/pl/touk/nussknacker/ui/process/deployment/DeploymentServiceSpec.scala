@@ -8,7 +8,6 @@ import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
@@ -16,6 +15,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{CustomActionResult, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
@@ -27,12 +27,11 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
-import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
-import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider.noCombinedDataFun
+import pl.touk.nussknacker.ui.process.processingtype.provider.{ProcessingTypeDataProvider, ProcessingTypeDataState}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner}
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -98,7 +97,8 @@ class DeploymentServiceSpec
   deploymentManager = new MockDeploymentManager(
     SimpleStateStatus.Running,
     DefaultProcessingTypeDeployedScenariosProvider(testDbRef, "streaming"),
-    new DefaultProcessingTypeActionService("streaming", deploymentService)
+    new DefaultProcessingTypeActionService("streaming", deploymentService),
+    new RepositoryBasedScenarioActivityManager(activityRepository, dbioRunner),
   )
 
   private def createDeploymentService(
@@ -381,6 +381,24 @@ class DeploymentServiceSpec
     eventually {
       checkStatusAction(SimpleStateStatus.Running, Some(ScenarioActionName.Deploy))
       listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
+    }
+
+    val activities = dbioRunner.run(activityRepository.findActivities(processIdWithName.id)).futureValue
+
+    activities.size shouldBe 3
+    activities(0) match {
+      case _: ScenarioActivity.ScenarioCreated => ()
+      case _                                   => fail("First activity should be ScenarioCreated")
+    }
+    activities(1) match {
+      case _: ScenarioActivity.ScenarioDeployed => ()
+      case _                                    => fail("First activity should be ScenarioCreated")
+    }
+    activities(2) match {
+      case ScenarioActivity.CustomAction(_, _, _, _, _, actionName, ScenarioComment.Available(content, _, _)) =>
+        actionName shouldBe "Custom action of MockDeploymentManager"
+        content shouldBe "With successfully updated comment"
+      case _ => fail("First activity should be ScenarioCreated with comment")
     }
   }
 

@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProvider,
-  ProcessingTypeDeployedScenariosProviderStub
+  ProcessingTypeDeployedScenariosProviderStub,
+  ScenarioActivityManagerStub
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -72,6 +73,7 @@ class K8sDeploymentManagerOnMocksTest
       DeploymentManagerDependencies(
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
         new ProcessingTypeActionServiceStub,
+        new ScenarioActivityManagerStub,
         system.dispatcher,
         system,
         SttpBackendStub.asynchronousFuture

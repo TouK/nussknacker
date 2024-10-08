@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManagerScenarioActivityHandling.{
-  ManagerSpecificScenarioActivitiesStoredByManager,
-  ManagerSpecificScenarioActivitiesStoredByNussknacker,
-  NoManagerSpecificScenarioActivities
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.{
+  AllScenarioActivitiesStoredByNussknacker,
+  ManagerSpecificScenarioActivitiesStoredByManager
 }
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ScenarioActivity}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessingType}
@@ -40,12 +39,10 @@ class DeploymentManagerDispatcher(
       result <- deploymentManager(processingType) match {
         case Some(manager) =>
           manager.scenarioActivityHandling match {
-            case NoManagerSpecificScenarioActivities =>
+            case AllScenarioActivitiesStoredByNussknacker =>
               Future.successful(List.empty)
             case handling: ManagerSpecificScenarioActivitiesStoredByManager =>
               handling.managerSpecificScenarioActivities(processId)
-            case _: ManagerSpecificScenarioActivitiesStoredByNussknacker =>
-              Future.successful(List.empty)
           }
         case None =>
           Future.successful(List.empty)

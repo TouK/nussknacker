@@ -58,7 +58,7 @@ class CachingProcessStateDeploymentManager(
 
   override def customActionsDefinitions: List[CustomActionDefinition] = delegate.customActionsDefinitions
 
-  override def scenarioActivityHandling: DeploymentManagerScenarioActivityHandling = delegate.scenarioActivityHandling
+  override def scenarioActivityHandling: ScenarioActivityHandling = delegate.scenarioActivityHandling
 
   override def close(): Unit = delegate.close()
 

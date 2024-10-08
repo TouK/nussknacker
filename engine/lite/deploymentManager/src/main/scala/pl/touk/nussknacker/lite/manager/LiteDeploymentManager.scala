@@ -4,14 +4,12 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManagerScenarioActivityHandling.NoManagerSpecificScenarioActivities
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
 import pl.touk.nussknacker.engine.api.deployment.{
   BaseDeploymentManager,
   DMTestScenarioCommand,
-  DeploymentManagerScenarioActivityHandling,
-  ScenarioActivity
+  ScenarioActivityHandling
 }
-import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.testmode.TestProcess
 
@@ -36,7 +34,5 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
       }
     }
   }
-
-  override def scenarioActivityHandling: DeploymentManagerScenarioActivityHandling = NoManagerSpecificScenarioActivities
 
 }
