@@ -392,13 +392,13 @@ class DeploymentServiceSpec
     }
     activities(1) match {
       case _: ScenarioActivity.ScenarioDeployed => ()
-      case _                                    => fail("First activity should be ScenarioCreated")
+      case _                                    => fail("Second activity should be ScenarioDeployed")
     }
     activities(2) match {
       case ScenarioActivity.CustomAction(_, _, _, _, _, actionName, ScenarioComment.Available(content, _, _)) =>
         actionName shouldBe "Custom action of MockDeploymentManager"
         content shouldBe "With successfully updated comment"
-      case _ => fail("First activity should be ScenarioCreated with comment")
+      case _ => fail("Third activity should be CustomAction with comment")
     }
   }
 
