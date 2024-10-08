@@ -4,9 +4,9 @@ import { useDispatch } from "react-redux";
 import { layoutChanged } from "../../actions/nk";
 import { useUserSettings } from "../../common/userSettings";
 import { ScenarioGraph } from "../../types";
-import { Edge } from "./Edge";
+import { Edge } from "./elements/Edge";
+import { Node } from "./elements/Node";
 import { GraphProvider, GraphProviderProps } from "./GraphProvider";
-import { Node } from "./Node";
 import { Paper } from "./paper/Paper";
 
 type Props = React.PropsWithChildren<{

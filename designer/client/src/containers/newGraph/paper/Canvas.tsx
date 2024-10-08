@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { BoxProps } from "@mui/material/Box/Box";
 import React from "react";
-import { createContextHook } from "../utils";
+import { createContextHook } from "../utils/context";
 
 type ContextType = React.Ref<HTMLElement>;
 const CanvasContext = React.createContext<ContextType>(null);

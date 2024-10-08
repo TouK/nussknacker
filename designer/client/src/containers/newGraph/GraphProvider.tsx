@@ -1,7 +1,7 @@
 import { debounce } from "lodash";
 import React, { useEffect, useState } from "react";
 import { Graph } from "./Graph";
-import { createContextHook, useContextForward } from "./utils";
+import { createContextHook, useContextForward } from "./utils/context";
 
 type GraphContextType = Graph;
 const GraphContext = React.createContext<GraphContextType>(null);

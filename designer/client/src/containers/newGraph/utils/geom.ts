@@ -9,8 +9,7 @@ function ringToGPolygon(ring: Ring): g.Polygon {
     return new g.Polygon(ring.map(([x, y]) => ({ x, y })));
 }
 
-export function polyDiff(base: g.Polygon, cutout: g.Polygon): g.Polygon {
-    console.log(...cutout.points);
+export function polygonDiff(base: g.Polygon, cutout: g.Polygon): g.Polygon {
     const multipolygon = difference(gPolygonToPolygon(base), gPolygonToPolygon(cutout));
     if (multipolygon.length !== 1) {
         return base;

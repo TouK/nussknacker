@@ -1,13 +1,10 @@
 import { dia, g } from "jointjs";
 import { clamp } from "lodash";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { polyDiff } from "../polyDiff";
-import { PaperBehaviorProps, PaperContextType } from "./Paper";
-
-export type PanWithCellBehavior = {
-    bindMoveWithEdge: (callback: (offset: { x: number; y: number }) => void) => () => void;
-    mutableMousePosition: g.Point;
-};
+import React, { useCallback, useEffect, useMemo } from "react";
+import { createContextHook, useContextForward } from "../utils/context";
+import { polygonDiff } from "../utils/geom";
+import { usePanZoomBehavior } from "./PanZoomBehavior";
+import { usePaper } from "./Paper";
 
 function getViewportBounds(paper: dia.Paper, domOverlays: Element[], border = 0): g.Polygon {
     const viewport = new g.Rect(paper?.el.getBoundingClientRect());
@@ -15,20 +12,30 @@ function getViewportBounds(paper: dia.Paper, domOverlays: Element[], border = 0)
     return domOverlays.reduce((poly, el) => {
         const rect = new g.Rect(el.getBoundingClientRect());
         const cutout = g.Polygon.fromRect(rect.inflate(border, border));
-        return polyDiff(poly, cutout);
+        return polygonDiff(poly, cutout);
     }, g.Polygon.fromRect(rect));
 }
 
-export function usePanWithCellBehavior(
-    [{ paper, panZoom }, register]: [PaperContextType, (behavior: PanWithCellBehavior) => void],
-    { interactive }: PaperBehaviorProps,
+type ContextType = {
+    bindMoveWithEdge: (callback?: (offset: { x: number; y: number }) => void) => () => void;
+    mutableMousePosition: g.Point;
+};
+
+const Context = React.createContext<ContextType>(null);
+
+export type PanWithCellBehaviorProps = React.PropsWithChildren;
+
+export const PanWithCellBehavior = React.forwardRef<ContextType, PanWithCellBehaviorProps>(function PanWithCellBehavior(
+    { children },
+    forwardedRef,
 ) {
-    const [_register] = useState(() => register);
+    const { paper } = usePaper();
+    const panZoom = usePanZoomBehavior();
 
     const mutableMousePosition = useMemo(() => {
         const viewport = new g.Rect(paper?.el.getBoundingClientRect());
         return new g.Point(viewport.center());
-    }, []);
+    }, [paper?.el]);
 
     const observeCellMousePosition = useCallback(() => {
         const callback = (cellView: dia.CellView, event: dia.Event) => {
@@ -47,8 +54,9 @@ export function usePanWithCellBehavior(
 
     const domOverlays = Array.from(document.querySelectorAll("[data-testid='SidePanel'] .droppable .draggable-list"));
     const bindMoveWithEdge = useCallback(
-        (callback: (offset: { x: number; y: number }) => void) => {
+        (callback = panZoom.panBy) => {
             const border = 80;
+            const maxDistance = border / 4;
             const viewport = getViewportBounds(paper, domOverlays, border);
 
             let frame: number;
@@ -56,8 +64,8 @@ export function usePanWithCellBehavior(
                 if (!viewport.containsPoint(mutableMousePosition)) {
                     const distance = viewport.closestPoint(mutableMousePosition).difference(mutableMousePosition);
                     viewport.closestPoint(mutableMousePosition);
-                    const x = clamp(distance.x / 2, -(border / 4), border / 4);
-                    const y = clamp(distance.y / 2, -(border / 4), border / 4);
+                    const x = clamp(distance.x / 2, -maxDistance, maxDistance);
+                    const y = clamp(distance.y / 2, -maxDistance, maxDistance);
                     callback({ x, y });
                 }
                 frame = requestAnimationFrame(panWithEdge);
@@ -67,31 +75,34 @@ export function usePanWithCellBehavior(
                 cancelAnimationFrame(frame);
             };
         },
-        [mutableMousePosition, paper?.el],
+        [domOverlays, mutableMousePosition, panZoom.panBy, paper],
     );
 
     useEffect(() => {
-        if (interactive) {
-            const callback = (cellView: dia.CellView) => {
-                if (!panZoom) return;
-                cellView.once(
-                    "cell:pointerup",
-                    bindMoveWithEdge((offset) => {
-                        panZoom.panBy(offset);
-                        updateCellPosition(cellView, offset);
-                    }),
-                );
-                cellView.once("cell:pointerup", observeCellMousePosition());
-            };
-            paper?.on("cell:pointerdown", callback);
-            return () => {
-                paper?.off("cell:pointerdown", callback);
-            };
-        }
-    }, [bindMoveWithEdge, interactive, observeCellMousePosition, panZoom, paper, updateCellPosition]);
+        const callback = (cellView: dia.CellView) => {
+            if (!panZoom) return;
+            cellView.once(
+                "cell:pointerup",
+                bindMoveWithEdge((offset) => {
+                    panZoom.panBy(offset);
+                    updateCellPosition(cellView, offset);
+                }),
+            );
+            cellView.once("cell:pointerup", observeCellMousePosition());
+        };
+        paper?.on("cell:pointerdown", callback);
+        return () => {
+            paper?.off("cell:pointerdown", callback);
+        };
+    }, [bindMoveWithEdge, observeCellMousePosition, panZoom, paper, updateCellPosition]);
 
-    useLayoutEffect(() => {
-        const behavior: PanWithCellBehavior = { mutableMousePosition, bindMoveWithEdge };
-        _register(behavior);
-    }, [_register, bindMoveWithEdge, mutableMousePosition]);
-}
+    const behavior = useMemo<ContextType>(() => {
+        return { mutableMousePosition, bindMoveWithEdge };
+    }, [bindMoveWithEdge, mutableMousePosition]);
+
+    useContextForward(forwardedRef, behavior);
+
+    return <Context.Provider value={behavior}>{children}</Context.Provider>;
+});
+
+export const usePanWithCellBehavior = createContextHook(Context, PanWithCellBehavior);

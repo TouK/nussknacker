@@ -1,6 +1,6 @@
 import { dia, shapes } from "jointjs";
 import { useEffect, useRef } from "react";
-import { useGraph } from "./GraphProvider";
+import { useGraph } from "../GraphProvider";
 
 type EdgeProps = {
     from: string;
