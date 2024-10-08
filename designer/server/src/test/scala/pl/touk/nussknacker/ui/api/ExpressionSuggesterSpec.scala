@@ -779,6 +779,21 @@ class ExpressionSuggesterSpec
     )
   }
 
+  test("should suggest parameters for casts methods") {
+    spelSuggestionsFor("#unknown.canCastTo('')", column = 20).toSet shouldBe Set(
+      suggestion("String", Typed[String]),
+      suggestion("Duration", Typed[Duration]),
+      suggestion("LocalDateTime", Typed[LocalDateTime]),
+      suggestion("Map", Typed[java.util.Map[_, _]]),
+      suggestion("A", Typed[A]),
+      suggestion("AA", Typed[AA]),
+      suggestion("B", Typed[B]),
+      suggestion("C", Typed[C]),
+      suggestion("Util", Typed[Util]),
+      suggestion("WithList", Typed[WithList]),
+    )
+  }
+
 }
 
 object ExpressionSuggesterTestData {

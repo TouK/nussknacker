@@ -8,7 +8,7 @@ import org.springframework.expression.TypedValue;
 import org.springframework.expression.spel.support.ReflectionHelper;
 import org.springframework.expression.spel.support.ReflectiveMethodExecutor;
 import org.springframework.util.ReflectionUtils;
-import pl.touk.nussknacker.engine.spel.internal.RuntimeConversionHandler;
+import pl.touk.nussknacker.engine.spel.internal.ConversionAndExtensionsAwareMethodInvoker;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -19,8 +19,6 @@ import java.lang.reflect.Modifier;
 // As an additional feature we allow to invoke list methods on arrays and
 // in the point of the method invocation we convert an array to a list
 public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
-    private static final RuntimeConversionHandler.ConversionAwareMethodInvoker methodInvoker =
-        new RuntimeConversionHandler.ConversionAwareMethodInvoker();
 
     private final Method method;
 
@@ -32,9 +30,10 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
 
     private boolean argumentConversionOccurred = false;
 
-    private final ClassLoader classLoader;
+    private final ConversionAndExtensionsAwareMethodInvoker methodInvoker;
 
-    public NuReflectiveMethodExecutor(ReflectiveMethodExecutor original, ClassLoader classLoader) {
+    public NuReflectiveMethodExecutor(ReflectiveMethodExecutor original,
+                                      ConversionAndExtensionsAwareMethodInvoker methodInvoker) {
         super(original.getMethod());
         this.method = original.getMethod();
         if (method.isVarArgs()) {
@@ -44,7 +43,7 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
         else {
             this.varargsPosition = null;
         }
-        this.classLoader = classLoader;
+        this.methodInvoker = methodInvoker;
     }
 
     /**
@@ -100,8 +99,8 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
                 arguments = ReflectionHelper.setupArgumentsForVarargsInvocation(this.method.getParameterTypes(), arguments);
             }
             ReflectionUtils.makeAccessible(this.method);
-            //Nussknacker: we use custom method invoker which is aware of array conversion
-            Object value = methodInvoker.invoke(this.method, target, arguments, this.classLoader);
+            //Nussknacker: we use custom method invoker which is aware of array conversion and extension methods
+            Object value = methodInvoker.invoke(this.method, target, arguments);
             return new TypedValue(value, new TypeDescriptor(new MethodParameter(this.method, -1)).narrow(value));
         }
         catch (Exception ex) {
