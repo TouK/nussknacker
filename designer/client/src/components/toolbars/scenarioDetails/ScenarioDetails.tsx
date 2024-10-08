@@ -24,6 +24,7 @@ import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";
 import { CategoryDetails } from "./CategoryDetails";
 import { ScenarioLabels } from "./ScenarioLabels";
 import { getLoggedUser } from "../../../reducers/selectors/settings";
+import { getProcessingModeVariantName } from "./getProcessingModeVariantName";
 
 const ScenarioDetails = memo((props: ToolbarPanelProps) => {
     const scenario = useSelector((state: RootState) => getScenario(state));
@@ -48,7 +49,7 @@ const ScenarioDetails = memo((props: ToolbarPanelProps) => {
                     <PanelScenarioDetails>
                         <CategoryDetails scenario={scenario} />
                         <ScenarioDetailsItemWrapper>
-                            <PanelScenarioDetailsIcon>
+                            <PanelScenarioDetailsIcon title={getProcessingModeVariantName(scenario.processingMode)}>
                                 <ProcessingModeIcon />
                             </PanelScenarioDetailsIcon>
                             {isRenamePending ? (
