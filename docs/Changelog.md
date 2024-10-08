@@ -66,6 +66,7 @@
 * [#6840](https://github.com/TouK/nussknacker/pull/6840) Introduce canCastTo, castTo and castToOrNull extension methods in SpeL.
 * [#6974](https://github.com/TouK/nussknacker/pull/6974) Add SpeL suggestions for cast methods parameter.
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Remove unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`
+* [#7000](https://github.com/TouK/nussknacker/pull/7000) Show all possible options for dictionary editor on open.
 
 ## 1.17
 
