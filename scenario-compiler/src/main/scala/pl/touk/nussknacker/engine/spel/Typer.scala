@@ -767,7 +767,7 @@ object Typer {
       spelDictTyper: SpelDictTyper,
       classDefinitionSet: ClassDefinitionSet
   ): Typer = {
-    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
+    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
 
     new Typer(
       spelDictTyper,

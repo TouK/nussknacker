@@ -7,6 +7,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.TestSpelExpression.expressionConfig
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -68,7 +69,11 @@ private class TestSpelExpression(expression: String) extends CompiledExpression 
 
   override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
     val evaluationContext = EvaluationContextPreparer
-      .default(getClass.getClassLoader, expressionConfig)
+      .default(
+        getClass.getClassLoader,
+        expressionConfig,
+        ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions
+      )
       .prepareEvaluationContext(ctx, globals)
 
     new SpelExpressionParser().parseRaw(expression).getValue(evaluationContext).asInstanceOf[T]

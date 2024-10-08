@@ -383,7 +383,7 @@ When a type cannot be determined by parser, the type is presented as `Unknown`. 
 runtime, we can cast a given type, and then we can operate on the cast type.
 
 E.g. having a variable `obj` of a type: `List[Unknown]` and we know the elements are strings then we can cast elements
-to String: `#obj.![#this.castToOrNull('java.lang.String')]`.
+to String: `#obj.![#this.castToOrNull('String')]`.
 
 Available methods:
 - `canCastTo` - checks if a type can be cast to a given class.

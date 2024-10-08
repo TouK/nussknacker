@@ -1510,6 +1510,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ).validExpression.evaluateSync[Any](ctx) shouldBe "unknown"
   }
 
+  test("should allow invoke cast methods with class simple names") {
+    parse[Any](
+      expr = "{#unknownString.value.castToOrNull('String'), #unknownString.value.castTo('String'), " +
+        "#unknownString.value.canCastTo('String')}",
+      context = ctx,
+      methodExecutionForUnknownAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) shouldBe List("unknown", "unknown", true).asJava
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
