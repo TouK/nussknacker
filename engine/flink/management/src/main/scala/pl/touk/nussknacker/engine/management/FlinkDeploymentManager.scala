@@ -5,9 +5,9 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.deployment.{
   ExternalDeploymentId
 }
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
 
@@ -263,6 +263,10 @@ abstract class FlinkDeploymentManager(
   ): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
+
+  override def scenarioActivityHandling: ScenarioActivityHandling =
+    AllScenarioActivitiesStoredByNussknacker
+
 }
 
 object FlinkDeploymentManager {

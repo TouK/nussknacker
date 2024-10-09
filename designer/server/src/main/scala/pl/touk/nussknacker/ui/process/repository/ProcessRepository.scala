@@ -189,7 +189,7 @@ class DBProcessRepository(
                   scenarioActivityId = ScenarioActivityId.random,
                   user = loggedUser.scenarioUser,
                   date = clock.instant(),
-                  scenarioVersionId = res.newVersion.map(v => ScenarioVersionId(v.value))
+                  scenarioVersionId = res.newVersion.map(ScenarioVersionId.from)
                 )
               )
             } yield res.newVersion.map(ProcessCreated(res.processId, _))
@@ -208,7 +208,7 @@ class DBProcessRepository(
           scenarioActivityId = ScenarioActivityId.random,
           user = loggedUser.scenarioUser,
           date = Instant.now(),
-          scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
+          scenarioVersionId = Some(ScenarioVersionId.from(versionId)),
           comment = updateProcessAction.comment match {
             case Some(comment) =>
               ScenarioComment.Available(
@@ -237,10 +237,10 @@ class DBProcessRepository(
           scenarioActivityId = ScenarioActivityId.random,
           user = loggedUser.scenarioUser,
           date = clock.instant(),
-          scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
+          scenarioVersionId = Some(ScenarioVersionId.from(versionId)),
           sourceEnvironment = Environment(migrateProcessAction.sourceEnvironment),
           sourceUser = UserName(user),
-          sourceScenarioVersionId = migrateProcessAction.sourceScenarioVersionId.map(v => ScenarioVersionId(v.value)),
+          sourceScenarioVersionId = migrateProcessAction.sourceScenarioVersionId.map(ScenarioVersionId.from),
           targetEnvironment = Some(Environment(migrateProcessAction.targetEnvironment)),
         )
     )
@@ -257,7 +257,7 @@ class DBProcessRepository(
           scenarioActivityId = ScenarioActivityId.random,
           user = loggedUser.scenarioUser,
           date = Instant.now(),
-          scenarioVersionId = Some(ScenarioVersionId(versionId.value)),
+          scenarioVersionId = Some(ScenarioVersionId.from(versionId)),
           changes = automaticProcessUpdateAction.migrationsApplies.map(_.description).mkString(", "),
           errorMessage = None,
         )
@@ -394,7 +394,7 @@ class DBProcessRepository(
               scenarioActivityId = ScenarioActivityId.random,
               user = loggedUser.scenarioUser,
               date = Instant.now(),
-              scenarioVersionId = Some(ScenarioVersionId(version.id.value)),
+              scenarioVersionId = Some(ScenarioVersionId.from(version.id)),
               oldName = process.name.value,
               newName = newName.value
             )
