@@ -22,6 +22,7 @@ export const state: GraphState = {
         labels: [],
         scenarioGraph: {
             properties: {
+                type: "Properties",
                 additionalFields: {
                     description: null,
                     properties: {
