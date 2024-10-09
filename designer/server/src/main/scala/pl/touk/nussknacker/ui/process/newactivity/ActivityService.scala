@@ -86,6 +86,38 @@ class ActivityService(
     )
   }
 
+  private def fetchActivities(
+      processIdWithName: ProcessIdWithName
+  )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
+
+    val combined = for {
+      generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
+      deploymentManagerSpecificActivities <- deploymentManagerDispatcher.managerSpecificScenarioActivities(
+        processIdWithName
+      )
+    } yield generalActivities ++ deploymentManagerSpecificActivities
+    EitherT.right(combined).map(_.map(toDto).toList.sortBy(_.date))
+  }
+
+  def managerSpecificScenarioActivities(
+      processId: ProcessIdWithName
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[List[ScenarioActivity]] = {
+    for {
+      processingType <- processRepository.fetchProcessingType(processId)
+      result <- deploymentManager(processingType) match {
+        case Some(manager) =>
+          manager.scenarioActivityHandling match {
+            case AllScenarioActivitiesStoredByNussknacker =>
+              Future.successful(List.empty)
+            case handling: ManagerSpecificScenarioActivitiesStoredByManager =>
+              handling.managerSpecificScenarioActivities(processId)
+          }
+        case None =>
+          Future.successful(List.empty)
+      }
+    } yield result
+  }
+
 }
 
 object ActivityService {

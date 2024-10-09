@@ -1,10 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.{
-  AllScenarioActivitiesStoredByNussknacker,
-  ManagerSpecificScenarioActivitiesStoredByManager
-}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ScenarioActivity}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -23,31 +19,21 @@ class DeploymentManagerDispatcher(
     processRepository.fetchProcessingType(processId).map(deploymentManagerUnsafe)
   }
 
+  def deploymentManager(
+      processId: ProcessIdWithName
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[DeploymentManager]] = {
+    for {
+      processingType <- processRepository.fetchProcessingType(processId)
+      maybeDeploymentManager = deploymentManager(processingType)
+    } yield maybeDeploymentManager
+  }
+
   def deploymentManager(processingType: ProcessingType)(implicit user: LoggedUser): Option[DeploymentManager] = {
     managers.forProcessingType(processingType)
   }
 
   def deploymentManagerUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): DeploymentManager = {
     managers.forProcessingTypeUnsafe(processingType)
-  }
-
-  def managerSpecificScenarioActivities(
-      processId: ProcessIdWithName
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[List[ScenarioActivity]] = {
-    for {
-      processingType <- processRepository.fetchProcessingType(processId)
-      result <- deploymentManager(processingType) match {
-        case Some(manager) =>
-          manager.scenarioActivityHandling match {
-            case AllScenarioActivitiesStoredByNussknacker =>
-              Future.successful(List.empty)
-            case handling: ManagerSpecificScenarioActivitiesStoredByManager =>
-              handling.managerSpecificScenarioActivities(processId)
-          }
-        case None =>
-          Future.successful(List.empty)
-      }
-    } yield result
   }
 
 }

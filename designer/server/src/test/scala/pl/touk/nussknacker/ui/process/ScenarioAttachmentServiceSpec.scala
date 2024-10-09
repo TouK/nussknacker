@@ -53,46 +53,51 @@ class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with Scala
 
 private object TestProcessActivityRepository extends ScenarioActivityRepository {
 
-  override def findActivities(scenarioId: ProcessId): DB[Seq[ScenarioActivity]] = ???
+  override def findActivities(scenarioId: ProcessId): DB[Seq[ScenarioActivity]] = notSupported("findActivities")
 
-  override def addActivity(scenarioActivity: ScenarioActivity): DB[ScenarioActivityId] = ???
+  override def addActivity(scenarioActivity: ScenarioActivity): DB[ScenarioActivityId] = notSupported("addActivity")
 
   override def modifyActivity(
       activityId: ScenarioActivityId,
       modification: ScenarioActivity => ScenarioActivity,
-  ): DB[Either[ModifyActivityError, Unit]] = ???
+  ): DB[Either[ModifyActivityError, Unit]] = notSupported("modifyActivity")
 
   override def addComment(scenarioId: ProcessId, processVersionId: VersionId, comment: String)(
       implicit user: LoggedUser
-  ): DB[ScenarioActivityId] = ???
+  ): DB[ScenarioActivityId] = notSupported("addComment")
 
   override def addAttachment(attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd)(
       implicit user: LoggedUser
   ): DB[ScenarioActivityId] =
     DBIO.successful(ScenarioActivityId.random)
 
-  override def findAttachments(scenarioId: ProcessId): DB[Seq[AttachmentEntityData]] = ???
+  override def findAttachments(scenarioId: ProcessId): DB[Seq[AttachmentEntityData]] = notSupported("findAttachments")
 
-  override def findAttachment(scenarioId: ProcessId, attachmentId: Long): DB[Option[AttachmentEntityData]] = ???
+  override def findAttachment(scenarioId: ProcessId, attachmentId: Long): DB[Option[AttachmentEntityData]] =
+    notSupported("findAttachment")
 
-  override def findActivity(processId: ProcessId): DB[ProcessActivity] = ???
+  override def findActivity(processId: ProcessId): DB[ProcessActivity] = notSupported("findActivity")
 
-  override def getActivityStats: DB[Map[String, Int]] = ???
+  override def getActivityStats: DB[Map[String, Int]] = notSupported("getActivityStats")
 
   override def editComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId, comment: String)(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("editComment")
 
   override def editComment(scenarioId: ProcessId, commentId: Long, comment: String)(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("editComment")
 
   override def deleteComment(scenarioId: ProcessId, commentId: Long)(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("deleteComment")
 
   override def deleteComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId)(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = ???
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("deleteComment")
+
+  private def notSupported(methodName: String): Nothing = throw new Exception(
+    s"Method $methodName not supported by TestProcessActivityRepository test implementation"
+  )
 
 }

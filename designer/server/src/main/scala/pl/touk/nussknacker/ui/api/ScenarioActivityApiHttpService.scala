@@ -2,6 +2,10 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.{
+  AllScenarioActivitiesStoredByNussknacker,
+  ManagerSpecificScenarioActivitiesStoredByManager
+}
 import pl.touk.nussknacker.engine.api.deployment.{
   ScenarioActivity,
   ScenarioActivityId,
@@ -20,8 +24,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
-import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ProcessRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
@@ -216,9 +220,18 @@ class ScenarioActivityApiHttpService(
   )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
     val combined = for {
       generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
-      deploymentManagerSpecificActivities <- deploymentManagerDispatcher.managerSpecificScenarioActivities(
-        processIdWithName
-      )
+      deploymentManager <- deploymentManagerDispatcher.deploymentManager(processIdWithName)
+      deploymentManagerSpecificActivities <- deploymentManager match {
+        case Some(manager) =>
+          manager.scenarioActivityHandling match {
+            case AllScenarioActivitiesStoredByNussknacker =>
+              Future.successful(List.empty)
+            case handling: ManagerSpecificScenarioActivitiesStoredByManager =>
+              handling.managerSpecificScenarioActivities(processIdWithName)
+          }
+        case None =>
+          Future.successful(List.empty)
+      }
     } yield generalActivities ++ deploymentManagerSpecificActivities
     EitherT.right(combined).map(_.map(toDto).toList.sortBy(_.date))
   }

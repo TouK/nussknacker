@@ -43,7 +43,7 @@ class MockDeploymentManager(
     deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
     actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
-    scenarioActivityManager: ScenarioActivityManager = new ScenarioActivityManagerStub,
+    scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
