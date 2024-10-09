@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
-import io.circe.{Decoder, KeyDecoder}
+import io.circe.{Decoder, JsonObject, KeyDecoder}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import org.scalatest.EitherValues
@@ -40,8 +40,9 @@ class KafkaJsonExceptionSerializationSchemaSpec extends AnyFunSuite with Matcher
       k -> (serializedSize(variables, k) - 2 - k.length)
     }
 
+    val inputEvent = createKafkaExceptionInfo(variables).asJson.hcursor.downField("inputEvent").as[JsonObject].value
     KafkaJsonExceptionSerializationSchema
-      .countVariableLengths(createKafkaExceptionInfo(variables).asJson.hcursor.downField("inputEvent"))
+      .countVariableLengths(inputEvent, indentBytes = 4)
       .toMap shouldBe expectedSizes
   }
 
@@ -63,7 +64,7 @@ class KafkaJsonExceptionSerializationSchemaSpec extends AnyFunSuite with Matcher
     val inputEvent1      = decode[KafkaExceptionInfo](record1).value.inputEvent.get.as[Map[String, String]].value
 
     (inputEvent1.keySet - "!warning") shouldBe (largeContext.keySet - "longVariable")
-    inputEvent1("!warning") should startWith("inputEvent truncated")
+    inputEvent1("!warning") should startWith("variables truncated")
     inputEvent1("!warning") should endWith(": longVariable")
     record1.length should be <= maxRecord1Length
 
