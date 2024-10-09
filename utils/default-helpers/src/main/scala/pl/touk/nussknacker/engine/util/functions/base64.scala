@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import java.util.Base64
 
 object base64 extends Base64Utils
 
-trait Base64Utils {
+trait Base64Utils extends HideToString {
 
   @Documentation(description = "Decode Base64 value to String")
   def decode(@ParamName("value") value: String): String = {
