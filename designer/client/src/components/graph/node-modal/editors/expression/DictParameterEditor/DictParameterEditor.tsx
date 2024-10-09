@@ -116,6 +116,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 renderOption={(props, option) => {
                     const isSelected = option.key === value?.key;
                     return (
+                        // aira-selected is set to false as it overrides styles defined in our menuOption
                         <Box component={"li"} sx={menuOption({}, isSelected, false) as SxProps<Theme>} {...props} aria-selected={false}>
                             {option.label}
                         </Box>
