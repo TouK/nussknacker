@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.process.newactivity
 
 import cats.data.EitherT
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.RunDeploymentError
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentCo
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: This service in the future should handle all activities that modify anything in application.
@@ -84,38 +84,6 @@ class ActivityService(
         )
         .map(_ => ())
     )
-  }
-
-  private def fetchActivities(
-      processIdWithName: ProcessIdWithName
-  )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
-
-    val combined = for {
-      generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
-      deploymentManagerSpecificActivities <- deploymentManagerDispatcher.managerSpecificScenarioActivities(
-        processIdWithName
-      )
-    } yield generalActivities ++ deploymentManagerSpecificActivities
-    EitherT.right(combined).map(_.map(toDto).toList.sortBy(_.date))
-  }
-
-  def managerSpecificScenarioActivities(
-      processId: ProcessIdWithName
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[List[ScenarioActivity]] = {
-    for {
-      processingType <- processRepository.fetchProcessingType(processId)
-      result <- deploymentManager(processingType) match {
-        case Some(manager) =>
-          manager.scenarioActivityHandling match {
-            case AllScenarioActivitiesStoredByNussknacker =>
-              Future.successful(List.empty)
-            case handling: ManagerSpecificScenarioActivitiesStoredByManager =>
-              handling.managerSpecificScenarioActivities(processId)
-          }
-        case None =>
-          Future.successful(List.empty)
-      }
-    } yield result
   }
 
 }
