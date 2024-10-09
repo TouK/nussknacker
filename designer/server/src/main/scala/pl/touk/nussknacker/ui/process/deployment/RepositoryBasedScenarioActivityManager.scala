@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityManager.ScenarioActivityModificationResult
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityManager.ModificationResult
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, ScenarioActivityId, ScenarioActivityManager}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
@@ -25,12 +25,12 @@ class RepositoryBasedScenarioActivityManager(
   override def modifyActivity(
       scenarioActivityId: ScenarioActivityId,
       modification: ScenarioActivity => ScenarioActivity
-  ): Future[ScenarioActivityModificationResult] = dbioActionRunner.run(
+  ): Future[ModificationResult] = dbioActionRunner.run(
     repository
       .modifyActivity(scenarioActivityId, modification)
       .map {
-        case Right(_: Unit)               => ScenarioActivityModificationResult.Success
-        case Left(_: ModifyActivityError) => ScenarioActivityModificationResult.Failure
+        case Right(_: Unit)               => ModificationResult.Success
+        case Left(_: ModifyActivityError) => ModificationResult.Failure
       }
   )
 

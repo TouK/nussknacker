@@ -24,8 +24,8 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ProcessRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
@@ -217,24 +217,26 @@ class ScenarioActivityApiHttpService(
 
   private def fetchActivities(
       processIdWithName: ProcessIdWithName
-  )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
-    val combined = for {
-      generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
-      deploymentManager <- deploymentManagerDispatcher.deploymentManager(processIdWithName)
-      deploymentManagerSpecificActivities <- deploymentManager match {
-        case Some(manager) =>
-          manager.scenarioActivityHandling match {
-            case AllScenarioActivitiesStoredByNussknacker =>
-              Future.successful(List.empty)
-            case handling: ManagerSpecificScenarioActivitiesStoredByManager =>
-              handling.managerSpecificScenarioActivities(processIdWithName)
-          }
-        case None =>
-          Future.successful(List.empty)
-      }
-    } yield generalActivities ++ deploymentManagerSpecificActivities
-    EitherT.right(combined).map(_.map(toDto).toList.sortBy(_.date))
-  }
+  )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] =
+    EitherT.right {
+      for {
+        generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
+        deploymentManager <- deploymentManagerDispatcher.deploymentManager(processIdWithName)
+        deploymentManagerSpecificActivities <- deploymentManager match {
+          case Some(manager) =>
+            manager.scenarioActivityHandling match {
+              case AllScenarioActivitiesStoredByNussknacker =>
+                Future.successful(List.empty)
+              case handling: ManagerSpecificScenarioActivitiesStoredByManager =>
+                handling.managerSpecificScenarioActivities(processIdWithName)
+            }
+          case None =>
+            Future.successful(List.empty)
+        }
+        combinedActivities       = (generalActivities ++ deploymentManagerSpecificActivities).map(toDto)
+        sortedCombinedActivities = combinedActivities.toList.sortBy(_.date)
+      } yield sortedCombinedActivities
+    }
 
   private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
     scenarioComment match {
