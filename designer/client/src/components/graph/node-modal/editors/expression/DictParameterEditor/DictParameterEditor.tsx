@@ -98,7 +98,8 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                     setOpen(false);
                 }}
                 onOpen={async () => {
-                    const fetchedOptions = await fetchProcessDefinitionDataDict(inputValue);
+                    // On open we show all the options
+                    const fetchedOptions = await fetchProcessDefinitionDataDict("");
                     setOptions(fetchedOptions);
                     setOpen(true);
                 }}
@@ -113,8 +114,10 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 inputValue={inputValue}
                 loading={isFetching}
                 renderOption={(props, option) => {
+                    const isSelected = option.key === value?.key;
                     return (
-                        <Box component={"li"} sx={menuOption({}, false, false) as SxProps<Theme>} {...props} aria-selected={false}>
+                        // aira-selected is set to false as it overrides styles defined in our menuOption
+                        <Box component={"li"} sx={menuOption({}, isSelected, false) as SxProps<Theme>} {...props} aria-selected={false}>
                             {option.label}
                         </Box>
                     );
