@@ -96,7 +96,7 @@ class RemoteEnvironmentResources(
                           scenarioActivityId = ScenarioActivityId.random,
                           user = user.scenarioUser,
                           date = clock.instant(),
-                          scenarioVersionId = Some(ScenarioVersionId(details.processVersionId.value)),
+                          scenarioVersionId = Some(ScenarioVersionId.from(details.processVersionId)),
                           destinationEnvironment = Environment(remoteEnvironment.environmentId)
                         )
                       )

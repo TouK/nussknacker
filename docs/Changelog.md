@@ -49,9 +49,10 @@
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
   - shorter message in logs
 * [#6766](https://github.com/TouK/nussknacker/pull/6766) Scenario labels support - you can assign labels to scenarios and use them to filter the scenario list
-* [#6176](https://github.com/TouK/nussknacker/pull/6176) Update most dependencies to latest versions, most important ones:
+* [#6176](https://github.com/TouK/nussknacker/pull/6176) [#6996](https://github.com/TouK/nussknacker/pull/6996) Update most dependencies to latest versions, most important ones:
   * Jackson 2.15.4 -> 2.17.2
   * cats 2.10 -> 2.12
+  * Avro 1.11.3 -> 1.11.4
 * [#6805](https://github.com/TouK/nussknacker/pull/6805) Support for Flink 1.19.1
 * Scenario activities mechanism replacing old process actions:
   * [#6822](https://github.com/TouK/nussknacker/pull/6822), [#6929](https://github.com/TouK/nussknacker/pull/6929)
@@ -65,6 +66,7 @@
 * [#6840](https://github.com/TouK/nussknacker/pull/6840) Introduce canCastTo, castTo and castToOrNull extension methods in SpeL.
 * [#6974](https://github.com/TouK/nussknacker/pull/6974) Add SpeL suggestions for cast methods parameter.
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Remove unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`
+* [#7000](https://github.com/TouK/nussknacker/pull/7000) Show all possible options for dictionary editor on open.
 * [#6979](https://github.com/TouK/nussknacker/pull/6979) Introduces an activities panel that provides information about all system activities.
 
 ## 1.17

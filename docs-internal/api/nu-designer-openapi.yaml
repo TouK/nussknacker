@@ -3770,6 +3770,8 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
+                      - name: status
+                        value: IN_PROGRESS
                       - name: dateFinished
                         value: '2024-01-17T14:21:17Z'
                       - name: errorMessage
@@ -3785,6 +3787,8 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
+                      - name: status
+                        value: FAILED
                       - name: dateFinished
                         value: '2024-01-17T14:21:17Z'
                       type: PERFORMED_SINGLE_EXECUTION
@@ -3793,8 +3797,34 @@ paths:
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
                       additionalFields:
+                      - name: status
+                        value: Execution finished
+                      - name: createdAt
+                        value: '2024-01-17T13:21:17Z'
                       - name: dateFinished
                         value: '2024-01-17T14:21:17Z'
+                      - name: scheduleName
+                        value: main-schedule
+                      - name: retriesLeft
+                        value: None
+                      type: PERFORMED_SCHEDULED_EXECUTION
+                    - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
+                      user: some user
+                      date: '2024-01-17T14:21:17Z'
+                      scenarioVersionId: 1
+                      additionalFields:
+                      - name: status
+                        value: Deployment will be retried
+                      - name: createdAt
+                        value: '2024-01-17T13:21:17Z'
+                      - name: dateFinished
+                        value: '2024-01-17T14:21:17Z'
+                      - name: scheduleName
+                        value: main-schedule
+                      - name: retriesLeft
+                        value: Some(1)
+                      - name: nextRetryAt
+                        value: '2024-01-17T15:21:17Z'
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user

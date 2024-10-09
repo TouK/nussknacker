@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.process.newactivity
 
 import cats.data.EitherT
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.RunDeploymentError
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentCo
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: This service in the future should handle all activities that modify anything in application.
@@ -74,13 +74,13 @@ class ActivityService(
               scenarioActivityId = ScenarioActivityId.random,
               user = loggedUser.scenarioUser,
               date = now,
-              scenarioVersionId = Some(ScenarioVersionId(scenarioGraphVersionId.value)),
+              scenarioVersionId = Some(ScenarioVersionId.from(scenarioGraphVersionId)),
               comment = commentOpt match {
                 case Some(comment) => ScenarioComment.Available(comment.content, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
               },
             )
-          )(loggedUser)
+          )
         )
         .map(_ => ())
     )
