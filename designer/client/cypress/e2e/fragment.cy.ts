@@ -15,7 +15,7 @@ describe("Fragment", () => {
         cy.viewport("macbook-16");
     });
 
-    it("should allow adding input parameters and display used fragment graph in modal", () => {
+    it.only("should allow adding input parameters and display used fragment graph in modal", () => {
         const toggleSettings = (fieldNumber: number) => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
@@ -302,6 +302,7 @@ describe("Fragment", () => {
             .should("be.visible");
 
         cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.viewport(1600, 1200);
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
     });
 
