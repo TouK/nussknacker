@@ -9,6 +9,7 @@
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
 * [#6925](https://github.com/TouK/nussknacker/pull/6925) Fix situation when preset labels were presented as `null` when node didn't pass the validation.
 * [#7000](https://github.com/TouK/nussknacker/pull/7000) Show all possible options for dictionary editor on open.
+* [#6958](https://github.com/TouK/nussknacker/pull/6958) Add message size limit in the "Kafka" exceptionHandler
 
 ### 1.17.1 (Not released yet)
 

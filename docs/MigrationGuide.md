@@ -3,6 +3,15 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.17-esp
+
+### Configuration changes
+
+* [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
+  Its default value reflects Kafka's default size limit of 1 MB (`max.message.bytes`), you need to increase it if your
+  error topic allows for larger messages. Remember to add some margin for Kafka protocol overhead (100 bytes should be enough).
+
+### Other changes
+
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
   If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
 

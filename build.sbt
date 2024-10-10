@@ -868,7 +868,8 @@ lazy val kafkaUtils = (project in utils("kafka-utils"))
     name := "nussknacker-kafka-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" % "kafka-clients" % kafkaV
+        "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "org.scalatest"   %% "scalatest"     % scalaTestV % Test,
       )
     }
     // Depends on componentsApi because of dependency to NuExceptionInfo and NonTransientException -
