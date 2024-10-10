@@ -27,7 +27,8 @@ trait BaseSpelSpec {
     "DATE_FORMAT" -> new DateFormatUtils(Locale.US),
     "UTIL"        -> util,
     "NUMERIC"     -> numeric,
-    "CONV"        -> conversion
+    "CONV"        -> conversion,
+    "BASE64"      -> base64
   )
 
   private val parser = SpelExpressionParser.default(

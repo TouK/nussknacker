@@ -13125,6 +13125,60 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.base64$"},
+    "methods": {
+      "decode": [
+        {
+          "description": "Decode Base64 value to String",
+          "name": "decode",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "encode": [
+        {
+          "description": "Encode String value to Base64",
+          "name": "encode",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "urlSafeDecode": [
+        {
+          "description": "Decode URL-safe Base64 value to String",
+          "name": "urlSafeDecode",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "urlSafeEncode": [
+        {
+          "description": "Encode String value to URL-safe Base64",
+          "name": "urlSafeEncode",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.collection$"},
     "methods": {
       "concat": [
@@ -14107,6 +14161,42 @@
               {"name": "value", "refClazz": {"type": "Unknown"}}
             ],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toJson": [
+        {
+          "description": "Convert String value to JSON",
+          "name": "toJson",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ],
+      "toJsonOrNull": [
+        {
+          "description": "Convert String value to JSON or null in case of failure",
+          "name": "toJsonOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ],
+      "toJsonString": [
+        {
+          "description": "Convert JSON to String",
+          "name": "toJsonString",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],

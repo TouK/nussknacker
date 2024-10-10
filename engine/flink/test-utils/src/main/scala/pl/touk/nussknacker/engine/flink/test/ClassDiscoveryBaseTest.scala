@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.test
 
 import cats.data.NonEmptyList
 import cats.implicits.toFunctorOps
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
@@ -13,7 +14,7 @@ import org.scalatest.matchers.should.Matchers
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
@@ -30,7 +31,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.util.Properties
 
-trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside {
+trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside with LazyLogging {
 
   protected def model: ModelData
 
@@ -68,6 +69,7 @@ trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside {
     val types = model.modelDefinitionWithClasses.classDefinitions.all
     if (Option(System.getenv("CLASS_EXTRACTION_PRINT")).exists(_.toBoolean)) {
       val fileName = s"${Properties.tmpDir}/${getClass.getSimpleName}-result.json"
+      logger.info(s"CLASS_EXTRACTION_PRINT is set. The file JSON file will be stored in '$fileName'")
       FileUtils.write(new File(fileName), encode(types), StandardCharsets.UTF_8)
     }
     val parsed  = parse(ResourceLoader.load(outputResource)).toOption.get
