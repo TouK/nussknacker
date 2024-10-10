@@ -57,7 +57,7 @@
   * Jackson 2.15.4 -> 2.17.2
   * cats 2.10 -> 2.12
   * Avro 1.11.3 -> 1.11.4
-* [#6805](https://github.com/TouK/nussknacker/pull/6805) Support for Flink 1.19.1
+* [#6805](https://github.com/TouK/nussknacker/pull/6805) Updated Flink 1.18.1 -> 1.19.1
 * Scenario activities mechanism replacing old process actions:
   * [#6822](https://github.com/TouK/nussknacker/pull/6822), [#6929](https://github.com/TouK/nussknacker/pull/6929)
     * Scenario Activity API contract (without BE implementation)
