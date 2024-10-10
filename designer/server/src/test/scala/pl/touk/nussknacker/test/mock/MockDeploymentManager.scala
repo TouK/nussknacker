@@ -101,6 +101,8 @@ class MockDeploymentManager(
           user = ScenarioUser.internalNuUser,
           date = Instant.now(),
           scenarioVersionId = Some(ScenarioVersionId.from(processVersion.versionId)),
+          state = ScenarioActivityState.Success,
+          dateFinished = Some(Instant.now()),
           actionName = "Custom action of MockDeploymentManager",
           comment = ScenarioComment.Available(
             comment = "???",

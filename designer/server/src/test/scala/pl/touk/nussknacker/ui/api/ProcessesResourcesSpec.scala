@@ -759,7 +759,7 @@ class ProcessesResourcesSpec
         attachment = None,
         additionalFields = Nil,
         overrideIcon = None,
-        overrideDisplayableName = Some("Version 2 saved"),
+        overrideDisplayableName = None,
         overrideSupportedActions = None,
         `type` = ScenarioActivityType.ScenarioModified
       )

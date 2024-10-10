@@ -123,6 +123,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
+            state = ScenarioActivityState.InProgress,
+            dateFinished = None,
             comment = Available("Deployment with scenario fix", user.name, date)
           )
       )
@@ -138,6 +140,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
+            state = ScenarioActivityState.InProgress,
+            dateFinished = None,
             comment = Available("I'm canceling this scenario, it causes problems", user.name, date)
           )
       )
@@ -181,6 +185,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
+            state = ScenarioActivityState.InProgress,
+            dateFinished = None,
             comment = Available("Paused because marketing campaign is paused for now", user.name, date)
           )
       )
@@ -236,8 +242,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
+            state = ScenarioActivityState.InProgress,
             dateFinished = None,
-            status = Some("IN_PROGRESS"),
             errorMessage = None,
             comment = Available("Deployed at the request of business", user.name, date)
           )
@@ -254,6 +260,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
+            state = ScenarioActivityState.InProgress,
+            dateFinished = None,
             actionName = "special action",
             comment = Available("Special action needed to be executed", user.name, date)
           )

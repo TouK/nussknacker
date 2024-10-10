@@ -4124,7 +4124,7 @@ paths:
                     - id: 07b04d45-c7c0-4980-a3bc-3c7f66410f68
                       user: some user
                       date: '2024-01-17T14:21:17Z'
-                      scenarioVersionId: 1
+                      scenarioVersionId: 2
                       comment:
                         content:
                           value: Added new processing step
@@ -4132,7 +4132,7 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields: []
-                      overrideDisplayableName: Version 1 saved
+                      overrideDisplayableName: Version 2 saved
                       type: SCENARIO_MODIFIED
                     - id: da3d1f78-7d73-4ed9-b0e5-95538e150d0d
                       user: some user
@@ -4235,8 +4235,6 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: status
-                        value: IN_PROGRESS
                       - name: dateFinished
                         value: '2024-01-17T14:21:17Z'
                       - name: errorMessage
@@ -4252,8 +4250,6 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: status
-                        value: FAILED
                       - name: dateFinished
                         value: '2024-01-17T14:21:17Z'
                       type: PERFORMED_SINGLE_EXECUTION
@@ -4425,7 +4421,7 @@ paths:
                   - delete_comment
                   - edit_comment
                 - type: SCENARIO_MODIFIED
-                  displayableName: New version saved
+                  displayableName: Scenario modified
                   icon: /assets/activities/scenarioModified.svg
                   supportedActions:
                   - delete_comment

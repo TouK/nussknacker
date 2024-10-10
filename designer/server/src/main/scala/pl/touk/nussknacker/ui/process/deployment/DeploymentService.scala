@@ -348,6 +348,7 @@ class DeploymentService(
               actionName,
               ctx.versionOnWhichActionIsDone,
               performedAt,
+              deploymentComment,
               exception.getMessage,
               ctx.buildInfoProcessingType
             )

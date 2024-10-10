@@ -132,6 +132,7 @@ class DbScenarioActionRepository(
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
       performedAt: Instant,
+      comment: Option[Comment],
       failureMessage: String,
       buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] = {
@@ -152,7 +153,7 @@ class DbScenarioActionRepository(
             performedAt,
             Some(performedAt),
             failureMessageOpt,
-            None,
+            comment,
             buildInfoProcessingType
           )
         }

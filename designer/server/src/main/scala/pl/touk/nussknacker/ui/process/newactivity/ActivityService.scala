@@ -34,7 +34,7 @@ class ActivityService(
         (for {
           validatedCommentOpt <- validateDeploymentCommentWhenPassed(comment)
           keys                <- runDeployment(command)
-          _ <- saveCommentWhenPassed[RunDeploymentError](
+          _ <- saveActivityWhenFinished[RunDeploymentError](
             validatedCommentOpt,
             keys.scenarioId,
             keys.scenarioGraphVersionId,
@@ -58,7 +58,7 @@ class ActivityService(
     EitherT(deploymentService.runDeployment(command))
       .leftMap[ActivityError[RunDeploymentError]](UnderlyingServiceError(_))
 
-  private def saveCommentWhenPassed[ErrorType](
+  private def saveActivityWhenFinished[ErrorType](
       commentOpt: Option[Comment],
       scenarioId: ProcessId,
       scenarioGraphVersionId: VersionId,
@@ -75,6 +75,8 @@ class ActivityService(
               user = loggedUser.scenarioUser,
               date = now,
               scenarioVersionId = Some(ScenarioVersionId.from(scenarioGraphVersionId)),
+              state = ScenarioActivityState.Success,
+              dateFinished = Some(clock.instant()),
               comment = commentOpt match {
                 case Some(comment) => ScenarioComment.Available(comment.content, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)

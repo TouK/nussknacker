@@ -87,7 +87,8 @@ object Examples {
           id = UUID.fromString("07b04d45-c7c0-4980-a3bc-3c7f66410f68"),
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
-          scenarioVersionId = Some(1),
+          previousScenarioVersionId = Some(1),
+          scenarioVersionId = Some(2),
           comment = ScenarioActivityComment(
             content = ScenarioActivityCommentContent.Available("Added new processing step"),
             lastModifiedBy = "some user",
@@ -184,7 +185,6 @@ object Examples {
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
-          status = Some("IN_PROGRESS"),
           errorMessage = Some("Execution error occurred"),
         ),
         ScenarioActivity.forPerformedSingleExecution(
@@ -198,7 +198,6 @@ object Examples {
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
-          status = Some("FAILED"),
           errorMessage = None,
         ),
         ScenarioActivity.forPerformedScheduledExecution(
@@ -208,7 +207,7 @@ object Examples {
           scenarioVersionId = Some(1),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           scheduleName = "main-schedule",
-          status = ScheduledExecutionStatus.Finished,
+          scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
           createdAt = Instant.parse("2024-01-17T13:21:17Z"),
           retriesLeft = None,
           nextRetryAt = None,
@@ -220,7 +219,7 @@ object Examples {
           scenarioVersionId = Some(1),
           dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
           scheduleName = "main-schedule",
-          status = ScheduledExecutionStatus.DeploymentWillBeRetried,
+          scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentWillBeRetried,
           createdAt = Instant.parse("2024-01-17T13:21:17Z"),
           retriesLeft = Some(1),
           nextRetryAt = Some(Instant.parse("2024-01-17T15:21:17Z")),
