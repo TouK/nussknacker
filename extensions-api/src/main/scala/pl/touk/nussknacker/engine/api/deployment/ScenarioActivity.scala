@@ -191,6 +191,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
+      previousScenarioVersionId: Option[ScenarioVersionId],
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
   ) extends StatelessScenarioActivity

@@ -554,6 +554,11 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         createEntity(scenarioActivity)(
           comment = comment(activity.comment),
           lastModifiedByUserName = lastModifiedByUserName(activity.comment),
+          additionalProperties = AdditionalProperties(
+            List(
+              activity.previousScenarioVersionId.map(_.value.toString).map("prevVersionId" -> _),
+            ).flatten.toMap
+          )
         )
       case activity: ScenarioActivity.ScenarioNameChanged =>
         createEntity(scenarioActivity)(
@@ -787,17 +792,20 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           comment = comment,
         )).map((entity.id, _))
       case ScenarioActivityType.ScenarioModified =>
-        commentFromEntity(entity)
-          .map { comment =>
-            ScenarioActivity.ScenarioModified(
-              scenarioId = scenarioIdFromEntity(entity),
-              scenarioActivityId = entity.activityId,
-              user = userFromEntity(entity),
-              date = entity.createdAt.toInstant,
-              scenarioVersionId = entity.scenarioVersion,
-              comment = comment,
-            )
-          }
+        (for {
+          comment <- commentFromEntity(entity)
+          previousScenarioVersionId = optionalAdditionalPropertyFromEntity(entity, "prevVersionId")
+            .flatMap(toLongOption)
+            .map(ScenarioVersionId.apply)
+        } yield ScenarioActivity.ScenarioModified(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          previousScenarioVersionId = previousScenarioVersionId,
+          scenarioVersionId = entity.scenarioVersion,
+          comment = comment,
+        ))
           .map((entity.id, _))
       case ScenarioActivityType.ScenarioNameChanged =>
         (for {

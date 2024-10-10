@@ -202,12 +202,13 @@ class DBProcessRepository(
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
     editProcess(
       updateProcessAction,
-      (processId, versionId, _) =>
+      (processId, oldVersionId, versionId, _) =>
         ScenarioActivity.ScenarioModified(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
           user = loggedUser.scenarioUser,
           date = Instant.now(),
+          previousScenarioVersionId = oldVersionId.map(ScenarioVersionId.from),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
           comment = updateProcessAction.comment.map(_.content) match {
             case Some(content) if content.nonEmpty =>
@@ -231,7 +232,7 @@ class DBProcessRepository(
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
     editProcess(
       migrateProcessAction,
-      (processId, versionId, user) =>
+      (processId, _, versionId, user) =>
         ScenarioActivity.IncomingMigration(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
@@ -251,7 +252,7 @@ class DBProcessRepository(
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
     editProcess(
       automaticProcessUpdateAction,
-      (processId, versionId, _) =>
+      (processId, _, versionId, _) =>
         ScenarioActivity.AutomaticUpdate(
           scenarioId = ScenarioId(processId.value),
           scenarioActivityId = ScenarioActivityId.random,
@@ -266,12 +267,16 @@ class DBProcessRepository(
 
   def editProcess[ACTION <: ModifyProcessAction](
       action: ACTION,
-      activityCreator: (ProcessId, Option[VersionId], String) => ScenarioActivity,
+      activityCreator: (ProcessId, Option[VersionId], Option[VersionId], String) => ScenarioActivity,
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
     val userName = action.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
 
-    def addScenarioModifiedActivity(scenarioId: ProcessId, newVersionId: Option[VersionId]) = {
-      run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, newVersionId, userName)))
+    def addScenarioModifiedActivity(
+        scenarioId: ProcessId,
+        oldVersionId: Option[VersionId],
+        newVersionId: Option[VersionId]
+    ) = {
+      run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId, userName)))
     }
 
     for {
@@ -283,10 +288,10 @@ class DBProcessRepository(
       )
       _ <- updateProcessRes match {
         // Comment should be added via ProcessService not to mix this repository responsibility.
-        case updateProcessRes @ ProcessUpdated(processId, _, Some(newVersion)) =>
-          addScenarioModifiedActivity(processId, Some(newVersion)).map(_ => updateProcessRes)
-        case updateProcessRes @ ProcessUpdated(processId, Some(oldVersion), _) =>
-          addScenarioModifiedActivity(processId, None).map(_ => updateProcessRes)
+        case updateProcessRes @ ProcessUpdated(processId, oldVersion, Some(newVersion)) =>
+          addScenarioModifiedActivity(processId, oldVersion, Some(newVersion)).map(_ => updateProcessRes)
+        case updateProcessRes @ ProcessUpdated(processId, Some(theSameVersion), _) =>
+          addScenarioModifiedActivity(processId, Some(theSameVersion), Some(theSameVersion)).map(_ => updateProcessRes)
         case _ => dbMonad.unit
       }
       _ <- scenarioLabelsRepository.overwriteLabels(

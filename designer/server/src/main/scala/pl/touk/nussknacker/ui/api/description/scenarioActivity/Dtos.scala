@@ -143,7 +143,7 @@ object Dtos {
     }
 
     case object ScenarioModified extends ScenarioActivityType {
-      override def displayableName: String        = "New version saved"
+      override def displayableName: String        = "Scenario modified"
       override def icon: String                   = "/assets/activities/scenarioModified.svg"
       override def supportedActions: List[String] = commentRelatedActions ::: "compare" :: Nil
     }
@@ -442,6 +442,7 @@ object Dtos {
         id: UUID,
         user: String,
         date: Instant,
+        previousScenarioVersionId: Option[Long],
         scenarioVersionId: Option[Long],
         comment: ScenarioActivityComment,
     ): ScenarioActivity = ScenarioActivity(
@@ -453,8 +454,18 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List.empty,
-      overrideDisplayableName = scenarioVersionId.map(version => s"Version $version saved"),
+      overrideDisplayableName = updatedVersionId(previousScenarioVersionId, scenarioVersionId).map(updatedVersion =>
+        s"Version $updatedVersion saved"
+      )
     )
+
+    private def updatedVersionId(oldVersionIdOpt: Option[Long], newVersionIdOpt: Option[Long]) = {
+      for {
+        newVersionId <- newVersionIdOpt
+        oldVersionIdOrZero = oldVersionIdOpt.getOrElse(0L)
+        updatedVersionId <- if (newVersionId > oldVersionIdOrZero) Some(newVersionId) else None
+      } yield updatedVersionId
+    }
 
     def forScenarioNameChanged(
         id: UUID,

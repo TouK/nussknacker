@@ -87,7 +87,8 @@ object Examples {
           id = UUID.fromString("07b04d45-c7c0-4980-a3bc-3c7f66410f68"),
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
-          scenarioVersionId = Some(1),
+          previousScenarioVersionId = Some(1),
+          scenarioVersionId = Some(2),
           comment = ScenarioActivityComment(
             content = ScenarioActivityCommentContent.Available("Added new processing step"),
             lastModifiedBy = "some user",

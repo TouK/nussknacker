@@ -328,12 +328,13 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioModified(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+      case ScenarioActivity.ScenarioModified(_, scenarioActivityId, user, date, oldVersionId, newVersionId, comment) =>
         Dtos.ScenarioActivity.forScenarioModified(
           id = scenarioActivityId.value,
           user = user.name.value,
           date = date,
-          scenarioVersionId = scenarioVersionId.map(_.value),
+          previousScenarioVersionId = oldVersionId.map(_.value),
+          scenarioVersionId = newVersionId.map(_.value),
           comment = toDto(comment),
         )
       case ScenarioActivity.ScenarioNameChanged(_, id, user, date, version, oldName, newName) =>
