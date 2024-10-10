@@ -18,7 +18,7 @@ import {
 import { NodeInput } from "../FormElements";
 import ValidationLabels from "./ValidationLabels";
 import { isEmpty } from "lodash";
-import { FormControl, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";

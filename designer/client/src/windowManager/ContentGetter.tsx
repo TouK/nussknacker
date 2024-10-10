@@ -7,6 +7,7 @@ import { Debug } from "../containers/Debug";
 import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import { WindowContent } from "./WindowContent";
 import { WindowKind } from "./WindowKind";
+import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
@@ -48,6 +49,10 @@ const ScenarioDetailsDialog = loadable(() => import("../components/modals/MoreSc
     fallback: <LoaderSpinner show />,
 });
 
+const AddCommentDialog = loadable(() => import("../components/modals/AddCommentDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -86,6 +91,10 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <FrameDialog {...props} />;
         case WindowKind.scenarioDetails:
             return <ScenarioDetailsDialog {...props} />;
+        case WindowKind.addComment:
+            return <AddCommentDialog {...props} />;
+        case WindowKind.addAttachment:
+            return <AddAttachmentDialog {...props} />;
         default:
             return (
                 <WindowContent {...props}>
