@@ -30,9 +30,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
   are registered based on class of Serializer instead of instance of Serializer. If you have values that were
   serialized by these Serializers in some state, the state won't be restored after upgrade.
-
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
   If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
+* [#6805](https://github.com/TouK/nussknacker/pull/6805) Updated Flink 1.18.1 -> 1.19.1. Due to backwards incompatible
+  changes in this Flink version update, Nussknacker 1.18 will not work with Flink versions pre-1.19 right away. If you
+  want to keep using Flink pre-1.19 with current Nussknacker, please refer to compatibility providing plugins in
+  https://github.com/TouK/nussknacker-flink-compatibility.
 
 ## In version 1.17.0
 
