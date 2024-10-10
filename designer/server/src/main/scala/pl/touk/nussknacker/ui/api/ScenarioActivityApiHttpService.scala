@@ -6,12 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.{
   AllScenarioActivitiesStoredByNussknacker,
   ManagerSpecificScenarioActivitiesStoredByManager
 }
-import pl.touk.nussknacker.engine.api.deployment.{
-  ScenarioActivity,
-  ScenarioActivityId,
-  ScenarioAttachment,
-  ScenarioComment
-}
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, _}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
@@ -233,9 +228,21 @@ class ScenarioActivityApiHttpService(
           case None =>
             Future.successful(List.empty)
         }
-        combinedActivities       = (generalActivities ++ deploymentManagerSpecificActivities).map(toDto)
-        sortedCombinedActivities = combinedActivities.toList.sortBy(_.date)
-      } yield sortedCombinedActivities
+        combinedActivities = generalActivities ++ deploymentManagerSpecificActivities
+        // todo NU-1772
+        //  The API endpoint returning scenario activities does not have support for filtering at the moment.
+        //  We made a decision to not display in GUI (and not return from API endpoint) those stateful activities, that are not successful
+        combinedSuccessfulActivities = combinedActivities.filter {
+          case _: StatelessScenarioActivity => true
+          case activity: StatefulScenarioActivity =>
+            activity.state match {
+              case ScenarioActivityState.Success    => true
+              case ScenarioActivityState.Failure    => false
+              case ScenarioActivityState.InProgress => false
+            }
+        }
+        sortedResult = combinedSuccessfulActivities.map(toDto).toList.sortBy(_.date)
+      } yield sortedResult
     }
 
   private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
@@ -297,7 +304,7 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value)
         )
-      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, _, _, comment) =>
         Dtos.ScenarioActivity.forScenarioDeployed(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -305,7 +312,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, _, _, comment) =>
         Dtos.ScenarioActivity.forScenarioPaused(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -313,7 +320,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, comment) =>
+      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, _, _, comment) =>
         Dtos.ScenarioActivity.forScenarioCanceled(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -405,9 +412,9 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersionId,
+            _,
             comment,
             dateFinished,
-            status,
             errorMessage,
           ) =>
         Dtos.ScenarioActivity.forPerformedSingleExecution(
@@ -417,7 +424,6 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
           dateFinished = dateFinished,
-          status = status,
           errorMessage = errorMessage,
         )
       case ScenarioActivity.PerformedScheduledExecution(
@@ -426,9 +432,10 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersionId,
+            _,
             dateFinished,
             scheduleName,
-            status,
+            scheduledExecutionStatus,
             createdAt,
             nextRetryAt,
             retriesLeft,
@@ -440,7 +447,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           dateFinished = dateFinished,
           scheduleName = scheduleName,
-          status = status,
+          scheduledExecutionStatus = scheduledExecutionStatus,
           createdAt = createdAt,
           retriesLeft = retriesLeft,
           nextRetryAt = nextRetryAt,
@@ -462,7 +469,17 @@ class ScenarioActivityApiHttpService(
           changes = changes,
           errorMessage = errorMessage,
         )
-      case ScenarioActivity.CustomAction(_, scenarioActivityId, user, date, scenarioVersionId, actionName, comment) =>
+      case ScenarioActivity.CustomAction(
+            _,
+            scenarioActivityId,
+            user,
+            date,
+            scenarioVersionId,
+            _,
+            _,
+            actionName,
+            comment
+          ) =>
         Dtos.ScenarioActivity.forCustomAction(
           id = scenarioActivityId.value,
           user = user.name.value,

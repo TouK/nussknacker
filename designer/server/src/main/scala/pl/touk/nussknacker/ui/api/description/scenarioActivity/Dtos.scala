@@ -587,7 +587,6 @@ object Dtos {
         scenarioVersionId: Option[Long],
         comment: ScenarioActivityComment,
         dateFinished: Option[Instant],
-        status: Option[String],
         errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
@@ -598,7 +597,6 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List(
-        status.map(AdditionalField("status", _)),
         dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
         errorMessage.map(e => AdditionalField("errorMessage", e)),
       ).flatten
@@ -611,12 +609,12 @@ object Dtos {
         scenarioVersionId: Option[Long],
         dateFinished: Option[Instant],
         scheduleName: String,
-        status: ScheduledExecutionStatus,
+        scheduledExecutionStatus: ScheduledExecutionStatus,
         createdAt: Instant,
         nextRetryAt: Option[Instant],
         retriesLeft: Option[Int],
     ): ScenarioActivity = {
-      val humanReadableStatus = status match {
+      val humanReadableStatus = scheduledExecutionStatus match {
         case ScheduledExecutionStatus.Scheduled               => "Scheduled"
         case ScheduledExecutionStatus.Deployed                => "Deployed"
         case ScheduledExecutionStatus.Finished                => "Execution finished"

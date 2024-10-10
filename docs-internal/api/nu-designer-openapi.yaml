@@ -3770,8 +3770,6 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: status
-                        value: IN_PROGRESS
                       - name: dateFinished
                         value: '2024-01-17T14:21:17Z'
                       - name: errorMessage
@@ -3787,8 +3785,6 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: status
-                        value: FAILED
                       - name: dateFinished
                         value: '2024-01-17T14:21:17Z'
                       type: PERFORMED_SINGLE_EXECUTION

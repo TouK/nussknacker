@@ -19,6 +19,7 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails
 }
 
+import java.time.Instant
 import java.util.UUID
 
 class ScenarioActivityApiHttpServiceBusinessSpec
@@ -328,7 +329,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
           )
         )
     }
-    "return SCENARIO_CREATED activity and activities returned by deployment manager" in {
+    "return SCENARIO_CREATED activity and activities returned by deployment manager, without failed activity" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -340,6 +341,23 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
+                state = ScenarioActivityState.Success,
+                dateFinished = Some(Instant.now()),
+                actionName = "Custom action handled by deployment manager",
+                comment = ScenarioComment.Available(
+                  comment = "Executed on custom deployment manager",
+                  lastModifiedByUserName = UserName("custom-user"),
+                  lastModifiedAt = clock.instant()
+                )
+              ),
+              ScenarioActivity.CustomAction(
+                scenarioId = ScenarioId(123),
+                scenarioActivityId = ScenarioActivityId.random,
+                user = ScenarioUser(None, UserName("custom-user"), None, None),
+                date = clock.instant(),
+                scenarioVersionId = None,
+                state = ScenarioActivityState.Failure,
+                dateFinished = None,
                 actionName = "Custom action handled by deployment manager",
                 comment = ScenarioComment.Available(
                   comment = "Executed on custom deployment manager",

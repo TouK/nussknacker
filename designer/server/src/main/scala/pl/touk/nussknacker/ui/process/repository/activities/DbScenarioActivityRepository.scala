@@ -227,11 +227,10 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       .filter(_.scenarioId === scenarioId)
       .sortBy(_.createdAt)
       .result
-      .map(_.map(fromEntity))
-      .map {
-        _.flatMap {
+      .map { entity =>
+        entity.map(fromEntity).flatMap {
           case Left(error) =>
-            logger.warn(s"Ignoring invalid scenario activity: [$error]")
+            logger.warn(s"Ignoring invalid scenario activity: [$error] for $entity")
             None
           case Right(activity) =>
             Some(activity)
@@ -456,8 +455,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       attachmentId: Option[Long] = None,
       comment: Option[String] = None,
       lastModifiedByUserName: Option[String] = None,
-      finishedAt: Option[Timestamp] = None,
-      state: Option[ProcessActionState] = None,
       errorMessage: Option[String] = None,
       buildInfo: Option[String] = None,
       additionalProperties: AdditionalProperties = AdditionalProperties.empty,
@@ -497,8 +494,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioVersion = scenarioActivity.scenarioVersionId,
       comment = comment,
       attachmentId = attachmentId,
-      finishedAt = finishedAt,
-      state = state,
+      finishedAt = scenarioActivity.dateFinished.map(Timestamp.from),
+      state = toProcessActionState(scenarioActivity.stateOpt),
       errorMessage = errorMessage,
       buildInfo = buildInfo,
       additionalProperties = additionalProperties,
@@ -615,16 +612,14 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         )
       case activity: ScenarioActivity.PerformedSingleExecution =>
         createEntity(scenarioActivity)(
-          finishedAt = activity.dateFinished.map(Timestamp.from),
           errorMessage = activity.errorMessage,
         )
       case activity: ScenarioActivity.PerformedScheduledExecution =>
         createEntity(scenarioActivity)(
-          finishedAt = activity.dateFinished.map(Timestamp.from),
           additionalProperties = AdditionalProperties(
             List(
               Some("scheduleName" -> activity.scheduleName),
-              Some("status"       -> activity.status.entryName),
+              Some("status"       -> activity.scheduledExecutionStatus.entryName),
               Some("createdAt"    -> activity.createdAt.toString),
               activity.nextRetryAt.map(nra => "nextRetryAt" -> nra.toString),
               activity.retriesLeft.map(rl => "retriesLeft" -> rl.toString)
@@ -750,44 +745,47 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           .asRight
           .map((entity.id, _))
       case ScenarioActivityType.ScenarioDeployed =>
-        commentFromEntity(entity)
-          .map { comment =>
-            ScenarioActivity.ScenarioDeployed(
-              scenarioId = scenarioIdFromEntity(entity),
-              scenarioActivityId = entity.activityId,
-              user = userFromEntity(entity),
-              date = entity.createdAt.toInstant,
-              scenarioVersionId = entity.scenarioVersion,
-              comment = comment,
-            )
-          }
-          .map((entity.id, _))
+        (for {
+          comment <- commentFromEntity(entity)
+          state   <- toScenarioActivityState(entity.state)
+        } yield ScenarioActivity.ScenarioDeployed(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          scenarioVersionId = entity.scenarioVersion,
+          state = state,
+          dateFinished = entity.finishedAt.map(_.toInstant),
+          comment = comment,
+        )).map((entity.id, _))
       case ScenarioActivityType.ScenarioPaused =>
-        commentFromEntity(entity)
-          .map { comment =>
-            ScenarioActivity.ScenarioPaused(
-              scenarioId = scenarioIdFromEntity(entity),
-              scenarioActivityId = entity.activityId,
-              user = userFromEntity(entity),
-              date = entity.createdAt.toInstant,
-              scenarioVersionId = entity.scenarioVersion,
-              comment = comment,
-            )
-          }
-          .map((entity.id, _))
+        (for {
+          comment <- commentFromEntity(entity)
+          state   <- toScenarioActivityState(entity.state)
+        } yield ScenarioActivity.ScenarioPaused(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          scenarioVersionId = entity.scenarioVersion,
+          state = state,
+          dateFinished = entity.finishedAt.map(_.toInstant),
+          comment = comment,
+        )).map((entity.id, _))
       case ScenarioActivityType.ScenarioCanceled =>
-        commentFromEntity(entity)
-          .map { comment =>
-            ScenarioActivity.ScenarioCanceled(
-              scenarioId = scenarioIdFromEntity(entity),
-              scenarioActivityId = entity.activityId,
-              user = userFromEntity(entity),
-              date = entity.createdAt.toInstant,
-              scenarioVersionId = entity.scenarioVersion,
-              comment = comment,
-            )
-          }
-          .map((entity.id, _))
+        (for {
+          comment <- commentFromEntity(entity)
+          state   <- toScenarioActivityState(entity.state)
+        } yield ScenarioActivity.ScenarioCanceled(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          scenarioVersionId = entity.scenarioVersion,
+          state = state,
+          dateFinished = entity.finishedAt.map(_.toInstant),
+          comment = comment,
+        )).map((entity.id, _))
       case ScenarioActivityType.ScenarioModified =>
         commentFromEntity(entity)
           .map { comment =>
@@ -886,35 +884,38 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case ScenarioActivityType.PerformedSingleExecution =>
         (for {
           comment <- commentFromEntity(entity)
+          state   <- toScenarioActivityState(entity.state)
         } yield ScenarioActivity.PerformedSingleExecution(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
+          state = state,
           comment = comment,
           dateFinished = entity.finishedAt.map(_.toInstant),
-          status = entity.state.map(_.toString),
           errorMessage = entity.errorMessage,
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
         (for {
           scheduleName <- additionalPropertyFromEntity(entity, "scheduleName")
-          status <- additionalPropertyFromEntity(entity, "status").flatMap(
+          scheduledExecutionStatus <- additionalPropertyFromEntity(entity, "status").flatMap(
             ScheduledExecutionStatus.withNameEither(_).left.map(_.getMessage)
           )
           createdAt <- additionalPropertyFromEntity(entity, "createdAt").map(Instant.parse)
           nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
           retriesLeft = optionalAdditionalPropertyFromEntity(entity, "retriesLeft").flatMap(toIntOption)
+          state <- toScenarioActivityState(entity.state)
         } yield ScenarioActivity.PerformedScheduledExecution(
           scenarioId = scenarioIdFromEntity(entity),
           scenarioActivityId = entity.activityId,
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
+          state = state,
           dateFinished = entity.finishedAt.map(_.toInstant),
           scheduleName = scheduleName,
-          status = status,
+          scheduledExecutionStatus = scheduledExecutionStatus,
           createdAt = createdAt,
           nextRetryAt = nextRetryAt,
           retriesLeft = retriesLeft,
@@ -935,6 +936,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case ScenarioActivityType.CustomAction(actionName) =>
         (for {
           comment <- commentFromEntity(entity)
+          state   <- toScenarioActivityState(entity.state)
         } yield ScenarioActivity
           .CustomAction(
             scenarioId = scenarioIdFromEntity(entity),
@@ -942,9 +944,30 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
             scenarioVersionId = entity.scenarioVersion,
+            state = state,
+            dateFinished = entity.finishedAt.map(_.toInstant),
             actionName = actionName,
             comment = comment,
           )).map((entity.id, _))
+    }
+  }
+
+  private def toScenarioActivityState(state: Option[ProcessActionState]): Either[String, ScenarioActivityState] = {
+    state match {
+      case None                                       => Right(ScenarioActivityState.Success)
+      case Some(ProcessActionState.Finished)          => Right(ScenarioActivityState.Success)
+      case Some(ProcessActionState.ExecutionFinished) => Right(ScenarioActivityState.Success)
+      case Some(ProcessActionState.Failed)            => Right(ScenarioActivityState.Failure)
+      case Some(ProcessActionState.InProgress)        => Right(ScenarioActivityState.InProgress)
+      case Some(other)                                => Left(s"Invalid state $other in ScenarioActivity entity")
+    }
+  }
+
+  private def toProcessActionState(state: Option[ScenarioActivityState]): Option[ProcessActionState] = {
+    state.map {
+      case ScenarioActivityState.InProgress => ProcessActionState.InProgress
+      case ScenarioActivityState.Success    => ProcessActionState.Finished
+      case ScenarioActivityState.Failure    => ProcessActionState.Failed
     }
   }
 
