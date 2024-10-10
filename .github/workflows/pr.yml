@@ -602,7 +602,7 @@ jobs:
   trigger-external-build:
     runs-on: ubuntu-latest
     needs: [ setup, publish ]
-#    if: ${{ github.ref == 'refs/heads/staging' }} TODO local: remove after test
+    if: ${{ github.ref == 'refs/heads/staging' }}
     strategy:
       matrix:
         include:
@@ -615,22 +615,15 @@ jobs:
           - repo: nussknacker-sample-components
             workflow_id: pr.yml
             ref: staging
-          - repo: nussknacker-flink-compatibility
-            workflow_id: test.yml
-            ref: staging
     steps:
       - uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
           script: |
-            const inputs = ('${{ matrix.repo }}' === 'nussknacker-flink-compatibility')
-              ? {}
-              : {'nussknacker_version': '${{ needs.setup.outputs.nk_snapshot_version }}'};
-
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: '${{ matrix.repo }}',
               workflow_id: '${{ matrix.workflow_id }}',
               ref: '${{ matrix.ref }}',
-              inputs: inputs
+              inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
             })
