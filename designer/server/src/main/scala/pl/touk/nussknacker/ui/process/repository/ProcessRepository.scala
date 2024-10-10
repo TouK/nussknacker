@@ -216,7 +216,7 @@ class DBProcessRepository(
                 lastModifiedByUserName = UserName(loggedUser.username),
                 lastModifiedAt = clock.instant(),
               )
-            case None =>
+            case Some(_) | None =>
               ScenarioComment.Deleted(
                 deletedByUserName = UserName(loggedUser.username),
                 deletedAt = clock.instant(),
