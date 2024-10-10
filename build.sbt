@@ -1662,7 +1662,7 @@ lazy val httpUtils = (project in utils("http-utils"))
   )
   .dependsOn(componentsApi % Provided, testUtils % Test)
 
-val swaggerParserV      = "2.1.15"
+val swaggerParserV      = "2.1.22"
 val swaggerIntegrationV = "2.2.10"
 
 lazy val openapiComponents = (project in component("openapi"))
