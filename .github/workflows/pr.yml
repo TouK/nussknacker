@@ -615,15 +615,24 @@ jobs:
           - repo: nussknacker-sample-components
             workflow_id: pr.yml
             ref: staging
+          - repo: nussknacker-flink-compatibility
+            workflow_id: test.yml
+            ref: staging
     steps:
       - uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
           script: |
+#           Empty input for flink-compatibility because right now it triggers a dummy job that doesn't use the
+#           current snapshot version. In future the job will use Nu version corresponding to triggering job.
+            const inputs = ('${{ matrix.repo }}' === 'nussknacker-flink-compatibility')
+              ? {}
+              : {'nussknacker_version': '${{ needs.setup.outputs.nk_snapshot_version }}'};
+
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: '${{ matrix.repo }}',
               workflow_id: '${{ matrix.workflow_id }}',
               ref: '${{ matrix.ref }}',
-              inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
+              inputs: inputs
             })
