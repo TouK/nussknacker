@@ -5,7 +5,7 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDeclaration}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
@@ -89,11 +89,11 @@ object GenericSourceWithCustomVariablesSample
       list = elementsValue,
       timestampAssigner = None,
       returnType = Typed[ProcessingType],
-    ) with TestDataGenerator with FlinkSourceTestSupport[ProcessingType] {
+    ) with TestDataGenerator with FlinkSourceTestSupport[ProcessingType] with TestWithParametersSupport[String] {
       override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
       override def generateTestData(size: Int): TestData = TestData(
-        elementsValue.map(el => TestRecord(Json.fromString(el)))
+        (0 to size).flatMap(index => elementsValue.map(el => TestRecord(Json.fromString(el + s"-$index")))).toList
       )
 
       override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
@@ -102,6 +102,12 @@ object GenericSourceWithCustomVariablesSample
         }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+
+      override def testParametersDefinition: List[Parameter] = elementsParamDeclaration.createParameter() :: Nil
+
+      override def parametersToTestData(params: Map[ParameterName, AnyRef]): String =
+        params.getOrElse(elementsParamName, "").toString
+
     }
   }
 

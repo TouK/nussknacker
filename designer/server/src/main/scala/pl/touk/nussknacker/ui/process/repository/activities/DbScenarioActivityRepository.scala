@@ -18,13 +18,16 @@ import pl.touk.nussknacker.ui.db.entity.{
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  ModifyActivityError,
+  ModifyCommentError
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
 import java.sql.Timestamp
-import java.time.Clock
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -45,8 +48,21 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
 
   def addActivity(
       scenarioActivity: ScenarioActivity,
-  )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
+  ): DB[ScenarioActivityId] = {
     insertActivity(scenarioActivity).map(_.activityId)
+  }
+
+  def modifyActivity(
+      activityId: ScenarioActivityId,
+      modification: ScenarioActivity => ScenarioActivity,
+  ): DB[Either[ModifyActivityError, Unit]] = {
+    modifyActivityByActivityId[ModifyActivityError, ScenarioActivity](
+      activityId = activityId,
+      activityDoesNotExistError = ModifyActivityError.ActivityDoesNotExist,
+      validateCurrentValue = validateActivityExistsForScenario,
+      modify = originalActivity => toEntity(modification(originalActivity)),
+      couldNotModifyError = ModifyActivityError.CouldNotModifyActivity,
+    )
   }
 
   def addComment(
@@ -61,7 +77,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         scenarioActivityId = ScenarioActivityId.random,
         user = user.scenarioUser,
         date = now,
-        scenarioVersionId = Some(ScenarioVersionId(processVersionId.value)),
+        scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
         comment = ScenarioComment.Available(
           comment = comment,
           lastModifiedByUserName = UserName(user.username),
@@ -147,7 +163,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioActivityId = ScenarioActivityId.random,
           user = user.scenarioUser,
           date = now,
-          scenarioVersionId = Some(ScenarioVersionId(attachmentToAdd.scenarioVersionId.value)),
+          scenarioVersionId = Some(ScenarioVersionId.from(attachmentToAdd.scenarioVersionId)),
           attachment = ScenarioAttachment.Available(
             attachmentId = AttachmentId(attachment.id),
             attachmentFilename = AttachmentFilename(attachmentToAdd.fileName),
@@ -227,7 +243,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     for {
       _ <- Either.cond(entity.scenarioId == scenarioId, (), ModifyCommentError.CommentDoesNotExist)
       _ <- entity.comment.toRight(ModifyCommentError.CommentDoesNotExist)
-    } yield ()
+    } yield entity
   }
 
   private def toComment(
@@ -325,14 +341,18 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private lazy val attachmentInsertQuery =
     attachmentsTable returning attachmentsTable.map(_.id) into ((item, id) => item.copy(id = id))
 
-  private def modifyActivityByActivityId[ERROR](
+  private def validateActivityExistsForScenario(entity: ScenarioActivityEntityData) = {
+    fromEntity(entity).left.map(_ => ModifyActivityError.CouldNotModifyActivity).map(_._2)
+  }
+
+  private def modifyActivityByActivityId[ERROR, T](
       activityId: ScenarioActivityId,
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
-      modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, T],
+      modify: T => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, Unit]] = {
-    modifyActivity[ScenarioActivityId, ERROR](
+    doModifyActivity[ScenarioActivityId, ERROR, T](
       key = activityId,
       fetchActivity = activityByIdCompiled(_).result.headOption,
       updateRow = (id: ScenarioActivityId, updatedEntity) => activityByIdCompiled(id).update(updatedEntity),
@@ -346,11 +366,11 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private def modifyActivityByRowId[ERROR](
       rowId: Long,
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, ScenarioActivityEntityData],
       modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, Unit]] = {
-    modifyActivity[Long, ERROR](
+    doModifyActivity[Long, ERROR, ScenarioActivityEntityData](
       key = rowId,
       fetchActivity = activityByRowIdCompiled(_).result.headOption,
       updateRow = (id: Long, updatedEntity) => activityByRowIdCompiled(id).update(updatedEntity),
@@ -361,22 +381,22 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     )
   }
 
-  private def modifyActivity[KEY, ERROR](
+  private def doModifyActivity[KEY, ERROR, VALIDATED](
       key: KEY,
       fetchActivity: KEY => DB[Option[ScenarioActivityEntityData]],
       updateRow: (KEY, ScenarioActivityEntityData) => DB[Int],
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
-      modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, VALIDATED],
+      modify: VALIDATED => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, Unit]] = {
     val action = for {
       fetchedActivity <- fetchActivity(key)
       result <- {
         val modifiedEntity = for {
-          entity <- fetchedActivity.toRight(activityDoesNotExistError)
-          _      <- validateCurrentValue(entity)
-          modifiedEntity = modify(entity)
+          entity    <- fetchedActivity.toRight(activityDoesNotExistError)
+          validated <- validateCurrentValue(entity)
+          modifiedEntity = modify(validated)
         } yield modifiedEntity
 
         modifiedEntity match {
@@ -466,7 +486,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       id = -1,
       activityType = activityType,
       scenarioId = ProcessId(scenarioActivity.scenarioId.value),
-      activityId = ScenarioActivityId.random,
+      activityId = scenarioActivity.scenarioActivityId,
       userId = scenarioActivity.user.id.map(_.value),
       userName = scenarioActivity.user.name.value,
       impersonatedByUserId = scenarioActivity.user.impersonatedByUserId.map(_.value),
@@ -601,7 +621,15 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       case activity: ScenarioActivity.PerformedScheduledExecution =>
         createEntity(scenarioActivity)(
           finishedAt = activity.dateFinished.map(Timestamp.from),
-          errorMessage = activity.errorMessage,
+          additionalProperties = AdditionalProperties(
+            List(
+              Some("scheduleName" -> activity.scheduleName),
+              Some("status"       -> activity.status.entryName),
+              Some("createdAt"    -> activity.createdAt.toString),
+              activity.nextRetryAt.map(nra => "nextRetryAt" -> nra.toString),
+              activity.retriesLeft.map(rl => "retriesLeft" -> rl.toString)
+            ).flatten.toMap
+          )
         )
       case activity: ScenarioActivity.AutomaticUpdate =>
         createEntity(scenarioActivity)(
@@ -612,8 +640,11 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             )
           )
         )
-      case _: ScenarioActivity.CustomAction =>
-        createEntity(scenarioActivity)()
+      case activity: ScenarioActivity.CustomAction =>
+        createEntity(scenarioActivity)(
+          comment = comment(activity.comment),
+          lastModifiedByUserName = lastModifiedByUserName(activity.comment),
+        )
     }
   }
 
@@ -673,10 +704,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           )
       }
     }
-  }
-
-  private def additionalPropertyListFromEntity(entity: ScenarioActivityEntityData, namePrefix: String): List[String] = {
-    entity.additionalProperties.properties.filter(_._1.startsWith(namePrefix)).values.toList
   }
 
   private def additionalPropertyFromEntity(entity: ScenarioActivityEntityData, name: String): Either[String, String] = {
@@ -842,7 +869,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioVersionId = entity.scenarioVersion,
           sourceEnvironment = Environment(sourceEnvironment),
           sourceUser = UserName(sourceUser),
-          sourceScenarioVersionId = sourceScenarioVersion.map(ScenarioVersionId),
+          sourceScenarioVersionId = sourceScenarioVersion.map(ScenarioVersionId.apply),
           targetEnvironment = targetEnvironment.map(Environment),
         )).map((entity.id, _))
       case ScenarioActivityType.OutgoingMigration =>
@@ -867,21 +894,31 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scenarioVersionId = entity.scenarioVersion,
           comment = comment,
           dateFinished = entity.finishedAt.map(_.toInstant),
+          status = entity.state.map(_.toString),
           errorMessage = entity.errorMessage,
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
-        ScenarioActivity
-          .PerformedScheduledExecution(
-            scenarioId = scenarioIdFromEntity(entity),
-            scenarioActivityId = entity.activityId,
-            user = userFromEntity(entity),
-            date = entity.createdAt.toInstant,
-            scenarioVersionId = entity.scenarioVersion,
-            dateFinished = entity.finishedAt.map(_.toInstant),
-            errorMessage = entity.errorMessage,
+        (for {
+          scheduleName <- additionalPropertyFromEntity(entity, "scheduleName")
+          status <- additionalPropertyFromEntity(entity, "status").flatMap(
+            ScheduledExecutionStatus.withNameEither(_).left.map(_.getMessage)
           )
-          .asRight
-          .map((entity.id, _))
+          createdAt <- additionalPropertyFromEntity(entity, "createdAt").map(Instant.parse)
+          nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
+          retriesLeft = optionalAdditionalPropertyFromEntity(entity, "retriesLeft").flatMap(toIntOption)
+        } yield ScenarioActivity.PerformedScheduledExecution(
+          scenarioId = scenarioIdFromEntity(entity),
+          scenarioActivityId = entity.activityId,
+          user = userFromEntity(entity),
+          date = entity.createdAt.toInstant,
+          scenarioVersionId = entity.scenarioVersion,
+          dateFinished = entity.finishedAt.map(_.toInstant),
+          scheduleName = scheduleName,
+          status = status,
+          createdAt = createdAt,
+          nextRetryAt = nextRetryAt,
+          retriesLeft = retriesLeft,
+        )).map((entity.id, _))
       case ScenarioActivityType.AutomaticUpdate =>
         (for {
           description <- additionalPropertyFromEntity(entity, "description")
@@ -922,5 +959,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   }
 
   private def toLongOption(str: String) = Try(str.toLong).toOption
+
+  private def toIntOption(str: String) = Try(str.toInt).toOption
 
 }

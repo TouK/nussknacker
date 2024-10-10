@@ -8,7 +8,6 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
@@ -52,6 +51,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
   MalformedTypingResult,
@@ -60,6 +60,7 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.
 }
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Examples._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedClassSchemaHelper.typedClassTypeSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas.TypedDictSchemaHelper.typedDictTypeSchema
@@ -542,47 +543,51 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       "StreamMetaData"
     )
 
-  private val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
-    oneOfVariantFromMatchType(
-      NotFound,
-      plainBody[NoScenario]
-        .example(
-          Example.of(
-            summary = Some("No scenario {scenarioName} found"),
-            value = NoScenario(ProcessName("'example scenario'"))
-          )
-        )
-    )
-
-  private val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
-    oneOfVariantFromMatchType(
-      BadRequest,
-      plainBody[MalformedTypingResult]
-        .example(
-          Example.of(
-            summary = Some("Malformed TypingResult sent in request"),
-            value = MalformedTypingResult(
-              "Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown"
-            )
-          )
-        )
-    )
-
-  private val noProcessingTypeExample: EndpointOutput.OneOfVariant[NoProcessingType] =
-    oneOfVariantFromMatchType(
-      NotFound,
-      plainBody[NoProcessingType]
-        .example(
-          Example.of(
-            summary = Some("ProcessingType type: {processingType} not found"),
-            value = NoProcessingType("'processingType'")
-          )
-        )
-    )
-
 }
 
 object NodesApiEndpoints {
+
+  object Examples {
+
+    val noScenarioExample: EndpointOutput.OneOfVariant[NoScenario] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoScenario]
+          .example(
+            Example.of(
+              summary = Some("No scenario {scenarioName} found"),
+              value = NoScenario(ProcessName("'example scenario'"))
+            )
+          )
+      )
+
+    val malformedTypingResultExample: EndpointOutput.OneOfVariant[MalformedTypingResult] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[MalformedTypingResult]
+          .example(
+            Example.of(
+              summary = Some("Malformed TypingResult sent in request"),
+              value = MalformedTypingResult(
+                "Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown"
+              )
+            )
+          )
+      )
+
+    val noProcessingTypeExample: EndpointOutput.OneOfVariant[NoProcessingType] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoProcessingType]
+          .example(
+            Example.of(
+              summary = Some("ProcessingType type: {processingType} not found"),
+              value = NoProcessingType("'processingType'")
+            )
+          )
+      )
+
+  }
 
   object Dtos {
 
@@ -1400,24 +1405,22 @@ object NodesApiEndpoints {
       new TypingResultDecoder(name => ClassUtils.forName(name, classLoader)).decodeTypingResults
     }
 
-    def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
-      implicit val parameterNameDecoder: KeyDecoder[ParameterName] = KeyDecoder.decodeKeyString.map(ParameterName.apply)
-      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(
-        modelData.modelClassLoader.classLoader
-      )
-      implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
-        deriveConfiguredDecoder[TestSourceParameters]
-      deriveConfiguredDecoder[TestFromParametersRequest]
-    }
+    implicit val parameterNameCodec: KeyEncoder[ParameterName]   = KeyEncoder.encodeKeyString.contramap(_.value)
+    implicit val parameterNameDecoder: KeyDecoder[ParameterName] = KeyDecoder.decodeKeyString.map(ParameterName.apply)
 
-    implicit val parameterNameCodec: KeyEncoder[ParameterName] = KeyEncoder.encodeKeyString.contramap(_.value)
+    implicit val mapParameterNameExpressionSchema: Typeclass[Map[ParameterName, Expression]] =
+      Schema.schemaForMap[ParameterName, Expression](_.value)
+    implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
+      deriveConfiguredDecoder[TestSourceParameters]
 
-    @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
+    @derive(schema, encoder, decoder)
+    final case class TestSourceParameters(
         sourceId: String,
         parameterExpressions: Map[ParameterName, Expression]
     )
 
-    @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
+    @derive(schema, encoder, decoder)
+    final case class AdhocTestParametersRequest(
         sourceParameters: TestSourceParameters,
         scenarioGraph: ScenarioGraph
     )

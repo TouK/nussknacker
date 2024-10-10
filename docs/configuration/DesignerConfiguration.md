@@ -657,7 +657,7 @@ processToolbarConfig {
           { type: "test-counts" }
           { type: "test-hide" }
           { type: "generate-and-test", disabled: { archived: true } }
-          { type: "test-with-form", disabled: { archived: true } }
+          { type: "adhoc-testing", disabled: { archived: true } }
         ]
       }
       {

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -57,6 +57,30 @@ class PeriodicProcessService(
   private val emptyCallback: Callback = () => Future.successful(())
 
   private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+
+  def getScenarioActivitiesSpecificToPeriodicProcess(
+      processIdWithName: ProcessIdWithName
+  ): Future[List[ScenarioActivity]] =
+    scheduledProcessesRepository
+      .getSchedulesState(processIdWithName.name)
+      .run
+      .map(_.groupedByPeriodicProcess)
+      .map(_.flatMap(_.deployments))
+      .map(_.map { deployment =>
+        ScenarioActivity.PerformedScheduledExecution(
+          scenarioId = ScenarioId(processIdWithName.id.value),
+          scenarioActivityId = ScenarioActivityId.random,
+          user = ScenarioUser.internalNuUser,
+          date = instantAtUTC(deployment.runAt),
+          scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
+          dateFinished = deployment.state.completedAt.map(instantAtUTC),
+          scheduleName = deployment.scheduleName.display,
+          status = scheduledExecutionStatus(deployment.state.status),
+          createdAt = instantAtUTC(deployment.createdAt),
+          nextRetryAt = deployment.nextRetryAt.map(instantAtUTC),
+          retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
+        )
+      }.toList.sortBy(_.date))
 
   def schedule(
       schedule: ScheduleProperty,
@@ -495,6 +519,26 @@ class PeriodicProcessService(
       runtimeStatusesMap.get(DeploymentId(deploymentId.toString))
 
   }
+
+  private def scheduledExecutionStatus(status: PeriodicProcessDeploymentStatus): ScheduledExecutionStatus = {
+    status match {
+      case PeriodicProcessDeploymentStatus.Scheduled =>
+        ScheduledExecutionStatus.Scheduled
+      case PeriodicProcessDeploymentStatus.Deployed =>
+        ScheduledExecutionStatus.Deployed
+      case PeriodicProcessDeploymentStatus.Finished =>
+        ScheduledExecutionStatus.Finished
+      case PeriodicProcessDeploymentStatus.Failed =>
+        ScheduledExecutionStatus.Failed
+      case PeriodicProcessDeploymentStatus.RetryingDeploy =>
+        ScheduledExecutionStatus.DeploymentWillBeRetried
+      case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
+        ScheduledExecutionStatus.DeploymentFailed
+    }
+  }
+
+  private def instantAtUTC(localDateTime: LocalDateTime): Instant =
+    localDateTime.toInstant(ZoneOffset.UTC)
 
 }
 

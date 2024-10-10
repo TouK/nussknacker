@@ -11,7 +11,7 @@ import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValida
 import HttpService from "../../../../../../../http/HttpService";
 import { useSelector } from "react-redux";
 import { getProcessingType } from "../../../../../../../reducers/selectors/graph";
-import { GenericValidationRequest } from "../../../../../../../actions/nk/genericAction";
+import { GenericValidationRequest } from "../../../../../../../actions/nk/adhocTesting";
 import { debounce } from "lodash";
 import { EditorType } from "../../../../editors/expression/Editor";
 import { useSettings } from "../../SettingsProvider";
