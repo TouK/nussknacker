@@ -1,0 +1,136 @@
+package pl.touk.nussknacker.openapi
+
+import com.github.tomakehurst.wiremock.client.WireMock._
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
+
+import scala.jdk.CollectionConverters._
+
+// TODO: after more test coverage maybe extract to multiple test classes
+class HttpEnricherBodyTest extends HttpEnricherTestSuite {
+
+  import org.scalatest.prop.TableDrivenPropertyChecks._
+
+  test("returns body as value decoded from json or plain string") {
+    forAll(
+      Table(
+        ("body", "expectedBodyRuntimeValue"),
+        (""" "string" """, "string"),
+        (" true ", true),
+        ("123", java.math.BigDecimal.valueOf(123)),
+        ("null", null),
+        ("[]", List.empty),
+        ("{}", Map.empty),
+        ("<html></html>", "<html></html>"),
+        (TestData.recordWithAllTypesNestedAsJson, TestData.recordWithAllTypesNestedAsComparableAsNuRuntimeValue)
+      )
+    ) { case (body, expected) =>
+      wireMock.stubFor(
+        get(urlEqualTo("/types-test")).willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "application/json")
+            .withBody(body)
+        )
+      )
+      val scenario = ScenarioBuilder
+        .streaming("id")
+        .source("start", TestScenarioRunner.testDataSource)
+        .enricher(
+          "http-node-id",
+          "httpOutput",
+          noConfigHttpEnricherName,
+          "URL"         -> s"'${wireMock.baseUrl()}/types-test'".spel,
+          "HTTP Method" -> "'GET'".spel,
+          "Headers"     -> "".spel,
+        )
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#httpOutput.body".spel)
+
+      val result = runner
+        .runWithData[String, Any](scenario, List("irrelevantInput"))
+        .validValue
+        .successes
+        .head
+      deepToScala(result) shouldBe expected
+    }
+  }
+
+  private def deepToScala(obj: Any): Any = obj match {
+    case map: java.util.Map[_, _] =>
+      map.asScala.map { case (key, value) => (deepToScala(key), deepToScala(value)) }.toMap
+    case list: java.util.List[_] =>
+      list.asScala.map(deepToScala).toList
+    case set: java.util.Set[_] =>
+      set.asScala.map(deepToScala).toSet
+    case array: Array[_] =>
+      array.map(deepToScala)
+    case other =>
+      other
+  }
+
+  object TestData {
+
+    val recordWithAllTypesNestedAsJson: String =
+      """
+        |{
+        |  "string": "this is a string",
+        |  "number": 123,
+        |  "decimal": 123.456,
+        |  "booleanTrue": true,
+        |  "nullValue": null,
+        |  "object": {
+        |    "nestedString": "nested value",
+        |    "nestedArray": [1, 2, 3],
+        |    "nestedObject": {
+        |      "innerKey": "innerValue"
+        |    }
+        |  },
+        |  "arrayOfObjects": [
+        |    {"key1": "value1"},
+        |    {"key2": "value2"}
+        |  ],
+        |  "array": [1, "string", true, null, {"innerArrayObject": [1, 2, 3]}]
+        |}
+        |""".stripMargin
+
+    val recordWithAllTypesNestedAsComparableAsNuRuntimeValue: Map[String, Any] = Map(
+      "string"      -> "this is a string",
+      "number"      -> java.math.BigDecimal.valueOf(123),
+      "decimal"     -> java.math.BigDecimal.valueOf(123.456),
+      "booleanTrue" -> true,
+      "nullValue"   -> null,
+      "object" -> Map(
+        "nestedString" -> "nested value",
+        "nestedArray" -> List(
+          java.math.BigDecimal.valueOf(1),
+          java.math.BigDecimal.valueOf(2),
+          java.math.BigDecimal.valueOf(3)
+        ),
+        "nestedObject" -> Map(
+          "innerKey" -> "innerValue"
+        )
+      ),
+      "arrayOfObjects" -> List(
+        Map("key1" -> "value1"),
+        Map("key2" -> "value2")
+      ),
+      "array" -> List(
+        java.math.BigDecimal.valueOf(1),
+        "string",
+        true,
+        null,
+        Map(
+          "innerArrayObject" -> List(
+            java.math.BigDecimal.valueOf(1),
+            java.math.BigDecimal.valueOf(2),
+            java.math.BigDecimal.valueOf(3)
+          )
+        )
+      )
+    )
+
+  }
+
+}
