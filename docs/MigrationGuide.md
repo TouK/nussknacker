@@ -4,6 +4,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.18.0 (Not released yet)
 
+### Configuration changes
+
+* [6944](https://github.com/TouK/nussknacker/pull/6944)
+  * Button name for 'test adhoc' was renamed from `test-with-form` to `adhoc-testing`
+    If you are using custom button config remember to update button type to `type: "adhoc-testing"` in `processToolbarConfig`
+
 ### Code API changes
 
 * [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
@@ -19,7 +25,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### REST API changes
 
-* [#6766](https://github.com/TouK/nussknacker/pull/6766) 
+* [6944](https://github.com/TouK/nussknacker/pull/6944)
+  *  New endpoint `/api/scenarioTesting/{scenarioName}/adhoc/validate`
+* [#6766](https://github.com/TouK/nussknacker/pull/6766)
   * Process API changes:
       * PUT `/api/processes/{processName}` - optional `scenarioLabels` field added
   * Migration API changes:

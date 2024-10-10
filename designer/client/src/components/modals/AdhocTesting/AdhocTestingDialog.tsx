@@ -1,23 +1,23 @@
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { ElementType, ReactElement, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { UIParameter, VariableTypes } from "../../../types";
+import { ScenarioGraph, UIParameter, VariableTypes } from "../../../types";
 import { WindowContent, WindowKind } from "../../../windowManager";
 import { ContentSize } from "../../graph/node-modal/node/ContentSize";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { MarkdownForm } from "./MarkdownForm";
-import { ActionValues, GenericActionFormContext } from "./GenericActionFormContext";
+import { ActionValues, AdhocTestingFormContext } from "./AdhocTestingFormContext";
 import { Box } from "@mui/material";
-import { useGenericActionValidation } from "./useGenericActionValidation";
+import { useAdhocTestingParametersValidation } from "./useAdhocTestingParametersValidation";
 
 type DocsLink = {
     url: string;
     label?: string;
 };
 
-export type GenericActionViewParams = {
+export type AdhocTestingViewParams = {
     confirmText?: string;
     cancelText?: string;
     Icon?: ElementType;
@@ -26,23 +26,23 @@ export type GenericActionViewParams = {
     markdownContent?: string;
 };
 
-export interface GenericActionParameters {
+export interface AdhocTestingParameters {
     parameters: UIParameter[];
-}
-
-export interface GenericAction extends GenericActionParameters {
     variableTypes: VariableTypes;
     processingType: string;
+    scenarioName: string;
     initialValues: ActionValues;
     onConfirmAction: (values: ActionValues) => void;
+    sourceId: string;
+    scenarioGraph: ScenarioGraph;
 }
 
-export interface GenericActionData {
-    view: GenericActionViewParams;
-    action: GenericAction;
+export interface AdhocTestingData {
+    view: AdhocTestingViewParams;
+    action: AdhocTestingParameters;
 }
 
-function GenericActionDialog(props: WindowContentProps<WindowKind, GenericActionData>): ReactElement {
+function AdhocTestingDialog(props: WindowContentProps<WindowKind, AdhocTestingData>): ReactElement {
     const { t } = useTranslation();
     const { data, close } = props;
     const {
@@ -52,7 +52,7 @@ function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction
     const { variableTypes, parameters = [], initialValues, onConfirmAction } = action;
 
     const [value, setValue] = useState(initialValues);
-    const { errors, isValid } = useGenericActionValidation(action, value);
+    const { errors, isValid } = useAdhocTestingParametersValidation(action, value);
 
     const confirm = useCallback(async () => {
         onConfirmAction(value);
@@ -60,16 +60,14 @@ function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction
     }, [close, onConfirmAction, value]);
 
     const buttons: WindowButtonProps[] = useMemo(() => {
-        const cancelText = view.cancelText ? view.cancelText : "cancel";
-        const confirmText = view.confirmText ? view.confirmText : "confirm";
         return [
             {
-                title: t(`dialog.generic.button.${cancelText}`, cancelText),
+                title: t(`dialog.adhoc-testing.button.cancel`, "Cancel"),
                 action: () => close(),
                 classname: LoadingButtonTypes.secondaryButton,
             },
             {
-                title: t(`dialog.generic.button.${confirmText}`, confirmText),
+                title: t(`dialog.adhoc-testing.button.test`, "Test"),
                 action: () => confirm(),
                 disabled: !isValid,
             },
@@ -85,7 +83,7 @@ function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction
         >
             <ContentSize>
                 <Box mx={3}>
-                    <GenericActionFormContext.Provider
+                    <AdhocTestingFormContext.Provider
                         value={{
                             value,
                             setValue,
@@ -95,11 +93,11 @@ function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction
                         }}
                     >
                         <MarkdownForm content={view.markdownContent} />
-                    </GenericActionFormContext.Provider>
+                    </AdhocTestingFormContext.Provider>
                 </Box>
             </ContentSize>
         </WindowContent>
     );
 }
 
-export default GenericActionDialog;
+export default AdhocTestingDialog;
