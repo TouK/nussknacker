@@ -228,7 +228,9 @@ private[spel] class Typer(
         case TypedNull =>
           invalidNodeResult(IllegalIndexingOperation)
         case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
-        case _ =>
+        case Unknown =>
+          validNodeResult(Unknown)
+        case _: TypedClass =>
           val w = validNodeResult(Unknown)
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
       }

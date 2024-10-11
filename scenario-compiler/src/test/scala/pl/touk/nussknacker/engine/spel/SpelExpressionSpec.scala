@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
@@ -95,14 +95,20 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val ctx = Context("abc").withVariables(
     Map(
-      "obj"            -> testValue,
-      "strVal"         -> "",
-      "mapValue"       -> Map("foo" -> "bar").asJava,
-      "array"          -> Array("a", "b"),
-      "intArray"       -> Array(1, 2, 3),
-      "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
-      "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"  -> ContainerOfUnknown("unknown")
+      "obj"                                         -> testValue,
+      "strVal"                                      -> "",
+      "mapValue"                                    -> Map("foo" -> "bar").asJava,
+      "array"                                       -> Array("a", "b"),
+      "intArray"                                    -> Array(1, 2, 3),
+      "nestedArray"                                 -> Array(Array(1, 2), Array(3, 4)),
+      "arrayOfUnknown"                              -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"                               -> ContainerOfUnknown("unknown"),
+      "containerWithUnknownObject"                  -> ContainerOfUnknown(SampleValue(1)),
+      "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticParameterlessMethod()),
+      "containerWithUnknownClassWithStaticMethods" -> ContainerOfUnknown(
+        classOf[JavaClassWithStaticParameterlessMethod]
+      ),
+      "containerWithUnknownArray" -> ContainerOfUnknown(Array("a", "b", "c")),
     )
   )
 
@@ -236,6 +242,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[LocalDate],
       classOf[ChronoLocalDate],
       classOf[SampleValue],
+      classOf[JavaClassWithStaticParameterlessMethod],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     )
     ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
@@ -261,6 +268,98 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("parsing Indexer on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}[0]").validExpression.evaluateSync[Any](ctx) should equal(1)
+  }
+
+  test(
+    "should not allow to call parameterless method in indexer on unknown that is not allowed in class definitions (IndexedType.OBJECT case)"
+  ) {
+    // we test here on non-(map, array, collection, string) object because those types handling is hardcoded in Indexer.getValueRef method and is quite safe
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownObject.value['productArity']", // productArity is not exposed method in ClassDefinitionSet
+      ).validExpression.evaluateSync[Any](ctx)
+    }
+  }
+
+  test(
+    "should allow to invoke not allowed parentless method in indexer on unknown when dynamicPropertyAccessAllowed=true"
+  ) {
+    parse[Any](
+      "#containerWithUnknownObject.value['productArity']",
+      dynamicPropertyAccessAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) shouldBe 2
+  }
+
+  test("should allow to call parameterless method in indexer on unknown that is allowed in class definitions") {
+    parse[AnyRef]("#containerWithUnknownObject.value['toString']").validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "SampleValue(1,)"
+  }
+
+  test(
+    "should allow to call parameterless method in indexer on unknown that is allowed in class definitions - reflective property accessor"
+  ) {
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any]("#containerWithUnknownObject.value['class']").validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test(
+    "should not allow to call parameterless method in indexer on unknown that is not allowed in class definitions - reflective property accessor"
+  ) {
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any]("#containerWithUnknownObject.value['getSomeHiddenGetter']").validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test("indexer access on unknown - static methods on objects case") {
+    parse[Any](
+      "#containerWithUnknownObjectWithStaticMethods.value['someAllowedParameterlessStaticMethod']"
+    ).validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "allowed"
+
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownObjectWithStaticMethods.value['someHiddenParameterlessStaticMethod']"
+      ).validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test("indexer access on unknown - static methods on class types case") {
+    parse[Any](
+      "#containerWithUnknownClassWithStaticMethods.value['someAllowedParameterlessStaticMethod']"
+    ).validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "allowed"
+
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownClassWithStaticMethods.value['someHiddenParameterlessStaticMethod']"
+      ).validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test("indexer access on unknown - array like case") {
+    parse[Any](
+      "#containerWithUnknownArray.value[0]"
+    ).validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "a"
+  }
+
+  test("projection access on unknown - array like case") {
+    parse[java.util.List[Object]](
+      "#containerWithUnknownArray.value.![#this.toString() + \"Val\"]"
+    ).validExpression
+      .evaluateSync[java.util.ArrayList[String]](ctx) should equal(util.Arrays.asList("aVal", "bVal", "cVal"))
+  }
+
+  test("selection access on unknown - array like case") {
+    parse[java.util.List[Object]](
+      "#containerWithUnknownArray.value.?[#this.toString() == \"b\"]"
+    ).validExpression
+      .evaluateSync[java.util.ArrayList[String]](ctx) should equal(util.Arrays.asList("b"))
   }
 
   test("parsing Selection on array") {
@@ -1512,7 +1611,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
 case class SampleObject(list: java.util.List[SampleValue])
 
-case class SampleValue(value: Int, anyObject: Any = "")
+case class SampleValue(value: Int, anyObject: Any = "") {
+
+  @Hidden
+  def getSomeHiddenGetter: String = {
+    "someHidden"
+  }
+
+}
 
 object SimpleEnum extends Enumeration {
   // we must explicitly define Value class to recognize if type is matching

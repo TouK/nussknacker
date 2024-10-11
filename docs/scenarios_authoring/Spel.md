@@ -238,6 +238,34 @@ If you need to invoke the same method in many places, probably the best solution
 | ------------                                                 | --------  | -------- |
 | `{1, 2, 3, 4}.?[#this > 1].![#this > 2 ? #this * 2 : #this]` | {2, 6, 8} | Double   |
 
+### Dynamic navigation
+
+When we deal with structures which schema is not known to Nussknacker (e.g. data from kafka topics without existing avro/json schema) we will end-up
+with `Unknown` type in designer. For such a type (`Unknown`) we allow dynamic-like access using `[]` operator to access nested fields/elements.
+
+Example `exampleObject` json-like variable
+```
+{
+    "someField": 123,
+    "someNestedObject": {
+        "someFieldInNestedObject": "value"
+    },
+    "someArrayWithObjects": [
+        {
+            "someFieldInObjectInArray": "value" 
+        }
+    ]
+}
+```
+
+can be accessed in e.g. in following ways:
+
+* `#exampleObjects['someField']`
+* `#exampleObjects['someNestedObject']['someFieldInNestedObject']`
+* `#exampleObjects['someArrayWithObjects'][0]['someFieldInObjectInArray']`
+
+Every unknown accessed field/element will produce `Unknown` data type which can be further navigated or [cast](#Casting) to a desired type.
+
 ### Type conversions
 
 It is possible to convert from a type to another type and this can be done by implicit and explicit conversion.
@@ -297,6 +325,7 @@ Available methods:
 - `canCastTo` - checks if a type can be cast to a given class.
 - `castTo` - casts a type to a given class or throws exception if type cannot be cast.
 - `castToOrNull` - casts a type to a given class or return null if type cannot be cast.
+
 
 ## Built-in helpers
 
@@ -389,3 +418,4 @@ On the other hand, formatter created using `#DATE_FORMAT.formatter()` method wil
 - `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
 
 For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).
+
