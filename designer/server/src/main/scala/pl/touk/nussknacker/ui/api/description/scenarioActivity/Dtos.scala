@@ -8,6 +8,7 @@ import io.circe
 import io.circe.generic.extras
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiDocumentation.dropNulls
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -586,6 +587,7 @@ object Dtos {
         scenarioVersionId: Option[Long],
         comment: ScenarioActivityComment,
         dateFinished: Option[Instant],
+        status: Option[String],
         errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
@@ -596,6 +598,7 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List(
+        status.map(AdditionalField("status", _)),
         dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
         errorMessage.map(e => AdditionalField("errorMessage", e)),
       ).flatten
@@ -607,20 +610,38 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         dateFinished: Option[Instant],
-        errorMessage: Option[String],
-    ): ScenarioActivity = ScenarioActivity(
-      id = id,
-      `type` = ScenarioActivityType.PerformedScheduledExecution,
-      user = user,
-      date = date,
-      scenarioVersionId = scenarioVersionId,
-      comment = None,
-      attachment = None,
-      additionalFields = List(
-        dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
-        errorMessage.map(error => AdditionalField("errorMessage", error)),
-      ).flatten
-    )
+        scheduleName: String,
+        status: ScheduledExecutionStatus,
+        createdAt: Instant,
+        nextRetryAt: Option[Instant],
+        retriesLeft: Option[Int],
+    ): ScenarioActivity = {
+      val humanReadableStatus = status match {
+        case ScheduledExecutionStatus.Scheduled               => "Scheduled"
+        case ScheduledExecutionStatus.Deployed                => "Deployed"
+        case ScheduledExecutionStatus.Finished                => "Execution finished"
+        case ScheduledExecutionStatus.Failed                  => "Execution failed"
+        case ScheduledExecutionStatus.DeploymentWillBeRetried => "Deployment will be retried"
+        case ScheduledExecutionStatus.DeploymentFailed        => "Deployment failed"
+      }
+      ScenarioActivity(
+        id = id,
+        `type` = ScenarioActivityType.PerformedScheduledExecution,
+        user = user,
+        date = date,
+        scenarioVersionId = scenarioVersionId,
+        comment = None,
+        attachment = None,
+        additionalFields = List(
+          Some(AdditionalField("status", humanReadableStatus)),
+          Some(AdditionalField("createdAt", createdAt.toString)),
+          dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
+          Some(AdditionalField("scheduleName", scheduleName)),
+          Some(AdditionalField("retriesLeft", retriesLeft.toString)),
+          nextRetryAt.map(nra => AdditionalField("nextRetryAt", nra.toString)),
+        ).flatten
+      )
+    }
 
     // Other/technical
 

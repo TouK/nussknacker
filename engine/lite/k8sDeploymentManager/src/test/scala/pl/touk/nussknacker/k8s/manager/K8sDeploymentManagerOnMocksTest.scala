@@ -11,9 +11,11 @@ import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
+  NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProvider,
-  ProcessingTypeDeployedScenariosProviderStub
+  ProcessingTypeDeployedScenariosProviderStub,
+  ScenarioActivityManager
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -72,6 +74,7 @@ class K8sDeploymentManagerOnMocksTest
       DeploymentManagerDependencies(
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
         new ProcessingTypeActionServiceStub,
+        NoOpScenarioActivityManager,
         system.dispatcher,
         system,
         SttpBackendStub.asynchronousFuture
