@@ -56,6 +56,14 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       )
   }
 
+  test("access dynamic field on unknown by indexing operator should return unknown") {
+    typeExpressionForcedType(
+      s"#unknown['foo']",
+      List("unknown" -> Unknown): _*
+    ).validValue.finalResult.typingResult shouldBe
+      Unknown
+  }
+
   test("detect proper List type with value") {
     typeExpression("{1,2}").validValue.finalResult.typingResult shouldBe
       typedListWithElementValues(Typed.typedClass[Int], List(1, 2).asJava)
@@ -186,6 +194,17 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
+    typer.typeExpression(parsed, validationCtx)
+  }
+
+  private def typeExpressionForcedType(
+      expr: String,
+      variablesTypes: (String, TypingResult)*
+  )(
+      implicit typer: Typer
+  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+    val parsed        = parser.parseExpression(expr)
+    val validationCtx = ValidationContext(variablesTypes.toMap)
     typer.typeExpression(parsed, validationCtx)
   }
 
