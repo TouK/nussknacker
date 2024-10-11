@@ -43,7 +43,7 @@
   * toBigIntegerOrNull
   * toBigDecimal
   * toBigDecimalOrNull
-* [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `toJson` and `toJsonString` conversions
+* [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `toJson` and `toJsonString` conversions (in the `#CONV` helper)
 * [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `#BASE64` helper to decode/encode Base64 values
 * [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside 
   indexer for Maps and Lists (for example `{1,2,3}[#otherList.remove(1) == null ? 0 : 0]`). This allowed executing 
