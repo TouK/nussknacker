@@ -104,14 +104,16 @@ lazy val publishSettings = Seq(
 
 def defaultMergeStrategy: String => MergeStrategy = {
   // remove JPMS module descriptors (a proper soultion would be to merge them)
-  case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
+  case PathList(ps @ _*) if ps.last == "module-info.class"               => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
-  case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
+  case PathList(ps @ _*) if ps.last == "NumberUtils.class"               => MergeStrategy.first
   // merge Netty version information files
-  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.concat
+  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties"    => MergeStrategy.concat
   // due to swagger-parser dependencies having different schema definitions (json-schema-validator and json-schema-core)
-  case PathList("draftv4", "schema")                                  => MergeStrategy.first
-  case x                                                              => MergeStrategy.defaultMergeStrategy(x)
+  case PathList("draftv4", "schema")                                     => MergeStrategy.first
+  // due to swagger-parser duplicated files with different implementation https://github.com/swagger-api/swagger-parser/issues/2126
+  case PathList("io", "swagger", "v3", "parser", "urlresolver", xs @ _*) => MergeStrategy.first
+  case x                                                                 => MergeStrategy.defaultMergeStrategy(x)
 }
 
 def designerMergeStrategy: String => MergeStrategy = {
