@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import java.lang.reflect.{Method, Modifier}
-import java.util.Optional
-import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
+import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
+import java.lang.reflect.{Field, Method, Modifier}
+import java.util.Optional
 import scala.collection.concurrent.TrieMap
 
 object propertyAccessors {
@@ -15,21 +16,69 @@ object propertyAccessors {
   // Order of accessors matters - property from first accessor that returns `true` from `canRead` will be chosen.
   // This general order can be overridden - each accessor can define target classes for which it will have precedence -
   // through the `getSpecificTargetClasses` method.
-  def configured(): Seq[PropertyAccessor] = {
+  def configured(
+      accessChecker: MethodAccessChecker
+  ): Seq[PropertyAccessor] = {
     Seq(
       MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
-      new ReflectivePropertyAccessor(),
-      NullPropertyAccessor,              // must be before other non-standard ones
-      ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
-      JavaOptionalOrNullPropertyAccessor,
-      PrimitiveOrWrappersPropertyAccessor,
-      StaticPropertyAccessor,
+      new CheckedReflectivePropertyAccessor(accessChecker),
+      NullPropertyAccessor,                                 // must be before other non-standard ones
+      new ScalaOptionOrNullPropertyAccessor(accessChecker), // must be before scalaPropertyAccessor
+      new JavaOptionalOrNullPropertyAccessor(accessChecker),
+      new PrimitiveOrWrappersPropertyAccessor(accessChecker),
+      new StaticPropertyAccessor(accessChecker),
       TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
-      NoParamMethodPropertyAccessor,
+      new NoParamMethodPropertyAccessor(accessChecker),
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor,
       MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
     )
+  }
+
+  class CheckedReflectivePropertyAccessor(accessChecker: MethodAccessChecker) extends ReflectivePropertyAccessor {
+
+    override def canRead(context: EvaluationContext, target: Any, name: String): Boolean = {
+      val canReadFromSupper = super.canRead(context, target, name)
+      // for access check we have to keep behaviour of the method consistent
+      // with the way in which ReflectivePropertyAccessor looks for member to use during read
+      if (canReadFromSupper && accessChecker != AllMethodsAllowed) {
+        val targetClass = computeTargetClass(target)
+        if (!(targetClass.isArray && name == "length")) {
+          findGetterMember(name, targetClass, target) match {
+            case Some(getterMethod) =>
+              accessChecker.checkAccessIfMethodFound(targetClass)(Some(getterMethod))
+            case None =>
+              findFieldMember(name, targetClass, target).foreach { field =>
+                accessChecker.checkAccessForMethodName(targetClass, field.getName, target.isInstanceOf[Class[_]])
+              }
+          }
+        }
+      }
+      canReadFromSupper
+    }
+
+    private def computeTargetClass(target: Any): Class[_] = {
+      target match {
+        case clazz: Class[_] => clazz
+        case _               => target.getClass
+      }
+    }
+
+    private def findGetterMember(propertyName: String, clazz: Class[_], target: Any): Option[Method] = {
+      Option(findGetterForProperty(propertyName, clazz, target.isInstanceOf[Class[_]])) match {
+        case None if target.isInstanceOf[Class[_]] =>
+          Option(findGetterForProperty(propertyName, target.getClass, false))
+        case opt => opt
+      }
+    }
+
+    private def findFieldMember(name: String, clazz: Class[_], target: Any): Option[Field] = {
+      Option(findField(name, clazz, target.isInstanceOf[Class[_]])) match {
+        case None if target.isInstanceOf[Class[_]] => Option(findField(name, target.getClass, false))
+        case opt                                   => opt
+      }
+    }
+
   }
 
   object NullPropertyAccessor extends PropertyAccessor with ReadOnly {
@@ -51,17 +100,21 @@ object propertyAccessors {
     This one is a bit tricky. We extend ReflectivePropertyAccessor, as it's the only sensible way to make it compilable,
     however it's not so easy to extend and in interpreted mode we skip original implementation
    */
-  object NoParamMethodPropertyAccessor extends ReflectivePropertyAccessor with ReadOnly with Caching {
+  class NoParamMethodPropertyAccessor(accessChecker: MethodAccessChecker)
+      extends ReflectivePropertyAccessor
+      with ReadOnly
+      with Caching {
 
     override def findGetterForProperty(propertyName: String, clazz: Class[_], mustBeStatic: Boolean): Method = {
       findMethodFromClass(propertyName, clazz).orNull
     }
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
-      )
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      accessChecker.checkAccessIfMethodFound(target) {
+        target.getMethods.find(m =>
+          !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
+        )
+      }
 
     override protected def invokeMethod(
         propertyName: String,
@@ -69,6 +122,7 @@ object propertyAccessors {
         target: Any,
         context: EvaluationContext
     ): AnyRef = {
+      // warning: the method is not called in case of access via optimized ReflectivePropertyAccessor!!!
       method.invoke(target)
     }
 
@@ -78,7 +132,11 @@ object propertyAccessors {
   // Spring bytecode generation fails when we try to invoke methods on primitives, so we
   // *do not* extend ReflectivePropertyAccessor and we force interpreted mode
   // TODO: figure out how to make bytecode generation work also in this case
-  object PrimitiveOrWrappersPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+  class PrimitiveOrWrappersPropertyAccessor(
+      accessChecker: MethodAccessChecker
+  ) extends PropertyAccessor
+      with ReadOnly
+      with Caching {
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
 
@@ -89,22 +147,28 @@ object propertyAccessors {
         context: EvaluationContext
     ): Any = method.invoke(target)
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
-      )
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      accessChecker.checkAccessIfMethodFound(target) {
+        target.getMethods.find(m =>
+          ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
+        )
+      }
 
   }
 
-  object StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
+  class StaticPropertyAccessor(
+      accessChecker: MethodAccessChecker
+  ) extends PropertyAccessor
+      with ReadOnly
+      with StaticMethodCaching {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target
-        .asInstanceOf[Class[_]]
-        .getMethods
-        .find(m => m.getParameterCount == 0 && m.getName == name && Modifier.isStatic(m.getModifiers))
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      accessChecker.checkAccessIfMethodFound(target, onlyStaticMethods = true) {
+        target
+          .asInstanceOf[Class[_]]
+          .getMethods
+          .find(m => m.getParameterCount == 0 && m.getName == name && Modifier.isStatic(m.getModifiers))
+      }
 
     override protected def invokeMethod(
         propertyName: String,
@@ -120,13 +184,17 @@ object propertyAccessors {
 
   // TODO: handle methods with multiple args or at least validate that they can't be called
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-  object ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+  class ScalaOptionOrNullPropertyAccessor(accessChecker: MethodAccessChecker)
+      extends PropertyAccessor
+      with ReadOnly
+      with Caching {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType)
-      )
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      accessChecker.checkAccessIfMethodFound(target) {
+        target.getMethods.find(m =>
+          m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType)
+        )
+      }
 
     override protected def invokeMethod(
         propertyName: String,
@@ -142,13 +210,17 @@ object propertyAccessors {
 
   // TODO: handle methods with multiple args or at least validate that they can't be called
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-  object JavaOptionalOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+  class JavaOptionalOrNullPropertyAccessor(accessChecker: MethodAccessChecker)
+      extends PropertyAccessor
+      with ReadOnly
+      with Caching {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        m.getParameterCount == 0 && m.getName == name && classOf[Optional[_]].isAssignableFrom(m.getReturnType)
-      )
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      accessChecker.checkAccessIfMethodFound(target) {
+        target.getMethods.find(m =>
+          m.getParameterCount == 0 && m.getName == name && classOf[Optional[_]].isAssignableFrom(m.getReturnType)
+        )
+      }
 
     override protected def invokeMethod(
         propertyName: String,
@@ -281,6 +353,70 @@ object propertyAccessors {
       throw new IllegalAccessException("Property is not writeable")
 
     override def canWrite(context: EvaluationContext, target: scala.Any, name: String) = false
+
+  }
+
+  sealed trait MethodAccessChecker {
+
+    def checkAccessIfMethodFound(targetClass: Class[_], onlyStaticMethods: Boolean = false)(
+        methodOpt: Option[Method]
+    ): Option[Method] = {
+      methodOpt.foreach(method => checkAccessForMethodName(targetClass, method.getName, onlyStaticMethods))
+      methodOpt
+    }
+
+    def checkAccessForMethodName(
+        targetClass: Class[_],
+        methodName: String,
+        onlyStaticMethods: Boolean
+    ): Unit = {
+      if (!methodAllowed(targetClass, methodName, onlyStaticMethods)) {
+        throw new IllegalStateException(
+          s"The $methodName method call on type ${targetClass.getSimpleName} is not allowed"
+        )
+      }
+    }
+
+    protected def methodAllowed(
+        targetClass: Class[_],
+        methodName: String,
+        onlyStaticMethods: Boolean
+    ): Boolean
+
+  }
+
+  object MethodAccessChecker {
+
+    def create(classDefinitionSet: ClassDefinitionSet, dynamicPropertyAccessAllowed: Boolean): MethodAccessChecker = {
+      if (!dynamicPropertyAccessAllowed) {
+        OnlyDefinedParameterlessMethodsAllowed(classDefinitionSet)
+      } else {
+        AllMethodsAllowed
+      }
+    }
+
+  }
+
+  object AllMethodsAllowed extends MethodAccessChecker {
+
+    override protected def methodAllowed(
+        targetClass: Class[_],
+        methodName: String,
+        onlyStaticMethods: Boolean
+    ): Boolean = true
+
+  }
+
+  final case class OnlyDefinedParameterlessMethodsAllowed(classDefinitionSet: ClassDefinitionSet)
+      extends MethodAccessChecker {
+
+    override protected def methodAllowed(
+        targetClass: Class[_],
+        methodName: String,
+        onlyStaticMethods: Boolean
+    ): Boolean = {
+      classDefinitionSet.isParameterlessMethodAllowed(targetClass, methodName, onlyStaticMethods)
+    }
 
   }
 

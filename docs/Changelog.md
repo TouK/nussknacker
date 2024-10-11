@@ -81,6 +81,7 @@
   * [#7058](https://github.com/TouK/nussknacker/pull/7058) Add missing Flink TypeInformation for better serialization
   * [#7097](https://github.com/TouK/nussknacker/pull/7097) Flink base types registration mechanism
 * [#7021](https://github.com/TouK/nussknacker/pull/7021) Definitions service can return definition without UI config
+* [#7010](https://github.com/TouK/nussknacker/pull/7010) Dynamic access allowed via indexer operator (`[]`) on expressions typed as `Unknown`
 
 ## 1.17
 

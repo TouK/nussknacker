@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.extension.{ExtensionAwareMethodsDiscovery, ExtensionsAwareMethodInvoker}
+import pl.touk.nussknacker.engine.spel.internal.propertyAccessors.MethodAccessChecker
 import pl.touk.nussknacker.engine.spel.{NuReflectiveMethodExecutor, internal}
 
 import java.lang.reflect.Method
@@ -93,7 +94,10 @@ object EvaluationContextPreparer {
       classDefinitionSet: ClassDefinitionSet
   ): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
-    val propertyAccessors = internal.propertyAccessors.configured()
+    val propertyAccessors =
+      internal.propertyAccessors.configured(
+        MethodAccessChecker.create(classDefinitionSet, expressionConfig.dynamicPropertyAccessAllowed)
+      )
     new EvaluationContextPreparer(
       classLoader,
       expressionConfig.globalImports,
