@@ -5,10 +5,10 @@ import { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "../../../h
 import { VariableSizeList } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
-import { alpha, Box, CircularProgress, styled } from "@mui/material";
+import { Box, CircularProgress, styled } from "@mui/material";
 import { useActivitiesSearch } from "./useActivitiesSearch";
 import { ActivitiesSearch } from "./ActivitiesSearch";
-import { blendLighten } from "../../../containers/theme/helpers";
+import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName } from "../../../reducers/selectors/graph";
@@ -21,13 +21,13 @@ const StyledVariableSizeList = styled(VariableSizeList)(({ theme }) => ({
         height: "0",
     },
     "::-webkit-scrollbar-track": {
-        background: blendLighten(theme.palette.background.paper, 0.5),
+        background: blendDarken(theme.palette.common.white, 0.75),
     },
     "::-webkit-scrollbar-thumb": {
-        background: alpha(theme.palette.background.paper, 0.85),
+        background: blendLighten(theme.palette.background.paper, 0.5),
     },
     "::-webkit-scrollbar-thumb:hover": {
-        background: alpha(theme.palette.background.paper, 0.85),
+        background: blendLighten(theme.palette.background.paper, 0.5),
     },
 }));
 
