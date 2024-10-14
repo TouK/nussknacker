@@ -401,10 +401,10 @@ class DeploymentServiceSpec
             _,
             _,
             _,
-            _,
             actionName,
             ScenarioComment.Available(content, _, _),
-            result
+            result,
+            _,
           ) =>
         actionName shouldBe "Custom action of MockDeploymentManager just before deployment"
         content shouldBe "With comment from DeploymentManager"

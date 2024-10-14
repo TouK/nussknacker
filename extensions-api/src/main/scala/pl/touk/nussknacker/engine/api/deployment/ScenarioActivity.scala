@@ -307,10 +307,10 @@ object ScenarioActivity {
       user: ScenarioUser,
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
-      dateFinished: Option[Instant],
       actionName: String,
       comment: ScenarioComment,
       result: DeploymentRelatedActivityResult,
+      dateFinished: Option[Instant],
   ) extends DeploymentRelatedActivity
 
 }

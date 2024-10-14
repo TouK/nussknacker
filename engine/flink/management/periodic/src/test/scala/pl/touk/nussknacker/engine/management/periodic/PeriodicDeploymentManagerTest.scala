@@ -381,8 +381,7 @@ class PeriodicDeploymentManagerTest
 
     val activities =
       f.periodicDeploymentManager.scenarioActivityHandling.managerSpecificScenarioActivities(idWithName).futureValue
-    val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(1),

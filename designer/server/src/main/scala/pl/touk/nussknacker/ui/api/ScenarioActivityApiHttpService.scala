@@ -476,10 +476,10 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersionId,
-            _,
             actionName,
             comment,
             result,
+            _,
           ) =>
         Dtos.ScenarioActivity.forCustomAction(
           id = scenarioActivityId.value,
