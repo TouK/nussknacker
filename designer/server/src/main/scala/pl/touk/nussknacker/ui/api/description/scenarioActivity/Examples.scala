@@ -230,7 +230,6 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           changes = "JIRA-12345, JIRA-32146",
-          errorMessage = None,
         ),
         ScenarioActivity.forCustomAction(
           id = UUID.fromString("33509d37-7657-4229-940f-b5736c82fb13"),
@@ -243,7 +242,8 @@ object Examples {
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
           actionName = "special_execution",
-          customIcon = Some("/assets/states/deploy-running-animated.svg")
+          customIcon = Some("/assets/states/deploy-running-animated.svg"),
+          errorMessage = None,
         )
       ),
     )

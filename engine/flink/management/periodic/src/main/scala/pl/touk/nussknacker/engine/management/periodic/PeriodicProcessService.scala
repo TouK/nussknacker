@@ -60,27 +60,27 @@ class PeriodicProcessService(
 
   def getScenarioActivitiesSpecificToPeriodicProcess(
       processIdWithName: ProcessIdWithName
-  ): Future[List[ScenarioActivity]] =
-    scheduledProcessesRepository
-      .getSchedulesState(processIdWithName.name)
-      .run
-      .map(_.groupedByPeriodicProcess)
-      .map(_.flatMap(_.deployments))
-      .map(_.map { deployment =>
-        ScenarioActivity.PerformedScheduledExecution(
-          scenarioId = ScenarioId(processIdWithName.id.value),
-          scenarioActivityId = ScenarioActivityId.random,
-          user = ScenarioUser.internalNuUser,
-          date = instantAtUTC(deployment.runAt),
-          scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
-          dateFinished = deployment.state.completedAt.map(instantAtUTC),
-          scheduleName = deployment.scheduleName.display,
-          scheduledExecutionStatus = scheduledExecutionStatus(deployment.state.status),
-          createdAt = instantAtUTC(deployment.createdAt),
-          nextRetryAt = deployment.nextRetryAt.map(instantAtUTC),
-          retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
-        )
-      }.toList.sortBy(_.date))
+  ): Future[List[ScenarioActivity]] = for {
+    schedulesState <- scheduledProcessesRepository.getSchedulesState(processIdWithName.name).run
+    groupedByProcess        = schedulesState.groupedByPeriodicProcess
+    deployments             = groupedByProcess.flatMap(_.deployments)
+    deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatus(d.state.status).map((d, _)))
+    activities = deploymentsWithStatuses.map { case (deployment, status) =>
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = ScenarioActivityId.random,
+        user = ScenarioUser.internalNuUser,
+        date = instantAtUTC(deployment.runAt),
+        scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
+        dateFinished = deployment.state.completedAt.map(instantAtUTC),
+        scheduleName = deployment.scheduleName.display,
+        scheduledExecutionStatus = status,
+        createdAt = instantAtUTC(deployment.createdAt),
+        nextRetryAt = deployment.nextRetryAt.map(instantAtUTC),
+        retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
+      )
+    }
+  } yield activities
 
   def schedule(
       schedule: ScheduleProperty,
@@ -520,20 +520,20 @@ class PeriodicProcessService(
 
   }
 
-  private def scheduledExecutionStatus(status: PeriodicProcessDeploymentStatus): ScheduledExecutionStatus = {
+  private def scheduledExecutionStatus(status: PeriodicProcessDeploymentStatus): Option[ScheduledExecutionStatus] = {
     status match {
       case PeriodicProcessDeploymentStatus.Scheduled =>
-        ScheduledExecutionStatus.Scheduled
+        None
       case PeriodicProcessDeploymentStatus.Deployed =>
-        ScheduledExecutionStatus.Deployed
+        None
       case PeriodicProcessDeploymentStatus.Finished =>
-        ScheduledExecutionStatus.Finished
+        Some(ScheduledExecutionStatus.Finished)
       case PeriodicProcessDeploymentStatus.Failed =>
-        ScheduledExecutionStatus.Failed
+        Some(ScheduledExecutionStatus.Failed)
       case PeriodicProcessDeploymentStatus.RetryingDeploy =>
-        ScheduledExecutionStatus.DeploymentWillBeRetried
+        Some(ScheduledExecutionStatus.DeploymentWillBeRetried)
       case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
-        ScheduledExecutionStatus.DeploymentFailed
+        Some(ScheduledExecutionStatus.DeploymentFailed)
     }
   }
 

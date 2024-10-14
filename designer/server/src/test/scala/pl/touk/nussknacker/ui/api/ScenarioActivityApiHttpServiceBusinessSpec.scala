@@ -329,7 +329,8 @@ class ScenarioActivityApiHttpServiceBusinessSpec
           )
         )
     }
-    "return SCENARIO_CREATED activity and activities returned by deployment manager, without failed activity" in {
+
+    "return SCENARIO_CREATED activity and activities returned by deployment manager, without failed non-batch activity" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -341,14 +342,14 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
-                state = ScenarioActivityState.Success,
                 dateFinished = Some(Instant.now()),
                 actionName = "Custom action handled by deployment manager",
                 comment = ScenarioComment.Available(
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
-                )
+                ),
+                result = DeploymentRelatedActivityResult.Success
               ),
               ScenarioActivity.CustomAction(
                 scenarioId = ScenarioId(123),
@@ -356,14 +357,14 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
-                state = ScenarioActivityState.Failure,
                 dateFinished = None,
                 actionName = "Custom action handled by deployment manager",
                 comment = ScenarioComment.Available(
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
-                )
+                ),
+                result = DeploymentRelatedActivityResult.Failure(None)
               )
             )
           )
@@ -402,6 +403,69 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |         {"name": "actionName", "value": "Custom action handled by deployment manager"}
                |       ],
                |       "type": "CUSTOM_ACTION"
+               |     }
+               |  ]
+               |}
+               |""".stripMargin
+          )
+        )
+    }
+
+    "return SCENARIO_CREATED activity and activities returned by deployment manager, with failed batch activity" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          MockableDeploymentManager.configureManagerSpecificScenarioActivities(
+            List(
+              ScenarioActivity.PerformedSingleExecution(
+                scenarioId = ScenarioId(123),
+                scenarioActivityId = ScenarioActivityId.random,
+                user = ScenarioUser(None, UserName("custom-user"), None, None),
+                date = clock.instant(),
+                scenarioVersionId = None,
+                dateFinished = None,
+                comment = ScenarioComment.Available(
+                  comment = "Immediate execution",
+                  lastModifiedByUserName = UserName("custom-user"),
+                  lastModifiedAt = clock.instant()
+                ),
+                result = DeploymentRelatedActivityResult.Success
+              )
+            )
+          )
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""
+               |{
+               |  "activities": [
+               |     {
+               |      "id": "${regexes.looseUuidRegex}",
+               |      "user": "admin",
+               |      "date": "${regexes.zuluDateRegex}",
+               |      "scenarioVersionId": 1,
+               |      "additionalFields": [],
+               |      "type": "SCENARIO_CREATED"
+               |     },
+               |     {
+               |       "id": "${regexes.looseUuidRegex}",
+               |       "user": "custom-user",
+               |       "date": "${regexes.zuluDateRegex}",
+               |       "comment": {
+               |         "content": {
+               |           "value": "Immediate execution",
+               |           "status": "AVAILABLE"
+               |         },
+               |         "lastModifiedBy": "custom-user",
+               |         "lastModifiedAt": "${regexes.zuluDateRegex}"
+               |       },
+               |       "additionalFields": [],
+               |       "type": "PERFORMED_SINGLE_EXECUTION"
                |     }
                |  ]
                |}

@@ -626,8 +626,6 @@ object Dtos {
         retriesLeft: Option[Int],
     ): ScenarioActivity = {
       val humanReadableStatus = scheduledExecutionStatus match {
-        case ScheduledExecutionStatus.Scheduled               => "Scheduled"
-        case ScheduledExecutionStatus.Deployed                => "Deployed"
         case ScheduledExecutionStatus.Finished                => "Execution finished"
         case ScheduledExecutionStatus.Failed                  => "Execution failed"
         case ScheduledExecutionStatus.DeploymentWillBeRetried => "Deployment will be retried"
@@ -660,7 +658,6 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         changes: String,
-        errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.AutomaticUpdate,
@@ -670,9 +667,8 @@ object Dtos {
       comment = None,
       attachment = None,
       additionalFields = List(
-        Some(AdditionalField("changes", changes)),
-        errorMessage.map(e => AdditionalField("errorMessage", e)),
-      ).flatten
+        AdditionalField("changes", changes),
+      ),
     )
 
     def forCustomAction(
@@ -683,6 +679,7 @@ object Dtos {
         comment: ScenarioActivityComment,
         actionName: String,
         customIcon: Option[String],
+        errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.CustomAction,
@@ -692,8 +689,9 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List(
-        AdditionalField("actionName", actionName),
-      ),
+        Some(AdditionalField("actionName", actionName)),
+        errorMessage.map(e => AdditionalField("errorMessage", e)),
+      ).flatten,
       overrideIcon = customIcon,
     )
 

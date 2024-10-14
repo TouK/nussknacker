@@ -101,14 +101,14 @@ class MockDeploymentManager(
           user = ScenarioUser.internalNuUser,
           date = Instant.now(),
           scenarioVersionId = Some(ScenarioVersionId.from(processVersion.versionId)),
-          state = ScenarioActivityState.Success,
           dateFinished = Some(Instant.now()),
-          actionName = "Custom action of MockDeploymentManager",
+          actionName = "Custom action of MockDeploymentManager just before deployment",
           comment = ScenarioComment.Available(
-            comment = "???",
+            comment = "With comment from DeploymentManager",
             lastModifiedByUserName = ScenarioUser.internalNuUser.name,
             lastModifiedAt = Instant.now()
-          )
+          ),
+          result = DeploymentRelatedActivityResult.Success,
         )
       )
       externalDeploymentId <- this.synchronized {
@@ -118,20 +118,6 @@ class MockDeploymentManager(
           .lastOption
           .getOrElse(Future.successful(None))
       }
-      _ <- scenarioActivityManager.modifyActivity(
-        customActivityId,
-        {
-          case customActionActivity: ScenarioActivity.CustomAction =>
-            customActionActivity.copy(
-              comment = ScenarioComment.Available(
-                comment = s"With successfully updated comment",
-                lastModifiedByUserName = ScenarioUser.internalNuUser.name,
-                lastModifiedAt = Instant.now()
-              )
-            )
-          case other => other
-        }
-      )
     } yield externalDeploymentId
   }
 

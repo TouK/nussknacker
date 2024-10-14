@@ -260,7 +260,6 @@ class DBProcessRepository(
           date = Instant.now(),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
           changes = automaticProcessUpdateAction.migrationsApplies.map(_.description).mkString(", "),
-          errorMessage = None,
         )
     )
   }

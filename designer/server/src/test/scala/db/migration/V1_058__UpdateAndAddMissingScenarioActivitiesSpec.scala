@@ -204,7 +204,6 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
           changes = """feature A
               |feature B
               |feature C""".stripMargin,
-          errorMessage = None,
         )
       )
     }
@@ -254,7 +253,6 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
           changes = """feature A
               |feature B
               |feature C""".stripMargin,
-          errorMessage = None,
         )
       )
     }

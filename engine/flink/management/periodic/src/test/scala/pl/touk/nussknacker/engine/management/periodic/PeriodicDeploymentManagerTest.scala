@@ -397,19 +397,6 @@ class PeriodicDeploymentManagerTest
         retriesLeft = None,
         nextRetryAt = None
       ),
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
-        scenarioActivityId = secondActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = secondActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(42)),
-        dateFinished = secondActivity.dateFinished,
-        scheduleName = "[default]",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Scheduled,
-        createdAt = secondActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      )
     )
   }
 

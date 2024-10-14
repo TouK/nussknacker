@@ -106,7 +106,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
         comment = Some(s"Very important change $expectedOldCommentIdForHeadActivity"),
         attachmentId = None,
         finishedAt = None,
-        state = Some("IN_PROGRESS"),
+        state = Some("FINISHED"),
         errorMessage = None,
         buildInfo = None,
         additionalProperties = AdditionalProperties.empty.properties.asJson.noSpaces,
@@ -123,9 +123,9 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            state = ScenarioActivityState.InProgress,
             dateFinished = None,
-            comment = Available("Deployment with scenario fix", user.name, date)
+            comment = Available("Deployment with scenario fix", user.name, date),
+            result = DeploymentRelatedActivityResult.Success,
           )
       )
     }
@@ -140,9 +140,9 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            state = ScenarioActivityState.InProgress,
             dateFinished = None,
-            comment = Available("I'm canceling this scenario, it causes problems", user.name, date)
+            comment = Available("I'm canceling this scenario, it causes problems", user.name, date),
+            result = DeploymentRelatedActivityResult.Success,
           )
       )
     }
@@ -185,9 +185,9 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            state = ScenarioActivityState.InProgress,
             dateFinished = None,
-            comment = Available("Paused because marketing campaign is paused for now", user.name, date)
+            comment = Available("Paused because marketing campaign is paused for now", user.name, date),
+            result = DeploymentRelatedActivityResult.Success,
           )
       )
     }
@@ -224,7 +224,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           comment = Some("Rename: [marketing-campaign] -> [marketing-campaign-plus]"),
           attachmentId = None,
           finishedAt = None,
-          state = Some("IN_PROGRESS"),
+          state = Some("FINISHED"),
           errorMessage = None,
           buildInfo = None,
           additionalProperties = "{}"
@@ -242,10 +242,9 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            state = ScenarioActivityState.InProgress,
             dateFinished = None,
-            errorMessage = None,
-            comment = Available("Deployed at the request of business", user.name, date)
+            comment = Available("Deployed at the request of business", user.name, date),
+            result = DeploymentRelatedActivityResult.Success,
           )
       )
     }
@@ -260,10 +259,10 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            state = ScenarioActivityState.InProgress,
             dateFinished = None,
             actionName = "special action",
-            comment = Available("Special action needed to be executed", user.name, date)
+            comment = Available("Special action needed to be executed", user.name, date),
+            result = DeploymentRelatedActivityResult.Success,
           )
       )
     }
@@ -411,7 +410,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
     createdAt = now,
     performedAt = None,
     actionName = scenarioActionName.value,
-    state = "IN_PROGRESS",
+    state = "FINISHED",
     failureMessage = None,
     commentId = commentId,
     buildInfo = None

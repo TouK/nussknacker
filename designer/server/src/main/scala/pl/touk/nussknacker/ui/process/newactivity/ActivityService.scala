@@ -75,12 +75,12 @@ class ActivityService(
               user = loggedUser.scenarioUser,
               date = now,
               scenarioVersionId = Some(ScenarioVersionId.from(scenarioGraphVersionId)),
-              state = ScenarioActivityState.Success,
               dateFinished = Some(clock.instant()),
               comment = commentOpt match {
                 case Some(comment) => ScenarioComment.Available(comment.content, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
               },
+              result = DeploymentRelatedActivityResult.Success,
             )
           )
         )
