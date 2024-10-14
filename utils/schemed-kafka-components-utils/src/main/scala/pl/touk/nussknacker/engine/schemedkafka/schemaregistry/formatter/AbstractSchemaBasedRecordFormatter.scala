@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter
 
+import cats.data.Validated
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json}
 import io.confluent.kafka.schemaregistry.ParsedSchema
@@ -7,11 +8,15 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, UnspecializedTopicName, serialization}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  IntSchemaId,
+  JsonTypes,
   SchemaId,
   SchemaIdFromMessageExtractor,
-  SchemaRegistryClient
+  SchemaRegistryClient,
+  SchemaWithMetadata
 }
 
 import java.nio.charset.StandardCharsets
@@ -106,9 +111,56 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
           .map(keyJson => readRecordKeyMessage(keySchemaOpt, topic, keyJson))
           .getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid avro key"))
       }
-      val valueSchemaOpt = record.valueSchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
-      val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)
-      (keyBytes, valueBytes)
+      schemaRegistryClient.getFreshSchema(
+        UnspecializedTopicName.apply(topic.name),
+        record.valueSchemaId.map(_.asInt),
+        isKey = false
+      ) match {
+        case Validated.Valid(a) =>
+          val valueSchemaOpt = Option(a.schema)
+          val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)
+          (keyBytes, valueBytes)
+        case Validated.Invalid(e) =>
+          val valueSchemaOpt =
+            record.valueSchemaId match {
+              case Some(IntSchemaId(JsonTypes.Json.value)) =>
+                Option(
+                  SchemaWithMetadata(
+                    OpenAPIJsonSchema("""{
+              |  "anyOf": [{
+              |      "type": "object",
+              |      "properties": {
+              |        "_metadata": {
+              |          "oneOf": [
+              |            {"type": "null"},
+              |            {"type": "object"}
+              |          ]
+              |        },
+              |        "_w": {"type": "boolean"},
+              |        "message": {"type": "object"}
+              |      }
+              |    },
+              |    {"type": "object"}]
+              |}""".stripMargin),
+                    SchemaId.fromInt(JsonTypes.Json.value)
+                  ).schema
+                )
+              case Some(IntSchemaId(JsonTypes.Plain.value)) =>
+                Option(
+                  SchemaWithMetadata(
+                    OpenAPIJsonSchema("""{"type": "string"}"""),
+                    SchemaId.fromInt(JsonTypes.Plain.value)
+                  ).schema
+                )
+              case None =>
+                Option(SchemaWithMetadata(OpenAPIJsonSchema("""{}"""), SchemaId.fromInt(JsonTypes.Json.value)).schema)
+              case _ => throw new IllegalStateException(e)
+            }
+
+          val valueBytes = readValueMessage(valueSchemaOpt, topic, value)
+          (keyBytes, valueBytes)
+      }
+
     }
 
     record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)

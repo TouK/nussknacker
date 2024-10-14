@@ -156,7 +156,14 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
     val encoder   = new ToJsonSchemaBasedEncoder(mode)
     val rawSchema = schema.cast().rawSchema()
-    (value: Any) => encoder.encodeOrError(value, rawSchema)
+    (value: Any) => {
+      // TODO: For ad-hoc test we create object { "Value" = userInputObject }, so we should go one level deeper
+      // should do it in a better way
+//      if (value.asInstanceOf[Map[String, Map[String, Any]]].head._1.equals("Value")) {
+//        encoder.encodeOrError(value.asInstanceOf[Map[String, Map[String, Any]]].head._2, rawSchema)
+//      } else
+      encoder.encodeOrError(value, rawSchema)
+    }
   }
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
