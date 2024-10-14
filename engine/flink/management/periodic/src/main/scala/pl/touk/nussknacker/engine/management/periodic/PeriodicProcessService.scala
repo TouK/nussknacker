@@ -74,7 +74,6 @@ class PeriodicProcessService(
           date = instantAtUTC(deployment.runAt),
           scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
           dateFinished = deployment.state.completedAt.map(instantAtUTC),
-          state = scenarioActivityState(deployment.state.status),
           scheduleName = deployment.scheduleName.display,
           scheduledExecutionStatus = scheduledExecutionStatus(deployment.state.status),
           createdAt = instantAtUTC(deployment.createdAt),
@@ -519,23 +518,6 @@ class PeriodicProcessService(
     def getStatus(deploymentId: PeriodicProcessDeploymentId): Option[StatusDetails] =
       runtimeStatusesMap.get(DeploymentId(deploymentId.toString))
 
-  }
-
-  private def scenarioActivityState(status: PeriodicProcessDeploymentStatus): ScenarioActivityState = {
-    status match {
-      case PeriodicProcessDeploymentStatus.Scheduled =>
-        ScenarioActivityState.InProgress
-      case PeriodicProcessDeploymentStatus.Deployed =>
-        ScenarioActivityState.InProgress
-      case PeriodicProcessDeploymentStatus.Finished =>
-        ScenarioActivityState.Success
-      case PeriodicProcessDeploymentStatus.Failed =>
-        ScenarioActivityState.Failure
-      case PeriodicProcessDeploymentStatus.RetryingDeploy =>
-        ScenarioActivityState.Failure
-      case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
-        ScenarioActivityState.Failure
-    }
   }
 
   private def scheduledExecutionStatus(status: PeriodicProcessDeploymentStatus): ScheduledExecutionStatus = {

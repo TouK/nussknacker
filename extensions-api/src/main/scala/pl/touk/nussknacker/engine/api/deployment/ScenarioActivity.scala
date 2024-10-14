@@ -95,12 +95,14 @@ object ScheduledExecutionStatus extends Enum[ScheduledExecutionStatus] {
   override def values: immutable.IndexedSeq[ScheduledExecutionStatus] = findValues
 }
 
-sealed trait ScenarioActivityState
+sealed trait ScenarioActivityState extends EnumEntry
 
-object ScenarioActivityState {
+object ScenarioActivityState extends Enum[ScenarioActivityState] {
   case object InProgress extends ScenarioActivityState
-  case object Success    extends ScenarioActivityState
   case object Failure    extends ScenarioActivityState
+  case object Success    extends ScenarioActivityState
+
+  override def values: immutable.IndexedSeq[ScenarioActivityState] = findValues
 }
 
 sealed trait ScenarioActivity {
@@ -109,18 +111,6 @@ sealed trait ScenarioActivity {
   def user: ScenarioUser
   def date: Instant
   def scenarioVersionId: Option[ScenarioVersionId]
-  def stateOpt: Option[ScenarioActivityState]
-  def dateFinished: Option[Instant]
-}
-
-sealed trait StatelessScenarioActivity extends ScenarioActivity {
-  def stateOpt: Option[ScenarioActivityState] = None
-  def dateFinished: Option[Instant]           = None
-}
-
-sealed trait StatefulScenarioActivity extends ScenarioActivity {
-  def state: ScenarioActivityState
-  def stateOpt: Option[ScenarioActivityState] = Some(state)
 }
 
 object ScenarioActivity {
@@ -131,7 +121,7 @@ object ScenarioActivity {
       user: ScenarioUser,
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   final case class ScenarioArchived(
       scenarioId: ScenarioId,
@@ -139,7 +129,7 @@ object ScenarioActivity {
       user: ScenarioUser,
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   final case class ScenarioUnarchived(
       scenarioId: ScenarioId,
@@ -147,7 +137,7 @@ object ScenarioActivity {
       user: ScenarioUser,
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   // Scenario deployments
 
@@ -160,7 +150,7 @@ object ScenarioActivity {
       state: ScenarioActivityState,
       dateFinished: Option[Instant],
       comment: ScenarioComment,
-  ) extends StatefulScenarioActivity
+  ) extends ScenarioActivity
 
   final case class ScenarioPaused(
       scenarioId: ScenarioId,
@@ -171,7 +161,7 @@ object ScenarioActivity {
       state: ScenarioActivityState,
       dateFinished: Option[Instant],
       comment: ScenarioComment,
-  ) extends StatefulScenarioActivity
+  ) extends ScenarioActivity
 
   final case class ScenarioCanceled(
       scenarioId: ScenarioId,
@@ -182,7 +172,7 @@ object ScenarioActivity {
       state: ScenarioActivityState,
       dateFinished: Option[Instant],
       comment: ScenarioComment,
-  ) extends StatefulScenarioActivity
+  ) extends ScenarioActivity
 
   // Scenario modifications
 
@@ -194,7 +184,7 @@ object ScenarioActivity {
       previousScenarioVersionId: Option[ScenarioVersionId],
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   final case class ScenarioNameChanged(
       scenarioId: ScenarioId,
@@ -204,7 +194,7 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       oldName: String,
       newName: String,
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   final case class CommentAdded(
       scenarioId: ScenarioId,
@@ -213,7 +203,7 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   final case class AttachmentAdded(
       scenarioId: ScenarioId,
@@ -222,7 +212,7 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       attachment: ScenarioAttachment,
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   final case class ChangedProcessingMode(
       scenarioId: ScenarioId,
@@ -232,7 +222,7 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       from: ProcessingMode,
       to: ProcessingMode,
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   // Migration between environments
 
@@ -246,7 +236,7 @@ object ScenarioActivity {
       sourceUser: UserName,
       sourceScenarioVersionId: Option[ScenarioVersionId],
       targetEnvironment: Option[Environment],
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   final case class OutgoingMigration(
       scenarioId: ScenarioId,
@@ -255,7 +245,7 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       destinationEnvironment: Environment,
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   // Batch
 
@@ -269,7 +259,7 @@ object ScenarioActivity {
       comment: ScenarioComment,
       dateFinished: Option[Instant],
       errorMessage: Option[String],
-  ) extends StatefulScenarioActivity
+  ) extends ScenarioActivity
 
   final case class PerformedScheduledExecution(
       scenarioId: ScenarioId,
@@ -277,14 +267,13 @@ object ScenarioActivity {
       user: ScenarioUser,
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
-      state: ScenarioActivityState,
+      scheduledExecutionStatus: ScheduledExecutionStatus,
       dateFinished: Option[Instant],
       scheduleName: String,
-      scheduledExecutionStatus: ScheduledExecutionStatus,
       createdAt: Instant,
       nextRetryAt: Option[Instant],
       retriesLeft: Option[Int],
-  ) extends StatefulScenarioActivity
+  ) extends ScenarioActivity
 
   // Other/technical
 
@@ -296,7 +285,7 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       changes: String,
       errorMessage: Option[String],
-  ) extends StatelessScenarioActivity
+  ) extends ScenarioActivity
 
   final case class CustomAction(
       scenarioId: ScenarioId,
@@ -308,6 +297,6 @@ object ScenarioActivity {
       dateFinished: Option[Instant],
       actionName: String,
       comment: ScenarioComment,
-  ) extends StatefulScenarioActivity
+  ) extends ScenarioActivity
 
 }

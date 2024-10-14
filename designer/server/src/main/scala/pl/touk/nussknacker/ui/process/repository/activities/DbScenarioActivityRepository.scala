@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
+import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 
 import java.sql.Timestamp
 import java.time.{Clock, Instant}
@@ -460,28 +461,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       additionalProperties: AdditionalProperties = AdditionalProperties.empty,
   ): ScenarioActivityEntityData = {
     val now = Timestamp.from(clock.instant())
-    val activityType = scenarioActivity match {
-      case _: ScenarioActivity.ScenarioCreated             => ScenarioActivityType.ScenarioCreated
-      case _: ScenarioActivity.ScenarioArchived            => ScenarioActivityType.ScenarioArchived
-      case _: ScenarioActivity.ScenarioUnarchived          => ScenarioActivityType.ScenarioUnarchived
-      case _: ScenarioActivity.ScenarioDeployed            => ScenarioActivityType.ScenarioDeployed
-      case _: ScenarioActivity.ScenarioPaused              => ScenarioActivityType.ScenarioPaused
-      case _: ScenarioActivity.ScenarioCanceled            => ScenarioActivityType.ScenarioCanceled
-      case _: ScenarioActivity.ScenarioModified            => ScenarioActivityType.ScenarioModified
-      case _: ScenarioActivity.ScenarioNameChanged         => ScenarioActivityType.ScenarioNameChanged
-      case _: ScenarioActivity.CommentAdded                => ScenarioActivityType.CommentAdded
-      case _: ScenarioActivity.AttachmentAdded             => ScenarioActivityType.AttachmentAdded
-      case _: ScenarioActivity.ChangedProcessingMode       => ScenarioActivityType.ChangedProcessingMode
-      case _: ScenarioActivity.IncomingMigration           => ScenarioActivityType.IncomingMigration
-      case _: ScenarioActivity.OutgoingMigration           => ScenarioActivityType.OutgoingMigration
-      case _: ScenarioActivity.PerformedSingleExecution    => ScenarioActivityType.PerformedSingleExecution
-      case _: ScenarioActivity.PerformedScheduledExecution => ScenarioActivityType.PerformedScheduledExecution
-      case _: ScenarioActivity.AutomaticUpdate             => ScenarioActivityType.AutomaticUpdate
-      case activity: ScenarioActivity.CustomAction         => ScenarioActivityType.CustomAction(activity.actionName)
-    }
     ScenarioActivityEntityData(
       id = -1,
-      activityType = activityType,
+      activityType = scenarioActivity.activityType,
       scenarioId = ProcessId(scenarioActivity.scenarioId.value),
       activityId = scenarioActivity.scenarioActivityId,
       userId = scenarioActivity.user.id.map(_.value),
@@ -494,7 +476,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioVersion = scenarioActivity.scenarioVersionId,
       comment = comment,
       attachmentId = attachmentId,
-      finishedAt = scenarioActivity.dateFinished.map(Timestamp.from),
+      finishedAt = scenarioActivity.dateFinishedOpt.map(Timestamp.from),
       state = toProcessActionState(scenarioActivity.stateOpt),
       errorMessage = errorMessage,
       buildInfo = buildInfo,
@@ -920,7 +902,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
-          state = state,
           dateFinished = entity.finishedAt.map(_.toInstant),
           scheduleName = scheduleName,
           scheduledExecutionStatus = scheduledExecutionStatus,

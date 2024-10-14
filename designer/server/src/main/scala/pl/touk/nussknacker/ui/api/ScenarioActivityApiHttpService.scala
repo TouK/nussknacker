@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
 import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
+import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 import sttp.model.MediaType
 
 import java.io.ByteArrayInputStream
@@ -232,14 +233,13 @@ class ScenarioActivityApiHttpService(
         // todo NU-1772
         //  The API endpoint returning scenario activities does not have support for filtering at the moment.
         //  We made a decision to not display in GUI (and not return from API endpoint) those stateful activities, that are not successful
-        combinedSuccessfulActivities = combinedActivities.filter {
-          case _: StatelessScenarioActivity => true
-          case activity: StatefulScenarioActivity =>
-            activity.state match {
-              case ScenarioActivityState.Success    => true
-              case ScenarioActivityState.Failure    => false
-              case ScenarioActivityState.InProgress => false
-            }
+        combinedSuccessfulActivities = combinedActivities.filter { activity =>
+          activity.stateOpt match {
+            case None                                   => true
+            case Some(ScenarioActivityState.Success)    => true
+            case Some(ScenarioActivityState.Failure)    => false
+            case Some(ScenarioActivityState.InProgress) => false
+          }
         }
         sortedResult = combinedSuccessfulActivities.map(toDto).toList.sortBy(_.date)
       } yield sortedResult
@@ -433,10 +433,9 @@ class ScenarioActivityApiHttpService(
             user,
             date,
             scenarioVersionId,
-            _,
+            scheduledExecutionStatus,
             dateFinished,
             scheduleName,
-            scheduledExecutionStatus,
             createdAt,
             nextRetryAt,
             retriesLeft,
