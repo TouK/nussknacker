@@ -55,10 +55,11 @@
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
   - shorter message in logs
 * [#6766](https://github.com/TouK/nussknacker/pull/6766) Scenario labels support - you can assign labels to scenarios and use them to filter the scenario list
-* [#6176](https://github.com/TouK/nussknacker/pull/6176) [#6996](https://github.com/TouK/nussknacker/pull/6996) Update most dependencies to latest versions, most important ones:
+* [#6176](https://github.com/TouK/nussknacker/pull/6176) [#6996](https://github.com/TouK/nussknacker/pull/6996) [7012](https://github.com/TouK/nussknacker/pull/7012) Update most dependencies to latest versions, most important ones:
   * Jackson 2.15.4 -> 2.17.2
   * cats 2.10 -> 2.12
   * Avro 1.11.3 -> 1.11.4
+  * swagger-parser 2.1.15 -> 2.1.22
 * [#6805](https://github.com/TouK/nussknacker/pull/6805) Support for Flink 1.19.1
 * Scenario activities mechanism replacing old process actions:
   * [#6822](https://github.com/TouK/nussknacker/pull/6822), [#6929](https://github.com/TouK/nussknacker/pull/6929)
