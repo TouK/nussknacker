@@ -7,7 +7,7 @@ import net.ceedubs.ficus.readers.EnumerationReader._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.kafka.exception.KafkaErrorTopicInitializer
+import pl.touk.nussknacker.engine.kafka.exception.{DefaultKafkaErrorTopicInitializer, KafkaErrorTopicInitializer}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter._
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -19,7 +19,7 @@ class KafkaErrorTopicInitializerTest extends AnyFunSuite with KafkaSpec with Mat
     val engineConfig = config
       .withValue("exceptionHandlingConfig.topic", fromAnyRef(topic))
       .as[KafkaInterpreterConfig]
-    new KafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig)
+    new DefaultKafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig)
   }
 
   test("should create topic if not exists") {

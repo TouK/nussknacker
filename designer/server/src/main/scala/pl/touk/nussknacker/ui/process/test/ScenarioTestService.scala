@@ -2,14 +2,13 @@ package pl.touk.nussknacker.ui.process.test
 
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.CanBeSubclassDeterminer
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -48,15 +47,22 @@ class ScenarioTestService(
   def testParametersDefinition(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
-      isFragment: Boolean,
-  )(implicit user: LoggedUser): List[UISourceParameters] = {
+      isFragment: Boolean
+                              )(implicit user: LoggedUser): Map[String, List[Parameter]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     testInfoProvider
       .getTestParameters(processVersion, canonical)
+  }
+
+  def testUISourceParametersDefinition(
+                                        scenarioGraph: ScenarioGraph,
+                                        processVersion: ProcessVersion,
+                                        isFragment: Boolean
+                                      )(implicit user: LoggedUser): List[UISourceParameters] =
+    testParametersDefinition(scenarioGraph, processVersion, isFragment)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
       .map { assignUserFriendlyEditor }
       .toList
-  }
 
   def generateData(
       scenarioGraph: ScenarioGraph,

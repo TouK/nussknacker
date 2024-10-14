@@ -3,7 +3,7 @@ import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../
 
 export type ActionValues = Record<string, Expression>;
 
-export const GenericActionFormContext = createContext<{
+export const AdhocTestingFormContext = createContext<{
     value: ActionValues;
     setValue: Dispatch<SetStateAction<ActionValues>>;
     parameters: UIParameter[];

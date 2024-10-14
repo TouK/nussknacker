@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.functions.ConversionUtils.{stringToBigInteger, stringToBoolean}
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
+import pl.touk.nussknacker.engine.util.json.{JsonUtils, ToJsonEncoder}
 
 import scala.util.Try
 
@@ -137,6 +138,30 @@ trait ConversionUtils extends HideToString {
     case v: Number               => Try(new java.math.BigDecimal(v.toString)).getOrElse(null)
     case _                       => null
   }
+
+  @Documentation(description = "Convert String value to JSON")
+  def toJson(@ParamName("value") value: String): Any = {
+    toJsonEither(value).toTry.get
+  }
+
+  @Documentation(description = "Convert String value to JSON or null in case of failure")
+  def toJsonOrNull(@ParamName("value") value: String): Any = {
+    toJsonEither(value).getOrElse(null)
+  }
+
+  @Documentation(description = "Convert JSON to String")
+  def toJsonString(@ParamName("value") value: Any): String = {
+    jsonEncoder.encode(value).noSpaces
+  }
+
+  private def toJsonEither(value: String): Either[Throwable, Any] = {
+    io.circe.parser.parse(value) match {
+      case Right(json) => Right(JsonUtils.jsonToAny(json))
+      case Left(ex)    => Left(new IllegalArgumentException(s"Cannot convert [$value] to JSON", ex))
+    }
+  }
+
+  private lazy val jsonEncoder = new ToJsonEncoder(true, this.getClass.getClassLoader)
 
 }
 
