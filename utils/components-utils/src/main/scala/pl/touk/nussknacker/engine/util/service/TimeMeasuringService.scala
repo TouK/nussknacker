@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.service
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.Service
+import pl.touk.nussknacker.engine.api.{Lifecycle, Service}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.SafeLazyValues
 import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
@@ -11,11 +11,12 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-trait TimeMeasuringService { self: Service =>
+trait TimeMeasuringService extends Lifecycle { self: Service =>
 
   protected var timeMeasurement: AsyncExecutionTimeMeasurement = _
 
   override def open(context: EngineRuntimeContext): Unit = {
+    super.open(context)
     timeMeasurement = new AsyncExecutionTimeMeasurement(context, serviceName, tags)
   }
 
