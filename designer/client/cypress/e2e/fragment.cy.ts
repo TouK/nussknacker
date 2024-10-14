@@ -15,7 +15,7 @@ describe("Fragment", () => {
         cy.viewport("macbook-16");
     });
 
-    it.only("should allow adding input parameters and display used fragment graph in modal", () => {
+    it("should allow adding input parameters and display used fragment graph in modal", () => {
         const toggleSettings = (fieldNumber: number) => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
@@ -431,7 +431,7 @@ describe("Fragment", () => {
         cy.layoutScenario();
 
         cy.get('[joint-selector="layers"]').matchImage({
-            maxmaxDiffThreshold: 0.015,
+            maxDiffThreshold: 0.015,
             screenshotConfig: { padding: 16 },
         });
     });
