@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.schemedkafka.source
 
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.avro.generic.GenericRecord
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
@@ -25,11 +26,12 @@ import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
+import pl.touk.nussknacker.engine.kafka.{PreparedKafkaTopic, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
@@ -69,16 +71,65 @@ class UniversalKafkaSourceFactory(
           (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: _,
           state
         ) =>
-      val preparedTopic = prepareTopic(topic)
+      val preparedTopic    = prepareTopic(topic)
+      val topicsWithSchema = topicSelectionStrategy.getTopics(schemaRegistryClient)
+      val hasSchema: Boolean =
+        topicsWithSchema.exists(topics => topics.contains(UnspecializedTopicName(preparedTopic.prepared.name)))
       val versionOption = parseVersionOption(version)
+
       val valueValidationResult =
-        state match {
-          case Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(results)) => results
-          case _ =>
-            determineSchemaAndType(
-              prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
-              Some(schemaVersionParamName)
-            )
+        if (hasSchema) {
+          state match {
+            case Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(results)) => results
+            case _ =>
+              determineSchemaAndType(
+                prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
+                Some(schemaVersionParamName)
+              )
+          }
+        } else {
+          versionOption match {
+            case DynamicSchemaVersion(JsonTypes.Json) =>
+              Valid(
+                (
+                  Some(
+                    RuntimeSchemaData[ParsedSchema](
+                      new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("""{
+                      |  "anyOf": [{
+                      |      "type": "object",
+                      |      "properties": {
+                      |        "_metadata": {
+                      |          "oneOf": [
+                      |            {"type": "null"},
+                      |            {"type": "object"}
+                      |          ]
+                      |        },
+                      |        "_w": {"type": "boolean"},
+                      |        "message": {"type": "object"}
+                      |      }
+                      |    },
+                      |    {}]
+                      |}""".stripMargin)),
+                      Some(SchemaId.fromInt(JsonTypes.Json.value))
+                    )
+                  ),
+                  Unknown
+                )
+              )
+            case DynamicSchemaVersion(JsonTypes.Plain) =>
+              Valid(
+                (
+                  Some(
+                    RuntimeSchemaData[ParsedSchema](
+                      new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("")),
+                      Some(SchemaId.fromInt(JsonTypes.Plain.value))
+                    )
+                  ),
+                  Typed[Array[java.lang.Byte]]
+                )
+              )
+            case _ => Invalid(FatalUnknownError("Wrong dynamic type"))
+          }
         }
 
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)

@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.Writer
+import cats.data.{Validated, Writer}
+import org.apache.kafka.clients.admin.ListTopicsOptions
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -13,11 +14,19 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicN
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaComponentsUtils,
+  KafkaConfig,
+  KafkaUtils,
+  PreparedKafkaTopic,
+  UnspecializedTopicName
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
+
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object KafkaUniversalComponentTransformer {
   final val schemaVersionParamName      = ParameterName("Schema version")
@@ -62,7 +71,10 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getTopicParam(
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)
+    val allTopics = getAllTopics
+
+    val topics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = Valid(allTopics)
+    // topicSelectionStrategy.getTopics(schemaRegistryClient)
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)
@@ -98,15 +110,31 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getVersionParam(
       preparedTopic: PreparedKafkaTopic[TN],
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
-    (versions match {
-      case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
-      case Invalid(e) =>
-        Writer[List[ProcessCompilationError], List[Integer]](
-          List(CustomNodeError(e.getMessage, Some(topicParamName))),
-          Nil
-        )
-    }).map(getVersionParam)
+    val topicsWithSchema = topicSelectionStrategy.getTopics(schemaRegistryClient)
+    if (topicsWithSchema.exists(topics => topics.contains(preparedTopic.prepared.topicName.toUnspecialized))) {
+      val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
+      (versions match {
+        case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
+        case Invalid(e) =>
+          Writer[List[ProcessCompilationError], List[Integer]](
+            List(CustomNodeError(e.getMessage, Some(topicParamName))),
+            Nil
+          )
+      }).map(getVersionParam)
+    } else {
+      val versionValues = List(
+        FixedExpressionValue("'Json'", "Json"),
+        FixedExpressionValue("'Plain'", "Plain")
+      )
+
+      Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, versionValues).map(versions =>
+        ParameterDeclaration
+          .mandatory[String](KafkaUniversalComponentTransformer.schemaVersionParamName)
+          .withCreator(
+            modify = _.copy(editor = Some(FixedValuesParameterEditor(versions)))
+          )
+      )
+    }
   }
 
   protected def getVersionParam(
@@ -210,5 +238,21 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   // override it if you use other parameter name for topic
   @transient protected lazy val topicParamName: ParameterName = KafkaUniversalComponentTransformer.topicParamName
+
+  protected def getAllTopics: List[UnspecializedTopicName] = {
+    val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
+
+    KafkaUtils
+      .usingAdminClient(kafkaConfig) {
+        _.listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
+          .names()
+          .get()
+          .asScala
+          .toSet
+          .map(UnspecializedTopicName.apply)
+          .filterNot(topic => topic.name.startsWith("_"))
+      }
+      .toList
+  }
 
 }
