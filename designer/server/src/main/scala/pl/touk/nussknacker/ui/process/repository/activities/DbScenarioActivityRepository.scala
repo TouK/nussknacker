@@ -480,7 +480,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       comment = comment,
       attachmentId = attachmentId,
       finishedAt = scenarioActivity.dateFinishedOpt.map(Timestamp.from),
-      state = Some(ProcessActionState.Finished),
+      state = None,
       errorMessage = scenarioActivity match {
         case activity: DeploymentRelatedActivity =>
           activity.result match {
