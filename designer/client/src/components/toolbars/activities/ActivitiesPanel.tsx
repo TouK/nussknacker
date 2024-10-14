@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getProcessName } from "../../../reducers/selectors/graph";
 import { getScenarioActivities, updateScenarioActivities } from "../../../actions/nk/scenarioActivities";
 import { getVisibleActivities } from "../../../reducers/selectors/activities";
+import { handleToggleActivities } from "./helpers/handleToggleActivities";
 
 const StyledVariableSizeList = styled(VariableSizeList)(({ theme }) => ({
     "::-webkit-scrollbar": {
@@ -98,44 +99,20 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     });
 
     const handleHideRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
-        let buttonIndex: number;
-
         dispatch(
             updateScenarioActivities((prevState) => {
-                return prevState.map((data, prevStateItemIndex) => {
-                    if (data.uiGeneratedId === uiGeneratedId) {
-                        return { ...data, isClicked: false };
-                    }
-
-                    buttonIndex = prevState.findIndex((uiActivity) => uiActivity.uiGeneratedId === uiGeneratedId);
-
-                    if (prevStateItemIndex <= buttonIndex && prevStateItemIndex > buttonIndex - sameItemOccurrence - 1) {
-                        return { ...data, isHidden: true };
-                    }
-
-                    return data;
-                });
+                const { uiActivities, buttonPosition } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence);
+                listRef.current.scrollToItem(buttonPosition - 2);
+                return uiActivities;
             }),
         );
-        listRef.current.scrollToItem(buttonIndex - sameItemOccurrence - 2);
     };
 
     const handleShowRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
         dispatch(
             updateScenarioActivities((prevState) => {
-                return prevState.map((uiActivity, prevStateItemIndex) => {
-                    if (uiActivity.uiGeneratedId === uiGeneratedId) {
-                        return { ...uiActivity, isClicked: true };
-                    }
-
-                    const buttonIndex = prevState.findIndex((uiActivity) => uiActivity.uiGeneratedId === uiGeneratedId);
-
-                    if (prevStateItemIndex < buttonIndex && prevStateItemIndex >= buttonIndex - sameItemOccurrence) {
-                        return { ...uiActivity, isHidden: false };
-                    }
-
-                    return uiActivity;
-                });
+                const { uiActivities } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence);
+                return uiActivities;
             }),
         );
     };

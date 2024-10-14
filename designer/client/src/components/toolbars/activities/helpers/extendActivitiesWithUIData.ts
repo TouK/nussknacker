@@ -19,7 +19,7 @@ const getLatestDateItem = (uiActivities: UIActivity[]) => {
 
 export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[]) => {
     const uiActivities: UIActivity[] = [];
-    const hideItemsOptionAvailableLimit = 4;
+    const hideItemsOptionAvailableLimit = 3;
 
     const recursiveDateLabelDesignation = (
         currentActivity: Activity,
@@ -103,8 +103,9 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
     };
 
     const initiallyHideItems = (sameItemOccurrence: number) => {
-        for (let i = uiActivities.length - sameItemOccurrence; i < uiActivities.length; i++) {
-            const item = uiActivities[i];
+        const itemOnly = uiActivities.filter((uiActivity) => uiActivity.uiType === "item");
+        for (let i = itemOnly.length - sameItemOccurrence; i < itemOnly.length; i++) {
+            const item = itemOnly[i];
 
             if (item.uiType === "item") {
                 item.isHidden = true;
