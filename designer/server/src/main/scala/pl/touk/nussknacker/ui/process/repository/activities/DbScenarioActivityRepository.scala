@@ -225,6 +225,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   ): DB[Seq[(Long, ScenarioActivity)]] = {
     scenarioActivityTable
       .filter(_.scenarioId === scenarioId)
+      // ScenarioActivity in domain represents a single, immutable event, so we interpret only finished operations as ScenarioActivities
       .filter { entity =>
         entity.state.isEmpty ||
         entity.state === ProcessActionState.Finished ||
