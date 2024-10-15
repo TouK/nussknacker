@@ -5,7 +5,7 @@ import scala.concurrent.Future
 trait ScenarioActivityManager {
 
   def saveActivity(
-      scenarioActivity: DeploymentRelatedActivity
+      activity: DeploymentRelatedActivity
   ): Future[Unit]
 
 }
@@ -13,7 +13,7 @@ trait ScenarioActivityManager {
 object NoOpScenarioActivityManager extends ScenarioActivityManager {
 
   def saveActivity(
-      scenarioActivity: DeploymentRelatedActivity
+      activity: DeploymentRelatedActivity
   ): Future[Unit] = Future.unit
 
 }

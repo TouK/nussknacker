@@ -484,8 +484,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       errorMessage = scenarioActivity match {
         case activity: DeploymentRelatedActivity =>
           activity.result match {
-            case DeploymentRelatedActivityResult.Success               => None
-            case DeploymentRelatedActivityResult.Failure(errorMessage) => errorMessage
+            case DeploymentResult.Success(_)               => None
+            case DeploymentResult.Failure(_, errorMessage) => errorMessage
           }
         case _ => None
       },
@@ -650,14 +650,15 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     ScenarioId(entity.scenarioId.value)
   }
 
-  private def resultFromEntity(entity: ScenarioActivityEntityData): Either[String, DeploymentRelatedActivityResult] = {
+  private def resultFromEntity(entity: ScenarioActivityEntityData): Either[String, DeploymentResult] = {
     for {
-      state <- entity.state.toRight("Missing state field")
+      state        <- entity.state.toRight("Missing state field")
+      dateFinished <- entity.finishedAt.toRight("Missing finishedAt field").map(_.toInstant)
       result <- state match {
         case ProcessActionState.InProgress        => Left("InProgress is not a terminal state")
-        case ProcessActionState.Finished          => Right(DeploymentRelatedActivityResult.Success)
-        case ProcessActionState.Failed            => Right(DeploymentRelatedActivityResult.Failure(entity.errorMessage))
-        case ProcessActionState.ExecutionFinished => Right(DeploymentRelatedActivityResult.Success)
+        case ProcessActionState.Finished          => Right(DeploymentResult.Success(dateFinished))
+        case ProcessActionState.Failed            => Right(DeploymentResult.Failure(dateFinished, entity.errorMessage))
+        case ProcessActionState.ExecutionFinished => Right(DeploymentResult.Success(dateFinished))
       }
     } yield result
   }
@@ -760,7 +761,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
-          dateFinished = entity.finishedAt.map(_.toInstant),
           comment = comment,
           result = result,
         )).map((entity.id, _))
@@ -774,7 +774,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
-          dateFinished = entity.finishedAt.map(_.toInstant),
           comment = comment,
           result = result,
         )).map((entity.id, _))
@@ -788,7 +787,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
-          dateFinished = entity.finishedAt.map(_.toInstant),
           comment = comment,
           result = result,
         )).map((entity.id, _))
@@ -901,7 +899,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
           comment = comment,
-          dateFinished = entity.finishedAt.map(_.toInstant),
           result = result,
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
@@ -910,7 +907,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           scheduledExecutionStatus <- additionalPropertyFromEntity(entity, "status").flatMap(
             ScheduledExecutionStatus.withNameEither(_).left.map(_.getMessage)
           )
-          createdAt <- additionalPropertyFromEntity(entity, "createdAt").map(Instant.parse)
+          dateFinished <- entity.finishedAt.toRight("Missing finishedAt field").map(_.toInstant)
+          createdAt    <- additionalPropertyFromEntity(entity, "createdAt").map(Instant.parse)
           nextRetryAt = optionalAdditionalPropertyFromEntity(entity, "nextRetryAt").map(Instant.parse)
           retriesLeft = optionalAdditionalPropertyFromEntity(entity, "retriesLeft").flatMap(toIntOption)
         } yield ScenarioActivity.PerformedScheduledExecution(
@@ -919,7 +917,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           user = userFromEntity(entity),
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
-          dateFinished = entity.finishedAt.map(_.toInstant),
+          dateFinished = dateFinished,
           scheduleName = scheduleName,
           scheduledExecutionStatus = scheduledExecutionStatus,
           createdAt = createdAt,
@@ -949,7 +947,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             user = userFromEntity(entity),
             date = entity.createdAt.toInstant,
             scenarioVersionId = entity.scenarioVersion,
-            dateFinished = entity.finishedAt.map(_.toInstant),
             actionName = actionName,
             comment = comment,
             result = result,

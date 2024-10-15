@@ -184,7 +184,7 @@ object Examples {
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
-          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
+          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
           errorMessage = Some("Execution error occurred"),
         ),
         ScenarioActivity.forPerformedSingleExecution(
@@ -197,7 +197,7 @@ object Examples {
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),
-          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
+          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
           errorMessage = None,
         ),
         ScenarioActivity.forPerformedScheduledExecution(
@@ -205,7 +205,7 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
-          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
+          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
           scheduleName = "main-schedule",
           scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
           createdAt = Instant.parse("2024-01-17T13:21:17Z"),
@@ -217,7 +217,7 @@ object Examples {
           user = "some user",
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
-          dateFinished = Some(Instant.parse("2024-01-17T14:21:17Z")),
+          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
           scheduleName = "main-schedule",
           scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentWillBeRetried,
           createdAt = Instant.parse("2024-01-17T13:21:17Z"),

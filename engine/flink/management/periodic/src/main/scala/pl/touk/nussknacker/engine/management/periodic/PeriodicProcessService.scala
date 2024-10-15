@@ -64,17 +64,17 @@ class PeriodicProcessService(
     schedulesState <- scheduledProcessesRepository.getSchedulesState(processIdWithName.name).run
     groupedByProcess        = schedulesState.groupedByPeriodicProcess
     deployments             = groupedByProcess.flatMap(_.deployments)
-    deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatus(d.state.status).map((d, _)))
-    activities = deploymentsWithStatuses.map { case (deployment, status) =>
+    deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
+    activities = deploymentsWithStatuses.map { case (deployment, (status, dateFinished)) =>
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
         scenarioActivityId = ScenarioActivityId.random,
         user = ScenarioUser.internalNuUser,
         date = instantAtUTC(deployment.runAt),
         scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
-        dateFinished = deployment.state.completedAt.map(instantAtUTC),
-        scheduleName = deployment.scheduleName.display,
         scheduledExecutionStatus = status,
+        dateFinished = dateFinished,
+        scheduleName = deployment.scheduleName.display,
         createdAt = instantAtUTC(deployment.createdAt),
         nextRetryAt = deployment.nextRetryAt.map(instantAtUTC),
         retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
@@ -520,21 +520,26 @@ class PeriodicProcessService(
 
   }
 
-  private def scheduledExecutionStatus(status: PeriodicProcessDeploymentStatus): Option[ScheduledExecutionStatus] = {
-    status match {
-      case PeriodicProcessDeploymentStatus.Scheduled =>
-        None
-      case PeriodicProcessDeploymentStatus.Deployed =>
-        None
-      case PeriodicProcessDeploymentStatus.Finished =>
-        Some(ScheduledExecutionStatus.Finished)
-      case PeriodicProcessDeploymentStatus.Failed =>
-        Some(ScheduledExecutionStatus.Failed)
-      case PeriodicProcessDeploymentStatus.RetryingDeploy =>
-        Some(ScheduledExecutionStatus.DeploymentWillBeRetried)
-      case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
-        Some(ScheduledExecutionStatus.DeploymentFailed)
-    }
+  private def scheduledExecutionStatusAndDateFinished(
+      entity: PeriodicProcessDeployment[Unit],
+  ): Option[(ScheduledExecutionStatus, Instant)] = {
+    for {
+      dateFinished <- entity.state.completedAt.map(instantAtUTC)
+      status <- entity.state.status match {
+        case PeriodicProcessDeploymentStatus.Scheduled =>
+          None
+        case PeriodicProcessDeploymentStatus.Deployed =>
+          None
+        case PeriodicProcessDeploymentStatus.Finished =>
+          Some(ScheduledExecutionStatus.Finished)
+        case PeriodicProcessDeploymentStatus.Failed =>
+          Some(ScheduledExecutionStatus.Failed)
+        case PeriodicProcessDeploymentStatus.RetryingDeploy =>
+          Some(ScheduledExecutionStatus.DeploymentWillBeRetried)
+        case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
+          Some(ScheduledExecutionStatus.DeploymentFailed)
+      }
+    } yield (status, dateFinished)
   }
 
   private def instantAtUTC(localDateTime: LocalDateTime): Instant =

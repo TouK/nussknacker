@@ -100,21 +100,25 @@ sealed trait ScenarioActivity {
 }
 
 sealed trait DeploymentRelatedActivity extends ScenarioActivity {
-  def result: DeploymentRelatedActivityResult
-  def dateFinished: Option[Instant]
+  def result: DeploymentResult
 }
 
 sealed trait BatchDeploymentRelatedActivity extends DeploymentRelatedActivity
 
-sealed trait DeploymentRelatedActivityResult
+sealed trait DeploymentResult {
+  def dateFinished: Instant
+}
 
-object DeploymentRelatedActivityResult {
+object DeploymentResult {
 
-  case object Success extends DeploymentRelatedActivityResult
+  final case class Success(
+      dateFinished: Instant,
+  ) extends DeploymentResult
 
   final case class Failure(
+      dateFinished: Instant,
       errorMessage: Option[String],
-  ) extends DeploymentRelatedActivityResult
+  ) extends DeploymentResult
 
 }
 
@@ -153,8 +157,7 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      result: DeploymentRelatedActivityResult,
-      dateFinished: Option[Instant],
+      result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 
   final case class ScenarioPaused(
@@ -164,8 +167,7 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      result: DeploymentRelatedActivityResult,
-      dateFinished: Option[Instant],
+      result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 
   final case class ScenarioCanceled(
@@ -175,8 +177,7 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      result: DeploymentRelatedActivityResult,
-      dateFinished: Option[Instant],
+      result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 
   // Scenario modifications
@@ -261,8 +262,7 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      result: DeploymentRelatedActivityResult,
-      dateFinished: Option[Instant],
+      result: DeploymentResult,
   ) extends BatchDeploymentRelatedActivity
 
   final case class PerformedScheduledExecution(
@@ -272,18 +272,18 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       scheduledExecutionStatus: ScheduledExecutionStatus,
-      dateFinished: Option[Instant],
+      dateFinished: Instant,
       scheduleName: String,
       createdAt: Instant,
       nextRetryAt: Option[Instant],
       retriesLeft: Option[Int],
   ) extends BatchDeploymentRelatedActivity {
 
-    override def result: DeploymentRelatedActivityResult = scheduledExecutionStatus match {
-      case ScheduledExecutionStatus.Finished                => DeploymentRelatedActivityResult.Success
-      case ScheduledExecutionStatus.Failed                  => DeploymentRelatedActivityResult.Failure(None)
-      case ScheduledExecutionStatus.DeploymentWillBeRetried => DeploymentRelatedActivityResult.Failure(None)
-      case ScheduledExecutionStatus.DeploymentFailed        => DeploymentRelatedActivityResult.Failure(None)
+    override def result: DeploymentResult = scheduledExecutionStatus match {
+      case ScheduledExecutionStatus.Finished                => DeploymentResult.Success(dateFinished)
+      case ScheduledExecutionStatus.Failed                  => DeploymentResult.Failure(dateFinished, None)
+      case ScheduledExecutionStatus.DeploymentWillBeRetried => DeploymentResult.Failure(dateFinished, None)
+      case ScheduledExecutionStatus.DeploymentFailed        => DeploymentResult.Failure(dateFinished, None)
     }
 
   }
@@ -309,8 +309,7 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       actionName: String,
       comment: ScenarioComment,
-      result: DeploymentRelatedActivityResult,
-      dateFinished: Option[Instant],
+      result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 
 }

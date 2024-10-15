@@ -101,14 +101,13 @@ class MockDeploymentManager(
           user = ScenarioUser.internalNuUser,
           date = Instant.now(),
           scenarioVersionId = Some(ScenarioVersionId.from(processVersion.versionId)),
-          dateFinished = Some(Instant.now()),
           actionName = "Custom action of MockDeploymentManager just before deployment",
           comment = ScenarioComment.Available(
             comment = "With comment from DeploymentManager",
             lastModifiedByUserName = ScenarioUser.internalNuUser.name,
             lastModifiedAt = Instant.now()
           ),
-          result = DeploymentRelatedActivityResult.Success,
+          result = DeploymentResult.Success(Instant.now()),
         )
       )
       externalDeploymentId <- this.synchronized {

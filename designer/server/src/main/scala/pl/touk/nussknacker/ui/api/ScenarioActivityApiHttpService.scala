@@ -237,8 +237,8 @@ class ScenarioActivityApiHttpService(
           case _: BatchDeploymentRelatedActivity => true
           case activity: DeploymentRelatedActivity =>
             activity.result match {
-              case DeploymentRelatedActivityResult.Success    => true
-              case DeploymentRelatedActivityResult.Failure(_) => false
+              case _: DeploymentResult.Success => true
+              case _: DeploymentResult.Failure => false
             }
           case _ => true
         }
@@ -305,7 +305,7 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value)
         )
-      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
+      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
         Dtos.ScenarioActivity.forScenarioDeployed(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -313,7 +313,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
+      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
         Dtos.ScenarioActivity.forScenarioPaused(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -321,7 +321,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
+      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
         Dtos.ScenarioActivity.forScenarioCanceled(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -416,7 +416,6 @@ class ScenarioActivityApiHttpService(
             scenarioVersionId,
             comment,
             result,
-            dateFinished,
           ) =>
         Dtos.ScenarioActivity.forPerformedSingleExecution(
           id = scenarioActivityId.value,
@@ -424,10 +423,10 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
-          dateFinished = dateFinished,
+          dateFinished = result.dateFinished,
           errorMessage = result match {
-            case DeploymentRelatedActivityResult.Success               => None
-            case DeploymentRelatedActivityResult.Failure(errorMessage) => errorMessage
+            case DeploymentResult.Success(_)               => None
+            case DeploymentResult.Failure(_, errorMessage) => errorMessage
           },
         )
       case ScenarioActivity.PerformedScheduledExecution(
@@ -479,7 +478,6 @@ class ScenarioActivityApiHttpService(
             actionName,
             comment,
             result,
-            _,
           ) =>
         Dtos.ScenarioActivity.forCustomAction(
           id = scenarioActivityId.value,
@@ -490,8 +488,8 @@ class ScenarioActivityApiHttpService(
           comment = toDto(comment),
           customIcon = None,
           errorMessage = result match {
-            case DeploymentRelatedActivityResult.Success               => None
-            case DeploymentRelatedActivityResult.Failure(errorMessage) => errorMessage
+            case DeploymentResult.Success(_)               => None
+            case DeploymentResult.Failure(_, errorMessage) => errorMessage
           },
         )
     }

@@ -342,14 +342,13 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
-                dateFinished = Some(Instant.now()),
                 actionName = "Custom action handled by deployment manager",
                 comment = ScenarioComment.Available(
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),
-                result = DeploymentRelatedActivityResult.Success
+                result = DeploymentResult.Success(clock.instant())
               ),
               ScenarioActivity.CustomAction(
                 scenarioId = ScenarioId(123),
@@ -357,14 +356,13 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
-                dateFinished = None,
                 actionName = "Custom action handled by deployment manager",
                 comment = ScenarioComment.Available(
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),
-                result = DeploymentRelatedActivityResult.Failure(None)
+                result = DeploymentResult.Failure(clock.instant(), None)
               )
             )
           )
@@ -423,13 +421,12 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
-                dateFinished = None,
                 comment = ScenarioComment.Available(
                   comment = "Immediate execution",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),
-                result = DeploymentRelatedActivityResult.Success
+                result = DeploymentResult.Success(clock.instant())
               )
             )
           )
@@ -464,7 +461,12 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |         "lastModifiedBy": "custom-user",
                |         "lastModifiedAt": "${regexes.zuluDateRegex}"
                |       },
-               |       "additionalFields": [],
+               |       "additionalFields": [
+               |         {
+               |           "name": "dateFinished",
+               |           "value": "${regexes.zuluDateRegex}"
+               |         }
+               |       ],
                |       "type": "PERFORMED_SINGLE_EXECUTION"
                |     }
                |  ]

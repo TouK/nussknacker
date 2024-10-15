@@ -123,9 +123,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            dateFinished = None,
             comment = Available("Deployment with scenario fix", user.name, date),
-            result = DeploymentRelatedActivityResult.Success,
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -140,9 +139,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            dateFinished = None,
             comment = Available("I'm canceling this scenario, it causes problems", user.name, date),
-            result = DeploymentRelatedActivityResult.Success,
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -185,9 +183,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            dateFinished = None,
             comment = Available("Paused because marketing campaign is paused for now", user.name, date),
-            result = DeploymentRelatedActivityResult.Success,
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -242,9 +239,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            dateFinished = None,
             comment = Available("Deployed at the request of business", user.name, date),
-            result = DeploymentRelatedActivityResult.Success,
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -259,10 +255,9 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            dateFinished = None,
             actionName = "special action",
             comment = Available("Special action needed to be executed", user.name, date),
-            result = DeploymentRelatedActivityResult.Success,
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -408,7 +403,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
     impersonatedByIdentity = None,
     impersonatedByUsername = None,
     createdAt = now,
-    performedAt = None,
+    performedAt = Some(now),
     actionName = scenarioActionName.value,
     state = "FINISHED",
     failureMessage = None,

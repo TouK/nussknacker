@@ -597,7 +597,7 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         comment: ScenarioActivityComment,
-        dateFinished: Option[Instant],
+        dateFinished: Instant,
         errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
@@ -608,7 +608,7 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List(
-        dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
+        Some(AdditionalField("dateFinished", dateFinished.toString)),
         errorMessage.map(e => AdditionalField("errorMessage", e)),
       ).flatten
     )
@@ -618,7 +618,7 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersionId: Option[Long],
-        dateFinished: Option[Instant],
+        dateFinished: Instant,
         scheduleName: String,
         scheduledExecutionStatus: ScheduledExecutionStatus,
         createdAt: Instant,
@@ -642,7 +642,7 @@ object Dtos {
         additionalFields = List(
           Some(AdditionalField("status", humanReadableStatus)),
           Some(AdditionalField("createdAt", createdAt.toString)),
-          dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
+          Some(AdditionalField("dateFinished", dateFinished.toString)),
           Some(AdditionalField("scheduleName", scheduleName)),
           Some(AdditionalField("retriesLeft", retriesLeft.toString)),
           nextRetryAt.map(nra => AdditionalField("nextRetryAt", nra.toString)),

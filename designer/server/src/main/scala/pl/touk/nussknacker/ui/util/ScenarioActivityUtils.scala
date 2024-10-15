@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.util
 
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActivity
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentRelatedActivity, ScenarioActivity}
 import pl.touk.nussknacker.ui.db.entity.ScenarioActivityType
 
 import java.time.Instant
@@ -33,23 +33,8 @@ object ScenarioActivityUtils {
 
     def dateFinishedOpt: Option[Instant] = {
       scenarioActivity match {
-        case _: ScenarioActivity.ScenarioCreated                    => None
-        case _: ScenarioActivity.ScenarioArchived                   => None
-        case _: ScenarioActivity.ScenarioUnarchived                 => None
-        case activity: ScenarioActivity.ScenarioDeployed            => activity.dateFinished
-        case activity: ScenarioActivity.ScenarioPaused              => activity.dateFinished
-        case activity: ScenarioActivity.ScenarioCanceled            => activity.dateFinished
-        case _: ScenarioActivity.ScenarioModified                   => None
-        case _: ScenarioActivity.ScenarioNameChanged                => None
-        case _: ScenarioActivity.CommentAdded                       => None
-        case _: ScenarioActivity.AttachmentAdded                    => None
-        case _: ScenarioActivity.ChangedProcessingMode              => None
-        case _: ScenarioActivity.IncomingMigration                  => None
-        case _: ScenarioActivity.OutgoingMigration                  => None
-        case activity: ScenarioActivity.PerformedSingleExecution    => activity.dateFinished
-        case activity: ScenarioActivity.PerformedScheduledExecution => activity.dateFinished
-        case _: ScenarioActivity.AutomaticUpdate                    => None
-        case activity: ScenarioActivity.CustomAction                => activity.dateFinished
+        case activity: DeploymentRelatedActivity => Some(activity.result.dateFinished)
+        case _                                   => None
       }
     }
 

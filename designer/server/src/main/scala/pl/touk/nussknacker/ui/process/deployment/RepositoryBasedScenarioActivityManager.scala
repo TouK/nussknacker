@@ -17,10 +17,10 @@ class RepositoryBasedScenarioActivityManager(
     extends ScenarioActivityManager {
 
   override def saveActivity(
-      scenarioActivity: DeploymentRelatedActivity
+      activity: DeploymentRelatedActivity
   ): Future[Unit] = {
     dbioActionRunner
-      .run(repository.addActivity(scenarioActivity))
+      .run(repository.addActivity(activity))
       .map((_: ScenarioActivityId) => ())
   }
 
