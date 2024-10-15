@@ -16,10 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
-  TestFromParametersRequest,
-  prepareTestFromParametersDecoder
-}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
 import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -245,10 +242,7 @@ class ManagementResources(
         path("testWithParameters" / ProcessNameSegment) { processName =>
           {
             (post & processDetailsForName(processName)) { process =>
-              val modelData = typeToConfig.forProcessingTypeUnsafe(process.processingType)
-              implicit val requestDecoder: Decoder[TestFromParametersRequest] =
-                prepareTestFromParametersDecoder(modelData)
-              (post & entity(as[TestFromParametersRequest])) { testParametersRequest =>
+              (post & entity(as[AdhocTestParametersRequest])) { testParametersRequest =>
                 {
                   canDeploy(process.idWithNameUnsafe) {
                     complete {

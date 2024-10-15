@@ -26,7 +26,7 @@ import { TestResults } from "../common/TestResultUtils";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { GenericValidationRequest } from "../actions/nk/genericAction";
+import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
 
@@ -560,6 +560,21 @@ class HttpService {
         return promise;
     }
 
+    validateAdhocTestParameters(
+        scenarioName: string,
+        validationRequest: TestAdhocValidationRequest,
+    ): Promise<AxiosResponse<ValidationData>> {
+        const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/adhoc/validate`, validationRequest);
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToValidateAdhocTestParameters", "Failed to validate parameters"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
     validateScenarioLabels(labels: string[]): Promise<AxiosResponse<ScenarioLabelsValidationResponse>> {
         const data = { labels: labels };
         return api
@@ -650,7 +665,10 @@ class HttpService {
     //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
 
     getTestCapabilities(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(`/testInfo/${encodeURIComponent(processName)}/capabilities`, this.#sanitizeScenarioGraph(scenarioGraph));
+        const promise = api.post(
+            `/scenarioTesting/${encodeURIComponent(processName)}/capabilities`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true),
         );
@@ -658,7 +676,10 @@ class HttpService {
     }
 
     getTestFormParameters(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(`/testInfo/${encodeURIComponent(processName)}/testParameters`, this.#sanitizeScenarioGraph(scenarioGraph));
+        const promise = api.post(
+            `/scenarioTesting/${encodeURIComponent(processName)}/parameters`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
@@ -671,7 +692,7 @@ class HttpService {
 
     generateTestData(processName: string, testSampleSize: string, scenarioGraph: ScenarioGraph): Promise<AxiosResponse> {
         const promise = api.post(
-            `/testInfo/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
+            `/scenarioTesting/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
             this.#sanitizeScenarioGraph(scenarioGraph),
             {
                 responseType: "blob",

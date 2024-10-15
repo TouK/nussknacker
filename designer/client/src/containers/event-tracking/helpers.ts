@@ -79,7 +79,7 @@ export const mapToolbarButtonToStatisticsEvent = (
         case BuiltinButtonTypes.testGenerate: {
             return EventTrackingSelector.TestGenerated;
         }
-        case CustomButtonTypes.testWithForm: {
+        case CustomButtonTypes.adhocTesting: {
             return EventTrackingSelector.TestAdhoc;
         }
         case BuiltinButtonTypes.processSave: {
