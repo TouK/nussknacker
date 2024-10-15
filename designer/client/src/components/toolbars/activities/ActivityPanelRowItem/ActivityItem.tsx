@@ -50,12 +50,7 @@ export const ActivityItem = forwardRef(
         return (
             <StyledActivityRoot ref={ref}>
                 <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
-                    <ActivityItemHeader
-                        isActiveItem={isActiveItem}
-                        searchQuery={searchQuery}
-                        activity={activity}
-                        scenarioVersion={activity.scenarioVersionId}
-                    />
+                    <ActivityItemHeader isActiveItem={isActiveItem} searchQuery={searchQuery} activity={activity} />
                     <StyledActivityBody>
                         <Box display={"flex"} alignItems={"center"} justifyContent={"flex-start"}>
                             <Typography

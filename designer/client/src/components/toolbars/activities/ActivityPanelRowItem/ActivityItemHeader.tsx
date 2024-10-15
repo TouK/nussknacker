@@ -87,7 +87,6 @@ interface Props {
     activity: ItemActivity;
     isActiveItem: boolean;
     searchQuery: string;
-    scenarioVersion: number;
 }
 
 const WithOpenVersion = ({
@@ -104,7 +103,6 @@ const WithOpenVersion = ({
 
     const doChangeVersion = useCallback(
         (scenarioId: number) => {
-            console.log(scenarioId);
             dispatch(displayScenarioVersion(name, scenarioId));
         },
         [dispatch, name],

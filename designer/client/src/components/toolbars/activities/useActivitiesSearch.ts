@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Activity, UIActivity } from "./ActivitiesPanel";
 import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
@@ -16,12 +16,41 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
     const [selectedResult, setSelectedResult] = useState<number>(0);
 
     const handleSetFoundResults = useCallback((activities: UIActivity[]) => {
-        setFoundResults(uniq(activities).map((activity) => activity.uiGeneratedId));
+        const uniqueFoundResults = uniq(activities).map((activity) => activity.uiGeneratedId);
+        setFoundResults(uniqueFoundResults);
+
+        return uniqueFoundResults;
     }, []);
+
+    const handleUpdateSearchResults = useCallback(
+        (foundActivities: string[], selectedResult: number) => {
+            handleUpdateScenarioActivities((prevState) => {
+                return prevState.map((activity) => {
+                    if (activity.uiType !== "item") {
+                        return activity;
+                    }
+
+                    activity.isFound = false;
+                    activity.isActiveFound = false;
+
+                    if (foundActivities.some((foundResult) => foundResult === activity.uiGeneratedId)) {
+                        activity.isFound = true;
+                    }
+
+                    if (activity.uiGeneratedId === foundActivities[selectedResult]) {
+                        activity.isActiveFound = true;
+                    }
+
+                    return activity;
+                });
+            });
+        },
+        [handleUpdateScenarioActivities],
+    );
 
     const handleSearch = (value: string) => {
         setSearchQuery(value);
-        setFoundResults([]);
+        setSelectedResult(0);
 
         const foundActivities: UIActivity[] = [];
 
@@ -60,9 +89,9 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
             }
         }
 
-        handleSetFoundResults(foundActivities);
-
-        const indexToScroll = activities.findIndex((item) => item.uiGeneratedId === foundActivities[selectedResult]?.uiGeneratedId);
+        const uniqueFoundResults = handleSetFoundResults(foundActivities);
+        handleUpdateSearchResults(uniqueFoundResults, selectedResult);
+        const indexToScroll = activities.findIndex((item) => item.uiGeneratedId === foundActivities[0]?.uiGeneratedId);
         handleScrollToItem(indexToScroll, "center");
     };
 
@@ -81,6 +110,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
             "center",
         );
         setSelectedResult(selectedResultNewValue);
+        handleUpdateSearchResults(foundResults, selectedResultNewValue);
     };
 
     const handleClearResults = () => {
@@ -88,29 +118,6 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
         setSelectedResult(0);
         setFoundResults([]);
     };
-
-    useEffect(() => {
-        handleUpdateScenarioActivities((prevState) => {
-            return prevState.map((activity) => {
-                if (activity.uiType !== "item") {
-                    return activity;
-                }
-
-                activity.isFound = false;
-                activity.isActiveFound = false;
-
-                if (foundResults.some((foundResult) => foundResult === activity.uiGeneratedId)) {
-                    activity.isFound = true;
-                }
-
-                if (activity.uiGeneratedId === foundResults[selectedResult]) {
-                    activity.isActiveFound = true;
-                }
-
-                return activity;
-            });
-        });
-    }, [foundResults, handleUpdateScenarioActivities, selectedResult]);
 
     return { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults };
 };
