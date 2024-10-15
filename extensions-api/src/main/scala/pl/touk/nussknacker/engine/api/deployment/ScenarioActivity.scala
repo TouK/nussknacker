@@ -80,10 +80,6 @@ final case class Environment(name: String) extends AnyVal
 sealed trait ScheduledExecutionStatus extends EnumEntry with UpperSnakecase
 
 object ScheduledExecutionStatus extends Enum[ScheduledExecutionStatus] {
-  case object Scheduled extends ScheduledExecutionStatus
-
-  case object Deployed extends ScheduledExecutionStatus
-
   case object Finished extends ScheduledExecutionStatus
 
   case object Failed extends ScheduledExecutionStatus
@@ -101,6 +97,29 @@ sealed trait ScenarioActivity {
   def user: ScenarioUser
   def date: Instant
   def scenarioVersionId: Option[ScenarioVersionId]
+}
+
+sealed trait DeploymentRelatedActivity extends ScenarioActivity {
+  def result: DeploymentResult
+}
+
+sealed trait BatchDeploymentRelatedActivity extends DeploymentRelatedActivity
+
+sealed trait DeploymentResult {
+  def dateFinished: Instant
+}
+
+object DeploymentResult {
+
+  final case class Success(
+      dateFinished: Instant,
+  ) extends DeploymentResult
+
+  final case class Failure(
+      dateFinished: Instant,
+      errorMessage: Option[String],
+  ) extends DeploymentResult
+
 }
 
 object ScenarioActivity {
@@ -138,7 +157,8 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-  ) extends ScenarioActivity
+      result: DeploymentResult,
+  ) extends DeploymentRelatedActivity
 
   final case class ScenarioPaused(
       scenarioId: ScenarioId,
@@ -147,7 +167,8 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-  ) extends ScenarioActivity
+      result: DeploymentResult,
+  ) extends DeploymentRelatedActivity
 
   final case class ScenarioCanceled(
       scenarioId: ScenarioId,
@@ -156,7 +177,8 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-  ) extends ScenarioActivity
+      result: DeploymentResult,
+  ) extends DeploymentRelatedActivity
 
   // Scenario modifications
 
@@ -165,6 +187,7 @@ object ScenarioActivity {
       scenarioActivityId: ScenarioActivityId,
       user: ScenarioUser,
       date: Instant,
+      previousScenarioVersionId: Option[ScenarioVersionId],
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
   ) extends ScenarioActivity
@@ -239,10 +262,8 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      dateFinished: Option[Instant],
-      status: Option[String],
-      errorMessage: Option[String],
-  ) extends ScenarioActivity
+      result: DeploymentResult,
+  ) extends BatchDeploymentRelatedActivity
 
   final case class PerformedScheduledExecution(
       scenarioId: ScenarioId,
@@ -250,15 +271,24 @@ object ScenarioActivity {
       user: ScenarioUser,
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
-      dateFinished: Option[Instant],
+      scheduledExecutionStatus: ScheduledExecutionStatus,
+      dateFinished: Instant,
       scheduleName: String,
-      status: ScheduledExecutionStatus,
       createdAt: Instant,
       nextRetryAt: Option[Instant],
       retriesLeft: Option[Int],
-  ) extends ScenarioActivity
+  ) extends BatchDeploymentRelatedActivity {
 
-  // Other/technical
+    override def result: DeploymentResult = scheduledExecutionStatus match {
+      case ScheduledExecutionStatus.Finished                => DeploymentResult.Success(dateFinished)
+      case ScheduledExecutionStatus.Failed                  => DeploymentResult.Failure(dateFinished, None)
+      case ScheduledExecutionStatus.DeploymentWillBeRetried => DeploymentResult.Failure(dateFinished, None)
+      case ScheduledExecutionStatus.DeploymentFailed        => DeploymentResult.Failure(dateFinished, None)
+    }
+
+  }
+
+  // Technical
 
   final case class AutomaticUpdate(
       scenarioId: ScenarioId,
@@ -267,8 +297,9 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       changes: String,
-      errorMessage: Option[String],
   ) extends ScenarioActivity
+
+  // Other
 
   final case class CustomAction(
       scenarioId: ScenarioId,
@@ -278,6 +309,7 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       actionName: String,
       comment: ScenarioComment,
-  ) extends ScenarioActivity
+      result: DeploymentResult,
+  ) extends DeploymentRelatedActivity
 
 }
