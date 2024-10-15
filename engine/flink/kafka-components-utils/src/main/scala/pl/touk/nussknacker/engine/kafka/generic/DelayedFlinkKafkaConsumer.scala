@@ -91,6 +91,11 @@ object DelayedFlinkKafkaConsumer {
   type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
 }
 
+/**
+ * Warning: this consumer works correctly only when it's handling a single partition (so job's parallelism must be
+ * at least equal to the number of topic partitions). Otherwise, a single message will block reading
+ * from multiple partitions, leading bigger delays than intended.
+ */
 class DelayedFlinkKafkaConsumer[T](
     topics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     schema: KafkaDeserializationSchema[T],
@@ -207,7 +212,8 @@ class DelayedKafkaFetcher[T](
 
       if (sleepTime >= maxSleepTime) {
         val logMessage = s"Sleeping for $sleepTime ms of total $remainingDelay ms for ${records.size()} events. " +
-          s"Max event timestamp is $maxEventTimestamp, fetcher delay is $delay, partition:offset is ${partitionState.getPartition}:$offset"
+          s"Max event timestamp is $maxEventTimestamp, fetcher delay is $delay, topic:partition:offset is " +
+          s"${partitionState.getTopic}:${partitionState.getPartition}:$offset"
         logger.info(logMessage)
       }
 
