@@ -19,6 +19,7 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails
 }
 
+import java.time.Instant
 import java.util.UUID
 
 class ScenarioActivityApiHttpServiceBusinessSpec
@@ -328,7 +329,8 @@ class ScenarioActivityApiHttpServiceBusinessSpec
           )
         )
     }
-    "return SCENARIO_CREATED activity and activities returned by deployment manager" in {
+
+    "return SCENARIO_CREATED activity and activities returned by deployment manager, without failed non-batch activity" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -345,7 +347,22 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
-                )
+                ),
+                result = DeploymentResult.Success(clock.instant())
+              ),
+              ScenarioActivity.CustomAction(
+                scenarioId = ScenarioId(123),
+                scenarioActivityId = ScenarioActivityId.random,
+                user = ScenarioUser(None, UserName("custom-user"), None, None),
+                date = clock.instant(),
+                scenarioVersionId = None,
+                actionName = "Custom action handled by deployment manager",
+                comment = ScenarioComment.Available(
+                  comment = "Executed on custom deployment manager",
+                  lastModifiedByUserName = UserName("custom-user"),
+                  lastModifiedAt = clock.instant()
+                ),
+                result = DeploymentResult.Failure(clock.instant(), None)
               )
             )
           )
@@ -384,6 +401,73 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |         {"name": "actionName", "value": "Custom action handled by deployment manager"}
                |       ],
                |       "type": "CUSTOM_ACTION"
+               |     }
+               |  ]
+               |}
+               |""".stripMargin
+          )
+        )
+    }
+
+    "return SCENARIO_CREATED activity and activities returned by deployment manager, with failed batch activity" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          MockableDeploymentManager.configureManagerSpecificScenarioActivities(
+            List(
+              ScenarioActivity.PerformedSingleExecution(
+                scenarioId = ScenarioId(123),
+                scenarioActivityId = ScenarioActivityId.random,
+                user = ScenarioUser(None, UserName("custom-user"), None, None),
+                date = clock.instant(),
+                scenarioVersionId = None,
+                comment = ScenarioComment.Available(
+                  comment = "Immediate execution",
+                  lastModifiedByUserName = UserName("custom-user"),
+                  lastModifiedAt = clock.instant()
+                ),
+                result = DeploymentResult.Success(clock.instant())
+              )
+            )
+          )
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""
+               |{
+               |  "activities": [
+               |     {
+               |      "id": "${regexes.looseUuidRegex}",
+               |      "user": "admin",
+               |      "date": "${regexes.zuluDateRegex}",
+               |      "scenarioVersionId": 1,
+               |      "additionalFields": [],
+               |      "type": "SCENARIO_CREATED"
+               |     },
+               |     {
+               |       "id": "${regexes.looseUuidRegex}",
+               |       "user": "custom-user",
+               |       "date": "${regexes.zuluDateRegex}",
+               |       "comment": {
+               |         "content": {
+               |           "value": "Immediate execution",
+               |           "status": "AVAILABLE"
+               |         },
+               |         "lastModifiedBy": "custom-user",
+               |         "lastModifiedAt": "${regexes.zuluDateRegex}"
+               |       },
+               |       "additionalFields": [
+               |         {
+               |           "name": "dateFinished",
+               |           "value": "${regexes.zuluDateRegex}"
+               |         }
+               |       ],
+               |       "type": "PERFORMED_SINGLE_EXECUTION"
                |     }
                |  ]
                |}

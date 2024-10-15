@@ -85,6 +85,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
           scenarioActivityId = activities(0).scenarioActivityId,
           user = ScenarioUser(None, UserName("Test User"), None, None),
           date = activities(0).date,
+          previousScenarioVersionId = None,
           scenarioVersionId = Some(ScenarioVersionId(2)),
           comment = ScenarioComment.Deleted(UserName("Test User"), activities(0).date)
         ),
@@ -125,6 +126,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
               impersonatedByUserName = None
             ),
             date = Instant.now,
+            previousScenarioVersionId = None,
             scenarioVersionId = None,
             comment = ScenarioComment.Available(
               comment = "Scenario migrated from TEST_ENV by test env user",
@@ -202,7 +204,6 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
           changes = """feature A
               |feature B
               |feature C""".stripMargin,
-          errorMessage = None,
         )
       )
     }
@@ -223,6 +224,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
               impersonatedByUserName = None
             ),
             date = Instant.now,
+            previousScenarioVersionId = None,
             scenarioVersionId = None,
             comment = ScenarioComment.Available(
               comment = "Migrations applied: feature A\\nfeature B\\nfeature C",
@@ -251,7 +253,6 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
           changes = """feature A
               |feature B
               |feature C""".stripMargin,
-          errorMessage = None,
         )
       )
     }

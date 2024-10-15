@@ -381,8 +381,7 @@ class PeriodicDeploymentManagerTest
 
     val activities =
       f.periodicDeploymentManager.scenarioActivityHandling.managerSpecificScenarioActivities(idWithName).futureValue
-    val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(1),
@@ -392,24 +391,11 @@ class PeriodicDeploymentManagerTest
         scenarioVersionId = Some(ScenarioVersionId(1)),
         dateFinished = firstActivity.dateFinished,
         scheduleName = "[default]",
-        status = ScheduledExecutionStatus.Finished,
+        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
         createdAt = firstActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
-        scenarioActivityId = secondActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = secondActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(42)),
-        dateFinished = secondActivity.dateFinished,
-        scheduleName = "[default]",
-        status = ScheduledExecutionStatus.Scheduled,
-        createdAt = secondActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      )
     )
   }
 
@@ -444,7 +430,7 @@ class PeriodicDeploymentManagerTest
         scenarioVersionId = Some(ScenarioVersionId(1)),
         dateFinished = headActivity.dateFinished,
         scheduleName = "[default]",
-        status = ScheduledExecutionStatus.Failed,
+        scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
         createdAt = headActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None

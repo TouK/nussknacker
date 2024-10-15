@@ -12,6 +12,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* [#6971](https://github.com/TouK/nussknacker/pull/6971) `DeploymentManagerDependencies` API changes:
+    * Added field `scenarioActivityManager: ScenarioActivityManager`
+    * `scenarioActivityManager` can be used by any `DeploymentManager` to save scenario activities in the Nu database
+    * there is `NoOpScenarioActivityManager` implementation available (if needed for tests etc.)
 * [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
   * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
   * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.

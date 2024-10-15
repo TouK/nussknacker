@@ -143,7 +143,7 @@ object Dtos {
     }
 
     case object ScenarioModified extends ScenarioActivityType {
-      override def displayableName: String        = "New version saved"
+      override def displayableName: String        = "Scenario modified"
       override def icon: String                   = "/assets/activities/scenarioModified.svg"
       override def supportedActions: List[String] = commentRelatedActions ::: "compare" :: Nil
     }
@@ -442,6 +442,7 @@ object Dtos {
         id: UUID,
         user: String,
         date: Instant,
+        previousScenarioVersionId: Option[Long],
         scenarioVersionId: Option[Long],
         comment: ScenarioActivityComment,
     ): ScenarioActivity = ScenarioActivity(
@@ -453,8 +454,18 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List.empty,
-      overrideDisplayableName = scenarioVersionId.map(version => s"Version $version saved"),
+      overrideDisplayableName = updatedVersionId(previousScenarioVersionId, scenarioVersionId).map(updatedVersion =>
+        s"Version $updatedVersion saved"
+      )
     )
+
+    private def updatedVersionId(oldVersionIdOpt: Option[Long], newVersionIdOpt: Option[Long]) = {
+      for {
+        newVersionId <- newVersionIdOpt
+        oldVersionIdOrZero = oldVersionIdOpt.getOrElse(0L)
+        updatedVersionId <- if (newVersionId > oldVersionIdOrZero) Some(newVersionId) else None
+      } yield updatedVersionId
+    }
 
     def forScenarioNameChanged(
         id: UUID,
@@ -586,8 +597,7 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         comment: ScenarioActivityComment,
-        dateFinished: Option[Instant],
-        status: Option[String],
+        dateFinished: Instant,
         errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
@@ -598,8 +608,7 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List(
-        status.map(AdditionalField("status", _)),
-        dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
+        Some(AdditionalField("dateFinished", dateFinished.toString)),
         errorMessage.map(e => AdditionalField("errorMessage", e)),
       ).flatten
     )
@@ -609,16 +618,14 @@ object Dtos {
         user: String,
         date: Instant,
         scenarioVersionId: Option[Long],
-        dateFinished: Option[Instant],
+        dateFinished: Instant,
         scheduleName: String,
-        status: ScheduledExecutionStatus,
+        scheduledExecutionStatus: ScheduledExecutionStatus,
         createdAt: Instant,
         nextRetryAt: Option[Instant],
         retriesLeft: Option[Int],
     ): ScenarioActivity = {
-      val humanReadableStatus = status match {
-        case ScheduledExecutionStatus.Scheduled               => "Scheduled"
-        case ScheduledExecutionStatus.Deployed                => "Deployed"
+      val humanReadableStatus = scheduledExecutionStatus match {
         case ScheduledExecutionStatus.Finished                => "Execution finished"
         case ScheduledExecutionStatus.Failed                  => "Execution failed"
         case ScheduledExecutionStatus.DeploymentWillBeRetried => "Deployment will be retried"
@@ -635,7 +642,7 @@ object Dtos {
         additionalFields = List(
           Some(AdditionalField("status", humanReadableStatus)),
           Some(AdditionalField("createdAt", createdAt.toString)),
-          dateFinished.map(date => AdditionalField("dateFinished", date.toString)),
+          Some(AdditionalField("dateFinished", dateFinished.toString)),
           Some(AdditionalField("scheduleName", scheduleName)),
           Some(AdditionalField("retriesLeft", retriesLeft.toString)),
           nextRetryAt.map(nra => AdditionalField("nextRetryAt", nra.toString)),
@@ -651,7 +658,6 @@ object Dtos {
         date: Instant,
         scenarioVersionId: Option[Long],
         changes: String,
-        errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.AutomaticUpdate,
@@ -661,9 +667,8 @@ object Dtos {
       comment = None,
       attachment = None,
       additionalFields = List(
-        Some(AdditionalField("changes", changes)),
-        errorMessage.map(e => AdditionalField("errorMessage", e)),
-      ).flatten
+        AdditionalField("changes", changes),
+      ),
     )
 
     def forCustomAction(
@@ -674,6 +679,7 @@ object Dtos {
         comment: ScenarioActivityComment,
         actionName: String,
         customIcon: Option[String],
+        errorMessage: Option[String],
     ): ScenarioActivity = ScenarioActivity(
       id = id,
       `type` = ScenarioActivityType.CustomAction,
@@ -683,8 +689,9 @@ object Dtos {
       comment = Some(comment),
       attachment = None,
       additionalFields = List(
-        AdditionalField("actionName", actionName),
-      ),
+        Some(AdditionalField("actionName", actionName)),
+        errorMessage.map(e => AdditionalField("errorMessage", e)),
+      ).flatten,
       overrideIcon = customIcon,
     )
 
