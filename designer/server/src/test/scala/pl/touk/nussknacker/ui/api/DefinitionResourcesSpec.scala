@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.{PredefinedFromEntityUnmarshallers, Unmarshal}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Json, parser}
 import org.scalatest.funspec.AnyFunSpec
@@ -28,6 +29,9 @@ import pl.touk.nussknacker.ui.definition.{
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 class DefinitionResourcesSpec
     extends AnyFunSpec
     with ScalatestRouteTest
@@ -44,14 +48,12 @@ class DefinitionResourcesSpec
     definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData)
 
-      (
-        DefinitionsService(
-          processingTypeData,
-          modelDefinitionEnricher,
-          new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
-          fragmentRepository,
-          None
-        )
+      DefinitionsService(
+        processingTypeData,
+        modelDefinitionEnricher,
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
+        fragmentRepository,
+        None
       )
     }
   )
@@ -59,6 +61,18 @@ class DefinitionResourcesSpec
   it("should handle missing scenario type") {
     getProcessDefinitionDataUsingRawProcessingType(processingType = "not-existing-processing-type") ~> check {
       status shouldBe StatusCodes.NotFound
+    }
+  }
+
+  it("should handle unknown properties mode") {
+    getProcessDefinitionDataUsingRawProcessingType(
+      processingType = "streaming",
+      modelParametersMode = Some("any")
+    ) ~> check {
+      status shouldBe StatusCodes.BadRequest
+      val textPlainMarshaller = PredefinedFromEntityUnmarshallers.stringUnmarshaller
+      val entityAsString      = Await.result(textPlainMarshaller(response.entity), 1 second)
+      entityAsString shouldEqual "Unknown modelParametersMode: any. Supported ones: ENRICHED, RAW"
     }
   }
 
@@ -71,6 +85,24 @@ class DefinitionResourcesSpec
         .downField("custom-noneReturnTypeTransformer")
 
       noneReturnType.downField("returnType").focus shouldBe Some(Json.Null)
+    }
+  }
+
+  it("should return enriched definition data for existing scenario type") {
+    getProcessDefinitionData(modelParametersMode = Some("ENRICHED")) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val response = responseAs[Json]
+      hasScenarioProperty(response, "someScenarioProperty1") should be(true)
+    }
+  }
+
+  it("should return raw definition data for existing scenario type") {
+    getProcessDefinitionData(modelParametersMode = Some("RAW")) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val response = responseAs[Json]
+      hasScenarioProperty(response, "someScenarioProperty1") should be(false)
     }
   }
 
@@ -279,15 +311,32 @@ class DefinitionResourcesSpec
     }
   }
 
-  private def getProcessDefinitionData(processingType: String = "streaming"): RouteTestResult = {
-    getProcessDefinitionDataUsingRawProcessingType(processingType)
+  private def getProcessDefinitionData(
+      processingType: String = "streaming",
+      modelParametersMode: Option[String] = None
+  ): RouteTestResult = {
+    getProcessDefinitionDataUsingRawProcessingType(processingType, modelParametersMode)
   }
 
-  private def getProcessDefinitionDataUsingRawProcessingType(processingType: String) = {
-    Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(
+  private def getProcessDefinitionDataUsingRawProcessingType(
+      processingType: String,
+      modelParametersMode: Option[String] = None
+  ) = {
+    val maybeModelParametersModeParam = modelParametersMode.fold("")(value => s"&modelParametersMode=$value")
+    Get(
+      s"/processDefinitionData/$processingType?isFragment=false$maybeModelParametersModeParam"
+    ) ~> withPermissions(
       definitionResources,
       Permission.Read
     )
+  }
+
+  private def hasScenarioProperty(response: Json, property: String) = {
+    response.hcursor
+      .downField("scenarioProperties")
+      .downField("propertiesConfig")
+      .downField(property)
+      .succeeded
   }
 
 }

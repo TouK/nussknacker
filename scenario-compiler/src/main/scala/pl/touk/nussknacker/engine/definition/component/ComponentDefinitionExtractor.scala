@@ -73,35 +73,60 @@ object ComponentDefinitionExtractor {
         case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
       }
 
-    val componentId = ComponentId(componentType, componentName)
-
-    def additionalConfigFromProvider(overriddenDesignerWideId: Option[DesignerWideComponentId]) = {
-      val designerWideId = overriddenDesignerWideId.getOrElse(determineDesignerWideId(componentId))
-
+    def additionalConfigFromProvider(designerWideId: DesignerWideComponentId) = {
       additionalConfigsFromProvider
         .get(designerWideId)
         .map(ComponentAdditionalConfigConverter.toComponentConfig)
         .getOrElse(ComponentConfig.zero)
-        .copy(
-          componentId = Some(designerWideId)
-        )
     }
 
-    def withUiDefinitionForNotDisabledComponent[T](
+    def configFor(defaultConfig: ComponentConfig, withConfigFromProvider: Boolean) = {
+      val componentId                             = ComponentId(componentType, componentName)
+      val configFromAdditional                    = additionalConfigs.getConfig(componentId)
+      val combinedConfigWithoutConfigFromProvider = configFromAdditional |+| configFromDefinition |+| defaultConfig
+      val designerWideId =
+        combinedConfigWithoutConfigFromProvider.componentId.getOrElse(determineDesignerWideId(componentId))
+
+      val finalConfig = if (withConfigFromProvider) {
+        additionalConfigFromProvider(designerWideId) |+| combinedConfigWithoutConfigFromProvider
+      } else {
+        combinedConfigWithoutConfigFromProvider
+      }
+
+      finalConfig.copy(
+        componentId = Some(designerWideId)
+      )
+    }
+
+    def withUiDefinitionForNotDisabledComponent[T <: ComponentDefinitionWithImplementation](
         returnType: Option[TypingResult]
-    )(f: (ComponentUiDefinition, Map[ParameterName, ParameterConfig]) => T): Option[T] = {
+    )(toComponentDefinition: ResolvedComponentConfig => T): Option[T] = {
       val defaultConfig =
         DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
           componentType,
           returnType.isDefined,
           customCanBeEnding
         )
-      val configFromAdditional                    = additionalConfigs.getConfig(componentId)
-      val combinedConfigWithoutConfigFromProvider = configFromAdditional |+| configFromDefinition |+| defaultConfig
-      val designerWideId                          = combinedConfigWithoutConfigFromProvider.componentId
-      val finalCombinedConfig = additionalConfigFromProvider(designerWideId) |+| combinedConfigWithoutConfigFromProvider
 
-      filterOutDisabledAndComputeFinalUiDefinition(finalCombinedConfig, additionalConfigs.groupName).map(f.tupled)
+      val finalEnrichedConfig = configFor(defaultConfig, withConfigFromProvider = true)
+      val finalRawConfig      = configFor(defaultConfig, withConfigFromProvider = false)
+
+      for {
+        enrichedComponentConfig <- filterOutDisabledAndComputeFinalUiDefinition(
+          finalEnrichedConfig,
+          additionalConfigs.groupName
+        )
+        rawComponentConfig <- filterOutDisabledAndComputeFinalUiDefinition(
+          finalRawConfig,
+          additionalConfigs.groupName
+        )
+      } yield toComponentDefinition(
+        ResolvedComponentConfig(
+          uiDefinition = enrichedComponentConfig._1,
+          enrichedParams = enrichedComponentConfig._2,
+          rawParams = rawComponentConfig._2
+        )
+      )
     }
 
     (component match {
@@ -110,7 +135,7 @@ object ComponentDefinitionExtractor {
         Right(
           withUiDefinitionForNotDisabledComponent(
             DynamicComponentStaticDefinitionDeterminer.staticReturnType(dynamicComponent)
-          ) { (uiDefinition, parametersConfig) =>
+          ) { componentConfigs =>
             val componentSpecificData = extractComponentSpecificData(component) {
               dynamicComponent match {
                 case _: JoinDynamicComponent[_]        => true
@@ -122,8 +147,9 @@ object ComponentDefinitionExtractor {
               implementationInvoker = invoker,
               component = dynamicComponent,
               componentTypeSpecificData = componentSpecificData,
-              uiDefinition = uiDefinition,
-              parametersConfig = parametersConfig
+              uiDefinition = componentConfigs.uiDefinition,
+              parametersConfig = componentConfigs.enrichedParams,
+              rawParametersConfig = componentConfigs.rawParams,
             )
           }
         )
@@ -131,37 +157,50 @@ object ComponentDefinitionExtractor {
         // We skip defaultConfig here, it is not needed for parameters, and it would generate a cycle of dependency:
         // method definition need parameters config, which need default config which need return type (for group determining)
         // which need method definition
-        val combinedConfigWithoutConfigFromProvider =
-          additionalConfigs.getConfig(componentId) |+| configFromDefinition
-        val configFromProvider = additionalConfigFromProvider(combinedConfigWithoutConfigFromProvider.componentId)
-        val combinedConfigForParametersExtraction = configFromProvider |+| combinedConfigWithoutConfigFromProvider
+        val combinedConfigForParametersExtraction = configFor(
+          defaultConfig = ComponentConfig.zero,
+          withConfigFromProvider = true
+        )
 
-        methodDefinitionExtractor
-          .extractMethodDefinition(
-            component,
-            findMainComponentMethod(component),
-            combinedConfigForParametersExtraction.params.getOrElse(Map.empty)
-          )
-          .map { methodDef =>
-            def notReturnAnything(typ: TypingResult) =
-              Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
-            val returnType = Option(methodDef.returnType).filterNot(notReturnAnything)
-            withUiDefinitionForNotDisabledComponent(returnType) { (uiDefinition, _) =>
-              val staticDefinition = ComponentStaticDefinition(methodDef.definedParameters, returnType)
-              val invoker          = extractComponentImplementationInvoker(component, methodDef)
-              val componentSpecificData = extractComponentSpecificData(component) {
-                methodDef.runtimeClass == classOf[JoinContextTransformation]
-              }
-              MethodBasedComponentDefinitionWithImplementation(
-                name = componentName,
-                implementationInvoker = invoker,
-                component = component,
-                componentTypeSpecificData = componentSpecificData,
-                staticDefinition = staticDefinition,
-                uiDefinition = uiDefinition
-              )
+        val rawConfigForParameterExtraction = configFor(
+          defaultConfig = ComponentConfig.zero,
+          withConfigFromProvider = false
+        )
+
+        for {
+          finalMethodDef <- methodDefinitionExtractor
+            .extractMethodDefinition(
+              component,
+              findMainComponentMethod(component),
+              combinedConfigForParametersExtraction.params.getOrElse(Map.empty)
+            )
+          rawMethodDef <- methodDefinitionExtractor
+            .extractMethodDefinition(
+              component,
+              findMainComponentMethod(component),
+              rawConfigForParameterExtraction.params.getOrElse(Map.empty)
+            )
+        } yield {
+          def notReturnAnything(typ: TypingResult) =
+            Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
+          val returnType = Option(finalMethodDef.returnType).filterNot(notReturnAnything)
+          withUiDefinitionForNotDisabledComponent(returnType) { componentConfigs =>
+            val staticDefinition =
+              ComponentStaticDefinition(finalMethodDef.definedParameters, returnType, rawMethodDef.definedParameters)
+            val invoker = extractComponentImplementationInvoker(component, finalMethodDef)
+            val componentSpecificData = extractComponentSpecificData(component) {
+              finalMethodDef.runtimeClass == classOf[JoinContextTransformation]
             }
+            MethodBasedComponentDefinitionWithImplementation(
+              name = componentName,
+              implementationInvoker = invoker,
+              component = component,
+              componentTypeSpecificData = componentSpecificData,
+              staticDefinition = staticDefinition,
+              uiDefinition = componentConfigs.uiDefinition
+            )
           }
+        }
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }
@@ -228,5 +267,11 @@ object ComponentDefinitionExtractor {
       (uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
     }
   }
+
+  private final case class ResolvedComponentConfig(
+      uiDefinition: ComponentUiDefinition,
+      enrichedParams: Map[ParameterName, ParameterConfig],
+      rawParams: Map[ParameterName, ParameterConfig]
+  )
 
 }

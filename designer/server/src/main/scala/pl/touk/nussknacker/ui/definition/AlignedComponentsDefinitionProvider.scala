@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.definition
 
-import cats.data.NonEmptySet
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess

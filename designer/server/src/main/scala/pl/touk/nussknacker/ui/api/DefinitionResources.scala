@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.{Directive, Directive1, Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.definition.DefinitionsService
+import pl.touk.nussknacker.ui.definition.DefinitionsService.ModelParametersMode
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.NuPathMatchers
@@ -25,8 +26,8 @@ class DefinitionResources(
         .map { case (definitionsService) =>
           pathEndOrSingleSlash {
             get {
-              parameter(Symbol("isFragment").as[Boolean]) { isFragment =>
-                complete(definitionsService.prepareUIDefinitions(processingType, isFragment))
+              (isFragmentParam & modelParametersModeParam) { (isFragment, modelParametersMode) =>
+                complete(definitionsService.prepareUIDefinitions(processingType, isFragment, modelParametersMode))
               }
             }
           }
@@ -34,6 +35,22 @@ class DefinitionResources(
         .getOrElse {
           complete(HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario type: $processingType not found"))
         }
+    }
+  }
+
+  private val isFragmentParam: Directive1[Boolean] = parameter(Symbol("isFragment").as[Boolean])
+
+  private val modelParametersModeParam: Directive1[ModelParametersMode] = {
+    parameter("modelParametersMode".as[String].optional).flatMap {
+      case Some("ENRICHED") | None => provide(ModelParametersMode.Enriched)
+      case Some("RAW")             => provide(ModelParametersMode.Raw)
+      case Some(other) =>
+        complete(
+          HttpResponse(
+            status = StatusCodes.BadRequest,
+            entity = s"Unknown modelParametersMode: $other. Supported ones: ENRICHED, RAW"
+          )
+        )
     }
   }
 

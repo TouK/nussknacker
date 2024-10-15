@@ -48,6 +48,7 @@ package object definition {
       // FE need this information because branch parameters aren't changed dynamically during node validation so they never
       // should be invalidated
       branchParam: Boolean,
+      requiredParam: Boolean,
       hintText: Option[String],
       label: String
   )
