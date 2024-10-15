@@ -157,7 +157,7 @@ object ComponentDefinitionExtractor {
         // We skip defaultConfig here, it is not needed for parameters, and it would generate a cycle of dependency:
         // method definition need parameters config, which need default config which need return type (for group determining)
         // which need method definition
-        val combinedConfigForParametersExtraction = configFor(
+        val enrichedConfigForParametersExtraction = configFor(
           defaultConfig = ComponentConfig.zero,
           withConfigFromProvider = true
         )
@@ -172,7 +172,7 @@ object ComponentDefinitionExtractor {
             .extractMethodDefinition(
               component,
               findMainComponentMethod(component),
-              combinedConfigForParametersExtraction.params.getOrElse(Map.empty)
+              enrichedConfigForParametersExtraction.params.getOrElse(Map.empty)
             )
           rawMethodDef <- methodDefinitionExtractor
             .extractMethodDefinition(
