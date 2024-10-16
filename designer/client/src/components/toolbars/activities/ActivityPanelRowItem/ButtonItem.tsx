@@ -12,6 +12,8 @@ export const ToggleItemsButton = styled(Button)(({ theme }) => ({
     textTransform: "lowercase",
     fontSize: theme.typography.caption.fontSize,
     fontWeight: theme.typography.caption.fontWeight,
+    paddingTop: 0,
+    paddingBottom: 0,
 }));
 
 interface Props {

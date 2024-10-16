@@ -32,8 +32,8 @@ const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: b
 const StyledActivityBody = styled("div")(({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    margin: theme.spacing(1),
-    gap: theme.spacing(0.5),
+    margin: `${theme.spacing(0.5)} ${theme.spacing(1)} 0`,
+    gap: theme.spacing(1),
 }));
 
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
