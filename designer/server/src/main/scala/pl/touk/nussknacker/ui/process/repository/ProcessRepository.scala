@@ -218,9 +218,9 @@ class DBProcessRepository(
                 lastModifiedAt = clock.instant(),
               )
             case Some(_) | None =>
-              ScenarioComment.Deleted(
-                deletedByUserName = UserName(loggedUser.username),
-                deletedAt = clock.instant(),
+              ScenarioComment.NotAvailable(
+                lastModifiedByUserName = UserName(loggedUser.username),
+                lastModifiedAt = clock.instant(),
               )
           }
         )

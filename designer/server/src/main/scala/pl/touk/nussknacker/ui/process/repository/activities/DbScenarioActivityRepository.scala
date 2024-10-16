@@ -261,7 +261,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioVersion <- scenarioActivity.scenarioVersionId
       content <- comment match {
         case ScenarioComment.Available(comment, _, _) => Some(comment)
-        case ScenarioComment.Deleted(_, _)            => None
+        case ScenarioComment.NotAvailable(_, _)       => None
       }
     } yield Legacy.Comment(
       id = id,
@@ -498,14 +498,14 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private def comment(scenarioComment: ScenarioComment): Option[String] = {
     scenarioComment match {
       case ScenarioComment.Available(comment, _, _) => Some(comment.value)
-      case ScenarioComment.Deleted(_, _)            => None
+      case ScenarioComment.NotAvailable(_, _)       => None
     }
   }
 
   private def lastModifiedByUserName(scenarioComment: ScenarioComment): Option[String] = {
     val userName = scenarioComment match {
       case ScenarioComment.Available(_, lastModifiedByUserName, _) => lastModifiedByUserName
-      case ScenarioComment.Deleted(deletedByUserName, _)           => deletedByUserName
+      case ScenarioComment.NotAvailable(deletedByUserName, _)      => deletedByUserName
     }
     Some(userName.value)
   }
@@ -677,9 +677,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             lastModifiedAt = lastModifiedAt.toInstant
           )
         case None =>
-          ScenarioComment.Deleted(
-            deletedByUserName = UserName(lastModifiedByUserName),
-            deletedAt = lastModifiedAt.toInstant
+          ScenarioComment.NotAvailable(
+            lastModifiedByUserName = UserName(lastModifiedByUserName),
+            lastModifiedAt = lastModifiedAt.toInstant
           )
       }
     }

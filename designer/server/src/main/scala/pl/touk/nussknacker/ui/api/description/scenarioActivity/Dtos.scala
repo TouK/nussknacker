@@ -260,7 +260,7 @@ object Dtos {
 
     final case class Available(value: String) extends ScenarioActivityCommentContent
 
-    case object Deleted extends ScenarioActivityCommentContent
+    case object NotAvailable extends ScenarioActivityCommentContent
 
   }
 
