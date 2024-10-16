@@ -15,7 +15,7 @@ trait WithHsqlDB {
 
   private val driverClassName = "org.hsqldb.jdbc.JDBCDriver"
   private val username        = "SA"
-  private val url             = s"jdbc:hsqldb:mem:$dbName"
+  private val url             = s"jdbc:hsqldb:mem:$dbName;hsqldb.tx=mvcc"
   private val password        = ""
 
   val hsqlConfigValues: Map[String, String] = Map(

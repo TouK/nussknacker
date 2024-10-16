@@ -83,7 +83,7 @@ class PeriodicProcessServiceIntegrationTest
 
     val hsqlConfig = ConfigFactory.parseMap(
       Map(
-        "url"      -> s"jdbc:hsqldb:mem:periodic-${UUID.randomUUID().toString};sql.syntax_ora=true",
+        "url"      -> s"jdbc:hsqldb:mem:periodic-${UUID.randomUUID().toString};sql.syntax_ora=true;hsqldb.tx=mvcc",
         "user"     -> "SA",
         "password" -> ""
       ).asJava

@@ -37,7 +37,7 @@ trait WithTestHsqlDb extends WithTestDb {
       "db" -> Map(
         "user"     -> "SA",
         "password" -> "",
-        "url"      -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
+        "url"      -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true;hsqldb.tx=mvcc",
         "driver"   -> "org.hsqldb.jdbc.JDBCDriver"
       ).asJava
     ).asJava
