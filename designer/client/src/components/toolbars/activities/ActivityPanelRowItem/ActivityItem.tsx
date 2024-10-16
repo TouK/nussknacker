@@ -69,7 +69,9 @@ export const ActivityItem = forwardRef(
                             </Typography>
                         </Box>
 
-                        {activity.scenarioVersionId && <Typography variant={"overline"}>{version}</Typography>}
+                        {activity.scenarioVersionId && activity.type !== "SCENARIO_MODIFIED" && (
+                            <Typography variant={"overline"}>{version}</Typography>
+                        )}
                         {activity?.comment?.content?.value && (
                             <CommentContent
                                 content={activity.comment.content.value}

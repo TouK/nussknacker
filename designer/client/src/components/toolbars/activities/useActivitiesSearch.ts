@@ -117,6 +117,7 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
         handleSearch("");
         setSelectedResult(0);
         setFoundResults([]);
+        handleUpdateSearchResults([], 0);
     };
 
     return { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults };
