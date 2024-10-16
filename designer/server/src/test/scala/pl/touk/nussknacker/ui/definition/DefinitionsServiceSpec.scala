@@ -24,7 +24,8 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
+import pl.touk.nussknacker.ui.definition.DefinitionsService.ModelParametersMode.{Enriched, Raw}
+import pl.touk.nussknacker.ui.definition.DefinitionsService.{ModelParametersMode, createUIScenarioPropertyConfig}
 import pl.touk.nussknacker.ui.security.api.AdminUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -199,7 +200,33 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   }
 
   test("should override component's parameter config with additionally provided config") {
-    val model: ModelData = LocalModelData(
+    val model: ModelData = localModelWithAdditionalConfig
+    val definitions      = prepareDefinitions(model, List.empty)
+
+    val expectedOverridenParamDefaultValue =
+      "paramStringEditor" -> Expression.spel("'default-from-additional-ui-config-provider'")
+    val returnedParamDefaultValues =
+      definitions.components(ComponentId(ComponentType.Service, "enricher")).parameters.map { param =>
+        param.name -> param.defaultValue
+      }
+    returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
+  }
+
+  test("should not override component's parameter config with additionally provided config when raw config requested") {
+    val model: ModelData = localModelWithAdditionalConfig
+    val definitions      = prepareDefinitions(model, List.empty, ModelParametersMode.Raw)
+
+    val expectedParamDefaultValue =
+      "paramStringEditor" -> Expression.spel("''")
+    val returnedParamDefaultValues =
+      definitions.components(ComponentId(ComponentType.Service, "enricher")).parameters.map { param =>
+        param.name -> param.defaultValue
+      }
+    returnedParamDefaultValues should contain(expectedParamDefaultValue)
+  }
+
+  private def localModelWithAdditionalConfig = {
+    LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
       List(ComponentDefinition("enricher", TestService)),
       additionalConfigsFromProvider = Map(
@@ -222,16 +249,6 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         )
       )
     )
-
-    val definitions = prepareDefinitions(model, List.empty)
-
-    val expectedOverridenParamDefaultValue =
-      "paramStringEditor" -> Expression.spel("'default-from-additional-ui-config-provider'")
-    val returnedParamDefaultValues =
-      definitions.components(ComponentId(ComponentType.Service, "enricher")).parameters.map { param =>
-        param.name -> param.defaultValue
-      }
-    returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
   }
 
   test("should override component's component groups with additionally provided config") {
@@ -264,7 +281,11 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
-  private def prepareDefinitions(model: ModelData, fragmentScenarios: List[CanonicalProcess]): UIDefinitions = {
+  private def prepareDefinitions(
+      model: ModelData,
+      fragmentScenarios: List[CanonicalProcess],
+      modelParametersMode: ModelParametersMode = ModelParametersMode.Enriched
+  ): UIDefinitions = {
     val processingType = Streaming
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
@@ -289,7 +310,13 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType.stringify),
       fragmentRepository = new StubFragmentRepository(Map(processingType.stringify -> fragmentScenarios)),
       fragmentPropertiesDocsUrl = None
-    ).prepareUIDefinitions(processingType.stringify, forFragment = false)(AdminUser("admin", "admin")).futureValue
+    ).prepareUIDefinitions(
+      processingType = processingType.stringify,
+      forFragment = false,
+      modelParametersMode = modelParametersMode
+    )(
+      AdminUser("admin", "admin")
+    ).futureValue
   }
 
 }
