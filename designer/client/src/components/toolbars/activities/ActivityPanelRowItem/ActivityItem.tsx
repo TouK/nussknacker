@@ -23,7 +23,7 @@ const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: b
         : "none",
     borderRadius: "4px",
     backgroundColor: isActiveFound
-        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.16)
+        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.27)
         : isFound
         ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.08)
         : "none",
