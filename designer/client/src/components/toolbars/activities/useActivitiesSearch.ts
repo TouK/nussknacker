@@ -50,6 +50,12 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
 
     const handleSearch = (value: string) => {
         setSearchQuery(value);
+
+        if (value === "") {
+            handleUpdateSearchResults([], 0);
+            return;
+        }
+
         setSelectedResult(0);
 
         const foundActivities: UIActivity[] = [];

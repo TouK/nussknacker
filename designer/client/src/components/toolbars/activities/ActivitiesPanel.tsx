@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "../../../http/HttpService";
@@ -13,7 +13,7 @@ import { ActivitiesPanelFooter } from "./ActivitiesPanelFooter";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName } from "../../../reducers/selectors/graph";
 import { getScenarioActivities, updateScenarioActivities } from "../../../actions/nk/scenarioActivities";
-import { getActivities } from "../../../reducers/selectors/activities";
+import { getVisibleActivities } from "../../../reducers/selectors/activities";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
 
 const StyledVariableSizeList = styled(VariableSizeList)(({ theme }) => ({
@@ -72,7 +72,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const rowHeights = useRef({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const scenarioName = useSelector(getProcessName);
-    const uiActivities = useSelector(getActivities);
+    const uiActivities = useSelector(getVisibleActivities);
 
     const dispatch = useDispatch();
 
@@ -130,14 +130,6 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
         handleFetchActivities();
     }, [handleFetchActivities]);
 
-    /*
-     * To correctly display items in a react-window list, only the visible elements should be passed.
-     **/
-    const visibleUiActivities = useMemo(
-        () => uiActivities.filter((activity) => (activity.uiType === "item" && !activity.isHidden) || activity.uiType !== "item"),
-        [uiActivities],
-    );
-
     return (
         <ToolbarWrapper {...props} title={"Activities"}>
             <ActivitiesSearch
@@ -158,13 +150,13 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                         {({ width, height }) => (
                             <StyledVariableSizeList
                                 ref={listRef}
-                                itemCount={visibleUiActivities.length}
+                                itemCount={uiActivities.length}
                                 itemSize={getRowHeight}
                                 height={height}
                                 width={width}
                                 estimatedItemSize={estimatedItemSize}
                                 itemKey={(index) => {
-                                    return visibleUiActivities[index].uiGeneratedId;
+                                    return uiActivities[index].uiGeneratedId;
                                 }}
                             >
                                 {({ index, style }) => (
@@ -174,7 +166,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
                                         setRowHeight={setRowHeight}
                                         handleShowRows={handleShowRows}
                                         handleHideRows={handleHideRows}
-                                        activities={visibleUiActivities}
+                                        activities={uiActivities}
                                         searchQuery={searchQuery}
                                     />
                                 )}
