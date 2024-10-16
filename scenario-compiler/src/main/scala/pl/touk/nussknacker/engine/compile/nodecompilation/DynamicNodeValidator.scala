@@ -108,6 +108,8 @@ class DynamicNodeValidator(
               // we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
               val allErrors = (errorsCombined ++ errors).distinct
               Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext, state, nodeParameters))
+            case component.NextParameters(Nil, _, _) =>
+              returnUnmatchedFallback
             case component.NextParameters(newParameters, newParameterErrors, state) =>
               val enrichedParameters =
                 StandardParameterEnrichment.enrichParameterDefinitions(newParameters, parametersConfig)
