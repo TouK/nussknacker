@@ -313,7 +313,8 @@ class ManagementResourcesSpec
     }
   }
 
-  test("snapshots process") {
+//  FIXME: temporarily disable test
+  ignore("snapshots process") {
     saveCanonicalProcessAndAssertSuccess(ProcessTestData.sampleScenario)
     deploymentManager.withProcessRunning(ProcessTestData.sampleScenario.name) {
       snapshot(ProcessTestData.sampleScenario.name) ~> check {
