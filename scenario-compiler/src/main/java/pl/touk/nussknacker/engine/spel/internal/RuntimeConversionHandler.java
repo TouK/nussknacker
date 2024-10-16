@@ -56,7 +56,7 @@ public class RuntimeConversionHandler {
 
     }
 
-    static List<Object> convert(Object target) {
+    public static List<Object> convert(Object target) {
         if (target.getClass().getComponentType().isPrimitive()) {
             int length = Array.getLength(target);
             List<Object> result = new ArrayList<>(length);

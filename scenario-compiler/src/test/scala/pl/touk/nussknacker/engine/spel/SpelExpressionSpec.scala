@@ -241,6 +241,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
   }
 
+  private def evaluate[T: TypeTag](expr: String): T =
+    parse[T](expr = expr, context = ctx).validExpression.evaluateSync[T](ctx)
+
   test("parsing first selection on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").validExpression
       .evaluateSync[java.util.ArrayList[Int]](ctx) should equal(2)
