@@ -162,6 +162,7 @@ class TestingApiHttpServiceSpec
              |
              |                ],
              |                "branchParam": false,
+             |                "requiredParam": true,
              |                "hintText": null,
              |                "label": "elements"
              |            }
