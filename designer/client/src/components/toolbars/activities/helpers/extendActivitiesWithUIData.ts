@@ -27,6 +27,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         occurrences: string[] = [],
         iteration = 0,
     ): DateActivity | undefined => {
+        const previousActivity = activitiesDataWithMetadata[index - 1 + iteration];
         const nextActivity = activitiesDataWithMetadata[index + 1 + iteration];
         const latestDateItem = getLatestDateItem(uiActivities);
 
@@ -35,9 +36,9 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         }
 
         const isDateRangeInOccurrences = occurrences.every((occurrence) => occurrence === occurrences[0]);
-        const isNextOccurrence = currentActivity.type === nextActivity?.type;
+        const isTheSameTypeAsBefore = currentActivity.type === previousActivity?.type;
         const shouldAddDateRangeElement =
-            occurrences.length >= hideItemsOptionAvailableLimit && !isNextOccurrence && !isDateRangeInOccurrences;
+            occurrences.length >= hideItemsOptionAvailableLimit && !isTheSameTypeAsBefore && !isDateRangeInOccurrences;
 
         if (shouldAddDateRangeElement) {
             const dates = occurrences.map((occurrence) => moment(occurrence));
@@ -50,10 +51,10 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
 
         const currentAndNextActivityDateAreTheSame = formatDate(currentActivity.date) === (nextActivity && formatDate(nextActivity.date));
 
-        if (currentAndNextActivityDateAreTheSame || isNextOccurrence) {
+        if (currentAndNextActivityDateAreTheSame || isTheSameTypeAsBefore) {
             iteration++;
 
-            if (isNextOccurrence) {
+            if (isTheSameTypeAsBefore) {
                 occurrences.push(formatDate(currentActivity.date));
             } else {
                 occurrences = [];
