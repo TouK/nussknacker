@@ -1,6 +1,7 @@
 //types from pl.touk.nussknacker.ui.definition
 
 interface TypingResultBase {
+    value?: string | number | boolean;
     type: string;
     display: string;
     refClazzName: string;

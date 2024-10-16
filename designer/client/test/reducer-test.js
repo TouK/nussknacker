@@ -4,7 +4,6 @@ import NodeUtils from "../src/components/graph/NodeUtils";
 const baseProcessState = {
     name: "DEFGH",
     isLatestVersion: true,
-    processType: "graph",
     processCategory: "Category1",
     modificationDate: "2017-02-14T11:16:56.686",
     createdAt: "2017-02-14T11:16:56.686",
