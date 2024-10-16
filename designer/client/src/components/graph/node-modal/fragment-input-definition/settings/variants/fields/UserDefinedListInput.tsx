@@ -15,7 +15,7 @@ import { GenericValidationRequest } from "../../../../../../../actions/nk/generi
 import { debounce } from "lodash";
 import { EditorType } from "../../../../editors/expression/Editor";
 import { useSettings } from "../../SettingsProvider";
-import { Box, FormControl } from "@mui/material";
+import { Box, Button, FormControl, Stack } from "@mui/material";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
@@ -167,27 +167,32 @@ export const UserDefinedListInput = ({
     return (
         <FormControl>
             <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
-            <Box width={"100%"} flex={1}>
-                <EditableEditor
-                    validationLabelInfo={temporaryValuesTyping && "Typing..."}
-                    expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
-                    onValueChange={(value) => {
-                        setTemporaryListItem(value);
-                        setTemporaryValuesTyping(true);
-                        setTemporaryValueErrors([]);
-                        validateTemporaryListItem(value);
-                    }}
-                    variableTypes={variableTypes}
-                    readOnly={readOnly}
-                    ref={(ref: AceEditor | null) => {
-                        if (ref?.editor) {
-                            ref.editor.commands.addCommand(aceEditorEnterCommand);
-                        }
-                    }}
-                    param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
-                    fieldErrors={getValidationErrorsForField(temporaryValueErrors, temporaryItemName)}
-                    showValidation
-                />
+            <Box width={"80%"} flex={1}>
+                <Stack direction="row" paddingY={1} spacing={1} justifyContent={"space-between"} alignItems={"start"}>
+                    <EditableEditor
+                        validationLabelInfo={temporaryValuesTyping && "Typing..."}
+                        expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
+                        onValueChange={(value) => {
+                            setTemporaryListItem(value);
+                            setTemporaryValuesTyping(true);
+                            setTemporaryValueErrors([]);
+                            validateTemporaryListItem(value);
+                        }}
+                        variableTypes={variableTypes}
+                        readOnly={readOnly}
+                        ref={(ref: AceEditor | null) => {
+                            if (ref?.editor) {
+                                ref.editor.commands.addCommand(aceEditorEnterCommand);
+                            }
+                        }}
+                        param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
+                        fieldErrors={getValidationErrorsForField(temporaryValueErrors, temporaryItemName)}
+                        showValidation
+                    />
+                    <Button variant="contained" onClick={handleAddNewListItem}>
+                        {t("fragment.addListItemButton", "Add")}
+                    </Button>
+                </Stack>
                 {userDefinedListOptions?.length > 0 && (
                     <ListItems
                         items={fixedValuesList}
