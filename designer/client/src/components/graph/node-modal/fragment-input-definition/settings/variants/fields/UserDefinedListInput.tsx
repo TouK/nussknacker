@@ -190,7 +190,7 @@ export const UserDefinedListInput = ({
                         showValidation
                     />
                     <Button variant="contained" onClick={handleAddNewListItem}>
-                        Add
+                        {t("fragment.addListItemButton", "Add")}
                     </Button>
                 </Stack>
                 {userDefinedListOptions?.length > 0 && (
