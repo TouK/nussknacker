@@ -109,6 +109,54 @@
           }
         }
       ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -2688,6 +2736,54 @@
               "noVarArgs": [
                 {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
               ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
               "result": {"type": "Unknown"}
             }
           ]
@@ -11950,6 +12046,54 @@
           }
         }
       ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -12095,6 +12239,54 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
+        }
+      ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -12346,6 +12538,54 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
+        }
+      ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [

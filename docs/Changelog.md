@@ -76,6 +76,9 @@
 * [#6958](https://github.com/TouK/nussknacker/pull/6958) Add message size limit in the "Kafka" exceptionHandler
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Remove unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`
 * [#7000](https://github.com/TouK/nussknacker/pull/7000) Show all possible options for dictionary editor on open.
+* [#7042](https://github.com/TouK/nussknacker/pull/7042) SpeL: added extension methods:
+  * toList/toListOrNull - a collection or unknown collection can be converted to a list.
+  * toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
 
 ## 1.17
 

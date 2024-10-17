@@ -57,7 +57,7 @@ import java.nio.charset.Charset
 import java.time.chrono.ChronoLocalDate
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.{Collections, Currency, Locale, Optional, UUID}
+import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -102,7 +102,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "intArray"       -> Array(1, 2, 3),
       "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
       "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"  -> ContainerOfUnknown("unknown")
+      "unknownString"  -> ContainerOfUnknown("unknown"),
+      "setVal"         -> Set("a").asJava
     )
   )
 
@@ -1506,6 +1507,112 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "{#unknownString.value.castToOrNull('String'), #unknownString.value.castTo('String'), " +
         "#unknownString.value.canCastTo('String')}"
     ) shouldBe List("unknown", "unknown", true).asJava
+  }
+
+  test("should convert a Set to a List") {
+    val parsed = parse[Any](expr = "#setVal.toList()", context = ctx).validValue
+    parsed.returnType.withoutValue shouldBe Typed.genericTypeClass[JList[_]](List(Typed.typedClass[String]))
+    parsed.expression.evaluateSync[Any](ctx) shouldBe List("a").asJava
+  }
+
+  test("should convert a List to a Map") {
+    val mapStringStringType =
+      Typed.genericTypeClass[JMap[_, _]](List(Typed.typedClass[String], Typed.typedClass[String]))
+    val mapStringUnknownType =
+      Typed.genericTypeClass[JMap[_, _]](List(Typed.typedClass[String], Unknown))
+    val stringMap = Map("foo" -> "bar", "baz" -> "qux").asJava
+    val nullableMap = {
+      val result = new util.HashMap[String, String]()
+      result.put("foo", "bar")
+      result.put("baz", null)
+      result.put(null, "qux")
+      result
+    }
+    val mapWithDifferentValueTypes = Map("foo" -> "bar", "baz" -> 1).asJava
+
+    forAll(
+      Table(
+        ("expression", "ctx", "expectedType", "expectedResult"),
+        (
+          "#mapVal.![{key: #this.key + '_k', value: #this.value + '_v'}].toMap()",
+          ctx.withVariable("mapVal", stringMap),
+          mapStringStringType,
+          Map("foo_k" -> "bar_v", "baz_k" -> "qux_v").asJava
+        ),
+        (
+          "#mapVal.![{key: #this.key, value: #this.value}].toMap()",
+          ctx.withVariable("mapVal", mapWithDifferentValueTypes),
+          mapStringUnknownType,
+          mapWithDifferentValueTypes
+        ),
+        (
+          "#mapVal.![{key: #this.key, value: #this.value}].toMap()",
+          ctx.withVariable("mapVal", nullableMap),
+          mapStringStringType,
+          nullableMap
+        )
+      )
+    ) { (expression, ctx, expectedType, expectedResult) =>
+      val parsed = parse[Any](expr = expression, context = ctx).validValue
+      parsed.returnType.withoutValue shouldBe expectedType
+      parsed.expression.evaluateSync[Any](ctx) shouldBe expectedResult
+    }
+  }
+
+  test("should return error msg if record in map project does not contain required fields") {
+    parse[Any]("#mapValue.![{invalid_key: #this.key}].toMap()", ctx).invalidValue.toList should matchPattern {
+      case GenericFunctionError("List element must contain 'key' and 'value' fields") :: Nil =>
+    }
+  }
+
+  test("should convert unknown to a appropriate type") {
+    val map         = Map("a" -> "b").asJava
+    val list        = List("a").asJava
+    val mapTyping   = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    val listTyping  = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val mapContext  = ctx.withVariable("unknownMap", ContainerOfUnknown(map))
+    val listContext = ctx.withVariable("unknownList", ContainerOfUnknown(list))
+    forAll(
+      Table(
+        ("expression", "ctx", "expectedType", "expectedResult"),
+        ("#unknownMap.value.toMap()", mapContext, mapTyping, map),
+        ("#unknownMap.value.toMapOrNull()", mapContext, mapTyping, map),
+        ("#unknownList.value.toList()", listContext, listTyping, list),
+        ("#unknownList.value.toListOrNull()", listContext, listTyping, list),
+      )
+    ) { (expression, ctx, expectedType, expectedResult) =>
+      val parsed = parse[Any](expr = expression, context = ctx).validValue
+      parsed.returnType.withoutValue shouldBe expectedType
+      parsed.expression.evaluateSync[Any](ctx) shouldBe expectedResult
+    }
+  }
+
+  test("should throw exception if an unknown could not be converted to appropriate type") {
+    forAll(
+      Table(
+        ("method", "errorMsg"),
+        ("toMap()", "Cannot convert unknown to a Map"),
+        ("toList()", "Cannot convert unknown to a List"),
+      )
+    ) { (method, errorMsg) =>
+      val caught = intercept[SpelExpressionEvaluationException] {
+        evaluate[Any](s"#unknownString.value.$method")
+      }
+      caught.getCause shouldBe a[IllegalArgumentException]
+      caught.getCause.getMessage shouldBe errorMsg
+    }
+  }
+
+  test("should return null if an unknown could not be converted to appropriate type") {
+    forAll(
+      Table(
+        ("method"),
+        ("toMapOrNull()"),
+        ("toListOrNull()"),
+      )
+    ) { (method) =>
+      evaluate[Any](s"#unknownString.value.$method") == null shouldBe true
+    }
   }
 
 }
