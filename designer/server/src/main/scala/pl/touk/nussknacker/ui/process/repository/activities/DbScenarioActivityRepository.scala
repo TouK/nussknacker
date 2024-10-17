@@ -3,11 +3,13 @@ package pl.touk.nussknacker.ui.process.repository.activities
 import cats.implicits.catsSyntaxEitherId
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
+import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{
   AdditionalProperties,
   AttachmentEntityData,
@@ -31,7 +33,7 @@ import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
-class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: Clock)(
+class DbScenarioActivityRepository private (override protected val dbRef: DbRef, clock: Clock)(
     implicit executionContext: ExecutionContext,
 ) extends DbioRepository
     with NuTables
@@ -50,19 +52,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioActivity: ScenarioActivity,
   ): DB[ScenarioActivityId] = {
     insertActivity(scenarioActivity).map(_.activityId)
-  }
-
-  def modifyActivity(
-      activityId: ScenarioActivityId,
-      modification: ScenarioActivity => ScenarioActivity,
-  ): DB[Either[ModifyActivityError, Unit]] = {
-    modifyActivityByActivityId[ModifyActivityError, ScenarioActivity](
-      activityId = activityId,
-      activityDoesNotExistError = ModifyActivityError.ActivityDoesNotExist,
-      validateCurrentValue = validateActivityExistsForScenario,
-      modify = originalActivity => toEntity(modification(originalActivity)),
-      couldNotModifyError = ModifyActivityError.CouldNotModifyActivity,
-    )
   }
 
   def addComment(
@@ -91,7 +80,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioId: ProcessId,
       rowId: Long,
       comment: String
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]] = {
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
     modifyActivityByRowId(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
@@ -105,7 +94,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioId: ProcessId,
       activityId: ScenarioActivityId,
       comment: String
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]] = {
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
@@ -118,7 +107,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   def deleteComment(
       scenarioId: ProcessId,
       rowId: Long,
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]] = {
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
     modifyActivityByRowId(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
@@ -131,7 +120,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   def deleteComment(
       scenarioId: ProcessId,
       activityId: ScenarioActivityId,
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]] = {
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
@@ -356,7 +345,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, T],
       modify: T => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
-  ): DB[Either[ERROR, Unit]] = {
+  ): DB[Either[ERROR, ScenarioActivityId]] = {
     doModifyActivity[ScenarioActivityId, ERROR, T](
       key = activityId,
       fetchActivity = activityByIdCompiled(_).result.headOption,
@@ -374,7 +363,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, ScenarioActivityEntityData],
       modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
-  ): DB[Either[ERROR, Unit]] = {
+  ): DB[Either[ERROR, ScenarioActivityId]] = {
     doModifyActivity[Long, ERROR, ScenarioActivityEntityData](
       key = rowId,
       fetchActivity = activityByRowIdCompiled(_).result.headOption,
@@ -394,7 +383,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, VALIDATED],
       modify: VALIDATED => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
-  ): DB[Either[ERROR, Unit]] = {
+  ): DB[Either[ERROR, ScenarioActivityId]] = {
     val action = for {
       fetchedActivity <- fetchActivity(key)
       result <- {
@@ -410,7 +399,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           case Right(modifiedEntity) =>
             for {
               rowsAffected <- updateRow(key, modifiedEntity)
-              res          <- DBIO.successful(Either.cond(rowsAffected != 0, (), couldNotModifyError))
+              res <- DBIO.successful(Either.cond(rowsAffected != 0, modifiedEntity.activityId, couldNotModifyError))
             } yield res
         }
       }
@@ -968,5 +957,17 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private def toLongOption(str: String) = Try(str.toLong).toOption
 
   private def toIntOption(str: String) = Try(str.toInt).toOption
+
+}
+
+object DbScenarioActivityRepository {
+
+  def create(dbRef: DbRef, clock: Clock)(
+      implicit executionContext: ExecutionContext,
+  ): ScenarioActivityRepository = {
+    new ScenarioActivityRepositoryAuditLogDecorator(
+      new DbScenarioActivityRepository(dbRef, clock)
+    )
+  }
 
 }

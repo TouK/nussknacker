@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
@@ -93,7 +94,7 @@ trait NuResourcesTest
 
   protected val fragmentRepository: DefaultFragmentRepository = newFragmentRepository(testDbRef)
 
-  protected val actionRepository: DbScenarioActionRepository = newActionProcessRepository(testDbRef)
+  protected val actionRepository: ScenarioActionRepository = newActionProcessRepository(testDbRef)
 
   protected val scenarioActivityRepository: ScenarioActivityRepository = newScenarioActivityRepository(testDbRef, clock)
 
@@ -195,7 +196,7 @@ trait NuResourcesTest
       dbioRunner,
       futureFetchingScenarioRepository,
       actionRepository,
-      writeProcessRepository
+      writeProcessRepository,
     )
 
   protected def createScenarioTestService(modelData: ModelData): ScenarioTestService =
@@ -498,7 +499,7 @@ trait NuResourcesTest
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),
-          actionRepository.markProcessAsArchived(processId = id, VersionId(1))
+          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None, None)
         )
       )
     } yield id).futureValue

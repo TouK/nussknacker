@@ -57,7 +57,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
   private val actionInsertQuery = processActionsDefinitions.table returning
     processActionsDefinitions.table.map(_.id) into ((item, id) => item.copy(id = id))
 
-  private val scenarioActivityRepository = new DbScenarioActivityRepository(testDbRef, clock)
+  private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
 
   private val now: Timestamp   = Timestamp.from(Instant.now)
   private val user             = "John Doe"

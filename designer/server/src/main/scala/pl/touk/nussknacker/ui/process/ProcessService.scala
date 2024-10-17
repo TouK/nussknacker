@@ -7,12 +7,11 @@ import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -351,7 +350,13 @@ class DBProcessService(
             DBIOAction.seq(
               processRepository.archive(processId = process.idWithNameUnsafe, isArchived = false),
               scenarioActionRepository
-                .markProcessAsUnArchived(processId = process.processIdUnsafe, process.processVersionId)
+                .addInstantAction(
+                  process.processIdUnsafe,
+                  process.processVersionId,
+                  ScenarioActionName.UnArchive,
+                  None,
+                  None
+                )
             )
           )
       } else {
@@ -528,7 +533,13 @@ class DBProcessService(
       .runInTransaction(
         DBIOAction.seq(
           processRepository.archive(processId = process.idWithNameUnsafe, isArchived = true),
-          scenarioActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
+          scenarioActionRepository.addInstantAction(
+            process.processIdUnsafe,
+            process.processVersionId,
+            ScenarioActionName.Archive,
+            None,
+            None
+          )
         )
       )
 

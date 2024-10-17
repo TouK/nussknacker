@@ -44,7 +44,7 @@ class DBFetchingProcessRepositorySpec
 
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
-  private val activities = new DbScenarioActivityRepository(testDbRef, clock)
+  private val activities = DbScenarioActivityRepository.create(testDbRef, clock)
 
   private val scenarioLabelsRepository = new ScenarioLabelsRepository(testDbRef)
 
@@ -62,7 +62,7 @@ class DBFetchingProcessRepositorySpec
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    new DbScenarioActionRepository(
+    DbScenarioActionRepository.create(
       testDbRef,
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )

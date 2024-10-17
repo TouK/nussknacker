@@ -57,11 +57,6 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
 
   override def addActivity(scenarioActivity: ScenarioActivity): DB[ScenarioActivityId] = notSupported("addActivity")
 
-  override def modifyActivity(
-      activityId: ScenarioActivityId,
-      modification: ScenarioActivity => ScenarioActivity,
-  ): DB[Either[ModifyActivityError, Unit]] = notSupported("modifyActivity")
-
   override def addComment(scenarioId: ProcessId, processVersionId: VersionId, comment: String)(
       implicit user: LoggedUser
   ): DB[ScenarioActivityId] = notSupported("addComment")
@@ -82,19 +77,19 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
 
   override def editComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId, comment: String)(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("editComment")
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("editComment")
 
   override def editComment(scenarioId: ProcessId, commentId: Long, comment: String)(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("editComment")
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("editComment")
 
   override def deleteComment(scenarioId: ProcessId, commentId: Long)(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("deleteComment")
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
 
   override def deleteComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId)(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("deleteComment")
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
 
   private def notSupported(methodName: String): Nothing = throw new Exception(
     s"Method $methodName not supported by TestProcessActivityRepository test implementation"

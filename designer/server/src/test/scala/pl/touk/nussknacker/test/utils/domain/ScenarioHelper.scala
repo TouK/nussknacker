@@ -2,9 +2,9 @@ package pl.touk.nussknacker.test.utils.domain
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -33,17 +33,17 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
-  private val actionRepository: DbScenarioActionRepository = new DbScenarioActionRepository(
+  private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(
     dbRef,
     mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
-  ) with DbioRepository
+  )
 
   private val scenarioLabelsRepository: ScenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
 
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
     clock,
-    new DbScenarioActivityRepository(dbRef, clock),
+    DbScenarioActivityRepository.create(dbRef, clock),
     scenarioLabelsRepository,
     mapProcessingTypeDataProvider(1)
   )
@@ -131,7 +131,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     dbioRunner.runInTransaction(
       DBIOAction.seq(
         writeScenarioRepository.archive(processId = idWithName, isArchived = true),
-        actionRepository.markProcessAsArchived(processId = idWithName.id, version)
+        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None, None)
       )
     )
 

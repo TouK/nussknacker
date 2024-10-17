@@ -21,18 +21,70 @@ import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
-//TODO: Add missing methods: markProcessAsDeployed and markProcessAsCancelled
+// This repository should be fully replaced with ScenarioActivityRepository
+// 1. At the moment, the new ScenarioActivityRepository:
+//   - is not aware that the underlying operation (Deployment, Cancel) may be long and may be in progress
+//   - it operates only on activities, that correspond to the finished, or immediate operations (finished deployments, renames, updates, migrations, etc.)
+// 2. At the moment, the old ScenarioActionRepository
+//   - handles those activities, which underlying operations may be long and may be in progress
+// 3. Eventually, the new ScenarioActivityRepository should be aware of the state of the underlying operation, and should replace this repository
 trait ScenarioActionRepository {
 
-  def markProcessAsArchived(
-      processId: ProcessId,
-      processVersion: VersionId
-  )(implicit user: LoggedUser): DB[_]
+  def executeCriticalSection[T](
+      dbioAction: DB[T]
+  ): DB[T]
 
-  def markProcessAsUnArchived(
+  def addInstantAction(
       processId: ProcessId,
-      processVersion: VersionId
-  )(implicit user: LoggedUser): DB[_]
+      processVersion: VersionId,
+      actionName: ScenarioActionName,
+      comment: Option[Comment],
+      buildInfoProcessingType: Option[ProcessingType]
+  )(implicit user: LoggedUser): DB[ProcessAction]
+
+  def addInProgressAction(
+      processId: ProcessId,
+      actionName: ScenarioActionName,
+      processVersion: Option[VersionId],
+      buildInfoProcessingType: Option[ProcessingType]
+  )(implicit user: LoggedUser): DB[ProcessActionId]
+
+  def markActionAsFinished(
+      actionId: ProcessActionId,
+      processId: ProcessId,
+      actionName: ScenarioActionName,
+      processVersion: VersionId,
+      performedAt: Instant,
+      comment: Option[Comment],
+      buildInfoProcessingType: Option[ProcessingType]
+  )(implicit user: LoggedUser): DB[Unit]
+
+  def markActionAsFailed(
+      actionId: ProcessActionId,
+      processId: ProcessId,
+      actionName: ScenarioActionName,
+      processVersion: Option[VersionId],
+      performedAt: Instant,
+      comment: Option[Comment],
+      failureMessage: String,
+      buildInfoProcessingType: Option[ProcessingType]
+  )(implicit user: LoggedUser): DB[Unit]
+
+  def markFinishedActionAsExecutionFinished(
+      actionId: ProcessActionId
+  ): DB[Boolean]
+
+  def removeAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId])(
+      implicit user: LoggedUser
+  ): DB[Unit]
+
+  def deleteInProgressActions(): DB[Unit]
+
+  def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]]
+
+  def getInProgressActionNames(
+      allowedActionNames: Set[ScenarioActionName]
+  ): DB[Map[ProcessId, Set[ScenarioActionName]]]
 
   def getFinishedProcessAction(
       actionId: ProcessActionId
@@ -57,7 +109,7 @@ trait ScenarioActionRepository {
 
 }
 
-class DbScenarioActionRepository(
+class DbScenarioActionRepository private (
     protected val dbRef: DbRef,
     buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
 )(implicit ec: ExecutionContext)
@@ -68,7 +120,12 @@ class DbScenarioActionRepository(
 
   import profile.api._
 
-  def addInProgressAction(
+  override def executeCriticalSection[T](dbioAction: DB[T]): DB[T] = for {
+    _      <- lockActionsTable
+    result <- dbioAction
+  } yield result
+
+  override def addInProgressAction(
       processId: ProcessId,
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
@@ -126,7 +183,7 @@ class DbScenarioActionRepository(
   }
 
   // We pass all parameters here because in_progress action can be invalidated and we have to revert it back
-  def markActionAsFailed(
+  override def markActionAsFailed(
       actionId: ProcessActionId,
       processId: ProcessId,
       actionName: ScenarioActionName,
@@ -160,7 +217,7 @@ class DbScenarioActionRepository(
     } yield ())
   }
 
-  def markFinishedActionAsExecutionFinished(actionId: ProcessActionId): DB[Boolean] = {
+  override def markFinishedActionAsExecutionFinished(actionId: ProcessActionId): DB[Boolean] = {
     run(
       scenarioActivityTable
         .filter(a => a.activityId === activityId(actionId) && a.state === ProcessActionState.Finished)
@@ -170,21 +227,15 @@ class DbScenarioActionRepository(
     )
   }
 
-  def removeAction(actionId: ProcessActionId): DB[Unit] = {
+  override def removeAction(
+      actionId: ProcessActionId,
+      processId: ProcessId,
+      processVersion: Option[VersionId]
+  )(implicit user: LoggedUser): DB[Unit] = {
     run(scenarioActivityTable.filter(a => a.activityId === activityId(actionId)).delete.map(_ => ()))
   }
 
-  override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(
-      implicit user: LoggedUser
-  ): DB[ProcessAction] =
-    addInstantAction(processId, processVersion, ScenarioActionName.Archive, None, None)
-
-  override def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(
-      implicit user: LoggedUser
-  ): DB[ProcessAction] =
-    addInstantAction(processId, processVersion, ScenarioActionName.UnArchive, None, None)
-
-  def addInstantAction(
+  override def addInstantAction(
       processId: ProcessId,
       processVersion: VersionId,
       actionName: ScenarioActionName,
@@ -294,7 +345,7 @@ class DbScenarioActionRepository(
     run(scenarioActivityTable.filter(_ => false).forUpdate.result.map(_ => ()))
   }
 
-  def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] = {
+  override def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] = {
     val query = scenarioActivityTable
       .filter(action => action.scenarioId === processId && action.state === ProcessActionState.InProgress)
       .map(_.activityType)
@@ -302,7 +353,7 @@ class DbScenarioActionRepository(
     run(query.result.map(_.toSet.flatMap(actionName)))
   }
 
-  def getInProgressActionNames(
+  override def getInProgressActionNames(
       allowedActionNames: Set[ScenarioActionName]
   ): DB[Map[ProcessId, Set[ScenarioActionName]]] = {
     val query = scenarioActivityTable
@@ -345,7 +396,7 @@ class DbScenarioActionRepository(
     )
   }
 
-  def deleteInProgressActions(): DB[Unit] = {
+  override def deleteInProgressActions(): DB[Unit] = {
     run(scenarioActivityTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
@@ -505,6 +556,18 @@ class DbScenarioActionRepository(
       case otherCustomAction =>
         ScenarioActivityType.CustomAction(otherCustomAction.value)
     }
+  }
+
+}
+
+object DbScenarioActionRepository {
+
+  def create(dbRef: DbRef, buildInfos: ProcessingTypeDataProvider[Map[String, String], _])(
+      implicit executionContext: ExecutionContext,
+  ): ScenarioActionRepository = {
+    new ScenarioActionRepositoryAuditLogDecorator(
+      new DbScenarioActionRepository(dbRef, buildInfos)
+    )
   }
 
 }
