@@ -27,18 +27,17 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         occurrences: string[] = [],
         iteration = 0,
     ): DateActivity | undefined => {
-        const previousActivity = activitiesDataWithMetadata[index - 1 + iteration];
         const nextActivity = activitiesDataWithMetadata[index + 1 + iteration];
         const latestDateItem = getLatestDateItem(uiActivities);
+        const currentAndNextActivityTypeAreTheSame = currentActivity.type === nextActivity?.type;
 
         if (latestDateItem?.value?.includes?.(formatDate(currentActivity.date))) {
             return undefined;
         }
 
         const isDateRangeInOccurrences = occurrences.every((occurrence) => occurrence === occurrences[0]);
-        const isTheSameTypeAsBefore = currentActivity.type === previousActivity?.type;
         const shouldAddDateRangeElement =
-            occurrences.length >= hideItemsOptionAvailableLimit && !isTheSameTypeAsBefore && !isDateRangeInOccurrences;
+            occurrences.length >= hideItemsOptionAvailableLimit && !currentAndNextActivityTypeAreTheSame && !isDateRangeInOccurrences;
 
         if (shouldAddDateRangeElement) {
             const dates = occurrences.map((occurrence) => moment(occurrence));
@@ -51,11 +50,15 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
 
         const currentAndNextActivityDateAreTheSame = formatDate(currentActivity.date) === (nextActivity && formatDate(nextActivity.date));
 
-        if (currentAndNextActivityDateAreTheSame || (isTheSameTypeAsBefore && nextActivity)) {
+        if (currentAndNextActivityTypeAreTheSame || currentAndNextActivityDateAreTheSame) {
             iteration++;
 
-            if (isTheSameTypeAsBefore) {
+            if (currentAndNextActivityTypeAreTheSame) {
                 occurrences.push(formatDate(currentActivity.date));
+                const isNextActivityLastOfType = activitiesDataWithMetadata[index + 1 + iteration].type !== nextActivity.type;
+                if (isNextActivityLastOfType) {
+                    occurrences.push(formatDate(nextActivity.date));
+                }
             } else {
                 occurrences = [];
             }
