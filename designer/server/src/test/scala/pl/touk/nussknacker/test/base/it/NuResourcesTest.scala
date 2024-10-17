@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
@@ -56,7 +57,6 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
-import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
@@ -196,9 +196,7 @@ trait NuResourcesTest
       dbioRunner,
       futureFetchingScenarioRepository,
       actionRepository,
-      scenarioActivityRepository,
       writeProcessRepository,
-      clock,
     )
 
   protected def createScenarioTestService(modelData: ModelData): ScenarioTestService =
@@ -501,15 +499,7 @@ trait NuResourcesTest
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),
-          scenarioActivityRepository.addActivity(
-            ScenarioActivity.ScenarioArchived(
-              scenarioId = ScenarioId(id.value),
-              scenarioActivityId = ScenarioActivityId.random,
-              user = implicitAdminUser.scenarioUser,
-              date = clock.instant(),
-              scenarioVersionId = Some(ScenarioVersionId(1))
-            )
-          )
+          actionRepository.addInstantAction(id, initialVersionId, ScenarioActionName.Archive, None, None)
         )
       )
     } yield id).futureValue

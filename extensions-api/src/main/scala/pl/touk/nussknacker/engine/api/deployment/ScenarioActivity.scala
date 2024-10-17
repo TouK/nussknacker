@@ -77,8 +77,6 @@ object ScenarioAttachment {
 
 final case class Environment(name: String) extends AnyVal
 
-final case class ScenarioBuildInfo(value: Map[String, String])
-
 sealed trait ScheduledExecutionStatus extends EnumEntry with UpperSnakecase
 
 object ScheduledExecutionStatus extends Enum[ScheduledExecutionStatus] {

@@ -871,9 +871,7 @@ class DefaultComponentServiceSpec
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       scenarioActionRepository = TestFactory.newDummyActionRepository(),
-      scenarioActivityRepository = TestFactory.newDummyScenarioActivityRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
-      clock = Clock.systemUTC(),
     )
 
   private def cid(processingType: ProcessingType, componentId: ComponentId): DesignerWideComponentId =

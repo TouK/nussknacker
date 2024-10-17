@@ -284,9 +284,7 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
         futureProcessRepository,
         actionRepository,
-        scenarioActivityRepository,
         writeProcessRepository,
-        designerClock,
       )
 
       val configProcessToolbarService = new ConfigScenarioToolbarService(
