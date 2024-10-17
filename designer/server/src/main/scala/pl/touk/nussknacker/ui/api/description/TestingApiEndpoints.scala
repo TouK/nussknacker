@@ -133,7 +133,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       )
       .errorOut(
         oneOf[TestingError](
-          noScenarioExample // TODO
+          noScenarioExample
         )
       )
       .withSecurity(auth)
@@ -205,7 +205,7 @@ class TestingApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndp
       .errorOut(
         oneOf[TestingError](
           testDataGenerationErrorExample,
-          noScenarioExample // TODO
+          noScenarioExample
         )
       )
       .withSecurity(auth)
