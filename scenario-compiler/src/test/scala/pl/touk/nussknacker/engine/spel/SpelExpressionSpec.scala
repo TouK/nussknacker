@@ -241,6 +241,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
   }
 
+  private def evaluate[T: TypeTag](expr: String): T =
+    parse[T](expr = expr, context = ctx).validExpression.evaluateSync[T](ctx)
+
   test("parsing first selection on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").validExpression
       .evaluateSync[java.util.ArrayList[Int]](ctx) should equal(2)
@@ -1300,8 +1303,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should return correct type in array projection") {
-    parse[Any]("#array.![#this]", ctx).validExpression
-      .evaluateSync[Any](ctx) shouldBe Array("a", "b")
+    evaluate[Any]("#array.![#this]") shouldBe Array("a", "b")
   }
 
   test("should return error on String projection") {
@@ -1309,8 +1311,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should convert array to list when passing arg which type should be list") {
-    parse[Any]("T(java.lang.String).join(',', #array)", ctx).validExpression
-      .evaluateSync[String](ctx) shouldBe "a,b"
+    evaluate[Any]("T(java.lang.String).join(',', #array)") shouldBe "a,b"
   }
 
   test("should calculate correct type of list after projection on list") {
@@ -1339,18 +1340,16 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should allow using list methods on array projection") {
-    parse[Any]("'a,b'.split(',').![#this].isEmpty()", ctx).validExpression
-      .evaluateSync[Boolean](ctx) shouldBe false
+    evaluate[Any]("'a,b'.split(',').![#this].isEmpty()") shouldBe false
   }
 
   test("should allow using list methods on array") {
-    parse[Any]("#array.isEmpty()", ctx).validExpression.evaluateSync[Boolean](ctx) shouldBe false
-    parse[Any]("#intArray.isEmpty()", ctx).validExpression.evaluateSync[Boolean](ctx) shouldBe false
+    evaluate[Any]("#array.isEmpty()") shouldBe false
+    evaluate[Any]("#intArray.isEmpty()") shouldBe false
   }
 
   test("should allow using list methods on nested arrays") {
-    parse[Any]("#nestedArray.![#this.isEmpty()]", ctx).validExpression
-      .evaluateSync[Any](ctx) shouldBe Array(false, false)
+    evaluate[Any]("#nestedArray.![#this.isEmpty()]") shouldBe Array(false, false)
   }
 
   test("should check if method exists as a fallback of not found property") {
@@ -1370,7 +1369,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownString.value.canCastTo('java.lang.Integer')", false),
       )
     ) { (expression, expectedResult) =>
-      parse[Any](expression, ctx).validExpression.evaluateSync[Any](ctx) shouldBe expectedResult
+      evaluate[Any](expression) shouldBe expectedResult
     }
   }
 
@@ -1409,7 +1408,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should throw exception if cast fails") {
     val caught = intercept[SpelExpressionEvaluationException] {
-      parse[Any]("#unknownString.value.castTo('java.lang.Integer')", ctx).validExpression.evaluateSync[Any](ctx)
+      evaluate[Any]("#unknownString.value.castTo('java.lang.Integer')")
     }
     caught.getCause shouldBe a[ClassCastException]
     caught.getMessage should include("Cannot cast: class java.lang.String to: java.lang.Integer")
@@ -1495,28 +1494,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should return null if castToOrNull fails") {
-    parse[Any](
-      expr = "#unknownString.value.castToOrNull('java.lang.Integer')",
-      context = ctx,
-      methodExecutionForUnknownAllowed = true
-    ).validExpression.evaluateSync[Any](ctx) == null shouldBe true
+    evaluate[Any]("#unknownString.value.castToOrNull('java.lang.Integer')") == null shouldBe true
   }
 
   test("should castToOrNull succeed") {
-    parse[Any](
-      expr = "#unknownString.value.castToOrNull('java.lang.String')",
-      context = ctx,
-      methodExecutionForUnknownAllowed = true
-    ).validExpression.evaluateSync[Any](ctx) shouldBe "unknown"
+    evaluate[Any]("#unknownString.value.castToOrNull('java.lang.String')") shouldBe "unknown"
   }
 
   test("should allow invoke cast methods with class simple names") {
-    parse[Any](
-      expr = "{#unknownString.value.castToOrNull('String'), #unknownString.value.castTo('String'), " +
-        "#unknownString.value.canCastTo('String')}",
-      context = ctx,
-      methodExecutionForUnknownAllowed = true
-    ).validExpression.evaluateSync[Any](ctx) shouldBe List("unknown", "unknown", true).asJava
+    evaluate[Any](
+      "{#unknownString.value.castToOrNull('String'), #unknownString.value.castTo('String'), " +
+        "#unknownString.value.canCastTo('String')}"
+    ) shouldBe List("unknown", "unknown", true).asJava
   }
 
 }

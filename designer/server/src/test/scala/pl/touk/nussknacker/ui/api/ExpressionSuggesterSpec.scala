@@ -780,7 +780,7 @@ class ExpressionSuggesterSpec
   }
 
   test("should suggest parameters for casts methods") {
-    spelSuggestionsFor("#unknown.canCastTo('')", column = 20).toSet shouldBe Set(
+    spelSuggestionsFor("#unknown.canCastTo('')", column = 20) should contain theSameElementsAs List(
       suggestion("String", Typed[String]),
       suggestion("Duration", Typed[Duration]),
       suggestion("LocalDateTime", Typed[LocalDateTime]),
@@ -792,6 +792,35 @@ class ExpressionSuggesterSpec
       suggestion("Util", Typed[Util]),
       suggestion("WithList", Typed[WithList]),
     )
+  }
+
+  test("should suggest the same methods for list and array") {
+    val suggester = new ExpressionSuggester(
+      expressionConfig,
+      ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
+      dictServices,
+      getClass.getClassLoader,
+      Nil
+    )
+    val variables = Map(
+      "list"  -> Typed[java.util.List[String]],
+      "array" -> Typed.genericTypeClass(classOf[Array[String]], List(Typed[String])),
+    )
+    val listSpelExpression  = Expression.spel("#list.")
+    val arraySpelExpression = Expression.spel("#array.")
+
+    def suggestion(expression: Expression): List[ExpressionSuggestion] =
+      suggester
+        .expressionSuggestions(
+          expression,
+          CaretPosition2d(0, expression.expression.length),
+          variables
+        )(ExecutionContext.global)
+        .futureValue
+
+    val listMethodsSuggestion  = suggestion(listSpelExpression)
+    val arrayMethodsSuggestion = suggestion(arraySpelExpression)
+    listMethodsSuggestion should contain theSameElementsAs arrayMethodsSuggestion
   }
 
 }

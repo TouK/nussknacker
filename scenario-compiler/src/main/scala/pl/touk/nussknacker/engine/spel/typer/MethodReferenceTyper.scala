@@ -29,7 +29,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
   }
 
   private def extractClazzDefinitions(typedClasses: NonEmptyList[SingleTypingResult]): List[ClassDefinition] = {
-    typedClasses.toList.flatMap(tc => classDefinitionSet.get(tc.typeHintsObjType.klass))
+    typedClasses.toList.flatMap(tc => classDefinitionSet.get(tc.runtimeObjType.klass))
   }
 
   private def typeFromClazzDefinitions(

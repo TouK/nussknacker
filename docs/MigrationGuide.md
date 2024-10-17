@@ -17,7 +17,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `scenarioActivityManager` can be used by any `DeploymentManager` to save scenario activities in the Nu database
     * there is `NoOpScenarioActivityManager` implementation available (if needed for tests etc.)
 * [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
-  * Added `typeHintsObjType` which is used as a type for a type hints, suggester and validation.
   * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
 * [#6766](https://github.com/TouK/nussknacker/pull/6766)
   * Process API changes:

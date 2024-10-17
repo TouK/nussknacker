@@ -104,7 +104,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
   ): Map[String, List[MethodDefinition]] = {
     def typeResultVisible(t: TypingResult): Boolean = t match {
       case str: SingleTypingResult =>
-        !settings.isHidden(str.typeHintsObjType.klass) && str.typeHintsObjType.params.forall(typeResultVisible)
+        !settings.isHidden(str.runtimeObjType.klass) && str.runtimeObjType.params.forall(typeResultVisible)
       case union: TypedUnion => union.possibleTypes.forall(typeResultVisible)
       case TypedNull         => true
       case Unknown           => true

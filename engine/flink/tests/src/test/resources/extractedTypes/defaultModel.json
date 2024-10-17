@@ -12,6 +12,103 @@
       "refClazzName": "[Ljava.lang.Object;"
     },
     "methods": {
+      "contains": [
+        {
+          "name": "contains",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "containsAll": [
+        {
+          "name": "containsAll",
+          "signature": {
+            "noVarArgs": [
+              {
+                "name": "arg0",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.Collection"
+                }
+              }
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "empty": [
+        {
+          "name": "empty",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "get": [
+        {
+          "name": "get",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "indexOf": [
+        {
+          "name": "indexOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "isEmpty": [
+        {
+          "name": "isEmpty",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "lastIndexOf": [
+        {
+          "name": "lastIndexOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "size": [
+        {
+          "name": "size",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
       "toString": [
         {
           "name": "toString",

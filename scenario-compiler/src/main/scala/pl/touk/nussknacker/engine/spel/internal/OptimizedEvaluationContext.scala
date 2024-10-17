@@ -42,9 +42,9 @@ class EvaluationContextPreparer(
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      private val conversionAndExtensionsAwareMethodsDiscovery = new ConversionAndExtensionAwareMethodsDiscovery()
+      private val discovery        = new ExtensionAwareMethodsDiscovery()
       private val extensionMethods = new ExtensionMethodsInvoker(classLoader, classDefinitionSet)
-      private val methodInvoker    = new ConversionAndExtensionsAwareMethodInvoker(extensionMethods)
+      private val methodInvoker    = new ExtensionsAwareMethodInvoker(extensionMethods)
 
       override def resolve(
           context: EvaluationContext,
@@ -63,7 +63,7 @@ class EvaluationContextPreparer(
       }
 
       override def getMethods(classType: Class[_]): Array[Method] =
-        conversionAndExtensionsAwareMethodsDiscovery.discover(classType)
+        discovery.discover(classType)
     }
     Collections.singletonList(mr)
   }
