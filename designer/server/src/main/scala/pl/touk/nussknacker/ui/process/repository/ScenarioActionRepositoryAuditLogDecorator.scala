@@ -15,7 +15,27 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
     implicit executionContext: ExecutionContext
 ) extends ScenarioActionRepository {
 
-  def addInProgressAction(
+  override def addInstantAction(
+      processId: ProcessId,
+      processVersion: VersionId,
+      actionName: ScenarioActionName,
+      comment: Option[Comment],
+      buildInfoProcessingType: Option[ProcessingType]
+  )(implicit user: LoggedUser): DB[ProcessAction] =
+    underlying
+      .addInstantAction(processId, processVersion, actionName, comment, buildInfoProcessingType)
+      .map { processAction =>
+        ScenarioActivityAuditLog.onScenarioImmediateAction(
+          processAction.id,
+          processId,
+          actionName,
+          Some(processVersion),
+          user
+        )
+        processAction
+      }
+
+  override def addInProgressAction(
       processId: ProcessId,
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
@@ -28,7 +48,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
         processActionId
       }
 
-  def markActionAsFinished(
+  override def markActionAsFinished(
       actionId: ProcessActionId,
       processId: ProcessId,
       actionName: ScenarioActionName,
@@ -59,7 +79,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
           )
       }
 
-  def markActionAsFailed(
+  override def markActionAsFailed(
       actionId: ProcessActionId,
       processId: ProcessId,
       actionName: ScenarioActionName,
@@ -93,7 +113,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
           )
       }
 
-  def removeAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId])(
+  override def removeAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId])(
       implicit user: LoggedUser
   ): DB[Unit] =
     underlying
@@ -108,45 +128,45 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
           )
       }
 
-  def deleteInProgressActions(): DB[Unit] =
+  override def deleteInProgressActions(): DB[Unit] =
     underlying.deleteInProgressActions()
 
-  def markFinishedActionAsExecutionFinished(
+  override def markFinishedActionAsExecutionFinished(
       actionId: ProcessActionId
   ): DB[Boolean] =
     underlying.markFinishedActionAsExecutionFinished(actionId)
 
-  def executeCriticalSection[T](
+  override def executeCriticalSection[T](
       dbioAction: DB[T]
   ): DB[T] =
     underlying.executeCriticalSection(dbioAction)
 
-  def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] =
+  override def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] =
     underlying.getInProgressActionNames(processId)
 
-  def getInProgressActionNames(
+  override def getInProgressActionNames(
       allowedActionNames: Set[ScenarioActionName]
   ): DB[Map[ProcessId, Set[ScenarioActionName]]] =
     underlying.getInProgressActionNames(allowedActionNames)
 
-  def getFinishedProcessAction(
+  override def getFinishedProcessAction(
       actionId: ProcessActionId
   ): DB[Option[ProcessAction]] =
     underlying.getFinishedProcessAction(actionId)
 
-  def getFinishedProcessActions(
+  override def getFinishedProcessActions(
       processId: ProcessId,
       actionNamesOpt: Option[Set[ScenarioActionName]]
   ): DB[List[ProcessAction]] =
     underlying.getFinishedProcessActions(processId, actionNamesOpt)
 
-  def getLastActionPerProcess(
+  override def getLastActionPerProcess(
       actionState: Set[ProcessActionState],
       actionNamesOpt: Option[Set[ScenarioActionName]]
   ): DB[Map[ProcessId, ProcessAction]] =
     underlying.getLastActionPerProcess(actionState, actionNamesOpt)
 
-  def getUserActionsAfter(
+  override def getUserActionsAfter(
       user: LoggedUser,
       possibleActionNames: Set[ScenarioActionName],
       possibleStates: Set[ProcessActionState],

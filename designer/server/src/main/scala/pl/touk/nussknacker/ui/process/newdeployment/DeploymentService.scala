@@ -78,7 +78,7 @@ class DeploymentService(
       // Saving of deployment is the final step before deployment request because we want to store only requested deployments
       _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
       _ <- runDeploymentUsingDeploymentManagerAsync(scenarioMetadata, scenarioGraphVersion, command)
-    } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id, scenarioMetadata.processingType)).value
+    } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
 
   private def getScenarioMetadata(
       command: RunDeploymentCommand
@@ -260,11 +260,7 @@ class DeploymentService(
 
 object DeploymentService {
 
-  final case class DeploymentForeignKeys(
-      scenarioId: ProcessId,
-      scenarioGraphVersionId: VersionId,
-      processingType: ProcessingType,
-  )
+  final case class DeploymentForeignKeys(scenarioId: ProcessId, scenarioGraphVersionId: VersionId)
 
   sealed trait RunDeploymentError
 

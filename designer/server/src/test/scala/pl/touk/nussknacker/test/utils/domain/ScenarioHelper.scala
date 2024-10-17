@@ -2,9 +2,9 @@ package pl.touk.nussknacker.test.utils.domain
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -17,9 +17,8 @@ import pl.touk.nussknacker.ui.process.processingtype.ValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
-import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import slick.dbio.DBIOAction
 
 import java.time.Clock
@@ -34,21 +33,17 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
-  private val buildInfos = mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
-
   private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(
     dbRef,
     mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
   )
-
-  private val scenarioActivityRepository: ScenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, clock)
 
   private val scenarioLabelsRepository: ScenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
 
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
     clock,
-    scenarioActivityRepository,
+    DbScenarioActivityRepository.create(dbRef, clock),
     scenarioLabelsRepository,
     mapProcessingTypeDataProvider(1)
   )
@@ -136,82 +131,37 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     dbioRunner.runInTransaction(
       DBIOAction.seq(
         writeScenarioRepository.archive(processId = idWithName, isArchived = true),
-        scenarioActivityRepository.addActivity(
-          ScenarioActivity.ScenarioArchived(
-            scenarioId = ScenarioId(idWithName.id.value),
-            scenarioActivityId = ScenarioActivityId.random,
-            user = user.scenarioUser,
-            date = clock.instant(),
-            scenarioVersionId = Some(ScenarioVersionId(1))
-          )
-        )
+        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None, None)
       )
     )
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
-    val now = clock.instant()
+    val actionName = ScenarioActionName.Deploy
+    val comment    = Comment("Deploy comment")
     dbioRunner.run(
-      scenarioActivityRepository.addActivity(
-        ScenarioActivity.ScenarioDeployed(
-          scenarioId = ScenarioId(scenarioId.value),
-          scenarioActivityId = ScenarioActivityId.random,
-          user = user.scenarioUser,
-          date = now,
-          scenarioVersionId = Some(ScenarioVersionId.from(VersionId.initialVersionId)),
-          comment = ScenarioComment.Available(
-            comment = "Deploy comment",
-            lastModifiedByUserName = user.scenarioUser.name,
-            lastModifiedAt = now
-          ),
-          result = DeploymentResult.Success(now),
-          buildInfo = buildInfos.forProcessingType(processingType).map(ScenarioBuildInfo),
-        )
+      actionRepository.addInstantAction(
+        scenarioId,
+        VersionId.initialVersionId,
+        actionName,
+        Some(comment),
+        Some(processingType)
       )
     )
   }
 
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
-    val now = clock.instant()
+    val actionName = ScenarioActionName.Cancel
+    val comment    = Comment("Cancel comment")
     dbioRunner.run(
-      scenarioActivityRepository.addActivity(
-        ScenarioActivity.ScenarioCanceled(
-          scenarioId = ScenarioId(scenarioId.value),
-          scenarioActivityId = ScenarioActivityId.random,
-          user = user.scenarioUser,
-          date = now,
-          scenarioVersionId = Some(ScenarioVersionId.from(VersionId.initialVersionId)),
-          comment = ScenarioComment.Available(
-            comment = "Cancel comment",
-            lastModifiedByUserName = user.scenarioUser.name,
-            lastModifiedAt = now
-          ),
-          result = DeploymentResult.Success(now),
-          buildInfo = None,
-        )
-      )
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )
   }
 
   private def prepareCustomAction(scenarioId: ProcessId): Future[_] = {
-    val now = clock.instant()
+    val actionName = ScenarioActionName("Custom")
+    val comment    = Comment("Execute custom action")
     dbioRunner.run(
-      scenarioActivityRepository.addActivity(
-        ScenarioActivity.CustomAction(
-          scenarioId = ScenarioId(scenarioId.value),
-          scenarioActivityId = ScenarioActivityId.random,
-          user = user.scenarioUser,
-          date = now,
-          scenarioVersionId = Some(ScenarioVersionId.from(VersionId.initialVersionId)),
-          actionName = "Custom",
-          comment = ScenarioComment.Available(
-            comment = "Execute custom action",
-            lastModifiedByUserName = user.scenarioUser.name,
-            lastModifiedAt = now
-          ),
-          buildInfo = None,
-          result = DeploymentResult.Success(now),
-        )
-      )
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )
   }
 

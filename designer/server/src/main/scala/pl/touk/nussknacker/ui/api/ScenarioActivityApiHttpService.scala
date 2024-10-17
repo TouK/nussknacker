@@ -305,7 +305,7 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value)
         )
-      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
+      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
         Dtos.ScenarioActivity.forScenarioDeployed(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -313,7 +313,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
+      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
         Dtos.ScenarioActivity.forScenarioPaused(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -321,7 +321,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
+      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
         Dtos.ScenarioActivity.forScenarioCanceled(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -415,7 +415,6 @@ class ScenarioActivityApiHttpService(
             date,
             scenarioVersionId,
             comment,
-            _,
             result,
           ) =>
         Dtos.ScenarioActivity.forPerformedSingleExecution(
@@ -478,7 +477,6 @@ class ScenarioActivityApiHttpService(
             scenarioVersionId,
             actionName,
             comment,
-            _,
             result,
           ) =>
         Dtos.ScenarioActivity.forCustomAction(

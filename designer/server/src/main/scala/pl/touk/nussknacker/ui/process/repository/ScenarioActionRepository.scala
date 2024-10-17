@@ -34,6 +34,14 @@ trait ScenarioActionRepository {
       dbioAction: DB[T]
   ): DB[T]
 
+  def addInstantAction(
+      processId: ProcessId,
+      processVersion: VersionId,
+      actionName: ScenarioActionName,
+      comment: Option[Comment],
+      buildInfoProcessingType: Option[ProcessingType]
+  )(implicit user: LoggedUser): DB[ProcessAction]
+
   def addInProgressAction(
       processId: ProcessId,
       actionName: ScenarioActionName,
@@ -225,6 +233,33 @@ class DbScenarioActionRepository private (
       processVersion: Option[VersionId]
   )(implicit user: LoggedUser): DB[Unit] = {
     run(scenarioActivityTable.filter(a => a.activityId === activityId(actionId)).delete.map(_ => ()))
+  }
+
+  override def addInstantAction(
+      processId: ProcessId,
+      processVersion: VersionId,
+      actionName: ScenarioActionName,
+      comment: Option[Comment],
+      buildInfoProcessingType: Option[ProcessingType]
+  )(implicit user: LoggedUser): DB[ProcessAction] = {
+    val now = Instant.now()
+    run(
+      insertAction(
+        None,
+        processId,
+        Some(processVersion),
+        actionName,
+        ProcessActionState.Finished,
+        now,
+        Some(now),
+        None,
+        comment,
+        buildInfoProcessingType
+      ).map(
+        toFinishedProcessAction(_)
+          .getOrElse(throw new IllegalArgumentException(s"Could not insert ProcessAction as ScenarioActivity"))
+      )
+    )
   }
 
   private def insertAction(

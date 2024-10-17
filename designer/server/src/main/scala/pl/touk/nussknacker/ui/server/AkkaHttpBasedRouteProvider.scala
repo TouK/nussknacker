@@ -444,7 +444,6 @@ class AkkaHttpBasedRouteProvider(
             featureTogglesConfig.deploymentCommentSettings,
             scenarioActivityRepository,
             deploymentService,
-            modelBuildInfo,
             dbioRunner,
             designerClock,
           )

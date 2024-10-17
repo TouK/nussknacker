@@ -450,6 +450,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       attachmentId: Option[Long] = None,
       comment: Option[String] = None,
       lastModifiedByUserName: Option[String] = None,
+      buildInfo: Option[String] = None,
       additionalProperties: AdditionalProperties = AdditionalProperties.empty,
   ): ScenarioActivityEntityData = {
     val now = Timestamp.from(clock.instant())
@@ -478,10 +479,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           }
         case _ => None
       },
-      buildInfo = scenarioActivity match {
-        case activity: DeploymentRelatedActivity => activity.buildInfo.map(_.value.asJson.noSpaces)
-        case _                                   => None
-      },
+      buildInfo = buildInfo,
       additionalProperties = additionalProperties,
     )
   }
@@ -754,7 +752,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
           comment = comment,
-          buildInfo = scenarioBuildInfo(entity),
           result = result,
         )).map((entity.id, _))
       case ScenarioActivityType.ScenarioPaused =>
@@ -768,7 +765,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
           comment = comment,
-          buildInfo = scenarioBuildInfo(entity),
           result = result,
         )).map((entity.id, _))
       case ScenarioActivityType.ScenarioCanceled =>
@@ -782,7 +778,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
           comment = comment,
-          buildInfo = scenarioBuildInfo(entity),
           result = result,
         )).map((entity.id, _))
       case ScenarioActivityType.ScenarioModified =>
@@ -894,7 +889,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           date = entity.createdAt.toInstant,
           scenarioVersionId = entity.scenarioVersion,
           comment = comment,
-          buildInfo = scenarioBuildInfo(entity),
           result = result,
         )).map((entity.id, _))
       case ScenarioActivityType.PerformedScheduledExecution =>
@@ -945,7 +939,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
             scenarioVersionId = entity.scenarioVersion,
             actionName = actionName,
             comment = comment,
-            buildInfo = scenarioBuildInfo(entity),
             result = result,
           )).map((entity.id, _))
     }
@@ -960,9 +953,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       createDate = attachmentEntityData.createDateTime,
     )
   }
-
-  private def scenarioBuildInfo(entity: ScenarioActivityEntityData): Option[ScenarioBuildInfo] =
-    entity.buildInfo.flatMap(BuildInfo.parseJson).map(ScenarioBuildInfo.apply)
 
   private def toLongOption(str: String) = Try(str.toLong).toOption
 

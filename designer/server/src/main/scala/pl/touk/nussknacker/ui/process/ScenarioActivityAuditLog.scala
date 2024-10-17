@@ -18,15 +18,15 @@ object ScenarioActivityAuditLog extends LazyLogging {
     )
 
   private def printScenarioActivity(scenarioActivity: ScenarioActivity) = scenarioActivity match {
-    case ScenarioActivity.ScenarioDeployed(_, _, _, _, _, comment, _, result) =>
+    case ScenarioActivity.ScenarioDeployed(_, _, _, _, _, comment, result) =>
       s"ScenarioDeployed(comment=${printComment(comment)},result=${printResult(result)})"
-    case ScenarioActivity.ScenarioPaused(_, _, _, _, _, comment, _, result) =>
+    case ScenarioActivity.ScenarioPaused(_, _, _, _, _, comment, result) =>
       s"ScenarioPaused(comment=${printComment(comment)},result=${printResult(result)})"
-    case ScenarioActivity.ScenarioCanceled(_, _, _, _, _, comment, _, result) =>
+    case ScenarioActivity.ScenarioCanceled(_, _, _, _, _, comment, result) =>
       s"ScenarioCanceled(comment=${printComment(comment)},result=${printResult(result)})"
-    case ScenarioActivity.CustomAction(_, _, _, _, _, actionName, comment, _, result) =>
+    case ScenarioActivity.CustomAction(_, _, _, _, _, actionName, comment, result) =>
       s"CustomAction(action=$actionName,comment=${printComment(comment)},result=${printResult(result)})"
-    case ScenarioActivity.PerformedSingleExecution(_, _, _, _, _, comment, _, result) =>
+    case ScenarioActivity.PerformedSingleExecution(_, _, _, _, _, comment, result) =>
       s"PerformedSingleExecution(comment=${printComment(comment)},result=${printResult(result)})"
     case ScenarioActivity.PerformedScheduledExecution(_, _, _, _, _, status, _, scheduleName, _, _, _) =>
       s"PerformedScheduledExecution(scheduleName=$scheduleName,scheduledExecutionStatus=${status.entryName})"
@@ -129,6 +129,19 @@ object ScenarioActivityAuditLog extends LazyLogging {
         user.username
       )(
         s"Attachment added: [${attachmentToAdd.fileName}]"
+      )
+    )
+
+  def onScenarioImmediateAction(
+      processActionId: ProcessActionId,
+      processId: ProcessId,
+      actionName: ScenarioActionName,
+      processVersion: Option[VersionId],
+      user: LoggedUser
+  ): Unit =
+    logger.info(
+      withPrefix(ScenarioId(processId.value), processVersion.map(ScenarioVersionId.from), user.username)(
+        s"Immediate scenario action [actionName=${actionName.value},actionId=${processActionId.value}]"
       )
     )
 

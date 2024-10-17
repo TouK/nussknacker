@@ -23,7 +23,6 @@ class ActivityService(
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     scenarioActivityRepository: ScenarioActivityRepository,
     deploymentService: DeploymentService,
-    buildInfos: ProcessingTypeDataProvider[Map[String, String], _],
     dbioRunner: DBIOActionRunner,
     clock: Clock,
 )(implicit ec: ExecutionContext) {
@@ -40,7 +39,6 @@ class ActivityService(
             validatedCommentOpt,
             keys.scenarioId,
             keys.scenarioGraphVersionId,
-            keys.processingType,
             command.user
           )
         } yield ()).value
@@ -65,7 +63,6 @@ class ActivityService(
       commentOpt: Option[Comment],
       scenarioId: ProcessId,
       scenarioGraphVersionId: VersionId,
-      processingType: ProcessingType,
       loggedUser: LoggedUser
   ): EitherT[Future, ActivityError[ErrorType], Unit] = {
     val now = clock.instant()
@@ -83,7 +80,6 @@ class ActivityService(
                 case Some(comment) => ScenarioComment.Available(comment.content, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
               },
-              buildInfo = buildInfos.forProcessingType(processingType)(loggedUser).map(ScenarioBuildInfo.apply),
               result = DeploymentResult.Success(clock.instant()),
             )
           )

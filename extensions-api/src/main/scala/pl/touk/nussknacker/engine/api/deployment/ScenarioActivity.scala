@@ -102,7 +102,6 @@ sealed trait ScenarioActivity {
 }
 
 sealed trait DeploymentRelatedActivity extends ScenarioActivity {
-  def buildInfo: Option[ScenarioBuildInfo]
   def result: DeploymentResult
 }
 
@@ -160,7 +159,6 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      buildInfo: Option[ScenarioBuildInfo],
       result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 
@@ -171,7 +169,6 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      buildInfo: Option[ScenarioBuildInfo],
       result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 
@@ -182,7 +179,6 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      buildInfo: Option[ScenarioBuildInfo],
       result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 
@@ -268,7 +264,6 @@ object ScenarioActivity {
       date: Instant,
       scenarioVersionId: Option[ScenarioVersionId],
       comment: ScenarioComment,
-      buildInfo: Option[ScenarioBuildInfo],
       result: DeploymentResult,
   ) extends BatchDeploymentRelatedActivity
 
@@ -285,8 +280,6 @@ object ScenarioActivity {
       nextRetryAt: Option[Instant],
       retriesLeft: Option[Int],
   ) extends BatchDeploymentRelatedActivity {
-
-    override def buildInfo: Option[ScenarioBuildInfo] = None
 
     override def result: DeploymentResult = scheduledExecutionStatus match {
       case ScheduledExecutionStatus.Finished                => DeploymentResult.Success(dateFinished)
@@ -318,7 +311,6 @@ object ScenarioActivity {
       scenarioVersionId: Option[ScenarioVersionId],
       actionName: String,
       comment: ScenarioComment,
-      buildInfo: Option[ScenarioBuildInfo],
       result: DeploymentResult,
   ) extends DeploymentRelatedActivity
 

@@ -348,7 +348,6 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),
-                buildInfo = None,
                 result = DeploymentResult.Success(clock.instant())
               ),
               ScenarioActivity.CustomAction(
@@ -363,7 +362,6 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),
-                buildInfo = None,
                 result = DeploymentResult.Failure(clock.instant(), None)
               )
             )
@@ -428,7 +426,6 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
                 ),
-                buildInfo = None,
                 result = DeploymentResult.Success(clock.instant())
               )
             )
