@@ -78,6 +78,9 @@
 * [#7000](https://github.com/TouK/nussknacker/pull/7000) Show all possible options for dictionary editor on open.
 * [7032](https://github.com/TouK/nussknacker/pull/7032) SpeL: added methods from a List as extension methods to an
   Array.
+* [7042](https://github.com/TouK/nussknacker/pull/7042) SpeL: added extension methods:
+  * Set.toList - set can be easily converted to a list.
+  * List.toMap - list of key, value pairs can be easily converted to a map.
 
 ## 1.17
 
