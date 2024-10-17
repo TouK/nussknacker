@@ -56,6 +56,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
@@ -93,7 +94,7 @@ trait NuResourcesTest
 
   protected val fragmentRepository: DefaultFragmentRepository = newFragmentRepository(testDbRef)
 
-  protected val actionRepository: DbScenarioActionRepository = newActionProcessRepository(testDbRef)
+  protected val actionRepository: ScenarioActionRepository = newActionProcessRepository(testDbRef)
 
   protected val scenarioActivityRepository: ScenarioActivityRepository = newScenarioActivityRepository(testDbRef, clock)
 
@@ -195,7 +196,9 @@ trait NuResourcesTest
       dbioRunner,
       futureFetchingScenarioRepository,
       actionRepository,
-      writeProcessRepository
+      scenarioActivityRepository,
+      writeProcessRepository,
+      clock,
     )
 
   protected def createScenarioTestService(modelData: ModelData): ScenarioTestService =
@@ -498,7 +501,15 @@ trait NuResourcesTest
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = ProcessIdWithName(id, processName), isArchived = true),
-          actionRepository.markProcessAsArchived(processId = id, VersionId(1))
+          scenarioActivityRepository.addActivity(
+            ScenarioActivity.ScenarioArchived(
+              scenarioId = ScenarioId(id.value),
+              scenarioActivityId = ScenarioActivityId.random,
+              user = implicitAdminUser.scenarioUser,
+              date = clock.instant(),
+              scenarioVersionId = Some(ScenarioVersionId(1))
+            )
+          )
         )
       )
     } yield id).futureValue

@@ -57,7 +57,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
   private val actionInsertQuery = processActionsDefinitions.table returning
     processActionsDefinitions.table.map(_.id) into ((item, id) => item.copy(id = id))
 
-  private val scenarioActivityRepository = new DbScenarioActivityRepository(testDbRef, clock)
+  private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
 
   private val now: Timestamp   = Timestamp.from(Instant.now)
   private val user             = "John Doe"
@@ -125,6 +125,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioVersionId = sv,
             comment = Available("Deployment with scenario fix", user.name, date),
             result = DeploymentResult.Success(date),
+            buildInfo = None,
           )
       )
     }
@@ -141,6 +142,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioVersionId = sv,
             comment = Available("I'm canceling this scenario, it causes problems", user.name, date),
             result = DeploymentResult.Success(date),
+            buildInfo = None,
           )
       )
     }
@@ -185,6 +187,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioVersionId = sv,
             comment = Available("Paused because marketing campaign is paused for now", user.name, date),
             result = DeploymentResult.Success(date),
+            buildInfo = None,
           )
       )
     }
@@ -241,6 +244,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioVersionId = sv,
             comment = Available("Deployed at the request of business", user.name, date),
             result = DeploymentResult.Success(date),
+            buildInfo = None,
           )
       )
     }
@@ -257,6 +261,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             scenarioVersionId = sv,
             actionName = "special action",
             comment = Available("Special action needed to be executed", user.name, date),
+            buildInfo = None,
             result = DeploymentResult.Success(date),
           )
       )

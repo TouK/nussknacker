@@ -10,7 +10,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -34,6 +33,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import slick.dbio.DBIOAction
 
 import java.util.UUID
@@ -403,6 +403,7 @@ class DeploymentServiceSpec
             _,
             actionName,
             ScenarioComment.Available(content, _, _),
+            _,
             result,
           ) =>
         actionName shouldBe "Custom action of MockDeploymentManager just before deployment"
@@ -754,7 +755,7 @@ class DeploymentServiceSpec
 
   test("Should return canceled status for archived canceled process") {
     val processName: ProcessName = generateProcessName
-    val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
+    val (processId, _) = prepareArchivedProcess(processName, Some(prepareScenarioCanceledActivity)).dbioActionValues
 
     val state = deploymentService.getProcessState(processId).futureValue
     state.status shouldBe SimpleStateStatus.Canceled
@@ -762,7 +763,7 @@ class DeploymentServiceSpec
 
   test("Should return canceled status for archived canceled process with running state (it should never happen)") {
     val processName: ProcessName = generateProcessName
-    val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
+    val (processId, _) = prepareArchivedProcess(processName, Some(prepareScenarioCanceledActivity)).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(processId).futureValue
@@ -838,7 +839,7 @@ class DeploymentServiceSpec
 
   test("Should return problem status for archived deployed process (last action deployed instead of cancel)") {
     val processName: ProcessName = generateProcessName
-    val (processId, _)           = prepareArchivedProcess(processName, Some(Deploy)).dbioActionValues
+    val (processId, _) = prepareArchivedProcess(processName, Some(prepareScenarioDeployedActivity)).dbioActionValues
 
     val state = deploymentService.getProcessState(processId).futureValue
     state.status shouldBe ProblemStateStatus.ArchivedShouldBeCanceled
@@ -846,7 +847,7 @@ class DeploymentServiceSpec
 
   test("Should return canceled status for unarchived process") {
     val processName: ProcessName = generateProcessName
-    val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
+    val (processId, _) = prepareArchivedProcess(processName, Some(prepareScenarioCanceledActivity)).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
       val state = deploymentService.getProcessState(processId).futureValue
@@ -856,7 +857,7 @@ class DeploymentServiceSpec
 
   test("Should return problem status for unarchived process with running state (it should never happen)") {
     val processName: ProcessName = generateProcessName
-    val (processId, _)           = preparedUnArchivedProcess(processName, Some(Cancel)).dbioActionValues
+    val (processId, _) = preparedUnArchivedProcess(processName, Some(prepareScenarioCanceledActivity)).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state          = deploymentService.getProcessState(processId).futureValue
@@ -978,31 +979,77 @@ class DeploymentServiceSpec
   private def prepareCanceledProcess(processName: ProcessName): DB[(ProcessIdWithName, ProcessActionId)] =
     for {
       (processId, _) <- prepareDeployedProcess(processName)
-      cancelActionId <- prepareAction(processId.id, Cancel)
+      cancelActionId <- activityRepository
+        .addActivity(prepareScenarioCanceledActivity(processId))
+        .map(id => ProcessActionId(id.value))
     } yield (processId, cancelActionId)
 
+  private def prepareScenarioCanceledActivity(processIdWithName: ProcessIdWithName) = {
+    val now = clock.instant()
+    ScenarioActivity.ScenarioCanceled(
+      scenarioId = ScenarioId(processIdWithName.id.value),
+      scenarioActivityId = ScenarioActivityId.random,
+      user = user.scenarioUser,
+      date = now,
+      scenarioVersionId = Some(ScenarioVersionId.from(VersionId.initialVersionId)),
+      comment = ScenarioComment.Available(
+        comment = "CANCEL",
+        lastModifiedByUserName = user.scenarioUser.name,
+        lastModifiedAt = now
+      ),
+      result = DeploymentResult.Success(now),
+      buildInfo = None,
+    )
+  }
+
+  private def prepareScenarioDeployedActivity(processIdWithName: ProcessIdWithName) = {
+    val now = clock.instant()
+    ScenarioActivity.ScenarioDeployed(
+      scenarioId = ScenarioId(processIdWithName.id.value),
+      scenarioActivityId = ScenarioActivityId.random,
+      user = user.scenarioUser,
+      date = now,
+      scenarioVersionId = Some(ScenarioVersionId.from(VersionId.initialVersionId)),
+      comment = ScenarioComment.Available(
+        comment = "DEPLOY",
+        lastModifiedByUserName = user.scenarioUser.name,
+        lastModifiedAt = now
+      ),
+      result = DeploymentResult.Success(now),
+      buildInfo = None,
+    )
+  }
+
   private def prepareDeployedProcess(processName: ProcessName): DB[(ProcessIdWithName, ProcessActionId)] =
-    prepareProcessWithAction(processName, Some(Deploy)).map {
+    prepareProcessWithAction(processName, Some(prepareScenarioDeployedActivity)).map {
       case (processId, Some(actionId)) => (processId, actionId)
       case (_, None) => throw new IllegalStateException("Deploy actionId should be defined for deployed process")
     }
 
   private def preparedUnArchivedProcess(
       processName: ProcessName,
-      actionNameOpt: Option[ScenarioActionName]
+      additionalScenarioActivity: Option[ProcessIdWithName => ScenarioActivity],
   ): DB[(ProcessIdWithName, Option[ProcessActionId])] =
     for {
-      (processId, actionIdOpt) <- prepareArchivedProcess(processName, actionNameOpt)
+      (processId, actionIdOpt) <- prepareArchivedProcess(processName, additionalScenarioActivity)
       _                        <- writeProcessRepository.archive(processId = processId, isArchived = false)
-      _                        <- actionRepository.markProcessAsUnArchived(processId = processId.id, initialVersionId)
+      _ <- activityRepository.addActivity(
+        ScenarioActivity.ScenarioUnarchived(
+          scenarioId = ScenarioId(processId.id.value),
+          scenarioActivityId = ScenarioActivityId.random,
+          user = user.scenarioUser,
+          date = clock.instant(),
+          scenarioVersionId = Some(ScenarioVersionId(initialVersionId.value))
+        )
+      )
     } yield (processId, actionIdOpt)
 
   private def prepareArchivedProcess(
       processName: ProcessName,
-      actionNameOpt: Option[ScenarioActionName]
+      additionalScenarioActivity: Option[ProcessIdWithName => ScenarioActivity],
   ): DB[(ProcessIdWithName, Option[ProcessActionId])] = {
     for {
-      (processId, actionIdOpt) <- prepareProcessWithAction(processName, actionNameOpt)
+      (processId, actionIdOpt) <- prepareProcessWithAction(processName, additionalScenarioActivity)
       _                        <- archiveProcess(processId)
     } yield (processId, actionIdOpt)
   }
@@ -1010,7 +1057,17 @@ class DeploymentServiceSpec
   private def archiveProcess(processId: ProcessIdWithName): DB[_] = {
     writeProcessRepository
       .archive(processId = processId, isArchived = true)
-      .flatMap(_ => actionRepository.markProcessAsArchived(processId = processId.id, initialVersionId))
+      .flatMap(_ =>
+        activityRepository.addActivity(
+          ScenarioActivity.ScenarioArchived(
+            scenarioId = ScenarioId(processId.id.value),
+            scenarioActivityId = ScenarioActivityId.random,
+            user = user.scenarioUser,
+            date = clock.instant(),
+            scenarioVersionId = Some(ScenarioVersionId(initialVersionId.value))
+          )
+        )
+      )
   }
 
   private def prepareProcessesInProgress = {
@@ -1044,17 +1101,16 @@ class DeploymentServiceSpec
 
   private def prepareProcessWithAction(
       processName: ProcessName,
-      actionNameOpt: Option[ScenarioActionName]
+      additionalScenarioActivity: Option[ProcessIdWithName => ScenarioActivity],
   ): DB[(ProcessIdWithName, Option[ProcessActionId])] = {
     for {
-      processId   <- prepareProcess(processName)
-      actionIdOpt <- DBIOAction.sequenceOption(actionNameOpt.map(prepareAction(processId.id, _)))
+      processId <- prepareProcess(processName)
+      actionIdOpt <- DBIOAction.sequenceOption(
+        additionalScenarioActivity.map(creator =>
+          activityRepository.addActivity(creator(processId)).map(id => ProcessActionId(id.value))
+        )
+      )
     } yield (processId, actionIdOpt)
-  }
-
-  private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
-    val comment = Some(Comment(actionName.toString.capitalize))
-    actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
   }
 
   private def prepareProcess(processName: ProcessName, parallelism: Option[Int] = None): DB[ProcessIdWithName] = {

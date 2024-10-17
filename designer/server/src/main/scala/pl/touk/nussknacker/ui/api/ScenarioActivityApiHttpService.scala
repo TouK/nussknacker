@@ -305,7 +305,7 @@ class ScenarioActivityApiHttpService(
           date = date,
           scenarioVersionId = scenarioVersionId.map(_.value)
         )
-      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
+      case ScenarioActivity.ScenarioDeployed(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
         Dtos.ScenarioActivity.forScenarioDeployed(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -313,7 +313,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
+      case ScenarioActivity.ScenarioPaused(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
         Dtos.ScenarioActivity.forScenarioPaused(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -321,7 +321,7 @@ class ScenarioActivityApiHttpService(
           scenarioVersionId = scenarioVersionId.map(_.value),
           comment = toDto(comment),
         )
-      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, comment, _) =>
+      case ScenarioActivity.ScenarioCanceled(_, scenarioActivityId, user, date, scenarioVersionId, comment, _, _) =>
         Dtos.ScenarioActivity.forScenarioCanceled(
           id = scenarioActivityId.value,
           user = user.name.value,
@@ -415,6 +415,7 @@ class ScenarioActivityApiHttpService(
             date,
             scenarioVersionId,
             comment,
+            _,
             result,
           ) =>
         Dtos.ScenarioActivity.forPerformedSingleExecution(
@@ -477,6 +478,7 @@ class ScenarioActivityApiHttpService(
             scenarioVersionId,
             actionName,
             comment,
+            _,
             result,
           ) =>
         Dtos.ScenarioActivity.forCustomAction(
@@ -506,7 +508,7 @@ class ScenarioActivityApiHttpService(
 
   private def editComment(request: EditCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(
         scenarioActivityRepository.editComment(
@@ -519,14 +521,14 @@ class ScenarioActivityApiHttpService(
 
   private def deleteComment(request: DeprecatedDeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(scenarioActivityRepository.deleteComment(scenarioId, request.commentId))
     ).leftMap(_ => NoComment(request.commentId))
 
   private def deleteComment(request: DeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(
         scenarioActivityRepository.deleteComment(scenarioId, ScenarioActivityId(request.scenarioActivityId))

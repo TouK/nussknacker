@@ -3,11 +3,12 @@ package pl.touk.nussknacker.ui.process.newactivity
 import cats.data.EitherT
 import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.RunDeploymentError
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -22,6 +23,7 @@ class ActivityService(
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     scenarioActivityRepository: ScenarioActivityRepository,
     deploymentService: DeploymentService,
+    buildInfos: ProcessingTypeDataProvider[Map[String, String], _],
     dbioRunner: DBIOActionRunner,
     clock: Clock,
 )(implicit ec: ExecutionContext) {
@@ -38,6 +40,7 @@ class ActivityService(
             validatedCommentOpt,
             keys.scenarioId,
             keys.scenarioGraphVersionId,
+            keys.processingType,
             command.user
           )
         } yield ()).value
@@ -62,6 +65,7 @@ class ActivityService(
       commentOpt: Option[Comment],
       scenarioId: ProcessId,
       scenarioGraphVersionId: VersionId,
+      processingType: ProcessingType,
       loggedUser: LoggedUser
   ): EitherT[Future, ActivityError[ErrorType], Unit] = {
     val now = clock.instant()
@@ -79,6 +83,7 @@ class ActivityService(
                 case Some(comment) => ScenarioComment.Available(comment.content, UserName(loggedUser.username), now)
                 case None          => ScenarioComment.Deleted(UserName(loggedUser.username), now)
               },
+              buildInfo = buildInfos.forProcessingType(processingType)(loggedUser).map(ScenarioBuildInfo.apply),
               result = DeploymentResult.Success(clock.instant()),
             )
           )

@@ -107,6 +107,7 @@ class MockDeploymentManager(
             lastModifiedByUserName = ScenarioUser.internalNuUser.name,
             lastModifiedAt = Instant.now()
           ),
+          buildInfo = None,
           result = DeploymentResult.Success(Instant.now()),
         )
       )

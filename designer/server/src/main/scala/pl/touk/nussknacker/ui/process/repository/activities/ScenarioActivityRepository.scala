@@ -22,11 +22,6 @@ trait ScenarioActivityRepository {
       scenarioActivity: ScenarioActivity,
   ): DB[ScenarioActivityId]
 
-  def modifyActivity(
-      activityId: ScenarioActivityId,
-      modification: ScenarioActivity => ScenarioActivity,
-  ): DB[Either[ModifyActivityError, Unit]]
-
   def addComment(
       scenarioId: ProcessId,
       processVersionId: VersionId,
@@ -37,23 +32,23 @@ trait ScenarioActivityRepository {
       scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId,
       comment: String,
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def editComment(
       scenarioId: ProcessId,
       commentId: Long,
       comment: String,
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def deleteComment(
       scenarioId: ProcessId,
       commentId: Long,
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def deleteComment(
       scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def addAttachment(
       attachmentToAdd: AttachmentToAdd

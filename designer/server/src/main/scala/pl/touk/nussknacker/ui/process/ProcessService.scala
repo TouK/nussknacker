@@ -7,10 +7,17 @@ import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  ProcessAction,
+  ScenarioActionName,
+  ScenarioActivity,
+  ScenarioActivityId,
+  ScenarioId,
+  ScenarioVersionId
+}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -22,7 +29,7 @@ import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResul
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
-import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions.Ops
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -34,11 +41,15 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.util.LoggedUserUtils
+//import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 import slick.dbio.DBIOAction
 
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -171,7 +182,9 @@ class DBProcessService(
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
     scenarioActionRepository: ScenarioActionRepository,
-    processRepository: ProcessRepository[DB]
+    scenarioActivityRepository: ScenarioActivityRepository,
+    processRepository: ProcessRepository[DB],
+    clock: Clock,
 )(implicit ec: ExecutionContext)
     extends ProcessService
     with LazyLogging {
@@ -343,21 +356,30 @@ class DBProcessService(
 
   override def unArchiveProcess(
       processIdWithName: ProcessIdWithName
-  )(implicit user: LoggedUser): Future[Unit] =
+  )(implicit user: LoggedUser): Future[Unit] = {
+    import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
     getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
         dbioRunner
           .runInTransaction(
             DBIOAction.seq(
               processRepository.archive(processId = process.idWithNameUnsafe, isArchived = false),
-              scenarioActionRepository
-                .markProcessAsUnArchived(processId = process.processIdUnsafe, process.processVersionId)
+              scenarioActivityRepository.addActivity(
+                ScenarioActivity.ScenarioUnarchived(
+                  scenarioId = ScenarioId(process.processIdUnsafe.value),
+                  scenarioActivityId = ScenarioActivityId.random,
+                  user = user.scenarioUser,
+                  date = clock.instant(),
+                  scenarioVersionId = Some(ScenarioVersionId.from(process.processVersionId))
+                )
+              )
             )
           )
       } else {
         throw ProcessIllegalAction("Can't unarchive not archived scenario.")
       }
     }
+  }
 
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
     withArchivedProcess(processIdWithName, "Can't delete not archived scenario.") {
@@ -523,14 +545,24 @@ class DBProcessService(
       })
   }
 
-  private def doArchive(process: ScenarioWithDetails)(implicit user: LoggedUser): Future[Unit] =
+  private def doArchive(process: ScenarioWithDetails)(implicit user: LoggedUser): Future[Unit] = {
+    import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
     dbioRunner
       .runInTransaction(
         DBIOAction.seq(
           processRepository.archive(processId = process.idWithNameUnsafe, isArchived = true),
-          scenarioActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
+          scenarioActivityRepository.addActivity(
+            ScenarioActivity.ScenarioArchived(
+              scenarioId = ScenarioId(process.processIdUnsafe.value),
+              scenarioActivityId = ScenarioActivityId.random,
+              user = user.scenarioUser,
+              date = clock.instant(),
+              scenarioVersionId = Some(ScenarioVersionId.from(process.processVersionId))
+            )
+          )
         )
       )
+  }
 
   private def doRename(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser) = {
     dbioRunner.runInTransaction(

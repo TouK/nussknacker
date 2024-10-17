@@ -67,7 +67,7 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -125,7 +125,7 @@ class AkkaHttpBasedRouteProvider(
       actionServiceSupplier      = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
       deploymentRepository       = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
-      scenarioActivityRepository = new DbScenarioActivityRepository(dbRef, designerClock)
+      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
       dbioRunner                 = DBIOActionRunner(dbRef)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         additionalUIConfigProvider,
@@ -163,8 +163,8 @@ class AkkaHttpBasedRouteProvider(
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
       implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
-      val scenarioActivityRepository                    = new DbScenarioActivityRepository(dbRef, designerClock)
-      val actionRepository                              = new DbScenarioActionRepository(dbRef, modelBuildInfo)
+      val scenarioActivityRepository                    = DbScenarioActivityRepository.create(dbRef, designerClock)
+      val actionRepository                              = DbScenarioActionRepository.create(dbRef, modelBuildInfo)
       val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
@@ -284,7 +284,9 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
         futureProcessRepository,
         actionRepository,
-        writeProcessRepository
+        scenarioActivityRepository,
+        writeProcessRepository,
+        designerClock,
       )
 
       val configProcessToolbarService = new ConfigScenarioToolbarService(
@@ -442,6 +444,7 @@ class AkkaHttpBasedRouteProvider(
             featureTogglesConfig.deploymentCommentSettings,
             scenarioActivityRepository,
             deploymentService,
+            modelBuildInfo,
             dbioRunner,
             designerClock,
           )
@@ -688,7 +691,7 @@ class AkkaHttpBasedRouteProvider(
   private def prepareProcessingTypeDataReload(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
-      scenarioActivityRepository: DbScenarioActivityRepository,
+      scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
   )(implicit executionContext: ExecutionContext): Resource[IO, ReloadableProcessingTypeDataProvider] = {
@@ -715,7 +718,7 @@ class AkkaHttpBasedRouteProvider(
 
   private def getDeploymentManagerDependencies(
       actionServiceProvider: Supplier[ActionService],
-      scenarioActivityRepository: DbScenarioActivityRepository,
+      scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType

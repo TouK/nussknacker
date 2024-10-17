@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId => LegacyDeploymentId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
@@ -78,7 +78,7 @@ class DeploymentService(
       // Saving of deployment is the final step before deployment request because we want to store only requested deployments
       _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
       _ <- runDeploymentUsingDeploymentManagerAsync(scenarioMetadata, scenarioGraphVersion, command)
-    } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
+    } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id, scenarioMetadata.processingType)).value
 
   private def getScenarioMetadata(
       command: RunDeploymentCommand
@@ -260,7 +260,11 @@ class DeploymentService(
 
 object DeploymentService {
 
-  final case class DeploymentForeignKeys(scenarioId: ProcessId, scenarioGraphVersionId: VersionId)
+  final case class DeploymentForeignKeys(
+      scenarioId: ProcessId,
+      scenarioGraphVersionId: VersionId,
+      processingType: ProcessingType,
+  )
 
   sealed trait RunDeploymentError
 
