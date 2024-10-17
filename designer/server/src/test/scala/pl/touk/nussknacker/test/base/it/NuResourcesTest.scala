@@ -467,7 +467,7 @@ trait NuResourcesTest
         forwardedUserName = None
       )
     for {
-      _  <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))
+      _  <- dbioRunner.runInSerializableTransactionWithRetry(writeProcessRepository.saveNewProcess(action))
       id <- futureFetchingScenarioRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }
