@@ -40,7 +40,7 @@ export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, fo
             >
                 <SearchIcon isEmpty={isEmpty(searchQuery)} />
             </SearchInputWithIcon>
-            <Box display={"flex"} alignItems={"center"} justifyContent={"flex-end"}>
+            <Box display={"flex"} alignItems={"center"} justifyContent={"flex-end"} mr={1}>
                 {searchQuery && (
                     <>
                         <Typography
