@@ -93,21 +93,33 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
           )
       }
 
+  def removeAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId])(
+      implicit user: LoggedUser
+  ): DB[Unit] =
+    underlying
+      .removeAction(actionId, processId, processVersion)
+      .map { _ =>
+        ScenarioActivityAuditLog
+          .onScenarioActionRemoved(
+            actionId,
+            processId,
+            processVersion,
+            user,
+          )
+      }
+
+  def deleteInProgressActions(): DB[Unit] =
+    underlying.deleteInProgressActions()
+
   def markFinishedActionAsExecutionFinished(
       actionId: ProcessActionId
   ): DB[Boolean] =
     underlying.markFinishedActionAsExecutionFinished(actionId)
 
-  def removeAction(actionId: ProcessActionId): DB[Unit] =
-    underlying.removeAction(actionId)
-
-  def deleteInProgressActions(): DB[Unit] =
-    underlying.deleteInProgressActions()
-
-  def executeInCriticalSection[T](
+  def executeCriticalSection[T](
       dbioAction: DB[T]
   ): DB[T] =
-    underlying.executeInCriticalSection(dbioAction)
+    underlying.executeCriticalSection(dbioAction)
 
   def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] =
     underlying.getInProgressActionNames(processId)

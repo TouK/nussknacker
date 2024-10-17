@@ -27,7 +27,6 @@ import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, 
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import pl.touk.nussknacker.ui.validation.{CustomActionValidator, UIProcessValidator}
@@ -142,7 +141,7 @@ class DeploymentService(
       actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData, updateStrategy)
         .transformWith {
           case Failure(ex) =>
-            removeInvalidAction(ctx.actionId).transform(_ => Failure(ex))
+            removeInvalidAction(ctx).transform(_ => Failure(ex))
           case Success(_) =>
             // we notify of deployment finish/fail only if initial validation succeeded
             val deploymentFuture = runActionAndHandleResults(
@@ -172,7 +171,7 @@ class DeploymentService(
   )(implicit user: LoggedUser): Future[CommandContext[PS]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     // 1.1 lock for critical section
-    runCriticalSectionInTransaction(
+    transactionallyRunCriticalSection(
       for {
         // 1.2. fetch scenario data
         processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id)
@@ -207,8 +206,8 @@ class DeploymentService(
     )
   }
 
-  private def runCriticalSectionInTransaction[T](dbioAction: DB[T]) = {
-    dbioRunner.runInTransaction(actionRepository.executeInCriticalSection(dbioAction))
+  private def transactionallyRunCriticalSection[T](dbioAction: DB[T]) = {
+    dbioRunner.runInTransaction(actionRepository.executeCriticalSection(dbioAction))
   }
 
   // TODO: Use buildInfo explicitly instead of ProcessingType-that-is-used-to-calculate-buildInfo
@@ -391,14 +390,22 @@ class DeploymentService(
             //       Before we can do that we should check if we somewhere rely on fact that version is always defined -
             //       see ProcessAction.processVersionId
             logger.info(s"Action $actionString finished for action without version id - skipping listener notification")
-            removeInvalidAction(ctx.actionId)
+            removeInvalidAction(ctx)
           }
           .map(_ => result)
     }
   }
 
-  private def removeInvalidAction(actionId: ProcessActionId): Future[Unit] = {
-    dbioRunner.runInTransaction(actionRepository.removeAction(actionId))
+  private def removeInvalidAction[PS: ScenarioShapeFetchStrategy](
+      context: CommandContext[PS]
+  )(implicit user: LoggedUser): Future[Unit] = {
+    dbioRunner.runInTransaction(
+      actionRepository.removeAction(
+        context.actionId,
+        context.latestScenarioDetails.processId,
+        context.versionOnWhichActionIsDone
+      )
+    )
   }
 
   // TODO: check deployment id to be sure that returned status is for given deployment

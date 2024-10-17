@@ -21,10 +21,16 @@ import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
-// This repository should be replaced with ScenarioActivityRepository
+// This repository should be fully replaced with ScenarioActivityRepository
+// 1. At the moment, the new ScenarioActivityRepository:
+//   - is not aware that the underlying operation (Deployment, Cancel) may be long and may be in progress
+//   - it operates only on activities, that correspond to the finished, or immediate operations (finished deployments, renames, updates, migrations, etc.)
+// 2. At the moment, the old ScenarioActionRepository
+//   - handles those activities, which underlying operations may be long and may be in progress
+// 3. Eventually, the new ScenarioActivityRepository should be aware of the state of the underlying operation, and should replace this repository
 trait ScenarioActionRepository {
 
-  def executeInCriticalSection[T](
+  def executeCriticalSection[T](
       dbioAction: DB[T]
   ): DB[T]
 
@@ -60,7 +66,9 @@ trait ScenarioActionRepository {
       actionId: ProcessActionId
   ): DB[Boolean]
 
-  def removeAction(actionId: ProcessActionId): DB[Unit]
+  def removeAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId])(
+      implicit user: LoggedUser
+  ): DB[Unit]
 
   def deleteInProgressActions(): DB[Unit]
 
@@ -104,7 +112,7 @@ class DbScenarioActionRepository private (
 
   import profile.api._
 
-  override def executeInCriticalSection[T](dbioAction: DB[T]): DB[T] = for {
+  override def executeCriticalSection[T](dbioAction: DB[T]): DB[T] = for {
     _      <- lockActionsTable
     result <- dbioAction
   } yield result
@@ -211,7 +219,11 @@ class DbScenarioActionRepository private (
     )
   }
 
-  override def removeAction(actionId: ProcessActionId): DB[Unit] = {
+  override def removeAction(
+      actionId: ProcessActionId,
+      processId: ProcessId,
+      processVersion: Option[VersionId]
+  )(implicit user: LoggedUser): DB[Unit] = {
     run(scenarioActivityTable.filter(a => a.activityId === activityId(actionId)).delete.map(_ => ()))
   }
 

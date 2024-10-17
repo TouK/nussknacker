@@ -13,7 +13,7 @@ object ScenarioActivityAuditLog extends LazyLogging {
   ): Unit =
     logger.info(
       withPrefix(scenarioActivity.scenarioId, scenarioActivity.scenarioVersionId, scenarioActivity.user.name.value)(
-        s"New scenario activity: ${printScenarioActivity(scenarioActivity)}"
+        s"New activity: ${printScenarioActivity(scenarioActivity)}"
       )
     )
 
@@ -180,6 +180,19 @@ object ScenarioActivityAuditLog extends LazyLogging {
     logger.info(
       withPrefix(ScenarioId(processId.value), processVersion.map(ScenarioVersionId.from), user.username)(
         s"Scenario action [actionName=${actionName.value},actionId=${processActionId.value}] finished with failure [$failureMessage] $commentValue"
+      )
+    )
+  }
+
+  def onScenarioActionRemoved(
+      processActionId: ProcessActionId,
+      processId: ProcessId,
+      processVersion: Option[VersionId],
+      user: LoggedUser
+  ): Unit = {
+    logger.info(
+      withPrefix(ScenarioId(processId.value), processVersion.map(ScenarioVersionId.from), user.username)(
+        s"Scenario action [actionId=${processActionId.value}] removed"
       )
     )
   }
