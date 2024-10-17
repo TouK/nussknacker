@@ -33,7 +33,7 @@ const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: b
 const StyledActivityBody = styled("div")(({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    margin: theme.spacing(0.5, 1),
+    margin: theme.spacing(0.5),
     gap: theme.spacing(0.5),
 }));
 
