@@ -12,10 +12,11 @@ import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
-    padding: theme.spacing(1),
+    padding: theme.spacing(0.5),
 }));
 
 const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: boolean }>(({ theme, isActiveFound, isFound }) => ({
+    padding: theme.spacing(0.5),
     border: isActiveFound
         ? `0.5px solid ${blendLighten(theme.palette.primary.main, 0.7)}`
         : isFound
@@ -32,8 +33,8 @@ const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: b
 const StyledActivityBody = styled("div")(({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    margin: `${theme.spacing(0.5)} ${theme.spacing(1)} 0`,
-    gap: theme.spacing(1),
+    margin: theme.spacing(0.5, 1),
+    gap: theme.spacing(0.5),
 }));
 
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
