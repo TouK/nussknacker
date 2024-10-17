@@ -83,9 +83,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -98,8 +99,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -192,9 +191,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -207,8 +207,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -269,9 +267,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -284,8 +283,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -389,9 +386,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -404,8 +402,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -474,9 +470,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -489,8 +486,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -550,9 +545,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -565,8 +561,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -628,9 +622,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -643,8 +638,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -699,9 +692,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -714,8 +708,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -784,9 +776,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -799,8 +792,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -892,9 +883,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -907,8 +899,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '409':
           description: ''
           content:
@@ -986,9 +976,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1001,8 +992,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -1071,9 +1060,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1086,8 +1076,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -1154,6 +1142,10 @@ paths:
                 - type: string
                 - type: string
               examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
                 Example:
                   summary: Migration performed by user without sufficient permissions
                   value: The supplied user [Griffin] is not authorized to access this
@@ -1170,8 +1162,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -1220,9 +1210,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1235,8 +1226,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -1328,9 +1317,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1343,8 +1333,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -1499,9 +1487,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1514,8 +1503,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -1656,9 +1643,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1671,8 +1659,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -1802,9 +1788,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1817,8 +1804,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -1891,9 +1876,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1906,8 +1892,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -2029,9 +2013,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2044,8 +2029,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -2117,9 +2100,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2132,8 +2116,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2189,9 +2171,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2204,8 +2187,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2288,9 +2269,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2303,8 +2285,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2370,9 +2350,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2385,8 +2366,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2438,9 +2417,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2453,8 +2433,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2509,9 +2487,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2524,8 +2503,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -2641,9 +2618,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2656,8 +2634,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -2747,9 +2723,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2762,8 +2739,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -2860,9 +2835,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2875,8 +2851,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -2982,9 +2956,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2997,8 +2972,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3081,9 +3054,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3096,8 +3070,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3167,9 +3139,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3182,8 +3155,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3256,9 +3227,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3271,8 +3243,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3346,9 +3316,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3361,8 +3332,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3435,9 +3404,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3450,8 +3420,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3529,9 +3497,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3544,8 +3513,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3630,9 +3597,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3645,8 +3613,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3714,9 +3680,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3729,8 +3696,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3823,9 +3788,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3838,8 +3804,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -3923,9 +3887,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3938,8 +3903,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -4243,9 +4206,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -4258,8 +4222,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:
@@ -4428,9 +4390,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -4443,8 +4406,6 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
         '404':
           description: ''
           content:

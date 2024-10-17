@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel
 
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.ToSecure
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.security.api.SecurityError
+import pl.touk.nussknacker.ui.security.api.{AuthenticationError, AuthorizationError, SecurityError}
 import pl.touk.nussknacker.ui.security.api.SecurityError._
 import sttp.model.StatusCode.{Forbidden, NotImplemented, Unauthorized}
 import sttp.tapir.EndpointIO.Example
@@ -39,11 +39,11 @@ object BaseEndpointDefinitions {
           oneOf(
             oneOfVariantFromMatchType(
               Unauthorized,
-              plainBody[CannotAuthenticateUser.type]
-                .example(
-                  Example.of(
-                    summary = Some("Authentication failed"),
-                    value = CannotAuthenticateUser
+              plainBody[AuthenticationError]
+                .examples(
+                  List(
+                    Example.of(name = Some("CannotAuthenticateUser"), value = CannotAuthenticateUser),
+                    Example.of(name = Some("ImpersonatedUserNotExistsError"), value = ImpersonatedUserNotExistsError)
                   )
                 )
             ),
@@ -62,14 +62,13 @@ object BaseEndpointDefinitions {
             ),
             oneOfVariantFromMatchType(
               Forbidden,
-              oneOfBody[SecurityError](
-                plainBody[SecurityError]
+              oneOfBody[AuthorizationError](
+                plainBody[AuthorizationError]
                   .examples(
                     List(
                       Example.of(name = Some("InsufficientPermission"), value = InsufficientPermission),
                       Example
-                        .of(name = Some("ImpersonationMissingPermission"), value = ImpersonationMissingPermissionError),
-                      Example.of(name = Some("ImpersonatedUserNotExistsError"), value = ImpersonatedUserNotExistsError)
+                        .of(name = Some("ImpersonationMissingPermission"), value = ImpersonationMissingPermissionError)
                     )
                   )
               )
@@ -82,15 +81,15 @@ object BaseEndpointDefinitions {
 
   private object Codecs {
 
-    implicit val authorizationErrorCodec: Codec[String, SecurityError, CodecFormat.TextPlain] = {
-      Codec.string.map(Mapping.from[String, SecurityError](deserializationNotSupportedException)(s => s.errorMessage))
+    implicit val authorizationErrorCodec: Codec[String, AuthorizationError, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, AuthorizationError](deserializationNotSupportedException)(s => s.errorMessage)
+      )
     }
 
-    implicit val authenticationErrorCodec: Codec[String, CannotAuthenticateUser.type, CodecFormat.TextPlain] = {
+    implicit val authenticationErrorCodec: Codec[String, AuthenticationError, CodecFormat.TextPlain] = {
       Codec.string.map(
-        Mapping.from[String, CannotAuthenticateUser.type](_ => CannotAuthenticateUser)(_ =>
-          CannotAuthenticateUser.errorMessage
-        )
+        Mapping.from[String, AuthenticationError](deserializationNotSupportedException)(s => s.errorMessage)
       )
     }
 
