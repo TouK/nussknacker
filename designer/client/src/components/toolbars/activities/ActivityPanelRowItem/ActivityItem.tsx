@@ -52,26 +52,29 @@ export const ActivityItem = forwardRef(
                 <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
                     <ActivityItemHeader isActiveItem={isActiveItem} searchQuery={searchQuery} activity={activity} />
                     <StyledActivityBody>
-                        <Box display={"flex"} alignItems={"center"} justifyContent={"flex-start"}>
-                            <Typography
-                                component={SearchHighlighter}
-                                highlights={[searchQuery]}
-                                variant={"overline"}
-                                data-testid={"activity-date"}
-                            >
-                                {formatDateTime(activity.date)}
-                            </Typography>
-                            <Box component={Typography} variant={"overline"} px={0.5}>
-                                |
+                        <Box display={"flex"} flexWrap={"wrap"}>
+                            <Box display={"flex"} alignItems={"center"} justifyContent={"flex-start"} flexBasis={"100%"}>
+                                <Typography
+                                    component={SearchHighlighter}
+                                    highlights={[searchQuery]}
+                                    variant={"overline"}
+                                    data-testid={"activity-date"}
+                                >
+                                    {formatDateTime(activity.date)}
+                                </Typography>
+                                <Box component={Typography} variant={"overline"} px={0.5}>
+                                    |
+                                </Box>
+                                <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
+                                    {activity.user}
+                                </Typography>
                             </Box>
-                            <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
-                                {activity.user}
-                            </Typography>
+
+                            {activity.scenarioVersionId && activity.type !== "SCENARIO_MODIFIED" && (
+                                <Typography variant={"overline"}>{version}</Typography>
+                            )}
                         </Box>
 
-                        {activity.scenarioVersionId && activity.type !== "SCENARIO_MODIFIED" && (
-                            <Typography variant={"overline"}>{version}</Typography>
-                        )}
                         {activity?.comment?.content?.value && (
                             <CommentContent
                                 content={activity.comment.content.value}

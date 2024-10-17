@@ -22,6 +22,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
         [activities],
     );
     const isActiveDeployedItem = firstDeployedIndex === index;
+    const isFirstDateItem = activities.findIndex((activeItem) => activeItem.uiType === "date") === index;
 
     useEffect(() => {
         if (rowRef.current) {
@@ -35,7 +36,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return <ActivityItem activity={activity} ref={rowRef} isActiveItem={isActiveDeployedItem} searchQuery={searchQuery} />;
             }
             case "date": {
-                return <DateItem activity={activity} ref={rowRef} />;
+                return <DateItem activity={activity} ref={rowRef} isFirstDateItem={isFirstDateItem} />;
             }
             case "toggleItemsButton": {
                 return (
@@ -58,7 +59,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return null;
             }
         }
-    }, [activity, handleHideRows, handleShowRows, isActiveDeployedItem, searchQuery, t]);
+    }, [activity, handleHideRows, handleShowRows, isActiveDeployedItem, isFirstDateItem, searchQuery, t]);
 
     return <div style={style}>{itemToRender}</div>;
 });

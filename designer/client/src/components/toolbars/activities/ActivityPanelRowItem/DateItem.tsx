@@ -5,12 +5,13 @@ import { DateActivity } from "../ActivitiesPanel";
 
 interface Props {
     activity: DateActivity;
+    isFirstDateItem: boolean;
 }
-export const DateItem = forwardRef(({ activity }: Props, ref: ForwardedRef<HTMLDivElement>) => {
+export const DateItem = forwardRef(({ activity, isFirstDateItem }: Props, ref: ForwardedRef<HTMLDivElement>) => {
     return (
-        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} px={1}>
+        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} px={1} pt={!isFirstDateItem && 4} ref={ref}>
             <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white, mr: 1 })} />
-            <Typography component={"div"} variant={"caption"} ref={ref}>
+            <Typography component={"div"} variant={"caption"}>
                 {Array.isArray(activity.value)
                     ? `${formatUiDate(activity.value[0])} - ${formatUiDate(activity.value[1])}`
                     : formatUiDate(activity.value)}
