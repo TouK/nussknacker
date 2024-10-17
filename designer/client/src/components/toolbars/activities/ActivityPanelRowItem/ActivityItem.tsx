@@ -12,7 +12,7 @@ import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
-    padding: theme.spacing(0.5),
+    padding: theme.spacing(0, 0.5),
 }));
 
 const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: boolean }>(({ theme, isActiveFound, isFound }) => ({
