@@ -353,8 +353,9 @@ object typing {
             supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
             javaList
           )
+        case set: java.util.Set[_] =>
+          genericTypeClass(classOf[java.util.Set[_]], List(supertypeOfElementTypes(set.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        // TODO: handle more types, for example Set
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>

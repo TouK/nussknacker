@@ -57,7 +57,7 @@ import java.nio.charset.Charset
 import java.time.chrono.ChronoLocalDate
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.{Collections, Currency, Locale, Optional, UUID}
+import java.util.{Collections, Currency, List => JList, Locale, Optional, Set => JSet, UUID}
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -102,7 +102,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "intArray"       -> Array(1, 2, 3),
       "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
       "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"  -> ContainerOfUnknown("unknown")
+      "unknownString"  -> ContainerOfUnknown("unknown"),
+      "setVal"         -> JSet.of("a")
     )
   )
 
@@ -1506,6 +1507,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "{#unknownString.value.castToOrNull('String'), #unknownString.value.castTo('String'), " +
         "#unknownString.value.canCastTo('String')}"
     ) shouldBe List("unknown", "unknown", true).asJava
+  }
+
+  test("should convert a Set to a List") {
+    val parsed = parse[Any](expr = "#setVal.toList()", context = ctx).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass[JList[_]](List(Typed.fromInstance("a")))
+    parsed.expression.evaluateSync[Any](ctx) shouldBe List("a").asJava
   }
 
 }
