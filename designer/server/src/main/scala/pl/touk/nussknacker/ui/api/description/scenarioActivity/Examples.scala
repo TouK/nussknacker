@@ -120,7 +120,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           comment = ScenarioActivityComment(
-            content = ScenarioActivityCommentContent.Deleted,
+            content = ScenarioActivityCommentContent.NotAvailable,
             lastModifiedBy = "John Doe",
             lastModifiedAt = Instant.parse("2024-01-18T14:21:17Z")
           )
@@ -193,7 +193,7 @@ object Examples {
           date = Instant.parse("2024-01-17T14:21:17Z"),
           scenarioVersionId = Some(1),
           comment = ScenarioActivityComment(
-            content = ScenarioActivityCommentContent.Deleted,
+            content = ScenarioActivityCommentContent.NotAvailable,
             lastModifiedBy = "some user",
             lastModifiedAt = Instant.parse("2024-01-17T14:21:17Z")
           ),

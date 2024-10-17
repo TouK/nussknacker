@@ -247,20 +247,17 @@ class ScenarioActivityApiHttpService(
     }
 
   private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
-    scenarioComment match {
-      case ScenarioComment.Available(comment, lastModifiedByUserName, lastModifiedAt) =>
-        Dtos.ScenarioActivityComment(
-          content = Dtos.ScenarioActivityCommentContent.Available(comment),
-          lastModifiedBy = lastModifiedByUserName.value,
-          lastModifiedAt = lastModifiedAt,
-        )
-      case ScenarioComment.Deleted(deletedByUserName, deletedAt) =>
-        Dtos.ScenarioActivityComment(
-          content = Dtos.ScenarioActivityCommentContent.Deleted,
-          lastModifiedBy = deletedByUserName.value,
-          lastModifiedAt = deletedAt,
-        )
+    val content = scenarioComment match {
+      case ScenarioComment.Available(comment, _, _) if comment.nonEmpty =>
+        Dtos.ScenarioActivityCommentContent.Available(comment)
+      case ScenarioComment.NotAvailable(_, _) | ScenarioComment.Available(_, _, _) =>
+        Dtos.ScenarioActivityCommentContent.NotAvailable
     }
+    Dtos.ScenarioActivityComment(
+      content = content,
+      lastModifiedBy = scenarioComment.lastModifiedByUserName.value,
+      lastModifiedAt = scenarioComment.lastModifiedAt,
+    )
   }
 
   private def toDto(attachment: ScenarioAttachment): Dtos.ScenarioActivityAttachment = {

@@ -4162,7 +4162,7 @@ paths:
                       scenarioVersionId: 1
                       comment:
                         content:
-                          status: DELETED
+                          status: NOT_AVAILABLE
                         lastModifiedBy: John Doe
                         lastModifiedAt: '2024-01-18T14:21:17Z'
                       additionalFields: []
@@ -4246,7 +4246,7 @@ paths:
                       scenarioVersionId: 1
                       comment:
                         content:
-                          status: DELETED
+                          status: NOT_AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
@@ -4911,14 +4911,6 @@ components:
       title: DateTimeParameterEditor
       type: object
     Deleted:
-      title: Deleted
-      type: object
-      required:
-      - status
-      properties:
-        status:
-          type: string
-    Deleted1:
       title: Deleted
       type: object
       required:
@@ -5961,6 +5953,14 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
+    NotAvailable:
+      title: NotAvailable
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          type: string
     Notification:
       title: Notification
       type: object
@@ -6356,12 +6356,12 @@ components:
       title: ScenarioActivityAttachmentFile
       oneOf:
       - $ref: '#/components/schemas/Available1'
-      - $ref: '#/components/schemas/Deleted1'
+      - $ref: '#/components/schemas/Deleted'
       discriminator:
         propertyName: status
         mapping:
           AVAILABLE: '#/components/schemas/Available1'
-          DELETED: '#/components/schemas/Deleted1'
+          DELETED: '#/components/schemas/Deleted'
     ScenarioActivityComment:
       title: ScenarioActivityComment
       type: object
@@ -6381,12 +6381,12 @@ components:
       title: ScenarioActivityCommentContent
       oneOf:
       - $ref: '#/components/schemas/Available'
-      - $ref: '#/components/schemas/Deleted'
+      - $ref: '#/components/schemas/NotAvailable'
       discriminator:
         propertyName: status
         mapping:
           AVAILABLE: '#/components/schemas/Available'
-          DELETED: '#/components/schemas/Deleted'
+          NOT_AVAILABLE: '#/components/schemas/NotAvailable'
     ScenarioActivityMetadata:
       title: ScenarioActivityMetadata
       type: object

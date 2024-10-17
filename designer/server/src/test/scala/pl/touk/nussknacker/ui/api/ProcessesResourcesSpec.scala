@@ -36,7 +36,10 @@ import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig,
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{Available, Deleted}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{
+  Available,
+  NotAvailable
+}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
   ScenarioActivities,
   ScenarioActivity,
@@ -732,7 +735,7 @@ class ProcessesResourcesSpec
         scenarioVersionId = Some(2L),
         comment = Some(
           ScenarioActivityComment(
-            content = Deleted,
+            content = NotAvailable,
             lastModifiedBy = "allpermuser",
             lastModifiedAt = activities(1).comment.get.lastModifiedAt
           )
