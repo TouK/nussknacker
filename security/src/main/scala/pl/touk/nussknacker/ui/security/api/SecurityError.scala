@@ -17,7 +17,7 @@ object SecurityError {
 
   case object ImpersonationNotSupportedError extends ImpersonationAuthenticationError
 
-  implicit class SecurityErrorWithMessage(s: SecurityError) {
+  implicit class SecurityErrorWithMessage(val s: SecurityError) extends AnyVal {
 
     def errorMessage: String = s match {
       case InsufficientPermission => "The supplied authentication is not authorized to access this resource"
