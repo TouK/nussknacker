@@ -195,9 +195,6 @@ object TestFactory {
   def newDummyActionRepository(): ScenarioActionRepository =
     newActionProcessRepository(dummyDbRef)
 
-  def newDummyScenarioActivityRepository(): ScenarioActivityRepository =
-    newScenarioActivityRepository(dummyDbRef, Clock.systemUTC())
-
   def newScenarioMetadataRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)
 
   def newDeploymentRepository(dbRef: DbRef, clock: Clock) = new DeploymentRepository(dbRef, clock)

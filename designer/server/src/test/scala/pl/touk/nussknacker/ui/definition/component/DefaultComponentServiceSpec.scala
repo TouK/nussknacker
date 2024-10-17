@@ -46,7 +46,6 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.net.URI
-import java.time.Clock
 
 class DefaultComponentServiceSpec
     extends AnyFlatSpec
@@ -871,7 +870,7 @@ class DefaultComponentServiceSpec
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       scenarioActionRepository = TestFactory.newDummyActionRepository(),
-      processRepository = TestFactory.newDummyWriteProcessRepository(),
+      processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 
   private def cid(processingType: ProcessingType, componentId: ComponentId): DesignerWideComponentId =
