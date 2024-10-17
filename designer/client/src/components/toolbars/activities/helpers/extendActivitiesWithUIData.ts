@@ -51,7 +51,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
 
         const currentAndNextActivityDateAreTheSame = formatDate(currentActivity.date) === (nextActivity && formatDate(nextActivity.date));
 
-        if (currentAndNextActivityDateAreTheSame || isTheSameTypeAsBefore) {
+        if (currentAndNextActivityDateAreTheSame || (isTheSameTypeAsBefore && nextActivity)) {
             iteration++;
 
             if (isTheSameTypeAsBefore) {
