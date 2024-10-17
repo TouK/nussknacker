@@ -98,7 +98,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -207,7 +207,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -284,7 +284,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -404,7 +404,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '500':
           description: ''
@@ -489,7 +489,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '500':
           description: ''
@@ -565,7 +565,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -643,7 +643,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -714,7 +714,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -799,7 +799,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -907,7 +907,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '409':
           description: ''
@@ -1001,7 +1001,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -1086,7 +1086,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -1170,7 +1170,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -1235,7 +1235,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -1343,7 +1343,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -1514,7 +1514,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -1671,7 +1671,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -1817,7 +1817,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -1906,7 +1906,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -2044,7 +2044,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -2132,7 +2132,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -2204,7 +2204,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -2303,7 +2303,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -2385,7 +2385,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -2453,7 +2453,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -2524,7 +2524,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '500':
           description: ''
@@ -2656,7 +2656,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -2762,7 +2762,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -2875,7 +2875,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -2997,7 +2997,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3096,7 +3096,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '501':
           description: Impersonation is not supported for defined authentication mechanism
@@ -3182,7 +3182,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3271,7 +3271,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3361,7 +3361,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3450,7 +3450,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3544,7 +3544,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3645,7 +3645,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3729,7 +3729,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3838,7 +3838,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -3938,7 +3938,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -4258,7 +4258,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''
@@ -4443,7 +4443,7 @@ paths:
                     resource
                 ImpersonationMissingPermission:
                   value: The supplied authentication is not authorized to impersonate
-                ImpersonatedUserDataNotFound:
+                ImpersonatedUserNotExistsError:
                   value: No impersonated user data found for provided identity
         '404':
           description: ''

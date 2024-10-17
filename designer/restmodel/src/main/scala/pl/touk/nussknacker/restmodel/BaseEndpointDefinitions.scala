@@ -3,13 +3,7 @@ package pl.touk.nussknacker.restmodel
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.ToSecure
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.SecurityError
-import pl.touk.nussknacker.ui.security.api.SecurityError.{
-  CannotAuthenticateUser,
-  ImpersonatedUserDataNotFoundError,
-  ImpersonationMissingPermissionError,
-  ImpersonationNotSupportedError,
-  InsufficientPermission
-}
+import pl.touk.nussknacker.ui.security.api.SecurityError._
 import sttp.model.StatusCode.{Forbidden, NotImplemented, Unauthorized}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -75,7 +69,7 @@ object BaseEndpointDefinitions {
                       Example.of(name = Some("InsufficientPermission"), value = InsufficientPermission),
                       Example
                         .of(name = Some("ImpersonationMissingPermission"), value = ImpersonationMissingPermissionError),
-                      Example.of(name = Some("ImpersonatedUserDataNotFound"), value = ImpersonatedUserDataNotFoundError)
+                      Example.of(name = Some("ImpersonatedUserNotExistsError"), value = ImpersonatedUserNotExistsError)
                     )
                   )
               )
@@ -89,15 +83,13 @@ object BaseEndpointDefinitions {
   private object Codecs {
 
     implicit val authorizationErrorCodec: Codec[String, SecurityError, CodecFormat.TextPlain] = {
-      Codec.string.map(
-        Mapping.from[String, SecurityError](_ => InsufficientPermission)(s => s.errorMessage)
-      )
+      Codec.string.map(Mapping.from[String, SecurityError](deserializationNotSupportedException)(s => s.errorMessage))
     }
 
     implicit val authenticationErrorCodec: Codec[String, CannotAuthenticateUser.type, CodecFormat.TextPlain] = {
       Codec.string.map(
         Mapping.from[String, CannotAuthenticateUser.type](_ => CannotAuthenticateUser)(_ =>
-          "The supplied authentication is invalid"
+          CannotAuthenticateUser.errorMessage
         )
       )
     }
