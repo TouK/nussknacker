@@ -12,11 +12,14 @@ import { NodeDetailsActions } from "./nk/nodeDetails";
 import { NotificationActions } from "./nk/notifications";
 import { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
 import { LoadProcessVersionsAction } from "./nk/loadProcessVersions";
+import { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
 
 type TypedAction =
     | UiActions
     | SettingsActions
     | DisplayProcessActivityAction
+    | GetScenarioActivitiesAction
+    | UpdateScenarioActivitiesAction
     | NodeActions
     | ToolbarActions
     | NodeDetailsActions

@@ -1,26 +1,28 @@
 import React from "react";
-import DownloadIcon from "@mui/icons-material/Download";
-import { Attachment } from "../../reducers/processActivity";
-import HttpService from "../../http/HttpService";
-import Date from "../common/Date";
-import { AttachmentDetails, DownloadAttachment, DownloadButton, AttachHeader } from "./StyledAttach";
-import { ProcessName } from "../Process/types";
+import { AttachmentDetails, AttachHeader } from "./StyledAttach";
 import { Typography } from "@mui/material";
+import { Attachment } from "./AddAttachment";
+import { DeleteOutline } from "@mui/icons-material";
+import { StyledIconButton } from "../toolbars/activities/ActivitiesSearch";
 
-export function AttachmentEl({ data, processName }: { data: Attachment; processName: ProcessName }) {
+export function AttachmentEl({
+    attachment,
+    handleDeleteAttachment,
+    index,
+}: {
+    attachment: Attachment;
+    handleDeleteAttachment: (index: number) => void;
+    index: number;
+}) {
     return (
         <li style={{ display: "flex" }}>
-            <DownloadAttachment className="download-attachment">
-                <DownloadButton onClick={() => HttpService.downloadAttachment(processName, data.id, data.fileName)}>
-                    <DownloadIcon sx={{ width: 13, height: 13 }} />
-                </DownloadButton>
-            </DownloadAttachment>
             <AttachmentDetails>
                 <AttachHeader>
-                    <Date date={data.createDate} />
-                    <Typography variant={"overline"}>{` | v${data.processVersionId} | ${data.user}`}</Typography>
+                    <Typography variant={"overline"} mr={1}>{` ${attachment.file.name} | v${attachment.processVersionId}`}</Typography>
+                    <StyledIconButton color={"inherit"} onClick={() => handleDeleteAttachment(index)}>
+                        <DeleteOutline fontSize={"small"} />
+                    </StyledIconButton>
                 </AttachHeader>
-                <Typography> {data.fileName} </Typography>
             </AttachmentDetails>
         </li>
     );
