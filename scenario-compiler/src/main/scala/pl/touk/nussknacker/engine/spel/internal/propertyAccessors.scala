@@ -15,7 +15,7 @@ object propertyAccessors {
   // Order of accessors matters - property from first accessor that returns `true` from `canRead` will be chosen.
   // This general order can be overridden - each accessor can define target classes for which it will have precedence -
   // through the `getSpecificTargetClasses` method.
-  def configured(): Seq[PropertyAccessor] = {
+  def configured(methodInvoker: ExtensionsAwareMethodInvoker): Seq[PropertyAccessor] = {
     Seq(
       MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
       new ReflectivePropertyAccessor(),
@@ -25,7 +25,7 @@ object propertyAccessors {
       PrimitiveOrWrappersPropertyAccessor,
       StaticPropertyAccessor,
       TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
-      NoParamMethodPropertyAccessor,
+      new NoParamMethodPropertyAccessor(methodInvoker),
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor,
       MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
@@ -51,16 +51,22 @@ object propertyAccessors {
     This one is a bit tricky. We extend ReflectivePropertyAccessor, as it's the only sensible way to make it compilable,
     however it's not so easy to extend and in interpreted mode we skip original implementation
    */
-  object NoParamMethodPropertyAccessor extends ReflectivePropertyAccessor with ReadOnly with Caching {
+  class NoParamMethodPropertyAccessor(methodInvoker: ExtensionsAwareMethodInvoker)
+      extends ReflectivePropertyAccessor
+      with ReadOnly
+      with Caching {
+
+    private val methodsDiscovery = new ExtensionAwareMethodsDiscovery
+    private val emptyArray       = Array[AnyRef]()
 
     override def findGetterForProperty(propertyName: String, clazz: Class[_], mustBeStatic: Boolean): Method = {
       findMethodFromClass(propertyName, clazz).orNull
     }
 
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
-      )
+      methodsDiscovery
+        .discover(target)
+        .find(m => !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name)
     }
 
     override protected def invokeMethod(
@@ -69,10 +75,27 @@ object propertyAccessors {
         target: Any,
         context: EvaluationContext
     ): AnyRef = {
-      method.invoke(target)
+      methodInvoker.invoke(method, target, emptyArray)
     }
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
+
+    override def createOptimalAccessor(context: EvaluationContext, target: Any, name: String): PropertyAccessor =
+      new NuOptimalAccessor(super.createOptimalAccessor(context, target, name))
+
+    private class NuOptimalAccessor(delegate: PropertyAccessor) extends PropertyAccessor {
+      override def getSpecificTargetClasses: Array[Class[_]] =
+        delegate.getSpecificTargetClasses
+      override def canWrite(context: EvaluationContext, target: Any, name: String): Boolean =
+        delegate.canWrite(context, target, name)
+      override def write(context: EvaluationContext, target: Any, name: String, newValue: Any): Unit =
+        delegate.write(context, target, name, newValue)
+      override def canRead(context: EvaluationContext, target: Any, name: String): Boolean =
+        NoParamMethodPropertyAccessor.this.canRead(context, target, name)
+      override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
+        NoParamMethodPropertyAccessor.this.read(context, target, name)
+    }
+
   }
 
   // Spring bytecode generation fails when we try to invoke methods on primitives, so we

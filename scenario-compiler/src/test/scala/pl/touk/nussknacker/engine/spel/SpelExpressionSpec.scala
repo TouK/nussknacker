@@ -1510,7 +1510,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should convert a Set to a List") {
-    val parsed = parse[Any](expr = "#setVal.toList()", context = ctx).validValue
+    val parsed = parse[Any](expr = "#setVal.toList", context = ctx).validValue
     parsed.returnType.withoutValue shouldBe Typed.genericTypeClass[JList[_]](List(Typed.typedClass[String]))
     parsed.expression.evaluateSync[Any](ctx) shouldBe List("a").asJava
   }
