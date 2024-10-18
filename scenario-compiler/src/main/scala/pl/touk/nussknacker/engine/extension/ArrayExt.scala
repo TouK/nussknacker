@@ -20,13 +20,17 @@ class ArrayExt(target: Any) extends util.AbstractList[Object] {
 
 }
 
-object ArrayExt
-    extends ExtensionMethodsFactory
-    with ExtensionMethodsDefinitionsExtractor
-    with ExtensionRuntimeApplicable {
+object ArrayExt extends ExtensionMethodsHandler {
 
-  override def create(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[String, Class[_]]): Any =
-    new ArrayExt(target)
+  override type ExtensionMethodInvocationTarget = ArrayExt
+
+  override val invocationTargetClass: Class[ExtensionMethodInvocationTarget] = classOf[ArrayExt]
+
+  def createConverter(
+      classLoader: ClassLoader,
+      classesBySimpleName: Map[String, Class[_]]
+  ): ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget] =
+    (target: Any) => new ArrayExt(target)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
     if (clazz.isArray) {
@@ -39,4 +43,5 @@ object ArrayExt
     }
 
   override def applies(clazz: Class[_]): Boolean = clazz.isArray
+
 }

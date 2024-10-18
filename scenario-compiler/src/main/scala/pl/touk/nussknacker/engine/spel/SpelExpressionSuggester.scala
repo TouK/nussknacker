@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.spel
 
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import org.springframework.expression.common.TemplateParserContext
@@ -20,12 +21,10 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
-
-import scala.collection.compat.immutable.LazyList
-import cats.implicits._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
+import scala.collection.compat.immutable.LazyList
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
