@@ -1,9 +1,9 @@
 import { useTestResults } from "./TestResultsWrapper";
 import ExpressionField from "./editors/expression/ExpressionField";
-import { findParamDefinitionByName } from "./FieldLabel";
 import React, { ComponentType, PropsWithChildren, useMemo } from "react";
 import { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { findParamDefinitionByName } from "./parameterHelpers";
 
 export type FieldWrapperProps = PropsWithChildren<Omit<ParameterExpressionFieldProps, "FieldWrapper">>;
 
@@ -24,7 +24,7 @@ export type ParameterExpressionFieldProps = {
 };
 
 //this is for "dynamic" parameters in sources, sinks, services etc.
-export function ParameterExpressionField({ FieldWrapper = React.Fragment, ...props }: ParameterExpressionFieldProps): JSX.Element {
+export function ParameterExpressionField({ FieldWrapper, ...props }: ParameterExpressionFieldProps): JSX.Element {
     const {
         errors,
         findAvailableVariables,
@@ -50,8 +50,8 @@ export function ParameterExpressionField({ FieldWrapper = React.Fragment, ...pro
         [findAvailableVariables, node.id, parameter.name, parameterDefinitions],
     );
 
-    return (
-        <FieldWrapper {...props}>
+    const field = useMemo(
+        () => (
             <ExpressionField
                 fieldName={parameter.name}
                 fieldLabel={parameter.name}
@@ -67,6 +67,22 @@ export function ParameterExpressionField({ FieldWrapper = React.Fragment, ...pro
                 variableTypes={variableTypes}
                 fieldErrors={getValidationErrorsForField(errors, parameter.name)}
             />
-        </FieldWrapper>
+        ),
+        [
+            errors,
+            isEditMode,
+            listFieldPath,
+            node,
+            parameter.name,
+            parameterDefinitions,
+            renderFieldLabel,
+            setProperty,
+            showSwitch,
+            showValidation,
+            testResultsState.testResultsToShow,
+            variableTypes,
+        ],
     );
+
+    return FieldWrapper ? <FieldWrapper {...props}>{field}</FieldWrapper> : <>{field}</>;
 }

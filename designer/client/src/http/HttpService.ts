@@ -4,8 +4,14 @@ import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
 import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
 import { UserData } from "../common/models/User";
+import { TestResults } from "../common/TestResultUtils";
+import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
+import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
+import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
 import {
     ActionName,
     PredefinedActionName,
@@ -17,18 +23,13 @@ import {
     StatusDefinitionType,
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
-import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
-import { Instant, WithId } from "../types/common";
+import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
-import { TestResults } from "../common/TestResultUtils";
-import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
-import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
-import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import { AuthenticationSettings } from "../reducers/settings";
+import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Instant, WithId } from "../types/common";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -92,7 +93,9 @@ export type ComponentType = {
 
 export type SourceWithParametersTest = {
     sourceId: string;
-    parameterExpressions: { [paramName: string]: Expression };
+    parameterExpressions: {
+        [paramName: string]: Expression;
+    };
 };
 
 export type NodeUsageData = {
@@ -157,8 +160,14 @@ export interface ScenarioParametersCombinations {
     engineSetupErrors: Record<string, string[]>;
 }
 
-export type ProcessDefinitionDataDictOption = { key: string; label: string };
-type DictOption = { id: string; label: string };
+export type ProcessDefinitionDataDictOption = {
+    key: string;
+    label: string;
+};
+type DictOption = {
+    id: string;
+    label: string;
+};
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -180,7 +189,11 @@ class HttpService {
             .then(() => ({ state: HealthState.ok }))
             .catch((error) => {
                 const { message, processes }: HealthCheckProcessDeploymentType = error.response?.data || {};
-                return { state: HealthState.error, error: message, processes: processes };
+                return {
+                    state: HealthState.error,
+                    error: message,
+                    processes: processes,
+                };
             });
     }
 
@@ -188,7 +201,11 @@ class HttpService {
         return api.get<SettingsData>("/settings");
     }
 
-    fetchSettingsWithAuth(): Promise<SettingsData & { authentication: AuthenticationSettings }> {
+    fetchSettingsWithAuth(): Promise<
+        SettingsData & {
+            authentication: AuthenticationSettings;
+        }
+    > {
         return this.fetchSettings().then(({ data }) => {
             const { provider } = data.authentication;
             const settings = data;
@@ -218,19 +235,18 @@ class HttpService {
     }
 
     fetchProcessDefinitionData(processingType: string, isFragment: boolean) {
-        const promise = api
-            .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`)
-            .then((response) => {
-                // This is a walk-around for having part of node template (branch parameters) outside of itself.
-                // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
-                response.data.componentGroups.forEach((group) => {
-                    group.components.forEach((component) => {
-                        component.node.branchParametersTemplate = component.branchParametersTemplate;
-                    });
-                });
-
-                return response;
-            });
+        const promise = api.get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`).then(
+            ({ data, ...response }): AxiosResponse<ProcessDefinitionData> => ({
+                ...response,
+                data: {
+                    ...data,
+                    componentGroups: data.componentGroups.map(({ components, ...group }) => ({
+                        ...group,
+                        components: components.map(fixBranchParametersTemplate).map(fixAggregateParameters),
+                    })),
+                },
+            }),
+        );
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true),
         );
@@ -314,7 +330,12 @@ class HttpService {
             );
     }
 
-    deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
+    deploy(
+        processName: string,
+        comment?: string,
+    ): Promise<{
+        isSuccess: boolean;
+    }> {
         return api
             .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
             .then(() => {
@@ -336,17 +357,27 @@ class HttpService {
     }
 
     customAction(processName: string, actionName: string, params: Record<string, unknown>, comment?: string) {
-        const data = { actionName: actionName, comment: comment, params: params };
+        const data = {
+            actionName: actionName,
+            comment: comment,
+            params: params,
+        };
         return api
             .post(`/processManagement/customAction/${encodeURIComponent(processName)}`, data)
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
-                return { isSuccess: res.data.isSuccess, msg: msg };
+                return {
+                    isSuccess: res.data.isSuccess,
+                    msg: msg,
+                };
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
-                const result = { isSuccess: false, msg: msg };
+                const result = {
+                    isSuccess: false,
+                    msg: msg,
+                };
                 if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
                 return result;
             });
@@ -625,7 +656,10 @@ class HttpService {
         //we use offset date time instead of timestamp to pass info about user time zone to BE
         const format = (date: Moment) => date?.format("YYYY-MM-DDTHH:mm:ssZ");
 
-        const data = { dateFrom: format(dateFrom), dateTo: format(dateTo) };
+        const data = {
+            dateFrom: format(dateFrom),
+            dateTo: format(dateTo),
+        };
         const promise = api.get(`/processCounts/${encodeURIComponent(processName)}`, { params: data });
 
         promise.catch((error) =>
@@ -636,7 +670,11 @@ class HttpService {
 
     //to prevent closing edit node modal and corrupting graph display
     saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string, labels: string[]) {
-        const data = { scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph), comment: comment, scenarioLabels: labels };
+        const data = {
+            scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
+            comment: comment,
+            scenarioLabels: labels,
+        };
         return api.put(`/processes/${encodeURIComponent(processName)}`, data).catch((error) => {
             this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true);
             return Promise.reject(error);
@@ -784,7 +822,11 @@ class HttpService {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
                 expectedType: {
-                    value: { type: type, refClazzName, params: [] },
+                    value: {
+                        type: type,
+                        refClazzName,
+                        params: [],
+                    },
                 },
             })
             .catch((error) =>
@@ -798,10 +840,16 @@ class HttpService {
     }
 
     fetchStatisticUsage() {
-        return api.get<{ urls: string[] }>(`/statistic/usage`);
+        return api.get<{
+            urls: string[];
+        }>(`/statistic/usage`);
     }
 
-    sendStatistics(statistics: { name: `${EventTrackingType}_${EventTrackingSelectorType}` }[]) {
+    sendStatistics(
+        statistics: {
+            name: `${EventTrackingType}_${EventTrackingSelectorType}`;
+        }[],
+    ) {
         return api.post(`/statistic`, { statistics });
     }
 

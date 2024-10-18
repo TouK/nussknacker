@@ -4,12 +4,9 @@ import { UIParameter } from "../../../types";
 import NodeTip from "./NodeTip";
 import InfoIcon from "@mui/icons-material/Info";
 import ProcessUtils from "../../../common/ProcessUtils";
+import { findParamDefinitionByName } from "./parameterHelpers";
 import { ErrorBoundary } from "react-error-boundary";
 import { PlaceholderIconFallbackComponent } from "../../common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
-
-export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
-    return definitions?.find((param) => param.name === paramName);
-}
 
 export const StyledNodeTip = styled(NodeTip)({
     margin: "0 8px",

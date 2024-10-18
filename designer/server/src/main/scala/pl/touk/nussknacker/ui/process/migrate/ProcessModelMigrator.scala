@@ -11,14 +11,15 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 final case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
 
-  def toAutomaticProcessUpdateAction(processId: ProcessId, labels: List[ScenarioLabel]): AutomaticProcessUpdateAction = AutomaticProcessUpdateAction(
-    processId = processId,
-    canonicalProcess = process,
-    labels = labels,
-    increaseVersionWhenJsonNotChanged = true,
-    forwardedUserName = None,
-    migrationsApplies = migrationsApplied
-  )
+  def toAutomaticProcessUpdateAction(processId: ProcessId, labels: List[ScenarioLabel]): AutomaticProcessUpdateAction =
+    AutomaticProcessUpdateAction(
+      processId = processId,
+      canonicalProcess = process,
+      labels = labels,
+      increaseVersionWhenJsonNotChanged = true,
+      forwardedUserName = None,
+      migrationsApplies = migrationsApplied
+    )
 
 }
 

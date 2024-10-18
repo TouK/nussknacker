@@ -8,16 +8,19 @@ export function DropTarget({
     renderClone,
     CloneWrapper = "div",
     onDragEnd,
+    onDragStart,
+    onDragUpdate,
     ...props
 }: PropsWithChildren<
-    { CloneWrapper?: ReactComponentLike } & Pick<DragDropContextProps, "onDragEnd"> & Omit<DroppableProps, "children">
+    { CloneWrapper?: ReactComponentLike } & Pick<DragDropContextProps, "onDragEnd" | "onDragUpdate" | "onDragStart"> &
+        Omit<DroppableProps, "children">
 >): JSX.Element {
     const clone: DraggableChildrenFn = useCallback(
         (...args) => <CloneWrapper>{renderClone(...args)}</CloneWrapper>,
         [CloneWrapper, renderClone],
     );
     return (
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart} onDragUpdate={onDragUpdate}>
             <Droppable {...props} renderClone={clone}>
                 {(p) => (
                     <div ref={p.innerRef}>
