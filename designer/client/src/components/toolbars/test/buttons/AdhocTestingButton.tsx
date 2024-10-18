@@ -30,7 +30,7 @@ function AdhocTestingButton({ disabled, name, title, docs, markdownContent, type
     const sourcesFound = testParameters.length;
 
     const multipleSourcesTest = useCallback(() => {
-      inform({ text: `Ad hoc testing is supported only for scenario with single source. Your scenario has ${sourcesFound} sources.` });
+        inform({ text: `Ad hoc testing is supported only for scenario with single source. Your scenario has ${sourcesFound} sources.` });
     }, [inform, sourcesFound]);
 
     const action = useAdhocTestingAction();
