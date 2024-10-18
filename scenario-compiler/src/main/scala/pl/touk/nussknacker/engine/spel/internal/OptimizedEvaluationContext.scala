@@ -93,7 +93,9 @@ object EvaluationContextPreparer {
       classDefinitionSet: ClassDefinitionSet
   ): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
-    val propertyAccessors = internal.propertyAccessors.configured()
+    val methodInvoker     = new ExtensionsAwareMethodInvoker(classLoader, classDefinitionSet)
+    val propertyAccessors = internal.propertyAccessors
+      .configured(methodInvoker)
     new EvaluationContextPreparer(
       classLoader,
       expressionConfig.globalImports,
