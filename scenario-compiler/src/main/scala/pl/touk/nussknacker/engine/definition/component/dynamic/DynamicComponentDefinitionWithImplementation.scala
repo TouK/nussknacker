@@ -17,7 +17,8 @@ final case class DynamicComponentDefinitionWithImplementation(
     override val component: DynamicComponent[_],
     override val componentTypeSpecificData: ComponentTypeSpecificData,
     override protected val uiDefinition: ComponentUiDefinition,
-    parametersConfig: Map[ParameterName, ParameterConfig]
+    parametersConfig: Map[ParameterName, ParameterConfig],
+    rawParametersConfig: Map[ParameterName, ParameterConfig]
 ) extends ComponentDefinitionWithImplementation {
 
   override def withImplementationInvoker(

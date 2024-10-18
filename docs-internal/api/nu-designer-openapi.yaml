@@ -2941,6 +2941,7 @@ paths:
                       additionalVariables: {}
                       variablesToHide: []
                       branchParam: false
+                      requiredParam: true
                       label: name
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
@@ -6753,6 +6754,7 @@ components:
       - defaultValue
       - additionalVariables
       - branchParam
+      - requiredParam
       - label
       properties:
         name:
@@ -6779,6 +6781,8 @@ components:
           items:
             type: string
         branchParam:
+          type: boolean
+        requiredParam:
           type: boolean
         hintText:
           type:
