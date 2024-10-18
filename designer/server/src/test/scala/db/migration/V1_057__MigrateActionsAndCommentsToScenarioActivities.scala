@@ -105,8 +105,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
         scenarioVersion = Some(processVersionId),
         comment = Some(s"Very important change $expectedOldCommentIdForHeadActivity"),
         attachmentId = None,
-        finishedAt = None,
-        state = Some("IN_PROGRESS"),
+        finishedAt = Some(now),
+        state = Some("FINISHED"),
         errorMessage = None,
         buildInfo = None,
         additionalProperties = AdditionalProperties.empty.properties.asJson.noSpaces,
@@ -123,7 +123,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = Available("Deployment with scenario fix", user.name, date)
+            comment = Available("Deployment with scenario fix", user.name, date),
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -138,7 +139,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = Available("I'm canceling this scenario, it causes problems", user.name, date)
+            comment = Available("I'm canceling this scenario, it causes problems", user.name, date),
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -181,7 +183,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = Available("Paused because marketing campaign is paused for now", user.name, date)
+            comment = Available("Paused because marketing campaign is paused for now", user.name, date),
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -217,8 +220,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           scenarioVersion = Some(5),
           comment = Some("Rename: [marketing-campaign] -> [marketing-campaign-plus]"),
           attachmentId = None,
-          finishedAt = None,
-          state = Some("IN_PROGRESS"),
+          finishedAt = Some(now),
+          state = Some("FINISHED"),
           errorMessage = None,
           buildInfo = None,
           additionalProperties = "{}"
@@ -236,9 +239,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            dateFinished = None,
-            errorMessage = None,
-            comment = Available("Deployed at the request of business", user.name, date)
+            comment = Available("Deployed at the request of business", user.name, date),
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -254,7 +256,8 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             date = date,
             scenarioVersionId = sv,
             actionName = "special action",
-            comment = Available("Special action needed to be executed", user.name, date)
+            comment = Available("Special action needed to be executed", user.name, date),
+            result = DeploymentResult.Success(date),
           )
       )
     }
@@ -400,9 +403,9 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
     impersonatedByIdentity = None,
     impersonatedByUsername = None,
     createdAt = now,
-    performedAt = None,
+    performedAt = Some(now),
     actionName = scenarioActionName.value,
-    state = "IN_PROGRESS",
+    state = "FINISHED",
     failureMessage = None,
     commentId = commentId,
     buildInfo = None

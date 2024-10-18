@@ -10,7 +10,7 @@ import { useEffect, useMemo } from "react";
 import { displayTestCapabilities, fetchTestFormParameters } from "../../../actions/nk";
 
 // TODO: fetch TestCapabilities and TestFormParameters in chain to avoid stupid errors
-export function useTestWithFormAvailability(disabled: boolean) {
+export function useAdhocTestingAvailability(disabled: boolean) {
     const dispatch = useDispatch();
 
     const processIsLatestVersion = useSelector(isLatestProcessVersion);

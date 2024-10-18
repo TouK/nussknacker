@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
-import HttpService, { ScenarioParametersCombination } from "../http/HttpService";
+import HttpService, { ProcessingMode, ScenarioParametersCombination } from "../http/HttpService";
 import { WindowContent } from "../windowManager";
 import { AddProcessForm, FormValue, TouchedValue } from "./AddProcessForm";
 import { extendErrors, mandatoryValueValidator } from "./graph/node-modal/editors/Validators";
@@ -87,6 +87,10 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         );
     }, []);
 
+    const displayContactSupportMessage = useMemo(
+        () => !isProcessingModeBatchAvailable && value.processingMode === ProcessingMode.batch,
+        [isProcessingModeBatchAvailable, value.processingMode],
+    );
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close(), classname: LoadingButtonTypes.secondaryButton },
@@ -100,10 +104,10 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                     }
                     createProcess();
                 },
-                disabled: !isEmpty(validationErrors) && isFormSubmitted,
+                disabled: (!isEmpty(validationErrors) && isFormSubmitted) || displayContactSupportMessage,
             },
         ],
-        [createProcess, isFormSubmitted, passProps, setAllFieldTouched, t, validationErrors],
+        [createProcess, displayContactSupportMessage, isFormSubmitted, passProps, setAllFieldTouched, t, validationErrors],
     );
 
     const onChange = (value: FormValue) => {
@@ -135,7 +139,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                 engines={isEngineFieldVisible ? engines : []}
                 touched={touched}
                 handleSetTouched={handleSetTouched}
-                isProcessingModeBatchAvailable={isProcessingModeBatchAvailable}
+                displayContactSupportMessage={displayContactSupportMessage}
             />
         </WindowContent>
     );

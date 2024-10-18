@@ -44,6 +44,8 @@ export const NodeTableStyled = styled("div")(({ theme }) => ({
             marginTop: 7,
             marginBottom: 7,
             "&::after": {
+                left: "0",
+                top: "0",
                 content: `""`,
                 verticalAlign: "middle",
                 textAlign: "center",

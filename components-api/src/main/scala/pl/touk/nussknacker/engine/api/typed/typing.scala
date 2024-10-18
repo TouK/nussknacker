@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
@@ -21,6 +21,7 @@ object typing {
 
   object TypingResult {
     implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
+    implicit val decoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown) // TODO?
   }
 
   // TODO: Rename to Typed, maybe NuType?

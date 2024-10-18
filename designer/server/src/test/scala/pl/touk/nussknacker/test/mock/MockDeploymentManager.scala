@@ -1,34 +1,29 @@
 package pl.touk.nussknacker.test.mock
 
+import _root_.sttp.client3.testing.SttpBackendStub
 import akka.actor.ActorSystem
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.google.common.collect.LinkedHashMultimap
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionDefinition,
-  CustomActionParameter,
-  CustomActionResult,
-  DeploymentId,
-  ExternalDeploymentId
-}
-import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
-import pl.touk.nussknacker.test.utils.domain.TestFactory
-import shapeless.syntax.typeable.typeableOps
-import _root_.sttp.client3.testing.SttpBackendStub
 import pl.touk.nussknacker.engine.api.definition.{
   NotBlankParameterValidator,
   NotNullParameterValidator,
   StringParameterEditor
 }
+import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment._
+import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.utils.domain.TestFactory
+import shapeless.syntax.typeable.typeableOps
 
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -47,7 +42,8 @@ class MockDeploymentManager(
     defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
     deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
-    actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub
+    actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
+    scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
@@ -56,6 +52,7 @@ class MockDeploymentManager(
       DeploymentManagerDependencies(
         deployedScenariosProvider,
         actionService,
+        scenarioActivityManager,
         ExecutionContext.global,
         ActorSystem("MockDeploymentManager"),
         SttpBackendStub.asynchronousFuture
@@ -94,13 +91,33 @@ class MockDeploymentManager(
     import command._
     logger.debug(s"Adding deploy for ${processVersion.processName}")
     deploys.add(processVersion.processName)
-    this.synchronized {
-      Option(deployResult.get(processVersion.processName))
-        .map(_.toArray(Array.empty[Future[Option[ExternalDeploymentId]]]))
-        .getOrElse(Array.empty)
-        .lastOption
-        .getOrElse(Future.successful(None))
-    }
+
+    val customActivityId = ScenarioActivityId.random
+    for {
+      _ <- scenarioActivityManager.saveActivity(
+        ScenarioActivity.CustomAction(
+          scenarioId = ScenarioId(processVersion.processId.value),
+          scenarioActivityId = customActivityId,
+          user = ScenarioUser.internalNuUser,
+          date = Instant.now(),
+          scenarioVersionId = Some(ScenarioVersionId.from(processVersion.versionId)),
+          actionName = "Custom action of MockDeploymentManager just before deployment",
+          comment = ScenarioComment.Available(
+            comment = "With comment from DeploymentManager",
+            lastModifiedByUserName = ScenarioUser.internalNuUser.name,
+            lastModifiedAt = Instant.now()
+          ),
+          result = DeploymentResult.Success(Instant.now()),
+        )
+      )
+      externalDeploymentId <- this.synchronized {
+        Option(deployResult.get(processVersion.processName))
+          .map(_.toArray(Array.empty[Future[Option[ExternalDeploymentId]]]))
+          .getOrElse(Array.empty)
+          .lastOption
+          .getOrElse(Future.successful(None))
+      }
+    } yield externalDeploymentId
   }
 
   override protected def waitForDuringDeployFinished(

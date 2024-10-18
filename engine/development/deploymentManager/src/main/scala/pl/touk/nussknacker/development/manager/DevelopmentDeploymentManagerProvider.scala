@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
   StringParameterEditor
 }
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -181,6 +182,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
         Future.failed(new NotImplementedError())
     }
   }
+
+  override def scenarioActivityHandling: ScenarioActivityHandling =
+    AllScenarioActivitiesStoredByNussknacker
 
   override def close(): Unit = {}
 

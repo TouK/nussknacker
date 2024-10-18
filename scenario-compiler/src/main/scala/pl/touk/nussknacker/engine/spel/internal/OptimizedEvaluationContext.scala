@@ -5,7 +5,9 @@ import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
+import pl.touk.nussknacker.engine.extension.ExtensionMethodsInvoker
 import pl.touk.nussknacker.engine.spel.{NuReflectiveMethodExecutor, internal}
 
 import java.lang.reflect.Method
@@ -18,7 +20,8 @@ class EvaluationContextPreparer(
     expressionImports: List[String],
     propertyAccessors: Seq[PropertyAccessor],
     conversionService: ConversionService,
-    spelExpressionExcludeList: SpelExpressionExcludeList
+    spelExpressionExcludeList: SpelExpressionExcludeList,
+    classDefinitionSet: ClassDefinitionSet
 ) {
 
   // this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
@@ -39,7 +42,9 @@ class EvaluationContextPreparer(
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      private val conversionAwareMethodsDiscovery = new RuntimeConversionHandler.ConversionAwareMethodsDiscovery()
+      private val conversionAndExtensionsAwareMethodsDiscovery = new ConversionAndExtensionAwareMethodsDiscovery()
+      private val extensionMethods = new ExtensionMethodsInvoker(classLoader, classDefinitionSet)
+      private val methodInvoker    = new ConversionAndExtensionsAwareMethodInvoker(extensionMethods)
 
       override def resolve(
           context: EvaluationContext,
@@ -53,12 +58,12 @@ class EvaluationContextPreparer(
           null
         } else {
           spelExpressionExcludeList.blockExcluded(targetObject, name)
-          new NuReflectiveMethodExecutor(methodExecutor, classLoader)
+          new NuReflectiveMethodExecutor(methodExecutor, methodInvoker)
         }
       }
 
       override def getMethods(classType: Class[_]): Array[Method] =
-        conversionAwareMethodsDiscovery.discover(classType)
+        conversionAndExtensionsAwareMethodsDiscovery.discover(classType)
     }
     Collections.singletonList(mr)
   }
@@ -84,7 +89,11 @@ class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any]) extend
 
 object EvaluationContextPreparer {
 
-  def default(classLoader: ClassLoader, expressionConfig: ExpressionConfigDefinition): EvaluationContextPreparer = {
+  def default(
+      classLoader: ClassLoader,
+      expressionConfig: ExpressionConfigDefinition,
+      classDefinitionSet: ClassDefinitionSet
+  ): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
     val propertyAccessors = internal.propertyAccessors.configured()
     new EvaluationContextPreparer(
@@ -92,7 +101,8 @@ object EvaluationContextPreparer {
       expressionConfig.globalImports,
       propertyAccessors,
       conversionService,
-      expressionConfig.spelExpressionExcludeList
+      expressionConfig.spelExpressionExcludeList,
+      classDefinitionSet
     )
   }
 

@@ -289,17 +289,17 @@ Explicit conversions are available in utility classes and build-in java conversi
 
 Nussknacker comes with the following helpers:
 
-| Helper        | Functions                                      |
-|---------------|------------------------------------------------|
-| `COLLECTION`  | Operations on collections                      |
-| `CONV`        | General conversion functions                   |
-| `DATE`        | Date operations (conversions, useful helpers)  |
-| `DATE_FORMAT` | Date formatting/parsing operations             |
-| `GEO`         | Simple distance measurements                   |
-| `NUMERIC`     | Number parsing                                 |
-| `RANDOM`      | Random value generators                        |
-| `UTIL`        | Various utilities (e.g. identifier generation) |
-
+| Helper        | Functions                                                          |
+|---------------|--------------------------------------------------------------------|
+| `COLLECTION`  | Operations on collections                                          |
+| `CONV`        | General conversion functions                                       |
+| `DATE`        | Date operations (conversions, useful helpers)                      |
+| `DATE_FORMAT` | Date formatting/parsing operations                                 |
+| `GEO`         | Simple distance measurements                                       |
+| `NUMERIC`     | Number parsing                                                     |
+| `RANDOM`      | Random value generators                                            |
+| `UTIL`        | Various utilities (e.g. identifier generation)                     |
+| `BASE64`      | Encoding & decoding [Base64](https://en.wikipedia.org/wiki/Base64) |
 
 ## Handling date/time.
 
@@ -383,7 +383,7 @@ When a type cannot be determined by parser, the type is presented as `Unknown`. 
 runtime, we can cast a given type, and then we can operate on the cast type.
 
 E.g. having a variable `obj` of a type: `List[Unknown]` and we know the elements are strings then we can cast elements
-to String: `#obj.![#this.castToOrNull('java.lang.String')]`.
+to String: `#obj.![#this.castToOrNull('String')]`.
 
 Available methods:
 - `canCastTo` - checks if a type can be cast to a given class.

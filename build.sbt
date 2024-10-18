@@ -226,14 +226,14 @@ lazy val commonSettings =
       ),
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
-        // currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version
-        "org.apache.avro"    % "avro"          % avroV,
-        "com.typesafe"       % "config"        % configV,
-        "commons-io"         % "commons-io"    % flinkCommonsIOV,
-        "org.apache.commons" % "commons-text"  % flinkCommonsTextV, // dependency of commons-lang3
-        "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
-        "io.circe"          %% "circe-core"    % circeV,
-        "io.circe"          %% "circe-parser"  % circeV,
+        "org.apache.avro"    % "avro"             % avroV,
+        "com.typesafe"       % "config"           % configV,
+        "commons-io"         % "commons-io"       % flinkCommonsIOV,       // dependency of avro via commons-compress
+        "org.apache.commons" % "commons-compress" % flinkCommonsCompressV, // dependency of avro
+        "org.apache.commons" % "commons-text"     % flinkCommonsTextV,     // dependency of commons-lang3, avro via commons-compress
+        "org.apache.commons" % "commons-lang3"    % flinkCommonsLang3V,
+        "io.circe"          %% "circe-core"       % circeV,
+        "io.circe"          %% "circe-parser"     % circeV,
 
         // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
         "com.typesafe.akka"      %% "akka-http"          % akkaHttpV,
@@ -280,20 +280,21 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV               = "1.19.1"
-val flinkConnectorKafkaV = "3.2.0-1.19"
-val flinkCommonsLang3V   = "3.12.0"
-val flinkCommonsTextV    = "1.10.0"
-val flinkCommonsIOV      = "2.15.1"
-val avroV                = "1.11.3"
+val flinkV                = "1.19.1"
+val flinkConnectorKafkaV  = "3.2.0-1.19"
+val flinkCommonsCompressV = "1.26.0"
+val flinkCommonsLang3V    = "3.12.0"
+val flinkCommonsTextV     = "1.10.0"
+val flinkCommonsIOV       = "2.15.1"
+val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV               = "3.6.2"
+val kafkaV                = "3.6.2"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV              = "5.2.23.RELEASE"
-val scalaTestV           = "3.2.18"
-val scalaCheckV          = "1.17.1"
-val scalaCheckVshort     = scalaCheckV.take(4).replace(".", "-")
-val scalaTestPlusV       =
+val springV               = "5.2.23.RELEASE"
+val scalaTestV            = "3.2.18"
+val scalaCheckV           = "1.17.1"
+val scalaCheckVshort      = scalaCheckV.take(4).replace(".", "-")
+val scalaTestPlusV        =
   "3.2.18.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.13"
@@ -343,8 +344,8 @@ val cronParserV               = "9.1.6"  // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.1.8"
 val sttpV                     = "3.9.8"
-val tapirV                    = "1.10.5"
-val openapiCirceYamlV         = "0.9.0"
+val tapirV                    = "1.11.7"
+val openapiCirceYamlV         = "0.11.3"
 //we use legacy version because this one supports Scala 2.12
 val monocleV                  = "2.1.0"
 val jmxPrometheusJavaagentV   = "0.20.0"
@@ -891,7 +892,8 @@ lazy val kafkaUtils = (project in utils("kafka-utils"))
     name := "nussknacker-kafka-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" % "kafka-clients" % kafkaV
+        "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "org.scalatest"   %% "scalatest"     % scalaTestV % Test,
       )
     }
     // Depends on componentsApi because of dependency to NuExceptionInfo and NonTransientException -
@@ -1124,7 +1126,7 @@ lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(
     name := "nussknacker-default-helpers"
   )
-  .dependsOn(mathUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
+  .dependsOn(mathUtils, commonUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 
 lazy val testUtils = (project in utils("test-utils"))
   .settings(commonSettings)
@@ -1172,7 +1174,9 @@ lazy val jsonUtils = (project in utils("json-utils"))
         ExclusionRule(organization = "javax.mail"),
         ExclusionRule(organization = "javax.validation"),
         ExclusionRule(organization = "jakarta.activation"),
-        ExclusionRule(organization = "jakarta.validation")
+        ExclusionRule(organization = "jakarta.validation"),
+        // due to swagger-parser duplicated files with different implementation https://github.com/swagger-api/swagger-parser/issues/2126
+        ExclusionRule("io.swagger", "swagger-parser-safe-url-resolver")
       ),
       "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
     )
@@ -1687,7 +1691,7 @@ lazy val httpUtils = (project in utils("http-utils"))
   )
   .dependsOn(componentsApi % Provided, testUtils % Test)
 
-val swaggerParserV      = "2.1.15"
+val swaggerParserV      = "2.1.22"
 val swaggerIntegrationV = "2.2.10"
 
 lazy val openapiComponents = (project in component("openapi"))
