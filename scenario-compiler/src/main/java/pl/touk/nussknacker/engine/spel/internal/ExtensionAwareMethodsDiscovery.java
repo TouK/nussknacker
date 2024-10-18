@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.spel.internal;
 
-import pl.touk.nussknacker.engine.extension.Extension;
+import pl.touk.nussknacker.engine.extension.ExtensionMethodsHandler;
 import pl.touk.nussknacker.engine.extension.ExtensionMethods;
-import pl.touk.nussknacker.engine.extension.ExtensionRuntimeApplicable;
 import scala.collection.JavaConverters;
 
 import java.lang.reflect.Method;
@@ -14,8 +13,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ExtensionAwareMethodsDiscovery {
-    private static final List<Map.Entry<ExtensionRuntimeApplicable, Method[]>> EXTENSIONS_METHODS = JavaConverters
-        .seqAsJavaListConverter(ExtensionMethods.extensions())
+    private static final List<Map.Entry<ExtensionMethodsHandler, Method[]>> EXTENSIONS_METHODS = JavaConverters
+        .seqAsJavaListConverter(ExtensionMethods.extensionMethodsHandlers())
         .asJava()
         .stream()
         .map(ExtensionAwareMethodsDiscovery::getNonStaticMethods)
@@ -28,11 +27,11 @@ public class ExtensionAwareMethodsDiscovery {
         return concatArrays(type.getMethods(), extensionMethods(type));
     }
 
-    private static Map.Entry<ExtensionRuntimeApplicable, Method[]> getNonStaticMethods(Extension e) {
-        Method[] methods = Arrays.stream(e.clazz().getDeclaredMethods())
+    private static Map.Entry<ExtensionMethodsHandler, Method[]> getNonStaticMethods(ExtensionMethodsHandler e) {
+        Method[] methods = Arrays.stream(e.invocationTargetClass().getDeclaredMethods())
             .filter(m -> Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()))
             .toArray(Method[]::new);
-        return Map.entry(e.runtimeApplicable(), methods);
+        return Map.entry(e, methods);
     }
 
     private static Method[] extensionMethods(Class<?> clazz) {

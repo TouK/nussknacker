@@ -42,7 +42,12 @@ class Cast(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[Strin
 
 }
 
-object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtractor with ExtensionRuntimeApplicable {
+object Cast extends ExtensionMethodsHandler {
+
+  override type ExtensionMethodInvocationTarget = Cast
+
+  override val invocationTargetClass: Class[ExtensionMethodInvocationTarget] = classOf[Cast]
+
   private val canCastToMethodName    = "canCastTo"
   private val castToMethodName       = "castTo"
   private val castToOrNullMethodName = "castToOrNull"
@@ -62,11 +67,12 @@ object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtr
     castToOrNullMethodName,
   )
 
-  def isCastMethod(methodName: String): Boolean =
-    castMethodsNames.contains(methodName)
-
-  override def create(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[String, Class[_]]): Any =
+  override def createConverter(
+      classLoader: ClassLoader,
+      classesBySimpleName: Map[String, Class[_]]
+  ): ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget] = { (target: Any) =>
     new Cast(target, classLoader, classesBySimpleName)
+  }
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
     clazz
@@ -76,31 +82,32 @@ object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtr
       case allowedClasses                           => definitions(allowedClasses)
     }
 
-  // Cast method should visible in runtime for every class because we allow invoke cast method on an unknown object
-  // in Typer, but in the runtime the same type could be known and that's why should add cast method for an every class.
-  override def applies(clazz: Class[_]): Boolean = true
-
   private def definitions(allowedClasses: Map[Class[_], TypingResult]): Map[String, List[MethodDefinition]] =
     List(
       FunctionalMethodDefinition(
         (_, x) => canCastToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
-        Cast.canCastToMethodName,
+        canCastToMethodName,
         Some("Checks if a type can be cast to a given class")
       ),
       FunctionalMethodDefinition(
         (_, x) => castToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
-        Cast.castToMethodName,
+        castToMethodName,
         Some("Casts a type to a given class or throws exception if type cannot be cast.")
       ),
       FunctionalMethodDefinition(
         (_, x) => castToTyping(allowedClasses)(x),
         methodTypeInfoWithStringParam,
-        Cast.castToOrNullMethodName,
+        castToOrNullMethodName,
         Some("Casts a type to a given class or return null if type cannot be cast.")
       ),
     ).groupBy(_.name)
+
+  private def canCastToTyping(allowedClasses: Map[Class[_], TypingResult])(
+      arguments: List[typing.TypingResult]
+  ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
+    castToTyping(allowedClasses)(arguments).map(_ => Typed.typedClass[Boolean])
 
   private def castToTyping(allowedClasses: Map[Class[_], TypingResult])(
       arguments: List[typing.TypingResult]
@@ -116,9 +123,11 @@ object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtr
     case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }
 
-  private def canCastToTyping(allowedClasses: Map[Class[_], TypingResult])(
-      arguments: List[typing.TypingResult]
-  ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
-    castToTyping(allowedClasses)(arguments).map(_ => Typed.typedClass[Boolean])
+  def isCastMethod(methodName: String): Boolean =
+    castMethodsNames.contains(methodName)
+
+  // Cast method should visible in runtime for every class because we allow invoke cast method on an unknown object
+  // in Typer, but in the runtime the same type could be known and that's why should add cast method for an every class.
+  override def applies(clazz: Class[_]): Boolean = true
 
 }
