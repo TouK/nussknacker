@@ -199,12 +199,13 @@ person2 = name: "John"; age: 24
 listOfPersons = {person1, person2}
 ```
 
-| Expression                     | Result           | Type          |
-| ------------                   | --------         | --------      |
-| `{1,2,3,4}.![#this * 2]`       | {2, 4, 6, 8}     | List[Integer] |
-| `#listOfPersons.![#this.name]` | {'Alex', 'John'} | List[String]  |
-| `#listOfPersons.![#this.age]`  | {42, 24}         | List[Integer] |
-| `#listOfPersons.![7]`          | {7, 7}           | List[Integer] |
+| Expression                                                      | Result               | Type                 |
+|-----------------------------------------------------------------|----------------------|----------------------|
+| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}         | List[Integer]        |
+| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}     | List[String]         |
+| `#listOfPersons.![#this.age]`                                   | {42, 24}             | List[Integer]        |
+| `#listOfPersons.![7]`                                           | {7, 7}               | List[Integer]        |
+| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24} | Map[String, Integer] |
 
 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).

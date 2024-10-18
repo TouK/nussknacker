@@ -28,6 +28,8 @@ object ExtensionMethods {
   val extensions = List(
     new Extension(classOf[Cast], Cast, Cast, Cast),
     new Extension(classOf[ArrayExt], ArrayExt, ArrayExt, ArrayExt),
+    new Extension(classOf[SetExt], SetExt, SetExt, SetExt),
+    new Extension(classOf[ListExt], ListExt, ListExt, ListExt),
   )
 
   def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {

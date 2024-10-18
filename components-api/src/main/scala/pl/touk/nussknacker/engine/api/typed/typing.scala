@@ -83,7 +83,7 @@ object typing {
         fields.map { case (fieldName, fieldType) =>
           fieldName -> fieldType.withoutValue
         },
-        runtimeObjType,
+        runtimeObjType.withoutValue,
         additionalInfo
       )
 
@@ -206,7 +206,7 @@ object typing {
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
     override val valueOpt: None.type = None
 
-    override def withoutValue: TypedClass = this
+    override def withoutValue: TypedClass = TypedClass(klass, params.map(_.withoutValue))
 
     override def display: String = {
       val className = if (klass.isArray) "List" else ReflectUtils.simpleNameWithoutSuffix(runtimeObjType.klass)
@@ -353,8 +353,9 @@ object typing {
             supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
             javaList
           )
+        case set: java.util.Set[_] =>
+          genericTypeClass(classOf[java.util.Set[_]], List(supertypeOfElementTypes(set.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        // TODO: handle more types, for example Set
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>
