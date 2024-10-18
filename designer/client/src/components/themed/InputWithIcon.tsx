@@ -1,5 +1,5 @@
 import { css, cx } from "@emotion/css";
-import { Box, styled, useTheme } from "@mui/material";
+import { useTheme } from "@mui/material";
 import React, { forwardRef, PropsWithChildren, ReactElement, ReactNode, useCallback, useImperativeHandle, useRef } from "react";
 import { ClearIcon } from "../table/SearchFilter";
 import { InputProps, ThemedInput } from "./ThemedInput";
@@ -8,6 +8,7 @@ type Props = PropsWithChildren<InputProps> & {
     onClear?: () => void;
     onAddonClick?: () => void;
     endAdornment?: ReactNode;
+    onKeyDown?: (e: KeyboardEvent) => void;
 };
 
 export type Focusable = {

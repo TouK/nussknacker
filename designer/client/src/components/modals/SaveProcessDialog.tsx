@@ -20,6 +20,7 @@ import { visualizationUrl } from "../../common/VisualizationUrl";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 
 export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const location = useLocation();
@@ -42,6 +43,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
                 await dispatch(UndoActionCreators.clearHistory());
                 await dispatch(displayCurrentProcessVersion(processName));
                 await dispatch(displayProcessActivity(processName));
+                await dispatch(await getScenarioActivities(processName));
 
                 if (isRenamed) {
                     await dispatch(loadProcessToolbarsConfiguration(unsavedNewName));
