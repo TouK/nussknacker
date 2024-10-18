@@ -55,7 +55,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
 
             if (currentAndNextActivityTypeAreTheSame) {
                 occurrences.push(formatDate(currentActivity.date));
-                const isNextActivityLastOfType = activitiesDataWithMetadata[index + 1 + iteration].type !== nextActivity.type;
+                const isNextActivityLastOfType = activitiesDataWithMetadata[index + 1 + iteration]?.type !== nextActivity.type;
                 if (isNextActivityLastOfType) {
                     occurrences.push(formatDate(nextActivity.date));
                 }
