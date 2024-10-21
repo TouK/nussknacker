@@ -8,7 +8,7 @@ import org.springframework.expression.TypedValue;
 import org.springframework.expression.spel.support.ReflectionHelper;
 import org.springframework.expression.spel.support.ReflectiveMethodExecutor;
 import org.springframework.util.ReflectionUtils;
-import pl.touk.nussknacker.engine.spel.internal.ExtensionsAwareMethodInvoker;
+import pl.touk.nussknacker.engine.extension.ExtensionsAwareMethodInvoker;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

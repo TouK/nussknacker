@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
+import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
 import scala.util.Try
 
@@ -42,7 +42,7 @@ class Cast(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[Strin
 
 }
 
-object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtractor with ExtensionRuntimeApplicable {
+object Cast extends ExtensionMethodsHandler {
   private val canCastToMethodName    = "canCastTo"
   private val castToMethodName       = "castTo"
   private val castToOrNullMethodName = "castToOrNull"
@@ -62,11 +62,19 @@ object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtr
     castToOrNullMethodName,
   )
 
+  override type ExtensionMethodInvocationTarget = Cast
+  override val invocationTargetClass: Class[Cast] = classOf[Cast]
+
   def isCastMethod(methodName: String): Boolean =
     castMethodsNames.contains(methodName)
 
-  override def create(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[String, Class[_]]): Any =
-    new Cast(target, classLoader, classesBySimpleName)
+  override def createConverter(
+      classLoader: ClassLoader,
+      set: ClassDefinitionSet
+  ): ToExtensionMethodInvocationTargetConverter[Cast] = {
+    val classesBySimpleName = set.classDefinitionsMap.keySet.classesBySimpleNamesRegardingClashes()
+    (target: Any) => new Cast(target, classLoader, classesBySimpleName)
+  }
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
     clazz

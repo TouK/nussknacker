@@ -1,40 +1,53 @@
 package pl.touk.nussknacker.engine.extension
 
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
-import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensions
-import pl.touk.nussknacker.engine.util.classes.Extensions.ClassesExtensions
+import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensionMethodsHandlers
 
-import java.lang.reflect.Method
+import java.lang.reflect.{Method, Modifier}
 
-class ExtensionMethodsInvoker(classLoader: ClassLoader, classDefinitionSet: ClassDefinitionSet) {
-  private val extensionsByClass   = extensions.map(e => e.clazz -> e).toMap[Class[_], Extension]
-  private val classesBySimpleName = classDefinitionSet.classDefinitionsMap.keySet.classesBySimpleNamesRegardingClashes()
+class ExtensionsAwareMethodInvoker(classLoader: ClassLoader, classDefinitionSet: ClassDefinitionSet) {
 
-  def invoke(target: Object, arguments: Array[Object]): PartialFunction[Method, Any] = {
-    case method if extensionsByClass.contains(method.getDeclaringClass) =>
-      extensionsByClass
+  private val toInvocationTargetConvertersByClass =
+    extensionMethodsHandlers
+      .map(e => e.invocationTargetClass -> e.createConverter(classLoader, classDefinitionSet))
+      .toMap[Class[_], ToExtensionMethodInvocationTargetConverter[_]]
+
+  def invoke(method: Method)(target: Any, arguments: Array[Object]): Any = {
+    if (toInvocationTargetConvertersByClass.contains(method.getDeclaringClass)) {
+      toInvocationTargetConvertersByClass
         .get(method.getDeclaringClass)
-        .map(_.implFactory.create(target, classLoader, classesBySimpleName))
+        .map(_.toInvocationTarget(target))
         .map(impl => method.invoke(impl, arguments: _*))
         .getOrElse {
           throw new IllegalArgumentException(s"Extension method: ${method.getName} is not implemented")
         }
+    } else {
+      method.invoke(target, arguments: _*)
+    }
   }
 
 }
 
+object ExtensionAwareMethodsDiscovery {
+
+  // Calculating methods should not be cached because it's calculated only once at the first execution of
+  // parsed expression (org.springframework.expression.spel.ast.MethodReference.getCachedExecutor).
+  def discover(clazz: Class[_]): Array[Method] =
+    clazz.getMethods ++ extensionMethodsHandlers.filter(_.applies(clazz)).flatMap(_.nonStaticMethods)
+}
+
 object ExtensionMethods {
 
-  val extensions = List(
-    new Extension(classOf[Cast], Cast, Cast, Cast),
-    new Extension(classOf[ArrayExt], ArrayExt, ArrayExt, ArrayExt),
+  val extensionMethodsHandlers: List[ExtensionMethodsHandler] = List(
+    Cast,
+    ArrayExt,
   )
 
   def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {
     new ClassDefinitionSet(
       set.classDefinitionsMap.map { case (clazz, definition) =>
         clazz -> definition.copy(
-          methods = definition.methods ++ extensions.flatMap(_.definitionsExtractor.extractDefinitions(clazz, set))
+          methods = definition.methods ++ extensionMethodsHandlers.flatMap(_.extractDefinitions(clazz, set))
         )
       }.toMap // .toMap is needed by scala 2.12
     )
@@ -42,23 +55,27 @@ object ExtensionMethods {
 
 }
 
-trait ExtensionMethodsFactory {
-  // Factory method should be as easy and lightweight as possible because it's fired with every method execution.
-  def create(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[String, Class[_]]): Any
-}
+trait ExtensionMethodsHandler {
 
-trait ExtensionMethodsDefinitionsExtractor {
+  type ExtensionMethodInvocationTarget
+  val invocationTargetClass: Class[ExtensionMethodInvocationTarget]
+
+  lazy val nonStaticMethods: Array[Method] =
+    invocationTargetClass.getDeclaredMethods
+      .filter(m => Modifier.isPublic(m.getModifiers) && !Modifier.isStatic(m.getModifiers))
+
+  def createConverter(
+      classLoader: ClassLoader,
+      set: ClassDefinitionSet
+  ): ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget]
+
   def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
-}
 
-// For what classes is extension available in the runtime invocation
-trait ExtensionRuntimeApplicable {
+  // For what classes is extension available in the runtime invocation
   def applies(clazz: Class[_]): Boolean
 }
 
-class Extension(
-    val clazz: Class[_],
-    val implFactory: ExtensionMethodsFactory,
-    val definitionsExtractor: ExtensionMethodsDefinitionsExtractor,
-    val runtimeApplicable: ExtensionRuntimeApplicable
-)
+trait ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget] {
+  // This method should be as easy and lightweight as possible because it's fired with every method execution.
+  def toInvocationTarget(target: Any): ExtensionMethodInvocationTarget
+}
