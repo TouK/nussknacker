@@ -207,18 +207,6 @@ object TestingApiHttpService {
           )
       )
 
-    val noProcessingTypeExample: EndpointOutput.OneOfVariant[NoProcessingType] =
-      oneOfVariantFromMatchType(
-        NotFound,
-        plainBody[NoProcessingType]
-          .example(
-            Example.of(
-              summary = Some("ProcessingType type: {processingType} not found"),
-              value = NoProcessingType("'processingType'")
-            )
-          )
-      )
-
   }
 
 }
