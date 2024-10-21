@@ -195,14 +195,14 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   )(implicit user: LoggedUser): DB[Either[DeleteAttachmentError, Unit]] = {
     scenarioActivityTable
       .filter(entity =>
-        entity.scenarioId === scenarioId && entity.activityType.inSet(Set(ScenarioActivityType.AttachmentAdded))
+        entity.scenarioId === scenarioId &&
+          entity.attachmentId === attachmentId &&
+          entity.activityType === (ScenarioActivityType.AttachmentAdded: ScenarioActivityType)
       )
-      .join(attachmentsTable.filter(_.id === attachmentId))
-      .on(_.attachmentId === _.id)
-      .map(_._1.attachmentId)
+      .map(_.attachmentId)
       .update(Option.empty[Long])
       .map { updateCount =>
-        if (updateCount == 1) {
+        if (updateCount > 0) {
           Right(())
         } else {
           Left(DeleteAttachmentError.CouldNotDeleteAttachment)

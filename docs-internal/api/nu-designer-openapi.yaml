@@ -3489,6 +3489,193 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/processes/{scenarioName}/activity/attachments/{attachmentId}:
+    get:
+      tags:
+      - Activities
+      summary: Download attachment service
+      operationId: getApiProcessesScenarionameActivityAttachmentsAttachmentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Disposition:
+              required: false
+              schema:
+                type:
+                - string
+                - 'null'
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter attachmentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+    delete:
+      tags:
+      - Activities
+      summary: Delete scenario attachment service
+      operationId: deleteApiProcessesScenarionameActivityAttachmentsAttachmentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter attachmentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Unable to delete attachment with given id
+                  value: 'Unable to delete attachment with id: 123'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/processes/{scenarioName}/activity/comment/{scenarioActivityId}:
     put:
       tags:
@@ -3951,103 +4138,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/processes/{scenarioName}/activity/attachments/{attachmentId}:
-    get:
-      tags:
-      - Activities
-      summary: Download attachment service
-      operationId: getApiProcessesScenarionameActivityAttachmentsAttachmentid
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: attachmentId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        '200':
-          description: ''
-          headers:
-            Content-Disposition:
-              required: false
-              schema:
-                type:
-                - string
-                - 'null'
-            Content-Type:
-              required: true
-              schema:
-                type: string
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter attachmentId'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
   /api/processes/{scenarioName}/activity/activities:
     get:
       tags:
@@ -4179,6 +4269,7 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields: []
+                      overrideDisplayableName: attachment01.png
                       type: ATTACHMENT_ADDED
                     - id: d0a7f4a2-abcc-4ffa-b1ca-68f6da3e999a
                       user: some user
@@ -4191,6 +4282,7 @@ paths:
                         lastModifiedBy: John Doe
                         lastModifiedAt: '2024-01-18T14:21:17Z'
                       additionalFields: []
+                      overrideDisplayableName: File removed
                       type: ATTACHMENT_ADDED
                     - id: 683df470-0b33-4ead-bf61-fa35c63484f3
                       user: some user

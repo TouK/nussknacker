@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   NoActivity,
+  NoAttachment,
   NoComment,
   NoScenario
 }
@@ -272,6 +273,11 @@ object Examples {
   val commentNotFoundError: Example[NoComment] = Example.of(
     summary = Some("Unable to edit comment with id: {commentId}"),
     value = NoComment(123L)
+  )
+
+  val attachmentNotFoundError: Example[NoAttachment] = Example.of(
+    summary = Some("Unable to delete attachment with given id"),
+    value = NoAttachment(123L)
   )
 
   val activityNotFoundError: Example[NoActivity] = Example.of(

@@ -19,7 +19,6 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails
 }
 
-import java.time.Instant
 import java.util.UUID
 
 class ScenarioActivityApiHttpServiceBusinessSpec
@@ -216,6 +215,68 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |""".stripMargin
           )
         )
+    }
+    "return 404 for no existing scenario" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+  }
+
+  "The scenario delete attachment endpoint when" - {
+    "add and delete attachment to existing scenario" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(200)
+
+      val attachmentId = verifyAttachmentAddedActivityExists(
+        user = "allpermuser",
+        scenarioName = exampleScenarioName,
+        fileIdPresent = true,
+        filename = fileName,
+        fileStatus = "AVAILABLE",
+        overrideDisplayableName = fileName
+      ).extractString("activities[1].attachment.file.id")
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/$attachmentId")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState {
+          verifyAttachmentAddedActivityExists(
+            user = "allpermuser",
+            scenarioName = exampleScenarioName,
+            fileIdPresent = false,
+            filename = fileName,
+            fileStatus = "DELETED",
+            overrideDisplayableName = "File removed"
+          )
+        }
+    }
+    "return 404 for no existing attachment" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
     }
     "return 404 for no existing scenario" in {
       given()

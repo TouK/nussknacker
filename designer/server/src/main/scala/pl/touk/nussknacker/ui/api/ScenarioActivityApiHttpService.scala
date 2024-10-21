@@ -12,6 +12,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   NoActivity,
+  NoAttachment,
   NoComment,
   NoPermission,
   NoScenario
@@ -92,6 +93,18 @@ class ScenarioActivityApiHttpService(
           scenarioId <- getScenarioIdByName(request.scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Write)
           _          <- saveAttachment(request, scenarioId)
+        } yield ()
+      }
+  }
+
+  expose {
+    endpoints.deleteAttachmentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: DeleteAttachmentRequest =>
+        for {
+          scenarioId <- getScenarioIdByName(request.scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- markAttachmentAsDeleted(request, scenarioId)
         } yield ()
       }
   }
@@ -554,6 +567,15 @@ class ScenarioActivityApiHttpService(
       attachmentService.saveAttachment(scenarioId, request.versionId, request.fileName.value, request.body)
     )
   }
+
+  private def markAttachmentAsDeleted(request: DeleteAttachmentRequest, scenarioId: ProcessId)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, ScenarioActivityError, Unit] =
+    EitherT(
+      dbioActionRunner.run(
+        scenarioActivityRepository.markAttachmentAsDeleted(scenarioId, request.attachmentId)
+      )
+    ).leftMap(_ => NoAttachment(request.attachmentId))
 
   private def buildResponse(maybeAttachment: Option[(String, Array[Byte])]): GetAttachmentResponse =
     maybeAttachment match {

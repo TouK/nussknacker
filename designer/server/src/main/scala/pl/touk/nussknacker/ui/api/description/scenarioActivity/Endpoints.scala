@@ -173,6 +173,23 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .withSecurity(auth)
   }
 
+  val deleteAttachmentEndpoint: SecuredEndpoint[DeleteAttachmentRequest, ScenarioActivityError, Unit, Any] = {
+    baseNuApiEndpoint
+      .summary("Delete scenario attachment service")
+      .tag("Activities")
+      .delete
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "attachments" / path[Long]("attachmentId"))
+      .mapInTo[DeleteAttachmentRequest]
+      .out(statusCode(Ok))
+      .errorOut(
+        oneOf[ScenarioActivityError](
+          oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariant(InternalServerError, plainBody[NoAttachment].example(Examples.attachmentNotFoundError)),
+        )
+      )
+      .withSecurity(auth)
+  }
+
   val downloadAttachmentEndpoint
       : SecuredEndpoint[GetAttachmentRequest, ScenarioActivityError, GetAttachmentResponse, Any] = {
     baseNuApiEndpoint

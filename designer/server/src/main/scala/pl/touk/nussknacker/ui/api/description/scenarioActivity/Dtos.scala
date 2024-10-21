@@ -519,7 +519,11 @@ object Dtos {
       scenarioVersionId = scenarioVersionId,
       comment = None,
       attachment = Some(attachment),
-      additionalFields = List.empty
+      additionalFields = List.empty,
+      overrideDisplayableName = attachment.file match {
+        case ScenarioActivityAttachmentFile.Available(_) => Some(attachment.filename)
+        case ScenarioActivityAttachmentFile.Deleted      => Some("File removed")
+      },
     )
 
     def forChangedProcessingMode(
@@ -749,6 +753,8 @@ object Dtos {
       fileName: FileName
   )
 
+  final case class DeleteAttachmentRequest(scenarioName: ProcessName, attachmentId: Long)
+
   final case class GetAttachmentRequest(scenarioName: ProcessName, attachmentId: Long)
 
   final case class GetAttachmentResponse(inputStream: InputStream, fileName: Option[String], contentType: String)
@@ -766,6 +772,7 @@ object Dtos {
     final case object NoPermission                         extends ScenarioActivityError with CustomAuthorizationError
     final case class NoActivity(scenarioActivityId: UUID)  extends ScenarioActivityError
     final case class NoComment(commentId: Long)            extends ScenarioActivityError
+    final case class NoAttachment(attachmentId: Long)      extends ScenarioActivityError
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
@@ -773,6 +780,11 @@ object Dtos {
     implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoComment](e =>
         s"Unable to delete comment with id: ${e.commentId}"
+      )
+
+    implicit val noAttachmentCodec: Codec[String, NoAttachment, CodecFormat.TextPlain] =
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoAttachment](e =>
+        s"Unable to delete attachment with id: ${e.attachmentId}"
       )
 
     implicit val noActivityCodec: Codec[String, NoActivity, CodecFormat.TextPlain] =
