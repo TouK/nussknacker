@@ -8,7 +8,7 @@ import org.springframework.expression.TypedValue;
 import org.springframework.expression.spel.support.ReflectionHelper;
 import org.springframework.expression.spel.support.ReflectiveMethodExecutor;
 import org.springframework.util.ReflectionUtils;
-import pl.touk.nussknacker.engine.spel.internal.ConversionAndExtensionsAwareMethodInvoker;
+import pl.touk.nussknacker.engine.extension.ExtensionsAwareMethodInvoker;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -16,8 +16,7 @@ import java.lang.reflect.Modifier;
 //this basically changed org.springframework.expression.spel.support.ReflectiveMethodExecutor
 //we want to create TypeDescriptor using SpelEspReflectionHelper.convertArguments
 //which should work faster
-// As an additional feature we allow to invoke list methods on arrays and
-// in the point of the method invocation we convert an array to a list
+// As an additional feature we allow to invoke defined extension methods
 public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
 
     private final Method method;
@@ -30,10 +29,10 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
 
     private boolean argumentConversionOccurred = false;
 
-    private final ConversionAndExtensionsAwareMethodInvoker methodInvoker;
+    private final ExtensionsAwareMethodInvoker methodInvoker;
 
     public NuReflectiveMethodExecutor(ReflectiveMethodExecutor original,
-                                      ConversionAndExtensionsAwareMethodInvoker methodInvoker) {
+                                      ExtensionsAwareMethodInvoker methodInvoker) {
         super(original.getMethod());
         this.method = original.getMethod();
         if (method.isVarArgs()) {
@@ -99,7 +98,7 @@ public class NuReflectiveMethodExecutor extends ReflectiveMethodExecutor {
                 arguments = ReflectionHelper.setupArgumentsForVarargsInvocation(this.method.getParameterTypes(), arguments);
             }
             ReflectionUtils.makeAccessible(this.method);
-            //Nussknacker: we use custom method invoker which is aware of array conversion and extension methods
+            //Nussknacker: we use custom method invoker which is aware of extension methods
             Object value = methodInvoker.invoke(this.method, target, arguments);
             return new TypedValue(value, new TypeDescriptor(new MethodParameter(this.method, -1)).narrow(value));
         }
