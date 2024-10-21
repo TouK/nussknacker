@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.extension.ExtensionMethodsInvoker
+import pl.touk.nussknacker.engine.extension.{ExtensionAwareMethodsDiscovery, ExtensionsAwareMethodInvoker}
 import pl.touk.nussknacker.engine.spel.{NuReflectiveMethodExecutor, internal}
 
 import java.lang.reflect.Method
@@ -42,9 +42,7 @@ class EvaluationContextPreparer(
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      private val conversionAndExtensionsAwareMethodsDiscovery = new ConversionAndExtensionAwareMethodsDiscovery()
-      private val extensionMethods = new ExtensionMethodsInvoker(classLoader, classDefinitionSet)
-      private val methodInvoker    = new ConversionAndExtensionsAwareMethodInvoker(extensionMethods)
+      private val methodInvoker = new ExtensionsAwareMethodInvoker(classLoader, classDefinitionSet)
 
       override def resolve(
           context: EvaluationContext,
@@ -63,7 +61,7 @@ class EvaluationContextPreparer(
       }
 
       override def getMethods(classType: Class[_]): Array[Method] =
-        conversionAndExtensionsAwareMethodsDiscovery.discover(classType)
+        ExtensionAwareMethodsDiscovery.discover(classType)
     }
     Collections.singletonList(mr)
   }

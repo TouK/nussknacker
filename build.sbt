@@ -344,8 +344,8 @@ val cronParserV               = "9.1.6"  // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.1.8"
 val sttpV                     = "3.9.8"
-val tapirV                    = "1.10.5"
-val openapiCirceYamlV         = "0.9.0"
+val tapirV                    = "1.11.7"
+val openapiCirceYamlV         = "0.11.3"
 //we use legacy version because this one supports Scala 2.12
 val monocleV                  = "2.1.0"
 val jmxPrometheusJavaagentV   = "0.20.0"

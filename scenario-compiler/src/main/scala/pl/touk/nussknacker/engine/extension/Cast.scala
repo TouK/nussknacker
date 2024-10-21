@@ -11,13 +11,38 @@ import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, Clas
 
 import scala.util.Try
 
-sealed trait Cast {
-  def canCastTo(className: String): Boolean
-  def castTo[T](className: String): T
-  def castToOrNull[T >: Null](className: String): T
+class Cast(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[String, Class[_]]) {
+
+  def canCastTo(className: String): Boolean =
+    getClass(className) match {
+      case Some(clazz) => clazz.isAssignableFrom(target.getClass)
+      case None        => false
+    }
+
+  def castTo[T](className: String): T = castToEither[T](className) match {
+    case Left(ex)     => throw ex
+    case Right(value) => value
+  }
+
+  def castToOrNull[T >: Null](className: String): T = castToEither[T](className) match {
+    case Right(value) => value
+    case _            => null
+  }
+
+  private def castToEither[T](className: String): Either[Throwable, T] =
+    getClass(className) match {
+      case Some(clazz) if clazz.isInstance(target) => Try(clazz.cast(target).asInstanceOf[T]).toEither
+      case _ => Left(new ClassCastException(s"Cannot cast: ${target.getClass} to: $className"))
+    }
+
+  private def getClass(name: String): Option[Class[_]] = classesBySimpleName.get(name) match {
+    case Some(clazz) => Some(clazz)
+    case None        => Try(classLoader.loadClass(name)).toOption
+  }
+
 }
 
-object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtractor {
+object Cast extends ExtensionMethodsHandler {
   private val canCastToMethodName    = "canCastTo"
   private val castToMethodName       = "castTo"
   private val castToOrNullMethodName = "castToOrNull"
@@ -37,18 +62,31 @@ object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtr
     castToOrNullMethodName,
   )
 
+  override type ExtensionMethodInvocationTarget = Cast
+  override val invocationTargetClass: Class[Cast] = classOf[Cast]
+
   def isCastMethod(methodName: String): Boolean =
     castMethodsNames.contains(methodName)
 
-  override def create(target: Any, classLoader: ClassLoader, set: ClassDefinitionSet): Any =
-    new CastImpl(target, classLoader, set.classDefinitionsMap.keySet.classesBySimpleNamesRegardingClashes())
-
-  override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = clazz
-    .findAllowedClassesForCastParameter(set)
-    .mapValuesNow(_.clazzName) match {
-    case allowedClasses if allowedClasses.isEmpty => Map.empty
-    case allowedClasses                           => definitions(allowedClasses)
+  override def createConverter(
+      classLoader: ClassLoader,
+      set: ClassDefinitionSet
+  ): ToExtensionMethodInvocationTargetConverter[Cast] = {
+    val classesBySimpleName = set.classDefinitionsMap.keySet.classesBySimpleNamesRegardingClashes()
+    (target: Any) => new Cast(target, classLoader, classesBySimpleName)
   }
+
+  override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
+    clazz
+      .findAllowedClassesForCastParameter(set)
+      .mapValuesNow(_.clazzName) match {
+      case allowedClasses if allowedClasses.isEmpty => Map.empty
+      case allowedClasses                           => definitions(allowedClasses)
+    }
+
+  // Cast method should visible in runtime for every class because we allow invoke cast method on an unknown object
+  // in Typer, but in the runtime the same type could be known and that's why should add cast method for an every class.
+  override def applies(clazz: Class[_]): Boolean = true
 
   private def definitions(allowedClasses: Map[Class[_], TypingResult]): Map[String, List[MethodDefinition]] =
     List(
@@ -90,37 +128,5 @@ object Cast extends ExtensionMethodsFactory with ExtensionMethodsDefinitionsExtr
       arguments: List[typing.TypingResult]
   ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
     castToTyping(allowedClasses)(arguments).map(_ => Typed.typedClass[Boolean])
-
-}
-
-// todo: lbg consider comment: It looks like we don't need the interface. WDYT about removing the Cast trait and renaming CastImpl to Cast?
-class CastImpl(target: Any, classLoader: ClassLoader, classesBySimpleName: Map[String, Class[_]]) extends Cast {
-
-  override def canCastTo(className: String): Boolean =
-    getClass(className) match {
-      case Some(clazz) => clazz.isAssignableFrom(target.getClass)
-      case None        => false
-    }
-
-  override def castTo[T](className: String): T = castToEither[T](className) match {
-    case Left(ex)     => throw ex
-    case Right(value) => value
-  }
-
-  override def castToOrNull[T >: Null](className: String): T = castToEither[T](className) match {
-    case Right(value) => value
-    case _            => null
-  }
-
-  private def castToEither[T](className: String): Either[Throwable, T] =
-    getClass(className) match {
-      case Some(clazz) if clazz.isInstance(target) => Try(clazz.cast(target).asInstanceOf[T]).toEither
-      case _ => Left(new ClassCastException(s"Cannot cast: ${target.getClass} to: $className"))
-    }
-
-  private def getClass(name: String): Option[Class[_]] = classesBySimpleName.get(name) match {
-    case Some(clazz) => Some(clazz)
-    case None        => Try(classLoader.loadClass(name)).toOption
-  }
 
 }

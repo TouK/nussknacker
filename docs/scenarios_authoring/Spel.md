@@ -285,6 +285,19 @@ Explicit conversions are available in utility classes and build-in java conversi
 | `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
 | `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
 
+### Casting
+
+When a type cannot be determined by parser, the type is presented as `Unknown`. When we know what the type will be on
+runtime, we can cast a given type, and then we can operate on the cast type.
+
+E.g. having a variable `obj` of a type: `List[Unknown]` and we know the elements are strings then we can cast elements
+to String: `#obj.![#this.castToOrNull('String')]`.
+
+Available methods:
+- `canCastTo` - checks if a type can be cast to a given class.
+- `castTo` - casts a type to a given class or throws exception if type cannot be cast.
+- `castToOrNull` - casts a type to a given class or return null if type cannot be cast.
+
 ## Built-in helpers
 
 Nussknacker comes with the following helpers:
@@ -376,16 +389,3 @@ On the other hand, formatter created using `#DATE_FORMAT.formatter()` method wil
 - `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
 
 For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).
-
-## Casting.
-
-When a type cannot be determined by parser, the type is presented as `Unknown`. When we know what the type will be on
-runtime, we can cast a given type, and then we can operate on the cast type.
-
-E.g. having a variable `obj` of a type: `List[Unknown]` and we know the elements are strings then we can cast elements
-to String: `#obj.![#this.castToOrNull('String')]`.
-
-Available methods:
-- `canCastTo` - checks if a type can be cast to a given class.
-- `castTo` - casts a type to a given class or throws exception if type cannot be cast.
-- `castToOrNull` - casts a type to a given class or return null if type cannot be cast.

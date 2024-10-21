@@ -83,9 +83,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -93,13 +94,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -190,9 +191,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -200,21 +202,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -275,9 +267,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -285,13 +278,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -393,9 +386,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -403,21 +397,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '500':
           description: ''
           content:
@@ -486,9 +470,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -496,21 +481,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '500':
           description: ''
           content:
@@ -570,9 +545,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -580,21 +556,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -656,9 +622,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -666,21 +633,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -735,9 +692,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -745,21 +703,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -828,9 +776,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -838,13 +787,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -934,9 +883,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -944,21 +894,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '409':
           description: ''
           content:
@@ -1036,9 +976,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1046,13 +987,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -1119,9 +1060,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1129,13 +1071,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -1182,14 +1124,28 @@ paths:
           content:
             text/plain:
               schema:
-                type: string
+                anyOf:
+                - type: string
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: Attempt to migrate scenario which is already archived
+                  value: Cannot migrate, scenario process1 is archived on test. You
+                    have to unarchive scenario on test in order to migrate.
         '401':
           description: ''
           content:
             text/plain:
               schema:
-                type: string
+                anyOf:
+                - type: string
+                - type: string
               examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
                 Example:
                   summary: Migration performed by user without sufficient permissions
                   value: The supplied user [Griffin] is not authorized to access this
@@ -1201,21 +1157,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -1264,9 +1210,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1274,21 +1221,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -1380,9 +1317,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1390,13 +1328,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -1549,9 +1487,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1559,13 +1498,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -1704,9 +1643,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1714,13 +1654,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -1848,9 +1788,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1858,13 +1799,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -1906,26 +1847,6 @@ paths:
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProcessProperties'
-            examples:
-              Example:
-                summary: Proper process properties
-                value:
-                  additionalFields:
-                    properties:
-                      parallelism: ''
-                      checkpointIntervalInSeconds: ''
-                      numberOfThreads: '2'
-                      spillStateToDisk: 'true'
-                      environment: test
-                      useAsyncInterpretation: ''
-                    metaDataType: StreamMetaData
-                    showDescription: false
-        required: true
       responses:
         '200':
           description: ''
@@ -1955,9 +1876,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -1965,13 +1887,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -2091,9 +2013,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2101,13 +2024,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -2177,9 +2100,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2187,21 +2111,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2257,9 +2171,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2267,21 +2182,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2364,9 +2269,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2374,21 +2280,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2454,9 +2350,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2464,21 +2361,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2530,9 +2417,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2540,21 +2428,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -2609,9 +2487,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2619,21 +2498,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '500':
           description: ''
           content:
@@ -2749,9 +2618,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2759,13 +2629,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -2853,9 +2723,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2863,13 +2734,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -2964,9 +2835,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -2974,13 +2846,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3084,9 +2956,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3094,13 +2967,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3181,9 +3054,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3191,21 +3065,11 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No impersonated user's data found for provided identity
-                  value: No impersonated user data found for provided identity
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '501':
           description: Impersonation is not supported for defined authentication mechanism
           content:
@@ -3275,9 +3139,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3285,13 +3150,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3350,7 +3215,7 @@ paths:
           description: ''
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter versionId, Invalid value for: body'
+            value for: path parameter versionId'
           content:
             text/plain:
               schema:
@@ -3362,9 +3227,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3372,13 +3238,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3450,9 +3316,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3460,13 +3327,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3525,7 +3392,7 @@ paths:
           description: ''
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter scenarioActivityId, Invalid value for: body'
+            value for: path parameter scenarioActivityId'
           content:
             text/plain:
               schema:
@@ -3537,9 +3404,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3547,13 +3415,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3567,7 +3435,9 @@ paths:
           content:
             text/plain:
               schema:
-                type: string
+                anyOf:
+                - type: string
+                - type: string
               examples:
                 Example:
                   summary: 'Unable to edit comment for activity with id: {commentId}'
@@ -3627,9 +3497,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3637,13 +3508,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3657,7 +3528,9 @@ paths:
           content:
             text/plain:
               schema:
-                type: string
+                anyOf:
+                - type: string
+                - type: string
               examples:
                 Example:
                   summary: 'Unable to edit comment for activity with id: {commentId}'
@@ -3712,7 +3585,7 @@ paths:
           description: ''
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter versionId, Invalid value for: body'
+            value for: path parameter versionId'
           content:
             text/plain:
               schema:
@@ -3724,9 +3597,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3734,13 +3608,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3806,9 +3680,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3816,13 +3691,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -3836,7 +3711,9 @@ paths:
           content:
             text/plain:
               schema:
-                type: string
+                anyOf:
+                - type: string
+                - type: string
               examples:
                 Example:
                   summary: 'Unable to edit comment for activity with id: {commentId}'
@@ -3911,9 +3788,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -3921,13 +3799,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -4009,9 +3887,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -4019,13 +3898,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -4323,9 +4202,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -4333,13 +4213,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -4506,9 +4386,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authentication failed
+                CannotAuthenticateUser:
                   value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
         '403':
           description: ''
           content:
@@ -4516,13 +4397,13 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
-                  summary: Authorization failed
+                InsufficientPermission:
                   value: The supplied authentication is not authorized to access this
                     resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
         '404':
-          description: Identity provided in the Nu-Impersonate-User-Identity header
-            did not match any user
+          description: ''
           content:
             text/plain:
               schema:
@@ -4639,6 +4520,7 @@ components:
           type: string
         status:
           type: string
+          const: AVAILABLE
     Available1:
       title: Available
       type: object
@@ -4651,6 +4533,7 @@ components:
           format: int64
         status:
           type: string
+          const: AVAILABLE
     BoolParameterEditor:
       title: BoolParameterEditor
       type: object
@@ -4918,6 +4801,7 @@ components:
       properties:
         status:
           type: string
+          const: DELETED
     Deleted1:
       title: Deleted
       type: object
@@ -4926,6 +4810,7 @@ components:
       properties:
         status:
           type: string
+          const: DELETED
     Dict:
       title: Dict
       type: object
