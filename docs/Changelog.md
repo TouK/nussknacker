@@ -34,18 +34,6 @@
 * [#6807](https://github.com/TouK/nussknacker/pull/6807) Add conversion functions to primitives to: `#CONV`:
   * toNumberOrNull
   * toString
-  * toBoolean
-  * toBooleanOrNull
-  * toInteger
-  * toIntegerOrNull
-  * toLong
-  * toLongOrNull
-  * toDouble
-  * toDoubleOrNull
-  * toBigInteger
-  * toBigIntegerOrNull
-  * toBigDecimal
-  * toBigDecimalOrNull
 * [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `toJson` and `toJsonString` conversions (in the `#CONV` helper)
 * [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `#BASE64` helper to decode/encode Base64 values
 * [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside 
@@ -76,6 +64,11 @@
 * [#6958](https://github.com/TouK/nussknacker/pull/6958) Add message size limit in the "Kafka" exceptionHandler
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Remove unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`
 * [#7000](https://github.com/TouK/nussknacker/pull/7000) Show all possible options for dictionary editor on open.
+* [#7061](https://github.com/TouK/nussknacker/pull/7061) SpeL: add conversion to primitives extension methods:
+    * isBoolean/toBoolean/toBooleanOrNull
+    * isLong/toLong/toLongOrNull
+    * isDouble/toDouble/toDoubleOrNull
+    * isBigDecimal/toBigDecimal/toBigDecimalOrNull
 
 ## 1.17
 

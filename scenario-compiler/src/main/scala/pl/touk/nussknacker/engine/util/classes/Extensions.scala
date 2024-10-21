@@ -12,6 +12,9 @@ object Extensions {
       clazz != targetClazz &&
         targetClazz.isAssignableFrom(clazz)
 
+    def isAOrChildOf(targetClazz: Class[_]): Boolean =
+      targetClazz.isAssignableFrom(clazz)
+
     def isNotFromNuUtilPackage(): Boolean = {
       val name = clazz.getName
       !(name.contains("nussknacker") && name.contains("util"))

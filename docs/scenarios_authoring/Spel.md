@@ -278,12 +278,20 @@ More usage examples can be found in [this section](#conversions-between-datetime
 
 Explicit conversions are available in utility classes and build-in java conversion mechanisms:
 
-| Expression                                                      | Result                     | Type            |
-|-----------------------------------------------------------------|----------------------------|-----------------|
-| `#NUMERIC.toNumber('42')`                                       | 42                         | Number          |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
+| Expression                                                      | Result                    | Type           |
+|-----------------------------------------------------------------|---------------------------|----------------|
+| `#NUMERIC.toNumber('42')`                                       | 42                        | Number         |
+| `#NUMERIC.toNumber('42').toString()`                            | '42'                      | String         |
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000             | OffsetDateTime |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00 | LocalDateTime  |
+| `'true'.toBoolean`                                              | true                      | Boolean        |
+| `'11'.toLong`                                                   | 11                        | Long           |
+| `'1.1'.toDouble`                                                | 1.1                       | Double         |
+| `2.1.toBigDecimal`                                              | 2.1                       | BigDecimal     |
+
+Functions which start with `to`, e.g. `toBoolean`, have their equivalents:
+- to check if a given value can be converted to appropriate type, e.g. `'true'.isBoolean`.
+- and to return null if conversion fails, e.g. `'false'.toBooleanOrNull'`.
 
 ### Casting
 

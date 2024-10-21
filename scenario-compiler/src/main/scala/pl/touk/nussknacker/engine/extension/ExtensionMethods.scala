@@ -41,6 +41,8 @@ object ExtensionMethods {
   val extensionMethodsHandlers: List[ExtensionMethodsHandler] = List(
     Cast,
     ArrayExt,
+    NumericConversionExt,
+    BooleanConversionExt,
   )
 
   def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {

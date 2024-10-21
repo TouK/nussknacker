@@ -52,7 +52,8 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-import java.math.{BigDecimal, BigInteger}
+import java.lang.{Boolean => JBoolean, Double => JDouble, Long => JLong}
+import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.nio.charset.Charset
 import java.time.chrono.ChronoLocalDate
 import java.time.{LocalDate, LocalDateTime}
@@ -89,7 +90,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private implicit val nid: NodeId = NodeId("")
 
-  private val bigValue = BigDecimal.valueOf(4187338076L)
+  private val bigValue = JBigDecimal.valueOf(4187338076L)
 
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
 
@@ -126,7 +127,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       id: String,
       value: Long,
       children: java.util.List[Test] = List[Test]().asJava,
-      bigValue: BigDecimal = BigDecimal.valueOf(0L)
+      bigValue: JBigDecimal = JBigDecimal.valueOf(0L)
   )
 
   case class ContainerOfUnknown(value: Any)
@@ -241,8 +242,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
   }
 
-  private def evaluate[T: TypeTag](expr: String): T =
-    parse[T](expr = expr, context = ctx).validExpression.evaluateSync[T](ctx)
+  private def evaluate[T: TypeTag](expr: String, context: Context = ctx): T =
+    parse[T](expr = expr, context = context).validExpression.evaluateSync[T](context)
 
   test("parsing first selection on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").validExpression
@@ -306,11 +307,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("blocking excluded in runtime, without previous static validation, allowed class and package") {
-    parse[BigInteger](
+    parse[JBigInteger](
       "T(java.math.BigInteger).valueOf(1L)",
       staticMethodInvocationsChecking = false,
       methodExecutionForUnknownAllowed = true
-    ).validExpression.evaluateSync[BigInteger](ctx) should equal(BigInteger.ONE)
+    ).validExpression.evaluateSync[JBigInteger](ctx) should equal(JBigInteger.ONE)
   }
 
   test("blocking excluded in runtime, allowed reference") {
@@ -517,9 +518,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("handle big decimals") {
-    bigValue.compareTo(BigDecimal.valueOf(50 * 1024 * 1024)) should be > 0
-    bigValue.compareTo(BigDecimal.valueOf(50 * 1024 * 1024L)) should be > 0
-    parse[Any]("#obj.bigValue").validExpression.evaluateSync[BigDecimal](ctx) should equal(bigValue)
+    bigValue.compareTo(JBigDecimal.valueOf(50 * 1024 * 1024)) should be > 0
+    bigValue.compareTo(JBigDecimal.valueOf(50 * 1024 * 1024L)) should be > 0
+    parse[Any]("#obj.bigValue").validExpression.evaluateSync[JBigDecimal](ctx) should equal(bigValue)
     parse[Boolean]("#obj.bigValue < 50*1024*1024").validExpression.evaluateSync[Boolean](ctx) should equal(false)
     parse[Boolean]("#obj.bigValue < 50*1024*1024L").validExpression.evaluateSync[Boolean](ctx) should equal(false)
   }
@@ -1506,6 +1507,113 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "{#unknownString.value.castToOrNull('String'), #unknownString.value.castTo('String'), " +
         "#unknownString.value.canCastTo('String')}"
     ) shouldBe List("unknown", "unknown", true).asJava
+  }
+
+  test("should convert unknown to a given type") {
+    val customCtx = ctx
+      .withVariable("unknownBoolean", ContainerOfUnknown(false))
+      .withVariable("unknownInteger", ContainerOfUnknown(1))
+    val longTyping       = Typed.typedClass[JLong]
+    val doubleTyping     = Typed.typedClass[JDouble]
+    val bigDecimalTyping = Typed.typedClass[JBigDecimal]
+    val booleanTyping    = Typed.typedClass[JBoolean]
+    forAll(
+      Table(
+        ("expression", "expectedType", "expectedResult"),
+        ("1.toLong()", longTyping, 1),
+        ("1.1.toLong()", longTyping, 1),
+        ("'1'.toLong()", longTyping, 1),
+        ("1.toLongOrNull()", longTyping, 1),
+        ("1.1.toLongOrNull()", longTyping, 1),
+        ("'1'.toLongOrNull()", longTyping, 1),
+        ("'a'.toLongOrNull()", longTyping, null),
+        ("#unknownBoolean.value.toLongOrNull()", longTyping, null),
+        ("1.toDouble()", doubleTyping, 1.0),
+        ("1.1.toDouble()", doubleTyping, 1.1),
+        ("'1'.toDouble()", doubleTyping, 1.0),
+        ("1.toDoubleOrNull()", doubleTyping, 1.0),
+        ("1.1.toDoubleOrNull()", doubleTyping, 1.1),
+        ("'1'.toDoubleOrNull()", doubleTyping, 1.0),
+        ("'a'.toDoubleOrNull()", doubleTyping, null),
+        ("#unknownBoolean.value.toDoubleOrNull()", doubleTyping, null),
+        ("1.toBigDecimal()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.1.toBigDecimal()", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("'1'.toBigDecimal()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("'1'.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("'a'.toBigDecimalOrNull()", bigDecimalTyping, null),
+        ("#unknownBoolean.value.toBigDecimalOrNull()", bigDecimalTyping, null),
+        ("'true'.toBoolean()", booleanTyping, true),
+        ("#unknownInteger.value.toBooleanOrNull()", booleanTyping, null),
+        ("'a'.toBooleanOrNull()", booleanTyping, null),
+        ("'true'.toBooleanOrNull()", booleanTyping, true),
+        ("#unknownBoolean.value.toBoolean()", booleanTyping, false),
+      )
+    ) { (expression, expectedType, expectedResult) =>
+      val parsed = parse[Any](expr = expression, context = customCtx).validValue
+      parsed.returnType.withoutValue shouldBe expectedType
+      parsed.expression.evaluateSync[Any](customCtx) shouldBe expectedResult
+    }
+  }
+
+  test("should check if unknown can be converted to a given type") {
+    val customCtx = ctx
+      .withVariable("unknownBoolean", ContainerOfUnknown(true))
+      .withVariable("unknownBooleanString", ContainerOfUnknown("false"))
+      .withVariable("unknownLong", ContainerOfUnknown(11L))
+      .withVariable("unknownLongString", ContainerOfUnknown("11"))
+      .withVariable("unknownDouble", ContainerOfUnknown(1.1))
+      .withVariable("unknownDoubleString", ContainerOfUnknown("1.1"))
+      .withVariable("unknownBigDecimal", ContainerOfUnknown(BigDecimal(2.1).bigDecimal))
+      .withVariable("unknownBigDecimalString", ContainerOfUnknown("2.1"))
+    forAll(
+      Table(
+        ("expression", "result"),
+        ("#unknownBoolean.value.isBoolean()", true),
+        ("#unknownBooleanString.value.isBoolean()", true),
+        ("#unknownString.value.isBoolean()", false),
+        ("#unknownLong.value.isLong()", true),
+        ("#unknownLongString.value.isLong()", true),
+        ("#unknownString.value.isLong()", false),
+        ("#unknownDouble.value.isDouble()", true),
+        ("#unknownDoubleString.value.isDouble()", true),
+        ("#unknownString.value.isDouble()", false),
+        ("#unknownBigDecimal.value.isBigDecimal()", true),
+        ("#unknownBigDecimalString.value.isBigDecimal()", true),
+        ("#unknownString.value.isBigDecimal()", false),
+      )
+    ) { (expression, result) =>
+      evaluate[Any](expression, customCtx) shouldBe result
+    }
+  }
+
+  test("should throw exception if a value cannot be converted to primitive") {
+    val customCtx = ctx
+      .withVariable("unknownBoolean", ContainerOfUnknown(true))
+      .withVariable("unknownLong", ContainerOfUnknown(11L))
+      .withVariable("unknownDouble", ContainerOfUnknown(1.1))
+      .withVariable("unknownBigDecimal", ContainerOfUnknown(BigDecimal(2.1).bigDecimal))
+    Table(
+      "expression",
+      "#unknownDouble.value.toBoolean()",
+      "#unknownLong.value.toBoolean()",
+      "#unknownString.value.toBoolean()",
+      "#unknownString.value.toLong()",
+      "#unknownBoolean.value.toLong()",
+      "#unknownString.value.toDouble()",
+      "#unknownBoolean.value.toDouble()",
+      "#unknownBoolean.value.toBigDecimal()",
+      "#unknownString.value.toBigDecimal()",
+    ).forEvery { expression =>
+      val caught = intercept[SpelExpressionEvaluationException] {
+        evaluate[Any](expression, customCtx)
+      }
+      caught.getCause.getMessage should (
+        include("Cannot convert:") or
+          include("is neither a decimal digit number")
+      )
+    }
   }
 
 }
