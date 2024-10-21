@@ -283,8 +283,6 @@ class DBProcessRepository(
       // Do not create activity, if the scenario is exactly the same, and there is no comment
       if (oldVersionId == newVersionId && action.comment.isEmpty && action.labels.isEmpty) {
         DBIO.successful(())
-      } else if (oldVersionId == newVersionId && action.comment.isEmpty && action.labels.nonEmpty) {
-        run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId, userName)))
       } else {
         run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId, userName)))
       }
