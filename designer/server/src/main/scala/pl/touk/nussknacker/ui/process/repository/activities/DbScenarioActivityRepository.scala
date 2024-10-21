@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  DeleteAttachmentError,
   ModifyActivityError,
   ModifyCommentError
 }
@@ -178,18 +179,48 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   def findAttachments(
       scenarioId: ProcessId,
   ): DB[Seq[AttachmentEntityData]] = {
-    attachmentsTable
-      .filter(_.processId === scenarioId)
+    scenarioActivityTable
+      .filter(entity =>
+        entity.scenarioId === scenarioId && entity.activityType.inSet(Set(ScenarioActivityType.AttachmentAdded))
+      )
+      .join(attachmentsTable)
+      .on(_.attachmentId === _.id)
+      .map(_._2)
       .result
+  }
+
+  def markAttachmentAsDeleted(
+      scenarioId: ProcessId,
+      attachmentId: Long,
+  )(implicit user: LoggedUser): DB[Either[DeleteAttachmentError, Unit]] = {
+    scenarioActivityTable
+      .filter(entity =>
+        entity.scenarioId === scenarioId && entity.activityType.inSet(Set(ScenarioActivityType.AttachmentAdded))
+      )
+      .join(attachmentsTable.filter(_.id === attachmentId))
+      .on(_.attachmentId === _.id)
+      .map(_._1.attachmentId)
+      .update(Option.empty[Long])
+      .map { updateCount =>
+        if (updateCount == 1) {
+          Right(())
+        } else {
+          Left(DeleteAttachmentError.CouldNotDeleteAttachment)
+        }
+      }
   }
 
   def findAttachment(
       scenarioId: ProcessId,
       attachmentId: Long,
   ): DB[Option[AttachmentEntityData]] = {
-    attachmentsTable
-      .filter(_.id === attachmentId)
-      .filter(_.processId === scenarioId)
+    scenarioActivityTable
+      .filter(entity =>
+        entity.scenarioId === scenarioId && entity.activityType.inSet(Set(ScenarioActivityType.AttachmentAdded))
+      )
+      .join(attachmentsTable.filter(_.id === attachmentId))
+      .on(_.attachmentId === _.id)
+      .map(_._2)
       .result
       .headOption
   }

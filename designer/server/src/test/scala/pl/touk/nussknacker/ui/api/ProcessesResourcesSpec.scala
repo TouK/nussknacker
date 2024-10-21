@@ -706,6 +706,13 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
+    updateCanonicalProcess(process, None) {
+      forScenarioReturned(processName) { process =>
+        process.history.map(_.size) shouldBe Some(2)
+      }
+      status shouldEqual StatusCodes.OK
+    }
+
     getDeprecatedActivity(processName) ~> check {
       val comments = responseAs[ProcessActivity].comments
       comments.loneElement.content shouldBe comment
@@ -713,6 +720,8 @@ class ProcessesResourcesSpec
 
     getScenarioActivities(processName) ~> check {
       val activities = responseAs[ScenarioActivities].activities
+
+      activities.map(println)
 
       activities.length shouldBe 3
       activities(0) shouldBe ScenarioActivity(
