@@ -93,7 +93,13 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "metadata")
-      .out(statusCode(Ok).and(jsonBody[ScenarioActivitiesMetadata].example(ScenarioActivitiesMetadata.default)))
+      .out(
+        statusCode(Ok).and(
+          jsonBody[ScenarioActivitiesMetadata]
+            .example(ScenarioActivitiesMetadata.default(ScenarioType.Scenario))
+            .example(ScenarioActivitiesMetadata.default(ScenarioType.Fragment))
+        )
+      )
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 

@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 }
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
@@ -153,7 +154,14 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Read)
-          metadata = ScenarioActivitiesMetadata.default
+          scenarioWithDetails <- EitherT.right(
+            scenarioService.getLatestProcessWithDetails(
+              ProcessIdWithName(scenarioId, scenarioName),
+              GetScenarioWithDetailsOptions.detailsOnly
+            )
+          )
+          scenarioType = if (scenarioWithDetails.isFragment) ScenarioType.Fragment else ScenarioType.Scenario
+          metadata     = ScenarioActivitiesMetadata.default(scenarioType)
         } yield metadata
       }
   }

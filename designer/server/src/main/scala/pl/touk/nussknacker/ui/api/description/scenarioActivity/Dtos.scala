@@ -28,6 +28,15 @@ import scala.collection.immutable
 
 object Dtos {
 
+  sealed trait ScenarioType extends EnumEntry with CapitalWords
+
+  object ScenarioType extends Enum[ScenarioType] {
+    case object Scenario extends ScenarioType
+    case object Fragment extends ScenarioType
+
+    override def values = findValues
+  }
+
   @derive(encoder, decoder, schema)
   final case class ScenarioActivitiesMetadata(
       activities: List[ScenarioActivityMetadata],
@@ -36,8 +45,8 @@ object Dtos {
 
   object ScenarioActivitiesMetadata {
 
-    val default: ScenarioActivitiesMetadata = ScenarioActivitiesMetadata(
-      activities = ScenarioActivityType.values.map(ScenarioActivityMetadata.from).toList,
+    def default(scenarioType: ScenarioType): ScenarioActivitiesMetadata = ScenarioActivitiesMetadata(
+      activities = ScenarioActivityType.values.map(ScenarioActivityMetadata.from(scenarioType)).toList,
       actions = List(
         ScenarioActivityActionMetadata(
           id = "compare",
@@ -80,31 +89,20 @@ object Dtos {
   final case class ScenarioActivityMetadata(
       `type`: String,
       displayableName: String,
-      displayableNameForFragment: String,
       icon: String,
       supportedActions: List[String],
   )
 
   object ScenarioActivityMetadata {
 
-    def from(scenarioActivityType: ScenarioActivityType): ScenarioActivityMetadata =
+    def from(scenarioType: ScenarioType)(scenarioActivityType: ScenarioActivityType): ScenarioActivityMetadata =
       ScenarioActivityMetadata(
         `type` = scenarioActivityType.entryName,
-        displayableName = scenarioActivityType.displayableName(ScenarioType.Scenario),
-        displayableNameForFragment = scenarioActivityType.displayableName(ScenarioType.Fragment),
+        displayableName = scenarioActivityType.displayableName(scenarioType),
         icon = scenarioActivityType.icon,
         supportedActions = scenarioActivityType.supportedActions,
       )
 
-  }
-
-  sealed trait ScenarioType extends EnumEntry with CapitalWords
-
-  object ScenarioType extends Enum[ScenarioType] {
-    case object Scenario extends ScenarioType
-    case object Fragment extends ScenarioType
-
-    override def values = findValues
   }
 
   sealed trait ScenarioActivityType extends EnumEntry with UpperSnakecase {
