@@ -13,12 +13,12 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{Comment, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -57,7 +57,6 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -720,8 +719,6 @@ class ProcessesResourcesSpec
 
     getScenarioActivities(processName) ~> check {
       val activities = responseAs[ScenarioActivities].activities
-
-      activities.map(println)
 
       activities.length shouldBe 3
       activities(0) shouldBe ScenarioActivity(
