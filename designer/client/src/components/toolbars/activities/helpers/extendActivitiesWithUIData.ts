@@ -19,7 +19,7 @@ const getLatestDateItem = (uiActivities: UIActivity[]) => {
 
 export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[]) => {
     const uiActivities: UIActivity[] = [];
-    const hideItemsOptionAvailableLimit = 3;
+    const maxAllowedTypesDuplicatesToItemsHide = 2;
 
     const recursiveDateLabelDesignation = (
         currentActivity: Activity,
@@ -37,7 +37,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
 
         const isDateRangeInOccurrences = occurrences.every((occurrence) => occurrence === occurrences[0]);
         const shouldAddDateRangeElement =
-            occurrences.length >= hideItemsOptionAvailableLimit && !currentAndNextActivityTypeAreTheSame && !isDateRangeInOccurrences;
+            occurrences.length > maxAllowedTypesDuplicatesToItemsHide && !currentAndNextActivityTypeAreTheSame && !isDateRangeInOccurrences;
 
         if (shouldAddDateRangeElement) {
             const dates = occurrences.map((occurrence) => moment(occurrence));
@@ -86,7 +86,7 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
         const nextActivity = activitiesDataWithMetadata[index + 1];
 
         if (
-            occurrences >= hideItemsOptionAvailableLimit &&
+            occurrences >= maxAllowedTypesDuplicatesToItemsHide &&
             activity.type !== previousActivity?.type &&
             activity.type !== nextActivity?.type
         ) {
