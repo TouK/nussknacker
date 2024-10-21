@@ -51,12 +51,6 @@ object typing {
     override def withoutValue: SingleTypingResult
 
     def runtimeObjType: TypedClass
-
-    // This type should be used only for: type hints, suggester and validation
-    def typeHintsObjType: TypedClass =
-      if (runtimeObjType.klass.isArray) TypedClass(classOf[java.util.List[_]], runtimeObjType.params)
-      else runtimeObjType
-
   }
 
   object TypedObjectTypingResult {
@@ -215,7 +209,7 @@ object typing {
     override def withoutValue: TypedClass = this
 
     override def display: String = {
-      val className = ReflectUtils.simpleNameWithoutSuffix(typeHintsObjType.klass)
+      val className = if (klass.isArray) "List" else ReflectUtils.simpleNameWithoutSuffix(runtimeObjType.klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else className
     }
