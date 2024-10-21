@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.description.scenarioActivity
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.EnumEntry.UpperSnakecase
+import enumeratum.EnumEntry.{CapitalWords, UpperSnakecase}
 import enumeratum.{Enum, EnumEntry}
 import io.circe
 import io.circe.generic.extras
@@ -80,6 +80,7 @@ object Dtos {
   final case class ScenarioActivityMetadata(
       `type`: String,
       displayableName: String,
+      displayableNameForFragment: String,
       icon: String,
       supportedActions: List[String],
   )
@@ -89,15 +90,25 @@ object Dtos {
     def from(scenarioActivityType: ScenarioActivityType): ScenarioActivityMetadata =
       ScenarioActivityMetadata(
         `type` = scenarioActivityType.entryName,
-        displayableName = scenarioActivityType.displayableName,
+        displayableName = scenarioActivityType.displayableName(ScenarioType.Scenario),
+        displayableNameForFragment = scenarioActivityType.displayableName(ScenarioType.Fragment),
         icon = scenarioActivityType.icon,
         supportedActions = scenarioActivityType.supportedActions,
       )
 
   }
 
+  sealed trait ScenarioType extends EnumEntry with CapitalWords
+
+  object ScenarioType extends Enum[ScenarioType] {
+    case object Scenario extends ScenarioType
+    case object Fragment extends ScenarioType
+
+    override def values = findValues
+  }
+
   sealed trait ScenarioActivityType extends EnumEntry with UpperSnakecase {
-    def displayableName: String
+    def displayableName(scenarioType: ScenarioType): String
     def icon: String
     def supportedActions: List[String]
   }
@@ -107,105 +118,105 @@ object Dtos {
     private val commentRelatedActions = List("delete_comment", "edit_comment")
 
     case object ScenarioCreated extends ScenarioActivityType {
-      override def displayableName: String        = "Scenario created"
-      override def icon: String                   = "/assets/activities/scenarioModified.svg"
-      override def supportedActions: List[String] = List.empty
+      override def displayableName(scenarioType: ScenarioType): String = s"${scenarioType.entryName} created"
+      override def icon: String                                        = "/assets/activities/scenarioModified.svg"
+      override def supportedActions: List[String]                      = List.empty
     }
 
     case object ScenarioArchived extends ScenarioActivityType {
-      override def displayableName: String        = "Scenario archived"
-      override def icon: String                   = "/assets/activities/archived.svg"
-      override def supportedActions: List[String] = List.empty
+      override def displayableName(scenarioType: ScenarioType): String = s"${scenarioType.entryName} archived"
+      override def icon: String                                        = "/assets/activities/archived.svg"
+      override def supportedActions: List[String]                      = List.empty
     }
 
     case object ScenarioUnarchived extends ScenarioActivityType {
-      override def displayableName: String        = "Scenario unarchived"
-      override def icon: String                   = "/assets/activities/unarchived.svg"
-      override def supportedActions: List[String] = List.empty
+      override def displayableName(scenarioType: ScenarioType): String = s"${scenarioType.entryName} unarchived"
+      override def icon: String                                        = "/assets/activities/unarchived.svg"
+      override def supportedActions: List[String]                      = List.empty
     }
 
     case object ScenarioDeployed extends ScenarioActivityType {
-      override def displayableName: String        = "Deployment"
-      override def icon: String                   = "/assets/activities/deployed.svg"
-      override def supportedActions: List[String] = commentRelatedActions
+      override def displayableName(scenarioType: ScenarioType): String = "Deployment"
+      override def icon: String                                        = "/assets/activities/deployed.svg"
+      override def supportedActions: List[String]                      = commentRelatedActions
     }
 
     case object ScenarioPaused extends ScenarioActivityType {
-      override def displayableName: String        = "Pause"
-      override def icon: String                   = "/assets/activities/pause.svg"
-      override def supportedActions: List[String] = commentRelatedActions
+      override def displayableName(scenarioType: ScenarioType): String = "Pause"
+      override def icon: String                                        = "/assets/activities/pause.svg"
+      override def supportedActions: List[String]                      = commentRelatedActions
     }
 
     case object ScenarioCanceled extends ScenarioActivityType {
-      override def displayableName: String        = "Cancel"
-      override def icon: String                   = "/assets/activities/cancel.svg"
-      override def supportedActions: List[String] = commentRelatedActions
+      override def displayableName(scenarioType: ScenarioType): String = "Cancel"
+      override def icon: String                                        = "/assets/activities/cancel.svg"
+      override def supportedActions: List[String]                      = commentRelatedActions
     }
 
     case object ScenarioModified extends ScenarioActivityType {
-      override def displayableName: String        = "Scenario modified"
-      override def icon: String                   = "/assets/activities/scenarioModified.svg"
-      override def supportedActions: List[String] = commentRelatedActions ::: "compare" :: Nil
+      override def displayableName(scenarioType: ScenarioType): String = s"${scenarioType.entryName} modified"
+      override def icon: String                                        = "/assets/activities/scenarioModified.svg"
+      override def supportedActions: List[String]                      = commentRelatedActions ::: "compare" :: Nil
     }
 
     case object ScenarioNameChanged extends ScenarioActivityType {
-      override def displayableName: String        = "Scenario name changed"
-      override def icon: String                   = "/assets/activities/scenarioModified.svg"
-      override def supportedActions: List[String] = List.empty
+      override def displayableName(scenarioType: ScenarioType): String = s"${scenarioType.entryName} name changed"
+      override def icon: String                                        = "/assets/activities/scenarioModified.svg"
+      override def supportedActions: List[String]                      = List.empty
     }
 
     case object CommentAdded extends ScenarioActivityType {
-      override def displayableName: String        = "Comment"
-      override def icon: String                   = "/assets/activities/comment.svg"
-      override def supportedActions: List[String] = commentRelatedActions
+      override def displayableName(scenarioType: ScenarioType): String = "Comment"
+      override def icon: String                                        = "/assets/activities/comment.svg"
+      override def supportedActions: List[String]                      = commentRelatedActions
     }
 
     case object AttachmentAdded extends ScenarioActivityType {
-      override def displayableName: String        = "Attachment"
-      override def icon: String                   = "/assets/activities/attachment.svg"
+      override def displayableName(scenarioType: ScenarioType): String = "Attachment"
+      override def icon: String                                        = "/assets/activities/attachment.svg"
       override def supportedActions: List[String] = List("download_attachment", "delete_attachment")
     }
 
     case object ChangedProcessingMode extends ScenarioActivityType {
-      override def displayableName: String        = "Processing mode change"
-      override def icon: String                   = "/assets/activities/processingModeChange.svg"
-      override def supportedActions: List[String] = List.empty
+      override def displayableName(scenarioType: ScenarioType): String = "Processing mode change"
+      override def icon: String                                        = "/assets/activities/processingModeChange.svg"
+      override def supportedActions: List[String]                      = List.empty
     }
 
     case object IncomingMigration extends ScenarioActivityType {
-      override def displayableName: String        = "Incoming migration"
-      override def icon: String                   = "/assets/activities/migration.svg"
-      override def supportedActions: List[String] = List("compare")
+      override def displayableName(scenarioType: ScenarioType): String = "Incoming migration"
+      override def icon: String                                        = "/assets/activities/migration.svg"
+      override def supportedActions: List[String]                      = List("compare")
     }
 
     case object OutgoingMigration extends ScenarioActivityType {
-      override def displayableName: String        = "Outgoing migration"
-      override def icon: String                   = "/assets/activities/migration.svg"
-      override def supportedActions: List[String] = commentRelatedActions
+      override def displayableName(scenarioType: ScenarioType): String = "Outgoing migration"
+      override def icon: String                                        = "/assets/activities/migration.svg"
+      override def supportedActions: List[String]                      = commentRelatedActions
     }
 
     case object PerformedSingleExecution extends ScenarioActivityType {
-      override def displayableName: String        = "Processing data"
-      override def icon: String                   = "/assets/activities/processingData.svg"
-      override def supportedActions: List[String] = commentRelatedActions
+      override def displayableName(scenarioType: ScenarioType): String = "Processing data"
+      override def icon: String                                        = "/assets/activities/processingData.svg"
+      override def supportedActions: List[String]                      = commentRelatedActions
     }
 
     case object PerformedScheduledExecution extends ScenarioActivityType {
-      override def displayableName: String        = "Processing data"
-      override def icon: String                   = "/assets/activities/processingData.svg"
-      override def supportedActions: List[String] = List.empty
+      override def displayableName(scenarioType: ScenarioType): String = "Processing data"
+      override def icon: String                                        = "/assets/activities/processingData.svg"
+      override def supportedActions: List[String]                      = List.empty
     }
 
     case object AutomaticUpdate extends ScenarioActivityType {
-      override def displayableName: String        = "Automatic update"
-      override def icon: String                   = "/assets/activities/automaticUpdate.svg"
-      override def supportedActions: List[String] = List("compare")
+      override def displayableName(scenarioType: ScenarioType): String = "Automatic update"
+      override def icon: String                                        = "/assets/activities/automaticUpdate.svg"
+      override def supportedActions: List[String]                      = List("compare")
     }
 
     case object CustomAction extends ScenarioActivityType {
-      override def displayableName: String        = "Custom action"
-      override def icon: String                   = "/assets/activities/customAction.svg"
-      override def supportedActions: List[String] = List.empty
+      override def displayableName(scenarioType: ScenarioType): String = "Custom action"
+      override def icon: String                                        = "/assets/activities/customAction.svg"
+      override def supportedActions: List[String]                      = List.empty
     }
 
     override def values: immutable.IndexedSeq[ScenarioActivityType] = findValues

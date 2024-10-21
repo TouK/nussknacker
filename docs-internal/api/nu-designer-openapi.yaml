@@ -4365,36 +4365,43 @@ paths:
                 activities:
                 - type: SCENARIO_CREATED
                   displayableName: Scenario created
+                  displayableNameForFragment: Fragment created
                   icon: /assets/activities/scenarioModified.svg
                   supportedActions: []
                 - type: SCENARIO_ARCHIVED
                   displayableName: Scenario archived
+                  displayableNameForFragment: Fragment archived
                   icon: /assets/activities/archived.svg
                   supportedActions: []
                 - type: SCENARIO_UNARCHIVED
                   displayableName: Scenario unarchived
+                  displayableNameForFragment: Fragment unarchived
                   icon: /assets/activities/unarchived.svg
                   supportedActions: []
                 - type: SCENARIO_DEPLOYED
                   displayableName: Deployment
+                  displayableNameForFragment: Deployment
                   icon: /assets/activities/deployed.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: SCENARIO_PAUSED
                   displayableName: Pause
+                  displayableNameForFragment: Pause
                   icon: /assets/activities/pause.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: SCENARIO_CANCELED
                   displayableName: Cancel
+                  displayableNameForFragment: Cancel
                   icon: /assets/activities/cancel.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: SCENARIO_MODIFIED
                   displayableName: Scenario modified
+                  displayableNameForFragment: Fragment modified
                   icon: /assets/activities/scenarioModified.svg
                   supportedActions:
                   - delete_comment
@@ -4402,52 +4409,62 @@ paths:
                   - compare
                 - type: SCENARIO_NAME_CHANGED
                   displayableName: Scenario name changed
+                  displayableNameForFragment: Fragment name changed
                   icon: /assets/activities/scenarioModified.svg
                   supportedActions: []
                 - type: COMMENT_ADDED
                   displayableName: Comment
+                  displayableNameForFragment: Comment
                   icon: /assets/activities/comment.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: ATTACHMENT_ADDED
                   displayableName: Attachment
+                  displayableNameForFragment: Attachment
                   icon: /assets/activities/attachment.svg
                   supportedActions:
                   - download_attachment
                   - delete_attachment
                 - type: CHANGED_PROCESSING_MODE
                   displayableName: Processing mode change
+                  displayableNameForFragment: Processing mode change
                   icon: /assets/activities/processingModeChange.svg
                   supportedActions: []
                 - type: INCOMING_MIGRATION
                   displayableName: Incoming migration
+                  displayableNameForFragment: Incoming migration
                   icon: /assets/activities/migration.svg
                   supportedActions:
                   - compare
                 - type: OUTGOING_MIGRATION
                   displayableName: Outgoing migration
+                  displayableNameForFragment: Outgoing migration
                   icon: /assets/activities/migration.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: PERFORMED_SINGLE_EXECUTION
                   displayableName: Processing data
+                  displayableNameForFragment: Processing data
                   icon: /assets/activities/processingData.svg
                   supportedActions:
                   - delete_comment
                   - edit_comment
                 - type: PERFORMED_SCHEDULED_EXECUTION
                   displayableName: Processing data
+                  displayableNameForFragment: Processing data
                   icon: /assets/activities/processingData.svg
                   supportedActions: []
                 - type: AUTOMATIC_UPDATE
                   displayableName: Automatic update
+                  displayableNameForFragment: Automatic update
                   icon: /assets/activities/automaticUpdate.svg
                   supportedActions:
                   - compare
                 - type: CUSTOM_ACTION
                   displayableName: Custom action
+                  displayableNameForFragment: Custom action
                   icon: /assets/activities/customAction.svg
                   supportedActions: []
                 actions:
@@ -6371,11 +6388,14 @@ components:
       required:
       - type
       - displayableName
+      - displayableNameForFragment
       - icon
       properties:
         type:
           type: string
         displayableName:
+          type: string
+        displayableNameForFragment:
           type: string
         icon:
           type: string
