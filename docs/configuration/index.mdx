@@ -36,34 +36,35 @@ The Scenario Type is a convenient umbrella term that groups all these things. Di
 Let's see how those concepts look in fragment of the configuration file:
 
 <pre>
-{/* Somehow, everything which is in the "pre" block is treated as jsx by Docusaurus*/}
-{/* so, we need to escape "{" */}
-{/* and add leading spaces in a special way. If not jsx parser will remove them */}
+{/* Somehow, everything which is in the "pre" block is treated as jsx by Docusaurus */}
+{/* so, we need to add opening curly bracket as comment */}
+{/* and add leading spaces in a special way. If not, jsx parser will remove them */}
 {/* Finally, do not worry - this is a valid jsx comment - you will not see it on Nu page*/}
 
-<b># Designer configuration </b> <br/>
-environment: "local"  <br/>
-... <br/>
- <br/>
-# Each scenario type is configured here  <br/>
-{" "} <b>scenarioTypes:</b> {"{"}  <br/>
-{" "} "scenario-type-1": {"{"}<br/>
-{" "}   # Configuration of scenario deployment (Flink used as example here)  <br/>
-{" "}   <b>deploymentConfig:</b> {"{"} <br/>
-{" "}     type: "flinkStreaming" <br/>
-{" "}     restUrl: "http://localhost:8081" <br/>
-{" "}   } <br/>
-{" "}   # Configuration of the model <br/>
-{" "}   <b>modelConfig</b>: {"{"} <br/>
-{" "}     classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"] <br/>
-{" "}     restartStrategy.default.strategy: disable <br/>
-{" "}     components {"{"} <br/>
-{" "}       ... <br/>
-{" "}     } <br/>
-{" "}   } <br/>
-{" "}   <b>category</b>: "Default" <br/>
-{" "} } <br/>
-} <br/>
+<b># Designer configuration </b>
+environment: "local"
+
+{" "}# Each scenario type is configured here 
+{" "}<b>scenarioTypes:</b> {"{"}
+{" "}  "scenario-type-1": {"{"}
+
+{" "}    # Configuration of scenario deployment (Flink used as example here)
+{" "}    <b>deploymentConfig:</b> {"{"} 
+{" "}      type: "flinkStreaming" 
+{" "}      restUrl: "http://localhost:8081" 
+{" "}    } 
+
+{" "}    # Configuration of the model 
+{" "}    <b>modelConfig</b>: {"{"}
+{" "}      classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"]
+{" "}      restartStrategy.default.strategy: disable
+{" "}      components: {"{"}
+{" "}      }
+{" "}    }
+
+{" "}  <b>category</b>: "Default"
+{" "}  }
+{" "}}
 </pre>
 
 It is worth noting that one Nussknacker Designer may be used to work with multiple Scenario Types and allow user:
