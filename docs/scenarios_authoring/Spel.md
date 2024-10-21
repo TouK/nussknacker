@@ -199,12 +199,13 @@ person2 = name: "John"; age: 24
 listOfPersons = {person1, person2}
 ```
 
-| Expression                     | Result           | Type          |
-| ------------                   | --------         | --------      |
-| `{1,2,3,4}.![#this * 2]`       | {2, 4, 6, 8}     | List[Integer] |
-| `#listOfPersons.![#this.name]` | {'Alex', 'John'} | List[String]  |
-| `#listOfPersons.![#this.age]`  | {42, 24}         | List[Integer] |
-| `#listOfPersons.![7]`          | {7, 7}           | List[Integer] |
+| Expression                                                      | Result               | Type                 |
+|-----------------------------------------------------------------|----------------------|----------------------|
+| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}         | List[Integer]        |
+| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}     | List[String]         |
+| `#listOfPersons.![#this.age]`                                   | {42, 24}             | List[Integer]        |
+| `#listOfPersons.![7]`                                           | {7, 7}               | List[Integer]        |
+| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24} | Map[String, Integer] |
 
 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
@@ -306,12 +307,20 @@ More usage examples can be found in [this section](#conversions-between-datetime
 
 Explicit conversions are available in utility classes and build-in java conversion mechanisms:
 
-| Expression                                                      | Result                     | Type            |
-|-----------------------------------------------------------------|----------------------------|-----------------|
-| `#NUMERIC.toNumber('42')`                                       | 42                         | Number          |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
+| Expression                                                      | Result                    | Type           |
+|-----------------------------------------------------------------|---------------------------|----------------|
+| `#NUMERIC.toNumber('42')`                                       | 42                        | Number         |
+| `#NUMERIC.toNumber('42').toString()`                            | '42'                      | String         |
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000             | OffsetDateTime |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00 | LocalDateTime  |
+| `'true'.toBoolean`                                              | true                      | Boolean        |
+| `'11'.toLong`                                                   | 11                        | Long           |
+| `'1.1'.toDouble`                                                | 1.1                       | Double         |
+| `2.1.toBigDecimal`                                              | 2.1                       | BigDecimal     |
+
+Functions which start with `to`, e.g. `toBoolean`, have their equivalents:
+- to check if a given value can be converted to appropriate type, e.g. `'true'.isBoolean`.
+- and to return null if conversion fails, e.g. `'false'.toBooleanOrNull'`.
 
 ### Casting
 
