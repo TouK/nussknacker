@@ -1,18 +1,20 @@
 package pl.touk.nussknacker.ui.process.repository.activities
 
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, ScenarioActivityId}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
-  ModifyActivityError,
-  ModifyCommentError
-}
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
+
+import java.time.Clock
 
 trait ScenarioActivityRepository {
+
+  def clock: Clock
 
   def findActivities(
       scenarioId: ProcessId,
@@ -25,8 +27,24 @@ trait ScenarioActivityRepository {
   def addComment(
       scenarioId: ProcessId,
       processVersionId: VersionId,
-      comment: String
-  )(implicit user: LoggedUser): DB[ScenarioActivityId]
+      comment: String,
+  )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
+    val now = clock.instant()
+    addActivity(
+      ScenarioActivity.CommentAdded(
+        scenarioId = ScenarioId(scenarioId.value),
+        scenarioActivityId = ScenarioActivityId.random,
+        user = user.scenarioUser,
+        date = now,
+        scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
+        comment = ScenarioComment.Available(
+          comment = comment,
+          lastModifiedByUserName = UserName(user.username),
+          lastModifiedAt = now,
+        )
+      ),
+    )
+  }
 
   def editComment(
       scenarioId: ProcessId,

@@ -11,12 +11,15 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
+import java.time.Clock
 import scala.concurrent.ExecutionContext
 
 class ScenarioActivityRepositoryAuditLogDecorator(
     underlying: ScenarioActivityRepository
 )(implicit executionContext: ExecutionContext)
     extends ScenarioActivityRepository {
+
+  def clock: Clock = underlying.clock
 
   def addActivity(
       scenarioActivity: ScenarioActivity,
@@ -25,18 +28,6 @@ class ScenarioActivityRepositoryAuditLogDecorator(
       .addActivity(scenarioActivity)
       .map { scenarioActivityId =>
         ScenarioActivityAuditLog.onCreateScenarioActivity(scenarioActivity)
-        scenarioActivityId
-      }
-
-  def addComment(
-      scenarioId: ProcessId,
-      processVersionId: VersionId,
-      comment: String,
-  )(implicit user: LoggedUser): DB[ScenarioActivityId] =
-    underlying
-      .addComment(scenarioId, processVersionId, comment)
-      .map { scenarioActivityId =>
-        ScenarioActivityAuditLog.onAddComment(scenarioId, Some(processVersionId), user, scenarioActivityId, comment)
         scenarioActivityId
       }
 

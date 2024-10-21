@@ -33,7 +33,7 @@ import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
-class DbScenarioActivityRepository private (override protected val dbRef: DbRef, clock: Clock)(
+class DbScenarioActivityRepository private (override protected val dbRef: DbRef, override val clock: Clock)(
     implicit executionContext: ExecutionContext,
 ) extends DbioRepository
     with NuTables
@@ -52,28 +52,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       scenarioActivity: ScenarioActivity,
   ): DB[ScenarioActivityId] = {
     insertActivity(scenarioActivity).map(_.activityId)
-  }
-
-  def addComment(
-      scenarioId: ProcessId,
-      processVersionId: VersionId,
-      comment: String,
-  )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
-    val now = clock.instant()
-    insertActivity(
-      ScenarioActivity.CommentAdded(
-        scenarioId = ScenarioId(scenarioId.value),
-        scenarioActivityId = ScenarioActivityId.random,
-        user = user.scenarioUser,
-        date = now,
-        scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
-        comment = ScenarioComment.Available(
-          comment = comment,
-          lastModifiedByUserName = UserName(user.username),
-          lastModifiedAt = now,
-        )
-      ),
-    ).map(_.activityId)
   }
 
   def editComment(
