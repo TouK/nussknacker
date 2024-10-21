@@ -434,7 +434,7 @@ private[spel] class Typer(
       case e: PropertyOrFieldReference =>
         current.stackHead
           .map(extractProperty(e, _))
-          .map(fallbackToCheckMethodsIfPropertyNotExists)
+          .map(mapErrorAndCheckMethodsIfPropertyNotExists)
           .getOrElse(invalid(NonReferenceError(e.toStringAST)))
           .map(toNodeResult)
       // TODO: what should be here?
@@ -735,10 +735,13 @@ private[spel] class Typer(
     }
   }
 
-  private def fallbackToCheckMethodsIfPropertyNotExists(typing: TypingR[TypingResult]): TypingR[TypingResult] =
+  private def mapErrorAndCheckMethodsIfPropertyNotExists(typing: TypingR[TypingResult]): TypingR[TypingResult] =
     typing.mapWritten(_.map {
       case e: NoPropertyError =>
         methodReferenceTyper.typeMethodReference(typer.MethodReference(e.typ, false, e.property, Nil)) match {
+          // Right is not mapped because of: pl.touk.nussknacker.engine.spel.Typer.propertyTypeBasedOnMethod and
+          // pl.touk.nussknacker.engine.spel.internal.propertyAccessors.NoParamMethodPropertyAccessor
+          // Methods without parameters can be treated as properties.
           case Left(me: ArgumentTypeError) => me
           case _                           => e
         }
@@ -771,7 +774,7 @@ object Typer {
       spelDictTyper: SpelDictTyper,
       classDefinitionSet: ClassDefinitionSet
   ): Typer = {
-    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
+    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
 
     new Typer(
       spelDictTyper,
