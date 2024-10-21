@@ -96,7 +96,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     modifyActivityByRowId(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateCommentExists(scenarioId),
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
       modify = doEditComment(comment),
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
@@ -110,7 +110,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateCommentExists(scenarioId),
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
       modify = doEditComment(comment),
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
@@ -123,7 +123,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     modifyActivityByRowId(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateCommentExists(scenarioId),
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
       modify = doDeleteComment,
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
@@ -136,7 +136,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateCommentExists(scenarioId),
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
       modify = doDeleteComment,
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
@@ -275,10 +275,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       }
   }
 
-  private def validateCommentExists(scenarioId: ProcessId)(entity: ScenarioActivityEntityData) = {
+  private def validateThatActivityIsAssignedToScenario(scenarioId: ProcessId)(entity: ScenarioActivityEntityData) = {
     for {
       _ <- Either.cond(entity.scenarioId == scenarioId, (), ModifyCommentError.CommentDoesNotExist)
-      _ <- entity.comment.toRight(ModifyCommentError.CommentDoesNotExist)
     } yield entity
   }
 
