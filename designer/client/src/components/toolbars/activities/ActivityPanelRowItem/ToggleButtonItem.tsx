@@ -20,10 +20,13 @@ interface Props {
     handleHideRow(): void;
 }
 
-export const ButtonItem = ({ handleHideRow, children }: PropsWithChildren<Props>) => {
+export const ToggleButtonItem = ({ handleHideRow, children }: PropsWithChildren<Props>) => {
     return (
         <ToggleItemsRoot>
-            <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.primary.main })} />
+            <Divider
+                variant={"fullWidth"}
+                sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.primary.main, borderBottomWidth: 0.5 })}
+            />
             <ToggleItemsButton onClick={handleHideRow}>{children}</ToggleItemsButton>
         </ToggleItemsRoot>
     );

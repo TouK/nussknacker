@@ -10,9 +10,10 @@ import { blendLighten } from "../../../../containers/theme/helpers";
 import { ItemActivity } from "../ActivitiesPanel";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
+import { ActivityTypes } from "../../../../http/HttpService";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
-    padding: theme.spacing(0, 0.5),
+    padding: theme.spacing(0.5),
 }));
 
 const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: boolean }>(({ theme, isActiveFound, isFound }) => ({
@@ -46,7 +47,16 @@ export const ActivityItem = forwardRef(
     ) => {
         const commentSettings = useSelector(getCommentSettings);
 
-        const version = `Version: ${activity.scenarioVersionId}`;
+        const actionsWithVersionInfo: ActivityTypes[] = [
+            "PERFORMED_SINGLE_EXECUTION",
+            "PERFORMED_SCHEDULED_EXECUTION",
+            "SCENARIO_DEPLOYED",
+            "SCENARIO_PAUSED",
+            "SCENARIO_CANCELED",
+        ];
+
+        const version =
+            activity.scenarioVersionId && actionsWithVersionInfo.includes(activity.type) && `Version: ${activity.scenarioVersionId}`;
 
         return (
             <StyledActivityRoot ref={ref}>
@@ -71,9 +81,7 @@ export const ActivityItem = forwardRef(
                                 </Typography>
                             </Box>
 
-                            {activity.scenarioVersionId && activity.type !== "SCENARIO_MODIFIED" && (
-                                <Typography variant={"overline"}>{version}</Typography>
-                            )}
+                            {version && <Typography variant={"overline"}>{version}</Typography>}
                         </Box>
 
                         {activity?.comment?.content?.value && (

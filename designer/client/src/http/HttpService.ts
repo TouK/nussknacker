@@ -159,7 +159,7 @@ export interface ScenarioParametersCombinations {
 
 export type ProcessDefinitionDataDictOption = { key: string; label: string };
 type DictOption = { id: string; label: string };
-type ActivityTypes =
+export type ActivityTypes =
     | "SCENARIO_CREATED"
     | "SCENARIO_ARCHIVED"
     | "SCENARIO_UNARCHIVED"

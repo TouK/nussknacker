@@ -11,6 +11,8 @@ export const handleToggleActivities = (activities: UIActivity[], uiGeneratedId: 
     let iteration = 0;
 
     while (itemsToSetState > 0) {
+        iteration++;
+
         const targetIndex = buttonIndex - iteration + 1;
 
         if (targetIndex < 0 || targetIndex >= newState.length) break;
@@ -21,8 +23,6 @@ export const handleToggleActivities = (activities: UIActivity[], uiGeneratedId: 
             newState[targetIndex] = { ...itemToHide, isHidden: !itemToHide.isHidden };
             itemsToSetState--;
         }
-
-        iteration++;
     }
 
     const clickedItem = newState[buttonIndex];
