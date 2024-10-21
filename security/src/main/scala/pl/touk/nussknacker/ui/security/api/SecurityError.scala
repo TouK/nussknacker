@@ -6,20 +6,27 @@ sealed trait AuthenticationError              extends SecurityError
 sealed trait ImpersonationAuthenticationError extends AuthenticationError
 
 object SecurityError {
+
   case object InsufficientPermission extends AuthorizationError
 
-  case object ImpersonationMissingPermissionError extends AuthorizationError {
-    val errorMessage = "The supplied authentication is not authorized to impersonate"
-  }
+  case object ImpersonationMissingPermissionError extends AuthorizationError
+
+  case object ImpersonatedUserNotExistsError extends ImpersonationAuthenticationError
 
   case object CannotAuthenticateUser extends AuthenticationError
 
-  case object ImpersonatedUserDataNotFoundError extends ImpersonationAuthenticationError {
-    val errorMessage = "No impersonated user data found for provided identity"
-  }
+  case object ImpersonationNotSupportedError extends ImpersonationAuthenticationError
 
-  case object ImpersonationNotSupportedError extends ImpersonationAuthenticationError {
-    val errorMessage = "Provided authentication method does not support impersonation"
+  implicit class SecurityErrorWithMessage(val s: SecurityError) extends AnyVal {
+
+    def errorMessage: String = s match {
+      case InsufficientPermission => "The supplied authentication is not authorized to access this resource"
+      case ImpersonationMissingPermissionError => "The supplied authentication is not authorized to impersonate"
+      case ImpersonatedUserNotExistsError      => "No impersonated user data found for provided identity"
+      case CannotAuthenticateUser              => "The supplied authentication is invalid"
+      case ImpersonationNotSupportedError      => "Provided authentication method does not support impersonation"
+    }
+
   }
 
 }

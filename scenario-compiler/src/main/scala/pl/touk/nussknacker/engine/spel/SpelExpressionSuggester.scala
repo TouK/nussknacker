@@ -174,7 +174,7 @@ class SpelExpressionSuggester(
                 ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil)
               }
             val suggestionsFromClass = clssDefinitions
-              .get(to.typeHintsObjType.klass)
+              .get(to.runtimeObjType.klass)
               .map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = true))
               .getOrElse(Nil)
             val applicableSuggestions = if (collectSuggestionsFromClass) {
@@ -186,7 +186,7 @@ class SpelExpressionSuggester(
           case TypingResultWithContext(tu: TypedUnion, staticContext) =>
             Future.successful(
               tu.possibleTypes
-                .map(_.typeHintsObjType.klass)
+                .map(_.runtimeObjType.klass)
                 .toList
                 .flatMap(klass =>
                   clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
@@ -398,13 +398,13 @@ class SpelExpressionSuggester(
 
   private def determineIterableElementTypingResult(parent: TypingResult): TypingResult = {
     parent match {
-      case tc: SingleTypingResult if tc.typeHintsObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
-        tc.typeHintsObjType.params.headOption.getOrElse(Unknown)
-      case tc: SingleTypingResult if tc.typeHintsObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+      case tc: SingleTypingResult if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+        tc.runtimeObjType.params.headOption.getOrElse(Unknown)
+      case tc: SingleTypingResult if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
         Typed.record(
           Map(
-            "key"   -> tc.typeHintsObjType.params.headOption.getOrElse(Unknown),
-            "value" -> tc.typeHintsObjType.params.drop(1).headOption.getOrElse(Unknown)
+            "key"   -> tc.runtimeObjType.params.headOption.getOrElse(Unknown),
+            "value" -> tc.runtimeObjType.params.drop(1).headOption.getOrElse(Unknown)
           )
         )
       case _ => Unknown

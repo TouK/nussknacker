@@ -59,7 +59,7 @@ class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtracto
     case TypedObjectTypingResult(fields, clazz, _) =>
       typesFromTypedClass(clazz) ++ fields.values.flatMap(typesFromTypingResult)
     case typedObjectWithData: SingleTypingResult =>
-      typesFromTypedClass(typedObjectWithData.typeHintsObjType)
+      typesFromTypedClass(typedObjectWithData.runtimeObjType)
     case union: TypedUnion =>
       union.possibleTypes.toList.toSet.flatMap(typesFromTypingResult)
     case TypedNull =>
