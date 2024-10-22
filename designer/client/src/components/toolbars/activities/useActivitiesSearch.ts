@@ -3,7 +3,7 @@ import { Activity, UIActivity } from "./ActivitiesPanel";
 import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
 import { get, uniq } from "lodash";
-import { ActivityAdditionalFields } from "../../../http/HttpService";
+import { ActivityAdditionalFields } from "./types";
 import { handleToggleActivities } from "./helpers/handleToggleActivities";
 
 interface Props {

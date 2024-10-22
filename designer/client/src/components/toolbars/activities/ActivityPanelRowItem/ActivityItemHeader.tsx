@@ -1,7 +1,8 @@
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
-import HttpService, { ActionMetadata, ActivityAttachment } from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService";
+import { ActionMetadata, ActivityAttachment, ActivityTypes } from "../types";
 import UrlIcon from "../../../UrlIcon";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,7 +16,6 @@ import { getHeaderColors } from "../helpers/activityItemColors";
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
     height: "16px",
-    marginRight: theme.spacing(1),
     color: theme.palette.primary.main,
 }));
 
@@ -31,8 +31,8 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunni
     ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
         display: "flex",
         alignItems: "center",
-        padding: theme.spacing(0.5, 1),
-        borderRadius: theme.spacing(1),
+        padding: theme.spacing(0.5, 0.75),
+        borderRadius: theme.spacing(0.5),
         ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
     }),
 );
@@ -59,6 +59,7 @@ const HeaderActivity = ({
 
             return (
                 <StyledHeaderActionIcon
+                    title={activityAction.displayableName}
                     data-testid={`compare-${scenarioVersionId}`}
                     onClick={() => open(handleOpenCompareVersionDialog(scenarioVersionId.toString()))}
                     key={activityAction.id}
@@ -67,11 +68,24 @@ const HeaderActivity = ({
             );
         }
         case "download_attachment": {
-            const attachmentId = activityAttachment.file.status === "AVAILABLE" && activityAttachment.file.id;
+            const attachmentStatus = activityAttachment.file.status;
+
+            if (attachmentStatus === "DELETED") {
+                return null;
+            }
+
+            const attachmentId = attachmentStatus === "AVAILABLE" && activityAttachment.file.id;
             const attachmentName = activityAttachment.filename;
 
             const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId, attachmentName);
-            return <StyledHeaderActionIcon onClick={handleDownloadAttachment} key={attachmentId} src={activityAction.icon} />;
+            return (
+                <StyledHeaderActionIcon
+                    onClick={handleDownloadAttachment}
+                    key={attachmentId}
+                    src={activityAction.icon}
+                    title={activityAction.displayableName}
+                />
+            );
         }
         default: {
             return null;
@@ -89,9 +103,11 @@ interface Props {
 
 const WithOpenVersion = ({
     scenarioVersion,
+    activityType,
     children,
 }: PropsWithChildren<{
     scenarioVersion: number;
+    activityType: ActivityTypes;
 }>) => {
     const nothingToSave = useSelector(isSaveDisabled);
     const scenario = useSelector(getScenario);
@@ -121,7 +137,15 @@ const WithOpenVersion = ({
 
     return (
         <Button
-            sx={{ textTransform: "initial", p: 0, m: 0 }}
+            sx={(theme) => ({
+                textTransform: "initial",
+                "&:hover": { backgroundColor: activityType === "SCENARIO_DEPLOYED" ? "unset" : theme.palette.action.hover },
+                "&:focus": { outline: activityType === "SCENARIO_DEPLOYED" && "unset" },
+                width: "100%",
+                justifyContent: "flex-start",
+                m: theme.spacing(0, 0.5),
+                p: theme.spacing(0, 0.5),
+            })}
             onClick={() => {
                 changeVersion(scenarioVersion);
             }}
@@ -136,26 +160,47 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
     const { processVersionId } = scenario || {};
 
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
-    const openVersionEnable = activity.type === "SCENARIO_MODIFIED" && activity.scenarioVersionId !== processVersionId;
+    const openVersionEnable =
+        ["SCENARIO_MODIFIED", "SCENARIO_DEPLOYED"].includes(activity.type) && activity.scenarioVersionId !== processVersionId;
 
     const getHeaderTitle = useMemo(() => {
+        const text = activity.overrideDisplayableName || activity.activities.displayableName;
+
         const headerTitle = (
             <Typography
                 variant={"caption"}
                 component={SearchHighlighter}
+                title={text}
                 highlights={[searchQuery]}
-                sx={(theme) => ({ color: theme.palette.text.primary })}
+                sx={(theme) => ({
+                    color: theme.palette.text.primary,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    textWrap: "noWrap",
+                    padding: !openVersionEnable && theme.spacing(0, 1),
+                })}
             >
-                {activity.overrideDisplayableName || activity.activities.displayableName}
+                {text}
             </Typography>
         );
 
         if (openVersionEnable) {
-            return <WithOpenVersion scenarioVersion={activity.scenarioVersionId}>{headerTitle}</WithOpenVersion>;
+            return (
+                <WithOpenVersion scenarioVersion={activity.scenarioVersionId} activityType={activity.type}>
+                    {headerTitle}
+                </WithOpenVersion>
+            );
         }
 
         return headerTitle;
-    }, [activity.activities.displayableName, activity.overrideDisplayableName, activity.scenarioVersionId, openVersionEnable, searchQuery]);
+    }, [
+        activity.activities.displayableName,
+        activity.overrideDisplayableName,
+        activity.scenarioVersionId,
+        activity.type,
+        openVersionEnable,
+        searchQuery,
+    ]);
 
     return (
         <StyledActivityItemHeader isHighlighted={isHighlighted} isRunning={isRunning} isActiveFound={isActiveFound}>
