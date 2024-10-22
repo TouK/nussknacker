@@ -190,7 +190,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       forwardedUserName = None
     )
     for {
-      _  <- dbioRunner.runInTransaction(writeScenarioRepository.saveNewProcess(action))
+      _  <- dbioRunner.runInSerializableTransactionWithRetry(writeScenarioRepository.saveNewProcess(action))
       id <- futureFetchingScenarioRepository.fetchProcessId(scenarioName).map(_.get)
     } yield id
   }
