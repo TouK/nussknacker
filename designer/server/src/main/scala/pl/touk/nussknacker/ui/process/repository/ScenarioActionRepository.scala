@@ -10,7 +10,12 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, Processin
 import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.entity.{AdditionalProperties, ScenarioActivityEntityData, ScenarioActivityType}
+import pl.touk.nussknacker.ui.db.entity.{
+  AdditionalProperties,
+  ScenarioActivityEntityData,
+  ScenarioActivityEntityFactory,
+  ScenarioActivityType
+}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -28,11 +33,7 @@ import scala.concurrent.ExecutionContext
 // 2. At the moment, the old ScenarioActionRepository
 //   - handles those activities, which underlying operations may be long and may be in progress
 // 3. Eventually, the new ScenarioActivityRepository should be aware of the state of the underlying operation, and should replace this repository
-trait ScenarioActionRepository {
-
-  def executeCriticalSection[T](
-      dbioAction: DB[T]
-  ): DB[T]
+trait ScenarioActionRepository extends LockableTable {
 
   def addInstantAction(
       processId: ProcessId,
@@ -112,18 +113,18 @@ trait ScenarioActionRepository {
 class DbScenarioActionRepository private (
     protected val dbRef: DbRef,
     buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
-)(implicit ec: ExecutionContext)
+)(override implicit val executionContext: ExecutionContext)
     extends DbioRepository
     with NuTables
+    with DbLockableTable
     with ScenarioActionRepository
     with LazyLogging {
 
   import profile.api._
 
-  override def executeCriticalSection[T](dbioAction: DB[T]): DB[T] = for {
-    _      <- lockActionsTable
-    result <- dbioAction
-  } yield result
+  override type ENTITY = ScenarioActivityEntityFactory#ScenarioActivityEntity
+
+  override protected def table: TableQuery[ScenarioActivityEntityFactory#ScenarioActivityEntity] = scenarioActivityTable
 
   override def addInProgressAction(
       processId: ProcessId,
@@ -338,11 +339,6 @@ class DbScenarioActionRepository private (
           (performedAt.map(Timestamp.from), Some(state), failure, comment.map(_.content))
         )
     } yield updateCount == 1
-  }
-
-  // we use "select for update where false" query syntax to lock the table - it is useful if you plan to insert something in a critical section
-  def lockActionsTable: DB[Unit] = {
-    run(scenarioActivityTable.filter(_ => false).forUpdate.result.map(_ => ()))
   }
 
   override def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] = {

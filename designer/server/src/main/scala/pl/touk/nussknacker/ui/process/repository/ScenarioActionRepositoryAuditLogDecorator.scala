@@ -135,11 +135,6 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
   ): DB[Boolean] =
     underlying.markFinishedActionAsExecutionFinished(actionId)
 
-  override def executeCriticalSection[T](
-      dbioAction: DB[T]
-  ): DB[T] =
-    underlying.executeCriticalSection(dbioAction)
-
   override def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] =
     underlying.getInProgressActionNames(processId)
 
@@ -172,5 +167,8 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
       limit: Instant
   ): DB[List[(ProcessAction, ProcessName)]] =
     underlying.getUserActionsAfter(user, possibleActionNames, possibleStates, limit)
+
+  override def withLockedTable[T](dbioAction: DB[T]): DB[T] =
+    underlying.withLockedTable(dbioAction)
 
 }

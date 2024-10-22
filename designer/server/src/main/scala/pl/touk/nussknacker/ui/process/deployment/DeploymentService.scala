@@ -207,7 +207,7 @@ class DeploymentService(
   }
 
   private def transactionallyRunCriticalSection[T](dbioAction: DB[T]) = {
-    dbioRunner.runInTransaction(actionRepository.executeCriticalSection(dbioAction))
+    dbioRunner.runInTransaction(actionRepository.withLockedTable(dbioAction))
   }
 
   // TODO: Use buildInfo explicitly instead of ProcessingType-that-is-used-to-calculate-buildInfo
