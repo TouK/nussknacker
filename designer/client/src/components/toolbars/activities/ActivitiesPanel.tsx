@@ -101,7 +101,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const handleHideRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
         dispatch(
             updateScenarioActivities((prevState) => {
-                const { uiActivities, buttonPosition } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence);
+                const { uiActivities, buttonPosition } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence, "collapse");
                 listRef.current.scrollToItem(buttonPosition - 2);
                 return uiActivities;
             }),
@@ -111,7 +111,7 @@ export const ActivitiesPanel = (props: ToolbarPanelProps) => {
     const handleShowRows = (uiGeneratedId: string, sameItemOccurrence: number) => {
         dispatch(
             updateScenarioActivities((prevState) => {
-                const { uiActivities } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence);
+                const { uiActivities } = handleToggleActivities(prevState, uiGeneratedId, sameItemOccurrence, "expand");
                 return uiActivities;
             }),
         );

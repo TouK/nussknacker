@@ -4,6 +4,7 @@ import { Align } from "react-window";
 import { NestedKeyOf } from "../../../reducers/graph/nestedKeyOf";
 import { get, uniq } from "lodash";
 import { ActivityAdditionalFields } from "../../../http/HttpService";
+import { handleToggleActivities } from "./helpers/handleToggleActivities";
 
 interface Props {
     activities: UIActivity[];
@@ -48,58 +49,111 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
         [handleUpdateScenarioActivities],
     );
 
-    const handleSearch = (value: string) => {
-        setSearchQuery(value);
+    const handleExpandAllResults = useCallback(() => {
+        handleUpdateScenarioActivities((prevState) => {
+            let newState = [...prevState];
 
-        if (value === "") {
-            handleUpdateSearchResults([], 0);
-            return;
-        }
-
-        setSelectedResult(0);
-
-        const foundActivities: UIActivity[] = [];
-
-        const fullSearchAllowedFields: NestedKeyOf<Activity>[] = [
-            "date",
-            "user",
-            "comment.content.value",
-            "activities.displayableName",
-            "overrideDisplayableName",
-            "additionalFields",
-        ];
-
-        for (const activity of activities) {
-            if (activity.uiType !== "item") {
-                continue;
+            for (const activity of newState) {
+                if (activity.uiType === "toggleItemsButton") {
+                    newState = handleToggleActivities(newState, activity.uiGeneratedId, activity.sameItemOccurrence, "expand").uiActivities;
+                }
             }
 
-            for (const fullSearchAllowedField of fullSearchAllowedFields) {
-                const searchFieldValue: string | ActivityAdditionalFields[] = get(activity, fullSearchAllowedField, "") || "";
+            return newState;
+        });
+    }, [handleUpdateScenarioActivities]);
 
-                if (Array.isArray(searchFieldValue)) {
-                    if (
-                        searchFieldValue.some((searchValue) =>
-                            `${searchValue.name.toLowerCase()}: ${searchValue.value.toLowerCase()}`.includes(value.toLowerCase()),
-                        )
-                    ) {
-                        foundActivities.push(activity);
-                    }
+    const handleCollapseAllResults = useCallback(() => {
+        handleUpdateScenarioActivities((prevState) => {
+            let newState = [...prevState];
 
+            for (const activity of newState) {
+                if (activity.uiType === "toggleItemsButton") {
+                    newState = handleToggleActivities(
+                        newState,
+                        activity.uiGeneratedId,
+                        activity.sameItemOccurrence,
+                        "collapse",
+                    ).uiActivities;
+                }
+            }
+
+            return newState;
+        });
+    }, [handleUpdateScenarioActivities]);
+
+    const handleClearResults = useCallback(() => {
+        setSearchQuery("");
+        setSelectedResult(0);
+        setFoundResults([]);
+        handleUpdateSearchResults([], 0);
+        handleCollapseAllResults();
+    }, [handleCollapseAllResults, handleUpdateSearchResults]);
+
+    const handleSearch = useCallback(
+        (value: string) => {
+            handleExpandAllResults();
+            setSearchQuery(value);
+
+            if (value === "") {
+                handleClearResults();
+                return;
+            }
+
+            setSelectedResult(0);
+
+            const foundActivities: UIActivity[] = [];
+
+            const fullSearchAllowedFields: NestedKeyOf<Activity>[] = [
+                "date",
+                "user",
+                "comment.content.value",
+                "activities.displayableName",
+                "overrideDisplayableName",
+                "additionalFields",
+            ];
+
+            for (const activity of activities) {
+                if (activity.uiType !== "item") {
                     continue;
                 }
 
-                if (value && searchFieldValue.toLowerCase().includes(value.toLowerCase())) {
-                    foundActivities.push(activity);
+                for (const fullSearchAllowedField of fullSearchAllowedFields) {
+                    const searchFieldValue: string | ActivityAdditionalFields[] = get(activity, fullSearchAllowedField, "") || "";
+
+                    if (Array.isArray(searchFieldValue)) {
+                        if (
+                            searchFieldValue.some((searchValue) =>
+                                `${searchValue.name.toLowerCase()}: ${searchValue.value.toLowerCase()}`.includes(value.toLowerCase()),
+                            )
+                        ) {
+                            foundActivities.push(activity);
+                        }
+
+                        continue;
+                    }
+
+                    if (value && searchFieldValue.toLowerCase().includes(value.toLowerCase())) {
+                        foundActivities.push(activity);
+                    }
                 }
             }
-        }
 
-        const uniqueFoundResults = handleSetFoundResults(foundActivities);
-        handleUpdateSearchResults(uniqueFoundResults, selectedResult);
-        const indexToScroll = activities.findIndex((item) => item.uiGeneratedId === foundActivities[0]?.uiGeneratedId);
-        handleScrollToItem(indexToScroll, "center");
-    };
+            const uniqueFoundResults = handleSetFoundResults(foundActivities);
+            handleUpdateSearchResults(uniqueFoundResults, selectedResult);
+            const indexToScroll = activities.findIndex((item) => item.uiGeneratedId === foundActivities[0]?.uiGeneratedId);
+            handleScrollToItem(indexToScroll, "center");
+        },
+        [
+            activities,
+            handleClearResults,
+            handleExpandAllResults,
+            handleScrollToItem,
+            handleSetFoundResults,
+            handleUpdateSearchResults,
+            selectedResult,
+        ],
+    );
 
     const changeResult = (selectedResultNewValue: number) => {
         if (selectedResultNewValue < 0) {
@@ -117,13 +171,6 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
         );
         setSelectedResult(selectedResultNewValue);
         handleUpdateSearchResults(foundResults, selectedResultNewValue);
-    };
-
-    const handleClearResults = () => {
-        handleSearch("");
-        setSelectedResult(0);
-        setFoundResults([]);
-        handleUpdateSearchResults([], 0);
     };
 
     return { handleSearch, foundResults, selectedResult, searchQuery, changeResult, handleClearResults };
