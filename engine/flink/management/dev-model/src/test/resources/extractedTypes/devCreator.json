@@ -89,6 +89,30 @@
           }
         }
       ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "lastIndexOf": [
         {
           "name": "lastIndexOf",
@@ -3149,6 +3173,30 @@
               "noVarArgs": [
                 {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
               ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
               "result": {"type": "Unknown"}
             }
           ]
@@ -11660,6 +11708,30 @@
           }
         }
       ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "size": [
         {
           "name": "size",
@@ -11842,6 +11914,30 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
+        }
+      ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "lastIndexOf": [
@@ -12137,6 +12233,30 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
+        }
+      ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "size": [

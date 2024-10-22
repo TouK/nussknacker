@@ -1594,6 +1594,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownEmptyList.value.toList()", listTyping, emptyList),
         ("#unknownEmptyTuplesList.value.toMapOrNull()", mapTyping, null),
         ("#unknownEmptyTuplesList.value.toList()", listTyping, emptyTuplesList),
+        ("#arrayOfUnknown.toList()", listTyping, List("unknown").asJava),
       )
     ) { (expression, expectedType, expectedResult) =>
       val parsed = parse[Any](expr = expression, context = customContext).validValue
@@ -1619,6 +1620,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownMap.value.isMap()", true),
         ("#unknownListOfTuples.value.isList()", true),
         ("#unknownListOfTuples.value.isMap()", true),
+        ("#arrayOfUnknown.isList()", true),
       )
     ) { (expression, result) =>
       evaluate[Any](expression, customCtx) shouldBe result
