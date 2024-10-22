@@ -7,13 +7,14 @@ import pl.touk.nussknacker.engine.api.component.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import scala.concurrent.duration.FiniteDuration
+import scala.reflect.{ClassTag, classTag}
 
 @silent("deprecated")
 case class FlinkCustomNodeContext(
@@ -26,8 +27,6 @@ case class FlinkCustomNodeContext(
     exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
     globalParameters: Option[NkGlobalParameters],
     validationContext: Either[ValidationContext, Map[String, ValidationContext]],
-    @deprecated("TypeInformationDetection.instance should be used instead", "1.17.0")
-    typeInformationDetection: TypeInformationDetection,
     componentUseCase: ComponentUseCase,
     nodeDeploymentData: Option[NodeDeploymentData]
 ) {
@@ -59,6 +58,12 @@ case class FlinkCustomNodeContext(
 
     def forType[T](value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
       TypeInformationDetection.instance.forValueWithContext(asOneOutputContext, value)
+
+    def forClass[T](klass: Class[_]): TypeInformation[ValueWithContext[T]] =
+      forType[T](Typed.typedClass(klass))
+
+    def forClass[T: ClassTag]: TypeInformation[ValueWithContext[T]] =
+      forType(TypeInformationDetection.instance.forClass[T])
 
     lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
   }

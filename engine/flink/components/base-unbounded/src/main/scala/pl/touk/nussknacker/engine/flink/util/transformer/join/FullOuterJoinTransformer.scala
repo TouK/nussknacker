@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataS
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
@@ -139,17 +140,17 @@ class FullOuterJoinTransformer(
 
     (inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext) => {
       val keyedStreams = inputs.map { case (id, stream) =>
+        val valueParameter: LazyParameter[AnyRef] = aggregateByByBranchId(id)
+
         stream
-          .flatMap(new StringKeyedValueMapper(context, keyByBranchId(id), aggregateByByBranchId(id)))
+          .flatMap(
+            new StringKeyedValueMapper(context, keyByBranchId(id), valueParameter),
+            keyed.typeInfo(context, valueParameter)
+          )
           .map(_.map(_.mapValue { x =>
             val sanitizedId = ContextTransformation.sanitizeBranchName(id)
             (baseElement + (sanitizedId -> Some(x))).asJava.asInstanceOf[AnyRef]
           }))
-          // FIXME: TypeInformation better map type
-          .returns(
-            context.valueWithContextInfo
-              .forBranch[StringKeyedValue[AnyRef]](id, Typed.fromDetailedType[KeyedValue[String, AnyRef]])
-          )
       }
 
       val types       = aggregateByByBranchId.mapValuesNow(_.returnType)
@@ -170,7 +171,6 @@ class FullOuterJoinTransformer(
         TypeInformationDetection.instance.forValueWithContext[AnyRef](ValidationContext(), outputType)
 
       val stream = keyedStreams
-        .map(_.asInstanceOf[DataStream[ValueWithContext[StringKeyedValue[AnyRef]]]])
         .reduce(_.connectAndMerge(_))
         .keyBy((v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
         .process(aggregatorFunction, outputTypeInfo)

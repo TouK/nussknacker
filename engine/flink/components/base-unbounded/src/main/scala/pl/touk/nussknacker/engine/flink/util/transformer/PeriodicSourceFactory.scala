@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.TimestampUtils.supportedTypeToMillis
 
 import java.time.Duration
@@ -65,11 +65,15 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
         val stream = env
           .addSource(new PeriodicFunction(period))
           .map(_ => Context(processName.value))
-          .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
-          .flatMap { (v: ValueWithContext[AnyRef], c: Collector[AnyRef]) =>
-            1.to(count).map(_ => v.value).foreach(c.collect)
-          }
-          .returns(TypeInformation.of(classOf[AnyRef]))
+          .flatMap(
+            flinkNodeContext.lazyParameterHelper.lazyMapFunction(value),
+            flinkNodeContext.valueWithContextInfo.forType[AnyRef](value.returnType)
+          )
+          .flatMap(
+            (value: ValueWithContext[AnyRef], out: Collector[AnyRef]) =>
+              1.to(count).map(_ => value.value).foreach(out.collect),
+            TypeInformationDetection.instance.forType[AnyRef](value.returnType)
+          )
 
         val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
 

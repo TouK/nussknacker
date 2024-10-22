@@ -43,6 +43,14 @@ object keyed {
     )
   }
 
+  def typeInfo[K <: AnyRef, V <: AnyRef](
+      flinkNodeContext: FlinkCustomNodeContext,
+      value: LazyParameter[V]
+  ): TypeInformation[ValueWithContext[KeyedValue[String, V]]] =
+    flinkNodeContext.valueWithContextInfo.forType(
+      KeyedValueType.info(TypeInformationDetection.instance.forType[V](value.returnType))
+    )
+
   abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag, OutputValue <: AnyRef: TypeTag]
       extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]]
       with LazyParameterInterpreterFunction {

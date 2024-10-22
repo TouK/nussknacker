@@ -18,13 +18,16 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
 
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(
-      @ParamName("Elements") elements: LazyParameter[java.util.Collection[AnyRef]],
+      @ParamName("Elements") elements: LazyParameter[util.Collection[AnyRef]],
       @OutputVariableName outputVariable: String
   ): FlinkCustomStreamTransformation with ReturningType = {
     FlinkCustomStreamTransformation(
       { (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
         stream
-          .flatMap(ctx.lazyParameterHelper.lazyMapFunction(elements))
+          .flatMap(
+            ctx.lazyParameterHelper.lazyMapFunction(elements),
+            ctx.valueWithContextInfo.forType[util.Collection[AnyRef]](elements.returnType)
+          )
           .flatMap(
             (valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
               valueWithContext.value.asScala.zipWithIndex

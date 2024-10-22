@@ -62,11 +62,6 @@ class UnionWithMemoTransformer(
               inputs: Map[String, DataStream[Context]],
               context: FlinkCustomNodeContext
           ): DataStream[ValueWithContext[AnyRef]] = {
-
-            val finalContextValidated =
-              transformContextsDefinition(valueByBranchId, variableName)(context.validationContext.toOption.get)
-            val finalContext = finalContextValidated.toOption.get
-
             val mapTypeInfo = TypeInformationDetection.instance
               .forType(
                 Typed.record(
@@ -76,16 +71,21 @@ class UnionWithMemoTransformer(
               )
               .asInstanceOf[TypeInformation[java.util.Map[String, AnyRef]]]
 
-            val processedTypeInfo =
-              TypeInformationDetection.instance.forValueWithContext(finalContext, KeyedValueType.info(mapTypeInfo))
-            val returnTypeInfo = TypeInformationDetection.instance.forValueWithContext(finalContext, mapTypeInfo)
+            val processedTypeInfo = context.valueWithContextInfo.forType(KeyedValueType.info(mapTypeInfo))
+            val returnTypeInfo    = context.valueWithContextInfo.forType(mapTypeInfo)
 
             val keyedInputStreams = inputs.toList.map { case (branchId, stream) =>
-              val keyParam   = keyByBranchId(branchId)
               val valueParam = valueByBranchId(branchId)
+
+              val valueTypeInfo   = TypeInformationDetection.instance.forType[AnyRef](valueParam.returnType)
+              val flatMapTypeInfo = context.valueWithContextInfo.forType(KeyedValueType.info(valueTypeInfo))
+
               stream
                 .map(ctx => ctx.appendIdSuffix(branchId))
-                .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
+                .flatMap(
+                  new StringKeyedValueMapper(context, keyByBranchId(branchId), valueParam),
+                  flatMapTypeInfo
+                )
                 .map(valueWithCtx =>
                   valueWithCtx
                     .map(keyedValue =>
@@ -93,7 +93,6 @@ class UnionWithMemoTransformer(
                         .mapValue(v => Collections.singletonMap(ContextTransformation.sanitizeBranchName(branchId), v))
                     )
                 )
-                .returns(processedTypeInfo)
             }
             val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
