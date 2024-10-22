@@ -29,6 +29,7 @@ import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-
 import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -159,85 +160,6 @@ export interface ScenarioParametersCombinations {
 
 export type ProcessDefinitionDataDictOption = { key: string; label: string };
 type DictOption = { id: string; label: string };
-export type ActivityTypes =
-    | "SCENARIO_CREATED"
-    | "SCENARIO_ARCHIVED"
-    | "SCENARIO_UNARCHIVED"
-    | "SCENARIO_DEPLOYED"
-    | "SCENARIO_CANCELED"
-    | "SCENARIO_MODIFIED"
-    | "SCENARIO_PAUSED"
-    | "SCENARIO_NAME_CHANGED"
-    | "COMMENT_ADDED"
-    | "ATTACHMENT_ADDED"
-    | "CHANGED_PROCESSING_MODE"
-    | "INCOMING_MIGRATION"
-    | "OUTGOING_MIGRATION"
-    | "PERFORMED_SINGLE_EXECUTION"
-    | "PERFORMED_SCHEDULED_EXECUTION"
-    | "AUTOMATIC_UPDATE"
-    | "CUSTOM_ACTION";
-
-export interface ActivityMetadata {
-    type: ActivityTypes;
-    displayableName: string;
-    icon: string;
-    supportedActions: string[];
-}
-
-export interface ActionMetadata {
-    id: "compare" | "delete_comment" | "edit_comment" | "download_attachment" | "delete_attachment";
-    displayableName: string;
-    icon: string;
-}
-
-export type ActivityAdditionalFields = { name: string; value: string };
-
-interface ActivityComment {
-    content: {
-        value: string;
-        status: "AVAILABLE" | "NOT_AVAILABLE";
-    };
-    lastModifiedBy: string;
-    lastModifiedAt: string;
-}
-
-interface ActivityAttachmentDeleteStatus {
-    status: "DELETED";
-}
-
-interface ActivityAttachmentAvailableStatus {
-    id: number;
-    status: "AVAILABLE";
-}
-
-export interface ActivityAttachment {
-    file: ActivityAttachmentDeleteStatus | ActivityAttachmentAvailableStatus;
-    filename: string;
-    lastModifiedBy: string;
-    lastModifiedAt: string;
-}
-
-export interface ActivitiesResponse {
-    activities: {
-        id: string;
-        type: ActivityTypes;
-        user: string;
-        date: string;
-        scenarioVersionId: number;
-        comment?: ActivityComment;
-        attachment?: ActivityAttachment;
-        overrideDisplayableName?: string;
-        overrideSupportedActions?: string[];
-        overrideIcon?: string;
-        additionalFields: ActivityAdditionalFields[];
-    }[];
-}
-
-export interface ActivityMetadataResponse {
-    activities: ActivityMetadata[];
-    actions: ActionMetadata[];
-}
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.

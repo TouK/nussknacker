@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "../../../http/HttpService";
+import { ActionMetadata, ActivitiesResponse, ActivityMetadata } from "./types";
 import { VariableSizeList } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { ActivitiesPanelRow } from "./ActivitiesPanelRow";
