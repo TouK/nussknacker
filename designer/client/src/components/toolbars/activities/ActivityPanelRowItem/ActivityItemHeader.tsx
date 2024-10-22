@@ -3,8 +3,6 @@ import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService, { ActionMetadata, ActivityAttachment } from "../../../../http/HttpService";
 import UrlIcon from "../../../UrlIcon";
-import { blend } from "@mui/system";
-import { getBorderColor } from "../../../../containers/theme/helpers";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../../reducers/selectors/graph";
@@ -12,6 +10,7 @@ import { useWindows } from "../../../../windowManager";
 import { displayScenarioVersion } from "../../../../actions/nk";
 import { ItemActivity } from "../ActivitiesPanel";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
+import { getHeaderColors } from "../helpers/activityItemColors";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -28,18 +27,15 @@ const StyledHeaderActionIcon = styled(UrlIcon)(({ theme }) => ({
     color: theme.palette.text.secondary,
 }));
 
-const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isActive: boolean }>(({ theme, isHighlighted, isActive }) => ({
-    display: "flex",
-    alignItems: "center",
-    padding: theme.spacing(0.5),
-    backgroundColor: isActive
-        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.2)
-        : isHighlighted
-        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.05)
-        : undefined,
-    border: (isActive || isHighlighted) && `1px solid ${getBorderColor(theme)}`,
-    borderRadius: theme.spacing(1),
-}));
+const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunning: boolean; isActiveFound: boolean }>(
+    ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
+        display: "flex",
+        alignItems: "center",
+        padding: theme.spacing(0.5, 1),
+        borderRadius: theme.spacing(1),
+        ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
+    }),
+);
 
 const HeaderActivity = ({
     activityAction,
@@ -85,7 +81,9 @@ const HeaderActivity = ({
 
 interface Props {
     activity: ItemActivity;
-    isActiveItem: boolean;
+    isRunning: boolean;
+    isActiveFound: boolean;
+    isFound: boolean;
     searchQuery: string;
 }
 
@@ -133,7 +131,7 @@ const WithOpenVersion = ({
     );
 };
 
-const ActivityItemHeader = ({ activity, isActiveItem, searchQuery }: Props) => {
+const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }: Props) => {
     const scenario = useSelector(getScenario);
     const { processVersionId } = scenario || {};
 
@@ -160,7 +158,7 @@ const ActivityItemHeader = ({ activity, isActiveItem, searchQuery }: Props) => {
     }, [activity.activities.displayableName, activity.overrideDisplayableName, activity.scenarioVersionId, openVersionEnable, searchQuery]);
 
     return (
-        <StyledActivityItemHeader isHighlighted={isHighlighted} isActive={isActiveItem}>
+        <StyledActivityItemHeader isHighlighted={isHighlighted} isRunning={isRunning} isActiveFound={isActiveFound}>
             <StyledHeaderIcon src={activity.activities.icon} id={activity.uiGeneratedId} />
             {getHeaderTitle}
             {activity.actions.map((activityAction) => (

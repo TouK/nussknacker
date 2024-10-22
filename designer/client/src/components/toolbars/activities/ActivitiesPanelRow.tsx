@@ -26,7 +26,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
         () => activities.findIndex((activeItem) => activeItem.uiType === "item" && activeItem.type === "SCENARIO_DEPLOYED"),
         [activities],
     );
-    const isActiveDeployedItem = firstDeployedIndex === index && scenarioState.status.name === "RUNNING";
+    const isRunning = firstDeployedIndex === index && scenarioState.status.name === "RUNNING";
     const isFirstDateItem = activities.findIndex((activeItem) => activeItem.uiType === "date") === index;
 
     useEffect(() => {
@@ -38,7 +38,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
     const itemToRender = useMemo(() => {
         switch (activity.uiType) {
             case "item": {
-                return <ActivityItem activity={activity} ref={rowRef} isActiveItem={isActiveDeployedItem} searchQuery={searchQuery} />;
+                return <ActivityItem activity={activity} ref={rowRef} isRunning={isRunning} searchQuery={searchQuery} />;
             }
             case "date": {
                 return <DateItem activity={activity} ref={rowRef} isFirstDateItem={isFirstDateItem} />;
@@ -64,7 +64,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return null;
             }
         }
-    }, [activity, handleHideRows, handleShowRows, isActiveDeployedItem, isFirstDateItem, searchQuery, t]);
+    }, [activity, handleHideRows, handleShowRows, isRunning, isFirstDateItem, searchQuery, t]);
 
     return <div style={style}>{itemToRender}</div>;
 });

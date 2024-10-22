@@ -5,36 +5,25 @@ import { formatDateTime } from "../../../../common/DateUtils";
 import CommentContent from "../../../comment/CommentContent";
 import { createSelector } from "reselect";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
-import { blend } from "@mui/system";
-import { blendLighten } from "../../../../containers/theme/helpers";
 import { ItemActivity } from "../ActivitiesPanel";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
 import { ActivityTypes } from "../../../../http/HttpService";
+import { getItemColors } from "../helpers/activityItemColors";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
-    padding: theme.spacing(0.5),
+    padding: theme.spacing(0.5, 1.25),
 }));
 
 const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: boolean }>(({ theme, isActiveFound, isFound }) => ({
-    padding: theme.spacing(0.5),
-    border: isActiveFound
-        ? `0.5px solid ${blendLighten(theme.palette.primary.main, 0.7)}`
-        : isFound
-        ? `0.5px solid ${blendLighten(theme.palette.primary.main, 0.6)}`
-        : "none",
-    borderRadius: "4px",
-    backgroundColor: isActiveFound
-        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.27)
-        : isFound
-        ? blend(theme.palette.background.paper, theme.palette.primary.main, 0.08)
-        : "none",
+    ...getItemColors(theme, isActiveFound, isFound),
+    borderRadius: theme.spacing(1),
 }));
 
 const StyledActivityBody = styled("div")(({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    margin: theme.spacing(0.5),
+    padding: theme.spacing(0.5, 0.5),
     gap: theme.spacing(0.5),
 }));
 
@@ -42,7 +31,7 @@ const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSe
 
 export const ActivityItem = forwardRef(
     (
-        { activity, isActiveItem, searchQuery }: { activity: ItemActivity; isActiveItem: boolean; searchQuery: string },
+        { activity, isRunning, searchQuery }: { activity: ItemActivity; isRunning: boolean; searchQuery: string },
         ref: ForwardedRef<HTMLDivElement>,
     ) => {
         const commentSettings = useSelector(getCommentSettings);
@@ -61,7 +50,13 @@ export const ActivityItem = forwardRef(
         return (
             <StyledActivityRoot ref={ref}>
                 <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
-                    <ActivityItemHeader isActiveItem={isActiveItem} searchQuery={searchQuery} activity={activity} />
+                    <ActivityItemHeader
+                        isRunning={isRunning}
+                        searchQuery={searchQuery}
+                        activity={activity}
+                        isActiveFound={activity.isActiveFound}
+                        isFound={activity.isFound}
+                    />
                     <StyledActivityBody>
                         <Box display={"flex"} flexWrap={"wrap"}>
                             <Box display={"flex"} alignItems={"center"} justifyContent={"flex-start"} flexBasis={"100%"}>
