@@ -6,7 +6,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  ModifyActivityError,
+  ModifyCommentError
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 trait ScenarioActivityRepository {
@@ -17,7 +20,12 @@ trait ScenarioActivityRepository {
 
   def addActivity(
       scenarioActivity: ScenarioActivity,
-  )(implicit user: LoggedUser): DB[ScenarioActivityId]
+  ): DB[ScenarioActivityId]
+
+  def modifyActivity(
+      activityId: ScenarioActivityId,
+      modification: ScenarioActivity => ScenarioActivity,
+  ): DB[Either[ModifyActivityError, Unit]]
 
   def addComment(
       scenarioId: ProcessId,
@@ -76,6 +84,13 @@ object ScenarioActivityRepository {
     case object ActivityDoesNotExist  extends ModifyCommentError
     case object CommentDoesNotExist   extends ModifyCommentError
     case object CouldNotModifyComment extends ModifyCommentError
+  }
+
+  sealed trait ModifyActivityError
+
+  object ModifyActivityError {
+    case object ActivityDoesNotExist   extends ModifyActivityError
+    case object CouldNotModifyActivity extends ModifyActivityError
   }
 
 }

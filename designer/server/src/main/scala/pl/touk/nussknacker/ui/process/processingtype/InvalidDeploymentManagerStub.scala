@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -44,6 +45,9 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
   override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+  override def scenarioActivityHandling: ScenarioActivityHandling =
+    AllScenarioActivitiesStoredByNussknacker
 
   override def close(): Unit = ()
 }

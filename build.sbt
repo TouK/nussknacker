@@ -344,8 +344,8 @@ val cronParserV               = "9.1.6"  // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.1.8"
 val sttpV                     = "3.9.8"
-val tapirV                    = "1.10.5"
-val openapiCirceYamlV         = "0.9.0"
+val tapirV                    = "1.11.7"
+val openapiCirceYamlV         = "0.11.3"
 //we use legacy version because this one supports Scala 2.12
 val monocleV                  = "2.1.0"
 val jmxPrometheusJavaagentV   = "0.20.0"
@@ -892,7 +892,8 @@ lazy val kafkaUtils = (project in utils("kafka-utils"))
     name := "nussknacker-kafka-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" % "kafka-clients" % kafkaV
+        "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "org.scalatest"   %% "scalatest"     % scalaTestV % Test,
       )
     }
     // Depends on componentsApi because of dependency to NuExceptionInfo and NonTransientException -
@@ -1125,7 +1126,7 @@ lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(
     name := "nussknacker-default-helpers"
   )
-  .dependsOn(mathUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
+  .dependsOn(mathUtils, commonUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 
 lazy val testUtils = (project in utils("test-utils"))
   .settings(commonSettings)
@@ -1173,7 +1174,9 @@ lazy val jsonUtils = (project in utils("json-utils"))
         ExclusionRule(organization = "javax.mail"),
         ExclusionRule(organization = "javax.validation"),
         ExclusionRule(organization = "jakarta.activation"),
-        ExclusionRule(organization = "jakarta.validation")
+        ExclusionRule(organization = "jakarta.validation"),
+        // due to swagger-parser duplicated files with different implementation https://github.com/swagger-api/swagger-parser/issues/2126
+        ExclusionRule("io.swagger", "swagger-parser-safe-url-resolver")
       ),
       "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
     )
@@ -1688,7 +1691,7 @@ lazy val httpUtils = (project in utils("http-utils"))
   )
   .dependsOn(componentsApi % Provided, testUtils % Test)
 
-val swaggerParserV      = "2.1.15"
+val swaggerParserV      = "2.1.22"
 val swaggerIntegrationV = "2.2.10"
 
 lazy val openapiComponents = (project in component("openapi"))

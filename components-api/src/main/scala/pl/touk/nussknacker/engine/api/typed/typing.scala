@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
@@ -21,6 +21,7 @@ object typing {
 
   object TypingResult {
     implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
+    implicit val decoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown) // TODO?
   }
 
   // TODO: Rename to Typed, maybe NuType?
@@ -50,12 +51,6 @@ object typing {
     override def withoutValue: SingleTypingResult
 
     def runtimeObjType: TypedClass
-
-    // This type should be used only for: type hints, suggester and validation
-    def typeHintsObjType: TypedClass =
-      if (runtimeObjType.klass.isArray) TypedClass(classOf[java.util.List[_]], runtimeObjType.params)
-      else runtimeObjType
-
   }
 
   object TypedObjectTypingResult {
@@ -214,7 +209,7 @@ object typing {
     override def withoutValue: TypedClass = this
 
     override def display: String = {
-      val className = ReflectUtils.simpleNameWithoutSuffix(typeHintsObjType.klass)
+      val className = if (klass.isArray) "List" else ReflectUtils.simpleNameWithoutSuffix(runtimeObjType.klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else className
     }

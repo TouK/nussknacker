@@ -545,6 +545,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
+      NoOpScenarioActivityManager,
       ExecutionContext.global,
       ActorSystem(getClass.getSimpleName),
       sttpBackend

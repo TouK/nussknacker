@@ -132,6 +132,7 @@ class DbScenarioActionRepository(
       actionName: ScenarioActionName,
       processVersion: Option[VersionId],
       performedAt: Instant,
+      comment: Option[Comment],
       failureMessage: String,
       buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] = {
@@ -152,7 +153,7 @@ class DbScenarioActionRepository(
             performedAt,
             Some(performedAt),
             failureMessageOpt,
-            None,
+            comment,
             buildInfoProcessingType
           )
         }
@@ -203,12 +204,10 @@ class DbScenarioActionRepository(
         None,
         comment,
         buildInfoProcessingType
-      ).map(toFinishedProcessAction).map {
-        case Right(processAction) =>
-          processAction
-        case Left(error) =>
-          throw new IllegalArgumentException(s"Could not insert ProcessAction as ScenarioActivity [$error")
-      }
+      ).map(
+        toFinishedProcessAction(_)
+          .getOrElse(throw new IllegalArgumentException(s"Could not insert ProcessAction as ScenarioActivity"))
+      )
     )
   }
 
@@ -341,7 +340,7 @@ class DbScenarioActionRepository(
         .sortBy(_._1.performedAt)
         .result
         .map(_.flatMap { case (data, name) =>
-          toFinishedProcessAction(data).map((_, name)).toOption
+          toFinishedProcessAction(data).map((_, name))
         }.toList)
     )
   }
@@ -375,7 +374,7 @@ class DbScenarioActionRepository(
 
     run(
       finalQuery.result.map(_.flatMap { case (scenarioId, action) =>
-        toFinishedProcessAction(action).map((ProcessId(scenarioId.value), _)).toOption
+        toFinishedProcessAction(action).map((ProcessId(scenarioId.value), _))
       }.toMap)
     )
   }
@@ -392,7 +391,7 @@ class DbScenarioActionRepository(
         )
         .result
         .headOption
-        .map(_.flatMap(toFinishedProcessAction(_).toOption))
+        .map(_.flatMap(toFinishedProcessAction))
     )
 
   override def getFinishedProcessActions(
@@ -407,12 +406,14 @@ class DbScenarioActionRepository(
         .map(actionNames => query.filter { entity => entity.activityType.inSet(activityTypes(actionNames)) })
         .getOrElse(query)
         .result
-        .map(_.toList.flatMap(toFinishedProcessAction(_).toOption))
+        .map(_.toList.flatMap(toFinishedProcessAction))
     )
   }
 
-  private def toFinishedProcessAction(activityEntity: ScenarioActivityEntityData): Either[String, ProcessAction] = {
-    for {
+  private def toFinishedProcessAction(
+      activityEntity: ScenarioActivityEntityData
+  ): Option[ProcessAction] = actionName(activityEntity.activityType).flatMap { actionName =>
+    (for {
       processVersionId <- activityEntity.scenarioVersion
         .map(_.value)
         .map(VersionId.apply)
@@ -420,8 +421,6 @@ class DbScenarioActionRepository(
       performedAt <- activityEntity.finishedAt
         .map(_.toInstant)
         .toRight(s"PerformedAt not available for finished action: $activityEntity")
-      actionName <- actionName(activityEntity.activityType)
-        .toRight(s"ActionName not available for finished action: $activityEntity")
       state <- activityEntity.state
         .toRight(s"State not available for finished action: $activityEntity")
     } yield ProcessAction(
@@ -437,10 +436,10 @@ class DbScenarioActionRepository(
       commentId = activityEntity.comment.map(_ => activityEntity.id),
       comment = activityEntity.comment.map(_.value),
       buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
-    )
-  }.left.map { error =>
-    logger.error(s"Could not interpret ScenarioActivity stored in the db as ProcessAction: [$error]")
-    error
+    )).left.map { error =>
+      logger.error(s"Could not interpret ScenarioActivity entity [$activityEntity] as ProcessAction: [$error]")
+      error
+    }.toOption
   }
 
   private def activityId(actionId: ProcessActionId) =

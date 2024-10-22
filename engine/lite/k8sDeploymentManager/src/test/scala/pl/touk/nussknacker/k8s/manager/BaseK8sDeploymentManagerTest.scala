@@ -60,6 +60,7 @@ class BaseK8sDeploymentManagerTest
     val dependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
+      NoOpScenarioActivityManager,
       system.dispatcher,
       system,
       backend

@@ -12,6 +12,103 @@
       "refClazzName": "[Ljava.lang.Object;"
     },
     "methods": {
+      "contains": [
+        {
+          "name": "contains",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "containsAll": [
+        {
+          "name": "containsAll",
+          "signature": {
+            "noVarArgs": [
+              {
+                "name": "arg0",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.Collection"
+                }
+              }
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "empty": [
+        {
+          "name": "empty",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "get": [
+        {
+          "name": "get",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "indexOf": [
+        {
+          "name": "indexOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "isEmpty": [
+        {
+          "name": "isEmpty",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "lastIndexOf": [
+        {
+          "name": "lastIndexOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "size": [
+        {
+          "name": "size",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -13125,6 +13222,60 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.base64$"},
+    "methods": {
+      "decode": [
+        {
+          "description": "Decode Base64 value to String",
+          "name": "decode",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "encode": [
+        {
+          "description": "Encode String value to Base64",
+          "name": "encode",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "urlSafeDecode": [
+        {
+          "description": "Decode URL-safe Base64 value to String",
+          "name": "urlSafeDecode",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "urlSafeEncode": [
+        {
+          "description": "Encode String value to URL-safe Base64",
+          "name": "urlSafeEncode",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.collection$"},
     "methods": {
       "concat": [
@@ -14107,6 +14258,42 @@
               {"name": "value", "refClazz": {"type": "Unknown"}}
             ],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toJson": [
+        {
+          "description": "Convert String value to JSON",
+          "name": "toJson",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ],
+      "toJsonOrNull": [
+        {
+          "description": "Convert String value to JSON or null in case of failure",
+          "name": "toJsonOrNull",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ],
+      "toJsonString": [
+        {
+          "description": "Convert JSON to String",
+          "name": "toJsonString",
+          "signature": {
+            "noVarArgs": [
+              {"name": "value", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],

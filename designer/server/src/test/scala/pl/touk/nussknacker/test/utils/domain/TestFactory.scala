@@ -9,6 +9,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.{
+  NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
@@ -131,6 +132,7 @@ object TestFactory {
     DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
+      NoOpScenarioActivityManager,
       actorSystem.dispatcher,
       actorSystem,
       SttpBackendStub.asynchronousFuture
