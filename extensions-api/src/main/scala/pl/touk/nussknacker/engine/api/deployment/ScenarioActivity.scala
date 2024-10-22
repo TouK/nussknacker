@@ -44,13 +44,13 @@ sealed trait ScenarioComment {
 
 object ScenarioComment {
 
-  final case class Available(
+  final case class WithContent(
       comment: String,
       lastModifiedByUserName: UserName,
       lastModifiedAt: Instant,
   ) extends ScenarioComment
 
-  final case class NotAvailable(
+  final case class WithoutContent(
       lastModifiedByUserName: UserName,
       lastModifiedAt: Instant,
   ) extends ScenarioComment

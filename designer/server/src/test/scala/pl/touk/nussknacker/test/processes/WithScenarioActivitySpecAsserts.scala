@@ -2,7 +2,6 @@ package pl.touk.nussknacker.test.processes
 
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.test.NuRestAssureMatchers
 import pl.touk.nussknacker.test.base.it.NuItTest
@@ -95,14 +94,14 @@ trait WithScenarioActivitySpecAsserts
       )
   }
 
-  def verifyAttachmentAddedActivityExists(
+  def verifyAttachmentAddedActivityExistsAndReturnFileId(
       user: String,
       scenarioName: String,
       fileIdPresent: Boolean,
       filename: String,
       fileStatus: String,
       overrideDisplayableName: String,
-  ): ValidatableResponse = {
+  ): Option[Long] = {
     val fileJson = if (fileIdPresent) {
       s"""
         |"file": {
@@ -117,7 +116,7 @@ trait WithScenarioActivitySpecAsserts
          |}
          |""".stripMargin
     }
-    given()
+    val response = given()
       .when()
       .basicAuthAllPermUser()
       .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity/activities")
@@ -156,6 +155,12 @@ trait WithScenarioActivitySpecAsserts
              |""".stripMargin
         )
       )
+    if (fileIdPresent) {
+      response.extractString("activities[1].attachment.file.id").toLongOption
+    } else {
+      None
+    }
+
   }
 
   def verifyEmptyCommentsAndAttachments(scenarioName: String): Unit = {

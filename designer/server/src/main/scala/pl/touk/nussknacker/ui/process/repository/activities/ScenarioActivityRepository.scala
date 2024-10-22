@@ -95,8 +95,6 @@ object ScenarioActivityRepository {
   sealed trait DeleteAttachmentError
 
   object DeleteAttachmentError {
-    case object ActivityDoesNotExist     extends DeleteAttachmentError
-    case object AttachmentDoesNotExist   extends DeleteAttachmentError
     case object CouldNotDeleteAttachment extends DeleteAttachmentError
   }
 

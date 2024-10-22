@@ -241,24 +241,23 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
 
-      val attachmentId = verifyAttachmentAddedActivityExists(
+      val attachmentId = verifyAttachmentAddedActivityExistsAndReturnFileId(
         user = "allpermuser",
         scenarioName = exampleScenarioName,
         fileIdPresent = true,
         filename = fileName,
         fileStatus = "AVAILABLE",
         overrideDisplayableName = fileName
-      ).extractString("activities[1].attachment.file.id")
+      ).getOrElse(throw new Exception("Missing attachmentId"))
 
       given()
         .when()
         .basicAuthAllPermUser()
-        .streamBody(fileContent = fileContent, fileName = fileName)
         .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/$attachmentId")
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyAttachmentAddedActivityExists(
+          verifyAttachmentAddedActivityExistsAndReturnFileId(
             user = "allpermuser",
             scenarioName = exampleScenarioName,
             fileIdPresent = false,
@@ -404,7 +403,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 date = clock.instant(),
                 scenarioVersionId = None,
                 actionName = "Custom action handled by deployment manager",
-                comment = ScenarioComment.Available(
+                comment = ScenarioComment.WithContent(
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
@@ -418,7 +417,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 date = clock.instant(),
                 scenarioVersionId = None,
                 actionName = "Custom action handled by deployment manager",
-                comment = ScenarioComment.Available(
+                comment = ScenarioComment.WithContent(
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
@@ -482,7 +481,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
-                comment = ScenarioComment.Available(
+                comment = ScenarioComment.WithContent(
                   comment = "Immediate execution",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()

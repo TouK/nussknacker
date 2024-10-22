@@ -269,9 +269,9 @@ class ScenarioActivityApiHttpService(
 
   private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
     val content = scenarioComment match {
-      case ScenarioComment.Available(comment, _, _) if comment.nonEmpty =>
+      case ScenarioComment.WithContent(comment, _, _) =>
         Dtos.ScenarioActivityCommentContent.Available(comment)
-      case ScenarioComment.NotAvailable(_, _) | ScenarioComment.Available(_, _, _) =>
+      case ScenarioComment.WithoutContent(_, _) | ScenarioComment.WithContent(_, _, _) =>
         Dtos.ScenarioActivityCommentContent.NotAvailable
     }
     Dtos.ScenarioActivityComment(
