@@ -10,6 +10,7 @@ import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
 import { ActivityTypes } from "../types";
 import { getItemColors } from "../helpers/activityItemColors";
+import { useTranslation } from "react-i18next";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
     padding: theme.spacing(0.5, 1.25),
@@ -34,6 +35,7 @@ export const ActivityItem = forwardRef(
         { activity, isRunning, searchQuery }: { activity: ItemActivity; isRunning: boolean; searchQuery: string },
         ref: ForwardedRef<HTMLDivElement>,
     ) => {
+        const { t } = useTranslation();
         const commentSettings = useSelector(getCommentSettings);
 
         const actionsWithVersionInfo: ActivityTypes[] = [
@@ -45,7 +47,9 @@ export const ActivityItem = forwardRef(
         ];
 
         const version =
-            activity.scenarioVersionId && actionsWithVersionInfo.includes(activity.type) && `Version: ${activity.scenarioVersionId}`;
+            activity.scenarioVersionId &&
+            actionsWithVersionInfo.includes(activity.type) &&
+            t("activityItem.version", "Version: {{scenarioVersionId}}", { scenarioVersionId: activity.scenarioVersionId });
 
         return (
             <StyledActivityRoot ref={ref}>
@@ -87,6 +91,15 @@ export const ActivityItem = forwardRef(
                                 variant={"overline"}
                             />
                         )}
+
+                        {activity?.attachment?.file.status === "DELETED" && (
+                            <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
+                                {t("activityItem.attachmentRemoved", "File ‘{{filename}}’ removed", {
+                                    filename: activity.attachment.filename,
+                                })}
+                            </Typography>
+                        )}
+
                         {activity.additionalFields.map((additionalField, index) => {
                             const additionalFieldText = `${additionalField.name}: ${additionalField.value}`;
 

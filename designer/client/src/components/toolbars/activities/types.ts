@@ -32,7 +32,7 @@ export interface ActionMetadata {
 
 export type ActivityAdditionalFields = { name: string; value: string };
 
-interface ActivityComment {
+export interface ActivityComment {
     content: {
         value: string;
         status: "AVAILABLE" | "DELETED";

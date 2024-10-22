@@ -404,7 +404,7 @@ class HttpService {
         }
     }
 
-    downloadAttachment(processName: ProcessName, attachmentId, fileName: string) {
+    downloadAttachment(processName: ProcessName, attachmentId: number, fileName: string) {
         return api
             .get(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`, {
                 responseType: "blob",
@@ -412,6 +412,14 @@ class HttpService {
             .then((response) => FileSaver.saveAs(response.data, fileName))
             .catch((error) =>
                 this.#addError(i18next.t("notification.error.failedToDownloadAttachment", "Failed to download attachment"), error),
+            );
+    }
+
+    deleteAttachment(processName: ProcessName, attachmentId: number) {
+        return api
+            .delete(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`)
+            .catch((error) =>
+                this.#addError(i18next.t("notification.error.failedToDeleteAttachment", "Failed to delete attachment"), error),
             );
     }
 

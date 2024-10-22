@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService from "../../../../http/HttpService";
-import { ActionMetadata, ActivityAttachment } from "../types";
+import { ActionMetadata, ActivityAttachment, ActivityComment } from "../types";
 import UrlIcon from "../../../UrlIcon";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,12 +12,19 @@ import { displayScenarioVersion } from "../../../../actions/nk";
 import { ItemActivity } from "../ActivitiesPanel";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
 import { getHeaderColors } from "../helpers/activityItemColors";
+import { useTranslation } from "react-i18next";
+import * as DialogMessages from "../../../../common/DialogMessages";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
     height: "16px",
     marginRight: theme.spacing(1),
     color: theme.palette.primary.main,
+}));
+
+const StyledHeaderActionRoot = styled("div")(() => ({
+    display: "flex",
+    marginLeft: "auto",
 }));
 
 const StyledHeaderActionIcon = styled(UrlIcon)(({ theme }) => ({
@@ -32,7 +39,7 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunni
     ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
         display: "flex",
         alignItems: "center",
-        padding: theme.spacing(0.5, 0.75),
+        padding: theme.spacing(0.5, 0, 0.5, 0.75),
         borderRadius: theme.spacing(1),
         ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
     }),
@@ -46,10 +53,12 @@ const HeaderActivity = ({
     activityAction: ActionMetadata;
     scenarioVersionId: number;
     activityAttachment: ActivityAttachment;
+    activityComment: ActivityComment;
 }) => {
-    const { open } = useWindows();
+    const { open, confirm } = useWindows();
     const processName = useSelector(getProcessName);
     const currentScenarioVersionId = useSelector(getProcessVersionId);
+    const { t } = useTranslation();
 
     switch (activityAction.id) {
         case "compare": {
@@ -68,12 +77,44 @@ const HeaderActivity = ({
             );
         }
         case "download_attachment": {
-            const attachmentId = activityAttachment.file.status === "AVAILABLE" && activityAttachment.file.id;
+            const attachmentStatus = activityAttachment.file.status;
+
+            if (attachmentStatus === "DELETED") {
+                return null;
+            }
+
+            const attachmentId = activityAttachment.file.id;
             const attachmentName = activityAttachment.filename;
 
             const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId, attachmentName);
             return <StyledHeaderActionIcon onClick={handleDownloadAttachment} key={attachmentId} src={activityAction.icon} />;
         }
+        case "delete_attachment": {
+            const attachmentStatus = activityAttachment.file.status;
+
+            if (attachmentStatus === "DELETED") {
+                return null;
+            }
+
+            const attachmentId = activityAttachment.file.id;
+
+            return (
+                <StyledHeaderActionIcon
+                    src={activityAction.icon}
+                    onClick={() =>
+                        confirm({
+                            text: DialogMessages.deleteAttachment(activityAttachment.filename),
+                            onConfirmCallback: (confirmed) => {
+                                confirmed && HttpService.deleteAttachment(processName, attachmentId);
+                            },
+                            confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
+                            denyText: t("panels.actions.process-unarchive.no", "No"),
+                        })
+                    }
+                />
+            );
+        }
+
         default: {
             return null;
         }
@@ -171,14 +212,17 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
         <StyledActivityItemHeader isHighlighted={isHighlighted} isRunning={isRunning} isActiveFound={isActiveFound}>
             <StyledHeaderIcon src={activity.activities.icon} id={activity.uiGeneratedId} />
             {getHeaderTitle}
-            {activity.actions.map((activityAction) => (
-                <HeaderActivity
-                    key={activityAction.id}
-                    activityAction={activityAction}
-                    scenarioVersionId={activity.scenarioVersionId}
-                    activityAttachment={activity.attachment}
-                />
-            ))}
+            <StyledHeaderActionRoot>
+                {activity.actions.map((activityAction) => (
+                    <HeaderActivity
+                        key={activityAction.id}
+                        activityAction={activityAction}
+                        scenarioVersionId={activity.scenarioVersionId}
+                        activityAttachment={activity.attachment}
+                        activityComment={activity.comment}
+                    />
+                ))}
+            </StyledHeaderActionRoot>
         </StyledActivityItemHeader>
     );
 };
