@@ -39,8 +39,10 @@ class ExtensionMethodsSpec extends AnyFunSuite with Matchers {
         "canCastTo",
         "castTo",
         "castToOrNull",
+        "isMap",
         "toMap",
         "toMapOrNull",
+        "isList",
         "toList",
         "toListOrNull"
       ),

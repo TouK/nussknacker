@@ -242,8 +242,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
   }
 
-  private def evaluate[T: TypeTag](expr: String): T =
-    parse[T](expr = expr, context = ctx).validExpression.evaluateSync[T](ctx)
+  private def evaluate[T: TypeTag](expr: String, context: Context = ctx): T =
+    parse[T](expr = expr, context = context).validExpression.evaluateSync[T](context)
 
   test("parsing first selection on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").validExpression
@@ -1529,33 +1529,34 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       result
     }
     val mapWithDifferentValueTypes = Map("foo" -> "bar", "baz" -> 1).asJava
+    val customCtx = ctx
+      .withVariable("stringMap", stringMap)
+      .withVariable("mapWithDifferentValueTypes", mapWithDifferentValueTypes)
+      .withVariable("nullableMap", nullableMap)
 
     forAll(
       Table(
-        ("expression", "ctx", "expectedType", "expectedResult"),
+        ("expression", "expectedType", "expectedResult"),
         (
-          "#mapVal.![{key: #this.key + '_k', value: #this.value + '_v'}].toMap()",
-          ctx.withVariable("mapVal", stringMap),
+          "#stringMap.![{key: #this.key + '_k', value: #this.value + '_v'}].toMap()",
           mapStringStringType,
           Map("foo_k" -> "bar_v", "baz_k" -> "qux_v").asJava
         ),
         (
-          "#mapVal.![{key: #this.key, value: #this.value}].toMap()",
-          ctx.withVariable("mapVal", mapWithDifferentValueTypes),
+          "#mapWithDifferentValueTypes.![{key: #this.key, value: #this.value}].toMap()",
           mapStringUnknownType,
           mapWithDifferentValueTypes
         ),
         (
-          "#mapVal.![{key: #this.key, value: #this.value}].toMap()",
-          ctx.withVariable("mapVal", nullableMap),
+          "#nullableMap.![{key: #this.key, value: #this.value}].toMap()",
           mapStringStringType,
           nullableMap
         )
       )
-    ) { (expression, ctx, expectedType, expectedResult) =>
-      val parsed = parse[Any](expr = expression, context = ctx).validValue
+    ) { (expression, expectedType, expectedResult) =>
+      val parsed = parse[Any](expr = expression, context = customCtx).validValue
       parsed.returnType.withoutValue shouldBe expectedType
-      parsed.expression.evaluateSync[Any](ctx) shouldBe expectedResult
+      parsed.expression.evaluateSync[Any](customCtx) shouldBe expectedResult
     }
   }
 
@@ -1565,25 +1566,62 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should convert unknown to a appropriate type") {
-    val map         = Map("a" -> "b").asJava
-    val list        = List("a").asJava
-    val mapTyping   = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
-    val listTyping  = Typed.genericTypeClass[JList[_]](List(Unknown))
-    val mapContext  = ctx.withVariable("unknownMap", ContainerOfUnknown(map))
-    val listContext = ctx.withVariable("unknownList", ContainerOfUnknown(list))
+  test("should convert unknown to a given type") {
+    val mapTyping       = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    val listTyping      = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val map             = Map("a" -> "b").asJava
+    val emptyMap        = Map().asJava
+    val list            = List("a").asJava
+    val listOfTuples    = List(Map("key" -> "a", "value" -> "b").asJava).asJava
+    val emptyList       = List().asJava
+    val emptyTuplesList = List(Map().asJava).asJava
+    val customContext = ctx
+      .withVariable("unknownMap", ContainerOfUnknown(map))
+      .withVariable("unknownList", ContainerOfUnknown(list))
+      .withVariable("unknownListOfTuples", ContainerOfUnknown(listOfTuples))
+      .withVariable("unknownEmptyList", ContainerOfUnknown(emptyList))
+      .withVariable("unknownEmptyTuplesList", ContainerOfUnknown(emptyTuplesList))
     forAll(
       Table(
-        ("expression", "ctx", "expectedType", "expectedResult"),
-        ("#unknownMap.value.toMap()", mapContext, mapTyping, map),
-        ("#unknownMap.value.toMapOrNull()", mapContext, mapTyping, map),
-        ("#unknownList.value.toList()", listContext, listTyping, list),
-        ("#unknownList.value.toListOrNull()", listContext, listTyping, list),
+        ("expression", "expectedType", "expectedResult"),
+        ("#unknownMap.value.toMap()", mapTyping, map),
+        ("#unknownMap.value.toMapOrNull()", mapTyping, map),
+        ("#unknownList.value.toList()", listTyping, list),
+        ("#unknownList.value.toListOrNull()", listTyping, list),
+        ("#unknownListOfTuples.value.toMap()", mapTyping, map),
+        ("#unknownListOfTuples.value.toMapOrNull()", mapTyping, map),
+        ("#unknownEmptyList.value.toMap()", mapTyping, emptyMap),
+        ("#unknownEmptyList.value.toList()", listTyping, emptyList),
+        ("#unknownEmptyTuplesList.value.toMapOrNull()", mapTyping, null),
+        ("#unknownEmptyTuplesList.value.toList()", listTyping, emptyTuplesList),
       )
-    ) { (expression, ctx, expectedType, expectedResult) =>
-      val parsed = parse[Any](expr = expression, context = ctx).validValue
+    ) { (expression, expectedType, expectedResult) =>
+      val parsed = parse[Any](expr = expression, context = customContext).validValue
       parsed.returnType.withoutValue shouldBe expectedType
-      parsed.expression.evaluateSync[Any](ctx) shouldBe expectedResult
+      parsed.expression.evaluateSync[Any](customContext) shouldBe expectedResult
+    }
+  }
+
+  test("should check if unknown can be converted to a given type") {
+    val map        = Map("a" -> "b").asJava
+    val list       = List("a").asJava
+    val tuplesList = List(Map("key" -> "a", "value" -> "b").asJava).asJava
+    val customCtx = ctx
+      .withVariable("unknownList", ContainerOfUnknown(list))
+      .withVariable("unknownListOfTuples", ContainerOfUnknown(tuplesList))
+      .withVariable("unknownMap", ContainerOfUnknown(map))
+    forAll(
+      Table(
+        ("expression", "result"),
+        ("#unknownList.value.isList()", true),
+        ("#unknownList.value.isMap()", false),
+        ("#unknownMap.value.isList()", false),
+        ("#unknownMap.value.isMap()", true),
+        ("#unknownListOfTuples.value.isList()", true),
+        ("#unknownListOfTuples.value.isMap()", true),
+      )
+    ) { (expression, result) =>
+      evaluate[Any](expression, customCtx) shouldBe result
     }
   }
 

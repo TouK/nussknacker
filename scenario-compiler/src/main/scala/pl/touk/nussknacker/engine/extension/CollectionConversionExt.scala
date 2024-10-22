@@ -4,20 +4,29 @@ import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
-import pl.touk.nussknacker.engine.extension.CollectionConversionExt.{key, value}
+import pl.touk.nussknacker.engine.definition.clazz.{
+  ClassDefinitionSet,
+  FunctionalMethodDefinition,
+  MethodDefinition,
+  StaticMethodDefinition
+}
+import pl.touk.nussknacker.engine.extension.CollectionConversionExt.{collectionClass, key, keyAndValueKeyes, value}
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
-import java.util.{ArrayList => JArrayList, Collection => JCollection, HashMap => JHashMap, List => JList, Map => JMap}
+import java.util.{
+  ArrayList => JArrayList,
+  Collection => JCollection,
+  HashMap => JHashMap,
+  List => JList,
+  Map => JMap,
+  Set => JSet
+}
 
 class CollectionConversionExt(target: Any) {
 
-  def toList[T](): JList[T] = convertToList[T] match {
-    case Right(value) => value
-    case Left(ex)     => throw ex
-  }
+  def isList(): Boolean = target.getClass.isAOrChildOf(collectionClass)
 
-  def toMap[K, V](): JMap[K, V] = convertToMap[K, V] match {
+  def toList[T](): JList[T] = convertToList[T] match {
     case Right(value) => value
     case Left(ex)     => throw ex
   }
@@ -25,6 +34,18 @@ class CollectionConversionExt(target: Any) {
   def toListOrNull[T](): JList[T] = convertToList[T] match {
     case Right(value) => value
     case Left(_)      => null
+  }
+
+  def isMap(): Boolean =
+    target match {
+      case c: JCollection[_] => canConvertToMap(c)
+      case _: JMap[_, _]     => true
+      case _                 => false
+    }
+
+  def toMap[K, V](): JMap[K, V] = convertToMap[K, V] match {
+    case Right(value) => value
+    case Left(ex)     => throw ex
   }
 
   def toMapOrNull[K, V](): JMap[K, V] = convertToMap[K, V] match {
@@ -40,16 +61,22 @@ class CollectionConversionExt(target: Any) {
     }
   }
 
-  private def convertToMap[K, V]: Either[Throwable, JMap[K, V]] = {
+  private def convertToMap[K, V]: Either[Throwable, JMap[K, V]] =
     target match {
-      case c: JCollection[JMap[String, Any] @unchecked] =>
+      case c: JCollection[JMap[_, _] @unchecked] if canConvertToMap(c) =>
         val map = new JHashMap[K, V]()
         c.forEach(e => map.put(e.get(key).asInstanceOf[K], e.get(value).asInstanceOf[V]))
         Right(map)
       case m: JMap[K, V] @unchecked => Right(m)
       case x                        => Left(new IllegalArgumentException(s"Cannot convert $x to a Map"))
     }
-  }
+
+  private def canConvertToMap(c: JCollection[_]): Boolean = c.isEmpty || c
+    .stream()
+    .allMatch {
+      case m: JMap[_, _] if !m.isEmpty => m.keySet().containsAll(keyAndValueKeyes)
+      case _                           => false
+    }
 
 }
 
@@ -57,6 +84,7 @@ object CollectionConversionExt extends ExtensionMethodsHandler {
 
   private val collectionClass = classOf[JCollection[_]]
   private val unknownClass    = classOf[Object]
+  private val booleanTyping   = Typed.typedClass[Boolean]
 
   private val toMapDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toMapTypeFunction(invocationTarget),
@@ -80,15 +108,28 @@ object CollectionConversionExt extends ExtensionMethodsHandler {
     description = Option("Convert to a list or throw exception in case of failure")
   )
 
+  private val isMethodDefinition = StaticMethodDefinition(
+    signature = MethodTypeInfo(
+      noVarArgs = Nil,
+      varArg = None,
+      result = booleanTyping
+    ),
+    name = "",
+    description = None
+  )
+
   private val definitions = List(
+    isMethodDefinition.copy(name = "isMap", description = Some("Check whether can be convert to a map")),
     toMapDefinition,
     toMapDefinition.copy(name = "toMapOrNull", description = Some("Convert to a map or null in case of failure")),
+    isMethodDefinition.copy(name = "isList", description = Some("Check whether can be convert to a list")),
     toListDefinition,
     toListDefinition.copy(name = "toListOrNull", description = Some("Convert to a list or null in case of failure")),
   ).groupBy(_.name)
 
-  private val key   = "key"
-  private val value = "value"
+  private val key              = "key"
+  private val value            = "value"
+  private val keyAndValueKeyes = JSet.of(key, value)
 
   override type ExtensionMethodInvocationTarget = CollectionConversionExt
   override val invocationTargetClass: Class[CollectionConversionExt] = classOf[CollectionConversionExt]
