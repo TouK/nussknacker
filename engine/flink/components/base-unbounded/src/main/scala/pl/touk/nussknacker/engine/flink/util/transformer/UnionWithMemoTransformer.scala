@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.state.ValueStateDescriptor
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
@@ -31,13 +31,12 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
 import java.util
-import java.util.Collections
 
 object UnionWithMemoTransformer extends UnionWithMemoTransformer(None)
 
 class UnionWithMemoTransformer(
     timestampAssigner: Option[
-      TimestampWatermarkHandler[TimestampedValue[ValueWithContext[StringKeyedValue[java.util.Map[String, AnyRef]]]]]
+      TimestampWatermarkHandler[TimestampedValue[ValueWithContext[StringKeyedValue[util.Map[String, AnyRef]]]]]
     ]
 ) extends CustomStreamTransformer
     with UnboundedStreamComponent
@@ -45,6 +44,9 @@ class UnionWithMemoTransformer(
     with ExplicitUidInOperatorsSupport {
 
   val KeyField = "key"
+
+  @transient
+  private lazy val typeInfoDetector = TypeInformationDetection.instance
 
   @MethodToInvoke
   def execute(
@@ -62,7 +64,12 @@ class UnionWithMemoTransformer(
               inputs: Map[String, DataStream[Context]],
               context: FlinkCustomNodeContext
           ): DataStream[ValueWithContext[AnyRef]] = {
-            val mapTypeInfo = TypeInformationDetection.instance
+            val finalValidatedCtx =
+              transformContextsDefinition(valueByBranchId, variableName)(context.validationContext.toOption.get)
+
+            val finalCtx = finalValidatedCtx.toOption.get
+
+            val mapTypeInfo = typeInfoDetector
               .forType(
                 Typed.record(
                   valueByBranchId.mapValuesNow(_.returnType),
@@ -71,14 +78,14 @@ class UnionWithMemoTransformer(
               )
               .asInstanceOf[TypeInformation[java.util.Map[String, AnyRef]]]
 
-            val processedTypeInfo = context.valueWithContextInfo.forType(KeyedValueType.info(mapTypeInfo))
-            val returnTypeInfo    = context.valueWithContextInfo.forType(mapTypeInfo)
+            val processedTypeInfo = typeInfoDetector.forValueWithContext(finalCtx, KeyedValueType.info(mapTypeInfo))
+            val returnTypeInfo    = typeInfoDetector.forValueWithContext(finalCtx, mapTypeInfo)
 
             val keyedInputStreams = inputs.toList.map { case (branchId, stream) =>
               val valueParam = valueByBranchId(branchId)
 
-              val valueTypeInfo   = TypeInformationDetection.instance.forType[AnyRef](valueParam.returnType)
-              val flatMapTypeInfo = context.valueWithContextInfo.forType(KeyedValueType.info(valueTypeInfo))
+              val valueTypeInfo   = typeInfoDetector.forType[AnyRef](valueParam.returnType)
+              val flatMapTypeInfo = typeInfoDetector.forValueWithContext(finalCtx, KeyedValueType.info(valueTypeInfo))
 
               stream
                 .map(ctx => ctx.appendIdSuffix(branchId))
@@ -90,26 +97,23 @@ class UnionWithMemoTransformer(
                   valueWithCtx
                     .map(keyedValue =>
                       keyedValue
-                        .mapValue(v => Collections.singletonMap(ContextTransformation.sanitizeBranchName(branchId), v))
+                        .mapValue(v =>
+                          util.Collections.singletonMap(ContextTransformation.sanitizeBranchName(branchId), v)
+                        )
                     )
                 )
+                .returns(processedTypeInfo)
             }
             val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
-            // TODO: Add better TypeInformation
             val afterOptionalAssigner = timestampAssigner
-              .map(
-                new TimestampAssignmentHelper[ValueWithContext[KeyedValue[String, java.util.Map[String, AnyRef]]]](_)(
-                  processedTypeInfo
-                )
-                  .assignWatermarks(connectedStream)
-              )
+              .map(new TimestampAssignmentHelper(_)(processedTypeInfo).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
 
             setUidToNodeIdIfNeed(
               context,
               afterOptionalAssigner
-                .keyBy((v: ValueWithContext[KeyedValue[String, java.util.Map[String, AnyRef]]]) => v.value.key)
+                .keyBy((v: ValueWithContext[KeyedValue[String, util.Map[String, AnyRef]]]) => v.value.key)
                 .process(new UnionMemoFunction(stateTimeout, mapTypeInfo), returnTypeInfo)
             ).asInstanceOf[SingleOutputStreamOperator[ValueWithContext[AnyRef]]]
           }
