@@ -3088,7 +3088,7 @@ paths:
     post:
       tags:
       - Activities
-      summary: Add scenario attachment service
+      summary: Add scenario attachment
       operationId: postApiProcessesScenarionameVersionidActivityAttachments
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3183,7 +3183,7 @@ paths:
     post:
       tags:
       - Activities
-      summary: Add scenario comment service
+      summary: Add scenario comment
       operationId: postApiProcessesScenarionameVersionidActivityComment
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3271,7 +3271,7 @@ paths:
     get:
       tags:
       - Activities
-      summary: Scenario attachments service
+      summary: Scenario attachments
       operationId: getApiProcessesScenarionameActivityAttachments
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3360,7 +3360,7 @@ paths:
     get:
       tags:
       - Activities
-      summary: Download attachment service
+      summary: Download attachment
       operationId: getApiProcessesScenarionameActivityAttachmentsAttachmentid
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3457,7 +3457,7 @@ paths:
     delete:
       tags:
       - Activities
-      summary: Delete scenario attachment service
+      summary: Delete scenario attachment
       operationId: deleteApiProcessesScenarionameActivityAttachmentsAttachmentid
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3549,7 +3549,7 @@ paths:
     put:
       tags:
       - Activities
-      summary: Edit process comment service
+      summary: Edit process comment
       operationId: putApiProcessesScenarionameActivityCommentScenarioactivityid
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3648,7 +3648,7 @@ paths:
     delete:
       tags:
       - Activities
-      summary: Delete process comment service
+      summary: Delete process comment
       operationId: deleteApiProcessesScenarionameActivityCommentScenarioactivityid
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3742,7 +3742,7 @@ paths:
     post:
       tags:
       - Activities
-      summary: Add scenario comment service
+      summary: Add scenario comment
       operationId: postApiProcessesScenarionameVersionidActivityComments
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3831,7 +3831,7 @@ paths:
     delete:
       tags:
       - Activities
-      summary: Delete process comment service
+      summary: Delete process comment
       operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3926,7 +3926,7 @@ paths:
     get:
       tags:
       - Activities
-      summary: Scenario activity service
+      summary: Scenario activity
       operationId: getApiProcessesScenarionameActivity
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -4022,7 +4022,7 @@ paths:
     get:
       tags:
       - Activities
-      summary: Scenario activities service
+      summary: Scenario activities
       operationId: getApiProcessesScenarionameActivityActivities
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -4339,7 +4339,7 @@ paths:
     get:
       tags:
       - Activities
-      summary: Scenario activities metadata service
+      summary: Scenario activities metadata
       operationId: getApiProcessesScenarionameActivityActivitiesMetadata
       parameters:
       - name: Nu-Impersonate-User-Identity
