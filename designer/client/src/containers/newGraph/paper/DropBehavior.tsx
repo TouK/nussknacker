@@ -1,35 +1,37 @@
-import React, { useEffect } from "react";
-import { useDrop } from "react-dnd";
+import React, { useEffect, useImperativeHandle } from "react";
+import { useDrop, XYCoord } from "react-dnd";
 import { DndTypes } from "../../../components/toolbars/creator/Tool";
-import { createContextHook, useContextForward } from "../utils/context";
-import { usePanWithCellBehavior } from "./PanWithCellBehavior";
+import { NodeType } from "../../../types";
+import { createContextHook } from "../utils/context";
 import { usePaper } from "./Paper";
 
 type ContextType = boolean;
 const Context = React.createContext<ContextType>(null);
 
-export type DropBehaviorProps = React.PropsWithChildren<{ interactive?: boolean }>;
+export type DropBehaviorProps = React.PropsWithChildren<{
+    enterEffect?: React.EffectCallback;
+    onDrop?: (item: NodeType) => void;
+    onMove?: (item: NodeType, offset: XYCoord, canDrop: boolean) => void;
+    leaveEffect?: React.EffectCallback;
+}>;
 
 export const DropBehavior = React.forwardRef<ContextType, DropBehaviorProps>(function PanWithCellBehavior(
-    { children, interactive },
+    { children, enterEffect, leaveEffect, onDrop, onMove },
     forwardedRef,
 ) {
     const { paper } = usePaper();
-    const edgePan = usePanWithCellBehavior();
 
-    const [{ isDraggingOver }, connectDropTarget] = useDrop({
-        accept: DndTypes.ELEMENT,
-        // drop: console.log,
+    const [{ isDraggingOver }, connectDropTarget] = useDrop<NodeType, void, { isDraggingOver: boolean }>({
+        accept: [DndTypes.ELEMENT],
+        drop: (item, monitor) => {
+            onDrop?.(item);
+        },
         hover: (item, monitor) => {
-            if (monitor.isOver() && monitor.canDrop()) {
-                edgePan.mutableMousePosition.update(monitor.getClientOffset());
-            }
+            const allowed = monitor.isOver() && monitor.canDrop();
+            const offset: XYCoord = monitor.getClientOffset();
+            onMove?.(item, offset, allowed);
         },
-        canDrop: (item, monitor) => {
-            if (interactive) {
-                return true;
-            }
-        },
+        canDrop: (item, monitor) => true,
         collect: (monitor) => ({
             isDraggingOver: monitor.isOver() && monitor.canDrop(),
         }),
@@ -40,12 +42,10 @@ export const DropBehavior = React.forwardRef<ContextType, DropBehaviorProps>(fun
     }, [connectDropTarget, paper?.el]);
 
     useEffect(() => {
-        if (isDraggingOver) {
-            return edgePan.bindMoveWithEdge();
-        }
-    }, [edgePan, isDraggingOver]);
+        return isDraggingOver ? enterEffect?.() : leaveEffect?.();
+    }, [isDraggingOver, enterEffect, leaveEffect]);
 
-    useContextForward(forwardedRef, isDraggingOver);
+    useImperativeHandle(forwardedRef, () => isDraggingOver, [isDraggingOver]);
 
     return <Context.Provider value={isDraggingOver}>{children}</Context.Provider>;
 });

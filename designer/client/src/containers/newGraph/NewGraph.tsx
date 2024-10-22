@@ -7,7 +7,8 @@ import { ScenarioGraph } from "../../types";
 import { Edge } from "./elements/Edge";
 import { Node } from "./elements/Node";
 import { GraphProvider, GraphProviderProps } from "./GraphProvider";
-import { Paper } from "./paper/Paper";
+import { InteractivePaper } from "./InteractivePaper";
+import { PreviewPaper } from "./PreviewPaper";
 
 type Props = React.PropsWithChildren<{
     scenarioGraph: ScenarioGraph;
@@ -40,8 +41,8 @@ export const NewGraph = ({ scenarioGraph, children }: Props) => {
                 ))}
             {userSettings["debug.newGraph"] ? (
                 <Box sx={{ display: "grid" }}>
-                    <Paper sx={{ background: "#CCFFCC" }} interactive />
-                    <Paper sx={{ background: "#CCCCFF" }} />
+                    <InteractivePaper />
+                    <PreviewPaper />
                 </Box>
             ) : null}
             {children}

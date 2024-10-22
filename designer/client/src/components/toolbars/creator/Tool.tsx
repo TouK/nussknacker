@@ -20,7 +20,7 @@ type OwnProps = {
 
 export default function Tool(props: OwnProps): JSX.Element {
     const { label, nodeModel, highlights = [], disabled } = props;
-    const [, drag, preview] = useDrag(() => ({
+    const [, drag, preview] = useDrag<NodeType, void, NonNullable<unknown>>(() => ({
         type: DndTypes.ELEMENT,
         item: { ...cloneDeep(nodeModel), id: label },
         options: { dropEffect: "copy" },

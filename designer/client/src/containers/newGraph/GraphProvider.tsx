@@ -1,7 +1,7 @@
 import { debounce } from "lodash";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useImperativeHandle, useState } from "react";
 import { Graph } from "./Graph";
-import { createContextHook, useContextForward } from "./utils/context";
+import { createContextHook } from "./utils/context";
 
 type GraphContextType = Graph;
 const GraphContext = React.createContext<GraphContextType>(null);
@@ -14,7 +14,7 @@ export const GraphProvider = React.forwardRef<GraphContextType, GraphProviderPro
     { children, onLayoutChange },
     forwardedRef,
 ) {
-    const [graph] = useState<Graph>(() => new Graph());
+    const [graph] = useState<GraphContextType>(() => new Graph());
 
     useEffect(() => {
         if (onLayoutChange) {
@@ -34,7 +34,7 @@ export const GraphProvider = React.forwardRef<GraphContextType, GraphProviderPro
         }
     }, [graph, onLayoutChange]);
 
-    useContextForward(forwardedRef, graph);
+    useImperativeHandle(forwardedRef, () => graph, [graph]);
 
     return <GraphContext.Provider value={graph}>{children}</GraphContext.Provider>;
 });

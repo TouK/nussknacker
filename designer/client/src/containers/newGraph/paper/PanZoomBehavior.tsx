@@ -1,9 +1,9 @@
-import React, { useEffect, useLayoutEffect, useMemo } from "react";
+import React, { useEffect, useImperativeHandle, useLayoutEffect, useMemo } from "react";
 import { PanZoomPlugin } from "../../../components/graph/PanZoomPlugin";
-import { createContextHook, useContextForward } from "../utils/context";
+import { createContextHook } from "../utils/context";
 import { usePaper } from "./Paper";
 
-type ContextType = PanZoomPlugin;
+export type ContextType = PanZoomPlugin;
 const Context = React.createContext<ContextType>(null);
 
 export type PanZoomBehaviorProps = React.PropsWithChildren<{
@@ -16,7 +16,8 @@ export const PanZoomBehavior = React.forwardRef<ContextType, PanZoomBehaviorProp
 ) {
     const { paper } = usePaper();
     const behavior = useMemo<PanZoomPlugin>(() => paper && new PanZoomPlugin(paper), [paper]);
-    useContextForward(forwardedRef, behavior);
+
+    useImperativeHandle(forwardedRef, () => behavior, [behavior]);
 
     useLayoutEffect(() => {
         behavior?.fitContent();

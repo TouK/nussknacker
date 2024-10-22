@@ -1,13 +1,11 @@
 import { Box } from "@mui/material";
 import { BoxProps } from "@mui/material/Box/Box";
 import { dia } from "jointjs";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useGraph } from "../GraphProvider";
-import { createContextHook, useContextForward } from "../utils/context";
+import { createContextHook } from "../utils/context";
 import { Canvas } from "./Canvas";
-import { DropBehavior } from "./DropBehavior";
-import { PanWithCellBehavior } from "./PanWithCellBehavior";
-import { PanZoomBehavior } from "./PanZoomBehavior";
 
 export type PaperContextType = { paper: dia.Paper };
 const PaperContext = React.createContext<PaperContextType>(null);
@@ -22,7 +20,7 @@ export const Paper = React.forwardRef<PaperContextType, PaperProps>(function Pap
 ) {
     const [context, setContext] = useState<PaperContextType>({ paper: null });
 
-    useContextForward(forwardedRef, context);
+    useImperativeHandle(forwardedRef, () => context, [context]);
 
     const canvasRef = useRef<HTMLElement>(null);
     const model = useGraph();
@@ -43,10 +41,6 @@ export const Paper = React.forwardRef<PaperContextType, PaperProps>(function Pap
             paper.undelegateEvents();
         };
     }, [model, setContext]);
-
-    // usePanZoomBehavior([context, registerBehavior("panZoom")], behaviorProps);
-    // usePanWithCellBehavior([context, registerBehavior("edgePan")], behaviorProps);
-    // const isDraggingOver = useDropBehavior(behaviorProps);
 
     useEffect(() => {
         const { paper } = context;
@@ -72,16 +66,14 @@ export const Paper = React.forwardRef<PaperContextType, PaperProps>(function Pap
                 }}
                 ref={canvasRef}
             />
-            <PaperContext.Provider value={context}>
-                <PanZoomBehavior interactive={interactive}>
-                    <PanWithCellBehavior>
-                        <DropBehavior interactive={interactive} />
-                    </PanWithCellBehavior>
-                    {children}
-                </PanZoomBehavior>
-            </PaperContext.Provider>
+            <PaperContext.Provider value={context}>{children}</PaperContext.Provider>
         </Box>
     );
 });
 
 export const usePaper = createContextHook(PaperContext, Paper);
+
+export const PaperSvgPortal = ({ children }: React.PropsWithChildren) => {
+    const { paper } = usePaper();
+    return createPortal(<>{children}</>, paper.svg);
+};

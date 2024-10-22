@@ -22,13 +22,3 @@ export function createContextHook<T, C>(Context: React.Context<T>, Provider: Rea
         }, [context]);
     };
 }
-
-export function useContextForward<C>(forwardedRef: React.ForwardedRef<C>, context: C) {
-    useEffect(() => {
-        if (typeof forwardedRef === "function") {
-            forwardedRef(context);
-        } else if (forwardedRef) {
-            forwardedRef.current = context;
-        }
-    }, [context, forwardedRef]);
-}
