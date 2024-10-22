@@ -8,7 +8,7 @@ import db.migration.V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinit
 import io.circe.syntax.EncoderOps
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ScenarioComment.Available
+import pl.touk.nussknacker.engine.api.deployment.ScenarioComment.WithContent
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData}
@@ -123,7 +123,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = Available("Deployment with scenario fix", user.name, date),
+            comment = WithContent("Deployment with scenario fix", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -139,7 +139,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = Available("I'm canceling this scenario, it causes problems", user.name, date),
+            comment = WithContent("I'm canceling this scenario, it causes problems", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -183,7 +183,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = Available("Paused because marketing campaign is paused for now", user.name, date),
+            comment = WithContent("Paused because marketing campaign is paused for now", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -239,7 +239,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             user = user,
             date = date,
             scenarioVersionId = sv,
-            comment = Available("Deployed at the request of business", user.name, date),
+            comment = WithContent("Deployed at the request of business", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -256,7 +256,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
             date = date,
             scenarioVersionId = sv,
             actionName = "special action",
-            comment = Available("Special action needed to be executed", user.name, date),
+            comment = WithContent("Special action needed to be executed", user.name, date),
             result = DeploymentResult.Success(date),
           )
       )
@@ -281,7 +281,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           user = ScenarioUser(None, UserName("John Doe"), None, None),
           date = now.toInstant,
           scenarioVersionId = Some(ScenarioVersionId(processVersionId)),
-          comment = Available("ABC1", UserName(user), now.toInstant)
+          comment = WithContent("ABC1", UserName(user), now.toInstant)
         ),
         ScenarioActivity.CommentAdded(
           scenarioId = ScenarioId(process.id.value),
@@ -289,7 +289,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
           user = ScenarioUser(None, UserName("John Doe"), None, None),
           date = now.toInstant,
           scenarioVersionId = Some(ScenarioVersionId(processVersionId)),
-          comment = Available("ABC2", UserName(user), now.toInstant)
+          comment = WithContent("ABC2", UserName(user), now.toInstant)
         )
       )
     }

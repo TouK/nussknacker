@@ -12,15 +12,18 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
   NoActivity,
+  NoAttachment,
   NoComment,
   NoPermission,
   NoScenario
 }
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.DeleteAttachmentError
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
@@ -97,6 +100,18 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
+    endpoints.deleteAttachmentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
+      .serverLogicEitherT { implicit loggedUser => request: DeleteAttachmentRequest =>
+        for {
+          scenarioId <- getScenarioIdByName(request.scenarioName)
+          _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- markAttachmentAsDeleted(request, scenarioId)
+        } yield ()
+      }
+  }
+
+  expose {
     endpoints.downloadAttachmentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
@@ -140,7 +155,14 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Read)
-          metadata = ScenarioActivitiesMetadata.default
+          scenarioWithDetails <- EitherT.right(
+            scenarioService.getLatestProcessWithDetails(
+              ProcessIdWithName(scenarioId, scenarioName),
+              GetScenarioWithDetailsOptions.detailsOnly
+            )
+          )
+          scenarioType = if (scenarioWithDetails.isFragment) ScenarioType.Fragment else ScenarioType.Scenario
+          metadata     = ScenarioActivitiesMetadata.default(scenarioType)
         } yield metadata
       }
   }
@@ -246,21 +268,19 @@ class ScenarioActivityApiHttpService(
       } yield sortedResult
     }
 
-  private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
-    scenarioComment match {
-      case ScenarioComment.Available(comment, lastModifiedByUserName, lastModifiedAt) =>
-        Dtos.ScenarioActivityComment(
-          content = Dtos.ScenarioActivityCommentContent.Available(comment),
-          lastModifiedBy = lastModifiedByUserName.value,
-          lastModifiedAt = lastModifiedAt,
-        )
-      case ScenarioComment.Deleted(deletedByUserName, deletedAt) =>
-        Dtos.ScenarioActivityComment(
-          content = Dtos.ScenarioActivityCommentContent.Deleted,
-          lastModifiedBy = deletedByUserName.value,
-          lastModifiedAt = deletedAt,
-        )
-    }
+  private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = scenarioComment match {
+    case ScenarioComment.WithContent(comment, _, _) =>
+      Dtos.ScenarioActivityComment(
+        content = Dtos.ScenarioActivityCommentContent.Available(comment),
+        lastModifiedBy = scenarioComment.lastModifiedByUserName.value,
+        lastModifiedAt = scenarioComment.lastModifiedAt,
+      )
+    case ScenarioComment.WithoutContent(_, _) =>
+      Dtos.ScenarioActivityComment(
+        content = Dtos.ScenarioActivityCommentContent.NotAvailable,
+        lastModifiedBy = scenarioComment.lastModifiedByUserName.value,
+        lastModifiedAt = scenarioComment.lastModifiedAt,
+      )
   }
 
   private def toDto(attachment: ScenarioAttachment): Dtos.ScenarioActivityAttachment = {
@@ -557,6 +577,15 @@ class ScenarioActivityApiHttpService(
       attachmentService.saveAttachment(scenarioId, request.versionId, request.fileName.value, request.body)
     )
   }
+
+  private def markAttachmentAsDeleted(request: DeleteAttachmentRequest, scenarioId: ProcessId)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, ScenarioActivityError, Unit] =
+    EitherT(
+      dbioActionRunner.run(
+        scenarioActivityRepository.markAttachmentAsDeleted(scenarioId, request.attachmentId)
+      )
+    ).leftMap { case DeleteAttachmentError.CouldNotDeleteAttachment => NoAttachment(request.attachmentId) }
 
   private def buildResponse(maybeAttachment: Option[(String, Array[Byte])]): GetAttachmentResponse =
     maybeAttachment match {
