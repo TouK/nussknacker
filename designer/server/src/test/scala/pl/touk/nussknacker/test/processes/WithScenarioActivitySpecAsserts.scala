@@ -7,6 +7,8 @@ import pl.touk.nussknacker.test.NuRestAssureMatchers
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithDesignerConfig}
 
+import scala.util.Try
+
 trait WithScenarioActivitySpecAsserts
     extends AnyFreeSpecLike
     with NuItTest
@@ -156,7 +158,7 @@ trait WithScenarioActivitySpecAsserts
         )
       )
     if (fileIdPresent) {
-      response.extractString("activities[1].attachment.file.id").toLongOption
+      Try(response.extractString("activities[1].attachment.file.id").toLong).toOption
     } else {
       None
     }
