@@ -69,6 +69,7 @@ object ProcessRepository {
     val increaseVersionWhenJsonNotChanged: Boolean
     val labels: List[ScenarioLabel]
     val forwardedUserName: Option[RemoteUserName]
+    val comment: Option[Comment]
     def id: ProcessIdWithName = ProcessIdWithName(processId, canonicalProcess.name)
   }
 
@@ -90,7 +91,9 @@ object ProcessRepository {
       sourceEnvironment: String,
       targetEnvironment: String,
       sourceScenarioVersionId: Option[VersionId],
-  ) extends ModifyProcessAction
+  ) extends ModifyProcessAction {
+    override val comment: Option[Comment] = None
+  }
 
   final case class AutomaticProcessUpdateAction(
       protected val processId: ProcessId,
@@ -99,7 +102,9 @@ object ProcessRepository {
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName],
       migrationsApplies: List[ProcessMigration]
-  ) extends ModifyProcessAction
+  ) extends ModifyProcessAction {
+    override val comment: Option[Comment] = None
+  }
 
   final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -218,11 +223,11 @@ class DBProcessRepository(
                 lastModifiedAt = clock.instant(),
               )
             case Some(_) | None =>
-              ScenarioComment.Deleted(
-                deletedByUserName = UserName(loggedUser.username),
-                deletedAt = clock.instant(),
+              ScenarioComment.NotAvailable(
+                lastModifiedByUserName = UserName(loggedUser.username),
+                lastModifiedAt = clock.instant(),
               )
-          }
+          },
         )
     )
   }
@@ -275,7 +280,12 @@ class DBProcessRepository(
         oldVersionId: Option[VersionId],
         newVersionId: Option[VersionId]
     ) = {
-      run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId, userName)))
+      // Do not create activity, if the scenario is exactly the same, and there is no comment
+      if (oldVersionId == newVersionId && action.comment.isEmpty) {
+        DBIO.successful(())
+      } else {
+        run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId, userName)))
+      }
     }
 
     for {

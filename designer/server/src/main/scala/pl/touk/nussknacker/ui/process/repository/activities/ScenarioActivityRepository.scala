@@ -7,6 +7,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  DeleteAttachmentError,
   ModifyActivityError,
   ModifyCommentError
 }
@@ -59,6 +60,11 @@ trait ScenarioActivityRepository {
       attachmentToAdd: AttachmentToAdd
   )(implicit user: LoggedUser): DB[ScenarioActivityId]
 
+  def markAttachmentAsDeleted(
+      scenarioId: ProcessId,
+      attachmentId: Long,
+  )(implicit user: LoggedUser): DB[Either[DeleteAttachmentError, Unit]]
+
   def findAttachments(
       scenarioId: ProcessId,
   ): DB[Seq[AttachmentEntityData]]
@@ -84,6 +90,14 @@ object ScenarioActivityRepository {
     case object ActivityDoesNotExist  extends ModifyCommentError
     case object CommentDoesNotExist   extends ModifyCommentError
     case object CouldNotModifyComment extends ModifyCommentError
+  }
+
+  sealed trait DeleteAttachmentError
+
+  object DeleteAttachmentError {
+    case object ActivityDoesNotExist     extends DeleteAttachmentError
+    case object AttachmentDoesNotExist   extends DeleteAttachmentError
+    case object CouldNotDeleteAttachment extends DeleteAttachmentError
   }
 
   sealed trait ModifyActivityError

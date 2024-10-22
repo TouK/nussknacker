@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbioRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  DeleteAttachmentError,
   ModifyActivityError,
   ModifyCommentError
 }
@@ -95,7 +96,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     modifyActivityByRowId(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateCommentExists(scenarioId),
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
       modify = doEditComment(comment),
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
@@ -109,7 +110,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateCommentExists(scenarioId),
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
       modify = doEditComment(comment),
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
@@ -122,7 +123,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     modifyActivityByRowId(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateCommentExists(scenarioId),
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
       modify = doDeleteComment,
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
@@ -135,7 +136,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateCommentExists(scenarioId),
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
       modify = doDeleteComment,
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
@@ -178,18 +179,48 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   def findAttachments(
       scenarioId: ProcessId,
   ): DB[Seq[AttachmentEntityData]] = {
-    attachmentsTable
-      .filter(_.processId === scenarioId)
+    scenarioActivityTable
+      .filter(entity =>
+        entity.scenarioId === scenarioId && entity.activityType.inSet(Set(ScenarioActivityType.AttachmentAdded))
+      )
+      .join(attachmentsTable)
+      .on(_.attachmentId === _.id)
+      .map(_._2)
       .result
+  }
+
+  def markAttachmentAsDeleted(
+      scenarioId: ProcessId,
+      attachmentId: Long,
+  )(implicit user: LoggedUser): DB[Either[DeleteAttachmentError, Unit]] = {
+    scenarioActivityTable
+      .filter(entity =>
+        entity.scenarioId === scenarioId &&
+          entity.attachmentId === attachmentId &&
+          entity.activityType === (ScenarioActivityType.AttachmentAdded: ScenarioActivityType)
+      )
+      .map(_.attachmentId)
+      .update(Option.empty[Long])
+      .map { updateCount =>
+        if (updateCount > 0) {
+          Right(())
+        } else {
+          Left(DeleteAttachmentError.CouldNotDeleteAttachment)
+        }
+      }
   }
 
   def findAttachment(
       scenarioId: ProcessId,
       attachmentId: Long,
   ): DB[Option[AttachmentEntityData]] = {
-    attachmentsTable
-      .filter(_.id === attachmentId)
-      .filter(_.processId === scenarioId)
+    scenarioActivityTable
+      .filter(entity =>
+        entity.scenarioId === scenarioId && entity.activityType.inSet(Set(ScenarioActivityType.AttachmentAdded))
+      )
+      .join(attachmentsTable.filter(_.id === attachmentId))
+      .on(_.attachmentId === _.id)
+      .map(_._2)
       .result
       .headOption
   }
@@ -244,10 +275,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       }
   }
 
-  private def validateCommentExists(scenarioId: ProcessId)(entity: ScenarioActivityEntityData) = {
+  private def validateThatActivityIsAssignedToScenario(scenarioId: ProcessId)(entity: ScenarioActivityEntityData) = {
     for {
       _ <- Either.cond(entity.scenarioId == scenarioId, (), ModifyCommentError.CommentDoesNotExist)
-      _ <- entity.comment.toRight(ModifyCommentError.CommentDoesNotExist)
     } yield entity
   }
 
@@ -261,7 +291,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioVersion <- scenarioActivity.scenarioVersionId
       content <- comment match {
         case ScenarioComment.Available(comment, _, _) => Some(comment)
-        case ScenarioComment.Deleted(_, _)            => None
+        case ScenarioComment.NotAvailable(_, _)       => None
       }
     } yield Legacy.Comment(
       id = id,
@@ -498,14 +528,14 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private def comment(scenarioComment: ScenarioComment): Option[String] = {
     scenarioComment match {
       case ScenarioComment.Available(comment, _, _) => Some(comment.value)
-      case ScenarioComment.Deleted(_, _)            => None
+      case ScenarioComment.NotAvailable(_, _)       => None
     }
   }
 
   private def lastModifiedByUserName(scenarioComment: ScenarioComment): Option[String] = {
     val userName = scenarioComment match {
       case ScenarioComment.Available(_, lastModifiedByUserName, _) => lastModifiedByUserName
-      case ScenarioComment.Deleted(deletedByUserName, _)           => deletedByUserName
+      case ScenarioComment.NotAvailable(deletedByUserName, _)      => deletedByUserName
     }
     Some(userName.value)
   }
@@ -677,9 +707,9 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
             lastModifiedAt = lastModifiedAt.toInstant
           )
         case None =>
-          ScenarioComment.Deleted(
-            deletedByUserName = UserName(lastModifiedByUserName),
-            deletedAt = lastModifiedAt.toInstant
+          ScenarioComment.NotAvailable(
+            lastModifiedByUserName = UserName(lastModifiedByUserName),
+            lastModifiedAt = lastModifiedAt.toInstant
           )
       }
     }

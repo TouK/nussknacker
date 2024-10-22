@@ -37,7 +37,10 @@ object ScenarioUser {
 final case class UserId(value: String)
 final case class UserName(value: String)
 
-sealed trait ScenarioComment
+sealed trait ScenarioComment {
+  def lastModifiedByUserName: UserName
+  def lastModifiedAt: Instant
+}
 
 object ScenarioComment {
 
@@ -47,9 +50,9 @@ object ScenarioComment {
       lastModifiedAt: Instant,
   ) extends ScenarioComment
 
-  final case class Deleted(
-      deletedByUserName: UserName,
-      deletedAt: Instant,
+  final case class NotAvailable(
+      lastModifiedByUserName: UserName,
+      lastModifiedAt: Instant,
   ) extends ScenarioComment
 
 }

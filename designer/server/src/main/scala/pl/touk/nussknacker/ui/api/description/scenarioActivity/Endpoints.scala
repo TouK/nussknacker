@@ -93,7 +93,13 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "metadata")
-      .out(statusCode(Ok).and(jsonBody[ScenarioActivitiesMetadata].example(ScenarioActivitiesMetadata.default)))
+      .out(
+        statusCode(Ok).and(
+          jsonBody[ScenarioActivitiesMetadata]
+            .example(ScenarioActivitiesMetadata.default(ScenarioType.Scenario))
+            .example(ScenarioActivitiesMetadata.default(ScenarioType.Fragment))
+        )
+      )
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
@@ -170,6 +176,23 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .mapInTo[AddAttachmentRequest]
       .out(statusCode(Ok))
       .errorOut(scenarioNotFoundErrorOutput)
+      .withSecurity(auth)
+  }
+
+  val deleteAttachmentEndpoint: SecuredEndpoint[DeleteAttachmentRequest, ScenarioActivityError, Unit, Any] = {
+    baseNuApiEndpoint
+      .summary("Delete scenario attachment service")
+      .tag("Activities")
+      .delete
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "attachments" / path[Long]("attachmentId"))
+      .mapInTo[DeleteAttachmentRequest]
+      .out(statusCode(Ok))
+      .errorOut(
+        oneOf[ScenarioActivityError](
+          oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariant(InternalServerError, plainBody[NoAttachment].example(Examples.attachmentNotFoundError)),
+        )
+      )
       .withSecurity(auth)
   }
 

@@ -95,6 +95,69 @@ trait WithScenarioActivitySpecAsserts
       )
   }
 
+  def verifyAttachmentAddedActivityExists(
+      user: String,
+      scenarioName: String,
+      fileIdPresent: Boolean,
+      filename: String,
+      fileStatus: String,
+      overrideDisplayableName: String,
+  ): ValidatableResponse = {
+    val fileJson = if (fileIdPresent) {
+      s"""
+        |"file": {
+        |  "id": "${regexes.digitsRegex}",
+        |  "status": "$fileStatus"
+        |}
+        |""".stripMargin
+    } else {
+      s"""
+         |"file": {
+         |  "status": "$fileStatus"
+         |}
+         |""".stripMargin
+    }
+    given()
+      .when()
+      .basicAuthAllPermUser()
+      .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity/activities")
+      .Then()
+      .statusCode(200)
+      .body(
+        matchJsonWithRegexValues(
+          s"""
+             |{
+             |  "activities": [
+             |    {
+             |      "id": "${regexes.looseUuidRegex}",
+             |      "user": "admin",
+             |      "date": "${regexes.zuluDateRegex}",
+             |      "scenarioVersionId": 1,
+             |      "additionalFields": [],
+             |      "type": "SCENARIO_CREATED"
+             |    },
+             |    {
+             |      "id": "${regexes.looseUuidRegex}",
+             |      "user": "$user",
+             |      "date": "${regexes.zuluDateRegex}",
+             |      "scenarioVersionId": 1,
+             |      "attachment": {
+             |        $fileJson,
+             |        "filename": "$filename",
+             |        "lastModifiedBy": "$user",
+             |        "lastModifiedAt": "${regexes.zuluDateRegex}"
+             |      },
+             |      "additionalFields": [],
+             |      "overrideDisplayableName": "$overrideDisplayableName",
+             |      "type": "ATTACHMENT_ADDED"
+             |    }
+             |  ]
+             |}
+             |""".stripMargin
+        )
+      )
+  }
+
   def verifyEmptyCommentsAndAttachments(scenarioName: String): Unit = {
     given()
       .when()

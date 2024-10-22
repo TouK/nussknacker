@@ -87,7 +87,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
           date = activities(0).date,
           previousScenarioVersionId = None,
           scenarioVersionId = Some(ScenarioVersionId(2)),
-          comment = ScenarioComment.Deleted(UserName("Test User"), activities(0).date)
+          comment = ScenarioComment.NotAvailable(UserName("Test User"), activities(0).date)
         ),
         ScenarioActivity.ScenarioCreated(
           scenarioId = ScenarioId(process.id.value),
