@@ -79,7 +79,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         user = user.scenarioUser,
         date = now,
         scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
-        comment = ScenarioComment.Available(
+        comment = ScenarioComment.WithContent(
           comment = comment,
           lastModifiedByUserName = UserName(user.username),
           lastModifiedAt = now,
@@ -290,8 +290,8 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
     for {
       scenarioVersion <- scenarioActivity.scenarioVersionId
       content <- comment match {
-        case ScenarioComment.Available(comment, _, _) => Some(comment)
-        case ScenarioComment.NotAvailable(_, _)       => None
+        case ScenarioComment.WithContent(comment, _, _) => Some(comment)
+        case ScenarioComment.WithoutContent(_, _)       => None
       }
     } yield Legacy.Comment(
       id = id,
@@ -323,7 +323,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           id,
           activity,
           ScenarioComment
-            .Available(s"Rename: [${activity.oldName}] -> [${activity.newName}]", UserName(""), activity.date),
+            .WithContent(s"Rename: [${activity.oldName}] -> [${activity.newName}]", UserName(""), activity.date),
           None
         )
       case activity: ScenarioActivity.CommentAdded =>
@@ -336,7 +336,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         toComment(
           id,
           activity,
-          ScenarioComment.Available(
+          ScenarioComment.WithContent(
             comment = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}",
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
@@ -353,7 +353,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
         toComment(
           id,
           activity,
-          ScenarioComment.Available(
+          ScenarioComment.WithContent(
             comment = s"Migrations applied: ${activity.changes}",
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
@@ -527,15 +527,15 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
 
   private def comment(scenarioComment: ScenarioComment): Option[String] = {
     scenarioComment match {
-      case ScenarioComment.Available(comment, _, _) => Some(comment.value)
-      case ScenarioComment.NotAvailable(_, _)       => None
+      case ScenarioComment.WithContent(comment, _, _) if comment.nonEmpty => Some(comment.value)
+      case _                                                              => None
     }
   }
 
   private def lastModifiedByUserName(scenarioComment: ScenarioComment): Option[String] = {
     val userName = scenarioComment match {
-      case ScenarioComment.Available(_, lastModifiedByUserName, _) => lastModifiedByUserName
-      case ScenarioComment.NotAvailable(deletedByUserName, _)      => deletedByUserName
+      case ScenarioComment.WithContent(_, lastModifiedByUserName, _) => lastModifiedByUserName
+      case ScenarioComment.WithoutContent(deletedByUserName, _)      => deletedByUserName
     }
     Some(userName.value)
   }
@@ -700,14 +700,14 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       lastModifiedAt         <- entity.lastModifiedAt.toRight("Missing lastModifiedAt field")
     } yield {
       entity.comment match {
-        case Some(comment) =>
-          ScenarioComment.Available(
+        case Some(comment) if comment.nonEmpty =>
+          ScenarioComment.WithContent(
             comment = comment,
             lastModifiedByUserName = UserName(lastModifiedByUserName),
             lastModifiedAt = lastModifiedAt.toInstant
           )
-        case None =>
-          ScenarioComment.NotAvailable(
+        case Some(_) | None =>
+          ScenarioComment.WithoutContent(
             lastModifiedByUserName = UserName(lastModifiedByUserName),
             lastModifiedAt = lastModifiedAt.toInstant
           )

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.{Comment, NonEmptyComment, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{Comment, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -27,7 +27,10 @@ import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.ScenarioParametersService
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{ProcessNotFoundError, ProcessVersionNotFoundError}
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
+  ProcessNotFoundError,
+  ProcessVersionNotFoundError
+}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -52,7 +55,7 @@ object ProcessService {
 
   @JsonCodec final case class UpdateScenarioCommand(
       scenarioGraph: ScenarioGraph,
-      comment: Option[Comment],
+      comment: Option[String],
       scenarioLabels: Option[List[String]],
       forwardedUserName: Option[RemoteUserName]
   )
@@ -418,7 +421,7 @@ class DBProcessService(
       val updateProcessAction = UpdateProcessAction(
         processId = processIdWithName.id,
         canonicalProcess = substituted,
-        comment = action.comment.flatMap(NonEmptyComment.from),
+        comment = action.comment.flatMap(Comment.from),
         labels = scenarioLabels,
         increaseVersionWhenJsonNotChanged = false,
         forwardedUserName = action.forwardedUserName
