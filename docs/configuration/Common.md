@@ -1,5 +1,5 @@
 ---
-title: Common
+title: Miscellaneous
 sidebar_position: 2
 ---
 # Common        
