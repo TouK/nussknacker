@@ -32,7 +32,7 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunni
     ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
         display: "flex",
         alignItems: "center",
-        padding: theme.spacing(0.5, 1),
+        padding: theme.spacing(0.5, 0.75),
         borderRadius: theme.spacing(1),
         ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
     }),
@@ -140,14 +140,23 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
     const openVersionEnable = activity.type === "SCENARIO_MODIFIED" && activity.scenarioVersionId !== processVersionId;
 
     const getHeaderTitle = useMemo(() => {
+        const text = activity.overrideDisplayableName || activity.activities.displayableName;
+
         const headerTitle = (
             <Typography
                 variant={"caption"}
                 component={SearchHighlighter}
+                title={text}
                 highlights={[searchQuery]}
-                sx={(theme) => ({ color: theme.palette.text.primary })}
+                sx={(theme) => ({
+                    color: theme.palette.text.primary,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    textWrap: "noWrap",
+                    maxWidth: "75%",
+                })}
             >
-                {activity.overrideDisplayableName || activity.activities.displayableName}
+                {text}
             </Typography>
         );
 
