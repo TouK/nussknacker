@@ -7,12 +7,14 @@ export function SearchHighlighter({
     highlights = [],
     className,
     typographyStyle = {},
+    title,
     ...props
 }: {
     children: string;
     highlights: string[];
     className?: string;
     typographyStyle?: CSSProperties;
+    title?: string;
 }) {
     const theme = useTheme();
     return (
@@ -29,6 +31,7 @@ export function SearchHighlighter({
                 background: theme.palette.background.paper,
                 fontWeight: "bold",
             }}
+            title={title}
             {...props}
         />
     );
