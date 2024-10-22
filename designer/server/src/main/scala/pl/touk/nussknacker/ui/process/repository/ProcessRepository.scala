@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.HttpHeader
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.engine.api.NonEmptyComment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -69,14 +69,14 @@ object ProcessRepository {
     val increaseVersionWhenJsonNotChanged: Boolean
     val labels: List[ScenarioLabel]
     val forwardedUserName: Option[RemoteUserName]
-    val comment: Option[Comment]
+    val comment: Option[NonEmptyComment]
     def id: ProcessIdWithName = ProcessIdWithName(processId, canonicalProcess.name)
   }
 
   final case class UpdateProcessAction(
       protected val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
-      comment: Option[Comment],
+      comment: Option[NonEmptyComment],
       labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
@@ -92,7 +92,7 @@ object ProcessRepository {
       targetEnvironment: String,
       sourceScenarioVersionId: Option[VersionId],
   ) extends ModifyProcessAction {
-    override val comment: Option[Comment] = None
+    override val comment: Option[NonEmptyComment] = None
   }
 
   final case class AutomaticProcessUpdateAction(
@@ -103,7 +103,7 @@ object ProcessRepository {
       forwardedUserName: Option[RemoteUserName],
       migrationsApplies: List[ProcessMigration]
   ) extends ModifyProcessAction {
-    override val comment: Option[Comment] = None
+    override val comment: Option[NonEmptyComment] = None
   }
 
   final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
@@ -216,13 +216,13 @@ class DBProcessRepository(
           previousScenarioVersionId = oldVersionId.map(ScenarioVersionId.from),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
           comment = updateProcessAction.comment.map(_.content) match {
-            case Some(content) if content.nonEmpty =>
+            case Some(content) =>
               ScenarioComment.Available(
                 comment = content,
                 lastModifiedByUserName = UserName(loggedUser.username),
                 lastModifiedAt = clock.instant(),
               )
-            case Some(_) | None =>
+            case None =>
               ScenarioComment.NotAvailable(
                 lastModifiedByUserName = UserName(loggedUser.username),
                 lastModifiedAt = clock.instant(),
