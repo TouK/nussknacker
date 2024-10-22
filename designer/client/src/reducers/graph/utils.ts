@@ -3,7 +3,7 @@ import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
 import NodeUtils from "../../components/graph/NodeUtils";
-import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
+import { BranchParams, Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
 import { GraphState } from "./types";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
@@ -57,7 +57,20 @@ export function prepareNewNodesWithLayout(
     const initialIds = nodesWithPositions.map((nodeWithPosition) => nodeWithPosition.node.id);
     const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
 
-    const updatedNodes = zipWith(nodesWithPositions, uniqueIds, ({ node }, id) => ({ ...node, id }));
+    const updatedNodes = zipWith(nodesWithPositions, uniqueIds, ({ node }, id) => {
+        const nodeCopy = cloneDeep(node);
+        const adjustBranchParametersToTheCopiedElements = (branchParameter: BranchParams) => {
+            branchParameter.branchId = uniqueIds.find((uniqueId) => uniqueId.includes(branchParameter.branchId));
+            return branchParameter;
+        };
+
+        if (nodeCopy.branchParameters) {
+            nodeCopy.branchParameters = nodeCopy.branchParameters.map(adjustBranchParametersToTheCopiedElements);
+        }
+
+        nodeCopy.id = id;
+        return nodeCopy;
+    });
     const updatedLayout = zipWith(nodesWithPositions, uniqueIds, ({ position }, id) => ({ id, position }));
 
     return {
