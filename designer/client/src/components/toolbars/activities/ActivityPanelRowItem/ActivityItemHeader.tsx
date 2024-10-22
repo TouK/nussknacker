@@ -1,7 +1,8 @@
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
-import HttpService, { ActionMetadata, ActivityAttachment } from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService";
+import { ActionMetadata, ActivityAttachment } from "../types";
 import UrlIcon from "../../../UrlIcon";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";

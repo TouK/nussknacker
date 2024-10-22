@@ -8,7 +8,7 @@ import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { ItemActivity } from "../ActivitiesPanel";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
-import { ActivityTypes } from "../../../../http/HttpService";
+import { ActivityTypes } from "../types";
 import { getItemColors } from "../helpers/activityItemColors";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({

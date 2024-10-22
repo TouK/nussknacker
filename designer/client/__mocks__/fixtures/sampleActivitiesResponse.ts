@@ -1,4 +1,4 @@
-import { ActivitiesResponse } from "../../src/http/HttpService";
+import { ActivitiesResponse } from "../../src/components/toolbars/activities/types";
 
 export const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
     {

@@ -1,4 +1,4 @@
-import { ActivitiesResponse, ActivityMetadataResponse } from "../../../../http/HttpService";
+import { ActivitiesResponse, ActivityMetadataResponse } from "../types";
 import { Activity } from "../ActivitiesPanel";
 
 export const mergeActivityDataWithMetadata = (
