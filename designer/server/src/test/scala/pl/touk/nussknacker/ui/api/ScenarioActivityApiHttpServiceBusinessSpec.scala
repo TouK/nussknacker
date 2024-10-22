@@ -241,14 +241,14 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
 
-      val attachmentId = verifyAttachmentAddedActivityExistsAndReturnFileId(
+      val attachmentId = verifyAttachmentAddedActivityExists(
         user = "allpermuser",
         scenarioName = exampleScenarioName,
         fileIdPresent = true,
         filename = fileName,
         fileStatus = "AVAILABLE",
         overrideDisplayableName = fileName
-      ).getOrElse(throw new Exception("Missing attachmentId"))
+      ).extractString(1, "attachment.file.id")
 
       given()
         .when()
@@ -257,7 +257,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyAttachmentAddedActivityExistsAndReturnFileId(
+          verifyAttachmentAddedActivityExists(
             user = "allpermuser",
             scenarioName = exampleScenarioName,
             fileIdPresent = false,

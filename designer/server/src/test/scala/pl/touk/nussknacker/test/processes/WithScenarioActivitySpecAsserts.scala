@@ -2,12 +2,12 @@ package pl.touk.nussknacker.test.processes
 
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.test.NuRestAssureMatchers
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithDesignerConfig}
-
-import scala.util.Try
+import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts.ScenarioActivitiesResponseWrapper
 
 trait WithScenarioActivitySpecAsserts
     extends AnyFreeSpecLike
@@ -96,14 +96,14 @@ trait WithScenarioActivitySpecAsserts
       )
   }
 
-  def verifyAttachmentAddedActivityExistsAndReturnFileId(
+  def verifyAttachmentAddedActivityExists(
       user: String,
       scenarioName: String,
       fileIdPresent: Boolean,
       filename: String,
       fileStatus: String,
       overrideDisplayableName: String,
-  ): Option[Long] = {
+  ): ScenarioActivitiesResponseWrapper = {
     val fileJson = if (fileIdPresent) {
       s"""
         |"file": {
@@ -157,12 +157,7 @@ trait WithScenarioActivitySpecAsserts
              |""".stripMargin
         )
       )
-    if (fileIdPresent) {
-      Try(response.extractString("activities[1].attachment.file.id").toLong).toOption
-    } else {
-      None
-    }
-
+    ScenarioActivitiesResponseWrapper(response)
   }
 
   def verifyEmptyCommentsAndAttachments(scenarioName: String): Unit = {
@@ -205,6 +200,15 @@ trait WithScenarioActivitySpecAsserts
                |""".stripMargin
         )
       )
+  }
+
+}
+
+object WithScenarioActivitySpecAsserts extends WithBusinessCaseRestAssuredUsersExtensions {
+
+  final case class ScenarioActivitiesResponseWrapper(validatableResponse: ValidatableResponse) {
+    def extractString(activityIndex: Int, path: String): String =
+      validatableResponse.extractString(s"activities[$activityIndex].$path")
   }
 
 }

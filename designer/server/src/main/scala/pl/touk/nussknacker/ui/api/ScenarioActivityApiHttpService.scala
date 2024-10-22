@@ -23,6 +23,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptio
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.DeleteAttachmentError
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
@@ -267,18 +268,19 @@ class ScenarioActivityApiHttpService(
       } yield sortedResult
     }
 
-  private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = {
-    val content = scenarioComment match {
-      case ScenarioComment.WithContent(comment, _, _) =>
-        Dtos.ScenarioActivityCommentContent.Available(comment)
-      case ScenarioComment.WithoutContent(_, _) | ScenarioComment.WithContent(_, _, _) =>
-        Dtos.ScenarioActivityCommentContent.NotAvailable
-    }
-    Dtos.ScenarioActivityComment(
-      content = content,
-      lastModifiedBy = scenarioComment.lastModifiedByUserName.value,
-      lastModifiedAt = scenarioComment.lastModifiedAt,
-    )
+  private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = scenarioComment match {
+    case ScenarioComment.WithContent(comment, _, _) =>
+      Dtos.ScenarioActivityComment(
+        content = Dtos.ScenarioActivityCommentContent.Available(comment),
+        lastModifiedBy = scenarioComment.lastModifiedByUserName.value,
+        lastModifiedAt = scenarioComment.lastModifiedAt,
+      )
+    case ScenarioComment.WithoutContent(_, _) =>
+      Dtos.ScenarioActivityComment(
+        content = Dtos.ScenarioActivityCommentContent.NotAvailable,
+        lastModifiedBy = scenarioComment.lastModifiedByUserName.value,
+        lastModifiedAt = scenarioComment.lastModifiedAt,
+      )
   }
 
   private def toDto(attachment: ScenarioAttachment): Dtos.ScenarioActivityAttachment = {
@@ -583,7 +585,7 @@ class ScenarioActivityApiHttpService(
       dbioActionRunner.run(
         scenarioActivityRepository.markAttachmentAsDeleted(scenarioId, request.attachmentId)
       )
-    ).leftMap(_ => NoAttachment(request.attachmentId))
+    ).leftMap { case DeleteAttachmentError.CouldNotDeleteAttachment => NoAttachment(request.attachmentId) }
 
   private def buildResponse(maybeAttachment: Option[(String, Array[Byte])]): GetAttachmentResponse =
     maybeAttachment match {
