@@ -5,6 +5,8 @@ import cats.effect.IO
 import cats.implicits.toFunctorOps
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime.syncIoRuntime
 
+import scala.language.higherKinds
+
 object FunctorUtils {
 
   implicit class Ops[M[_]: Functor, T](m: M[T]) {
