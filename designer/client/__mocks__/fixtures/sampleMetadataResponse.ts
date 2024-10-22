@@ -1,4 +1,4 @@
-import { ActivityMetadataResponse } from "../../src/http/HttpService";
+import { ActivityMetadataResponse } from "src/components/toolbars/activities/types";
 
 export const sampleMetadataResponse: ActivityMetadataResponse = {
     activities: [

@@ -1,7 +1,8 @@
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
-import HttpService, { ActionMetadata, ActivityAttachment } from "../../../../http/HttpService";
+import HttpService from "../../../../http/HttpService";
+import { ActionMetadata, ActivityAttachment } from "../types";
 import UrlIcon from "../../../UrlIcon";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
@@ -31,7 +32,7 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunni
     ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
         display: "flex",
         alignItems: "center",
-        padding: theme.spacing(0.5, 1),
+        padding: theme.spacing(0.5, 0.75),
         borderRadius: theme.spacing(1),
         ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
     }),
@@ -139,14 +140,23 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
     const openVersionEnable = activity.type === "SCENARIO_MODIFIED" && activity.scenarioVersionId !== processVersionId;
 
     const getHeaderTitle = useMemo(() => {
+        const text = activity.overrideDisplayableName || activity.activities.displayableName;
+
         const headerTitle = (
             <Typography
                 variant={"caption"}
                 component={SearchHighlighter}
+                title={text}
                 highlights={[searchQuery]}
-                sx={(theme) => ({ color: theme.palette.text.primary })}
+                sx={(theme) => ({
+                    color: theme.palette.text.primary,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    textWrap: "noWrap",
+                    paddingRight: theme.spacing(1),
+                })}
             >
-                {activity.overrideDisplayableName || activity.activities.displayableName}
+                {text}
             </Typography>
         );
 
