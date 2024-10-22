@@ -1,8 +1,8 @@
 import { TypingInfo, TypingResult, UIParameter } from "./definition";
 
 export type ValidationResult = {
-    validationErrors: ValidationErrors[];
-    validationWarnings: ValidationWarnings[];
+    validationErrors?: ValidationErrors[];
+    validationWarnings?: ValidationWarnings[];
     nodeResults: NodeResults;
     errors: ValidationErrors;
     warnings?: Pick<ValidationErrors, "invalidNodes">;

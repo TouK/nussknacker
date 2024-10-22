@@ -27,8 +27,7 @@
     in table source and sink components in `Table` parameter
   * [#6950](https://github.com/TouK/nussknacker/pull/6950) Fix for testing mechanism for table sources: using full, model classpath instead of only flinkTable.jar
 * [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
-* [#6695](https://github.com/TouK/nussknacker/pull/6695) From now on, arrays on UI are visible as lists but on a 
-  background they are stored as it is and SpeL converts them to lists in a runtime.
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) [7032](https://github.com/TouK/nussknacker/pull/7032) From now on, arrays on UI are visible as lists but on a background they are stored as it is.
 * [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`.
 * [#6778](https://github.com/TouK/nussknacker/pull/6778) SpeL: check for methods if a property for a given name does not exist.
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
