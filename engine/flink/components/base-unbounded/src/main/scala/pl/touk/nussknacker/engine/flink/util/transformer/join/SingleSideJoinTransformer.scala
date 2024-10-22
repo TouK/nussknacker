@@ -20,12 +20,14 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -121,16 +123,26 @@ class SingleSideJoinTransformer(
           inputs: Map[String, DataStream[Context]],
           context: FlinkCustomNodeContext
       ): DataStream[ValueWithContext[AnyRef]] = {
-        val keyedMainBranchStream = inputs(mainId(branchTypeByBranchId).get)
+        val mainBranchId = mainId(branchTypeByBranchId).get
+
+        val keyedMainBranchStream = inputs(mainBranchId)
           .flatMap(
-            new StringKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainId(branchTypeByBranchId).get)),
-            context.valueWithContextInfo.forClass[String]
+            new StringKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainBranchId)),
+            context.valueWithContextInfo.forBranch[String](mainBranchId, Typed.typedClass[String])
           )
 
-        val keyedJoinedStream = inputs(joinedId(branchTypeByBranchId).get)
+        val joinedBranchId = joinedId(branchTypeByBranchId).get
+
+        val joinedTypeInfo: TypeInformation[ValueWithContext[KeyedValue[String, AnyRef]]] =
+          context.valueWithContextInfo.forBranch(
+            joinedBranchId,
+            KeyedValueType.info(TypeInformationDetection.instance.forType[AnyRef](aggregateBy.returnType))
+          )
+
+        val keyedJoinedStream = inputs(joinedBranchId)
           .flatMap(
-            new StringKeyedValueMapper(context, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy),
-            keyed.typeInfo(context, aggregateBy)
+            new StringKeyedValueMapper(context, keyByBranchId(joinedBranchId), aggregateBy),
+            joinedTypeInfo
           )
 
         val storedTypeInfo = TypeInformationDetection.instance
