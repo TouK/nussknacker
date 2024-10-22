@@ -248,7 +248,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         filename = fileName,
         fileStatus = "AVAILABLE",
         overrideDisplayableName = fileName
-      ).extractString(1, "attachment.file.id")
+      ).getAddedAttachmentId
 
       given()
         .when()
