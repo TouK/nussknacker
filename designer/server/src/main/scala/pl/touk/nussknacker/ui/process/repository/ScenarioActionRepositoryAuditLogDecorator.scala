@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.ui.process.ScenarioActivityAuditLog
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.FunctorUtils.Ops
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -24,7 +25,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
   )(implicit user: LoggedUser): DB[ProcessAction] =
     underlying
       .addInstantAction(processId, processVersion, actionName, comment, buildInfoProcessingType)
-      .map { processAction =>
+      .onSuccessRunAsync(processAction =>
         ScenarioActivityAuditLog.onScenarioImmediateAction(
           processAction.id,
           processId,
@@ -32,8 +33,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
           Some(processVersion),
           user
         )
-        processAction
-      }
+      )
 
   override def addInProgressAction(
       processId: ProcessId,
@@ -43,10 +43,9 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
   )(implicit user: LoggedUser): DB[ProcessActionId] =
     underlying
       .addInProgressAction(processId, actionName, processVersion, buildInfoProcessingType)
-      .map { processActionId =>
+      .onSuccessRunAsync(processActionId =>
         ScenarioActivityAuditLog.onScenarioActionStarted(processActionId, processId, actionName, processVersion, user)
-        processActionId
-      }
+      )
 
   override def markActionAsFinished(
       actionId: ProcessActionId,
@@ -67,7 +66,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
         comment,
         buildInfoProcessingType
       )
-      .map { _ =>
+      .onSuccessRunAsync(_ =>
         ScenarioActivityAuditLog
           .onScenarioActionFinishedWithSuccess(
             actionId,
@@ -77,7 +76,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
             comment.map(_.content),
             user
           )
-      }
+      )
 
   override def markActionAsFailed(
       actionId: ProcessActionId,
@@ -100,7 +99,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
         failureMessage,
         buildInfoProcessingType
       )
-      .map { _ =>
+      .onSuccessRunAsync(_ =>
         ScenarioActivityAuditLog
           .onScenarioActionFinishedWithFailure(
             actionId,
@@ -111,14 +110,14 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
             failureMessage,
             user
           )
-      }
+      )
 
   override def removeAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId])(
       implicit user: LoggedUser
   ): DB[Unit] =
     underlying
       .removeAction(actionId, processId, processVersion)
-      .map { _ =>
+      .onSuccessRunAsync(_ =>
         ScenarioActivityAuditLog
           .onScenarioActionRemoved(
             actionId,
@@ -126,7 +125,7 @@ class ScenarioActionRepositoryAuditLogDecorator(underlying: ScenarioActionReposi
             processVersion,
             user,
           )
-      }
+      )
 
   override def deleteInProgressActions(): DB[Unit] =
     underlying.deleteInProgressActions()

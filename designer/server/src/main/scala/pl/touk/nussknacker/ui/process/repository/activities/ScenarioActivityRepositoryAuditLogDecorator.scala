@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.ui.process.repository.activities
 
-import db.util.DBIOActionInstances.DB
+import cats.effect.IO
+import db.util.DBIOActionInstances.{DB, dbMonad}
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.ScenarioActivityAuditLog
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import slick.dbio.DBIOAction
+import pl.touk.nussknacker.ui.util.FunctorUtils._
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext
@@ -26,10 +27,7 @@ class ScenarioActivityRepositoryAuditLogDecorator(
   ): DB[ScenarioActivityId] =
     underlying
       .addActivity(scenarioActivity)
-      .map { scenarioActivityId =>
-        ScenarioActivityAuditLog.onCreateScenarioActivity(scenarioActivity)
-        scenarioActivityId
-      }
+      .onSuccessRunAsync(_ => ScenarioActivityAuditLog.onCreateScenarioActivity(scenarioActivity))
 
   def editComment(
       scenarioId: ProcessId,
@@ -38,10 +36,10 @@ class ScenarioActivityRepositoryAuditLogDecorator(
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] =
     underlying
       .editComment(scenarioId, rowId, comment)
-      .map(_.map { scenarioActivityId =>
-        ScenarioActivityAuditLog.onEditComment(scenarioId, user, scenarioActivityId, comment)
-        scenarioActivityId
-      })
+      .onSuccessRunAsync {
+        case Right(activityId) => ScenarioActivityAuditLog.onEditComment(scenarioId, user, activityId, comment)
+        case Left(_)           => IO.unit
+      }
 
   def editComment(
       scenarioId: ProcessId,
@@ -50,10 +48,10 @@ class ScenarioActivityRepositoryAuditLogDecorator(
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] =
     underlying
       .editComment(scenarioId, activityId, comment)
-      .map(_.map { scenarioActivityId =>
-        ScenarioActivityAuditLog.onEditComment(scenarioId, user, scenarioActivityId, comment)
-        scenarioActivityId
-      })
+      .onSuccessRunAsync {
+        case Right(activityId) => ScenarioActivityAuditLog.onEditComment(scenarioId, user, activityId, comment)
+        case Left(_)           => IO.unit
+      }
 
   def deleteComment(
       scenarioId: ProcessId,
@@ -61,10 +59,7 @@ class ScenarioActivityRepositoryAuditLogDecorator(
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] =
     underlying
       .deleteComment(scenarioId, rowId)
-      .map { scenarioActivityId =>
-        ScenarioActivityAuditLog.onDeleteComment(scenarioId, rowId, user)
-        scenarioActivityId
-      }
+      .onSuccessRunAsync(_ => ScenarioActivityAuditLog.onDeleteComment(scenarioId, rowId, user))
 
   def deleteComment(
       scenarioId: ProcessId,
@@ -72,19 +67,14 @@ class ScenarioActivityRepositoryAuditLogDecorator(
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] =
     underlying
       .deleteComment(scenarioId, activityId)
-      .map { scenarioActivityId =>
-        ScenarioActivityAuditLog.onDeleteComment(scenarioId, activityId, user)
-        scenarioActivityId
-      }
+      .onSuccessRunAsync(_ => ScenarioActivityAuditLog.onDeleteComment(scenarioId, activityId, user))
 
   def addAttachment(
       attachmentToAdd: AttachmentToAdd
   )(implicit user: LoggedUser): DB[ScenarioActivityId] =
     underlying
       .addAttachment(attachmentToAdd)
-      .andFinally(
-        DBIOAction.successful(ScenarioActivityAuditLog.onAddAttachment(attachmentToAdd, user))
-      )
+      .onSuccessRunAsync(_ => ScenarioActivityAuditLog.onAddAttachment(attachmentToAdd, user))
 
   def findActivities(
       scenarioId: ProcessId,
