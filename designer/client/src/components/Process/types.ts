@@ -47,7 +47,6 @@ export interface Scenario {
     isFragment: boolean;
     isLatestVersion: boolean;
     processCategory: string;
-    processType: string;
     modificationDate: Instant; // Deprecated
     modifiedBy: string;
     createdAt: Instant;
@@ -77,6 +76,7 @@ export type ProcessStateType = {
     startTime?: Date;
     attributes?: UnknownRecord;
     errors?: Array<string>;
+    version?: number | null;
 };
 
 export type StatusType = {
