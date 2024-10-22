@@ -6,13 +6,6 @@ final case class Comment private (content: String) extends AnyVal {
   override def toString: String = content
 }
 
-final case class NonEmptyComment private (content: String)
-
-object NonEmptyComment {
-  def from(comment: Comment): Option[NonEmptyComment] =
-    if (comment.content.isEmpty) None else Some(NonEmptyComment(comment.content))
-}
-
 object Comment {
 
   def from(content: String): Option[Comment] = {

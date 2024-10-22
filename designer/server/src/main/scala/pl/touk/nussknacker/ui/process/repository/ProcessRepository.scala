@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.HttpHeader
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.NonEmptyComment
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -69,14 +69,13 @@ object ProcessRepository {
     val increaseVersionWhenJsonNotChanged: Boolean
     val labels: List[ScenarioLabel]
     val forwardedUserName: Option[RemoteUserName]
-    val comment: Option[NonEmptyComment]
     def id: ProcessIdWithName = ProcessIdWithName(processId, canonicalProcess.name)
   }
 
   final case class UpdateProcessAction(
       protected val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
-      comment: Option[NonEmptyComment],
+      comment: Option[Comment],
       labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
@@ -91,9 +90,7 @@ object ProcessRepository {
       sourceEnvironment: String,
       targetEnvironment: String,
       sourceScenarioVersionId: Option[VersionId],
-  ) extends ModifyProcessAction {
-    override val comment: Option[NonEmptyComment] = None
-  }
+  ) extends ModifyProcessAction
 
   final case class AutomaticProcessUpdateAction(
       protected val processId: ProcessId,
@@ -102,9 +99,7 @@ object ProcessRepository {
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName],
       migrationsApplies: List[ProcessMigration]
-  ) extends ModifyProcessAction {
-    override val comment: Option[NonEmptyComment] = None
-  }
+  ) extends ModifyProcessAction
 
   final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
