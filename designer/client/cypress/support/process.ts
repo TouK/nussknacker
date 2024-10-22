@@ -324,7 +324,7 @@ function deployScenario(comment = "issues/123", withScreenshot?: boolean) {
 }
 
 function cancelScenario(comment = "issues/123") {
-    cy.contains(/^cancel$/i).click();
+    cy.contains("button", /^cancel$/i).click();
     cy.get("[data-testid=window] textarea").click().type(comment);
     cy.contains(/^ok$/i).should("be.enabled").click();
 }
