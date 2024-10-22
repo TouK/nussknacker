@@ -312,7 +312,7 @@ trait NuResourcesTest
     doUpdateProcess(
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
-        comment.map(Comment.apply),
+        comment,
         Some(List.empty),
         None
       ),

@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.HttpHeader
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.NonEmptyComment
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -75,7 +75,7 @@ object ProcessRepository {
   final case class UpdateProcessAction(
       protected val processId: ProcessId,
       canonicalProcess: CanonicalProcess,
-      comment: Option[NonEmptyComment],
+      comment: Option[Comment],
       labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName]
