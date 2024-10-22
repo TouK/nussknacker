@@ -9,7 +9,7 @@ interface Props {
 }
 export const DateItem = forwardRef(({ activity, isFirstDateItem }: Props, ref: ForwardedRef<HTMLDivElement>) => {
     return (
-        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} px={1} pt={!isFirstDateItem && 3} ref={ref}>
+        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} px={1} pt={!isFirstDateItem && 3} pb={1} ref={ref}>
             <Divider variant={"fullWidth"} sx={(theme) => ({ flex: 1, backgroundColor: theme.palette.common.white, mr: 1 })} />
             <Typography component={"div"} variant={"caption"}>
                 {Array.isArray(activity.value)
