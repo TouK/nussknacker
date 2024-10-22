@@ -44,19 +44,20 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
     ContextTransformation
       .definedBy(_.withVariable(OutputVar.customNode(variableName), newValue.returnType))
       .implementedBy(
-        FlinkCustomStreamTransformation { (stream, nodeContext) =>
-          implicit val nctx: FlinkCustomNodeContext = nodeContext
+        FlinkCustomStreamTransformation { (stream, ctx) =>
+          implicit val nctx: FlinkCustomNodeContext = ctx
           setUidToNodeIdIfNeed(
-            nodeContext,
+            ctx,
             stream
               .groupBy(groupBy)
               .process(
                 new TransformStateFunction[String](
-                  nodeContext.lazyParameterHelper,
+                  ctx.lazyParameterHelper,
                   transformWhen,
                   newValue,
                   stateTimeoutSeconds.seconds
-                )
+                ),
+                ctx.valueWithContextInfo.forClass[AnyRef](classOf[String])
               )
           )
         }

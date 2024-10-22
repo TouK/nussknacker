@@ -41,6 +41,7 @@ class FlinkKafkaUniversalSink(
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSink[_] =
+    // FIXME: Missing map TypeInformation
     dataStream
       .map(new EncodeAvroRecordFunction(flinkNodeContext))
       .filter(_.value != null)
