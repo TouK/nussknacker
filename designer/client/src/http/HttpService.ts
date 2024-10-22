@@ -196,7 +196,7 @@ export type ActivityAdditionalFields = { name: string; value: string };
 interface ActivityComment {
     content: {
         value: string;
-        status: "AVAILABLE" | "DELETED";
+        status: "AVAILABLE" | "NOT_AVAILABLE";
     };
     lastModifiedBy: string;
     lastModifiedAt: string;
