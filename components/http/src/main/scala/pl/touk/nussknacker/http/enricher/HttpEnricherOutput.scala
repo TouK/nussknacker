@@ -8,10 +8,9 @@ import pl.touk.nussknacker.http.enricher.MapExtensions.MapToHashMapExtension
 import sttp.client3.Response
 import sttp.model.MediaType
 
-// TODO decision: can we leak headers / url / body in scenario? would it be enough to filter out configured securities?
 private[enricher] object HttpEnricherOutput {
 
-  // TODO: fill out request typing result with values determined at validation
+  // TODO: add typing results with values if evaulable
   def typingResult(requestBodyTypingResult: TypingResult): TypedObjectTypingResult = Typed.record(
     List(
       "request" -> Typed.record(
@@ -26,13 +25,14 @@ private[enricher] object HttpEnricherOutput {
         List(
           "statusCode" -> Typed[Int],
           "statusText" -> Typed[String],
-          "headers"    -> Typed.typedClass[java.util.Map[String, String]],
+          "headers"    -> Typed.genericTypeClass[Map[_, _]](Typed[String] :: Typed[String] :: Nil),
           "body"       -> Unknown
         )
       ),
     )
   )
 
+  // TODO: filter out configured seucurities
   def buildOutput(response: Response[Either[String, String]], requestBody: Option[Body]): java.util.Map[String, _] =
     Map(
       "request" -> Map(
@@ -69,7 +69,7 @@ private[enricher] object HttpEnricherOutput {
           case Right(value) => value
         }
         contentType match {
-          case s if s == MediaType.ApplicationJson.toString() =>
+          case s if s.toLowerCase.contains(MediaType.ApplicationJson.toString()) =>
             io.circe.parser.parse(body) match {
               case Right(json) => JsonUtils.jsonToAny(json)
               case Left(err) =>
@@ -77,11 +77,11 @@ private[enricher] object HttpEnricherOutput {
                   input = body,
                   message = s"Could not parse json: ${err.message}",
                   cause = err.underlying
-                ) // TODO decision: if we cant parse - throw exception or return null?
+                )
             }
-          case s if s == MediaType.TextPlain.toString() => body
+          case s if s.toLowerCase.contains(MediaType.TextPlain.toString()) => body
           /*
-            TODO decision: if we cant parse body, do we:
+            TODO decision: if we get an unsupported body type:
              1. treat it as text/plain - pass it as string without parsing
              2. throw exception
              3. return null

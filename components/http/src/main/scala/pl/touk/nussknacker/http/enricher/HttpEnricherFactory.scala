@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.http.enricher
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   DefinedLazyParameter,
@@ -16,14 +15,13 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.http.HttpEnricherConfig
 import pl.touk.nussknacker.http.client.HttpClientProvider
-import pl.touk.nussknacker.http.enricher.HttpEnricher.{BodyType, HttpMethod, buildURL}
+import pl.touk.nussknacker.http.enricher.HttpEnricher.{BodyType, HttpMethod}
 import pl.touk.nussknacker.http.enricher.HttpEnricherFactory.{
   BodyParamExtractor,
   BodyTypeParamExtractor,
   TransformationState
 }
 import pl.touk.nussknacker.http.enricher.HttpEnricherParameters._
-import sttp.model.QueryParams
 
 class HttpEnricherFactory(val config: HttpEnricherConfig)
     extends EagerService
@@ -67,10 +65,10 @@ class HttpEnricherFactory(val config: HttpEnricherConfig)
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(
-          (UrlParam.name, DefinedLazyParameter(lazyUrlParam)) ::
-          (QueryParamsParam.name, _) ::
-          (MethodParam.name, DefinedEagerParameter(httpMethod: String, _)) ::
-          (HeadersParam.name, _) ::
+          (UrlParam.name, DefinedLazyParameter(urlParamTypingResult)) ::
+          (QueryParamsParam.name, DefinedLazyParameter(queryParamsParamTypingResult)) ::
+          (MethodParam.name, DefinedEagerParameter(methodParamValue: String, _)) ::
+          (HeadersParam.name, DefinedLazyParameter(headersParamTypingResult)) ::
           (BodyTypeParam.name, _) ::
           parametersTail,
           Some(TransformationState.BodyTypeDeclared(bodyType))
@@ -78,16 +76,8 @@ class HttpEnricherFactory(val config: HttpEnricherConfig)
       val outName = OutputVariableNameDependency.extract(dependencies)
 
       val method = HttpMethod.values
-        .find(_.name == httpMethod)
+        .find(_.name == methodParamValue)
         .getOrElse(throw new IllegalStateException("Invalid body type parameter value."))
-
-      val compileTimeUrlValidationErrorOpt = lazyUrlParam.valueOpt.flatMap {
-        case url: String =>
-          buildURL(config.rootUrl, url, QueryParams()).swap.toOption.map(ex =>
-            CustomNodeError(s"Invalid URL: ${ex.cause.getMessage}", Some(UrlParam.name))
-          )
-        case _ => None
-      }
 
       val requestBodyTypingResult = bodyType match {
         case BodyType.None => typing.TypedNull
@@ -101,14 +91,23 @@ class HttpEnricherFactory(val config: HttpEnricherConfig)
           }
       }
 
+      val compileTimeUrlValidation = UrlParam.validate(urlParamTypingResult, config.rootUrl)
+      val queryParamErrors         = QueryParamsParam.validate(queryParamsParamTypingResult)
+
+      // TODO http: add validation for String | List[String] in headers and query params
+
+      val errors = compileTimeUrlValidation ++ queryParamErrors
+
+      val outputTypingResult = HttpEnricherOutput.typingResult(requestBodyTypingResult)
+
       FinalResults.forValidation(
         context,
-        compileTimeUrlValidationErrorOpt.toList,
+        errors,
         Some(TransformationState.FinalState(bodyType, method))
       )(ctx =>
         ctx.withVariable(
           outName,
-          HttpEnricherOutput.typingResult(requestBodyTypingResult),
+          outputTypingResult,
           Some(ParameterName(OutputVar.CustomNodeFieldName))
         )
       )

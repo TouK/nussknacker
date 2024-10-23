@@ -17,6 +17,7 @@ class HttpEnricherBodyTest extends HttpEnricherTestSuite {
         ("contentType", "body", "expectedBodyRuntimeValue"),
         ("application/json", """ "string" """, "string"),
         ("application/json", "true", true),
+        ("application/json; charset=UTF-8", "true", true),
         (
           "application/json",
           TestData.recordWithAllTypesNestedAsJson,
@@ -205,7 +206,6 @@ class HttpEnricherBodyTest extends HttpEnricherTestSuite {
         |  "array": {1, "string", true, null, {"innerArrayObject": {1, 2, 3}}}
         |}
         |""".stripMargin.spel
-
 
     val recordWithAllTypesNestedAsComparableAsNuRuntimeValue: Map[String, Any] = Map(
       "string"      -> "this is a string",

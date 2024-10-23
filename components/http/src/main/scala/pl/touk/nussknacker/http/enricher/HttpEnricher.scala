@@ -12,7 +12,7 @@ import pl.touk.nussknacker.http.enricher.HttpEnricher.{ApiKeyConfig, Body, BodyT
 import pl.touk.nussknacker.http.enricher.HttpEnricherParameters.BodyParam
 import sttp.client3.basicRequest
 import sttp.client3.circe._
-import sttp.model.{Header, Method, QueryParams, Uri}
+import sttp.model.{Header, Headers, Method, QueryParams, Uri}
 
 import java.net.URL
 import scala.collection.immutable
@@ -35,23 +35,25 @@ class HttpEnricher(
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] = {
     val url = {
-      val urlParam = HttpEnricherParameters.UrlParam.extractor(context, params)
-      val queryParamsFromParam: QueryParams = HttpEnricherParameters.QueryParamsParam.extractor(context, params) match {
-        case null => QueryParams()
-        case jMap => QueryParams.fromMap(jMap.asScala.toMap)
-      }
-      val queryParamsApiKeys = securityConfig.collect { case q: ApiKeyInQuery => q.name -> q.value }.toMap
-      val allQueryParams     = queryParamsFromParam.param(queryParamsApiKeys)
-      buildURL(rootUrl, urlParam, allQueryParams).fold(ex => throw ex, identity)
+      val urlParam             = HttpEnricherParameters.UrlParam.extractor(context, params)
+      val queryParamsFromParam = HttpEnricherParameters.QueryParamsParam.extractor(context, params)
+      val queryParamsApiKeys   = securityConfig.collect { case q: ApiKeyInQuery => q.name -> q.value }.toList
+      val allQueryParamsGrouped =
+        (queryParamsFromParam ++ queryParamsApiKeys)
+      val finalQueryParams = QueryParams.fromSeq(allQueryParamsGrouped)
+      buildURL(rootUrl, urlParam, finalQueryParams).fold(ex => throw ex, identity)
     }
 
-    val headers: List[Header] = HttpEnricherParameters.HeadersParam.extractor(context, params) match {
-      case null => List.empty
-      case jMap =>
-        jMap.asScala.toMap.map { case (k, v) =>
-          Header(k, v)
-        }.toList
-    }
+    // TODO: merging cookies?
+    val headersFromParam: List[(String, String)] = HttpEnricherParameters.HeadersParam.extractor(context, params)
+    val headersApiKeys = securityConfig.collect { case q: ApiKeyInHeader => q.name -> q.value }.toList
+    val headers = (headersFromParam ++ headersApiKeys)
+      .groupBy(_._1)
+      .map { case (k, v) =>
+        k -> v.map(_._2).mkString(",")
+      }
+      .map(a => Header.apply(a._1, a._2))
+      .toList
 
     val body = BodyParam.extractor(context, params, bodyType)
 
@@ -88,7 +90,6 @@ class HttpEnricher(
     }
     val requestWithSecurityApplied = securityConfig.foldLeft(requestWithAppliedBody) { (request, securityToApply) =>
       securityToApply match {
-        case ApiKeyInHeader(name, value) => request.header(name, value)
         case ApiKeyInCookie(name, value) => request.cookie(name, value)
         case _                           => request
       }
