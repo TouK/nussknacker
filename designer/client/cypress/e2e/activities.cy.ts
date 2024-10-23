@@ -94,8 +94,6 @@ describe("Activities", () => {
         findActivity("comment 6");
         makeScreenshot();
 
-        cy.contains(/^show 5 more/i).click();
-
         findActivity("comment 1");
         makeScreenshot();
         cy.contains(/^show less/i).click();
