@@ -39,8 +39,7 @@ class PartReferenceTypeInformation extends TypeInformation[PartReference] {
   override def equals(obj: Any): Boolean =
     canEqual(obj)
 
-  override def hashCode(): Int =
-    Objects.hashCode(this)
+  override def hashCode(): Int = 1
 }
 
 private object PartReferenceSerializer {
