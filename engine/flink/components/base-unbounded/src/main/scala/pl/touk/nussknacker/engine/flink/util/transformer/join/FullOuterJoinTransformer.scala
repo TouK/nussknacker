@@ -164,7 +164,7 @@ class FullOuterJoinTransformer(
                 Types
                   .MAP(
                     Types.STRING,
-                    // FIXME: Passing the valueTypeInfo here results in problems of serialization a List[Int]
+                    // FIXME: Passing the valueTypeInfo here will cause serialisation problems with a List[Int]
                     new OptionTypeInfo(TypeInformation.of(classOf[AnyRef]))
                   )
                   .asInstanceOf[TypeInformation[AnyRef]]
