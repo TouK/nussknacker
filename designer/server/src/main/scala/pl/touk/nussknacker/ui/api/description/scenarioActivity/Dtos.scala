@@ -10,7 +10,6 @@ import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.requestresponse.openapi.OApiDocumentation.dropNulls
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.enumSchema
@@ -366,7 +365,7 @@ object Dtos {
       val derivedCodec = deriveConfiguredCodec[ScenarioActivity]
       circe.Codec.from(
         decodeA = derivedCodec,
-        encodeA = dropNulls(derivedCodec)
+        encodeA = derivedCodec.mapJson(_.dropNullValues)
       )
     }
 
