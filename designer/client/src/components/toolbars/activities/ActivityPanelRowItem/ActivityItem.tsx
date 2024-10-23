@@ -18,7 +18,7 @@ const StyledActivityRoot = styled("div")(({ theme }) => ({
 
 const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: boolean }>(({ theme, isActiveFound, isFound }) => ({
     ...getItemColors(theme, isActiveFound, isFound),
-    borderRadius: theme.spacing(1),
+    borderRadius: theme.spacing(0.5),
 }));
 
 const StyledActivityBody = styled("div")(({ theme }) => ({

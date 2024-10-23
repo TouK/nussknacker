@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService from "../../../../http/HttpService";
-import { ActionMetadata, ActivityAttachment, ActivityComment } from "../types";
+import { ActionMetadata, ActivityAttachment, ActivityTypes } from "../types";
 import UrlIcon from "../../../UrlIcon";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,7 +18,6 @@ import * as DialogMessages from "../../../../common/DialogMessages";
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
     height: "16px",
-    marginRight: theme.spacing(1),
     color: theme.palette.primary.main,
 }));
 
@@ -40,7 +39,7 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunni
         display: "flex",
         alignItems: "center",
         padding: theme.spacing(0.5, 0, 0.5, 0.75),
-        borderRadius: theme.spacing(1),
+        borderRadius: theme.spacing(0.5),
         ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
     }),
 );
@@ -69,6 +68,7 @@ const HeaderActivity = ({
 
             return (
                 <StyledHeaderActionIcon
+                    title={activityAction.displayableName}
                     data-testid={`compare-${scenarioVersionId}`}
                     onClick={() => open(handleOpenCompareVersionDialog(scenarioVersionId.toString()))}
                     key={activityAction.id}
@@ -83,11 +83,18 @@ const HeaderActivity = ({
                 return null;
             }
 
-            const attachmentId = activityAttachment.file.id;
+            const attachmentId = attachmentStatus && activityAttachment.file.id;
             const attachmentName = activityAttachment.filename;
 
             const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId, attachmentName);
-            return <StyledHeaderActionIcon onClick={handleDownloadAttachment} key={attachmentId} src={activityAction.icon} />;
+            return (
+                <StyledHeaderActionIcon
+                    onClick={handleDownloadAttachment}
+                    key={attachmentId}
+                    src={activityAction.icon}
+                    title={activityAction.displayableName}
+                />
+            );
         }
         case "delete_attachment": {
             const attachmentStatus = activityAttachment.file.status;
@@ -131,9 +138,13 @@ interface Props {
 
 const WithOpenVersion = ({
     scenarioVersion,
+    isFound,
     children,
+    activityType,
 }: PropsWithChildren<{
     scenarioVersion: number;
+    isFound: boolean;
+    activityType: ActivityTypes;
 }>) => {
     const nothingToSave = useSelector(isSaveDisabled);
     const scenario = useSelector(getScenario);
@@ -163,7 +174,15 @@ const WithOpenVersion = ({
 
     return (
         <Button
-            sx={{ textTransform: "initial", p: 0, m: 0 }}
+            sx={(theme) => ({
+                textTransform: "initial",
+                "&:hover": { backgroundColor: activityType === "SCENARIO_DEPLOYED" || isFound ? "unset" : theme.palette.action.hover },
+                "&:focus": { outline: (activityType === "SCENARIO_DEPLOYED" || isFound) && "unset" },
+                width: "100%",
+                justifyContent: "flex-start",
+                m: theme.spacing(0, 0.5),
+                p: theme.spacing(0, 0.5),
+            })}
             onClick={() => {
                 changeVersion(scenarioVersion);
             }}
@@ -173,12 +192,13 @@ const WithOpenVersion = ({
     );
 };
 
-const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }: Props) => {
+const ActivityItemHeader = ({ activity, isRunning, isFound, isActiveFound, searchQuery }: Props) => {
     const scenario = useSelector(getScenario);
     const { processVersionId } = scenario || {};
 
     const isHighlighted = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED"].includes(activity.type);
-    const openVersionEnable = activity.type === "SCENARIO_MODIFIED" && activity.scenarioVersionId !== processVersionId;
+    const openVersionEnable =
+        ["SCENARIO_MODIFIED", "SCENARIO_DEPLOYED"].includes(activity.type) && activity.scenarioVersionId !== processVersionId;
 
     const getHeaderTitle = useMemo(() => {
         const text = activity.overrideDisplayableName || activity.activities.displayableName;
@@ -194,7 +214,7 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     textWrap: "noWrap",
-                    paddingRight: theme.spacing(1),
+                    padding: !openVersionEnable && theme.spacing(0, 1),
                 })}
             >
                 {text}
@@ -202,11 +222,22 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
         );
 
         if (openVersionEnable) {
-            return <WithOpenVersion scenarioVersion={activity.scenarioVersionId}>{headerTitle}</WithOpenVersion>;
+            return (
+                <WithOpenVersion scenarioVersion={activity.scenarioVersionId} isFound={isFound} activityType={activity.type}>
+                    {headerTitle}
+                </WithOpenVersion>
+            );
         }
 
         return headerTitle;
-    }, [activity.activities.displayableName, activity.overrideDisplayableName, activity.scenarioVersionId, openVersionEnable, searchQuery]);
+    }, [
+        activity.activities.displayableName,
+        activity.overrideDisplayableName,
+        activity.scenarioVersionId,
+        isFound,
+        openVersionEnable,
+        searchQuery,
+    ]);
 
     return (
         <StyledActivityItemHeader isHighlighted={isHighlighted} isRunning={isRunning} isActiveFound={isActiveFound}>
