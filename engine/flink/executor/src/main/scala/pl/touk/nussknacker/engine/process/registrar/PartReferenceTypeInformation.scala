@@ -7,8 +7,6 @@ import org.apache.flink.api.common.typeutils.{CompositeTypeSerializerSnapshot, T
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import java.util.Objects
 
