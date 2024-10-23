@@ -194,7 +194,7 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     textWrap: "noWrap",
-                    maxWidth: "75%",
+                    paddingRight: theme.spacing(1),
                 })}
             >
                 {text}
