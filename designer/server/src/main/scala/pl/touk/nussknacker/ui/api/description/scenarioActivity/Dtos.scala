@@ -650,7 +650,7 @@ object Dtos {
         comment: ScenarioActivityComment,
         dateFinished: Instant,
         errorMessage: Option[String],
-    ): ScenarioActivity = {
+    )(implicit zoneId: ZoneId): ScenarioActivity = {
       val humanReadableStatus = "Run now execution finished"
       ScenarioActivity(
         id = id,
@@ -680,7 +680,7 @@ object Dtos {
         createdAt: Instant,
         nextRetryAt: Option[Instant],
         retriesLeft: Option[Int],
-    ): ScenarioActivity = {
+    )(implicit zoneId: ZoneId): ScenarioActivity = {
       val humanReadableStatus = scheduledExecutionStatus match {
         case ScheduledExecutionStatus.Finished                => "Scheduled execution finished"
         case ScheduledExecutionStatus.Failed                  => "Scheduled execution failed"
@@ -874,8 +874,8 @@ object Dtos {
 
   private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-  private def format(instant: Instant): String = {
-    instant.atZone(ZoneId.systemDefault()).format(dateTimeFormatter)
+  private def format(instant: Instant)(implicit zoneId: ZoneId): String = {
+    instant.atZone(zoneId).format(dateTimeFormatter)
   }
 
 }

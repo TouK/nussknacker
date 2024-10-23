@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
 import sttp.tapir.EndpointIO.Example
 
-import java.time.Instant
+import java.time.{Instant, ZoneId}
 import java.util.UUID
 
 object Examples {
@@ -40,7 +40,7 @@ object Examples {
     )
   )
 
-  val scenarioActivities: Example[ScenarioActivities] = Example.of(
+  def scenarioActivities(implicit zoneId: ZoneId): Example[ScenarioActivities] = Example.of(
     summary = Some("Display scenario actions"),
     value = ScenarioActivities(
       activities = List(
