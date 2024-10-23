@@ -51,6 +51,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
   If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
 
+* [#7058](https://github.com/TouK/nussknacker/pull/7058) Improvements: Add missing Flink TypeInformation for proper serialization:
+  * In case of using base (bounded and unbounded) Flink components state will be probably not compatible
+  * `FlinkCustomNodeContext.typeInformationDetection` hase been removed, please use `TypeInformationDetection.instance` instead
+
 ## In version 1.17.0
 
 ### Code API changes
