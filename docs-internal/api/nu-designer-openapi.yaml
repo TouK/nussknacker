@@ -4207,8 +4207,12 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Run now execution finished
+                      - name: started
+                        value: '2024-01-17 15:21:17'
+                      - name: finished
+                        value: '2024-01-17 15:21:17'
                       - name: errorMessage
                         value: Execution error occurred
                       type: PERFORMED_SINGLE_EXECUTION
@@ -4222,8 +4226,12 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Run now execution finished
+                      - name: started
+                        value: '2024-01-17 15:21:17'
+                      - name: finished
+                        value: '2024-01-17 15:21:17'
                       type: PERFORMED_SINGLE_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4231,15 +4239,15 @@ paths:
                       scenarioVersionId: 1
                       additionalFields:
                       - name: status
-                        value: Execution finished
-                      - name: createdAt
-                        value: '2024-01-17T13:21:17Z'
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                        value: Scheduled execution finished
+                      - name: created
+                        value: '2024-01-17 14:21:17'
+                      - name: started
+                        value: '2024-01-17 15:21:17'
+                      - name: finished
+                        value: '2024-01-17 15:21:17'
                       - name: scheduleName
                         value: main-schedule
-                      - name: retriesLeft
-                        value: None
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4248,16 +4256,18 @@ paths:
                       additionalFields:
                       - name: status
                         value: Deployment will be retried
-                      - name: createdAt
-                        value: '2024-01-17T13:21:17Z'
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: created
+                        value: '2024-01-17 14:21:17'
+                      - name: started
+                        value: '2024-01-17 15:21:17'
+                      - name: finished
+                        value: '2024-01-17 15:21:17'
                       - name: scheduleName
                         value: main-schedule
                       - name: retriesLeft
-                        value: Some(1)
+                        value: '1'
                       - name: nextRetryAt
-                        value: '2024-01-17T15:21:17Z'
+                        value: '2024-01-17 16:21:17'
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user
