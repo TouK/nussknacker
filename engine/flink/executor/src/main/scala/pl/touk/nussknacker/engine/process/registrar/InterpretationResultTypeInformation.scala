@@ -14,8 +14,7 @@ object InterpretationResultTypeInformation {
   def create(
       validationContext: ValidationContext
   ): TypeInformation[InterpretationResult] = {
-    // TODO: here we still use Kryo :/
-    val reference    = TypeInformation.of(classOf[PartReference])
+    val reference    = new PartReferenceTypeInformation
     val finalContext = TypeInformationDetection.instance.forContext(validationContext)
 
     ConcreteCaseClassTypeInfo[InterpretationResult](
