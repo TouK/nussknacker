@@ -59,6 +59,11 @@ object Dtos {
           icon = "/assets/activities/actions/delete.svg"
         ),
         ScenarioActivityActionMetadata(
+          id = "add_comment",
+          displayableName = "Add",
+          icon = "/assets/activities/actions/add_comment.svg"
+        ),
+        ScenarioActivityActionMetadata(
           id = "edit_comment",
           displayableName = "Edit",
           icon = "/assets/activities/actions/edit.svg"
@@ -117,7 +122,7 @@ object Dtos {
 
   object ScenarioActivityType extends Enum[ScenarioActivityType] {
 
-    private val commentRelatedActions = List("delete_comment", "edit_comment")
+    private val commentRelatedActions = List("delete_comment", "edit_comment", "add_comment")
 
     case object ScenarioCreated extends ScenarioActivityType {
       override def displayableNameForScenario: String = s"Scenario created"

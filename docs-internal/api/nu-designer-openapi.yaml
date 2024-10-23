@@ -4383,24 +4383,28 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_PAUSED
                       displayableName: Pause
                       icon: /assets/activities/pause.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_CANCELED
                       displayableName: Cancel
                       icon: /assets/activities/cancel.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_MODIFIED
                       displayableName: Scenario modified
                       icon: /assets/activities/scenarioModified.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                       - compare
                     - type: SCENARIO_NAME_CHANGED
                       displayableName: Scenario name changed
@@ -4412,6 +4416,7 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: ATTACHMENT_ADDED
                       displayableName: Attachment
                       icon: /assets/activities/attachment.svg
@@ -4433,12 +4438,14 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: PERFORMED_SINGLE_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: PERFORMED_SCHEDULED_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
@@ -4459,6 +4466,9 @@ paths:
                     - id: delete_comment
                       displayableName: Delete
                       icon: /assets/activities/actions/delete.svg
+                    - id: add_comment
+                      displayableName: Add
+                      icon: /assets/activities/actions/add_comment.svg
                     - id: edit_comment
                       displayableName: Edit
                       icon: /assets/activities/actions/edit.svg
@@ -4489,24 +4499,28 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_PAUSED
                       displayableName: Pause
                       icon: /assets/activities/pause.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_CANCELED
                       displayableName: Cancel
                       icon: /assets/activities/cancel.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_MODIFIED
                       displayableName: Fragment modified
                       icon: /assets/activities/scenarioModified.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                       - compare
                     - type: SCENARIO_NAME_CHANGED
                       displayableName: Fragment name changed
@@ -4518,6 +4532,7 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: ATTACHMENT_ADDED
                       displayableName: Attachment
                       icon: /assets/activities/attachment.svg
@@ -4539,12 +4554,14 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: PERFORMED_SINGLE_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: PERFORMED_SCHEDULED_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
@@ -4565,6 +4582,9 @@ paths:
                     - id: delete_comment
                       displayableName: Delete
                       icon: /assets/activities/actions/delete.svg
+                    - id: add_comment
+                      displayableName: Add
+                      icon: /assets/activities/actions/add_comment.svg
                     - id: edit_comment
                       displayableName: Edit
                       icon: /assets/activities/actions/edit.svg
