@@ -32,10 +32,12 @@ export interface ActionMetadata {
 
 export type ActivityAdditionalFields = { name: string; value: string };
 
+export type ActivityCommentContentStatus = "AVAILABLE" | "NOT_AVAILABLE";
+
 export interface ActivityComment {
     content: {
-        value: string;
-        status: "AVAILABLE" | "DELETED";
+        value?: string;
+        status: ActivityCommentContentStatus;
     };
     lastModifiedBy: string;
     lastModifiedAt: string;

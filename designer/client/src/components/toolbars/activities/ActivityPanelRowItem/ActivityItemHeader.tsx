@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService from "../../../../http/HttpService";
-import { ActionMetadata, ActivityAttachment, ActivityTypes } from "../types";
+import { ActionMetadata, ActivityAttachment, ActivityComment, ActivityTypes } from "../types";
 import UrlIcon from "../../../UrlIcon";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,6 +14,7 @@ import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsD
 import { getHeaderColors } from "../helpers/activityItemColors";
 import { useTranslation } from "react-i18next";
 import * as DialogMessages from "../../../../common/DialogMessages";
+import { StyledActionIcon } from "./StyledActionIcon";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -24,14 +25,6 @@ const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
 const StyledHeaderActionRoot = styled("div")(() => ({
     display: "flex",
     marginLeft: "auto",
-}));
-
-const StyledHeaderActionIcon = styled(UrlIcon)(({ theme }) => ({
-    width: "1.25rem",
-    height: "1.25rem",
-    marginLeft: "auto",
-    cursor: "pointer",
-    color: theme.palette.text.secondary,
 }));
 
 const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunning: boolean; isActiveFound: boolean }>(
@@ -67,7 +60,7 @@ const HeaderActivity = ({
             }
 
             return (
-                <StyledHeaderActionIcon
+                <StyledActionIcon
                     title={activityAction.displayableName}
                     data-testid={`compare-${scenarioVersionId}`}
                     onClick={() => open(handleOpenCompareVersionDialog(scenarioVersionId.toString()))}
@@ -86,9 +79,9 @@ const HeaderActivity = ({
             const attachmentId = attachmentStatus && activityAttachment.file.id;
             const attachmentName = activityAttachment.filename;
 
-            const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId, attachmentName);
+            const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId.toString(), attachmentName);
             return (
-                <StyledHeaderActionIcon
+                <StyledActionIcon
                     onClick={handleDownloadAttachment}
                     key={attachmentId}
                     src={activityAction.icon}
@@ -106,13 +99,13 @@ const HeaderActivity = ({
             const attachmentId = activityAttachment.file.id;
 
             return (
-                <StyledHeaderActionIcon
+                <StyledActionIcon
                     src={activityAction.icon}
                     onClick={() =>
                         confirm({
                             text: DialogMessages.deleteAttachment(activityAttachment.filename),
                             onConfirmCallback: (confirmed) => {
-                                confirmed && HttpService.deleteAttachment(processName, attachmentId);
+                                confirmed && HttpService.deleteAttachment(processName, attachmentId.toString());
                             },
                             confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
                             denyText: t("panels.actions.process-unarchive.no", "No"),
@@ -234,6 +227,7 @@ const ActivityItemHeader = ({ activity, isRunning, isFound, isActiveFound, searc
         activity.activities.displayableName,
         activity.overrideDisplayableName,
         activity.scenarioVersionId,
+        activity.type,
         isFound,
         openVersionEnable,
         searchQuery,

@@ -404,7 +404,7 @@ class HttpService {
         }
     }
 
-    downloadAttachment(processName: ProcessName, attachmentId: number, fileName: string) {
+    downloadAttachment(processName: ProcessName, attachmentId: string, fileName: string) {
         return api
             .get(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`, {
                 responseType: "blob",
@@ -415,7 +415,7 @@ class HttpService {
             );
     }
 
-    deleteAttachment(processName: ProcessName, attachmentId: number) {
+    deleteAttachment(processName: ProcessName, attachmentId: string) {
         return api
             .delete(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`)
             .catch((error) =>
