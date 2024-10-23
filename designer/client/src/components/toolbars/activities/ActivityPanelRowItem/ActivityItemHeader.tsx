@@ -103,10 +103,12 @@ interface Props {
 
 const WithOpenVersion = ({
     scenarioVersion,
-    activityType,
+    isFound,
     children,
+    activityType,
 }: PropsWithChildren<{
     scenarioVersion: number;
+    isFound: boolean;
     activityType: ActivityTypes;
 }>) => {
     const nothingToSave = useSelector(isSaveDisabled);
@@ -139,8 +141,8 @@ const WithOpenVersion = ({
         <Button
             sx={(theme) => ({
                 textTransform: "initial",
-                "&:hover": { backgroundColor: activityType === "SCENARIO_DEPLOYED" ? "unset" : theme.palette.action.hover },
-                "&:focus": { outline: activityType === "SCENARIO_DEPLOYED" && "unset" },
+                "&:hover": { backgroundColor: activityType === "SCENARIO_DEPLOYED" || isFound ? "unset" : theme.palette.action.hover },
+                "&:focus": { outline: (activityType === "SCENARIO_DEPLOYED" || isFound) && "unset" },
                 width: "100%",
                 justifyContent: "flex-start",
                 m: theme.spacing(0, 0.5),
@@ -155,7 +157,7 @@ const WithOpenVersion = ({
     );
 };
 
-const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }: Props) => {
+const ActivityItemHeader = ({ activity, isRunning, isFound, isActiveFound, searchQuery }: Props) => {
     const scenario = useSelector(getScenario);
     const { processVersionId } = scenario || {};
 
@@ -186,7 +188,7 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
 
         if (openVersionEnable) {
             return (
-                <WithOpenVersion scenarioVersion={activity.scenarioVersionId} activityType={activity.type}>
+                <WithOpenVersion scenarioVersion={activity.scenarioVersionId} isFound={isFound} activityType={activity.type}>
                     {headerTitle}
                 </WithOpenVersion>
             );
@@ -197,7 +199,7 @@ const ActivityItemHeader = ({ activity, isRunning, isActiveFound, searchQuery }:
         activity.activities.displayableName,
         activity.overrideDisplayableName,
         activity.scenarioVersionId,
-        activity.type,
+        isFound,
         openVersionEnable,
         searchQuery,
     ]);
