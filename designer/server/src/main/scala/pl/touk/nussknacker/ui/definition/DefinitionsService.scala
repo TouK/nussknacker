@@ -10,7 +10,11 @@ import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinitio
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioPropertyConfig}
+import pl.touk.nussknacker.ui.definition.DefinitionsService.{
+  ModelParametersMode,
+  createUIParameter,
+  createUIScenarioPropertyConfig
+}
 import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
@@ -33,7 +37,11 @@ class DefinitionsService(
     fragmentPropertiesDocsUrl: Option[String]
 )(implicit ec: ExecutionContext) {
 
-  def prepareUIDefinitions(processingType: ProcessingType, forFragment: Boolean)(
+  def prepareUIDefinitions(
+      processingType: ProcessingType,
+      forFragment: Boolean,
+      modelParametersMode: ModelParametersMode
+  )(
       implicit user: LoggedUser
   ): Future[UIDefinitions] = {
     fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
@@ -54,8 +62,12 @@ class DefinitionsService(
           throw new IllegalStateException(s"Unknown component representation: $other")
       }
 
-      val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
-        .finalizeScenarioProperties(scenarioPropertiesConfig)
+      val finalizedScenarioPropertiesConfig = modelParametersMode match {
+        case ModelParametersMode.Enriched =>
+          scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioPropertiesConfig)
+        case ModelParametersMode.Raw =>
+          scenarioPropertiesConfig
+      }
 
       import net.ceedubs.ficus.Ficus._
       val scenarioPropertiesDocsUrl = modelData.modelConfig.getAs[String]("scenarioPropertiesDocsUrl")
@@ -64,7 +76,8 @@ class DefinitionsService(
         withStaticDefinition,
         forFragment,
         finalizedScenarioPropertiesConfig,
-        scenarioPropertiesDocsUrl
+        scenarioPropertiesDocsUrl,
+        modelParametersMode
       )
     }
   }
@@ -73,11 +86,14 @@ class DefinitionsService(
       components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
       finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-      scenarioPropertiesDocsUrl: Option[String]
+      scenarioPropertiesDocsUrl: Option[String],
+      modelParametersMode: ModelParametersMode
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
-      components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
+      components = components
+        .map(component => component.component.id -> createUIComponentDefinition(component, modelParametersMode))
+        .toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioProperties = {
         if (forFragment) {
@@ -97,10 +113,15 @@ class DefinitionsService(
   }
 
   private def createUIComponentDefinition(
-      componentDefinition: ComponentWithStaticDefinition
+      componentDefinition: ComponentWithStaticDefinition,
+      modelParametersMode: ModelParametersMode
   ): UIComponentDefinition = {
+    val parameters = modelParametersMode match {
+      case ModelParametersMode.Enriched => componentDefinition.staticDefinition.parameters
+      case ModelParametersMode.Raw      => componentDefinition.staticDefinition.rawParameters
+    }
     UIComponentDefinition(
-      parameters = componentDefinition.staticDefinition.parameters.map(createUIParameter),
+      parameters = parameters.map(createUIParameter),
       returnType = componentDefinition.staticDefinition.returnType,
       icon = componentDefinition.component.icon,
       docsUrl = componentDefinition.component.docsUrl,
@@ -142,6 +163,7 @@ object DefinitionsService {
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
       variablesToHide = parameter.variablesToHide,
       branchParam = parameter.branchParam,
+      requiredParam = !parameter.isOptional,
       hintText = parameter.hintText,
       label = parameter.label
     )
@@ -150,6 +172,13 @@ object DefinitionsService {
   def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
     UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
+  }
+
+  sealed trait ModelParametersMode
+
+  object ModelParametersMode {
+    case object Enriched extends ModelParametersMode
+    case object Raw      extends ModelParametersMode
   }
 
 }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ParameterConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   WithStaticParameters
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
@@ -32,14 +33,19 @@ class DynamicComponentStaticDefinitionDeterminer(
   private def determineStaticDefinition(
       dynamic: DynamicComponentDefinitionWithImplementation
   ): ComponentStaticDefinition = {
-    val parameters = determineInitialParameters(dynamic)
+    val parameters    = determineInitialParameters(dynamic.component, dynamic.parametersConfig)
+    val rawParameters = determineInitialParameters(dynamic.component, dynamic.rawParametersConfig)
     ComponentStaticDefinition(
-      parameters,
-      staticReturnType(dynamic.component)
+      parameters = parameters,
+      returnType = staticReturnType(dynamic.component),
+      rawParameters = rawParameters
     )
   }
 
-  private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
+  private def determineInitialParameters(
+      component: DynamicComponent[_],
+      parametersConfig: Map[ParameterName, ParameterConfig]
+  ): List[Parameter] = {
     def inferParameters(transformer: DynamicComponent[_])(inputContext: transformer.InputContext) = {
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
@@ -52,9 +58,9 @@ class DynamicComponentStaticDefinitionDeterminer(
           transformer,
           Nil,
           Nil,
-          if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
+          if (component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
           else None,
-          dynamic.parametersConfig
+          parametersConfig
         )(inputContext)
         .map(_.parameters)
         .valueOr { err =>
@@ -67,9 +73,9 @@ class DynamicComponentStaticDefinitionDeterminer(
         }
     }
 
-    dynamic.component match {
+    component match {
       case withStatic: WithStaticParameters =>
-        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
+        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, parametersConfig)
       case single: SingleInputDynamicComponent[_] =>
         inferParameters(single)(ValidationContext())
       case join: JoinDynamicComponent[_] =>

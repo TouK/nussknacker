@@ -342,6 +342,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "additionalVariables": {},
              |      "variablesToHide": [],
              |      "branchParam": false,
+             |      "requiredParam": true,
              |      "hintText": null,
              |      "label": "Topic"
              |    },
@@ -363,6 +364,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "additionalVariables": {},
              |      "variablesToHide": [],
              |      "branchParam": false,
+             |      "requiredParam": true,
              |      "hintText": null,
              |      "label": "Value"
              |    }
