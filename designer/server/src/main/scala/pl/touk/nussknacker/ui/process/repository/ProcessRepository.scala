@@ -211,18 +211,18 @@ class DBProcessRepository(
           previousScenarioVersionId = oldVersionId.map(ScenarioVersionId.from),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
           comment = updateProcessAction.comment.map(_.content) match {
-            case Some(content) if content.nonEmpty =>
-              ScenarioComment.Available(
+            case Some(content) =>
+              ScenarioComment.WithContent(
                 comment = content,
                 lastModifiedByUserName = UserName(loggedUser.username),
                 lastModifiedAt = clock.instant(),
               )
-            case Some(_) | None =>
-              ScenarioComment.Deleted(
-                deletedByUserName = UserName(loggedUser.username),
-                deletedAt = clock.instant(),
+            case None =>
+              ScenarioComment.WithoutContent(
+                lastModifiedByUserName = UserName(loggedUser.username),
+                lastModifiedAt = clock.instant(),
               )
-          }
+          },
         )
     )
   }
@@ -275,7 +275,16 @@ class DBProcessRepository(
         oldVersionId: Option[VersionId],
         newVersionId: Option[VersionId]
     ) = {
-      run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId, userName)))
+      // Do not create activity, if the scenario is exactly the same, and there is no comment
+      val comment = action match {
+        case action: UpdateProcessAction => action.comment
+        case _                           => None
+      }
+      if (oldVersionId == newVersionId && comment.isEmpty) {
+        DBIO.successful(())
+      } else {
+        run(scenarioActivityRepository.addActivity(activityCreator(scenarioId, oldVersionId, newVersionId, userName)))
+      }
     }
 
     for {
