@@ -126,22 +126,7 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
               case Some(IntSchemaId(JsonTypes.Json.value)) =>
                 Option(
                   SchemaWithMetadata(
-                    OpenAPIJsonSchema("""{
-              |  "anyOf": [{
-              |      "type": "object",
-              |      "properties": {
-              |        "_metadata": {
-              |          "oneOf": [
-              |            {"type": "null"},
-              |            {"type": "object"}
-              |          ]
-              |        },
-              |        "_w": {"type": "boolean"},
-              |        "message": {"type": "object"}
-              |      }
-              |    },
-              |    {"type": "object"}]
-              |}""".stripMargin),
+                    OpenAPIJsonSchema("""{"type": "object"}"""),
                     SchemaId.fromInt(JsonTypes.Json.value)
                   ).schema
                 )

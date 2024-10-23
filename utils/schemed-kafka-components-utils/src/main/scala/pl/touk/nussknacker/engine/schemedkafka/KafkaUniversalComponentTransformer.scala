@@ -73,8 +73,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val allTopics = getAllTopics
 
+    // TODO: previously schemaRegistryClient made validation
     val topics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = Valid(allTopics)
-    // topicSelectionStrategy.getTopics(schemaRegistryClient)
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)

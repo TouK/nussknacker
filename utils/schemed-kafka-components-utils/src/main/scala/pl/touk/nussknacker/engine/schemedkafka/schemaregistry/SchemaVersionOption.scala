@@ -29,13 +29,7 @@ case object LatestSchemaVersion extends SchemaVersionOption
 
 case class DynamicSchemaVersion(typ: JsonTypes) extends SchemaVersionOption
 
-sealed abstract class JsonTypes(val value: Int) extends IntEnumEntry {
-
-  implicit def apply(): Int = {
-    this.value
-  }
-
-}
+sealed abstract class JsonTypes(val value: Int) extends IntEnumEntry
 
 object JsonTypes extends IntEnum[JsonTypes] {
   val values = findValues
