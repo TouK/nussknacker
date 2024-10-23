@@ -94,25 +94,11 @@ class UniversalKafkaSourceFactory(
                 (
                   Some(
                     RuntimeSchemaData[ParsedSchema](
-                      new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("""{
-                      |  "anyOf": [{
-                      |      "type": "object",
-                      |      "properties": {
-                      |        "_metadata": {
-                      |          "oneOf": [
-                      |            {"type": "null"},
-                      |            {"type": "object"}
-                      |          ]
-                      |        },
-                      |        "_w": {"type": "boolean"},
-                      |        "message": {"type": "object"}
-                      |      }
-                      |    },
-                      |    {}]
-                      |}""".stripMargin)),
+                      new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("{}")),
                       Some(SchemaId.fromInt(JsonTypes.Json.value))
                     )
                   ),
+                  // This is the type after it leaves source
                   Unknown
                 )
               )
@@ -125,6 +111,7 @@ class UniversalKafkaSourceFactory(
                       Some(SchemaId.fromInt(JsonTypes.Plain.value))
                     )
                   ),
+                  // This is the type after it leaves source
                   Typed[Array[java.lang.Byte]]
                 )
               )

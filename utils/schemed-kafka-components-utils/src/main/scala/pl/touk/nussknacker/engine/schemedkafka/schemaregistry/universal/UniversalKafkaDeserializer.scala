@@ -49,36 +49,20 @@ class UniversalKafkaDeserializer[T](
           writerSchemaId.value.asInt match {
             case JsonTypes.Json.value =>
               SchemaWithMetadata(
-                OpenAPIJsonSchema("""{
-                  |  "anyOf": [{
-                  |      "type": "object",
-                  |      "properties": {
-                  |        "_metadata": {
-                  |          "oneOf": [
-                  |            {"type": "null"},
-                  |            {"type": "object"}
-                  |          ]
-                  |        },
-                  |        "_w": {"type": "boolean"},
-                  |        "message": {"type": "object"}
-                  |      }
-                  |    },
-                  |    {"type": "object"}]
-                  |}""".stripMargin),
+                // I don't know how these schemas affect deserialization later
+                OpenAPIJsonSchema("""{"type": "object"}"""),
                 SchemaId.fromInt(JsonTypes.Json.value)
               )
             case JsonTypes.Plain.value =>
               SchemaWithMetadata(
-                OpenAPIJsonSchema(
-                  """{"type": "string"}"""
-                ),
+                OpenAPIJsonSchema("""{"type": "string"}"""),
                 SchemaId.fromInt(JsonTypes.Plain.value)
               )
           }
         case Validated.Invalid(error) =>
           throw error
       }
-//    val writerSchema = schemaRegistryClient.getSchemaById(writerSchemaId.value).schema
+
     val writerSchema = schemaWithMetadata.schema
     readerSchemaDataOpt
       .map(_.schema.schemaType())
