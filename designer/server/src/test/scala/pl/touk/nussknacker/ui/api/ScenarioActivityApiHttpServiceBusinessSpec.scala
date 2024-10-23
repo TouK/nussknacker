@@ -523,8 +523,16 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |       },
                |       "additionalFields": [
                |         {
-               |           "name": "dateFinished",
-               |           "value": "${regexes.zuluDateRegex}"
+               |           "name": "status",
+               |           "value": "Run now execution finished"
+               |         },
+               |         {
+               |           "name": "started",
+               |           "value": "${regexes.formattedDateRegex}"
+               |         },
+               |         {
+               |           "name": "finished",
+               |           "value": "${regexes.formattedDateRegex}"
                |         }
                |       ],
                |       "type": "PERFORMED_SINGLE_EXECUTION"

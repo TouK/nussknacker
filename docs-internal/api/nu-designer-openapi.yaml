@@ -4474,13 +4474,13 @@ paths:
                       displayableName: Compare
                       icon: /assets/activities/actions/compare.svg
                     - id: delete_comment
-                      displayableName: Delete
+                      displayableName: Delete comment
                       icon: /assets/activities/actions/delete.svg
                     - id: add_comment
-                      displayableName: Add
+                      displayableName: Add comment
                       icon: /assets/activities/actions/add_comment.svg
                     - id: edit_comment
-                      displayableName: Edit
+                      displayableName: Edit comment
                       icon: /assets/activities/actions/edit.svg
                     - id: download_attachment
                       displayableName: Download
@@ -4590,13 +4590,13 @@ paths:
                       displayableName: Compare
                       icon: /assets/activities/actions/compare.svg
                     - id: delete_comment
-                      displayableName: Delete
+                      displayableName: Delete comment
                       icon: /assets/activities/actions/delete.svg
                     - id: add_comment
-                      displayableName: Add
+                      displayableName: Add comment
                       icon: /assets/activities/actions/add_comment.svg
                     - id: edit_comment
-                      displayableName: Edit
+                      displayableName: Edit comment
                       icon: /assets/activities/actions/edit.svg
                     - id: download_attachment
                       displayableName: Download
