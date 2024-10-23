@@ -82,23 +82,9 @@ class ParsedSchemaDeterminer(
         Valid(
           RuntimeSchemaData[ParsedSchema](
             new NkSerializableParsedSchema[ParsedSchema](
+//              Input type in ad hoc or in sink for example is displayed based on this schema, empty makes it Unknown
               OpenAPIJsonSchema(
-                """{
-              |  "anyOf": [{
-              |      "type": "object",
-              |      "properties": {
-              |        "_metadata": {
-              |          "oneOf": [
-              |            {"type": "null"},
-              |            {"type": "object"}
-              |          ]
-              |        },
-              |        "_w": {"type": "boolean"},
-              |        "message": {"type": "object"}
-              |      }
-              |    },
-              |    {"type": "object"}]
-              |}""".stripMargin
+                "{}"
               )
             ),
             Some(SchemaId.fromInt(JsonTypes.Json.value))
@@ -107,7 +93,7 @@ class ParsedSchemaDeterminer(
       case JsonTypes.Plain =>
         Valid(
           RuntimeSchemaData[ParsedSchema](
-            new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("""{"type": "string"}""")),
+            new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("")),
             Some(SchemaId.fromInt(JsonTypes.Plain.value))
           )
         )

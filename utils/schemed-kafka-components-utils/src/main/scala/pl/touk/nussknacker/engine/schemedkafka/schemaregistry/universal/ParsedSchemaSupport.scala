@@ -158,7 +158,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     val rawSchema = schema.cast().rawSchema()
     (value: Any) => {
       // TODO: For ad-hoc test we create object { "Value" = userInputObject }, so we should go one level deeper
-      // should do it in a better way
+      // should do it in a better way as this crash if both source and sink use topic without schema
 //      if (value.asInstanceOf[Map[String, Map[String, Any]]].head._1.equals("Value")) {
 //        encoder.encodeOrError(value.asInstanceOf[Map[String, Map[String, Any]]].head._2, rawSchema)
 //      } else
