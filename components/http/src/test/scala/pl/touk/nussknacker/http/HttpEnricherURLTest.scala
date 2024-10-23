@@ -67,6 +67,45 @@ class HttpEnricherURLTest extends HttpEnricherTestSuite {
     result shouldBe 200
   }
 
+  test("makes request with query parameters with spel value and spel list") {
+    wireMock.stubFor(
+      get(
+        urlEqualTo(
+          "/url-test?spel_query_key_1=spel_query_value_1_1&spel_query_key_1=spel_query_value_1_2&spel_query_key_2=spel_query_value_2"
+        )
+      )
+        .willReturn(
+          aResponse().withStatus(200)
+        )
+    )
+    val scenario = ScenarioBuilder
+      .streaming("id")
+      .source("start", TestScenarioRunner.testDataSource)
+      .enricher(
+        "http",
+        "httpOutput",
+        noConfigHttpEnricherName,
+        "URL" -> s"'${wireMock.baseUrl}/url-test'".spel,
+        "Query Parameters" ->
+          """
+            |{
+            |   spel_query_key_1 : {'spel_query_value_1_1', 'spel_query_value_1_2'},
+            |   spel_query_key_2 : 'spel_query_value_2'
+            |}
+            |""".stripMargin.spel,
+        "HTTP Method" -> "'GET'".spel,
+      )
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#httpOutput.response.statusCode".spel)
+
+    val result = runner
+      .runWithData[String, Integer](scenario, List("input_query_value_1"))
+      .validValue
+      .successes
+      .head
+
+    result shouldBe 200
+  }
+
   test("makes request under specified url with encoded query params") {
     wireMock.stubFor(
       get(urlEqualTo("/url-test?spel_query_unencoded_header_+!%23=spel_query_unencoded_header_+!%23"))

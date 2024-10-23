@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   DefinedLazyParameter,
-  DynamicComponent,
   OutputVariableNameValue
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
