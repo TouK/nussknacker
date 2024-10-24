@@ -4445,10 +4445,7 @@ paths:
                     - type: OUTGOING_MIGRATION
                       displayableName: Outgoing migration
                       icon: /assets/activities/migration.svg
-                      supportedActions:
-                      - delete_comment
-                      - edit_comment
-                      - add_comment
+                      supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
@@ -4561,10 +4558,7 @@ paths:
                     - type: OUTGOING_MIGRATION
                       displayableName: Outgoing migration
                       icon: /assets/activities/migration.svg
-                      supportedActions:
-                      - delete_comment
-                      - edit_comment
-                      - add_comment
+                      supportedActions: []
                     - type: PERFORMED_SINGLE_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
