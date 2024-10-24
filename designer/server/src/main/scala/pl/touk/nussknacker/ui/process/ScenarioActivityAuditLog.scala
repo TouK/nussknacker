@@ -58,6 +58,17 @@ object ScenarioActivityAuditLog {
       user.username
     )(s"Attachment added: [${attachmentToAdd.fileName}]")
 
+  def onDeleteAttachment(
+      scenarioId: ProcessId,
+      attachmentId: Long,
+      user: LoggedUser,
+  ): IO[Unit] =
+    logWithContext(
+      ScenarioId(scenarioId.value),
+      None,
+      user.username
+    )(s"Attachment deleted: [attachmentId=$attachmentId]")
+
   def onScenarioImmediateAction(
       processActionId: ProcessActionId,
       processId: ProcessId,
@@ -171,8 +182,8 @@ object ScenarioActivityAuditLog {
   }
 
   private def stringify(comment: ScenarioComment): String = comment match {
-    case ScenarioComment.Available(comment, _, _) => comment
-    case ScenarioComment.Deleted(_, _)            => "none"
+    case ScenarioComment.WithContent(comment, _, _) => comment
+    case ScenarioComment.WithoutContent(_, _)       => "none"
   }
 
   private def stringify(result: DeploymentResult): String = result match {

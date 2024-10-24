@@ -76,6 +76,14 @@ class ScenarioActivityRepositoryAuditLogDecorator(
       .addAttachment(attachmentToAdd)
       .onSuccessRunAsync(_ => ScenarioActivityAuditLog.onAddAttachment(attachmentToAdd, user))
 
+  def markAttachmentAsDeleted(
+      scenarioId: ProcessId,
+      attachmentId: Long
+  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.DeleteAttachmentError, Unit]] =
+    underlying
+      .markAttachmentAsDeleted(scenarioId, attachmentId)
+      .onSuccessRunAsync(_ => ScenarioActivityAuditLog.onDeleteAttachment(scenarioId, attachmentId, user))
+
   def findActivities(
       scenarioId: ProcessId,
   ): DB[Seq[ScenarioActivity]] = underlying.findActivities(scenarioId)

@@ -40,7 +40,7 @@ trait ScenarioActivityRepository {
         user = user.scenarioUser,
         date = now,
         scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
-        comment = ScenarioComment.Available(
+        comment = ScenarioComment.WithContent(
           comment = comment,
           lastModifiedByUserName = UserName(user.username),
           lastModifiedAt = now,
