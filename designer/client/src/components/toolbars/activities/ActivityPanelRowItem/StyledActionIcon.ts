@@ -7,4 +7,6 @@ export const StyledActionIcon = styled(UrlIcon)(({ theme }) => ({
     marginLeft: "auto",
     cursor: "pointer",
     color: theme.palette.text.secondary,
+    alignItems: "center",
+    justifyContent: "center",
 }));
