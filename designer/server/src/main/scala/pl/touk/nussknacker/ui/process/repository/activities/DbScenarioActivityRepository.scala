@@ -6,7 +6,7 @@ import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.{
   AdditionalProperties,
@@ -63,8 +63,12 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = entity => validateThatActivityIsAssignedToScenario(scenarioId)(entity),
-      modify = doEditComment(validate, comment),
+      validateCurrentValue = entity =>
+        for {
+          _ <- validateThatActivityIsAssignedToScenario(scenarioId, entity)
+          _ <- validate(commentModificationMetadata(entity))
+        } yield (),
+      modify = doEditComment(comment),
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
   }
@@ -77,8 +81,12 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     modifyActivityByRowId(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
-      modify = doDeleteComment(validate),
+      validateCurrentValue = entity =>
+        for {
+          _ <- validateThatActivityIsAssignedToScenario(scenarioId, entity)
+          _ <- validate(commentModificationMetadata(entity))
+        } yield (),
+      modify = doDeleteComment,
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
   }
@@ -91,8 +99,12 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
-      modify = doDeleteComment(validate),
+      validateCurrentValue = entity =>
+        for {
+          _ <- validateThatActivityIsAssignedToScenario(scenarioId, entity)
+          _ <- validate(commentModificationMetadata(entity))
+        } yield (),
+      modify = doDeleteComment,
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
   }
@@ -230,10 +242,13 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       }
   }
 
-  private def validateThatActivityIsAssignedToScenario(scenarioId: ProcessId)(entity: ScenarioActivityEntityData) = {
+  private def validateThatActivityIsAssignedToScenario(
+      scenarioId: ProcessId,
+      entity: ScenarioActivityEntityData
+  ): Either[ModifyCommentError, Unit] = {
     for {
       _ <- Either.cond(entity.scenarioId == scenarioId, (), ModifyCommentError.CommentDoesNotExist)
-    } yield entity
+    } yield ()
   }
 
   private def toComment(
@@ -335,14 +350,14 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     fromEntity(entity).left.map(_ => ModifyActivityError.CouldNotModifyActivity).map(_._2)
   }
 
-  private def modifyActivityByActivityId[ERROR, T](
+  private def modifyActivityByActivityId[ERROR](
       activityId: ScenarioActivityId,
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, T],
-      modify: T => Either[ERROR, ScenarioActivityEntityData],
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
+      modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, ScenarioActivityId]] = {
-    doModifyActivity[ScenarioActivityId, ERROR, T](
+    doModifyActivity[ScenarioActivityId, ERROR](
       key = activityId,
       fetchActivity = activityByIdCompiled(_).result.headOption,
       updateRow = (id: ScenarioActivityId, updatedEntity) => activityByIdCompiled(id).update(updatedEntity),
@@ -356,11 +371,11 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
   private def modifyActivityByRowId[ERROR](
       rowId: Long,
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, ScenarioActivityEntityData],
-      modify: ScenarioActivityEntityData => Either[ERROR, ScenarioActivityEntityData],
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
+      modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, ScenarioActivityId]] = {
-    doModifyActivity[Long, ERROR, ScenarioActivityEntityData](
+    doModifyActivity[Long, ERROR](
       key = rowId,
       fetchActivity = activityByRowIdCompiled(_).result.headOption,
       updateRow = (id: Long, updatedEntity) => activityByRowIdCompiled(id).update(updatedEntity),
@@ -371,22 +386,22 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     )
   }
 
-  private def doModifyActivity[KEY, ERROR, VALIDATED](
+  private def doModifyActivity[KEY, ERROR](
       key: KEY,
       fetchActivity: KEY => DB[Option[ScenarioActivityEntityData]],
       updateRow: (KEY, ScenarioActivityEntityData) => DB[Int],
       activityDoesNotExistError: ERROR,
-      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, VALIDATED],
-      modify: VALIDATED => Either[ERROR, ScenarioActivityEntityData],
+      validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, Unit],
+      modify: ScenarioActivityEntityData => ScenarioActivityEntityData,
       couldNotModifyError: ERROR,
   ): DB[Either[ERROR, ScenarioActivityId]] = {
     val action = for {
       fetchedActivity <- fetchActivity(key)
       result <- {
         val modifiedEntity = for {
-          entity         <- fetchedActivity.toRight(activityDoesNotExistError)
-          validated      <- validateCurrentValue(entity)
-          modifiedEntity <- modify(validated)
+          entity <- fetchedActivity.toRight(activityDoesNotExistError)
+          _      <- validateCurrentValue(entity)
+          modifiedEntity = modify(entity)
         } yield modifiedEntity
 
         modifiedEntity match {
@@ -416,12 +431,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     }
   }
 
-  private def doEditComment(validate: CommentModificationMetadata => Either[ModifyCommentError, Unit], comment: String)(
-      entity: ScenarioActivityEntityData
-  )(implicit user: LoggedUser): Either[ModifyCommentError, ScenarioActivityEntityData] = {
-    validate(commentModificationMetadata(entity)).map(_ => doEditComment(comment)(entity))
-  }
-
   private def doEditComment(comment: String)(
       entity: ScenarioActivityEntityData
   )(implicit user: LoggedUser): ScenarioActivityEntityData = {
@@ -433,12 +442,6 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         value = entity.comment.getOrElse(""),
       )
     )
-  }
-
-  private def doDeleteComment(validate: CommentModificationMetadata => Either[ModifyCommentError, Unit])(
-      entity: ScenarioActivityEntityData
-  )(implicit user: LoggedUser): Either[ModifyCommentError, ScenarioActivityEntityData] = {
-    validate(commentModificationMetadata(entity)).map(_ => doDeleteComment(entity))
   }
 
   private def doDeleteComment(
