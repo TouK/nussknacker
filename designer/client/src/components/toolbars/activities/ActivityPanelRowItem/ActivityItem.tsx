@@ -1,10 +1,6 @@
 import React, { ForwardedRef, forwardRef } from "react";
-import { useSelector } from "react-redux";
 import { Box, styled, Typography } from "@mui/material";
 import { formatDateTime } from "../../../../common/DateUtils";
-import CommentContent from "../../../comment/CommentContent";
-import { createSelector } from "reselect";
-import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { ItemActivity } from "../ActivitiesPanel";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
@@ -12,6 +8,7 @@ import { ActivityTypes } from "../types";
 import { getItemColors } from "../helpers/activityItemColors";
 import { useTranslation } from "react-i18next";
 import { ActivityItemComment } from "./ActivityItemComment";
+import { useActivityItemInfo } from "./ActivityItemProvider";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
     padding: theme.spacing(0.5, 1.25),
@@ -35,6 +32,7 @@ export const ActivityItem = forwardRef(
         ref: ForwardedRef<HTMLDivElement>,
     ) => {
         const { t } = useTranslation();
+        const { handleSetIsActivityHovered } = useActivityItemInfo();
 
         const actionsWithVersionInfo: ActivityTypes[] = [
             "PERFORMED_SINGLE_EXECUTION",
@@ -50,7 +48,11 @@ export const ActivityItem = forwardRef(
             t("activityItem.version", "Version: {{scenarioVersionId}}", { scenarioVersionId: activity.scenarioVersionId });
 
         return (
-            <StyledActivityRoot ref={ref}>
+            <StyledActivityRoot
+                ref={ref}
+                onMouseEnter={() => handleSetIsActivityHovered(true)}
+                onMouseLeave={() => handleSetIsActivityHovered(false)}
+            >
                 <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
                     <ActivityItemHeader
                         isRunning={isRunning}
