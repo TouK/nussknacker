@@ -780,17 +780,14 @@ class ExpressionSuggesterSpec
   }
 
   test("should suggest parameters for casts methods") {
-    spelSuggestionsFor("#unknown.canCastTo('')", column = 20) should contain theSameElementsAs List(
-      suggestion("String", Typed[String]),
-      suggestion("Duration", Typed[Duration]),
-      suggestion("LocalDateTime", Typed[LocalDateTime]),
-      suggestion("Map", Typed[java.util.Map[_, _]]),
-      suggestion("A", Typed[A]),
-      suggestion("AA", Typed[AA]),
-      suggestion("B", Typed[B]),
-      suggestion("C", Typed[C]),
-      suggestion("Util", Typed[Util]),
-      suggestion("WithList", Typed[WithList]),
+    spelSuggestionsFor("#unknown.to('')", column = 13) should contain theSameElementsAs List(
+      suggestion("BigDecimal", Typed[java.math.BigDecimal]),
+      suggestion("Boolean", Typed[java.lang.Boolean]),
+      suggestion("Double", Typed[java.lang.Double]),
+      suggestion("Long", Typed[java.lang.Long]),
+      suggestion("String", Typed[java.lang.String]),
+      suggestion("List", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
+      suggestion("Map", Typed.genericTypeClass[java.util.Map[_, _]](List(Unknown, Unknown))),
     )
   }
 

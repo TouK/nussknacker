@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.validation.Validations.isVariableNameValid
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
-import pl.touk.nussknacker.engine.extension.Cast
+import pl.touk.nussknacker.engine.extension.ConversionExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -23,8 +23,6 @@ import pl.touk.nussknacker.engine.util.CaretPosition2d
 
 import scala.collection.compat.immutable.LazyList
 import cats.implicits._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
@@ -287,12 +285,12 @@ class SpelExpressionSuggester(
                     Future.successful(fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil)))
                   case _ => successfulNil
                 }
-              case m: MethodReference if Cast.isCastMethod(m.getName) =>
+              case m: MethodReference if ConversionExt.isConversionMethod(m.getName) =>
                 parentPrevNodeTyping match {
                   case Unknown =>
-                    castMethodsSuggestions(classOf[Object])
+                    conversionMethodsSuggestions(classOf[Object])
                   case TypedClass(klass, _) =>
-                    castMethodsSuggestions(klass)
+                    conversionMethodsSuggestions(klass)
                   case _ => successfulNil
                 }
               case _ => successfulNil
@@ -338,18 +336,14 @@ class SpelExpressionSuggester(
     suggestions
   }
 
-  private def castMethodsSuggestions(
+  private def conversionMethodsSuggestions(
       klass: Class[_]
   )(implicit ec: ExecutionContext): Future[Iterable[ExpressionSuggestion]] =
     Future {
-      val allowedClassesForCastParameter = klass
-        .findAllowedClassesForCastParameter(clssDefinitions)
-        .mapValuesNow(_.clazzName)
-      allowedClassesForCastParameter.keySet
-        .classesBySimpleNamesRegardingClashes()
-        .map { case (name, clazz) =>
-          ExpressionSuggestion(name, allowedClassesForCastParameter.getOrElse(clazz, Unknown), false, None, Nil)
-        }
+      if (ConversionExt.applies(klass))
+        ConversionExt.supportedTypes
+          .map(t => ExpressionSuggestion(t._1, t._2, false, None, Nil))
+      else List.empty
     }
 
   private def expressionContainOddNumberOfQuotesOrOddNumberOfDoubleQuotes(plainExpression: String): Boolean =

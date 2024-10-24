@@ -27,11 +27,54 @@ class ExtensionMethodsSpec extends AnyFunSuite with Matchers {
     )
     val definitionsSet = ClassDefinitionSet(Set(stringDefinition, unknownDefinition))
 
-    ExtensionMethods.enrichWithExtensionMethods(
-      definitionsSet
-    ).classDefinitionsMap.map(e => e._1.getName -> e._2.methods.keys) shouldBe Map(
-      "java.lang.String" -> Set("toUpperCase"),
-      "java.lang.Object" -> Set("toString", "canCastTo", "castTo", "castToOrNull"),
+    ExtensionMethods
+      .enrichWithExtensionMethods(
+        definitionsSet
+      )
+      .classDefinitionsMap
+      .map(e => e._1.getName -> e._2.methods.keys) shouldBe Map(
+      "java.lang.String" -> Set(
+        "isBigDecimal",
+        "toBigDecimal",
+        "toBigDecimalOrNull",
+        "isBoolean",
+        "toBoolean",
+        "toBooleanOrNull",
+        "isDouble",
+        "toDouble",
+        "toDoubleOrNull",
+        "isLong",
+        "toLong",
+        "toLongOrNull",
+        "toUpperCase",
+        "is",
+        "to",
+        "toOrNull",
+      ),
+      "java.lang.Object" -> Set(
+        "isBigDecimal",
+        "toBigDecimal",
+        "toBigDecimalOrNull",
+        "isBoolean",
+        "toBoolean",
+        "toBooleanOrNull",
+        "isDouble",
+        "toDouble",
+        "toDoubleOrNull",
+        "isLong",
+        "toLong",
+        "toLongOrNull",
+        "toString",
+        "is",
+        "to",
+        "toOrNull",
+        "isMap",
+        "toMap",
+        "toMapOrNull",
+        "isList",
+        "toList",
+        "toListOrNull"
+      ),
     )
   }
 
