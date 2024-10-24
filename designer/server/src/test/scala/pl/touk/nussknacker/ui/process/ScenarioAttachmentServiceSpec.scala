@@ -11,7 +11,11 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.Proce
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyActivityError
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  CommentModificationMetadata,
+  ModifyActivityError,
+  ModifyCommentError
+}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIO
 
@@ -86,19 +90,27 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
 
   override def getActivityStats: DB[Map[String, Int]] = notSupported("getActivityStats")
 
-  override def editComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId, comment: String)(
+  override def editComment(
+      scenarioId: ProcessId,
+      scenarioActivityId: ScenarioActivityId,
+      commentCreator: CommentModificationMetadata => Either[ModifyCommentError, String]
+  )(
       implicit user: LoggedUser
   ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("editComment")
 
-  override def editComment(scenarioId: ProcessId, commentId: Long, comment: String)(
-      implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("editComment")
-
-  override def deleteComment(scenarioId: ProcessId, commentId: Long)(
+  override def deleteComment(
+      scenarioId: ProcessId,
+      commentId: Long,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit]
+  )(
       implicit user: LoggedUser
   ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("deleteComment")
 
-  override def deleteComment(scenarioId: ProcessId, scenarioActivityId: ScenarioActivityId)(
+  override def deleteComment(
+      scenarioId: ProcessId,
+      scenarioActivityId: ScenarioActivityId,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit]
+  )(
       implicit user: LoggedUser
   ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("deleteComment")
 
