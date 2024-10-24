@@ -19,7 +19,6 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails
 }
 
-import java.time.Instant
 import java.util.UUID
 
 class ScenarioActivityApiHttpServiceBusinessSpec
@@ -229,6 +228,67 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     }
   }
 
+  "The scenario delete attachment endpoint when" - {
+    "add and delete attachment to existing scenario" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(200)
+
+      val attachmentId = verifyAttachmentAddedActivityExists(
+        user = "allpermuser",
+        scenarioName = exampleScenarioName,
+        fileIdPresent = true,
+        filename = fileName,
+        fileStatus = "AVAILABLE",
+        overrideDisplayableName = fileName
+      ).getAddedAttachmentId
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/$attachmentId")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState {
+          verifyAttachmentAddedActivityExists(
+            user = "allpermuser",
+            scenarioName = exampleScenarioName,
+            fileIdPresent = false,
+            filename = fileName,
+            fileStatus = "DELETED",
+            overrideDisplayableName = "File removed"
+          )
+        }
+    }
+    "return 404 for no existing attachment" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+    "return 404 for no existing scenario" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+  }
+
   "The scenario download attachment endpoint when" - {
     "download existing attachment" in {
       val attachmentId = given()
@@ -343,7 +403,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 date = clock.instant(),
                 scenarioVersionId = None,
                 actionName = "Custom action handled by deployment manager",
-                comment = ScenarioComment.Available(
+                comment = ScenarioComment.WithContent(
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
@@ -357,7 +417,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 date = clock.instant(),
                 scenarioVersionId = None,
                 actionName = "Custom action handled by deployment manager",
-                comment = ScenarioComment.Available(
+                comment = ScenarioComment.WithContent(
                   comment = "Executed on custom deployment manager",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
@@ -421,7 +481,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                 user = ScenarioUser(None, UserName("custom-user"), None, None),
                 date = clock.instant(),
                 scenarioVersionId = None,
-                comment = ScenarioComment.Available(
+                comment = ScenarioComment.WithContent(
                   comment = "Immediate execution",
                   lastModifiedByUserName = UserName("custom-user"),
                   lastModifiedAt = clock.instant()
@@ -463,8 +523,16 @@ class ScenarioActivityApiHttpServiceBusinessSpec
                |       },
                |       "additionalFields": [
                |         {
-               |           "name": "dateFinished",
-               |           "value": "${regexes.zuluDateRegex}"
+               |           "name": "status",
+               |           "value": "Run now execution finished"
+               |         },
+               |         {
+               |           "name": "started",
+               |           "value": "${regexes.formattedDateRegex}"
+               |         },
+               |         {
+               |           "name": "finished",
+               |           "value": "${regexes.formattedDateRegex}"
                |         }
                |       ],
                |       "type": "PERFORMED_SINGLE_EXECUTION"

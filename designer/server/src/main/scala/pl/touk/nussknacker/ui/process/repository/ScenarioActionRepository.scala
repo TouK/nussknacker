@@ -418,9 +418,7 @@ class DbScenarioActionRepository(
         .map(_.value)
         .map(VersionId.apply)
         .toRight(s"Process version not available for finished action: $activityEntity")
-      performedAt <- activityEntity.finishedAt
-        .map(_.toInstant)
-        .toRight(s"PerformedAt not available for finished action: $activityEntity")
+      performedAt = activityEntity.finishedAt.getOrElse(activityEntity.createdAt).toInstant
       state <- activityEntity.state
         .toRight(s"State not available for finished action: $activityEntity")
     } yield ProcessAction(
@@ -437,7 +435,7 @@ class DbScenarioActionRepository(
       comment = activityEntity.comment.map(_.value),
       buildInfo = activityEntity.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )).left.map { error =>
-      logger.error(s"Could not interpret ScenarioActivity entity [$activityEntity] as ProcessAction: [$error]")
+      logger.error(s"Could not interpret ScenarioActivity entity as ProcessAction: [$error]")
       error
     }.toOption
   }

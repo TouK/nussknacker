@@ -12,9 +12,10 @@ import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
+import java.time.ZoneId
 import java.util.UUID
 
-class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStreamEndpointProvider)
+class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStreamEndpointProvider, zoneId: ZoneId)
     extends BaseEndpointDefinitions {
 
   import TapirCodecs.ContentDispositionCodec._
@@ -28,7 +29,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
   lazy val deprecatedScenarioActivityEndpoint
       : SecuredEndpoint[ProcessName, ScenarioActivityError, Legacy.ProcessActivity, Any] =
     baseNuApiEndpoint
-      .summary("Scenario activity service")
+      .summary("Scenario activity")
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity")
@@ -39,7 +40,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
 
   lazy val deprecatedAddCommentEndpoint: SecuredEndpoint[AddCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
-      .summary("Add scenario comment service")
+      .summary("Add scenario comment")
       .tag("Activities")
       .post
       .in("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity" / "comments")
@@ -53,7 +54,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
   lazy val deprecatedDeleteCommentEndpoint
       : SecuredEndpoint[DeprecatedDeleteCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
-      .summary("Delete process comment service")
+      .summary("Delete process comment")
       .tag("Activities")
       .delete
       .in(
@@ -78,28 +79,34 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
     Any
   ] =
     baseNuApiEndpoint
-      .summary("Scenario activities service")
+      .summary("Scenario activities")
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities")
-      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities)))
+      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities(zoneId))))
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
   lazy val scenarioActivitiesMetadataEndpoint
       : SecuredEndpoint[ProcessName, ScenarioActivityError, ScenarioActivitiesMetadata, Any] =
     baseNuApiEndpoint
-      .summary("Scenario activities metadata service")
+      .summary("Scenario activities metadata")
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities" / "metadata")
-      .out(statusCode(Ok).and(jsonBody[ScenarioActivitiesMetadata].example(ScenarioActivitiesMetadata.default)))
+      .out(
+        statusCode(Ok).and(
+          jsonBody[ScenarioActivitiesMetadata]
+            .example(ScenarioActivitiesMetadata.default(ScenarioType.Scenario))
+            .example(ScenarioActivitiesMetadata.default(ScenarioType.Fragment))
+        )
+      )
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 
   lazy val addCommentEndpoint: SecuredEndpoint[AddCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
-      .summary("Add scenario comment service")
+      .summary("Add scenario comment")
       .tag("Activities")
       .post
       .in("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity" / "comment")
@@ -111,7 +118,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
 
   lazy val editCommentEndpoint: SecuredEndpoint[EditCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
-      .summary("Edit process comment service")
+      .summary("Edit process comment")
       .tag("Activities")
       .put
       .in(
@@ -131,7 +138,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
 
   lazy val deleteCommentEndpoint: SecuredEndpoint[DeleteCommentRequest, ScenarioActivityError, Unit, Any] =
     baseNuApiEndpoint
-      .summary("Delete process comment service")
+      .summary("Delete process comment")
       .tag("Activities")
       .delete
       .in(
@@ -150,7 +157,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
 
   val attachmentsEndpoint: SecuredEndpoint[ProcessName, ScenarioActivityError, ScenarioAttachments, Any] = {
     baseNuApiEndpoint
-      .summary("Scenario attachments service")
+      .summary("Scenario attachments")
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "attachments")
@@ -161,7 +168,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
 
   val addAttachmentEndpoint: SecuredEndpoint[AddAttachmentRequest, ScenarioActivityError, Unit, Any] = {
     baseNuApiEndpoint
-      .summary("Add scenario attachment service")
+      .summary("Add scenario attachment")
       .tag("Activities")
       .post
       .in("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity" / "attachments")
@@ -173,10 +180,27 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .withSecurity(auth)
   }
 
+  val deleteAttachmentEndpoint: SecuredEndpoint[DeleteAttachmentRequest, ScenarioActivityError, Unit, Any] = {
+    baseNuApiEndpoint
+      .summary("Delete scenario attachment")
+      .tag("Activities")
+      .delete
+      .in("processes" / path[ProcessName]("scenarioName") / "activity" / "attachments" / path[Long]("attachmentId"))
+      .mapInTo[DeleteAttachmentRequest]
+      .out(statusCode(Ok))
+      .errorOut(
+        oneOf[ScenarioActivityError](
+          oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
+          oneOfVariant(InternalServerError, plainBody[NoAttachment].example(Examples.attachmentNotFoundError)),
+        )
+      )
+      .withSecurity(auth)
+  }
+
   val downloadAttachmentEndpoint
       : SecuredEndpoint[GetAttachmentRequest, ScenarioActivityError, GetAttachmentResponse, Any] = {
     baseNuApiEndpoint
-      .summary("Download attachment service")
+      .summary("Download attachment")
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "attachments" / path[Long]("attachmentId"))
