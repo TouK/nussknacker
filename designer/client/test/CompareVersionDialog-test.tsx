@@ -93,6 +93,7 @@ describe(CompareVersionsDialog.name, () => {
                             title: "compare versions",
                             kind: 12,
                             id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                            meta: { scenarioVersionId: undefined },
                         }}
                     />
                 </Provider>
@@ -137,6 +138,7 @@ describe(CompareVersionsDialog.name, () => {
                             title: "compare versions",
                             kind: 12,
                             id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                            meta: { scenarioVersionId: undefined },
                         }}
                     />
                 </Provider>

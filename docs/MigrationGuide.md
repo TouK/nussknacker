@@ -51,6 +51,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
   If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
 
+### Configuration changes
+* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to The `processToolbarConfig` which replace deprecated `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
+
 ## In version 1.17.0
 
 ### Code API changes

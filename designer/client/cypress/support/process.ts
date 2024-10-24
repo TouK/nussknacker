@@ -26,16 +26,24 @@ declare global {
             removeKafkaTopic: typeof removeKafkaTopic;
             createSchema: typeof createSchema;
             removeSchema: typeof removeSchema;
+            getTestProcessName: typeof getTestProcessName;
+            archiveProcess: typeof archiveProcess;
+            unarchiveProcess: typeof unarchiveProcess;
+            migrateProcess: typeof migrateProcess;
         }
     }
 }
 
 const processIndexes = {};
 
+function getTestProcessName(name: string, index: string) {
+    return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
+}
+
 function createTestProcessName(name?: string) {
     processIndexes[name] = ++processIndexes[name] || 1;
     const index = padStart(processIndexes[name].toString(), 3, "0");
-    return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
+    return getTestProcessName(name, index);
 }
 
 function createProcess(
@@ -114,19 +122,35 @@ function addLabelsToNewProcess(name?: string, labels?: string[]) {
     });
 }
 
+function archiveProcess(processName: string) {
+    return cy.request({
+        method: "POST",
+        url: `/api/archive/${processName}`,
+        failOnStatusCode: false,
+    });
+}
+
+function unarchiveProcess(processName: string) {
+    return cy.request({
+        method: "POST",
+        url: `/api/unarchive/${processName}`,
+        failOnStatusCode: false,
+    });
+}
+
+function migrateProcess(processName: string, processVersionId: number) {
+    return cy.request({
+        method: "POST",
+        url: `/api/remoteEnvironment/${processName}/${processVersionId}/migrate`,
+        failOnStatusCode: false,
+    });
+}
+
 function deleteTestProcess(processName: string, force?: boolean) {
     const url = `/api/processes/${processName}`;
 
-    function archiveProcess() {
-        return cy.request({
-            method: "POST",
-            url: `/api/archive/${processName}`,
-            failOnStatusCode: false,
-        });
-    }
-
     function archiveThenDeleteProcess() {
-        return archiveProcess().then(() =>
+        return cy.archiveProcess(processName).then(() =>
             cy.request({
                 method: "DELETE",
                 url,
@@ -300,7 +324,7 @@ function deployScenario(comment = "issues/123", withScreenshot?: boolean) {
 }
 
 function cancelScenario(comment = "issues/123") {
-    cy.contains(/^cancel$/i).click();
+    cy.contains("button", /^cancel$/i).click();
     cy.get("[data-testid=window] textarea").click().type(comment);
     cy.contains(/^ok$/i).should("be.enabled").click();
 }
@@ -326,4 +350,8 @@ Cypress.Commands.add("createKafkaTopic", createKafkaTopic);
 Cypress.Commands.add("removeKafkaTopic", removeKafkaTopic);
 Cypress.Commands.add("createSchema", createSchema);
 Cypress.Commands.add("removeSchema", removeSchema);
+Cypress.Commands.add("getTestProcessName", getTestProcessName);
+Cypress.Commands.add("archiveProcess", archiveProcess);
+Cypress.Commands.add("unarchiveProcess", unarchiveProcess);
+Cypress.Commands.add("migrateProcess", migrateProcess);
 export default {};

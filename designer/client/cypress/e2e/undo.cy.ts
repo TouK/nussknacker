@@ -100,18 +100,6 @@ describe("Undo/Redo", () => {
         cy.get("@redo").should("be.enabled").click().should("be.disabled");
     });
 
-    it("should work with 'last deployed' tag", () => {
-        const screenshotConfig = {
-            clip: { x: 0, y: 0, height: 25, width: 2000 },
-        };
-        cy.dragNode("enricher", { x: 560, y: 500 });
-        cy.get("@undo").should("be.enabled").click().should("be.disabled");
-        cy.deployScenario("undo");
-        cy.contains("v2 | admin").scrollIntoView().parent().matchImage({ screenshotConfig });
-        cy.get("@redo").should("be.enabled").click().should("be.disabled");
-        cy.contains("v2 | admin").scrollIntoView().parent().matchImage({ screenshotConfig });
-    });
-
     it("should work with counts", () => {
         cy.intercept("GET", "/api/processCounts/*", {
             boundedSource: { all: 10, errors: 0, fragmentCounts: {} },

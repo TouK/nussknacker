@@ -48,17 +48,17 @@ class ScenarioTestService(
       scenarioGraph: ScenarioGraph,
       processVersion: ProcessVersion,
       isFragment: Boolean
-                              )(implicit user: LoggedUser): Map[String, List[Parameter]] = {
+  )(implicit user: LoggedUser): Map[String, List[Parameter]] = {
     val canonical = toCanonicalProcess(scenarioGraph, processVersion, isFragment)
     testInfoProvider
       .getTestParameters(processVersion, canonical)
   }
 
   def testUISourceParametersDefinition(
-                                        scenarioGraph: ScenarioGraph,
-                                        processVersion: ProcessVersion,
-                                        isFragment: Boolean
-                                      )(implicit user: LoggedUser): List[UISourceParameters] =
+      scenarioGraph: ScenarioGraph,
+      processVersion: ProcessVersion,
+      isFragment: Boolean
+  )(implicit user: LoggedUser): List[UISourceParameters] =
     testParametersDefinition(scenarioGraph, processVersion, isFragment)
       .map { case (id, params) => UISourceParameters(id, params.map(DefinitionsService.createUIParameter)) }
       .map { assignUserFriendlyEditor }
