@@ -18,5 +18,5 @@ class HttpEnricherComponentProvider extends ComponentProvider with LazyLogging {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def isAutoLoaded: Boolean = true
+  override def isAutoLoaded: Boolean = false
 }
