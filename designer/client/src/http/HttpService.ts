@@ -384,11 +384,27 @@ class HttpService {
         }
     }
 
+    /**
+     * @deprecated The method will be deleted
+     */
     deleteComment(processName, commentId) {
         return api
             .delete(`/processes/${encodeURIComponent(processName)}/activity/comments/${commentId}`)
             .then(() => this.#addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted")))
             .catch((error) => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error));
+    }
+
+    deleteActivityComment(processName: string, scenarioActivityId: string) {
+        return api
+            .delete(`/processes/${encodeURIComponent(processName)}/activity/comment/${scenarioActivityId}`)
+            .then(() => {
+                this.#addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted"));
+                return "success" as const;
+            })
+            .catch((error) => {
+                this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error);
+                return "error" as const;
+            });
     }
 
     async addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
@@ -418,9 +434,13 @@ class HttpService {
     deleteAttachment(processName: ProcessName, attachmentId: string) {
         return api
             .delete(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`)
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToDeleteAttachment", "Failed to delete attachment"), error),
-            );
+            .then(() => {
+                return "success" as const;
+            })
+            .catch((error) => {
+                this.#addError(i18next.t("notification.error.failedToDeleteAttachment", "Failed to delete attachment"), error);
+                return "error" as const;
+            });
     }
 
     changeProcessName(processName, newProcessName): Promise<boolean> {

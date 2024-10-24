@@ -84,7 +84,12 @@ export const ActivityItem = forwardRef(
                         </Box>
 
                         {activity?.comment?.content.status === "AVAILABLE" && (
-                            <ActivityItemComment comment={activity.comment} searchQuery={searchQuery} activityActions={activity.actions} />
+                            <ActivityItemComment
+                                comment={activity.comment}
+                                searchQuery={searchQuery}
+                                activityActions={activity.actions}
+                                scenarioActivityId={activity.id}
+                            />
                         )}
 
                         {activity?.attachment?.file.status === "DELETED" && (

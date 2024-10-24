@@ -15,6 +15,7 @@ import { getHeaderColors } from "../helpers/activityItemColors";
 import { useTranslation } from "react-i18next";
 import * as DialogMessages from "../../../../common/DialogMessages";
 import { StyledActionIcon } from "./StyledActionIcon";
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -51,6 +52,7 @@ const HeaderActivity = ({
     const processName = useSelector(getProcessName);
     const currentScenarioVersionId = useSelector(getProcessVersionId);
     const { t } = useTranslation();
+    const dispatch = useDispatch();
 
     switch (activityAction.id) {
         case "compare": {
@@ -105,7 +107,12 @@ const HeaderActivity = ({
                         confirm({
                             text: DialogMessages.deleteAttachment(activityAttachment.filename),
                             onConfirmCallback: (confirmed) => {
-                                confirmed && HttpService.deleteAttachment(processName, attachmentId.toString());
+                                confirmed &&
+                                    HttpService.deleteAttachment(processName, attachmentId.toString()).then((status) => {
+                                        if (status === "success") {
+                                            dispatch(getScenarioActivities(processName));
+                                        }
+                                    });
                             },
                             confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
                             denyText: t("panels.actions.process-unarchive.no", "No"),
