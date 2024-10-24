@@ -104,16 +104,16 @@ export const useActivitiesSearch = ({ activities, handleScrollToItem, handleUpda
 
             const foundActivities: UIActivity[] = [];
 
-            const fullSearchAllowedFields: NestedKeyOf<Activity>[] = [
-                "date",
-                "user",
-                "comment.content.value",
-                "activities.displayableName",
-                "overrideDisplayableName",
-                "additionalFields",
-            ];
-
             for (const activity of activities) {
+                const fullSearchAllowedFields: NestedKeyOf<Activity>[] = [
+                    "date",
+                    "user",
+                    "comment.content.value",
+                    "activities.displayableName",
+                    "overrideDisplayableName",
+                    "additionalFields",
+                ];
+
                 if (activity.uiType !== "item") {
                     continue;
                 }
