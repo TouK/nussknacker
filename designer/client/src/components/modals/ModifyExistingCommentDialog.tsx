@@ -35,7 +35,7 @@ const ModifyExistingCommentDialog = (props: WindowContentProps<number, ModifyAct
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.add", "Add"), action: () => confirmAction() },
+            { title: t("dialog.button.modify", "Modify"), action: () => confirmAction() },
         ],
         [confirmAction, props, t],
     );

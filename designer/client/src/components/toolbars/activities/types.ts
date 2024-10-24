@@ -25,7 +25,7 @@ export interface ActivityMetadata {
 }
 
 export interface ActionMetadata {
-    id: "compare" | "delete_comment" | "edit_comment" | "download_attachment" | "delete_attachment";
+    id: "compare" | "delete_comment" | "add_comment" | "edit_comment" | "download_attachment" | "delete_attachment";
     displayableName: string;
     icon: string;
 }

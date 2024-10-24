@@ -19,7 +19,7 @@ export const ActivityItemCommentModify = ({ commentContent, scenarioActivityId, 
         const permittedModifyCommentTypes: ActivityType[] = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED", "SCENARIO_PAUSED"];
 
         open<ModifyActivityCommentMeta>({
-            title: "Edit comment",
+            title: "Modify comment",
             isModal: true,
             shouldCloseOnEsc: true,
             kind: WindowKind.modifyComment,

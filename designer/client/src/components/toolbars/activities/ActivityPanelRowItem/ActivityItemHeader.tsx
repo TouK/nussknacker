@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import * as DialogMessages from "../../../../common/DialogMessages";
 import { StyledActionIcon } from "./StyledActionIcon";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
+import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -23,9 +24,10 @@ const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     color: theme.palette.primary.main,
 }));
 
-const StyledHeaderActionRoot = styled("div")(() => ({
+const StyledHeaderActionRoot = styled("div")(({ theme }) => ({
     display: "flex",
     marginLeft: "auto",
+    gap: theme.spacing(0.5),
 }));
 
 const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunning: boolean; isActiveFound: boolean }>(
@@ -42,11 +44,16 @@ const HeaderActivity = ({
     activityAction,
     scenarioVersionId,
     activityAttachment,
+    activityComment,
+    scenarioActivityId,
+    activityType,
 }: {
     activityAction: ActionMetadata;
     scenarioVersionId: number;
     activityAttachment: ActivityAttachment;
     activityComment: ActivityComment;
+    scenarioActivityId: string;
+    activityType: ActivityType;
 }) => {
     const { open, confirm } = useWindows();
     const processName = useSelector(getProcessName);
@@ -123,6 +130,20 @@ const HeaderActivity = ({
             );
         }
 
+        case "add_comment": {
+            if (activityComment.content.status === "AVAILABLE") {
+                return null;
+            }
+
+            return (
+                <ActivityItemCommentModify
+                    commentContent={activityComment.content}
+                    scenarioActivityId={scenarioActivityId}
+                    activityType={activityType}
+                    activityAction={activityAction}
+                />
+            );
+        }
         default: {
             return null;
         }
@@ -253,6 +274,8 @@ const ActivityItemHeader = ({ activity, isRunning, isFound, isActiveFound, searc
                         scenarioVersionId={activity.scenarioVersionId}
                         activityAttachment={activity.attachment}
                         activityComment={activity.comment}
+                        activityType={activity.type}
+                        scenarioActivityId={activity.id}
                     />
                 ))}
             </StyledHeaderActionRoot>
