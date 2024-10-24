@@ -31,6 +31,8 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMess
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
+import scala.util.{Failure, Success, Try}
+
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
 
   protected implicit class RichParsedSchema(p: ParsedSchema) {
@@ -156,7 +158,20 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
     val encoder   = new ToJsonSchemaBasedEncoder(mode)
     val rawSchema = schema.cast().rawSchema()
-    (value: Any) => encoder.encodeOrError(value, rawSchema)
+    (value: Any) => {
+      // In ad-hoc test without schema we create object `{ "Value" = userInputInAdHoc }`, so if present we should just take the input
+      Try {
+        val temp = value.asInstanceOf[Map[String, Map[String, Any]]].head
+        if (temp._1.equals("Value")) {
+          temp._2
+        } else Failure
+      } match {
+        // For normal usage
+        case Failure(_) => encoder.encodeOrError(value, rawSchema)
+        // If source with topic without schema
+        case Success(objectInside) => encoder.encodeOrError(objectInside, rawSchema)
+      }
+    }
   }
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
