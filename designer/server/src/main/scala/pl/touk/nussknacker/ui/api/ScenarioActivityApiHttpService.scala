@@ -536,7 +536,7 @@ class ScenarioActivityApiHttpService(
 
   private def editComment(request: EditCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(
         scenarioActivityRepository.editComment(
@@ -571,7 +571,7 @@ class ScenarioActivityApiHttpService(
 
   private def deleteComment(request: DeprecatedDeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] = {
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] = {
     DeploymentComment.createDeploymentComment(None, deploymentCommentSettings).toEither
     EitherT(
       dbioActionRunner.run(
@@ -592,7 +592,7 @@ class ScenarioActivityApiHttpService(
 
   private def deleteComment(request: DeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(
         scenarioActivityRepository.deleteComment(

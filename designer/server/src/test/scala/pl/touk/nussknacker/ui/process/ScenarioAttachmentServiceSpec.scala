@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIO
 
 import java.io.ByteArrayInputStream
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
@@ -57,18 +58,11 @@ class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with Scala
 
 private object TestProcessActivityRepository extends ScenarioActivityRepository {
 
+  override def clock: Clock = Clock.systemUTC()
+
   override def findActivities(scenarioId: ProcessId): DB[Seq[ScenarioActivity]] = notSupported("findActivities")
 
   override def addActivity(scenarioActivity: ScenarioActivity): DB[ScenarioActivityId] = notSupported("addActivity")
-
-  override def modifyActivity(
-      activityId: ScenarioActivityId,
-      modification: ScenarioActivity => ScenarioActivity,
-  ): DB[Either[ModifyActivityError, Unit]] = notSupported("modifyActivity")
-
-  override def addComment(scenarioId: ProcessId, processVersionId: VersionId, comment: String)(
-      implicit user: LoggedUser
-  ): DB[ScenarioActivityId] = notSupported("addComment")
 
   override def addAttachment(attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd)(
       implicit user: LoggedUser
@@ -96,15 +90,15 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
       commentCreator: CommentModificationMetadata => Either[ModifyCommentError, String]
   )(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("editComment")
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("editComment")
 
   override def deleteComment(
       scenarioId: ProcessId,
       commentId: Long,
-      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit]
+      validate: CommentModificationMetadata => Either[ModifyCommentError, ScenarioActivityId]
   )(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("deleteComment")
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
 
   override def deleteComment(
       scenarioId: ProcessId,
@@ -112,7 +106,7 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
       validate: CommentModificationMetadata => Either[ModifyCommentError, Unit]
   )(
       implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, Unit]] = notSupported("deleteComment")
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
 
   private def notSupported(methodName: String): Nothing = throw new Exception(
     s"Method $methodName not supported by TestProcessActivityRepository test implementation"

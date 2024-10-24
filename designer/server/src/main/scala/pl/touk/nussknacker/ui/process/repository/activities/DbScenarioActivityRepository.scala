@@ -33,7 +33,7 @@ import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
-class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: Clock)(
+class DbScenarioActivityRepository private (override protected val dbRef: DbRef, override val clock: Clock)(
     implicit executionContext: ExecutionContext,
 ) extends DbioRepository
     with NuTables
@@ -52,19 +52,6 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioActivity: ScenarioActivity,
   ): DB[ScenarioActivityId] = {
     insertActivity(scenarioActivity).map(_.activityId)
-  }
-
-  def modifyActivity(
-      activityId: ScenarioActivityId,
-      modification: ScenarioActivity => ScenarioActivity,
-  ): DB[Either[ModifyActivityError, Unit]] = {
-    modifyActivityByActivityId[ModifyActivityError, ScenarioActivity](
-      activityId = activityId,
-      activityDoesNotExistError = ModifyActivityError.ActivityDoesNotExist,
-      validateCurrentValue = validateActivityExistsForScenario,
-      modify = originalActivity => Right(toEntity(modification(originalActivity))),
-      couldNotModifyError = ModifyActivityError.CouldNotModifyActivity,
-    )
   }
 
   def addComment(
@@ -91,9 +78,23 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
 
   def editComment(
       scenarioId: ProcessId,
+      rowId: Long,
+      comment: String
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
+    modifyActivityByRowId(
+      rowId = rowId,
+      activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
+      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
+      modify = doEditComment(comment),
+      couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
+    )
+  }
+
+  def editComment(
+      scenarioId: ProcessId,
       activityId: ScenarioActivityId,
       commentCreator: CommentModificationMetadata => Either[ModifyCommentError, String],
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]] = {
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
@@ -107,7 +108,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioId: ProcessId,
       rowId: Long,
       validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]] = {
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
     modifyActivityByRowId(
       rowId = rowId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
@@ -121,7 +122,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       scenarioId: ProcessId,
       activityId: ScenarioActivityId,
       validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]] = {
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
@@ -375,7 +376,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, T],
       modify: T => Either[ERROR, ScenarioActivityEntityData],
       couldNotModifyError: ERROR,
-  ): DB[Either[ERROR, Unit]] = {
+  ): DB[Either[ERROR, ScenarioActivityId]] = {
     doModifyActivity[ScenarioActivityId, ERROR, T](
       key = activityId,
       fetchActivity = activityByIdCompiled(_).result.headOption,
@@ -393,7 +394,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, ScenarioActivityEntityData],
       modify: ScenarioActivityEntityData => Either[ERROR, ScenarioActivityEntityData],
       couldNotModifyError: ERROR,
-  ): DB[Either[ERROR, Unit]] = {
+  ): DB[Either[ERROR, ScenarioActivityId]] = {
     doModifyActivity[Long, ERROR, ScenarioActivityEntityData](
       key = rowId,
       fetchActivity = activityByRowIdCompiled(_).result.headOption,
@@ -413,7 +414,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
       validateCurrentValue: ScenarioActivityEntityData => Either[ERROR, VALIDATED],
       modify: VALIDATED => Either[ERROR, ScenarioActivityEntityData],
       couldNotModifyError: ERROR,
-  ): DB[Either[ERROR, Unit]] = {
+  ): DB[Either[ERROR, ScenarioActivityId]] = {
     val action = for {
       fetchedActivity <- fetchActivity(key)
       result <- {
@@ -429,7 +430,7 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
           case Right(modifiedEntity) =>
             for {
               rowsAffected <- updateRow(key, modifiedEntity)
-              res          <- DBIO.successful(Either.cond(rowsAffected != 0, (), couldNotModifyError))
+              res <- DBIO.successful(Either.cond(rowsAffected != 0, modifiedEntity.activityId, couldNotModifyError))
             } yield res
         }
       }
@@ -1007,5 +1008,17 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private def toLongOption(str: String) = Try(str.toLong).toOption
 
   private def toIntOption(str: String) = Try(str.toInt).toOption
+
+}
+
+object DbScenarioActivityRepository {
+
+  def create(dbRef: DbRef, clock: Clock)(
+      implicit executionContext: ExecutionContext,
+  ): ScenarioActivityRepository = {
+    new ScenarioActivityRepositoryAuditLogDecorator(
+      new DbScenarioActivityRepository(dbRef, clock)
+    )
+  }
 
 }

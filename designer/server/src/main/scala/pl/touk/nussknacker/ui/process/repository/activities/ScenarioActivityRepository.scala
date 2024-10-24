@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository.activities
 
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, ScenarioActivityId}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
@@ -9,12 +9,16 @@ import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
   CommentModificationMetadata,
   DeleteAttachmentError,
-  ModifyActivityError,
   ModifyCommentError
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
+
+import java.time.Clock
 
 trait ScenarioActivityRepository {
+
+  def clock: Clock
 
   def findActivities(
       scenarioId: ProcessId,
@@ -24,16 +28,27 @@ trait ScenarioActivityRepository {
       scenarioActivity: ScenarioActivity,
   ): DB[ScenarioActivityId]
 
-  def modifyActivity(
-      activityId: ScenarioActivityId,
-      modification: ScenarioActivity => ScenarioActivity,
-  ): DB[Either[ModifyActivityError, Unit]]
-
   def addComment(
       scenarioId: ProcessId,
       processVersionId: VersionId,
-      comment: String
-  )(implicit user: LoggedUser): DB[ScenarioActivityId]
+      comment: String,
+  )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
+    val now = clock.instant()
+    addActivity(
+      ScenarioActivity.CommentAdded(
+        scenarioId = ScenarioId(scenarioId.value),
+        scenarioActivityId = ScenarioActivityId.random,
+        user = user.scenarioUser,
+        date = now,
+        scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
+        comment = ScenarioComment.WithContent(
+          comment = comment,
+          lastModifiedByUserName = UserName(user.username),
+          lastModifiedAt = now,
+        )
+      ),
+    )
+  }
 
   def editComment(
       scenarioId: ProcessId,
@@ -45,13 +60,13 @@ trait ScenarioActivityRepository {
       scenarioId: ProcessId,
       commentId: Long,
       validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def deleteComment(
       scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId,
       validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def addAttachment(
       attachmentToAdd: AttachmentToAdd
