@@ -453,31 +453,40 @@ class DbScenarioActivityRepository(override protected val dbRef: DbRef, clock: C
   private def doEditComment(commentCreator: CommentModificationMetadata => Either[ModifyCommentError, String])(
       entity: ScenarioActivityEntityData
   )(implicit user: LoggedUser): Either[ModifyCommentError, ScenarioActivityEntityData] = {
-    commentCreator(commentModificationMetadata(entity)).map { comment =>
-      entity.copy(
-        comment = Some(comment),
-        lastModifiedByUserName = Some(user.username),
-        additionalProperties = entity.additionalProperties.withProperty(
-          key = s"comment_replaced_by_${user.username}_at_${clock.instant()}",
-          value = entity.comment.getOrElse(""),
-        )
+    commentCreator(commentModificationMetadata(entity)).map(doEditComment)
+  }
+
+  private def doEditComment(comment: String)(
+      entity: ScenarioActivityEntityData
+  )(implicit user: LoggedUser): ScenarioActivityEntityData = {
+    entity.copy(
+      comment = Some(comment),
+      lastModifiedByUserName = Some(user.username),
+      additionalProperties = entity.additionalProperties.withProperty(
+        key = s"comment_replaced_by_${user.username}_at_${clock.instant()}",
+        value = entity.comment.getOrElse(""),
       )
-    }
+    )
   }
 
   private def doDeleteComment(validate: CommentModificationMetadata => Either[ModifyCommentError, Unit])(
       entity: ScenarioActivityEntityData
-  )(implicit user: LoggedUser): Either[ModifyCommentError, ScenarioActivityEntityData] =
-    validate(commentModificationMetadata(entity)).map { (_: Unit) =>
-      entity.copy(
-        comment = None,
-        lastModifiedByUserName = Some(user.username),
-        additionalProperties = entity.additionalProperties.withProperty(
-          key = s"comment_deleted_by_${user.username}_at_${clock.instant()}",
-          value = entity.comment.getOrElse(""),
-        )
+  )(implicit user: LoggedUser): Either[ModifyCommentError, ScenarioActivityEntityData] = {
+    validate(commentModificationMetadata(entity)).map(_ => doDeleteComment(entity))
+  }
+
+  private def doDeleteComment(
+      entity: ScenarioActivityEntityData
+  )(implicit user: LoggedUser): ScenarioActivityEntityData = {
+    entity.copy(
+      comment = None,
+      lastModifiedByUserName = Some(user.username),
+      additionalProperties = entity.additionalProperties.withProperty(
+        key = s"comment_deleted_by_${user.username}_at_${clock.instant()}",
+        value = entity.comment.getOrElse(""),
       )
-    }
+    )
+  }
 
   private def commentModificationMetadata(entity: ScenarioActivityEntityData): CommentModificationMetadata = {
     val isScenarioDeployedActivity = entity.activityType match {

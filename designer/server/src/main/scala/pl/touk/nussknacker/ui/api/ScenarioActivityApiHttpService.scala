@@ -556,7 +556,7 @@ class ScenarioActivityApiHttpService(
   private def createValidatedComment(commentModificationMetadata: CommentModificationMetadata, content: String) = {
     val commentOpt = Comment.from(content)
     val result = if (commentModificationMetadata.commentForScenarioDeployed) {
-      DeploymentComment.createDeploymentComment(Comment.from(content), deploymentCommentSettings).toEither match {
+      DeploymentComment.createDeploymentComment(commentOpt, deploymentCommentSettings).toEither match {
         case Right(commentOpt) => Right(commentOpt)
         case Left(error)       => Left(ModifyCommentError.InvalidContent(error.message))
       }
