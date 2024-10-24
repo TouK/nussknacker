@@ -1,4 +1,4 @@
-export type ActivityTypes =
+export type ActivityType =
     | "SCENARIO_CREATED"
     | "SCENARIO_ARCHIVED"
     | "SCENARIO_UNARCHIVED"
@@ -18,24 +18,26 @@ export type ActivityTypes =
     | "CUSTOM_ACTION";
 
 export interface ActivityMetadata {
-    type: ActivityTypes;
+    type: ActivityType;
     displayableName: string;
     icon: string;
     supportedActions: string[];
 }
 
 export interface ActionMetadata {
-    id: "compare" | "delete_comment" | "edit_comment" | "download_attachment" | "delete_attachment";
+    id: "compare" | "delete_comment" | "add_comment" | "edit_comment" | "download_attachment" | "delete_attachment";
     displayableName: string;
     icon: string;
 }
 
 export type ActivityAdditionalFields = { name: string; value: string };
 
-interface ActivityComment {
+export type ActivityCommentContentStatus = "AVAILABLE" | "NOT_AVAILABLE";
+
+export interface ActivityComment {
     content: {
-        value: string;
-        status: "AVAILABLE" | "DELETED";
+        value?: string;
+        status: ActivityCommentContentStatus;
     };
     lastModifiedBy: string;
     lastModifiedAt: string;
@@ -60,7 +62,7 @@ export interface ActivityAttachment {
 export interface ActivitiesResponse {
     activities: {
         id: string;
-        type: ActivityTypes;
+        type: ActivityType;
         user: string;
         date: string;
         scenarioVersionId: number;
@@ -77,3 +79,5 @@ export interface ActivityMetadataResponse {
     activities: ActivityMetadata[];
     actions: ActionMetadata[];
 }
+
+export type ModifyActivityCommentMeta = { existingComment?: string; scenarioActivityId: string; placeholder?: string };

@@ -34,6 +34,12 @@ export const deleteComment = () => {
     return i18next.t("dialogMessages.deleteComment", "Are you sure you want to delete comment?");
 };
 
+export const deleteAttachment = (attachmentName: string) => {
+    return i18next.t("dialogMessages.deleteAttachment", "Are you sure you want to delete {{attachmentName}} attachment?", {
+        attachmentName,
+    });
+};
+
 export const cantArchiveRunningProcess = () => {
     return i18next.t(
         "dialogMessages.cantArchiveRunningProcess",

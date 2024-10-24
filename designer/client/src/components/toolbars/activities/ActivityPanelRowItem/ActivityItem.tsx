@@ -1,15 +1,14 @@
 import React, { ForwardedRef, forwardRef } from "react";
-import { useSelector } from "react-redux";
 import { Box, styled, Typography } from "@mui/material";
 import { formatDateTime } from "../../../../common/DateUtils";
-import CommentContent from "../../../comment/CommentContent";
-import { createSelector } from "reselect";
-import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { ItemActivity } from "../ActivitiesPanel";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
-import { ActivityTypes } from "../types";
+import { ActivityType } from "../types";
 import { getItemColors } from "../helpers/activityItemColors";
+import { useTranslation } from "react-i18next";
+import { ActivityItemComment } from "./ActivityItemComment";
+import { useActivityItemInfo } from "./ActivityItemProvider";
 
 const StyledActivityRoot = styled("div")(({ theme }) => ({
     padding: theme.spacing(0.5, 1.25),
@@ -23,20 +22,19 @@ const StyledActivityContent = styled("div")<{ isActiveFound: boolean; isFound: b
 const StyledActivityBody = styled("div")(({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    padding: theme.spacing(1, 0.5),
+    padding: theme.spacing(1, 0, 1, 0.5),
     gap: theme.spacing(0.5),
 }));
-
-const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
 
 export const ActivityItem = forwardRef(
     (
         { activity, isRunning, searchQuery }: { activity: ItemActivity; isRunning: boolean; searchQuery: string },
         ref: ForwardedRef<HTMLDivElement>,
     ) => {
-        const commentSettings = useSelector(getCommentSettings);
+        const { t } = useTranslation();
+        const { handleSetIsActivityHovered } = useActivityItemInfo();
 
-        const actionsWithVersionInfo: ActivityTypes[] = [
+        const actionsWithVersionInfo: ActivityType[] = [
             "PERFORMED_SINGLE_EXECUTION",
             "PERFORMED_SCHEDULED_EXECUTION",
             "SCENARIO_DEPLOYED",
@@ -45,10 +43,16 @@ export const ActivityItem = forwardRef(
         ];
 
         const version =
-            activity.scenarioVersionId && actionsWithVersionInfo.includes(activity.type) && `Version: ${activity.scenarioVersionId}`;
+            activity.scenarioVersionId &&
+            actionsWithVersionInfo.includes(activity.type) &&
+            t("activityItem.version", "Version: {{scenarioVersionId}}", { scenarioVersionId: activity.scenarioVersionId });
 
         return (
-            <StyledActivityRoot ref={ref}>
+            <StyledActivityRoot
+                ref={ref}
+                onMouseEnter={() => handleSetIsActivityHovered(true)}
+                onMouseLeave={() => handleSetIsActivityHovered(false)}
+            >
                 <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
                     <ActivityItemHeader
                         isRunning={isRunning}
@@ -79,14 +83,24 @@ export const ActivityItem = forwardRef(
                             {version && <Typography variant={"overline"}>{version}</Typography>}
                         </Box>
 
-                        {activity?.comment?.content?.value && (
-                            <CommentContent
-                                content={activity.comment.content.value}
-                                commentSettings={commentSettings}
-                                searchWords={[searchQuery]}
-                                variant={"overline"}
+                        {activity?.comment?.content.status === "AVAILABLE" && (
+                            <ActivityItemComment
+                                comment={activity.comment}
+                                searchQuery={searchQuery}
+                                activityActions={activity.actions}
+                                scenarioActivityId={activity.id}
+                                activityType={activity.type}
                             />
                         )}
+
+                        {activity?.attachment?.file.status === "DELETED" && (
+                            <Typography component={SearchHighlighter} highlights={[searchQuery]} variant={"overline"}>
+                                {t("activityItem.attachmentRemoved", "File ‘{{filename}}’ removed", {
+                                    filename: activity.attachment.filename,
+                                })}
+                            </Typography>
+                        )}
+
                         {activity.additionalFields.map((additionalField, index) => {
                             const additionalFieldText = `${additionalField.name}: ${additionalField.value}`;
 

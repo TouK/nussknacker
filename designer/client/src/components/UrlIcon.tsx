@@ -3,7 +3,7 @@ import { absoluteBePath } from "../common/UrlUtils";
 import { InlineSvg, InlineSvgProps } from "./SvgDiv";
 import { PlaceholderIconFallbackComponent } from "./common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
 
-interface ImageWithFallbackProps extends DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> {
+export interface ImageWithFallbackProps extends DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> {
     src: string;
     FallbackComponent?: ComponentType;
 }

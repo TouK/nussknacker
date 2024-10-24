@@ -25,14 +25,14 @@ const AddAttachmentDialog = (props: WindowContentProps) => {
         );
         const results = await Promise.all(attachmentPromises);
 
-        if (results.every((result) => result === "success")) {
+        if (results.every(({ status }) => status === "success")) {
             props.close();
         }
 
-        if (results.some((result) => result === "success")) {
+        if (results.some(({ status }) => status === "success")) {
             await dispatch(await getScenarioActivities(processName));
         }
-    }, [attachments, processName, processVersionId, props]);
+    }, [attachments, dispatch, processName, processVersionId, props]);
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
