@@ -64,7 +64,7 @@ class NotificationServiceTest
   private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef, clock)
 
   private val actionRepository =
-    new DbScenarioActionRepository(
+    DbScenarioActionRepository.create(
       testDbRef,
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )

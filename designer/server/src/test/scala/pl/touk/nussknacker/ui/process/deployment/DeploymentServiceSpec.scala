@@ -994,7 +994,7 @@ class DeploymentServiceSpec
     for {
       (processId, actionIdOpt) <- prepareArchivedProcess(processName, actionNameOpt)
       _                        <- writeProcessRepository.archive(processId = processId, isArchived = false)
-      _                        <- actionRepository.markProcessAsUnArchived(processId = processId.id, initialVersionId)
+      _ <- actionRepository.addInstantAction(processId.id, initialVersionId, ScenarioActionName.UnArchive, None, None)
     } yield (processId, actionIdOpt)
 
   private def prepareArchivedProcess(
@@ -1010,7 +1010,9 @@ class DeploymentServiceSpec
   private def archiveProcess(processId: ProcessIdWithName): DB[_] = {
     writeProcessRepository
       .archive(processId = processId, isArchived = true)
-      .flatMap(_ => actionRepository.markProcessAsArchived(processId = processId.id, initialVersionId))
+      .flatMap(_ =>
+        actionRepository.addInstantAction(processId.id, initialVersionId, ScenarioActionName.Archive, None, None)
+      )
   }
 
   private def prepareProcessesInProgress = {
