@@ -9,6 +9,7 @@ import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 
 function UnArchiveButton({ disabled, type }: ToolbarButtonProps) {
     const processName = useSelector(getProcessName);
@@ -25,9 +26,10 @@ function UnArchiveButton({ disabled, type }: ToolbarButtonProps) {
                 text: DialogMessages.unArchiveProcess(processName),
                 onConfirmCallback: (confirmed) =>
                     confirmed &&
-                    HttpService.unArchiveProcess(processName).then(() => {
+                    HttpService.unArchiveProcess(processName).then(async () => {
                         dispatch(loadProcessToolbarsConfiguration(processName));
                         dispatch(displayCurrentProcessVersion(processName));
+                        await dispatch(await getScenarioActivities(processName));
                     }),
                 confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
                 denyText: t("panels.actions.process-unarchive.no", "No"),

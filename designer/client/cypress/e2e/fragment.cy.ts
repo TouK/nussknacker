@@ -189,6 +189,7 @@ describe("Fragment", () => {
 
         cy.wait("@fragmentInputValidation");
         cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.viewport(1600, 1200);
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
 
         cy.get("[data-testid=window]").find("section").scrollTo("bottom");
@@ -302,6 +303,7 @@ describe("Fragment", () => {
             .should("be.visible");
 
         cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.viewport(1600, 1200);
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
     });
 
@@ -429,7 +431,7 @@ describe("Fragment", () => {
         cy.layoutScenario();
 
         cy.get('[joint-selector="layers"]').matchImage({
-            maxmaxDiffThreshold: 0.015,
+            maxDiffThreshold: 0.015,
             screenshotConfig: { padding: 16 },
         });
     });
