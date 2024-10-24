@@ -1,21 +1,20 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import scala.concurrent.duration.FiniteDuration
+import scala.reflect.ClassTag
 
-@silent("deprecated")
 case class FlinkCustomNodeContext(
     jobData: JobData,
     // TODO: it can be used in state recovery - make sure that it won't change during renaming of nodes on gui
@@ -26,8 +25,6 @@ case class FlinkCustomNodeContext(
     exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
     globalParameters: Option[NkGlobalParameters],
     validationContext: Either[ValidationContext, Map[String, ValidationContext]],
-    @deprecated("TypeInformationDetection.instance should be used instead", "1.17.0")
-    typeInformationDetection: TypeInformationDetection,
     componentUseCase: ComponentUseCase,
     nodeDeploymentData: Option[NodeDeploymentData]
 ) {
@@ -36,17 +33,9 @@ case class FlinkCustomNodeContext(
   lazy val contextTypeInfo: TypeInformation[Context] =
     TypeInformationDetection.instance.forContext(asOneOutputContext)
 
-  lazy val valueWithContextInfo = new valueWithContextInfo
+  lazy val valueWithContextInfo = new ValueWithContextInfo
 
-  class valueWithContextInfo {
-
-    @deprecated("TypeInformationDetection.instance.forValueWithContext should be used instead", "1.17.0")
-    def forCustomContext[T](ctx: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
-      TypeInformationDetection.instance.forValueWithContext(ctx, value)
-
-    @deprecated("TypeInformationDetection.instance.forValueWithContext should be used instead", "1.17.0")
-    def forCustomContext[T](ctx: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]] =
-      TypeInformationDetection.instance.forValueWithContext(ctx, value)
+  class ValueWithContextInfo {
 
     def forBranch[T](key: String, value: TypingResult): TypeInformation[ValueWithContext[T]] =
       forBranch(key, TypeInformationDetection.instance.forType[T](value))
@@ -60,7 +49,14 @@ case class FlinkCustomNodeContext(
     def forType[T](value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
       TypeInformationDetection.instance.forValueWithContext(asOneOutputContext, value)
 
+    def forClass[T](klass: Class[_]): TypeInformation[ValueWithContext[T]] =
+      forType[T](Typed.typedClass(klass))
+
+    def forClass[T: ClassTag]: TypeInformation[ValueWithContext[T]] =
+      forType(TypeInformationDetection.instance.forClass[T])
+
     lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
+
   }
 
   def branchValidationContext(branchId: String): ValidationContext = asJoinContext.getOrElse(

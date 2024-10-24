@@ -152,7 +152,6 @@ class FlinkProcessRegistrar(
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
         validationContext,
-        TypeInformationDetection.instance,
         compilerData.componentUseCase,
         // TODO: we should verify if component supports given node data type. If not, we should throw some error instead
         //       of silently skip these data

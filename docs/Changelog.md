@@ -76,6 +76,7 @@
 * [#6958](https://github.com/TouK/nussknacker/pull/6958) Add message size limit in the "Kafka" exceptionHandler
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Remove unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`
 * [#7000](https://github.com/TouK/nussknacker/pull/7000) Show all possible options for dictionary editor on open.
+* [#7058](https://github.com/TouK/nussknacker/pull/7058) Improvements: Add missing Flink TypeInformation for proper serialization
 
 ## 1.17
 
