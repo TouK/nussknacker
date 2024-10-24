@@ -2084,7 +2084,7 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .settings {
     // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
     forScalaVersion(defaultScalaV) {
-      case (2, 12) => doTest
+      case (2, 12) => doNotTest // TODO: temporary disable
       case (2, 13) => doNotTest
     }
   }

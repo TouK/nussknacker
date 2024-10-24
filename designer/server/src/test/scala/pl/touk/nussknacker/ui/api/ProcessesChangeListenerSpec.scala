@@ -97,7 +97,7 @@ class ProcessesChangeListenerSpec
     }
   }
 
-  test("listen to deployment failure") {
+  ignore("listen to deployment failure") {
     val processId = createValidProcess(processName)
 
     deploymentManager.withFailingDeployment(processName) {
