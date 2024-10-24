@@ -578,7 +578,7 @@ class ScenarioActivityApiHttpService(
         scenarioActivityRepository.deleteComment(
           scenarioId,
           request.commentId,
-          validateCommentCanBeRemoved,
+          validateCommentCanBeRemoved(_),
         )
       )
     ).leftMap {
@@ -598,7 +598,7 @@ class ScenarioActivityApiHttpService(
         scenarioActivityRepository.deleteComment(
           scenarioId,
           ScenarioActivityId(request.scenarioActivityId),
-          validateCommentCanBeRemoved,
+          validateCommentCanBeRemoved(_),
         )
       )
     ).leftMap {
