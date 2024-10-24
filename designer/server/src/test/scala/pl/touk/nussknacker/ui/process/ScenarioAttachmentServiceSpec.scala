@@ -64,6 +64,12 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
   ): DB[ScenarioActivityId] =
     DBIO.successful(ScenarioActivityId.random)
 
+  override def markAttachmentAsDeleted(
+      scenarioId: ProcessId,
+      attachmentId: Long
+  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.DeleteAttachmentError, Unit]] =
+    notSupported("markAttachmentAsDeleted")
+
   override def findAttachments(scenarioId: ProcessId): DB[Seq[AttachmentEntityData]] = notSupported("findAttachments")
 
   override def findAttachment(scenarioId: ProcessId, attachmentId: Long): DB[Option[AttachmentEntityData]] =

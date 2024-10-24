@@ -402,7 +402,7 @@ class DeploymentServiceSpec
             _,
             _,
             actionName,
-            ScenarioComment.Available(content, _, _),
+            ScenarioComment.WithContent(content, _, _),
             result,
           ) =>
         actionName shouldBe "Custom action of MockDeploymentManager just before deployment"
