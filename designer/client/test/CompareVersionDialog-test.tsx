@@ -24,6 +24,11 @@ jest.mock("../src/windowManager", () => ({
     WindowContent: ({ children }) => <div>{children}</div>,
 }));
 
+// this module brings nothing but problems with some nested imports to this test, so it could be safely mocked
+jest.mock("../src/components/graph/node-modal/NodeDetailsContent", () => ({
+    NodeDetailsContent: ({ children }) => <div>{children}</div>,
+}));
+
 const mockStore = configureMockStore([thunk]);
 const graphReducer = {
     history: {

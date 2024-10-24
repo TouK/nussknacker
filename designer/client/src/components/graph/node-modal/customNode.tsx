@@ -1,10 +1,11 @@
-import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
 import React, { PropsWithChildren, useMemo } from "react";
+import ProcessUtils from "../../../common/ProcessUtils";
+import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
+import { AggregateParametersList } from "./aggregateParametersList";
+import { DescriptionField } from "./DescriptionField";
+import { FieldType } from "./editors/field/Field";
 import { IdField } from "./IdField";
 import { NodeField } from "./NodeField";
-import { FieldType } from "./editors/field/Field";
-import { DescriptionField } from "./DescriptionField";
 import { ParametersList } from "./parametersList";
 
 export type CustomNodeProps = {
@@ -13,7 +14,7 @@ export type CustomNodeProps = {
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    processDefinitionData?: ProcessDefinitionData;
+    processDefinitionData: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showSwitch?: boolean;
@@ -37,6 +38,12 @@ export function CustomNode({
         (): boolean => !!ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.returnType || !!node.outputVar,
         [node, processDefinitionData.components],
     );
+
+    const ParametersComponent = useMemo(() => {
+        const isAggregate = ["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(node.nodeType);
+        return isAggregate ? AggregateParametersList : ParametersList;
+    }, [node.nodeType]);
+
     return (
         <>
             <IdField
@@ -61,7 +68,7 @@ export function CustomNode({
                 />
             )}
             {children}
-            <ParametersList
+            <ParametersComponent
                 parameters={node.parameters}
                 showSwitch={showSwitch}
                 findAvailableVariables={findAvailableVariables}
