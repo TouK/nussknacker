@@ -1448,17 +1448,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       Table(
         ("expression", "expectedType", "expectedResult"),
         (
-          "#stringMap.![{key: #this.key + '_k', value: #this.value + '_v'}].toMap()",
+          "#stringMap.![{key: #this.key + '_k', value: #this.value + '_v'}].toMap",
           mapStringStringType,
           Map("foo_k" -> "bar_v", "baz_k" -> "qux_v").asJava
         ),
         (
-          "#mapWithDifferentValueTypes.![{key: #this.key, value: #this.value}].toMap()",
+          "#mapWithDifferentValueTypes.![{key: #this.key, value: #this.value}].toMap",
           mapStringUnknownType,
           mapWithDifferentValueTypes
         ),
         (
-          "#nullableMap.![{key: #this.key, value: #this.value}].toMap()",
+          "#nullableMap.![{key: #this.key, value: #this.value}].toMap",
           mapStringStringType,
           nullableMap
         )
@@ -1663,25 +1663,25 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownMap.value.is('Map')", true),
         ("#unknownListOfTuples.value.is('List')", true),
         ("#unknownListOfTuples.value.is('Map')", true),
-        ("#unknownBoolean.value.isBoolean()", true),
-        ("#unknownBooleanString.value.isBoolean()", true),
-        ("#unknownString.value.isBoolean()", false),
-        ("#unknownLong.value.isLong()", true),
-        ("#unknownLongString.value.isLong()", true),
-        ("#unknownString.value.isLong()", false),
-        ("#unknownDouble.value.isDouble()", true),
-        ("#unknownDoubleString.value.isDouble()", true),
-        ("#unknownString.value.isDouble()", false),
-        ("#unknownBigDecimal.value.isBigDecimal()", true),
-        ("#unknownBigDecimalString.value.isBigDecimal()", true),
-        ("#unknownString.value.isBigDecimal()", false),
-        ("#unknownList.value.isList()", true),
-        ("#unknownList.value.isMap()", false),
-        ("#unknownMap.value.isList()", false),
-        ("#unknownMap.value.isMap()", true),
-        ("#unknownListOfTuples.value.isList()", true),
-        ("#unknownListOfTuples.value.isMap()", true),
-        ("#arrayOfUnknown.isList()", true),
+        ("#unknownBoolean.value.isBoolean", true),
+        ("#unknownBooleanString.value.isBoolean", true),
+        ("#unknownString.value.isBoolean", false),
+        ("#unknownLong.value.isLong", true),
+        ("#unknownLongString.value.isLong", true),
+        ("#unknownString.value.isLong", false),
+        ("#unknownDouble.value.isDouble", true),
+        ("#unknownDoubleString.value.isDouble", true),
+        ("#unknownString.value.isDouble", false),
+        ("#unknownBigDecimal.value.isBigDecimal", true),
+        ("#unknownBigDecimalString.value.isBigDecimal", true),
+        ("#unknownString.value.isBigDecimal", false),
+        ("#unknownList.value.isList", true),
+        ("#unknownList.value.isMap", false),
+        ("#unknownMap.value.isList", false),
+        ("#unknownMap.value.isMap", true),
+        ("#unknownListOfTuples.value.isList", true),
+        ("#unknownListOfTuples.value.isMap", true),
+        ("#arrayOfUnknown.isList", true),
       )
     ) { (expression, result) =>
       evaluate[Any](expression, customCtx) shouldBe result
@@ -1716,6 +1716,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
           include("is neither a decimal digit number")
       )
     }
+  }
+
+  test("should allow use no param method property accessor on unknown") {
+    evaluate[String]("#unknownString.value.toString") shouldBe "unknown"
   }
 
 }

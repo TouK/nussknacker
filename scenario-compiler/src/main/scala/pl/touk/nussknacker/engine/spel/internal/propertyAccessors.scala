@@ -4,9 +4,11 @@ import java.lang.reflect.{Method, Modifier}
 import java.util.Optional
 import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
+import org.springframework.expression.spel.support.ReflectivePropertyAccessor.OptimalPropertyAccessor
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
+import pl.touk.nussknacker.engine.extension.{ExtensionAwareMethodsDiscovery, ExtensionsAwareMethodInvoker}
 
 import scala.collection.concurrent.TrieMap
 
@@ -52,15 +54,17 @@ object propertyAccessors {
     however it's not so easy to extend and in interpreted mode we skip original implementation
    */
   object NoParamMethodPropertyAccessor extends ReflectivePropertyAccessor with ReadOnly with Caching {
+    private val methodInvoker = new ExtensionsAwareMethodInvoker()
+    private val emptyArray    = Array[AnyRef]()
 
     override def findGetterForProperty(propertyName: String, clazz: Class[_], mustBeStatic: Boolean): Method = {
       findMethodFromClass(propertyName, clazz).orNull
     }
 
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
-      )
+      ExtensionAwareMethodsDiscovery
+        .discover(target)
+        .find(m => !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name)
     }
 
     override protected def invokeMethod(
@@ -68,17 +72,38 @@ object propertyAccessors {
         method: Method,
         target: Any,
         context: EvaluationContext
-    ): AnyRef = {
-      method.invoke(target)
-    }
+    ): Any =
+      methodInvoker.invoke(method)(target, emptyArray)
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
+
+    override def createOptimalAccessor(context: EvaluationContext, target: Any, name: String): PropertyAccessor =
+      super.createOptimalAccessor(context, target, name) match {
+        case o: OptimalPropertyAccessor => new NuOptimalAccessor(o)
+        case o                          => o
+      }
+
+    private class NuOptimalAccessor(delegate: PropertyAccessor) extends PropertyAccessor {
+      override def getSpecificTargetClasses: Array[Class[_]] =
+        delegate.getSpecificTargetClasses
+      override def canWrite(context: EvaluationContext, target: Any, name: String): Boolean =
+        delegate.canWrite(context, target, name)
+      override def write(context: EvaluationContext, target: Any, name: String, newValue: Any): Unit =
+        delegate.write(context, target, name, newValue)
+      override def canRead(context: EvaluationContext, target: Any, name: String): Boolean =
+        NoParamMethodPropertyAccessor.this.canRead(context, target, name)
+      override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
+        NoParamMethodPropertyAccessor.this.read(context, target, name)
+    }
+
   }
 
   // Spring bytecode generation fails when we try to invoke methods on primitives, so we
   // *do not* extend ReflectivePropertyAccessor and we force interpreted mode
   // TODO: figure out how to make bytecode generation work also in this case
   object PrimitiveOrWrappersPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+    private val methodInvoker = new ExtensionsAwareMethodInvoker()
+    private val emptyArray    = Array[AnyRef]()
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
 
@@ -87,12 +112,12 @@ object propertyAccessors {
         method: Method,
         target: Any,
         context: EvaluationContext
-    ): Any = method.invoke(target)
+    ): Any = methodInvoker.invoke(method)(target, emptyArray)
 
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
-      )
+      ExtensionAwareMethodsDiscovery
+        .discover(target)
+        .find(m => ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name)
     }
 
   }

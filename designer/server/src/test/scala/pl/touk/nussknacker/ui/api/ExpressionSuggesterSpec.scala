@@ -779,7 +779,7 @@ class ExpressionSuggesterSpec
     )
   }
 
-  test("should suggest parameters for casts methods") {
+  test("should suggest parameters for conversion methods") {
     spelSuggestionsFor("#unknown.to('')", column = 13) should contain theSameElementsAs List(
       suggestion("BigDecimal", Typed[java.math.BigDecimal]),
       suggestion("Boolean", Typed[java.lang.Boolean]),
