@@ -53,8 +53,9 @@ trait ScenarioActivityRepository {
   def editComment(
       scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId,
-      commentCreator: CommentModificationMetadata => Either[ModifyCommentError, String],
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, Unit]]
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+      comment: String,
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def deleteComment(
       scenarioId: ProcessId,

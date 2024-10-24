@@ -54,52 +54,17 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     insertActivity(scenarioActivity).map(_.activityId)
   }
 
-  def addComment(
-      scenarioId: ProcessId,
-      processVersionId: VersionId,
-      comment: String,
-  )(implicit user: LoggedUser): DB[ScenarioActivityId] = {
-    val now = clock.instant()
-    insertActivity(
-      ScenarioActivity.CommentAdded(
-        scenarioId = ScenarioId(scenarioId.value),
-        scenarioActivityId = ScenarioActivityId.random,
-        user = user.scenarioUser,
-        date = now,
-        scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
-        comment = ScenarioComment.WithContent(
-          comment = comment,
-          lastModifiedByUserName = UserName(user.username),
-          lastModifiedAt = now,
-        )
-      ),
-    ).map(_.activityId)
-  }
-
-  def editComment(
-      scenarioId: ProcessId,
-      rowId: Long,
-      comment: String
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
-    modifyActivityByRowId(
-      rowId = rowId,
-      activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
-      validateCurrentValue = validateThatActivityIsAssignedToScenario(scenarioId),
-      modify = doEditComment(comment),
-      couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
-    )
-  }
-
   def editComment(
       scenarioId: ProcessId,
       activityId: ScenarioActivityId,
-      commentCreator: CommentModificationMetadata => Either[ModifyCommentError, String],
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+      comment: String,
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = {
     modifyActivityByActivityId(
       activityId = activityId,
       activityDoesNotExistError = ModifyCommentError.ActivityDoesNotExist,
       validateCurrentValue = entity => validateThatActivityIsAssignedToScenario(scenarioId)(entity),
-      modify = doEditComment(commentCreator),
+      modify = doEditComment(validate, comment),
       couldNotModifyError = ModifyCommentError.CouldNotModifyComment,
     )
   }
@@ -451,10 +416,10 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     }
   }
 
-  private def doEditComment(commentCreator: CommentModificationMetadata => Either[ModifyCommentError, String])(
+  private def doEditComment(validate: CommentModificationMetadata => Either[ModifyCommentError, Unit], comment: String)(
       entity: ScenarioActivityEntityData
   )(implicit user: LoggedUser): Either[ModifyCommentError, ScenarioActivityEntityData] = {
-    commentCreator(commentModificationMetadata(entity)).map(doEditComment)
+    validate(commentModificationMetadata(entity)).map(_ => doEditComment(comment)(entity))
   }
 
   private def doEditComment(comment: String)(

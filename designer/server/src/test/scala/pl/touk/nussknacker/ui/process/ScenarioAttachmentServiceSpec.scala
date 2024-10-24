@@ -13,7 +13,6 @@ import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
   CommentModificationMetadata,
-  ModifyActivityError,
   ModifyCommentError
 }
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
@@ -87,7 +86,8 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
   override def editComment(
       scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId,
-      commentCreator: CommentModificationMetadata => Either[ModifyCommentError, String]
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+      comment: String,
   )(
       implicit user: LoggedUser
   ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("editComment")
@@ -95,18 +95,14 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
   override def deleteComment(
       scenarioId: ProcessId,
       commentId: Long,
-      validate: CommentModificationMetadata => Either[ModifyCommentError, ScenarioActivityId]
-  )(
-      implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
 
   override def deleteComment(
       scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId,
-      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit]
-  )(
-      implicit user: LoggedUser
-  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
 
   private def notSupported(methodName: String): Nothing = throw new Exception(
     s"Method $methodName not supported by TestProcessActivityRepository test implementation"
