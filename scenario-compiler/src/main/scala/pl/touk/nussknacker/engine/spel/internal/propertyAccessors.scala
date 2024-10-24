@@ -17,14 +17,15 @@ object propertyAccessors {
   // This general order can be overridden - each accessor can define target classes for which it will have precedence -
   // through the `getSpecificTargetClasses` method.
   def configured(classDefinitionSet: ClassDefinitionSet): Seq[PropertyAccessor] = {
+
     Seq(
       MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
       new ReflectivePropertyAccessor(),
-      NullPropertyAccessor,              // must be before other non-standard ones
-      ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
-      JavaOptionalOrNullPropertyAccessor,
-      PrimitiveOrWrappersPropertyAccessor,
-      StaticPropertyAccessor,
+      NullPropertyAccessor,                                      // must be before other non-standard ones
+      new ScalaOptionOrNullPropertyAccessor(classDefinitionSet), // must be before scalaPropertyAccessor
+      new JavaOptionalOrNullPropertyAccessor(classDefinitionSet),
+      new PrimitiveOrWrappersPropertyAccessor(classDefinitionSet),
+      new StaticPropertyAccessor(classDefinitionSet),
       TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
       new NoParamMethodPropertyAccessor(classDefinitionSet),
       // it can add performance overhead so it will be better to keep it on the bottom
@@ -32,6 +33,8 @@ object propertyAccessors {
       MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
     )
   }
+
+  class CheckedReflectivePropertyAccessor extends ReflectivePropertyAccessor {}
 
   object NullPropertyAccessor extends PropertyAccessor with ReadOnly {
 
@@ -52,33 +55,22 @@ object propertyAccessors {
     This one is a bit tricky. We extend ReflectivePropertyAccessor, as it's the only sensible way to make it compilable,
     however it's not so easy to extend and in interpreted mode we skip original implementation
    */
-  class NoParamMethodPropertyAccessor(classDefinitionSet: ClassDefinitionSet)
+  class NoParamMethodPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
       extends ReflectivePropertyAccessor
       with ReadOnly
-      with Caching {
+      with Caching
+      with ClassDefinitionSetChecking {
 
     override def findGetterForProperty(propertyName: String, clazz: Class[_], mustBeStatic: Boolean): Method = {
       findMethodFromClass(propertyName, clazz).orNull
     }
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
-      ) match {
-        case Some(method) =>
-          throwIfMethodNotInDefinitionSet(method, target)
-          Some(method)
-        case None => None
-      }
-    }
-
-    private def throwIfMethodNotInDefinitionSet(method: Method, targetClass: Class[_]): Unit = {
-      if (!classDefinitionSet.isParameterlessMethodAllowed(targetClass, method)) {
-        throw new IllegalStateException(
-          s"The ${method.getName} method call on type ${targetClass.getSimpleName} is not allowed"
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      checkAccessIfMethodFound(target) {
+        target.getMethods.find(m =>
+          !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
         )
       }
-    }
 
     override protected def invokeMethod(
         propertyName: String,
@@ -96,7 +88,11 @@ object propertyAccessors {
   // Spring bytecode generation fails when we try to invoke methods on primitives, so we
   // *do not* extend ReflectivePropertyAccessor and we force interpreted mode
   // TODO: figure out how to make bytecode generation work also in this case
-  object PrimitiveOrWrappersPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+  class PrimitiveOrWrappersPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
+      extends PropertyAccessor
+      with ReadOnly
+      with Caching
+      with ClassDefinitionSetChecking {
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
 
@@ -107,22 +103,28 @@ object propertyAccessors {
         context: EvaluationContext
     ): Any = method.invoke(target)
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
-      )
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      checkAccessIfMethodFound(target) {
+        target.getMethods.find(m =>
+          ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
+        )
+      }
 
   }
 
-  object StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
+  class StaticPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
+      extends PropertyAccessor
+      with ReadOnly
+      with StaticMethodCaching
+      with ClassDefinitionSetChecking {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target
-        .asInstanceOf[Class[_]]
-        .getMethods
-        .find(m => m.getParameterCount == 0 && m.getName == name && Modifier.isStatic(m.getModifiers))
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      checkAccessIfMethodFound(target) {
+        target
+          .asInstanceOf[Class[_]]
+          .getMethods
+          .find(m => m.getParameterCount == 0 && m.getName == name && Modifier.isStatic(m.getModifiers))
+      }
 
     override protected def invokeMethod(
         propertyName: String,
@@ -138,13 +140,18 @@ object propertyAccessors {
 
   // TODO: handle methods with multiple args or at least validate that they can't be called
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-  object ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+  class ScalaOptionOrNullPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
+      extends PropertyAccessor
+      with ReadOnly
+      with Caching
+      with ClassDefinitionSetChecking {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType)
-      )
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      checkAccessIfMethodFound(target) {
+        target.getMethods.find(m =>
+          m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType)
+        )
+      }
 
     override protected def invokeMethod(
         propertyName: String,
@@ -160,13 +167,18 @@ object propertyAccessors {
 
   // TODO: handle methods with multiple args or at least validate that they can't be called
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-  object JavaOptionalOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+  class JavaOptionalOrNullPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
+      extends PropertyAccessor
+      with ReadOnly
+      with Caching
+      with ClassDefinitionSetChecking {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m =>
-        m.getParameterCount == 0 && m.getName == name && classOf[Optional[_]].isAssignableFrom(m.getReturnType)
-      )
-    }
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      checkAccessIfMethodFound(target) {
+        target.getMethods.find(m =>
+          m.getParameterCount == 0 && m.getName == name && classOf[Optional[_]].isAssignableFrom(m.getReturnType)
+        )
+      }
 
     override protected def invokeMethod(
         propertyName: String,
@@ -299,6 +311,29 @@ object propertyAccessors {
       throw new IllegalAccessException("Property is not writeable")
 
     override def canWrite(context: EvaluationContext, target: scala.Any, name: String) = false
+
+  }
+
+  trait ClassDefinitionSetChecking { self: PropertyAccessor =>
+
+    protected def classDefinitionSet: ClassDefinitionSet
+
+    protected def checkAccessIfMethodFound(targetClass: Class[_])(methodOpt: Option[Method]): Option[Method] = {
+      methodOpt match {
+        case Some(method) =>
+          throwIfMethodNotInDefinitionSet(method.getName, targetClass)
+          Some(method)
+        case None => None
+      }
+    }
+
+    private def throwIfMethodNotInDefinitionSet(method: String, targetClass: Class[_]): Unit = {
+      if (!classDefinitionSet.isParameterlessMethodAllowed(targetClass, method)) {
+        throw new IllegalStateException(
+          s"The $method method call on type ${targetClass.getSimpleName} is not allowed"
+        )
+      }
+    }
 
   }
 

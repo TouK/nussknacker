@@ -18,15 +18,15 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
   def get(clazz: Class[_]): Option[ClassDefinition] =
     classDefinitionsMap.get(clazz)
 
-  def isParameterlessMethodAllowed(targetClass: Class[_], method: Method): Boolean = {
+  def isParameterlessMethodAllowed(targetClass: Class[_], method: String): Boolean = {
     // todo: some memoization
     // todo: should it be validated in runtime for not-dynamic access?
     val classWithParentClasses = extractAllTypes(targetClass)
-    classWithParentClasses.exists(hasDirectlyDefinedParameterlessMethod(_, method.getName))
+    classWithParentClasses.exists(hasDirectlyDefinedParameterlessMethod(_, method))
   }
 
   private def extractAllTypes(clazz: Class[_]): List[Class[_]] = {
-    // todo: recursive types (heap safety)?
+    // todo: recursive types (stack safety)?
     val superClassAsList: List[Class[_]] = Option(clazz.getSuperclass).map(List(_)).getOrElse(List.empty)
     val extractedSuperTypes              = (clazz.getInterfaces.toList ++ superClassAsList).flatMap(extractAllTypes)
     clazz :: extractedSuperTypes
