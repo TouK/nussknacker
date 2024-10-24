@@ -44,7 +44,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
   private val processInsertQuery = processesTable returning
     processesTable.map(_.id) into ((item, id) => item.copy(id = id))
 
-  private val scenarioActivityRepository = new DbScenarioActivityRepository(testDbRef, clock)
+  private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
 
   private val now: Timestamp = Timestamp.from(Instant.now)
   private val user           = "Test User"
