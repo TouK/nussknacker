@@ -19,8 +19,8 @@ class DeploymentCommentSpec extends AnyFunSuite with Matchers {
       exampleComment = None
     )
 
-  private val validComment   = Comment("issues/123123")
-  private val invalidComment = Comment("invalid_comment")
+  private val validComment   = Comment.unsafeFrom("issues/123123")
+  private val invalidComment = Comment.unsafeFrom("invalid_comment")
   private val emptyComment   = None
 
   private val emptyValidationPattern    = ""

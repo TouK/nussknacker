@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api.description.scenarioActivity
 import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
+  InvalidComment,
   NoActivity,
   NoAttachment,
   NoComment,
@@ -273,6 +274,11 @@ object Examples {
   val commentNotFoundError: Example[NoComment] = Example.of(
     summary = Some("Unable to edit comment with id: {commentId}"),
     value = NoComment(123L)
+  )
+
+  val invalidCommentError: Example[InvalidComment] = Example.of(
+    summary = Some("Invalid comment"),
+    value = InvalidComment("Comment is required.")
   )
 
   val attachmentNotFoundError: Example[NoAttachment] = Example.of(

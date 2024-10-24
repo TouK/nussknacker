@@ -620,6 +620,58 @@ class ScenarioActivityApiHttpServiceBusinessSpec
           )
         }
     }
+    "return 200 when editing deployment comment with valid format" in {
+      val newContent = "[JIRA-12345] Very important feature"
+
+      val scenarioDeployedActivityId = given()
+        .applicationState {
+          createDeployedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .extractString("activities[1].id")
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(newContent)
+        .put(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comment/$scenarioDeployedActivityId")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState {
+          verifyCommentExists(
+            scenarioName = exampleScenarioName,
+            commentContent = s"Deployment: $newContent",
+            commentUser = "admin"
+          )
+        }
+    }
+    "return 400 when editing deployment comment with invalid format" in {
+      val newContent = "New comment content after modification"
+
+      val scenarioDeployedActivityId = given()
+        .applicationState {
+          createDeployedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .extractString("activities[1].id")
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(newContent)
+        .put(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comment/$scenarioDeployedActivityId")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody(
+          "Bad comment format 'New comment content after modification'. Example comment: [JIRA-1234] description."
+        )
+    }
     "return 404 for no existing scenario" in {
       given()
         .applicationState {
@@ -658,6 +710,25 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .verifyApplicationState {
           verifyEmptyCommentsAndAttachments(exampleScenarioName)
         }
+    }
+    "return 400 when removing deployment comment with required non-empty content" in {
+      val commentActivityId = given()
+        .applicationState {
+          createDeployedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .extractString("activities[1].id") // First activity (0) is SCENARIO_CREATED, second (1) is SCENARIO_DEPLOYED
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comment/$commentActivityId")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody("Comment is required.")
     }
     "return 500 for no existing comment" in {
       given()

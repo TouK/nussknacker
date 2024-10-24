@@ -130,7 +130,7 @@ class ManagementResources(
                     .processCommand(
                       RunDeploymentCommand(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
-                        commonData = CommonCommandData(processIdWithName, comment.map(Comment.apply), user),
+                        commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
                         nodesDeploymentData = NodesDeploymentData.empty,
                         stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
@@ -152,7 +152,7 @@ class ManagementResources(
                 deploymentService
                   .processCommand(
                     RunDeploymentCommand(
-                      commonData = CommonCommandData(processIdWithName, comment.map(Comment.apply), user),
+                      commonData = CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user),
                       nodesDeploymentData = NodesDeploymentData.empty,
                       stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
@@ -170,7 +170,7 @@ class ManagementResources(
                 measureTime("cancel", metricRegistry) {
                   deploymentService.processCommand(
                     CancelScenarioCommand(commonData =
-                      CommonCommandData(processIdWithName, comment.map(Comment.apply), user)
+                      CommonCommandData(processIdWithName, comment.flatMap(Comment.from), user)
                     )
                   )
                 }
@@ -268,7 +268,7 @@ class ManagementResources(
               deploymentService
                 .processCommand(
                   CustomActionCommand(
-                    commonData = CommonCommandData(processIdWithName, req.comment.map(Comment.apply), user),
+                    commonData = CommonCommandData(processIdWithName, req.comment.flatMap(Comment.from), user),
                     actionName = req.actionName,
                     params = req.params
                   )

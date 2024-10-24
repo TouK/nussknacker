@@ -401,6 +401,7 @@ class AkkaHttpBasedRouteProvider(
           scenarioActivityRepository,
           dbioRunner,
         ),
+        featureTogglesConfig.deploymentCommentSettings,
         new AkkaHttpBasedTapirStreamEndpointProvider(),
         dbioRunner,
       )

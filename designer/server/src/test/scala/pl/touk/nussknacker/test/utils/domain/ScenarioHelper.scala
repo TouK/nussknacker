@@ -137,13 +137,13 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
     val actionName = ScenarioActionName.Deploy
-    val comment    = Comment("Deploy comment")
+    val comment    = Comment.from("Deploy comment")
     dbioRunner.run(
       actionRepository.addInstantAction(
         scenarioId,
         VersionId.initialVersionId,
         actionName,
-        Some(comment),
+        comment,
         Some(processingType)
       )
     )
@@ -151,17 +151,17 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Cancel
-    val comment    = Comment("Cancel comment")
+    val comment    = Comment.from("Cancel comment")
     dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
     )
   }
 
   private def prepareCustomAction(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName("Custom")
-    val comment    = Comment("Execute custom action")
+    val comment    = Comment.from("Execute custom action")
     dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
     )
   }
 

@@ -13,7 +13,7 @@ object DeploymentComment {
       deploymentCommentSettings: Option[DeploymentCommentSettings]
   ): Validated[CommentValidationError, Option[Comment]] = {
 
-    (comment.filterNot(_.content.isEmpty), deploymentCommentSettings) match {
+    (comment, deploymentCommentSettings) match {
       case (None, Some(_)) =>
         Invalid(CommentValidationError("Comment is required."))
       case (None, None) =>
