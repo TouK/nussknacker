@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import java.lang.reflect.{Method, Modifier}
-import java.util.Optional
 import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
+import java.lang.reflect.{Method, Modifier}
+import java.util.Optional
 import scala.collection.concurrent.TrieMap
 
 object propertyAccessors {
@@ -15,7 +16,7 @@ object propertyAccessors {
   // Order of accessors matters - property from first accessor that returns `true` from `canRead` will be chosen.
   // This general order can be overridden - each accessor can define target classes for which it will have precedence -
   // through the `getSpecificTargetClasses` method.
-  def configured(): Seq[PropertyAccessor] = {
+  def configured(classDefinitionSet: ClassDefinitionSet): Seq[PropertyAccessor] = {
     Seq(
       MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
       new ReflectivePropertyAccessor(),
@@ -25,7 +26,7 @@ object propertyAccessors {
       PrimitiveOrWrappersPropertyAccessor,
       StaticPropertyAccessor,
       TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
-      NoParamMethodPropertyAccessor,
+      new NoParamMethodPropertyAccessor(classDefinitionSet),
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor,
       MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
@@ -51,7 +52,10 @@ object propertyAccessors {
     This one is a bit tricky. We extend ReflectivePropertyAccessor, as it's the only sensible way to make it compilable,
     however it's not so easy to extend and in interpreted mode we skip original implementation
    */
-  object NoParamMethodPropertyAccessor extends ReflectivePropertyAccessor with ReadOnly with Caching {
+  class NoParamMethodPropertyAccessor(classDefinitionSet: ClassDefinitionSet)
+      extends ReflectivePropertyAccessor
+      with ReadOnly
+      with Caching {
 
     override def findGetterForProperty(propertyName: String, clazz: Class[_], mustBeStatic: Boolean): Method = {
       findMethodFromClass(propertyName, clazz).orNull
@@ -60,7 +64,20 @@ object propertyAccessors {
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
       target.getMethods.find(m =>
         !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
-      )
+      ) match {
+        case Some(method) =>
+          throwIfMethodNotInDefinitionSet(method, target)
+          Some(method)
+        case None => None
+      }
+    }
+
+    private def throwIfMethodNotInDefinitionSet(method: Method, targetClass: Class[_]): Unit = {
+      if (!classDefinitionSet.isParameterlessMethodAllowed(targetClass, method)) {
+        throw new IllegalStateException(
+          s"The ${method.getName} method call on type ${targetClass.getSimpleName} is not allowed"
+        )
+      }
     }
 
     override protected def invokeMethod(
@@ -69,6 +86,7 @@ object propertyAccessors {
         target: Any,
         context: EvaluationContext
     ): AnyRef = {
+      // warning: the method is not called in case of access via optimized ReflectivePropertyAccessor!!!
       method.invoke(target)
     }
 

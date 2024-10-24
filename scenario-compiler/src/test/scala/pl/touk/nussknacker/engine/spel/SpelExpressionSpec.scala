@@ -95,14 +95,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val ctx = Context("abc").withVariables(
     Map(
-      "obj"            -> testValue,
-      "strVal"         -> "",
-      "mapValue"       -> Map("foo" -> "bar").asJava,
-      "array"          -> Array("a", "b"),
-      "intArray"       -> Array(1, 2, 3),
-      "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
-      "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"  -> ContainerOfUnknown("unknown")
+      "obj"                        -> testValue,
+      "strVal"                     -> "",
+      "mapValue"                   -> Map("foo" -> "bar").asJava,
+      "array"                      -> Array("a", "b"),
+      "intArray"                   -> Array(1, 2, 3),
+      "nestedArray"                -> Array(Array(1, 2), Array(3, 4)),
+      "arrayOfUnknown"             -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"              -> ContainerOfUnknown("unknown"),
+      "containerWithUnknownObject" -> ContainerOfUnknown(SampleValue(1))
     )
   )
 
@@ -258,6 +259,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("parsing Indexer on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}[0]").validExpression.evaluateSync[Any](ctx) should equal(1)
+  }
+
+  test(
+    "should not allow to call parameterless method in indexer on unknown that is not allowed in class definitions (IndexedType.OBJECT case)"
+  ) {
+    // we test here on non-(map, array, collection, string) object because those types handling is hardcoded in Indexer.getValueRef method and is quite safe
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownObject.value['hashCode']", // hashCode is not exposed method in ClassDefinitionSet
+      ).validExpression.evaluateSync[Any](ctx)
+    }
+  }
+
+  test("should allow to call parameterless method in indexer on unknown that is allowed in class definitions") {
+    parse[AnyRef]("#containerWithUnknownObject.value['toString']").validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "SampleValue(1,)"
   }
 
   test("parsing Selection on array") {
