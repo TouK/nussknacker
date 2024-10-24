@@ -23,6 +23,8 @@ import org.apache.flink.api.java.typeutils.runtime.TupleSerializerBase
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.flink.types.NullFieldException
 
+import scala.util.{Failure, Success, Try}
+
 /**
  * Serializer for Case Classes. Creation and access is different from our Java Tuples so we have to
  * treat them differently.
@@ -122,7 +124,12 @@ abstract class CaseClassSerializer[T <: Product](clazz: Class[T], scalaFieldSeri
       fields(i) = fieldSerializers(i).deserialize(source)
       i += 1
     }
-    createInstance(fields)
+
+    Try(createInstance(fields)) match {
+      case Success(value) => value
+      case Failure(exc) =>
+        throw new IllegalArgumentException(s"Failed to deserialize in class: ${clazz.getName}.", exc)
+    }
   }
 
   private def initArray() = {

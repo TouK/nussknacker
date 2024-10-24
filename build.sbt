@@ -1181,10 +1181,11 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
-        "org.scala-lang"          % "scala-reflect"           % scalaVersion.value,
-        "org.apache.flink"        % "flink-streaming-java"    % flinkV     % Provided,
-        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
-        "org.scalatest"          %% "scalatest"               % scalaTestV % Test,
+        "org.scala-lang"              % "scala-reflect"           % scalaVersion.value,
+        "org.apache.flink"            % "flink-streaming-java"    % flinkV        % Provided,
+        "com.typesafe.scala-logging" %% "scala-logging"           % scalaLoggingV % Provided,
+        "org.scala-lang.modules"     %% "scala-collection-compat" % scalaCollectionsCompatV,
+        "org.scalatest"              %% "scalatest"               % scalaTestV    % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some("provided"))
     }
   )

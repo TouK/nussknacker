@@ -17,11 +17,13 @@
  */
 package pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeutils._
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer.lookupConstructor
 
 import java.io.{ObjectInputStream, ObjectStreamClass}
 import scala.reflect.runtime.universe
+import scala.util.{Failure, Success, Try}
 
 /**
  * This is a non macro-generated, concrete Scala case class serializer.
@@ -57,7 +59,7 @@ class ScalaCaseClassSerializer[T <: Product](
 
 }
 
-object ScalaCaseClassSerializer {
+object ScalaCaseClassSerializer extends LazyLogging {
 
   def lookupConstructor[T](cls: Class[T]): Array[AnyRef] => T = {
     val rootMirror  = universe.runtimeMirror(cls.getClassLoader)
@@ -87,7 +89,19 @@ object ScalaCaseClassSerializer {
     val constructorMethodMirror = classMirror.reflectConstructor(primaryConstructorSymbol)
 
     arr: Array[AnyRef] => {
-      constructorMethodMirror.apply(arr.toIndexedSeq: _*).asInstanceOf[T]
+      Try(constructorMethodMirror.apply(arr.toIndexedSeq: _*).asInstanceOf[T]) match {
+        case Success(value) => value
+        case Failure(exc) =>
+          logger.warn(
+            s"Casting info, " +
+              s"class: ${cls.getName}," +
+              s"constructorMethodMirror: ${constructorMethodMirror.getClass.getName}" +
+              s"arr: ${arr.mkString("Array(", ", ", ")")}" +
+              s"class symbol: ${classSymbol.getClass.getName}"
+          )
+
+          throw exc
+      }
     }
   }
 
