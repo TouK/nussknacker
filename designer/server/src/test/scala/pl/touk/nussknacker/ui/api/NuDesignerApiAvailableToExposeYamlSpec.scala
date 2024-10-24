@@ -18,6 +18,7 @@ import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.{Endpoint, EndpointInput, auth}
 
 import java.lang.reflect.{Method, Modifier}
+import java.time.{ZoneId, ZoneOffset}
 import scala.concurrent.Await
 import scala.util.Try
 
@@ -206,8 +207,14 @@ object NuDesignerApiAvailableToExpose {
           .map(_.newInstance())
       }
       .orElse {
-        Try(clazz.getConstructor(classOf[EndpointInput[PassedAuthCredentials]], classOf[TapirStreamEndpointProvider]))
-          .map(_.newInstance(basicAuth, streamEndpointProvider))
+        Try(
+          clazz.getConstructor(
+            classOf[EndpointInput[PassedAuthCredentials]],
+            classOf[TapirStreamEndpointProvider],
+            classOf[ZoneId]
+          )
+        )
+          .map(_.newInstance(basicAuth, streamEndpointProvider, ZoneOffset.UTC))
       }
       .getOrElse(
         throw new IllegalStateException(

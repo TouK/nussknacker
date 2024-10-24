@@ -3088,7 +3088,7 @@ paths:
     post:
       tags:
       - Activities
-      summary: Add scenario attachment service
+      summary: Add scenario attachment
       operationId: postApiProcessesScenarionameVersionidActivityAttachments
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3183,7 +3183,7 @@ paths:
     post:
       tags:
       - Activities
-      summary: Add scenario comment service
+      summary: Add scenario comment
       operationId: postApiProcessesScenarionameVersionidActivityComment
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3271,7 +3271,7 @@ paths:
     get:
       tags:
       - Activities
-      summary: Scenario attachments service
+      summary: Scenario attachments
       operationId: getApiProcessesScenarionameActivityAttachments
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3356,11 +3356,200 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/processes/{scenarioName}/activity/attachments/{attachmentId}:
+    get:
+      tags:
+      - Activities
+      summary: Download attachment
+      operationId: getApiProcessesScenarionameActivityAttachmentsAttachmentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+          headers:
+            Content-Disposition:
+              required: false
+              schema:
+                type:
+                - string
+                - 'null'
+            Content-Type:
+              required: true
+              schema:
+                type: string
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter attachmentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+    delete:
+      tags:
+      - Activities
+      summary: Delete scenario attachment
+      operationId: deleteApiProcessesScenarionameActivityAttachmentsAttachmentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter attachmentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                CannotAuthenticateUser:
+                  value: The supplied authentication is invalid
+                ImpersonatedUserNotExistsError:
+                  value: No impersonated user data found for provided identity
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                InsufficientPermission:
+                  value: The supplied authentication is not authorized to access this
+                    resource
+                ImpersonationMissingPermission:
+                  value: The supplied authentication is not authorized to impersonate
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Unable to delete attachment with given id
+                  value: 'Unable to delete attachment with id: 123'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
   /api/processes/{scenarioName}/activity/comment/{scenarioActivityId}:
     put:
       tags:
       - Activities
-      summary: Edit process comment service
+      summary: Edit process comment
       operationId: putApiProcessesScenarionameActivityCommentScenarioactivityid
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3459,7 +3648,7 @@ paths:
     delete:
       tags:
       - Activities
-      summary: Delete process comment service
+      summary: Delete process comment
       operationId: deleteApiProcessesScenarionameActivityCommentScenarioactivityid
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3553,7 +3742,7 @@ paths:
     post:
       tags:
       - Activities
-      summary: Add scenario comment service
+      summary: Add scenario comment
       operationId: postApiProcessesScenarionameVersionidActivityComments
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3642,7 +3831,7 @@ paths:
     delete:
       tags:
       - Activities
-      summary: Delete process comment service
+      summary: Delete process comment
       operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3737,7 +3926,7 @@ paths:
     get:
       tags:
       - Activities
-      summary: Scenario activity service
+      summary: Scenario activity
       operationId: getApiProcessesScenarionameActivity
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -3829,109 +4018,11 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/processes/{scenarioName}/activity/attachments/{attachmentId}:
-    get:
-      tags:
-      - Activities
-      summary: Download attachment service
-      operationId: getApiProcessesScenarionameActivityAttachmentsAttachmentid
-      parameters:
-      - name: Nu-Impersonate-User-Identity
-        in: header
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: attachmentId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        '200':
-          description: ''
-          headers:
-            Content-Disposition:
-              required: false
-              schema:
-                type:
-                - string
-                - 'null'
-            Content-Type:
-              required: true
-              schema:
-                type: string
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter attachmentId'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                CannotAuthenticateUser:
-                  value: The supplied authentication is invalid
-                ImpersonatedUserNotExistsError:
-                  value: No impersonated user data found for provided identity
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                InsufficientPermission:
-                  value: The supplied authentication is not authorized to access this
-                    resource
-                ImpersonationMissingPermission:
-                  value: The supplied authentication is not authorized to impersonate
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
-        '501':
-          description: Impersonation is not supported for defined authentication mechanism
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Cannot authenticate impersonated user as impersonation
-                    is not supported by the authentication mechanism
-                  value: Provided authentication method does not support impersonation
-      security:
-      - {}
-      - httpAuth: []
   /api/processes/{scenarioName}/activity/activities:
     get:
       tags:
       - Activities
-      summary: Scenario activities service
+      summary: Scenario activities
       operationId: getApiProcessesScenarionameActivityActivities
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -4041,7 +4132,7 @@ paths:
                       scenarioVersionId: 1
                       comment:
                         content:
-                          status: DELETED
+                          status: NOT_AVAILABLE
                         lastModifiedBy: John Doe
                         lastModifiedAt: '2024-01-18T14:21:17Z'
                       additionalFields: []
@@ -4058,6 +4149,7 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields: []
+                      overrideDisplayableName: attachment01.png
                       type: ATTACHMENT_ADDED
                     - id: d0a7f4a2-abcc-4ffa-b1ca-68f6da3e999a
                       user: some user
@@ -4070,6 +4162,7 @@ paths:
                         lastModifiedBy: John Doe
                         lastModifiedAt: '2024-01-18T14:21:17Z'
                       additionalFields: []
+                      overrideDisplayableName: File removed
                       type: ATTACHMENT_ADDED
                     - id: 683df470-0b33-4ead-bf61-fa35c63484f3
                       user: some user
@@ -4114,8 +4207,12 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Run now execution finished
+                      - name: started
+                        value: '2024-01-17 14:21:17'
+                      - name: finished
+                        value: '2024-01-17 14:21:17'
                       - name: errorMessage
                         value: Execution error occurred
                       type: PERFORMED_SINGLE_EXECUTION
@@ -4125,12 +4222,16 @@ paths:
                       scenarioVersionId: 1
                       comment:
                         content:
-                          status: DELETED
+                          status: NOT_AVAILABLE
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Run now execution finished
+                      - name: started
+                        value: '2024-01-17 14:21:17'
+                      - name: finished
+                        value: '2024-01-17 14:21:17'
                       type: PERFORMED_SINGLE_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4138,15 +4239,15 @@ paths:
                       scenarioVersionId: 1
                       additionalFields:
                       - name: status
-                        value: Execution finished
-                      - name: createdAt
-                        value: '2024-01-17T13:21:17Z'
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                        value: Scheduled execution finished
+                      - name: created
+                        value: '2024-01-17 13:21:17'
+                      - name: started
+                        value: '2024-01-17 14:21:17'
+                      - name: finished
+                        value: '2024-01-17 14:21:17'
                       - name: scheduleName
                         value: main-schedule
-                      - name: retriesLeft
-                        value: None
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4155,16 +4256,18 @@ paths:
                       additionalFields:
                       - name: status
                         value: Deployment will be retried
-                      - name: createdAt
-                        value: '2024-01-17T13:21:17Z'
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: created
+                        value: '2024-01-17 13:21:17'
+                      - name: started
+                        value: '2024-01-17 14:21:17'
+                      - name: finished
+                        value: '2024-01-17 14:21:17'
                       - name: scheduleName
                         value: main-schedule
                       - name: retriesLeft
-                        value: Some(1)
+                        value: '1'
                       - name: nextRetryAt
-                        value: '2024-01-17T15:21:17Z'
+                        value: '2024-01-17 15:21:17'
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user
@@ -4246,7 +4349,7 @@ paths:
     get:
       tags:
       - Activities
-      summary: Scenario activities metadata service
+      summary: Scenario activities metadata
       operationId: getApiProcessesScenarionameActivityActivitiesMetadata
       parameters:
       - name: Nu-Impersonate-User-Identity
@@ -4268,111 +4371,239 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScenarioActivitiesMetadata'
-              example:
-                activities:
-                - type: SCENARIO_CREATED
-                  displayableName: Scenario created
-                  icon: /assets/activities/scenarioModified.svg
-                  supportedActions: []
-                - type: SCENARIO_ARCHIVED
-                  displayableName: Scenario archived
-                  icon: /assets/activities/archived.svg
-                  supportedActions: []
-                - type: SCENARIO_UNARCHIVED
-                  displayableName: Scenario unarchived
-                  icon: /assets/activities/unarchived.svg
-                  supportedActions: []
-                - type: SCENARIO_DEPLOYED
-                  displayableName: Deployment
-                  icon: /assets/activities/deployed.svg
-                  supportedActions:
-                  - delete_comment
-                  - edit_comment
-                - type: SCENARIO_PAUSED
-                  displayableName: Pause
-                  icon: /assets/activities/pause.svg
-                  supportedActions:
-                  - delete_comment
-                  - edit_comment
-                - type: SCENARIO_CANCELED
-                  displayableName: Cancel
-                  icon: /assets/activities/cancel.svg
-                  supportedActions:
-                  - delete_comment
-                  - edit_comment
-                - type: SCENARIO_MODIFIED
-                  displayableName: Scenario modified
-                  icon: /assets/activities/scenarioModified.svg
-                  supportedActions:
-                  - delete_comment
-                  - edit_comment
-                  - compare
-                - type: SCENARIO_NAME_CHANGED
-                  displayableName: Scenario name changed
-                  icon: /assets/activities/scenarioModified.svg
-                  supportedActions: []
-                - type: COMMENT_ADDED
-                  displayableName: Comment
-                  icon: /assets/activities/comment.svg
-                  supportedActions:
-                  - delete_comment
-                  - edit_comment
-                - type: ATTACHMENT_ADDED
-                  displayableName: Attachment
-                  icon: /assets/activities/attachment.svg
-                  supportedActions:
-                  - download_attachment
-                  - delete_attachment
-                - type: CHANGED_PROCESSING_MODE
-                  displayableName: Processing mode change
-                  icon: /assets/activities/processingModeChange.svg
-                  supportedActions: []
-                - type: INCOMING_MIGRATION
-                  displayableName: Incoming migration
-                  icon: /assets/activities/migration.svg
-                  supportedActions:
-                  - compare
-                - type: OUTGOING_MIGRATION
-                  displayableName: Outgoing migration
-                  icon: /assets/activities/migration.svg
-                  supportedActions:
-                  - delete_comment
-                  - edit_comment
-                - type: PERFORMED_SINGLE_EXECUTION
-                  displayableName: Processing data
-                  icon: /assets/activities/processingData.svg
-                  supportedActions:
-                  - delete_comment
-                  - edit_comment
-                - type: PERFORMED_SCHEDULED_EXECUTION
-                  displayableName: Processing data
-                  icon: /assets/activities/processingData.svg
-                  supportedActions: []
-                - type: AUTOMATIC_UPDATE
-                  displayableName: Automatic update
-                  icon: /assets/activities/automaticUpdate.svg
-                  supportedActions:
-                  - compare
-                - type: CUSTOM_ACTION
-                  displayableName: Custom action
-                  icon: /assets/activities/customAction.svg
-                  supportedActions: []
-                actions:
-                - id: compare
-                  displayableName: Compare
-                  icon: /assets/activities/actions/compare.svg
-                - id: delete_comment
-                  displayableName: Delete
-                  icon: /assets/activities/actions/delete.svg
-                - id: edit_comment
-                  displayableName: Edit
-                  icon: /assets/activities/actions/edit.svg
-                - id: download_attachment
-                  displayableName: Download
-                  icon: /assets/activities/actions/download.svg
-                - id: delete_attachment
-                  displayableName: Delete
-                  icon: /assets/activities/actions/delete.svg
+              examples:
+                Example0:
+                  value:
+                    activities:
+                    - type: SCENARIO_CREATED
+                      displayableName: Scenario created
+                      icon: /assets/activities/scenarioModified.svg
+                      supportedActions: []
+                    - type: SCENARIO_ARCHIVED
+                      displayableName: Scenario archived
+                      icon: /assets/activities/archived.svg
+                      supportedActions: []
+                    - type: SCENARIO_UNARCHIVED
+                      displayableName: Scenario unarchived
+                      icon: /assets/activities/unarchived.svg
+                      supportedActions: []
+                    - type: SCENARIO_DEPLOYED
+                      displayableName: Deployment
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_PAUSED
+                      displayableName: Pause
+                      icon: /assets/activities/pause.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_CANCELED
+                      displayableName: Cancel
+                      icon: /assets/activities/cancel.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_MODIFIED
+                      displayableName: Scenario modified
+                      icon: /assets/activities/scenarioModified.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                      - compare
+                    - type: SCENARIO_NAME_CHANGED
+                      displayableName: Scenario name changed
+                      icon: /assets/activities/scenarioModified.svg
+                      supportedActions: []
+                    - type: COMMENT_ADDED
+                      displayableName: Comment
+                      icon: /assets/activities/comment.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: ATTACHMENT_ADDED
+                      displayableName: Attachment
+                      icon: /assets/activities/attachment.svg
+                      supportedActions:
+                      - download_attachment
+                      - delete_attachment
+                    - type: CHANGED_PROCESSING_MODE
+                      displayableName: Processing mode change
+                      icon: /assets/activities/processingModeChange.svg
+                      supportedActions: []
+                    - type: INCOMING_MIGRATION
+                      displayableName: Incoming migration
+                      icon: /assets/activities/migration.svg
+                      supportedActions:
+                      - compare
+                    - type: OUTGOING_MIGRATION
+                      displayableName: Outgoing migration
+                      icon: /assets/activities/migration.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: PERFORMED_SINGLE_EXECUTION
+                      displayableName: Processing data
+                      icon: /assets/activities/processingData.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: PERFORMED_SCHEDULED_EXECUTION
+                      displayableName: Processing data
+                      icon: /assets/activities/processingData.svg
+                      supportedActions: []
+                    - type: AUTOMATIC_UPDATE
+                      displayableName: Automatic update
+                      icon: /assets/activities/automaticUpdate.svg
+                      supportedActions:
+                      - compare
+                    - type: CUSTOM_ACTION
+                      displayableName: Custom action
+                      icon: /assets/activities/customAction.svg
+                      supportedActions: []
+                    actions:
+                    - id: compare
+                      displayableName: Compare
+                      icon: /assets/activities/actions/compare.svg
+                    - id: delete_comment
+                      displayableName: Delete comment
+                      icon: /assets/activities/actions/delete.svg
+                    - id: add_comment
+                      displayableName: Add comment
+                      icon: /assets/activities/actions/add_comment.svg
+                    - id: edit_comment
+                      displayableName: Edit comment
+                      icon: /assets/activities/actions/edit.svg
+                    - id: download_attachment
+                      displayableName: Download
+                      icon: /assets/activities/actions/download.svg
+                    - id: delete_attachment
+                      displayableName: Delete
+                      icon: /assets/activities/actions/delete.svg
+                Example1:
+                  value:
+                    activities:
+                    - type: SCENARIO_CREATED
+                      displayableName: Fragment created
+                      icon: /assets/activities/scenarioModified.svg
+                      supportedActions: []
+                    - type: SCENARIO_ARCHIVED
+                      displayableName: Fragment archived
+                      icon: /assets/activities/archived.svg
+                      supportedActions: []
+                    - type: SCENARIO_UNARCHIVED
+                      displayableName: Fragment unarchived
+                      icon: /assets/activities/unarchived.svg
+                      supportedActions: []
+                    - type: SCENARIO_DEPLOYED
+                      displayableName: Deployment
+                      icon: /assets/activities/deployed.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_PAUSED
+                      displayableName: Pause
+                      icon: /assets/activities/pause.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_CANCELED
+                      displayableName: Cancel
+                      icon: /assets/activities/cancel.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: SCENARIO_MODIFIED
+                      displayableName: Fragment modified
+                      icon: /assets/activities/scenarioModified.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                      - compare
+                    - type: SCENARIO_NAME_CHANGED
+                      displayableName: Fragment name changed
+                      icon: /assets/activities/scenarioModified.svg
+                      supportedActions: []
+                    - type: COMMENT_ADDED
+                      displayableName: Comment
+                      icon: /assets/activities/comment.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: ATTACHMENT_ADDED
+                      displayableName: Attachment
+                      icon: /assets/activities/attachment.svg
+                      supportedActions:
+                      - download_attachment
+                      - delete_attachment
+                    - type: CHANGED_PROCESSING_MODE
+                      displayableName: Processing mode change
+                      icon: /assets/activities/processingModeChange.svg
+                      supportedActions: []
+                    - type: INCOMING_MIGRATION
+                      displayableName: Incoming migration
+                      icon: /assets/activities/migration.svg
+                      supportedActions:
+                      - compare
+                    - type: OUTGOING_MIGRATION
+                      displayableName: Outgoing migration
+                      icon: /assets/activities/migration.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: PERFORMED_SINGLE_EXECUTION
+                      displayableName: Processing data
+                      icon: /assets/activities/processingData.svg
+                      supportedActions:
+                      - delete_comment
+                      - edit_comment
+                      - add_comment
+                    - type: PERFORMED_SCHEDULED_EXECUTION
+                      displayableName: Processing data
+                      icon: /assets/activities/processingData.svg
+                      supportedActions: []
+                    - type: AUTOMATIC_UPDATE
+                      displayableName: Automatic update
+                      icon: /assets/activities/automaticUpdate.svg
+                      supportedActions:
+                      - compare
+                    - type: CUSTOM_ACTION
+                      displayableName: Custom action
+                      icon: /assets/activities/customAction.svg
+                      supportedActions: []
+                    actions:
+                    - id: compare
+                      displayableName: Compare
+                      icon: /assets/activities/actions/compare.svg
+                    - id: delete_comment
+                      displayableName: Delete comment
+                      icon: /assets/activities/actions/delete.svg
+                    - id: add_comment
+                      displayableName: Add comment
+                      icon: /assets/activities/actions/add_comment.svg
+                    - id: edit_comment
+                      displayableName: Edit comment
+                      icon: /assets/activities/actions/edit.svg
+                    - id: download_attachment
+                      displayableName: Download
+                      icon: /assets/activities/actions/download.svg
+                    - id: delete_attachment
+                      displayableName: Delete
+                      icon: /assets/activities/actions/delete.svg
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
@@ -4794,15 +5025,6 @@ components:
       title: DateTimeParameterEditor
       type: object
     Deleted:
-      title: Deleted
-      type: object
-      required:
-      - status
-      properties:
-        status:
-          type: string
-          const: DELETED
-    Deleted1:
       title: Deleted
       type: object
       required:
@@ -5846,6 +6068,15 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
+    NotAvailable:
+      title: NotAvailable
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          const: NOT_AVAILABLE
     Notification:
       title: Notification
       type: object
@@ -6241,12 +6472,12 @@ components:
       title: ScenarioActivityAttachmentFile
       oneOf:
       - $ref: '#/components/schemas/Available1'
-      - $ref: '#/components/schemas/Deleted1'
+      - $ref: '#/components/schemas/Deleted'
       discriminator:
         propertyName: status
         mapping:
           AVAILABLE: '#/components/schemas/Available1'
-          DELETED: '#/components/schemas/Deleted1'
+          DELETED: '#/components/schemas/Deleted'
     ScenarioActivityComment:
       title: ScenarioActivityComment
       type: object
@@ -6266,12 +6497,12 @@ components:
       title: ScenarioActivityCommentContent
       oneOf:
       - $ref: '#/components/schemas/Available'
-      - $ref: '#/components/schemas/Deleted'
+      - $ref: '#/components/schemas/NotAvailable'
       discriminator:
         propertyName: status
         mapping:
           AVAILABLE: '#/components/schemas/Available'
-          DELETED: '#/components/schemas/Deleted'
+          NOT_AVAILABLE: '#/components/schemas/NotAvailable'
     ScenarioActivityMetadata:
       title: ScenarioActivityMetadata
       type: object
