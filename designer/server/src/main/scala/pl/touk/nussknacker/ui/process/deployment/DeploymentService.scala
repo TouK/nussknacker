@@ -7,6 +7,7 @@ import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
@@ -19,7 +20,6 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.ProcessStateProvider
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -48,7 +48,7 @@ import scala.util.{Failure, Success}
 class DeploymentService(
     dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
-    actionRepository: DbScenarioActionRepository,
+    actionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     processValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
     scenarioResolver: ProcessingTypeDataProvider[ScenarioResolver, _],
@@ -141,7 +141,7 @@ class DeploymentService(
       actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData, updateStrategy)
         .transformWith {
           case Failure(ex) =>
-            removeInvalidAction(ctx.actionId).transform(_ => Failure(ex))
+            removeInvalidAction(ctx).transform(_ => Failure(ex))
           case Success(_) =>
             // we notify of deployment finish/fail only if initial validation succeeded
             val deploymentFuture = runActionAndHandleResults(
@@ -170,10 +170,9 @@ class DeploymentService(
       getBuildInfoProcessingType: ScenarioWithDetailsEntity[PS] => Option[ProcessingType]
   )(implicit user: LoggedUser): Future[CommandContext[PS]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    dbioRunner.runInTransaction(
+    // 1.1 lock for critical section
+    transactionallyRunCriticalSection(
       for {
-        // 1.1 lock for critical section
-        _ <- actionRepository.lockActionsTable
         // 1.2. fetch scenario data
         processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id)
         processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
@@ -205,6 +204,10 @@ class DeploymentService(
         )
       } yield CommandContext(processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessingType)
     )
+  }
+
+  private def transactionallyRunCriticalSection[T](dbioAction: DB[T]) = {
+    dbioRunner.runInTransaction(actionRepository.withLockedTable(dbioAction))
   }
 
   // TODO: Use buildInfo explicitly instead of ProcessingType-that-is-used-to-calculate-buildInfo
@@ -387,14 +390,22 @@ class DeploymentService(
             //       Before we can do that we should check if we somewhere rely on fact that version is always defined -
             //       see ProcessAction.processVersionId
             logger.info(s"Action $actionString finished for action without version id - skipping listener notification")
-            removeInvalidAction(ctx.actionId)
+            removeInvalidAction(ctx)
           }
           .map(_ => result)
     }
   }
 
-  private def removeInvalidAction(actionId: ProcessActionId): Future[Unit] = {
-    dbioRunner.runInTransaction(actionRepository.removeAction(actionId))
+  private def removeInvalidAction[PS: ScenarioShapeFetchStrategy](
+      context: CommandContext[PS]
+  )(implicit user: LoggedUser): Future[Unit] = {
+    dbioRunner.runInTransaction(
+      actionRepository.removeAction(
+        context.actionId,
+        context.latestScenarioDetails.processId,
+        context.versionOnWhichActionIsDone
+      )
+    )
   }
 
   // TODO: check deployment id to be sure that returned status is for given deployment

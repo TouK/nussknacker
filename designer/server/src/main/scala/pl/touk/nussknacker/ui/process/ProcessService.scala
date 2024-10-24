@@ -350,7 +350,13 @@ class DBProcessService(
             DBIOAction.seq(
               processRepository.archive(processId = process.idWithNameUnsafe, isArchived = false),
               scenarioActionRepository
-                .markProcessAsUnArchived(processId = process.processIdUnsafe, process.processVersionId)
+                .addInstantAction(
+                  process.processIdUnsafe,
+                  process.processVersionId,
+                  ScenarioActionName.UnArchive,
+                  None,
+                  None
+                )
             )
           )
       } else {
@@ -527,7 +533,13 @@ class DBProcessService(
       .runInTransaction(
         DBIOAction.seq(
           processRepository.archive(processId = process.idWithNameUnsafe, isArchived = true),
-          scenarioActionRepository.markProcessAsArchived(processId = process.processIdUnsafe, process.processVersionId)
+          scenarioActionRepository.addInstantAction(
+            process.processIdUnsafe,
+            process.processVersionId,
+            ScenarioActionName.Archive,
+            None,
+            None
+          )
         )
       )
 
