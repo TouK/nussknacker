@@ -161,6 +161,8 @@ export interface ScenarioParametersCombinations {
 export type ProcessDefinitionDataDictOption = { key: string; label: string };
 type DictOption = { id: string; label: string };
 
+type ResponseStatus = { status: "success" } | { status: "error"; error: AxiosError<string> };
+
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
@@ -373,14 +375,27 @@ class HttpService {
         return api.get(`/processes/${encodeURIComponent(processName)}/activity`);
     }
 
-    async addComment(processName: string, versionId: number, comment: string): Promise<"success" | "error"> {
+    async addComment(processName: string, versionId: number, comment: string): Promise<ResponseStatus> {
         try {
             await api.post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/comment`, comment);
             this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added"));
-            return "success" as const;
+            return { status: "success" };
         } catch (error) {
             await this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error);
-            return "error" as const;
+            return { status: "error", error };
+        }
+    }
+
+    async updateComment(processName: string, comment: string, scenarioActivityId: string): Promise<ResponseStatus> {
+        try {
+            await api.put(`/processes/${encodeURIComponent(processName)}/activity/comment/${scenarioActivityId}`, comment);
+            this.#addInfo(i18next.t("notification.info.commentAdded", "Comment modified"));
+            return { status: "success" };
+        } catch (error) {
+            if (error?.response?.status != 400) {
+                await this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error);
+            }
+            return { status: "error", error };
         }
     }
 
@@ -394,29 +409,27 @@ class HttpService {
             .catch((error) => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error));
     }
 
-    deleteActivityComment(processName: string, scenarioActivityId: string) {
-        return api
-            .delete(`/processes/${encodeURIComponent(processName)}/activity/comment/${scenarioActivityId}`)
-            .then(() => {
-                this.#addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted"));
-                return "success" as const;
-            })
-            .catch((error) => {
-                this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error);
-                return "error" as const;
-            });
+    async deleteActivityComment(processName: string, scenarioActivityId: string): Promise<ResponseStatus> {
+        try {
+            await api.delete(`/processes/${encodeURIComponent(processName)}/activity/comment/${scenarioActivityId}`);
+            this.#addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted"));
+            return { status: "success" };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error);
+            return { status: "error", error };
+        }
     }
 
-    async addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
+    async addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File): Promise<ResponseStatus> {
         try {
             await api.post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
                 headers: { "Content-Disposition": `attachment; filename="${file.name}"` },
             });
             this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added"));
-            return "success" as const;
+            return { status: "success" };
         } catch (error) {
             await this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true);
-            return "error" as const;
+            return { status: "error", error };
         }
     }
 
@@ -431,16 +444,15 @@ class HttpService {
             );
     }
 
-    deleteAttachment(processName: ProcessName, attachmentId: string) {
-        return api
-            .delete(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`)
-            .then(() => {
-                return "success" as const;
-            })
-            .catch((error) => {
-                this.#addError(i18next.t("notification.error.failedToDeleteAttachment", "Failed to delete attachment"), error);
-                return "error" as const;
-            });
+    async deleteAttachment(processName: ProcessName, attachmentId: string): Promise<ResponseStatus> {
+        try {
+            await api.delete(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`);
+
+            return { status: "success" };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToDeleteAttachment", "Failed to delete attachment"), error);
+            return { status: "error", error };
+        }
     }
 
     changeProcessName(processName, newProcessName): Promise<boolean> {

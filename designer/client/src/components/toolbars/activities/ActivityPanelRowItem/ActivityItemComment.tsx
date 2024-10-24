@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import CommentContent from "../../../comment/CommentContent";
-import { ActionMetadata, ActivityComment } from "../types";
+import { ActionMetadata, ActivityComment, ActivityType } from "../types";
 import { useDispatch, useSelector } from "react-redux";
 import { createSelector } from "reselect";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
@@ -13,10 +13,21 @@ import { useTranslation } from "react-i18next";
 import { useWindows } from "../../../../windowManager";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
+import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
 
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
 
-const CommentActivity = ({ activityAction, scenarioActivityId }: { activityAction: ActionMetadata; scenarioActivityId: string }) => {
+const CommentActivity = ({
+    activityAction,
+    scenarioActivityId,
+    commentContent,
+    activityType,
+}: {
+    activityAction: ActionMetadata;
+    scenarioActivityId: string;
+    commentContent: ActivityComment["content"];
+    activityType: ActivityType;
+}) => {
     const { t } = useTranslation();
     const { confirm } = useWindows();
     const processName = useSelector(getProcessName);
@@ -32,7 +43,7 @@ const CommentActivity = ({ activityAction, scenarioActivityId }: { activityActio
                             text: DialogMessages.deleteComment(),
                             onConfirmCallback: (confirmed) => {
                                 confirmed &&
-                                    HttpService.deleteActivityComment(processName, scenarioActivityId).then((status) => {
+                                    HttpService.deleteActivityComment(processName, scenarioActivityId).then(({ status }) => {
                                         if (status === "success") {
                                             dispatch(getScenarioActivities(processName));
                                         }
@@ -50,12 +61,13 @@ const CommentActivity = ({ activityAction, scenarioActivityId }: { activityActio
         }
         case "edit_comment": {
             return (
-                <StyledActionIcon
-                    data-testid={`delete-comment-icon`}
-                    onClick={() => console.log("works")}
+                <ActivityItemCommentModify
+                    activityAction={activityAction}
+                    activityType={activityType}
+                    scenarioActivityId={scenarioActivityId}
+                    commentContent={commentContent}
+                    data-testid={`edit-comment-icon`}
                     key={activityAction.id}
-                    src={activityAction.icon}
-                    title={activityAction.displayableName}
                 />
             );
         }
@@ -67,9 +79,10 @@ interface Props {
     searchQuery: string;
     activityActions: ActionMetadata[];
     scenarioActivityId: string;
+    activityType: ActivityType;
 }
 
-export const ActivityItemComment = ({ comment, searchQuery, activityActions, scenarioActivityId }: Props) => {
+export const ActivityItemComment = ({ comment, searchQuery, activityActions, scenarioActivityId, activityType }: Props) => {
     const commentSettings = useSelector(getCommentSettings);
     const [isMultiline, setIsMultiline] = useState(false);
     const { isActivityHovered } = useActivityItemInfo();
@@ -97,7 +110,13 @@ export const ActivityItemComment = ({ comment, searchQuery, activityActions, sce
                     flexDirection={isMultiline ? "column-reverse" : "row"}
                 >
                     {activityActions.map((activityAction) => (
-                        <CommentActivity key={activityAction.id} activityAction={activityAction} scenarioActivityId={scenarioActivityId} />
+                        <CommentActivity
+                            key={activityAction.id}
+                            activityAction={activityAction}
+                            scenarioActivityId={scenarioActivityId}
+                            commentContent={comment.content}
+                            activityType={activityType}
+                        />
                     ))}
                 </Box>
             )}

@@ -4,7 +4,7 @@ import { formatDateTime } from "../../../../common/DateUtils";
 import { ItemActivity } from "../ActivitiesPanel";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import ActivityItemHeader from "./ActivityItemHeader";
-import { ActivityTypes } from "../types";
+import { ActivityType } from "../types";
 import { getItemColors } from "../helpers/activityItemColors";
 import { useTranslation } from "react-i18next";
 import { ActivityItemComment } from "./ActivityItemComment";
@@ -34,7 +34,7 @@ export const ActivityItem = forwardRef(
         const { t } = useTranslation();
         const { handleSetIsActivityHovered } = useActivityItemInfo();
 
-        const actionsWithVersionInfo: ActivityTypes[] = [
+        const actionsWithVersionInfo: ActivityType[] = [
             "PERFORMED_SINGLE_EXECUTION",
             "PERFORMED_SCHEDULED_EXECUTION",
             "SCENARIO_DEPLOYED",
@@ -89,6 +89,7 @@ export const ActivityItem = forwardRef(
                                 searchQuery={searchQuery}
                                 activityActions={activity.actions}
                                 scenarioActivityId={activity.id}
+                                activityType={activity.type}
                             />
                         )}
 

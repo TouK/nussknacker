@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService from "../../../../http/HttpService";
-import { ActionMetadata, ActivityAttachment, ActivityComment, ActivityTypes } from "../types";
+import { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
 import UrlIcon from "../../../UrlIcon";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
@@ -102,13 +102,14 @@ const HeaderActivity = ({
 
             return (
                 <StyledActionIcon
+                    title={activityAction.displayableName}
                     src={activityAction.icon}
                     onClick={() =>
                         confirm({
                             text: DialogMessages.deleteAttachment(activityAttachment.filename),
                             onConfirmCallback: (confirmed) => {
                                 confirmed &&
-                                    HttpService.deleteAttachment(processName, attachmentId.toString()).then((status) => {
+                                    HttpService.deleteAttachment(processName, attachmentId.toString()).then(({ status }) => {
                                         if (status === "success") {
                                             dispatch(getScenarioActivities(processName));
                                         }
@@ -144,7 +145,7 @@ const WithOpenVersion = ({
 }: PropsWithChildren<{
     scenarioVersion: number;
     isFound: boolean;
-    activityType: ActivityTypes;
+    activityType: ActivityType;
 }>) => {
     const nothingToSave = useSelector(isSaveDisabled);
     const scenario = useSelector(getScenario);

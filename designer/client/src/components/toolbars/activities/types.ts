@@ -1,4 +1,4 @@
-export type ActivityTypes =
+export type ActivityType =
     | "SCENARIO_CREATED"
     | "SCENARIO_ARCHIVED"
     | "SCENARIO_UNARCHIVED"
@@ -18,7 +18,7 @@ export type ActivityTypes =
     | "CUSTOM_ACTION";
 
 export interface ActivityMetadata {
-    type: ActivityTypes;
+    type: ActivityType;
     displayableName: string;
     icon: string;
     supportedActions: string[];
@@ -62,7 +62,7 @@ export interface ActivityAttachment {
 export interface ActivitiesResponse {
     activities: {
         id: string;
-        type: ActivityTypes;
+        type: ActivityType;
         user: string;
         date: string;
         scenarioVersionId: number;
@@ -79,3 +79,5 @@ export interface ActivityMetadataResponse {
     activities: ActivityMetadata[];
     actions: ActionMetadata[];
 }
+
+export type ModifyActivityCommentMeta = { existingComment?: string; scenarioActivityId: string; placeholder?: string };
