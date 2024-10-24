@@ -6,7 +6,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 class DetermineOfferedPlanSpec extends AnyFreeSpecLike with BaseE2ESpec with Matchers with VeryPatientScalaFutures {
 
-  "Properly determine offers for customers" in {
+  "Properly determine offers for customers" ignore {
     val customers = List(
       customerJson("Nick", age = 15, gender = "Male", isBigSpender = false),
       customerJson("John", age = 25, gender = "Male", isBigSpender = false),

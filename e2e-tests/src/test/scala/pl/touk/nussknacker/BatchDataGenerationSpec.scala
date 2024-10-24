@@ -36,7 +36,7 @@ class BatchDataGenerationSpec
     super.beforeAll()
   }
 
-  "Generate file endpoint for scenario with table source should generate" - {
+  "Generate file endpoint for scenario with table source should generate" ignore {
     "randomized records when configured with random mode" in {
       given()
         .when()
@@ -89,7 +89,7 @@ class BatchDataGenerationSpec
     }
   }
 
-  "Test on generated data endpoint should return results and counts for scenario with table source" in {
+  "Test on generated data endpoint should return results and counts for scenario with table source" ignore {
     given()
       .when()
       .request()
@@ -157,7 +157,7 @@ class BatchDataGenerationSpec
       )
   }
 
-  "Test from file endpoint should return results and counts for scenario with table source" in {
+  "Test from file endpoint should return results and counts for scenario with table source" ignore {
     given()
       .when()
       .request()

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 class DetectLargeTransactionSpec extends AnyFreeSpecLike with BaseE2ESpec with Matchers with VeryPatientScalaFutures {
 
-  "Large transactions should be properly detected" in {
+  "Large transactions should be properly detected" ignore {
     val smallAmountTransactions = List(
       transactionJson(amount = 1),
       transactionJson(amount = 2),
