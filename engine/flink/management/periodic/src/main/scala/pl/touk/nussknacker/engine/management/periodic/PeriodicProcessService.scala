@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
+import java.time.{Clock, Instant, LocalDateTime, ZoneId}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -70,13 +70,13 @@ class PeriodicProcessService(
         scenarioId = ScenarioId(processIdWithName.id.value),
         scenarioActivityId = ScenarioActivityId.random,
         user = ScenarioUser.internalNuUser,
-        date = instantAtUTC(deployment.runAt),
+        date = instantAtSystemDefaultZone(deployment.runAt),
         scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
         scheduledExecutionStatus = status,
         dateFinished = dateFinished,
         scheduleName = deployment.scheduleName.display,
-        createdAt = instantAtUTC(deployment.createdAt),
-        nextRetryAt = deployment.nextRetryAt.map(instantAtUTC),
+        createdAt = instantAtSystemDefaultZone(deployment.createdAt),
+        nextRetryAt = deployment.nextRetryAt.map(instantAtSystemDefaultZone),
         retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
       )
     }
@@ -524,7 +524,7 @@ class PeriodicProcessService(
       entity: PeriodicProcessDeployment[Unit],
   ): Option[(ScheduledExecutionStatus, Instant)] = {
     for {
-      dateFinished <- entity.state.completedAt.map(instantAtUTC)
+      dateFinished <- entity.state.completedAt.map(instantAtSystemDefaultZone)
       status <- entity.state.status match {
         case PeriodicProcessDeploymentStatus.Scheduled =>
           None
@@ -542,8 +542,10 @@ class PeriodicProcessService(
     } yield (status, dateFinished)
   }
 
-  private def instantAtUTC(localDateTime: LocalDateTime): Instant =
-    localDateTime.toInstant(ZoneOffset.UTC)
+  // LocalDateTime's in the context of PeriodicProcess are created using clock with system default timezone
+  private def instantAtSystemDefaultZone(localDateTime: LocalDateTime): Instant = {
+    localDateTime.atZone(ZoneId.systemDefault).toInstant
+  }
 
 }
 

@@ -10,7 +10,6 @@ import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.ScheduledExecutionStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.requestresponse.openapi.OApiDocumentation.dropNulls
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs.enumSchema
@@ -22,7 +21,8 @@ import sttp.tapir.derevo.schema
 import sttp.tapir.generic.Configuration
 
 import java.io.InputStream
-import java.time.Instant
+import java.time.{Instant, ZoneId}
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.collection.immutable
 
@@ -55,12 +55,17 @@ object Dtos {
         ),
         ScenarioActivityActionMetadata(
           id = "delete_comment",
-          displayableName = "Delete",
+          displayableName = "Delete comment",
           icon = "/assets/activities/actions/delete.svg"
         ),
         ScenarioActivityActionMetadata(
+          id = "add_comment",
+          displayableName = "Add comment",
+          icon = "/assets/activities/actions/add_comment.svg"
+        ),
+        ScenarioActivityActionMetadata(
           id = "edit_comment",
-          displayableName = "Edit",
+          displayableName = "Edit comment",
           icon = "/assets/activities/actions/edit.svg"
         ),
         ScenarioActivityActionMetadata(
@@ -117,7 +122,7 @@ object Dtos {
 
   object ScenarioActivityType extends Enum[ScenarioActivityType] {
 
-    private val commentRelatedActions = List("delete_comment", "edit_comment")
+    private val commentRelatedActions = List("delete_comment", "edit_comment", "add_comment")
 
     case object ScenarioCreated extends ScenarioActivityType {
       override def displayableNameForScenario: String = s"Scenario created"
@@ -361,7 +366,7 @@ object Dtos {
       val derivedCodec = deriveConfiguredCodec[ScenarioActivity]
       circe.Codec.from(
         decodeA = derivedCodec,
-        encodeA = dropNulls(derivedCodec)
+        encodeA = derivedCodec.mapJson(_.dropNullValues)
       )
     }
 
@@ -645,19 +650,24 @@ object Dtos {
         comment: ScenarioActivityComment,
         dateFinished: Instant,
         errorMessage: Option[String],
-    ): ScenarioActivity = ScenarioActivity(
-      id = id,
-      `type` = ScenarioActivityType.PerformedSingleExecution,
-      user = user,
-      date = date,
-      scenarioVersionId = scenarioVersionId,
-      comment = Some(comment),
-      attachment = None,
-      additionalFields = List(
-        Some(AdditionalField("dateFinished", dateFinished.toString)),
-        errorMessage.map(e => AdditionalField("errorMessage", e)),
-      ).flatten
-    )
+    )(implicit zoneId: ZoneId): ScenarioActivity = {
+      val humanReadableStatus = "Run now execution finished"
+      ScenarioActivity(
+        id = id,
+        `type` = ScenarioActivityType.PerformedSingleExecution,
+        user = user,
+        date = date,
+        scenarioVersionId = scenarioVersionId,
+        comment = Some(comment),
+        attachment = None,
+        additionalFields = List(
+          Some(AdditionalField("status", humanReadableStatus)),
+          Some(AdditionalField("started", format(date))),
+          Some(AdditionalField("finished", format(dateFinished))),
+          errorMessage.map(e => AdditionalField("errorMessage", e)),
+        ).flatten
+      )
+    }
 
     def forPerformedScheduledExecution(
         id: UUID,
@@ -670,10 +680,10 @@ object Dtos {
         createdAt: Instant,
         nextRetryAt: Option[Instant],
         retriesLeft: Option[Int],
-    ): ScenarioActivity = {
+    )(implicit zoneId: ZoneId): ScenarioActivity = {
       val humanReadableStatus = scheduledExecutionStatus match {
-        case ScheduledExecutionStatus.Finished                => "Execution finished"
-        case ScheduledExecutionStatus.Failed                  => "Execution failed"
+        case ScheduledExecutionStatus.Finished                => "Scheduled execution finished"
+        case ScheduledExecutionStatus.Failed                  => "Scheduled execution failed"
         case ScheduledExecutionStatus.DeploymentWillBeRetried => "Deployment will be retried"
         case ScheduledExecutionStatus.DeploymentFailed        => "Deployment failed"
       }
@@ -687,11 +697,12 @@ object Dtos {
         attachment = None,
         additionalFields = List(
           Some(AdditionalField("status", humanReadableStatus)),
-          Some(AdditionalField("createdAt", createdAt.toString)),
-          Some(AdditionalField("dateFinished", dateFinished.toString)),
+          Some(AdditionalField("created", format(createdAt))),
+          Some(AdditionalField("started", format(date))),
+          Some(AdditionalField("finished", format(dateFinished))),
           Some(AdditionalField("scheduleName", scheduleName)),
-          Some(AdditionalField("retriesLeft", retriesLeft.toString)),
-          nextRetryAt.map(nra => AdditionalField("nextRetryAt", nra.toString)),
+          retriesLeft.map(rl => AdditionalField("retriesLeft", rl.toString)),
+          nextRetryAt.map(nra => AdditionalField("nextRetryAt", format(nra))),
         ).flatten
       )
     }
@@ -859,6 +870,12 @@ object Dtos {
         createDate: Instant
     )
 
+  }
+
+  private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+  private def format(instant: Instant)(implicit zoneId: ZoneId): String = {
+    instant.atZone(zoneId).format(dateTimeFormatter)
   }
 
 }

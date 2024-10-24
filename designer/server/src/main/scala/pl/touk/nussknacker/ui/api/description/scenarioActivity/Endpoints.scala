@@ -12,9 +12,10 @@ import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
+import java.time.ZoneId
 import java.util.UUID
 
-class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStreamEndpointProvider)
+class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStreamEndpointProvider, zoneId: ZoneId)
     extends BaseEndpointDefinitions {
 
   import TapirCodecs.ContentDispositionCodec._
@@ -82,7 +83,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .tag("Activities")
       .get
       .in("processes" / path[ProcessName]("scenarioName") / "activity" / "activities")
-      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities)))
+      .out(statusCode(Ok).and(jsonBody[ScenarioActivities].example(Examples.scenarioActivities(zoneId))))
       .errorOut(scenarioNotFoundErrorOutput)
       .withSecurity(auth)
 

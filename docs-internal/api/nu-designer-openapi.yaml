@@ -4207,8 +4207,12 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Run now execution finished
+                      - name: started
+                        value: '2024-01-17 14:21:17'
+                      - name: finished
+                        value: '2024-01-17 14:21:17'
                       - name: errorMessage
                         value: Execution error occurred
                       type: PERFORMED_SINGLE_EXECUTION
@@ -4222,8 +4226,12 @@ paths:
                         lastModifiedBy: some user
                         lastModifiedAt: '2024-01-17T14:21:17Z'
                       additionalFields:
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: status
+                        value: Run now execution finished
+                      - name: started
+                        value: '2024-01-17 14:21:17'
+                      - name: finished
+                        value: '2024-01-17 14:21:17'
                       type: PERFORMED_SINGLE_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4231,15 +4239,15 @@ paths:
                       scenarioVersionId: 1
                       additionalFields:
                       - name: status
-                        value: Execution finished
-                      - name: createdAt
-                        value: '2024-01-17T13:21:17Z'
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                        value: Scheduled execution finished
+                      - name: created
+                        value: '2024-01-17 13:21:17'
+                      - name: started
+                        value: '2024-01-17 14:21:17'
+                      - name: finished
+                        value: '2024-01-17 14:21:17'
                       - name: scheduleName
                         value: main-schedule
-                      - name: retriesLeft
-                        value: None
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 9b27797e-aa03-42ba-8406-d0ae8005a883
                       user: some user
@@ -4248,16 +4256,18 @@ paths:
                       additionalFields:
                       - name: status
                         value: Deployment will be retried
-                      - name: createdAt
-                        value: '2024-01-17T13:21:17Z'
-                      - name: dateFinished
-                        value: '2024-01-17T14:21:17Z'
+                      - name: created
+                        value: '2024-01-17 13:21:17'
+                      - name: started
+                        value: '2024-01-17 14:21:17'
+                      - name: finished
+                        value: '2024-01-17 14:21:17'
                       - name: scheduleName
                         value: main-schedule
                       - name: retriesLeft
-                        value: Some(1)
+                        value: '1'
                       - name: nextRetryAt
-                        value: '2024-01-17T15:21:17Z'
+                        value: '2024-01-17 15:21:17'
                       type: PERFORMED_SCHEDULED_EXECUTION
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user
@@ -4383,24 +4393,28 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_PAUSED
                       displayableName: Pause
                       icon: /assets/activities/pause.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_CANCELED
                       displayableName: Cancel
                       icon: /assets/activities/cancel.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_MODIFIED
                       displayableName: Scenario modified
                       icon: /assets/activities/scenarioModified.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                       - compare
                     - type: SCENARIO_NAME_CHANGED
                       displayableName: Scenario name changed
@@ -4412,6 +4426,7 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: ATTACHMENT_ADDED
                       displayableName: Attachment
                       icon: /assets/activities/attachment.svg
@@ -4433,12 +4448,14 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: PERFORMED_SINGLE_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: PERFORMED_SCHEDULED_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
@@ -4457,10 +4474,13 @@ paths:
                       displayableName: Compare
                       icon: /assets/activities/actions/compare.svg
                     - id: delete_comment
-                      displayableName: Delete
+                      displayableName: Delete comment
                       icon: /assets/activities/actions/delete.svg
+                    - id: add_comment
+                      displayableName: Add comment
+                      icon: /assets/activities/actions/add_comment.svg
                     - id: edit_comment
-                      displayableName: Edit
+                      displayableName: Edit comment
                       icon: /assets/activities/actions/edit.svg
                     - id: download_attachment
                       displayableName: Download
@@ -4489,24 +4509,28 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_PAUSED
                       displayableName: Pause
                       icon: /assets/activities/pause.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_CANCELED
                       displayableName: Cancel
                       icon: /assets/activities/cancel.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: SCENARIO_MODIFIED
                       displayableName: Fragment modified
                       icon: /assets/activities/scenarioModified.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                       - compare
                     - type: SCENARIO_NAME_CHANGED
                       displayableName: Fragment name changed
@@ -4518,6 +4542,7 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: ATTACHMENT_ADDED
                       displayableName: Attachment
                       icon: /assets/activities/attachment.svg
@@ -4539,12 +4564,14 @@ paths:
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: PERFORMED_SINGLE_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
                       supportedActions:
                       - delete_comment
                       - edit_comment
+                      - add_comment
                     - type: PERFORMED_SCHEDULED_EXECUTION
                       displayableName: Processing data
                       icon: /assets/activities/processingData.svg
@@ -4563,10 +4590,13 @@ paths:
                       displayableName: Compare
                       icon: /assets/activities/actions/compare.svg
                     - id: delete_comment
-                      displayableName: Delete
+                      displayableName: Delete comment
                       icon: /assets/activities/actions/delete.svg
+                    - id: add_comment
+                      displayableName: Add comment
+                      icon: /assets/activities/actions/add_comment.svg
                     - id: edit_comment
-                      displayableName: Edit
+                      displayableName: Edit comment
                       icon: /assets/activities/actions/edit.svg
                     - id: download_attachment
                       displayableName: Download
