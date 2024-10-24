@@ -18,13 +18,7 @@ import pl.touk.nussknacker.security.AuthCredentials.{
 import pl.touk.nussknacker.security.{AuthCredentials, ImpersonatedUserIdentity}
 import pl.touk.nussknacker.ui.security.api.AuthManager.{ImpersonationConsideringInputEndpoint, impersonateHeaderName}
 import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
-import pl.touk.nussknacker.ui.security.api.SecurityError.{
-  CannotAuthenticateUser,
-  ImpersonatedUserDataNotFoundError,
-  ImpersonationMissingPermissionError,
-  ImpersonationNotSupportedError,
-  InsufficientPermission
-}
+import pl.touk.nussknacker.ui.security.api.SecurityError._
 import sttp.tapir._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -88,7 +82,7 @@ class AuthManager(protected val authenticationResources: AuthenticationResources
         maybeImpersonatedUserData match {
           case Some(impersonatedUserData) =>
             Right(AuthenticatedUser.createImpersonatedUser(impersonatingUser, impersonatedUserData))
-          case None => Left(ImpersonatedUserDataNotFoundError)
+          case None => Left(ImpersonatedUserNotExistsError)
         }
       case Left(ImpersonationNotSupported) => Left(ImpersonationNotSupportedError)
     }
@@ -162,8 +156,8 @@ private[api] trait AkkaBasedAuthManager {
       case Some(impersonatedUserIdentity) =>
         handleImpersonation(user, impersonatedUserIdentity) match {
           case Right(impersonatedUser) => provide(impersonatedUser)
-          case Left(ImpersonatedUserDataNotFoundError) =>
-            complete(StatusCodes.NotFound, ImpersonatedUserDataNotFoundError.errorMessage)
+          case Left(ImpersonatedUserNotExistsError) =>
+            complete(StatusCodes.Forbidden, ImpersonatedUserNotExistsError.errorMessage)
           case Left(ImpersonationNotSupportedError) =>
             complete(StatusCodes.NotImplemented, ImpersonationNotSupportedError.errorMessage)
         }
