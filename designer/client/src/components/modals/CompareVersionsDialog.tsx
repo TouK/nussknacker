@@ -1,10 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
-import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { WindowButtonProps, WindowContentProps, WindowType } from "@touk/window-manager";
 import { keys } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { WindowContent } from "../../windowManager";
+import { WindowContent, WindowKind } from "../../windowManager";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
 import HttpService from "../../http/HttpService";
@@ -21,6 +21,14 @@ import { useTranslation } from "react-i18next";
 import { Option, TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSelect";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
+import i18next from "i18next";
+
+const initState: State = {
+    otherVersion: null,
+    currentDiffId: null,
+    difference: null,
+    remoteVersions: [],
+};
 
 interface State {
     currentDiffId: string;
@@ -29,14 +37,11 @@ interface State {
     difference: unknown;
 }
 
-const VersionsForm = () => {
+interface Props {
+    predefinedOtherVersion?: string;
+}
+const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     const remotePrefix = "remote-";
-    const initState: State = {
-        otherVersion: null,
-        currentDiffId: null,
-        difference: null,
-        remoteVersions: [],
-    };
 
     const [state, setState] = useState<State>(initState);
     const processName = useSelector(getProcessName);
@@ -62,15 +67,24 @@ const VersionsForm = () => {
         [state.difference],
     );
 
-    const loadVersion = (versionId: string) => {
-        if (versionId) {
-            HttpService.compareProcesses(processName, version, versionToPass(versionId), isRemote(versionId)).then((response) =>
-                setState((prevState) => ({ ...prevState, difference: response.data, otherVersion: versionId, currentDiffId: null })),
-            );
-        } else {
-            setState(initState);
+    const loadVersion = useCallback(
+        (versionId: string) => {
+            if (versionId) {
+                HttpService.compareProcesses(processName, version, versionToPass(versionId), isRemote(versionId)).then((response) =>
+                    setState((prevState) => ({ ...prevState, difference: response.data, otherVersion: versionId, currentDiffId: null })),
+                );
+            } else {
+                setState(initState);
+            }
+        },
+        [processName, version],
+    );
+
+    useEffect(() => {
+        if (predefinedOtherVersion) {
+            loadVersion(predefinedOtherVersion);
         }
-    };
+    }, [loadVersion, predefinedOtherVersion]);
 
     const isRemote = (versionId: string) => {
         return versionId.startsWith(remotePrefix);
@@ -202,6 +216,7 @@ const VersionsForm = () => {
             <FormControl>
                 <FormLabel>Version to compare</FormLabel>
                 <TypeSelect
+                    readOnly={Boolean(predefinedOtherVersion)}
                     autoFocus={true}
                     id="otherVersion"
                     onChange={(value) => loadVersion(value)}
@@ -229,14 +244,25 @@ const VersionsForm = () => {
     );
 };
 
-const CompareVersionsDialog = (props: WindowContentProps) => {
+export const handleOpenCompareVersionDialog = (
+    scenarioVersionId?: string,
+): Partial<WindowType<number, { scenarioVersionId?: string }>> => ({
+    title: i18next.t("dialog.title.compareVersions", "compare versions"),
+    isResizable: true,
+    minWidth: 980,
+    minHeight: 200,
+    kind: WindowKind.compareVersions,
+    meta: { scenarioVersionId },
+});
+
+const CompareVersionsDialog = (props: WindowContentProps<number, { scenarioVersionId?: string }>) => {
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(() => [{ title: t("dialog.button.ok", "OK"), action: props.close }], [props.close, t]);
 
     return (
         <WindowContent buttons={buttons} icon={<WindowHeaderIconStyled as={Icon} type={props.data.kind} />} {...props}>
             <CompareModal className={cx("modalContentDark", css({ padding: "1em" }))}>
-                <VersionsForm />
+                <VersionsForm predefinedOtherVersion={props.data.meta.scenarioVersionId} />
             </CompareModal>
         </WindowContent>
     );

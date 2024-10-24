@@ -16,6 +16,7 @@ import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import i18next from "i18next";
 import { ThunkAction } from "../actions/reduxTypes";
+import { getScenarioActivities } from "../actions/nk/scenarioActivities";
 
 const prepareNotification =
     ({ id, message, type }: BackendNotification): ThunkAction =>
@@ -54,6 +55,7 @@ const handleRefresh =
                 case "versions":
                     return dispatch(loadProcessVersions(scenarioName));
                 case "activity":
+                    dispatch(getScenarioActivities(scenarioName));
                     return dispatch(displayProcessActivity(scenarioName));
                 case "state":
                     return dispatch(loadProcessState(scenarioName));

@@ -18,4 +18,6 @@ export enum WindowKind {
     scenarioDetails,
     viewDescription,
     editDescription,
+    addComment,
+    addAttachment,
 }
