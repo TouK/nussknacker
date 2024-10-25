@@ -8,7 +8,10 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.ScenarioActivityAuditLog
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.ModifyCommentError
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  CommentModificationMetadata,
+  ModifyCommentError
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.FunctorUtils._
 
@@ -31,23 +34,12 @@ class ScenarioActivityRepositoryAuditLogDecorator(
 
   def editComment(
       scenarioId: ProcessId,
-      rowId: Long,
-      comment: String
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] =
-    underlying
-      .editComment(scenarioId, rowId, comment)
-      .onSuccessRunAsync {
-        case Right(activityId) => ScenarioActivityAuditLog.onEditComment(scenarioId, user, activityId, comment)
-        case Left(_)           => IO.unit
-      }
-
-  def editComment(
-      scenarioId: ProcessId,
       activityId: ScenarioActivityId,
-      comment: String
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+      comment: String,
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] =
     underlying
-      .editComment(scenarioId, activityId, comment)
+      .editComment(scenarioId, activityId, validate, comment)
       .onSuccessRunAsync {
         case Right(activityId) => ScenarioActivityAuditLog.onEditComment(scenarioId, user, activityId, comment)
         case Left(_)           => IO.unit
@@ -56,17 +48,19 @@ class ScenarioActivityRepositoryAuditLogDecorator(
   def deleteComment(
       scenarioId: ProcessId,
       rowId: Long,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] =
     underlying
-      .deleteComment(scenarioId, rowId)
+      .deleteComment(scenarioId, rowId, validate)
       .onSuccessRunAsync(_ => ScenarioActivityAuditLog.onDeleteComment(scenarioId, rowId, user))
 
   def deleteComment(
       scenarioId: ProcessId,
       activityId: ScenarioActivityId,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] =
     underlying
-      .deleteComment(scenarioId, activityId)
+      .deleteComment(scenarioId, activityId, validate)
       .onSuccessRunAsync(_ => ScenarioActivityAuditLog.onDeleteComment(scenarioId, activityId, user))
 
   def addAttachment(
