@@ -32,6 +32,7 @@ import sttp.model.MediaType
 
 import java.io.ByteArrayInputStream
 import java.net.URLConnection
+import java.time.ZoneId
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
@@ -47,9 +48,11 @@ class ScenarioActivityApiHttpService(
     extends BaseHttpService(authManager)
     with LazyLogging {
 
+  private implicit val zoneId: ZoneId = ZoneId.systemDefault()
+
   private val securityInput = authManager.authenticationEndpointInput()
 
-  private val endpoints = new Endpoints(securityInput, streamEndpointProvider)
+  private val endpoints = new Endpoints(securityInput, streamEndpointProvider, zoneId)
 
   expose {
     endpoints.deprecatedScenarioActivityEndpoint
@@ -526,7 +529,7 @@ class ScenarioActivityApiHttpService(
 
   private def editComment(request: EditCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(
         scenarioActivityRepository.editComment(
@@ -539,14 +542,14 @@ class ScenarioActivityApiHttpService(
 
   private def deleteComment(request: DeprecatedDeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(scenarioActivityRepository.deleteComment(scenarioId, request.commentId))
     ).leftMap(_ => NoComment(request.commentId))
 
   private def deleteComment(request: DeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(
         scenarioActivityRepository.deleteComment(scenarioId, ScenarioActivityId(request.scenarioActivityId))

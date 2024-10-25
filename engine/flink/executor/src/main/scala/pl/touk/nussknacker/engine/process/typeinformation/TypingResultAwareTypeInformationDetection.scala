@@ -11,9 +11,11 @@ import pl.touk.nussknacker.engine.flink.api.TypedMultiset
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
-import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedScalaMapTypeInformation}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
+  TypedJavaMapTypeInformation,
+  TypedScalaMapTypeInformation
+}
 import pl.touk.nussknacker.engine.util.Implicits._
-
 
 // TODO: handle avro types - see FlinkConfluentUtils
 /*

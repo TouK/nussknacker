@@ -10,6 +10,22 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Button name for 'test adhoc' was renamed from `test-with-form` to `adhoc-testing`
     If you are using custom button config remember to update button type to `type: "adhoc-testing"` in `processToolbarConfig`
 
+* [7039](https://github.com/TouK/nussknacker/pull/7039)
+    * Scenario Activity audit log is available
+    * logger name, `scenario-activity-audit`, it is optional, does not have to be configured
+    * it uses MDC context, example of configuration in `logback.xml`:
+    ```
+        <logger name="scenario-activity-audit" level="INFO" additivity="false">
+            <appender-ref ref="STDOUT_FOR_SCENARIO_ACTIVITY_AUDIT"/>
+        </logger>
+  
+        <appender name="STDOUT_FOR_SCENARIO_ACTIVITY_AUDIT" class="ch.qos.logback.core.ConsoleAppender">
+          <encoder>
+              <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [scenarioId=%X{scenarioId}][version=%X{scenarioVersionId}][user=%X{username}] %msg%n</Pattern>
+          </encoder>
+        </appender>
+    ```
+
 ### Code API changes
 
 * [#6971](https://github.com/TouK/nussknacker/pull/6971) `DeploymentManagerDependencies` API changes:
@@ -55,6 +71,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
   If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
+
+### Configuration changes
+* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to The `processToolbarConfig` which replace deprecated `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
 
 ## In version 1.17.0
 

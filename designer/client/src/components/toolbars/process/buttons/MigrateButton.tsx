@@ -1,7 +1,7 @@
 import { isEmpty } from "lodash";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/migrate.svg";
 import * as DialogMessages from "../../../../common/DialogMessages";
 import HttpService from "../../../../http/HttpService";
@@ -10,6 +10,7 @@ import { getFeatureSettings, getTargetEnvironmentId } from "../../../../reducers
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 
 type Props = ToolbarButtonProps;
 
@@ -20,6 +21,7 @@ function MigrateButton(props: Props) {
     const featuresSettings = useSelector(getFeatureSettings);
     const migrationPossible = useSelector(isMigrationPossible);
     const targetEnvironmentId = useSelector(getTargetEnvironmentId);
+    const dispatch = useDispatch();
 
     const available = !disabled && migrationPossible;
     const { t } = useTranslation();
@@ -29,7 +31,11 @@ function MigrateButton(props: Props) {
         () =>
             confirm({
                 text: DialogMessages.migrate(processName, targetEnvironmentId),
-                onConfirmCallback: (confirmed) => confirmed && HttpService.migrateProcess(processName, versionId),
+                onConfirmCallback: (confirmed) =>
+                    confirmed &&
+                    HttpService.migrateProcess(processName, versionId).then(async () => {
+                        await dispatch(await getScenarioActivities(processName));
+                    }),
                 confirmText: t("panels.actions.process-migrate.yes", "Yes"),
                 denyText: t("panels.actions.process-migrate.no", "No"),
             }),

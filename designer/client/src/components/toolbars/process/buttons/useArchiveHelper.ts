@@ -8,6 +8,7 @@ import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 import { useCallback } from "react";
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 
 export const useArchiveHelper = (processName: string) => {
     const dispatch = useDispatch();
@@ -17,13 +18,14 @@ export const useArchiveHelper = (processName: string) => {
     const { redirectAfterArchive } = useSelector(getFeatureSettings);
 
     const archive = useCallback(async () => {
-        return HttpService.archiveProcess(processName).then(() => {
+        return HttpService.archiveProcess(processName).then(async () => {
             dispatch({ type: "ARCHIVED" });
             if (redirectAfterArchive) {
                 navigate(ArchivedPath);
             } else {
                 dispatch(loadProcessToolbarsConfiguration(processName));
                 dispatch(displayCurrentProcessVersion(processName));
+                await dispatch(await getScenarioActivities(processName));
             }
         });
     }, [dispatch, navigate, processName, redirectAfterArchive]);

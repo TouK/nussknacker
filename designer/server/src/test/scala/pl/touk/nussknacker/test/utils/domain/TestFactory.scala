@@ -37,7 +37,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -147,7 +147,7 @@ object TestFactory {
   def newDummyDBIOActionRunner(): DBIOActionRunner =
     newDBIOActionRunner(dummyDbRef)
 
-  def newScenarioActivityRepository(dbRef: DbRef, clock: Clock) = new DbScenarioActivityRepository(dbRef, clock)
+  def newScenarioActivityRepository(dbRef: DbRef, clock: Clock) = DbScenarioActivityRepository.create(dbRef, clock)
 
   def newScenarioLabelsRepository(dbRef: DbRef) = new ScenarioLabelsRepository(dbRef)
 
@@ -187,12 +187,12 @@ object TestFactory {
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
-    new DbScenarioActionRepository(
+    DbScenarioActionRepository.create(
       dbRef,
       mapProcessingTypeDataProvider(Streaming.stringify -> buildInfo)
-    ) with DbioRepository
+    )
 
-  def newDummyActionRepository(): DbScenarioActionRepository =
+  def newDummyActionRepository(): ScenarioActionRepository =
     newActionProcessRepository(dummyDbRef)
 
   def newScenarioMetadataRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)

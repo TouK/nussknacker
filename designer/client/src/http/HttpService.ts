@@ -18,7 +18,7 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -27,8 +27,9 @@ import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInf
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
+import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
+import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -253,7 +254,7 @@ class HttpService {
         return api.get<Scenario[]>("/processes", { params: data });
     }
 
-    fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId) {
+    fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
         const id = encodeURIComponent(processName);
         const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`;
         return api.get<Scenario>(url);
@@ -372,11 +373,15 @@ class HttpService {
         return api.get(`/processes/${encodeURIComponent(processName)}/activity`);
     }
 
-    addComment(processName, versionId, data) {
-        return api
-            .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/comments`, data)
-            .then(() => this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added")))
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error));
+    async addComment(processName: string, versionId: number, comment: string): Promise<"success" | "error"> {
+        try {
+            await api.post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/comment`, comment);
+            this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added"));
+            return "success" as const;
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error);
+            return "error" as const;
+        }
     }
 
     deleteComment(processName, commentId) {
@@ -386,15 +391,17 @@ class HttpService {
             .catch((error) => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error));
     }
 
-    addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
-        return api
-            .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
+    async addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
+        try {
+            await api.post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
                 headers: { "Content-Disposition": `attachment; filename="${file.name}"` },
-            })
-            .then(() => this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added")))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true),
-            );
+            });
+            this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added"));
+            return "success" as const;
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true);
+            return "error" as const;
+        }
     }
 
     downloadAttachment(processName: ProcessName, attachmentId, fileName: string) {
@@ -803,6 +810,14 @@ class HttpService {
 
     sendStatistics(statistics: { name: `${EventTrackingType}_${EventTrackingSelectorType}` }[]) {
         return api.post(`/statistic`, { statistics });
+    }
+
+    fetchActivitiesMetadata(scenarioName: string) {
+        return api.get<ActivityMetadataResponse>(`/processes/${scenarioName}/activity/activities/metadata`);
+    }
+
+    fetchActivities(scenarioName: string) {
+        return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
     #addInfo(message: string) {
