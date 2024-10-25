@@ -12,7 +12,7 @@ final case class MethodBasedComponentDefinitionWithImplementation(
     override val component: Component,
     override val componentTypeSpecificData: ComponentTypeSpecificData,
     staticDefinition: ComponentStaticDefinition,
-    override protected val uiDefinition: ComponentUiDefinition,
+    override protected val uiDefinitions: ComponentUiDefinitions,
 ) extends ComponentDefinitionWithImplementation {
 
   override def withImplementationInvoker(
@@ -40,7 +40,7 @@ object MethodBasedComponentDefinitionWithImplementation {
       name: String,
       componentTypeSpecificData: ComponentTypeSpecificData,
       staticDefinition: ComponentStaticDefinition,
-      uiDefinition: ComponentUiDefinition,
+      uiDefinitions: ComponentUiDefinitions,
       allowedProcessingModes: AllowedProcessingModes,
   ): MethodBasedComponentDefinitionWithImplementation = {
     MethodBasedComponentDefinitionWithImplementation(
@@ -49,7 +49,7 @@ object MethodBasedComponentDefinitionWithImplementation {
       new FakeComponentWithAllowedProcessingModesSpecified(allowedProcessingModes),
       componentTypeSpecificData,
       staticDefinition,
-      uiDefinition
+      uiDefinitions
     )
   }
 

@@ -66,10 +66,10 @@ object DefaultComponentConfigDeterminer {
       icon: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
-  ): ComponentUiDefinition = {
+  ): ComponentUiDefinitions = {
     val beforeTranslationGroupName = componentGroupName.getOrElse(DefaultsComponentGroupName.FragmentsGroupName)
 
-    ComponentUiDefinition(
+    val definition = ComponentUiDefinition(
       originalGroupName = beforeTranslationGroupName,
       componentGroup = translateGroupName(beforeTranslationGroupName)
         .getOrElse(throw new IllegalStateException("Fragments can't be assigned to the null component group")),
@@ -77,6 +77,7 @@ object DefaultComponentConfigDeterminer {
       docsUrl = docsUrl,
       designerWideId = designerWideId
     )
+    ComponentUiDefinitions(definition, definition)
   }
 
   private case class ComponentConfigData(componentGroup: ComponentGroupName, icon: String)

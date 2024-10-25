@@ -64,18 +64,6 @@ class DefinitionResourcesSpec
     }
   }
 
-  it("should handle unknown properties mode") {
-    getProcessDefinitionDataUsingRawProcessingType(
-      processingType = "streaming",
-      modelParametersMode = Some("any")
-    ) ~> check {
-      status shouldBe StatusCodes.BadRequest
-      val textPlainMarshaller = PredefinedFromEntityUnmarshallers.stringUnmarshaller
-      val entityAsString      = Await.result(textPlainMarshaller(response.entity), 1 second)
-      entityAsString shouldEqual "Unknown modelParametersMode: any. Supported ones: ENRICHED, RAW"
-    }
-  }
-
   it("should return definition data for existing scenario type") {
     getProcessDefinitionData() ~> check {
       status shouldBe StatusCodes.OK
@@ -89,7 +77,7 @@ class DefinitionResourcesSpec
   }
 
   it("should return enriched definition data for existing scenario type") {
-    getProcessDefinitionData(modelParametersMode = Some("ENRICHED")) ~> check {
+    getProcessDefinitionData(enrichWithAdditionalConfig = Some(true)) ~> check {
       status shouldBe StatusCodes.OK
 
       val response = responseAs[Json]
@@ -98,7 +86,7 @@ class DefinitionResourcesSpec
   }
 
   it("should return raw definition data for existing scenario type") {
-    getProcessDefinitionData(modelParametersMode = Some("RAW")) ~> check {
+    getProcessDefinitionData(enrichWithAdditionalConfig = Some(false)) ~> check {
       status shouldBe StatusCodes.OK
 
       val response = responseAs[Json]
@@ -313,18 +301,19 @@ class DefinitionResourcesSpec
 
   private def getProcessDefinitionData(
       processingType: String = "streaming",
-      modelParametersMode: Option[String] = None
+      enrichWithAdditionalConfig: Option[Boolean] = None
   ): RouteTestResult = {
-    getProcessDefinitionDataUsingRawProcessingType(processingType, modelParametersMode)
+    getProcessDefinitionDataUsingRawProcessingType(processingType, enrichWithAdditionalConfig)
   }
 
   private def getProcessDefinitionDataUsingRawProcessingType(
       processingType: String,
-      modelParametersMode: Option[String] = None
+      enrichWithAdditionalConfig: Option[Boolean] = None
   ) = {
-    val maybeModelParametersModeParam = modelParametersMode.fold("")(value => s"&modelParametersMode=$value")
+    val maybeEnrichWithAdditionalConfig =
+      enrichWithAdditionalConfig.fold("")(value => s"&enrichWithAdditionalConfig=$value")
     Get(
-      s"/processDefinitionData/$processingType?isFragment=false$maybeModelParametersModeParam"
+      s"/processDefinitionData/$processingType?isFragment=false$maybeEnrichWithAdditionalConfig"
     ) ~> withPermissions(
       definitionResources,
       Permission.Read

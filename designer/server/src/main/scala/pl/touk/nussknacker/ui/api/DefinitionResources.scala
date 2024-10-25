@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.{Directive, Directive1, Directives, Route}
+import akka.http.scaladsl.server.{Directive1, Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.definition.DefinitionsService
-import pl.touk.nussknacker.ui.definition.DefinitionsService.ModelParametersMode
+import pl.touk.nussknacker.ui.definition.DefinitionsService.ComponentUiConfigMode
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.NuPathMatchers
@@ -26,8 +26,8 @@ class DefinitionResources(
         .map { case (definitionsService) =>
           pathEndOrSingleSlash {
             get {
-              (isFragmentParam & modelParametersModeParam) { (isFragment, modelParametersMode) =>
-                complete(definitionsService.prepareUIDefinitions(processingType, isFragment, modelParametersMode))
+              (isFragmentParam & componentUiConfigModeParam) { (isFragment, componentUiConfigMode) =>
+                complete(definitionsService.prepareUIDefinitions(processingType, isFragment, componentUiConfigMode))
               }
             }
           }
@@ -40,17 +40,11 @@ class DefinitionResources(
 
   private val isFragmentParam: Directive1[Boolean] = parameter(Symbol("isFragment").as[Boolean])
 
-  private val modelParametersModeParam: Directive1[ModelParametersMode] = {
-    parameter("modelParametersMode".as[String].optional).flatMap {
-      case Some("ENRICHED") | None => provide(ModelParametersMode.Enriched)
-      case Some("RAW")             => provide(ModelParametersMode.Raw)
-      case Some(other) =>
-        complete(
-          HttpResponse(
-            status = StatusCodes.BadRequest,
-            entity = s"Unknown modelParametersMode: $other. Supported ones: ENRICHED, RAW"
-          )
-        )
+  private val componentUiConfigModeParam: Directive1[ComponentUiConfigMode] = {
+    // parameter used only by an external project to fetch component definitions without enrichments
+    parameter("enrichWithAdditionalConfig".as[Boolean].optional).flatMap {
+      case Some(true) | None => provide(ComponentUiConfigMode.EnrichedWithAdditionalConfig)
+      case Some(false)       => provide(ComponentUiConfigMode.BasicConfig)
     }
   }
 

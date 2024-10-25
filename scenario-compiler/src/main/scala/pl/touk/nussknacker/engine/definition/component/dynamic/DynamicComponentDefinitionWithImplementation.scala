@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
   ComponentTypeSpecificData,
-  ComponentUiDefinition
+  ComponentUiDefinition,
+  ComponentUiDefinitions
 }
 
 final case class DynamicComponentDefinitionWithImplementation(
@@ -16,9 +17,9 @@ final case class DynamicComponentDefinitionWithImplementation(
     override val implementationInvoker: ComponentImplementationInvoker,
     override val component: DynamicComponent[_],
     override val componentTypeSpecificData: ComponentTypeSpecificData,
-    override protected val uiDefinition: ComponentUiDefinition,
+    override protected val uiDefinitions: ComponentUiDefinitions,
     parametersConfig: Map[ParameterName, ParameterConfig],
-    rawParametersConfig: Map[ParameterName, ParameterConfig]
+    parametersWithoutEnrichmentsConfig: Map[ParameterName, ParameterConfig]
 ) extends ComponentDefinitionWithImplementation {
 
   override def withImplementationInvoker(

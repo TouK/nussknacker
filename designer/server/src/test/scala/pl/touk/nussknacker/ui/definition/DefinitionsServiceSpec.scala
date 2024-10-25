@@ -20,12 +20,11 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.restmodel.definition.UIDefinitions
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
-import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.definition.DefinitionsService.ModelParametersMode.{Enriched, Raw}
-import pl.touk.nussknacker.ui.definition.DefinitionsService.{ModelParametersMode, createUIScenarioPropertyConfig}
+import pl.touk.nussknacker.ui.definition.DefinitionsService.{ComponentUiConfigMode, createUIScenarioPropertyConfig}
 import pl.touk.nussknacker.ui.security.api.AdminUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -214,7 +213,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
   test("should not override component's parameter config with additionally provided config when raw config requested") {
     val model: ModelData = localModelWithAdditionalConfig
-    val definitions      = prepareDefinitions(model, List.empty, ModelParametersMode.Raw)
+    val definitions      = prepareDefinitions(model, List.empty, ComponentUiConfigMode.BasicConfig)
 
     val expectedParamDefaultValue =
       "paramStringEditor" -> Expression.spel("''")
@@ -284,7 +283,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   private def prepareDefinitions(
       model: ModelData,
       fragmentScenarios: List[CanonicalProcess],
-      modelParametersMode: ModelParametersMode = ModelParametersMode.Enriched
+      componentUiConfigMode: ComponentUiConfigMode = ComponentUiConfigMode.EnrichedWithAdditionalConfig
   ): UIDefinitions = {
     val processingType = Streaming
 
@@ -313,7 +312,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     ).prepareUIDefinitions(
       processingType = processingType.stringify,
       forFragment = false,
-      modelParametersMode = modelParametersMode
+      componentUiConfigMode = componentUiConfigMode
     )(
       AdminUser("admin", "admin")
     ).futureValue

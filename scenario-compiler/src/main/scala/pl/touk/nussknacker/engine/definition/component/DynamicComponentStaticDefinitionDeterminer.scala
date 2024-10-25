@@ -33,12 +33,13 @@ class DynamicComponentStaticDefinitionDeterminer(
   private def determineStaticDefinition(
       dynamic: DynamicComponentDefinitionWithImplementation
   ): ComponentStaticDefinition = {
-    val parameters    = determineInitialParameters(dynamic.component, dynamic.parametersConfig)
-    val rawParameters = determineInitialParameters(dynamic.component, dynamic.rawParametersConfig)
+    val parameters = determineInitialParameters(dynamic.component, dynamic.parametersConfig)
+    val parametersWithoutEnrichments =
+      determineInitialParameters(dynamic.component, dynamic.parametersWithoutEnrichmentsConfig)
     ComponentStaticDefinition(
       parameters = parameters,
       returnType = staticReturnType(dynamic.component),
-      rawParameters = rawParameters
+      parametersWithoutEnrichments = parametersWithoutEnrichments
     )
   }
 

@@ -38,7 +38,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7021](https://github.com/TouK/nussknacker/pull/7021)
   * Definitions API changes:
       * GET `/api/processDefinitionData/*}` 
-        * added optional query param `modelParametersMode`
+        * added optional query param `enrichWithAdditionalConfig`
         * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 
 ### Configuration changes

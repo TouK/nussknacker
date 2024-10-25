@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionExtractor.FinalComponentUiDefinition
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
@@ -181,12 +182,12 @@ final case class ModelDefinitionBuilder(
         configWithDesignerWideComponentId,
         groupName => groupNameMapping.getOrElse(groupName, Some(groupName))
       )
-      .map { case (uiDefinition, _) =>
+      .map { case FinalComponentUiDefinition(uiDefinition, _) =>
         MethodBasedComponentDefinitionWithImplementation.withNullImplementation(
           name,
           componentTypeSpecificData,
           staticDefinition,
-          uiDefinition,
+          ComponentUiDefinitions(uiDefinition, uiDefinition),
           allowedProcessingModes
         )
       }

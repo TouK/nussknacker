@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{
-  ModelParametersMode,
+  ComponentUiConfigMode,
   createUIParameter,
   createUIScenarioPropertyConfig
 }
@@ -40,7 +40,7 @@ class DefinitionsService(
   def prepareUIDefinitions(
       processingType: ProcessingType,
       forFragment: Boolean,
-      modelParametersMode: ModelParametersMode
+      componentUiConfigMode: ComponentUiConfigMode
   )(
       implicit user: LoggedUser
   ): Future[UIDefinitions] = {
@@ -62,10 +62,10 @@ class DefinitionsService(
           throw new IllegalStateException(s"Unknown component representation: $other")
       }
 
-      val finalizedScenarioPropertiesConfig = modelParametersMode match {
-        case ModelParametersMode.Enriched =>
+      val finalizedScenarioPropertiesConfig = componentUiConfigMode match {
+        case ComponentUiConfigMode.EnrichedWithAdditionalConfig =>
           scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioPropertiesConfig)
-        case ModelParametersMode.Raw =>
+        case ComponentUiConfigMode.BasicConfig =>
           scenarioPropertiesConfig
       }
 
@@ -77,7 +77,7 @@ class DefinitionsService(
         forFragment,
         finalizedScenarioPropertiesConfig,
         scenarioPropertiesDocsUrl,
-        modelParametersMode
+        componentUiConfigMode
       )
     }
   }
@@ -87,12 +87,12 @@ class DefinitionsService(
       forFragment: Boolean,
       finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       scenarioPropertiesDocsUrl: Option[String],
-      modelParametersMode: ModelParametersMode
+      componentUiConfigMode: ComponentUiConfigMode
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
       components = components
-        .map(component => component.component.id -> createUIComponentDefinition(component, modelParametersMode))
+        .map(component => component.component.id -> createUIComponentDefinition(component, componentUiConfigMode))
         .toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioProperties = {
@@ -114,17 +114,27 @@ class DefinitionsService(
 
   private def createUIComponentDefinition(
       componentDefinition: ComponentWithStaticDefinition,
-      modelParametersMode: ModelParametersMode
+      componentUiConfigMode: ComponentUiConfigMode
   ): UIComponentDefinition = {
-    val parameters = modelParametersMode match {
-      case ModelParametersMode.Enriched => componentDefinition.staticDefinition.parameters
-      case ModelParametersMode.Raw      => componentDefinition.staticDefinition.rawParameters
+    val (parameters, icon, docsUrl) = componentUiConfigMode match {
+      case ComponentUiConfigMode.EnrichedWithAdditionalConfig =>
+        (
+          componentDefinition.staticDefinition.parameters,
+          componentDefinition.component.icon,
+          componentDefinition.component.docsUrl
+        )
+      case ComponentUiConfigMode.BasicConfig =>
+        (
+          componentDefinition.staticDefinition.parametersWithoutEnrichments,
+          componentDefinition.component.basicComponentUiDefinition.icon,
+          componentDefinition.component.basicComponentUiDefinition.docsUrl
+        )
     }
     UIComponentDefinition(
       parameters = parameters.map(createUIParameter),
       returnType = componentDefinition.staticDefinition.returnType,
-      icon = componentDefinition.component.icon,
-      docsUrl = componentDefinition.component.docsUrl,
+      icon = icon,
+      docsUrl = docsUrl,
       outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
         case FragmentSpecificData(outputNames) => outputNames
       }
@@ -163,9 +173,9 @@ object DefinitionsService {
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
       variablesToHide = parameter.variablesToHide,
       branchParam = parameter.branchParam,
-      requiredParam = !parameter.isOptional,
       hintText = parameter.hintText,
-      label = parameter.label
+      label = parameter.label,
+      requiredParam = !parameter.isOptional,
     )
   }
 
@@ -174,11 +184,11 @@ object DefinitionsService {
     UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
   }
 
-  sealed trait ModelParametersMode
+  sealed trait ComponentUiConfigMode
 
-  object ModelParametersMode {
-    case object Enriched extends ModelParametersMode
-    case object Raw      extends ModelParametersMode
+  object ComponentUiConfigMode {
+    case object EnrichedWithAdditionalConfig extends ComponentUiConfigMode
+    case object BasicConfig                  extends ComponentUiConfigMode
   }
 
 }

@@ -32,17 +32,17 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   final def id: ComponentId = ComponentId(componentType, name)
 
-  protected def uiDefinition: ComponentUiDefinition
+  protected def uiDefinitions: ComponentUiDefinitions
 
-  final def designerWideId: DesignerWideComponentId = uiDefinition.designerWideId
+  final def designerWideId: DesignerWideComponentId = uiDefinitions.finalDefinition.designerWideId
 
-  final def componentGroup: ComponentGroupName = uiDefinition.componentGroup
+  final def componentGroup: ComponentGroupName = uiDefinitions.finalDefinition.componentGroup
 
-  final def originalGroupName: ComponentGroupName = uiDefinition.originalGroupName
+  final def originalGroupName: ComponentGroupName = uiDefinitions.finalDefinition.originalGroupName
 
-  final def icon: String = uiDefinition.icon
+  final def icon: String = uiDefinitions.finalDefinition.icon
 
-  final def docsUrl: Option[String] = uiDefinition.docsUrl
+  final def docsUrl: Option[String] = uiDefinitions.finalDefinition.docsUrl
 
   override final def definedTypes: List[TypingResult] = {
     val fromExplicitTypes = component match {
@@ -56,6 +56,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
 
   def allowedProcessingModes: AllowedProcessingModes = component.allowedProcessingModes
 
+  final def basicComponentUiDefinition: ComponentUiDefinition = uiDefinitions.basicDefinition
 }
 
 trait ObjectOperatingOnTypes {
@@ -71,6 +72,8 @@ final case class ComponentUiDefinition(
     docsUrl: Option[String],
     designerWideId: DesignerWideComponentId
 )
+
+final case class ComponentUiDefinitions(finalDefinition: ComponentUiDefinition, basicDefinition: ComponentUiDefinition)
 
 object ComponentDefinitionWithImplementation {
 
