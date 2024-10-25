@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
-import java.lang.reflect.{Method, Modifier}
+import java.lang.reflect.{Field, Method, Modifier}
 import java.util.Optional
 import scala.collection.concurrent.TrieMap
 
@@ -47,13 +47,9 @@ object propertyAccessors {
       with ClassDefinitionSetChecking {
 
     override def canRead(context: EvaluationContext, target: Any, name: String): Boolean = {
-      val canRead = super.canRead(context, target, name)
-      if (canRead && checkAccess) {
-        val targetClass = target match {
-          case clazz: Class[_] => clazz
-          case _               => target.getClass
-        }
-
+      val canReadFromSupper = super.canRead(context, target, name)
+      if (canReadFromSupper && checkAccess) {
+        val targetClass = computeTargetClass(target)
         if (!(targetClass.isArray && name == "length")) {
           findGetterMember(name, targetClass, target) match {
             case Some(getterMethod) =>
@@ -65,24 +61,28 @@ object propertyAccessors {
           }
         }
       }
-      canRead
+      canReadFromSupper
     }
 
-    private def findGetterMember(propertyName: String, clazz: Class[_], target: Any): Option[Method] = {
-      val methodOpt = Option(findGetterForProperty(propertyName, clazz, target.isInstanceOf[Class[_]]))
-      if (methodOpt.isEmpty && target.isInstanceOf[Class[_]]) {
-        Option(findGetterForProperty(propertyName, target.getClass, false))
-      } else {
-        methodOpt
+    private def computeTargetClass(target: Any): Class[_] = {
+      target match {
+        case clazz: Class[_] => clazz
+        case _               => target.getClass
       }
     }
 
-    private def findFieldMember(name: String, clazz: Class[_], target: Any) = {
-      val fieldOpt = Option(findField(name, clazz, target.isInstanceOf[Class[_]]))
-      if (fieldOpt.isEmpty && target.isInstanceOf[Class[_]]) {
-        Option(findField(name, target.getClass, false))
-      } else {
-        fieldOpt
+    private def findGetterMember(propertyName: String, clazz: Class[_], target: Any): Option[Method] = {
+      Option(findGetterForProperty(propertyName, clazz, target.isInstanceOf[Class[_]])) match {
+        case None if target.isInstanceOf[Class[_]] =>
+          Option(findGetterForProperty(propertyName, target.getClass, false))
+        case opt => opt
+      }
+    }
+
+    private def findFieldMember(name: String, clazz: Class[_], target: Any): Option[Field] = {
+      Option(findField(name, clazz, target.isInstanceOf[Class[_]])) match {
+        case None if target.isInstanceOf[Class[_]] => Option(findField(name, target.getClass, false))
+        case opt                                   => opt
       }
     }
 
@@ -394,6 +394,7 @@ object propertyAccessors {
 
     protected def checkAccessForMethodName(targetClass: Class[_], methodName: String): Unit = {
       if (checkAccess) {
+        // todo: should we differentiate static/non-static methods here basing on context?
         throwIfMethodNotInDefinitionSet(methodName, targetClass)
       }
     }
