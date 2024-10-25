@@ -3580,12 +3580,15 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter scenarioActivityId'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Invalid comment
+                  value: Comment is required.
         '401':
           description: ''
           content:
@@ -3673,12 +3676,15 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter scenarioActivityId'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Invalid comment
+                  value: Comment is required.
         '401':
           description: ''
           content:
@@ -3856,12 +3862,15 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: path parameter commentId'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Invalid comment
+                  value: Comment is required.
         '401':
           description: ''
           content:
