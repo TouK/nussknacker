@@ -16,18 +16,24 @@ object propertyAccessors {
   // Order of accessors matters - property from first accessor that returns `true` from `canRead` will be chosen.
   // This general order can be overridden - each accessor can define target classes for which it will have precedence -
   // through the `getSpecificTargetClasses` method.
-  def configured(classDefinitionSet: ClassDefinitionSet): Seq[PropertyAccessor] = {
+  def configured(
+      classDefinitionSet: ClassDefinitionSet,
+      dynamicPropertyAccessAllowed: Boolean
+  ): Seq[PropertyAccessor] = {
 
     Seq(
       MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
       new ReflectivePropertyAccessor(), // todo: it must be additionally secured using classDefinitionSet but implementation is a bit harder
-      NullPropertyAccessor,                                      // must be before other non-standard ones
-      new ScalaOptionOrNullPropertyAccessor(classDefinitionSet), // must be before scalaPropertyAccessor
-      new JavaOptionalOrNullPropertyAccessor(classDefinitionSet),
-      new PrimitiveOrWrappersPropertyAccessor(classDefinitionSet),
-      new StaticPropertyAccessor(classDefinitionSet),
+      NullPropertyAccessor, // must be before other non-standard ones
+      new ScalaOptionOrNullPropertyAccessor(
+        classDefinitionSet,
+        dynamicPropertyAccessAllowed
+      ), // must be before scalaPropertyAccessor
+      new JavaOptionalOrNullPropertyAccessor(classDefinitionSet, dynamicPropertyAccessAllowed),
+      new PrimitiveOrWrappersPropertyAccessor(classDefinitionSet, dynamicPropertyAccessAllowed),
+      new StaticPropertyAccessor(classDefinitionSet, dynamicPropertyAccessAllowed),
       TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
-      new NoParamMethodPropertyAccessor(classDefinitionSet),
+      new NoParamMethodPropertyAccessor(classDefinitionSet, dynamicPropertyAccessAllowed),
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor,
       MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
@@ -53,8 +59,10 @@ object propertyAccessors {
     This one is a bit tricky. We extend ReflectivePropertyAccessor, as it's the only sensible way to make it compilable,
     however it's not so easy to extend and in interpreted mode we skip original implementation
    */
-  class NoParamMethodPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
-      extends ReflectivePropertyAccessor
+  class NoParamMethodPropertyAccessor(
+      protected val classDefinitionSet: ClassDefinitionSet,
+      protected val dynamicPropertyAccessAllowed: Boolean
+  ) extends ReflectivePropertyAccessor
       with ReadOnly
       with Caching
       with ClassDefinitionSetChecking {
@@ -86,8 +94,10 @@ object propertyAccessors {
   // Spring bytecode generation fails when we try to invoke methods on primitives, so we
   // *do not* extend ReflectivePropertyAccessor and we force interpreted mode
   // TODO: figure out how to make bytecode generation work also in this case
-  class PrimitiveOrWrappersPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
-      extends PropertyAccessor
+  class PrimitiveOrWrappersPropertyAccessor(
+      protected val classDefinitionSet: ClassDefinitionSet,
+      protected val dynamicPropertyAccessAllowed: Boolean
+  ) extends PropertyAccessor
       with ReadOnly
       with Caching
       with ClassDefinitionSetChecking {
@@ -110,8 +120,10 @@ object propertyAccessors {
 
   }
 
-  class StaticPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
-      extends PropertyAccessor
+  class StaticPropertyAccessor(
+      protected val classDefinitionSet: ClassDefinitionSet,
+      protected val dynamicPropertyAccessAllowed: Boolean
+  ) extends PropertyAccessor
       with ReadOnly
       with StaticMethodCaching
       with ClassDefinitionSetChecking {
@@ -138,8 +150,10 @@ object propertyAccessors {
 
   // TODO: handle methods with multiple args or at least validate that they can't be called
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-  class ScalaOptionOrNullPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
-      extends PropertyAccessor
+  class ScalaOptionOrNullPropertyAccessor(
+      protected val classDefinitionSet: ClassDefinitionSet,
+      protected val dynamicPropertyAccessAllowed: Boolean
+  ) extends PropertyAccessor
       with ReadOnly
       with Caching
       with ClassDefinitionSetChecking {
@@ -165,8 +179,10 @@ object propertyAccessors {
 
   // TODO: handle methods with multiple args or at least validate that they can't be called
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-  class JavaOptionalOrNullPropertyAccessor(protected val classDefinitionSet: ClassDefinitionSet)
-      extends PropertyAccessor
+  class JavaOptionalOrNullPropertyAccessor(
+      protected val classDefinitionSet: ClassDefinitionSet,
+      protected val dynamicPropertyAccessAllowed: Boolean
+  ) extends PropertyAccessor
       with ReadOnly
       with Caching
       with ClassDefinitionSetChecking {
@@ -316,14 +332,16 @@ object propertyAccessors {
 
     protected def classDefinitionSet: ClassDefinitionSet
 
+    protected def dynamicPropertyAccessAllowed: Boolean
+
     protected def checkAccessIfMethodFound(targetClass: Class[_])(methodOpt: Option[Method]): Option[Method] = {
-      // todo: disable class definition validation if dynamicPropertyAccessAllowed=true?
       // todo: memoization of found method?
       methodOpt match {
-        case Some(method) =>
+        case s @ Some(method) if !dynamicPropertyAccessAllowed =>
           throwIfMethodNotInDefinitionSet(method.getName, targetClass)
-          Some(method)
-        case None => None
+          s
+        case s @ Some(_) => s
+        case None        => None
       }
     }
 

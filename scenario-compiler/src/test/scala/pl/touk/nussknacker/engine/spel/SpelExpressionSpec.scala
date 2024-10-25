@@ -267,9 +267,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     // we test here on non-(map, array, collection, string) object because those types handling is hardcoded in Indexer.getValueRef method and is quite safe
     a[SpelExpressionEvaluationException] should be thrownBy {
       parse[Any](
-        "#containerWithUnknownObject.value['hashCode']", // hashCode is not exposed method in ClassDefinitionSet
+        "#containerWithUnknownObject.value['productArity']", // productArity is not exposed method in ClassDefinitionSet
       ).validExpression.evaluateSync[Any](ctx)
     }
+  }
+
+  test(
+    "should allow to invoke not allowed parentless method in indexer on unknown when dynamicPropertyAccessAllowed=true"
+  ) {
+    parse[Any](
+      "#containerWithUnknownObject.value['productArity']",
+      dynamicPropertyAccessAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) shouldBe 2
   }
 
   test("should allow to call parameterless method in indexer on unknown that is allowed in class definitions") {
