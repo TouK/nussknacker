@@ -1,19 +1,15 @@
 ---
-title: Common
+title: Evnironment Variables
 sidebar_position: 1
 ---
-# Common        
+# Environment variables
 
-## Environment variables
-
-All configuration options are described in [Configuration](./DesignerConfiguration.md).
-
-Some of them can be configured using already predefined environment variables, which is mostly useful in the Docker setup.
+Some of the configuration options can be configured using already predefined environment variables, which is mostly useful in the Docker setup.
 The table below shows all the predefined environment variables used in the Nussknacker image. `$NUSSKNACKER_DIR` is a placeholder pointing to the Nussknacker installation directory.
 
 Because we use [HOCON](../#conventions), you can set (or override) any configuration value used by Nussknacker even if the already predefined environment variable does not exist. This is achieved by setting the JVM property `-Dconfig.override_with_env_vars=true` and setting environment variables following conventions described [here](https://github.com/lightbend/config?tab=readme-ov-file#optional-system-or-env-variable-overrides).
 
-### Basic environment variables
+## Basic environment variables
 
 | Variable name                 | Type    | Default value                                          | Description                                                                                                                                                                                                                                               |
 |-------------------------------|---------|--------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -48,7 +44,7 @@ Because we use [HOCON](../#conventions), you can set (or override) any configura
 | PROMETHEUS_AGENT_CONFIG_FILE  | int     | $NUSSKNACKER_DIR/conf/jmx_prometheus.yaml              | Default configuration for JMX Prometheus agent. Used only when agent is enabled. See `PROMETHEUS_METRICS_PORT`                                                                                                                                            |
 | TABLES_DEFINITION_FILE        | string  | $NUSSKNACKER_DIR/conf/dev-tables-definition.sql        | Location of file containing definitions of tables for Flink Table API components in Flink Sql                                                                                                                                                             |
 
-### OAuth2 environment variables
+## OAuth2 environment variables
 
 | Variable name                                   | Type            | Default value     |
 |-------------------------------------------------|-----------------|-------------------|
