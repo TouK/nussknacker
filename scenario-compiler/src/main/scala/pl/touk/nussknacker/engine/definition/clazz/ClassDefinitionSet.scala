@@ -18,7 +18,6 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
 
   def isParameterlessMethodAllowed(targetClass: Class[_], method: String): Boolean = {
     // todo: some memoization
-    // todo: should it be validated in runtime for not-dynamic access?
     val classWithParentClasses = extractAllTypes(targetClass)
     classWithParentClasses.exists(hasDirectlyDefinedParameterlessMethod(_, method))
   }
@@ -31,7 +30,9 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
 
   private def hasDirectlyDefinedParameterlessMethod(targetClass: Class[_], methodName: String): Boolean = {
     get(targetClass)
-      .flatMap(definition => definition.methods.get(methodName))
+      .flatMap(definition =>
+        definition.methods.get(methodName)
+      ) // todo: in StaticPropertyAccessor we should check against staticMethods map
       .getOrElse(List.empty)
       .exists { methodDefinition =>
         methodDefinition match {
