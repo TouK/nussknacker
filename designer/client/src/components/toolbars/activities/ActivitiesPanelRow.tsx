@@ -71,7 +71,11 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
         }
     }, [activity, handleHideRows, handleShowRows, isRunning, isFirstDateItem, searchQuery, t]);
 
-    return <div style={style}>{itemToRender}</div>;
+    return (
+        <div style={style} data-testid={`activity-row-${index}`}>
+            {itemToRender}
+        </div>
+    );
 });
 
 ActivitiesPanelRow.displayName = "ActivitiesPanelRow";

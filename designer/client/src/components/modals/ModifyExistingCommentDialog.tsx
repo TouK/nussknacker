@@ -53,6 +53,9 @@ const ModifyExistingCommentDialog = (props: WindowContentProps<number, ModifyAct
                         minHeight: 80,
                     })}
                     autoFocus
+                    onFocus={(event) => {
+                        event.target.setSelectionRange(event.target.value.length, event.target.value.length);
+                    }}
                 />
                 <FormHelperText title={validationError} error>
                     {validationError}

@@ -56,6 +56,7 @@ const CommentActivity = ({
                     key={activityAction.id}
                     src={activityAction.icon}
                     title={activityAction.displayableName}
+                    delete-testid={`delete-comment-icon`}
                 />
             );
         }
