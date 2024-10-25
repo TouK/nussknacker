@@ -1,10 +1,11 @@
 import React from "react";
-import { SearchInputWithIcon } from "../../themed/SearchInput";
 import i18next from "i18next";
 import { Box, IconButton, styled, Typography } from "@mui/material";
 import { isEmpty } from "lodash";
 import { SearchIcon } from "../../table/SearchFilter";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { SearchInputWithIcon } from "../../themed/SearchInput";
+import { getBorderColor } from "../../../containers/theme/helpers";
 
 export const StyledIconButton = styled(IconButton)(() => ({
     padding: 0,
@@ -37,6 +38,7 @@ export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, fo
                         changeResult(selectedResult + 1);
                     }
                 }}
+                rootStyles={(theme) => ({ borderBottom: `0.5px solid ${getBorderColor(theme)}` })}
             >
                 <SearchIcon isEmpty={isEmpty(searchQuery)} />
             </SearchInputWithIcon>

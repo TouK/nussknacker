@@ -1,14 +1,16 @@
 import { css, cx } from "@emotion/css";
-import { useTheme } from "@mui/material";
+import { Box, Theme, useTheme } from "@mui/material";
 import React, { forwardRef, PropsWithChildren, ReactElement, ReactNode, useCallback, useImperativeHandle, useRef } from "react";
 import { ClearIcon } from "../table/SearchFilter";
 import { InputProps, ThemedInput } from "./ThemedInput";
+import { SxProps } from "@mui/system/styleFunctionSx";
 
 type Props = PropsWithChildren<InputProps> & {
     onClear?: () => void;
     onAddonClick?: () => void;
     endAdornment?: ReactNode;
     onKeyDown?: (e: KeyboardEvent) => void;
+    rootStyles?: SxProps<Theme>;
 };
 
 export type Focusable = {
@@ -16,7 +18,7 @@ export type Focusable = {
 };
 
 export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon(
-    { children, onAddonClick, onClear, ...props },
+    { children, onAddonClick, onClear, rootStyles, ...props },
     forwardedRef,
 ): ReactElement {
     const theme = useTheme();
@@ -63,7 +65,7 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
     useImperativeHandle(forwardedRef, () => ({ focus }), [focus]);
 
     return (
-        <div className={cx(children && wrapperWithAddonStyles)}>
+        <Box className={cx(children && wrapperWithAddonStyles)} sx={rootStyles}>
             {children && (
                 <div className={addonStyles} onClick={onAddonClick ?? (() => focus())}>
                     {children}
@@ -78,6 +80,6 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
                 )}
                 {props.endAdornment && <div className={addonStyles}>{props.endAdornment}</div>}
             </div>
-        </div>
+        </Box>
     );
 });
