@@ -192,7 +192,7 @@ class DeploymentServiceSpec
 
     deploymentServiceWithCommentSettings.processCommand(
       RunDeploymentCommand(
-        CommonCommandData(processIdWithName, Some(Comment("samplePattern")), user),
+        CommonCommandData(processIdWithName, Comment.from("samplePattern"), user),
         StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
         NodesDeploymentData.empty
       )
@@ -943,12 +943,12 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
     val actionName               = ScenarioActionName("hello")
-    val comment                  = Comment("not empty comment")
+    val comment                  = Comment.from("not empty comment")
 
     val result =
       deploymentService
         .processCommand(
-          CustomActionCommand(CommonCommandData(processIdWithName, Some(comment), user), actionName, Map.empty)
+          CustomActionCommand(CommonCommandData(processIdWithName, comment, user), actionName, Map.empty)
         )
         .futureValue
 
@@ -958,7 +958,7 @@ class DeploymentServiceSpec
         actionRepository.getFinishedProcessActions(processIdWithName.id, Some(Set(actionName))).dbioActionValues
 
       action.loneElement.state shouldBe ProcessActionState.Finished
-      action.loneElement.comment shouldBe Some(comment.content)
+      action.loneElement.comment shouldBe comment.map(_.content)
       listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
     }
   }
@@ -1055,7 +1055,7 @@ class DeploymentServiceSpec
   }
 
   private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
-    val comment = Some(Comment(actionName.toString.capitalize))
+    val comment = Comment.from(actionName.toString.capitalize)
     actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
   }
 
