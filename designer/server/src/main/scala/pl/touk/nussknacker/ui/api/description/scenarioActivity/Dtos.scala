@@ -220,7 +220,7 @@ object Dtos {
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
       override def icon: String                       = "/assets/activities/migration.svg"
-      override def supportedActions: List[String]     = commentRelatedActions
+      override def supportedActions: List[String]     = List.empty
     }
 
     case object PerformedSingleExecution extends ScenarioActivityType {
