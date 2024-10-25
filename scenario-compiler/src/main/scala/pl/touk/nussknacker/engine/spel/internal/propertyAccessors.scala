@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
+import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
@@ -18,26 +18,74 @@ object propertyAccessors {
   // through the `getSpecificTargetClasses` method.
   def configured(
       classDefinitionSet: ClassDefinitionSet,
-      dynamicPropertyAccessAllowed: Boolean
+      checkAccess: Boolean
   ): Seq[PropertyAccessor] = {
 
     Seq(
       MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
-      new ReflectivePropertyAccessor(), // todo: it must be additionally secured using classDefinitionSet but implementation is a bit harder
+      new CheckedReflectivePropertyAccessor(classDefinitionSet, checkAccess),
       NullPropertyAccessor, // must be before other non-standard ones
       new ScalaOptionOrNullPropertyAccessor(
         classDefinitionSet,
-        dynamicPropertyAccessAllowed
+        checkAccess
       ), // must be before scalaPropertyAccessor
-      new JavaOptionalOrNullPropertyAccessor(classDefinitionSet, dynamicPropertyAccessAllowed),
-      new PrimitiveOrWrappersPropertyAccessor(classDefinitionSet, dynamicPropertyAccessAllowed),
-      new StaticPropertyAccessor(classDefinitionSet, dynamicPropertyAccessAllowed),
+      new JavaOptionalOrNullPropertyAccessor(classDefinitionSet, checkAccess),
+      new PrimitiveOrWrappersPropertyAccessor(classDefinitionSet, checkAccess),
+      new StaticPropertyAccessor(classDefinitionSet, checkAccess),
       TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
-      new NoParamMethodPropertyAccessor(classDefinitionSet, dynamicPropertyAccessAllowed),
+      new NoParamMethodPropertyAccessor(classDefinitionSet, checkAccess),
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor,
       MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
     )
+  }
+
+  class CheckedReflectivePropertyAccessor(
+      protected val classDefinitionSet: ClassDefinitionSet,
+      protected val checkAccess: Boolean
+  ) extends ReflectivePropertyAccessor
+      with ClassDefinitionSetChecking {
+
+    override def canRead(context: EvaluationContext, target: Any, name: String): Boolean = {
+      val canRead = super.canRead(context, target, name)
+      if (canRead && checkAccess) {
+        val targetClass = target match {
+          case clazz: Class[_] => clazz
+          case _               => target.getClass
+        }
+
+        if (!(targetClass.isArray && name == "length")) {
+          findGetterMember(name, targetClass, target) match {
+            case Some(getterMethod) =>
+              checkAccessIfMethodFound(targetClass)(Some(getterMethod))
+            case None =>
+              findFieldMember(name, targetClass, target).foreach { field =>
+                checkAccessForMethodName(targetClass, field.getName)
+              }
+          }
+        }
+      }
+      canRead
+    }
+
+    private def findGetterMember(propertyName: String, clazz: Class[_], target: Any): Option[Method] = {
+      val methodOpt = Option(findGetterForProperty(propertyName, clazz, target.isInstanceOf[Class[_]]))
+      if (methodOpt.isEmpty && target.isInstanceOf[Class[_]]) {
+        Option(findGetterForProperty(propertyName, target.getClass, false))
+      } else {
+        methodOpt
+      }
+    }
+
+    private def findFieldMember(name: String, clazz: Class[_], target: Any) = {
+      val fieldOpt = Option(findField(name, clazz, target.isInstanceOf[Class[_]]))
+      if (fieldOpt.isEmpty && target.isInstanceOf[Class[_]]) {
+        Option(findField(name, target.getClass, false))
+      } else {
+        fieldOpt
+      }
+    }
+
   }
 
   object NullPropertyAccessor extends PropertyAccessor with ReadOnly {
@@ -61,7 +109,7 @@ object propertyAccessors {
    */
   class NoParamMethodPropertyAccessor(
       protected val classDefinitionSet: ClassDefinitionSet,
-      protected val dynamicPropertyAccessAllowed: Boolean
+      protected val checkAccess: Boolean
   ) extends ReflectivePropertyAccessor
       with ReadOnly
       with Caching
@@ -96,7 +144,7 @@ object propertyAccessors {
   // TODO: figure out how to make bytecode generation work also in this case
   class PrimitiveOrWrappersPropertyAccessor(
       protected val classDefinitionSet: ClassDefinitionSet,
-      protected val dynamicPropertyAccessAllowed: Boolean
+      protected val checkAccess: Boolean
   ) extends PropertyAccessor
       with ReadOnly
       with Caching
@@ -122,7 +170,7 @@ object propertyAccessors {
 
   class StaticPropertyAccessor(
       protected val classDefinitionSet: ClassDefinitionSet,
-      protected val dynamicPropertyAccessAllowed: Boolean
+      protected val checkAccess: Boolean
   ) extends PropertyAccessor
       with ReadOnly
       with StaticMethodCaching
@@ -152,7 +200,7 @@ object propertyAccessors {
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
   class ScalaOptionOrNullPropertyAccessor(
       protected val classDefinitionSet: ClassDefinitionSet,
-      protected val dynamicPropertyAccessAllowed: Boolean
+      protected val checkAccess: Boolean
   ) extends PropertyAccessor
       with ReadOnly
       with Caching
@@ -181,7 +229,7 @@ object propertyAccessors {
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
   class JavaOptionalOrNullPropertyAccessor(
       protected val classDefinitionSet: ClassDefinitionSet,
-      protected val dynamicPropertyAccessAllowed: Boolean
+      protected val checkAccess: Boolean
   ) extends PropertyAccessor
       with ReadOnly
       with Caching
@@ -332,16 +380,21 @@ object propertyAccessors {
 
     protected def classDefinitionSet: ClassDefinitionSet
 
-    protected def dynamicPropertyAccessAllowed: Boolean
+    protected def checkAccess: Boolean
 
     protected def checkAccessIfMethodFound(targetClass: Class[_])(methodOpt: Option[Method]): Option[Method] = {
       // todo: memoization of found method?
       methodOpt match {
-        case s @ Some(method) if !dynamicPropertyAccessAllowed =>
-          throwIfMethodNotInDefinitionSet(method.getName, targetClass)
+        case s @ Some(method) =>
+          checkAccessForMethodName(targetClass, method.getName)
           s
-        case s @ Some(_) => s
-        case None        => None
+        case None => None
+      }
+    }
+
+    protected def checkAccessForMethodName(targetClass: Class[_], methodName: String): Unit = {
+      if (checkAccess) {
+        throwIfMethodNotInDefinitionSet(methodName, targetClass)
       }
     }
 

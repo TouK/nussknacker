@@ -32,6 +32,7 @@ class ClassDefinitionDiscovery(classDefinitionExtractor: ClassDefinitionExtracto
   private val mandatoryClasses = (Set(
     classOf[java.util.List[_]],
     classOf[java.util.Map[_, _]],
+    classOf[java.util.Map.Entry[_, _]],
     classOf[java.math.BigDecimal],
     classOf[Number],
     classOf[String],

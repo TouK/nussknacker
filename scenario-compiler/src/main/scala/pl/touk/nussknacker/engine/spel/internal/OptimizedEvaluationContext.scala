@@ -96,7 +96,7 @@ object EvaluationContextPreparer {
   ): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
     val propertyAccessors =
-      internal.propertyAccessors.configured(classDefinitionSet, expressionConfig.dynamicPropertyAccessAllowed)
+      internal.propertyAccessors.configured(classDefinitionSet, !expressionConfig.dynamicPropertyAccessAllowed)
     new EvaluationContextPreparer(
       classLoader,
       expressionConfig.globalImports,

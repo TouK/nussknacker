@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
@@ -284,6 +284,24 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should allow to call parameterless method in indexer on unknown that is allowed in class definitions") {
     parse[AnyRef]("#containerWithUnknownObject.value['toString']").validExpression
       .evaluateSync[AnyRef](ctx) shouldBe "SampleValue(1,)"
+  }
+
+  test(
+    "should allow to call parameterless method in indexer on unknown that is allowed in class definitions - reflective property accessor"
+  ) {
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any]("#containerWithUnknownObject.value['class']").validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test(
+    "should not allow to call parameterless method in indexer on unknown that is not allowed in class definitions - reflective property accessor"
+  ) {
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any]("#containerWithUnknownObject.value['getSomeHiddenGetter']").validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
   }
 
   test("parsing Selection on array") {
@@ -1549,7 +1567,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
 case class SampleObject(list: java.util.List[SampleValue])
 
-case class SampleValue(value: Int, anyObject: Any = "")
+case class SampleValue(value: Int, anyObject: Any = "") {
+
+  @Hidden
+  def getSomeHiddenGetter: String = {
+    "someHidden"
+  }
+
+}
 
 object SimpleEnum extends Enumeration {
   // we must explicitly define Value class to recognize if type is matching

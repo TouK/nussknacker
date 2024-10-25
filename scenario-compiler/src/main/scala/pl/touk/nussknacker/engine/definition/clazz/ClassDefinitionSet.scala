@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.definition.clazz
 
-import java.lang.reflect.Method
-
 object ClassDefinitionSet {
 
   def apply(classDefinitions: Set[ClassDefinition]): ClassDefinitionSet = {

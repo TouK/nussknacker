@@ -12184,6 +12184,73 @@
           "params": [],
           "refClazzName": "java.lang.Object",
           "type": "Unknown"
+        },
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.util.Map$Entry"
+    },
+    "methods": {
+      "getKey": [
+        {
+          "name": "getKey",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ],
+      "getValue": [
+        {
+          "name": "getValue",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ],
+      "key": [
+        {
+          "name": "key",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "value": [
+        {
+          "name": "value",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"type": "Unknown"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
         }
       ],
       "refClazzName": "java.util.Set"
