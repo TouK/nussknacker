@@ -26,7 +26,6 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
   }
 
   private def extractAllTypes(clazz: Class[_]): List[Class[_]] = {
-    // todo: recursive types (stack safety)?
     val superClassAsList: List[Class[_]] = Option(clazz.getSuperclass).map(List(_)).getOrElse(List.empty)
     val extractedSuperTypes              = (clazz.getInterfaces.toList ++ superClassAsList).flatMap(extractAllTypes)
     clazz :: extractedSuperTypes

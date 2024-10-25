@@ -20,7 +20,7 @@ object propertyAccessors {
 
     Seq(
       MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
-      new ReflectivePropertyAccessor(),
+      new ReflectivePropertyAccessor(), // todo: it must be additionally secured using classDefinitionSet but implementation is a bit harder
       NullPropertyAccessor,                                      // must be before other non-standard ones
       new ScalaOptionOrNullPropertyAccessor(classDefinitionSet), // must be before scalaPropertyAccessor
       new JavaOptionalOrNullPropertyAccessor(classDefinitionSet),
@@ -33,8 +33,6 @@ object propertyAccessors {
       MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
     )
   }
-
-  class CheckedReflectivePropertyAccessor extends ReflectivePropertyAccessor {}
 
   object NullPropertyAccessor extends PropertyAccessor with ReadOnly {
 
@@ -319,6 +317,8 @@ object propertyAccessors {
     protected def classDefinitionSet: ClassDefinitionSet
 
     protected def checkAccessIfMethodFound(targetClass: Class[_])(methodOpt: Option[Method]): Option[Method] = {
+      // todo: disable class definition validation if dynamicPropertyAccessAllowed=true?
+      // todo: memoization of found method?
       methodOpt match {
         case Some(method) =>
           throwIfMethodNotInDefinitionSet(method.getName, targetClass)
