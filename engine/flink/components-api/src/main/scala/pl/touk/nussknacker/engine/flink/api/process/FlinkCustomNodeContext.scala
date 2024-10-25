@@ -37,6 +37,11 @@ case class FlinkCustomNodeContext(
 
   class ValueWithContextInfo {
 
+    lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
+
+    def forNull[T]: TypeInformation[ValueWithContext[T]] =
+      forType(TypeInformationDetection.instance.forNull[T])
+
     def forBranch[T](key: String, value: TypingResult): TypeInformation[ValueWithContext[T]] =
       forBranch(key, TypeInformationDetection.instance.forType[T](value))
 
@@ -54,8 +59,6 @@ case class FlinkCustomNodeContext(
 
     def forClass[T: ClassTag]: TypeInformation[ValueWithContext[T]] =
       forType(TypeInformationDetection.instance.forClass[T])
-
-    lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
 
   }
 

@@ -45,6 +45,8 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
     extends SourceFactory
     with UnboundedStreamComponent {
 
+  import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
+
   @silent("deprecated")
   @MethodToInvoke
   def create(
@@ -55,20 +57,13 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
   ): Source = {
     new FlinkSource with ReturningType {
 
-      override def contextStream(
-          env: StreamExecutionEnvironment,
-          flinkNodeContext: FlinkCustomNodeContext
-      ): DataStream[Context] = {
-
+      override def contextStream(env: StreamExecutionEnvironment, ctx: FlinkCustomNodeContext): DataStream[Context] = {
         val count       = Option(nullableCount).map(_.toInt).getOrElse(1)
-        val processName = flinkNodeContext.metaData.name
+        val processName = ctx.metaData.name
         val stream = env
           .addSource(new PeriodicFunction(period))
           .map(_ => Context(processName.value))
-          .flatMap(
-            flinkNodeContext.lazyParameterHelper.lazyMapFunction(value),
-            flinkNodeContext.valueWithContextInfo.forType[AnyRef](value.returnType)
-          )
+          .flatMap(value)(ctx)
           .flatMap(
             (value: ValueWithContext[AnyRef], out: Collector[AnyRef]) =>
               1.to(count).map(_ => value.value).foreach(out.collect),
@@ -81,10 +76,10 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
           .map(
             new FlinkContextInitializingFunction[AnyRef](
               new BasicContextInitializer[AnyRef](Unknown),
-              flinkNodeContext.nodeId,
-              flinkNodeContext.convertToEngineRuntimeContext
+              ctx.nodeId,
+              ctx.convertToEngineRuntimeContext
             ),
-            flinkNodeContext.contextTypeInfo
+            ctx.contextTypeInfo
           )
       }
 

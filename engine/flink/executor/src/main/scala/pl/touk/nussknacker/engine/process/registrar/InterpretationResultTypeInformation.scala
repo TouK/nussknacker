@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.InterpretationResult
-import pl.touk.nussknacker.engine.api.PartReference
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo

@@ -16,6 +16,8 @@ import scala.jdk.CollectionConverters._
   */
 object ForEachTransformer extends CustomStreamTransformer with Serializable {
 
+  import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
+
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(
       @ParamName("Elements") elements: LazyParameter[util.Collection[AnyRef]],
@@ -24,10 +26,7 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
     FlinkCustomStreamTransformation(
       { (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
         stream
-          .flatMap(
-            ctx.lazyParameterHelper.lazyMapFunction(elements),
-            ctx.valueWithContextInfo.forType[util.Collection[AnyRef]](elements.returnType)
-          )
+          .flatMap(elements)(ctx)
           .flatMap(
             (valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
               valueWithContext.value.asScala.zipWithIndex

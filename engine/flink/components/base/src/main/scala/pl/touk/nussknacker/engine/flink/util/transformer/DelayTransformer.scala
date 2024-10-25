@@ -47,8 +47,7 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
         keyedStream
           .process(
             prepareDelayFunction(ctx, delay),
-            // DelayFunction passes null, Flink doesn't have any special null serializer, so we use String TypeInfo
-            ctx.valueWithContextInfo.forClass[AnyRef](classOf[String])
+            ctx.valueWithContextInfo.forNull[AnyRef]
           )
       )
     }

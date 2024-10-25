@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
@@ -16,6 +16,9 @@ import scala.reflect.{ClassTag, classTag}
  * by default generic Flink mechanisms are used
  */
 trait TypeInformationDetection extends Serializable {
+
+  // Flink doesn't have any special null serializer, so we use String TypeInfo
+  def forNull[T]: TypeInformation[T] = forType[T](Typed.typedClass[String])
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context]
 
