@@ -186,6 +186,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         forFragment = false,
         fragments = List.empty
       )
+      .components
   }
 
   private val processingTypeAndInfoToNonFragmentDesignerWideId =

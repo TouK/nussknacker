@@ -170,12 +170,11 @@ final case class ModelDefinitionBuilder(
           canBeEnding
         }
       )
-    val configWithOverridenGroupName =
-      componentGroupName.map(group => defaultConfig.copy(componentGroup = Some(group))).getOrElse(defaultConfig)
     val id = ComponentId(componentTypeSpecificData.componentType, name)
     val configWithDesignerWideComponentId =
-      configWithOverridenGroupName.copy(componentId =
-        Some(designerWideComponentId.getOrElse(determineDesignerWideId(id)))
+      defaultConfig.copy(
+        componentGroup = componentGroupName.orElse(defaultConfig.componentGroup),
+        componentId = Some(designerWideComponentId.getOrElse(determineDesignerWideId(id)))
       )
     ComponentDefinitionExtractor
       .filterOutDisabledAndComputeFinalUiDefinition(
@@ -187,7 +186,7 @@ final case class ModelDefinitionBuilder(
           name,
           componentTypeSpecificData,
           staticDefinition,
-          ComponentUiDefinitions(uiDefinition, uiDefinition),
+          uiDefinition,
           allowedProcessingModes
         )
       }

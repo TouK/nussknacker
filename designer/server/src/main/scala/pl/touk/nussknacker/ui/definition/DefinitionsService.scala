@@ -18,7 +18,7 @@ import pl.touk.nussknacker.ui.definition.DefinitionsService.{
 import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
+import pl.touk.nussknacker.ui.process.processingtype.{DesignerModelData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 // enters the scenario view. The core domain logic should be done during Model definition extraction
 class DefinitionsService(
     modelData: ModelData,
-    staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
+    staticDefinitionForDynamicComponents: DesignerModelData.DynamicComponentsStaticDefinitions,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
@@ -49,17 +49,28 @@ class DefinitionsService(
         alignedComponentsDefinitionProvider
           .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
 
-      val withStaticDefinition = alignedComponentsDefinition.map {
-        case dynamic: DynamicComponentDefinitionWithImplementation =>
-          val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
-            dynamic.id,
-            throw new IllegalStateException(s"Static definition for dynamic component: $dynamic should be precomputed")
-          )
-          ComponentWithStaticDefinition(dynamic, staticDefinition)
-        case methodBased: MethodBasedComponentDefinitionWithImplementation =>
-          ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
-        case other =>
-          throw new IllegalStateException(s"Unknown component representation: $other")
+      val withStaticDefinition = {
+        val (components, cachedStaticDefinitionsForDynamicComponents) = componentUiConfigMode match {
+          case ComponentUiConfigMode.EnrichedWithAdditionalConfig =>
+            (alignedComponentsDefinition.components, staticDefinitionForDynamicComponents.finalDefinitions)
+          case ComponentUiConfigMode.BasicConfig =>
+            (alignedComponentsDefinition.basicComponents, staticDefinitionForDynamicComponents.basicDefinitions)
+        }
+
+        components.map {
+          case dynamic: DynamicComponentDefinitionWithImplementation =>
+            val staticDefinition = cachedStaticDefinitionsForDynamicComponents.getOrElse(
+              dynamic.id,
+              throw new IllegalStateException(
+                s"Static definition for dynamic component: $dynamic should be precomputed"
+              )
+            )
+            ComponentWithStaticDefinition(dynamic, staticDefinition)
+          case methodBased: MethodBasedComponentDefinitionWithImplementation =>
+            ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+          case other =>
+            throw new IllegalStateException(s"Unknown component representation: $other")
+        }
       }
 
       val finalizedScenarioPropertiesConfig = componentUiConfigMode match {
@@ -76,8 +87,7 @@ class DefinitionsService(
         withStaticDefinition,
         forFragment,
         finalizedScenarioPropertiesConfig,
-        scenarioPropertiesDocsUrl,
-        componentUiConfigMode
+        scenarioPropertiesDocsUrl
       )
     }
   }
@@ -86,14 +96,11 @@ class DefinitionsService(
       components: List[ComponentWithStaticDefinition],
       forFragment: Boolean,
       finalizedScenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-      scenarioPropertiesDocsUrl: Option[String],
-      componentUiConfigMode: ComponentUiConfigMode
+      scenarioPropertiesDocsUrl: Option[String]
   ): UIDefinitions = {
     UIDefinitions(
       componentGroups = ComponentGroupsPreparer.prepareComponentGroups(components),
-      components = components
-        .map(component => component.component.id -> createUIComponentDefinition(component, componentUiConfigMode))
-        .toMap,
+      components = components.map(component => component.component.id -> createUIComponentDefinition(component)).toMap,
       classes = modelData.modelDefinitionWithClasses.classDefinitions.all.toList.map(_.clazzName),
       scenarioProperties = {
         if (forFragment) {
@@ -113,28 +120,13 @@ class DefinitionsService(
   }
 
   private def createUIComponentDefinition(
-      componentDefinition: ComponentWithStaticDefinition,
-      componentUiConfigMode: ComponentUiConfigMode
+      componentDefinition: ComponentWithStaticDefinition
   ): UIComponentDefinition = {
-    val (parameters, icon, docsUrl) = componentUiConfigMode match {
-      case ComponentUiConfigMode.EnrichedWithAdditionalConfig =>
-        (
-          componentDefinition.staticDefinition.parameters,
-          componentDefinition.component.icon,
-          componentDefinition.component.docsUrl
-        )
-      case ComponentUiConfigMode.BasicConfig =>
-        (
-          componentDefinition.staticDefinition.parametersWithoutEnrichments,
-          componentDefinition.component.basicComponentUiDefinition.icon,
-          componentDefinition.component.basicComponentUiDefinition.docsUrl
-        )
-    }
     UIComponentDefinition(
-      parameters = parameters.map(createUIParameter),
+      parameters = componentDefinition.staticDefinition.parameters.map(createUIParameter),
       returnType = componentDefinition.staticDefinition.returnType,
-      icon = icon,
-      docsUrl = docsUrl,
+      icon = componentDefinition.component.icon,
+      docsUrl = componentDefinition.component.docsUrl,
       outputParameters = Option(componentDefinition.component.componentTypeSpecificData).collect {
         case FragmentSpecificData(outputNames) => outputNames
       }

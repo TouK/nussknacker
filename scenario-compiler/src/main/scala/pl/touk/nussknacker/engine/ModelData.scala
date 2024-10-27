@@ -13,6 +13,8 @@ import pl.touk.nussknacker.engine.api.component.{
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
   ModelDefinitionExtractor,
@@ -47,7 +49,8 @@ object ModelData extends LazyLogging {
       dependencies.determineDesignerWideId,
       dependencies.additionalConfigsFromProvider,
       _ => true,
-      dependencies.shouldIncludeComponentProvider
+      dependencies.shouldIncludeComponentProvider,
+      dependencies.componentDefinitionExtractionMode
     )
   }
 
@@ -82,7 +85,8 @@ object ModelData extends LazyLogging {
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
       additionalConfigsFromProvider = Map.empty,
       shouldIncludeConfigCreator = _ => true,
-      shouldIncludeComponentProvider = _ => true
+      shouldIncludeComponentProvider = _ => true,
+      componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition
     )
   }
 
@@ -96,7 +100,8 @@ final case class ModelDependencies(
     additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
     workingDirectoryOpt: Option[Path],
-    shouldIncludeComponentProvider: ComponentProvider => Boolean
+    shouldIncludeComponentProvider: ComponentProvider => Boolean,
+    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
 )
 
 case class ClassLoaderModelData private (
@@ -111,6 +116,7 @@ case class ClassLoaderModelData private (
     // add liteKafkaComponents (which are in test scope), see comment next to designer module
     shouldIncludeConfigCreator: ProcessConfigCreator => Boolean,
     shouldIncludeComponentProvider: ComponentProvider => Boolean,
+    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
 ) extends ModelData
     with LazyLogging {
 
@@ -145,7 +151,12 @@ case class ClassLoaderModelData private (
   override val namingStrategy: NamingStrategy = NamingStrategy.fromConfig(modelConfig)
 
   override val extractModelDefinitionFun: ExtractDefinitionFun =
-    new ExtractDefinitionFunImpl(configCreator, category, shouldIncludeComponentProvider)
+    new ExtractDefinitionFunImpl(
+      configCreator,
+      category,
+      shouldIncludeComponentProvider,
+      componentDefinitionExtractionMode
+    )
 
 }
 
@@ -154,7 +165,8 @@ object ClassLoaderModelData {
   class ExtractDefinitionFunImpl(
       configCreator: ProcessConfigCreator,
       category: Option[String],
-      shouldIncludeComponentProvider: ComponentProvider => Boolean
+      shouldIncludeComponentProvider: ComponentProvider => Boolean,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) extends ExtractDefinitionFun
       with Serializable {
 
@@ -171,7 +183,8 @@ object ClassLoaderModelData {
         category,
         determineDesignerWideId,
         additionalConfigsFromProvider,
-        shouldIncludeComponentProvider
+        shouldIncludeComponentProvider,
+        componentDefinitionExtractionMode
       )
     }
 

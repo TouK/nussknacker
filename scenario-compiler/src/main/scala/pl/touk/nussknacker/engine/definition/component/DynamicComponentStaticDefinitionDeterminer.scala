@@ -34,12 +34,9 @@ class DynamicComponentStaticDefinitionDeterminer(
       dynamic: DynamicComponentDefinitionWithImplementation
   ): ComponentStaticDefinition = {
     val parameters = determineInitialParameters(dynamic.component, dynamic.parametersConfig)
-    val parametersWithoutEnrichments =
-      determineInitialParameters(dynamic.component, dynamic.parametersWithoutEnrichmentsConfig)
     ComponentStaticDefinition(
       parameters = parameters,
       returnType = staticReturnType(dynamic.component),
-      parametersWithoutEnrichments = parametersWithoutEnrichments
     )
   }
 
@@ -90,7 +87,8 @@ object DynamicComponentStaticDefinitionDeterminer {
 
   def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
-      createMetaData: ProcessName => MetaData
+      createMetaData: ProcessName => MetaData,
+      extractComponentsDefinitions: Components => List[ComponentDefinitionWithImplementation]
   ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
@@ -98,7 +96,7 @@ object DynamicComponentStaticDefinitionDeterminer {
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
-      modelDataForType.modelDefinition.components.collect {
+      extractComponentsDefinitions(modelDataForType.modelDefinition.components).collect {
         case dynamic: DynamicComponentDefinitionWithImplementation =>
           dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
       }.toMap

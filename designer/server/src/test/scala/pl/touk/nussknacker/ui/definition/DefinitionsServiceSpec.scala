@@ -25,6 +25,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.DefinitionsService.{ComponentUiConfigMode, createUIScenarioPropertyConfig}
+import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 import pl.touk.nussknacker.ui.security.api.AdminUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -300,7 +301,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
 
     new DefinitionsService(
       modelData = model,
-      staticDefinitionForDynamicComponents = Map.empty,
+      staticDefinitionForDynamicComponents = DynamicComponentsStaticDefinitions(Map.empty, Map.empty),
       fragmentPropertiesConfig = Map.empty,
       scenarioPropertiesConfig = Map.empty,
       deploymentManager = new MockDeploymentManager,

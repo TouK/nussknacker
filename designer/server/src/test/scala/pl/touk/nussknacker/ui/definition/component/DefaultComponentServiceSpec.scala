@@ -12,6 +12,8 @@ import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon._
@@ -843,7 +845,8 @@ class DefaultComponentServiceSpec
           TestFactory.deploymentManagerDependencies,
           EngineSetupName("Mock"),
           deploymentConfig = ConfigFactory.empty(),
-          category = category
+          category = category,
+          ComponentDefinitionExtractionMode.FinalDefinition
         )
     }
 

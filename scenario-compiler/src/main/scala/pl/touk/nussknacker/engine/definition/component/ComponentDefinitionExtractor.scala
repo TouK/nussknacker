@@ -80,27 +80,24 @@ object ComponentDefinitionExtractor {
         .getOrElse(ComponentConfig.zero)
     }
 
-    def configFor(defaultConfig: ComponentConfig, withConfigFromProvider: Boolean) = {
+    def configFor(defaultConfig: ComponentConfig) = {
       val componentId                             = ComponentId(componentType, componentName)
       val configFromAdditional                    = additionalConfigs.getConfig(componentId)
       val combinedConfigWithoutConfigFromProvider = configFromAdditional |+| configFromDefinition |+| defaultConfig
       val designerWideId =
         combinedConfigWithoutConfigFromProvider.componentId.getOrElse(determineDesignerWideId(componentId))
 
-      val finalConfig = if (withConfigFromProvider) {
+      val configWithConfigFromProvider =
         additionalConfigFromProvider(designerWideId) |+| combinedConfigWithoutConfigFromProvider
-      } else {
-        combinedConfigWithoutConfigFromProvider
-      }
 
-      finalConfig.copy(
+      configWithConfigFromProvider.copy(
         componentId = Some(designerWideId)
       )
     }
 
     def withUiDefinitionForNotDisabledComponent[T <: ComponentDefinitionWithImplementation](
         returnType: Option[TypingResult]
-    )(toComponentDefinition: ResolvedComponentUiDefinitions => T): Option[T] = {
+    )(toComponentDefinition: FinalComponentUiDefinition => T): Option[T] = {
       val defaultConfig =
         DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
           componentType,
@@ -108,28 +105,11 @@ object ComponentDefinitionExtractor {
           customCanBeEnding
         )
 
-      val enrichedComponentUiDefinition = filterOutDisabledAndComputeFinalUiDefinition(
-        finalCombinedConfig = configFor(defaultConfig, withConfigFromProvider = true),
+      val uiDefinition = filterOutDisabledAndComputeFinalUiDefinition(
+        finalCombinedConfig = configFor(defaultConfig),
         translateGroupName = additionalConfigs.groupName
       )
-
-      val basicComponentUiDefinition = filterOutDisabledAndComputeFinalUiDefinition(
-        finalCombinedConfig = configFor(defaultConfig, withConfigFromProvider = false),
-        translateGroupName = additionalConfigs.groupName
-      )
-
-      val resolvedDefinition = (enrichedComponentUiDefinition, basicComponentUiDefinition) match {
-        case (Some(finalConfig), Some(basicConfig)) =>
-          Some(ResolvedComponentUiDefinitions(finalDefinition = finalConfig, basicDefinition = basicConfig))
-        case (Some(finalConfig), None) =>
-          Some(ResolvedComponentUiDefinitions(finalDefinition = finalConfig, basicDefinition = finalConfig))
-        case (None, Some(basicConfig)) =>
-          None
-        case (None, None) =>
-          None
-      }
-
-      resolvedDefinition.map(toComponentDefinition)
+      uiDefinition.map(toComponentDefinition)
     }
 
     (component match {
@@ -138,7 +118,7 @@ object ComponentDefinitionExtractor {
         Right(
           withUiDefinitionForNotDisabledComponent(
             DynamicComponentStaticDefinitionDeterminer.staticReturnType(dynamicComponent)
-          ) { componentConfigs =>
+          ) { componentUiDefinition =>
             val componentSpecificData = extractComponentSpecificData(component) {
               dynamicComponent match {
                 case _: JoinDynamicComponent[_]        => true
@@ -150,9 +130,8 @@ object ComponentDefinitionExtractor {
               implementationInvoker = invoker,
               component = dynamicComponent,
               componentTypeSpecificData = componentSpecificData,
-              uiDefinitions = componentConfigs.componentUiDefinitions,
-              parametersConfig = componentConfigs.finalDefinition.parameters,
-              parametersWithoutEnrichmentsConfig = componentConfigs.basicDefinition.parameters,
+              uiDefinition = componentUiDefinition.uiDefinition,
+              parametersConfig = componentUiDefinition.parameters,
             )
           }
         )
@@ -160,39 +139,24 @@ object ComponentDefinitionExtractor {
         // We skip defaultConfig here, it is not needed for parameters, and it would generate a cycle of dependency:
         // method definition need parameters config, which need default config which need return type (for group determining)
         // which need method definition
-        val enrichedComponentConfigForParametersExtraction = configFor(
-          defaultConfig = ComponentConfig.zero,
-          withConfigFromProvider = true
-        )
-
-        val basicComponentConfigForParameterExtraction = configFor(
-          defaultConfig = ComponentConfig.zero,
-          withConfigFromProvider = false
-        )
+        val componentConfigForParametersExtraction = configFor(defaultConfig = ComponentConfig.zero)
 
         for {
           finalMethodDef <- methodDefinitionExtractor
             .extractMethodDefinition(
               component,
               findMainComponentMethod(component),
-              enrichedComponentConfigForParametersExtraction.params.getOrElse(Map.empty)
-            )
-          basicMethodDefinition <- methodDefinitionExtractor
-            .extractMethodDefinition(
-              component,
-              findMainComponentMethod(component),
-              basicComponentConfigForParameterExtraction.params.getOrElse(Map.empty)
+              componentConfigForParametersExtraction.params.getOrElse(Map.empty)
             )
         } yield {
           def notReturnAnything(typ: TypingResult) =
             Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
           val returnType = Option(finalMethodDef.returnType).filterNot(notReturnAnything)
-          withUiDefinitionForNotDisabledComponent(returnType) { componentConfigs =>
+          withUiDefinitionForNotDisabledComponent(returnType) { componentUiDefinition =>
             val staticDefinition =
               ComponentStaticDefinition(
                 parameters = finalMethodDef.definedParameters,
                 returnType = returnType,
-                parametersWithoutEnrichments = basicMethodDefinition.definedParameters
               )
             val invoker = extractComponentImplementationInvoker(component, finalMethodDef)
             val componentSpecificData = extractComponentSpecificData(component) {
@@ -204,7 +168,7 @@ object ComponentDefinitionExtractor {
               component = component,
               componentTypeSpecificData = componentSpecificData,
               staticDefinition = staticDefinition,
-              uiDefinitions = componentConfigs.componentUiDefinitions
+              uiDefinition = componentUiDefinition.uiDefinition
             )
           }
         }
@@ -273,19 +237,6 @@ object ComponentDefinitionExtractor {
       )
       FinalComponentUiDefinition(uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
     }
-  }
-
-  private final case class ResolvedComponentUiDefinitions(
-      finalDefinition: FinalComponentUiDefinition,
-      basicDefinition: FinalComponentUiDefinition
-  ) {
-
-    def componentUiDefinitions: ComponentUiDefinitions =
-      ComponentUiDefinitions(
-        finalDefinition = finalDefinition.uiDefinition,
-        basicDefinition = basicDefinition.uiDefinition
-      )
-
   }
 
   final case class FinalComponentUiDefinition(

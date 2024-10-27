@@ -28,7 +28,7 @@ object FragmentComponentDefinition {
       designerWideId: DesignerWideComponentId,
       allowedProcessingModes: AllowedProcessingModes,
   ): ComponentDefinitionWithImplementation = {
-    val uiDefinitions =
+    val uiDefinition =
       DefaultComponentConfigDeterminer.forFragment(
         docsUrl,
         componentGroupName,
@@ -46,7 +46,7 @@ object FragmentComponentDefinition {
         parameters,
         Some(Typed.genericTypeClass[Map[_, _]](List(Typed[String], Unknown)))
       ),
-      uiDefinitions = uiDefinitions
+      uiDefinition = uiDefinition
     )
   }
 

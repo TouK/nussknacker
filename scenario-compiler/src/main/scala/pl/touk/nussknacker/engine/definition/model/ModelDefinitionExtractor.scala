@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId
 }
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 
@@ -20,7 +21,8 @@ object ModelDefinitionExtractor {
       category: Option[String],
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      shouldIncludeComponentProvider: ComponentProvider => Boolean
+      shouldIncludeComponentProvider: ComponentProvider => Boolean,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): ModelDefinition = {
     val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
     val modelDefinitionBasedOnConfigCreator =
@@ -37,7 +39,8 @@ object ModelDefinitionExtractor {
         modelDependencies,
         componentsUiConfig,
         determineDesignerWideId,
-        additionalConfigsFromProvider
+        additionalConfigsFromProvider,
+        componentDefinitionExtractionMode
       )
     modelDefinitionBasedOnConfigCreator.withComponents(componentsFromProviders)
   }

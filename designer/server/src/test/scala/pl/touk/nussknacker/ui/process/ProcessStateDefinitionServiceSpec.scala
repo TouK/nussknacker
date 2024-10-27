@@ -9,11 +9,13 @@ import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownI
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFactory}
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.test.utils.domain.TestFactory.modelDependencies
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ValueWithRestriction}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
@@ -197,7 +199,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       TestFactory.deploymentManagerDependencies,
       deploymentConfig = ConfigFactory.empty(),
       engineSetupName = EngineSetupName("mock"),
-      category = category
+      category = category,
+      componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
     )
   }
 

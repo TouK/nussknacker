@@ -15,7 +15,9 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessConfigCreator,
   ProcessObjectDependencies
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{
@@ -41,7 +43,9 @@ object LocalModelData {
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
       determineDesignerWideId: ComponentId => DesignerWideComponentId = DesignerWideComponentId.default("streaming", _),
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty,
-      namingStrategy: Option[NamingStrategy] = None
+      namingStrategy: Option[NamingStrategy] = None,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode =
+        ComponentDefinitionExtractionMode.FinalDefinition,
   ): LocalModelData =
     new LocalModelData(
       InputConfigDuringExecution(inputConfig),
@@ -53,13 +57,15 @@ object LocalModelData {
       components,
       determineDesignerWideId,
       additionalConfigsFromProvider,
+      componentDefinitionExtractionMode,
       namingStrategy = namingStrategy.getOrElse(NamingStrategy.fromConfig(inputConfig))
     )
 
   class ExtractDefinitionFunImpl(
       configCreator: ProcessConfigCreator,
       category: Option[String],
-      components: List[ComponentDefinition]
+      components: List[ComponentDefinition],
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
   ) extends ExtractDefinitionFun
       with Serializable {
 
@@ -70,11 +76,12 @@ object LocalModelData {
         additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ): ModelDefinition = {
       val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
-      val componentDefs = ComponentDefinitionWithImplementation.forList(
+      val componentDefs = Components.forList(
         components,
         componentsUiConfig,
         determineDesignerWideId,
-        additionalConfigsFromProvider
+        additionalConfigsFromProvider,
+        componentDefinitionExtractionMode
       )
       // To avoid classloading magic, for local model we load components manually and skip ComponentProvider's loading
       ModelDefinitionFromConfigCreatorExtractor
@@ -103,9 +110,11 @@ case class LocalModelData(
     components: List[ComponentDefinition],
     determineDesignerWideId: ComponentId => DesignerWideComponentId,
     additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
     namingStrategy: NamingStrategy
 ) extends ModelData {
 
-  override val extractModelDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category, components)
+  override val extractModelDefinitionFun =
+    new ExtractDefinitionFunImpl(configCreator, category, components, componentDefinitionExtractionMode)
 
 }

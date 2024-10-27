@@ -5,9 +5,15 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  Components,
+  DynamicComponentStaticDefinitionDeterminer
+}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
+import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData.DynamicComponentsStaticDefinitions
 
 import scala.util.control.NonFatal
 
@@ -50,7 +56,8 @@ object ProcessingTypeData {
       deploymentManagerDependencies: DeploymentManagerDependencies,
       engineSetupName: EngineSetupName,
       deploymentConfig: Config,
-      category: String
+      category: String,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): ProcessingTypeData = {
     try {
       val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(deploymentConfig)
@@ -64,7 +71,8 @@ object ProcessingTypeData {
           metaDataInitializer
         )
 
-      val designerModelData = createDesignerModelData(modelData, metaDataInitializer, name)
+      val designerModelData =
+        createDesignerModelData(modelData, metaDataInitializer, name, componentDefinitionExtractionMode)
       ProcessingTypeData(
         name,
         designerModelData,
@@ -117,17 +125,41 @@ object ProcessingTypeData {
   private def createDesignerModelData(
       modelData: ModelData,
       metaDataInitializer: MetaDataInitializer,
-      processingType: ProcessingType
+      processingType: ProcessingType,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
+
     val staticDefinitionForDynamicComponents =
-      DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
-        modelData,
-        metaDataInitializer.create(_, Map.empty)
-      )
+      createDynamicComponentsStaticDefinitions(modelData, metaDataInitializer, componentDefinitionExtractionMode)
 
     val singleProcessingMode =
-      ScenarioParametersDeterminer.determineProcessingMode(modelData.modelDefinition.components, processingType)
+      ScenarioParametersDeterminer.determineProcessingMode(
+        modelData.modelDefinition.components.components,
+        processingType
+      )
     DesignerModelData(modelData, staticDefinitionForDynamicComponents, singleProcessingMode)
+  }
+
+  private def createDynamicComponentsStaticDefinitions(
+      modelData: ModelData,
+      metaDataInitializer: MetaDataInitializer,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+  ): DynamicComponentsStaticDefinitions = {
+    def createStaticDefinitions(extractComponents: Components => List[ComponentDefinitionWithImplementation]) = {
+      DynamicComponentStaticDefinitionDeterminer.collectStaticDefinitionsForDynamicComponents(
+        modelData,
+        metaDataInitializer.create(_, Map.empty),
+        extractComponents
+      )
+    }
+
+    DynamicComponentsStaticDefinitions(
+      finalDefinitions = createStaticDefinitions(_.components),
+      basicDefinitions = componentDefinitionExtractionMode match {
+        case ComponentDefinitionExtractionMode.FinalDefinition          => Map.empty
+        case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions => createStaticDefinitions(_.basicComponents)
+      }
+    )
   }
 
 }

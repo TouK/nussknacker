@@ -12,6 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -538,7 +539,7 @@ class AkkaHttpBasedRouteProvider(
           }
           .all
           .values
-          .flatten
+          .flatMap(_.components)
           .toList,
         designerClock,
         dbioRunner,
@@ -745,7 +746,9 @@ class AkkaHttpBasedRouteProvider(
       additionalConfigsFromProvider,
       DesignerWideComponentId.default(processingType, _),
       workingDirectoryOpt = None, // we use the default working directory
-      _ => true
+      _ => true,
+      ComponentDefinitionExtractionMode.FinalDefinition
+      // todomkp load from config
     )
   }
 
