@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.api.TapirCodecs
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
 import sttp.model.HeaderNames
-import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
+import sttp.model.StatusCode._
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
@@ -64,6 +64,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .out(statusCode(Ok))
       .errorOut(
         oneOf[ScenarioActivityError](
+          oneOfVariant(BadRequest, plainBody[InvalidComment].example(Examples.invalidCommentError)),
           oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
           oneOfVariant(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError)),
           oneOfVariant(InternalServerError, plainBody[NoActivity].example(Examples.activityNotFoundError)),
@@ -129,6 +130,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .out(statusCode(Ok))
       .errorOut(
         oneOf[ScenarioActivityError](
+          oneOfVariant(BadRequest, plainBody[InvalidComment].example(Examples.invalidCommentError)),
           oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
           oneOfVariant(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError)),
           oneOfVariant(InternalServerError, plainBody[NoActivity].example(Examples.activityNotFoundError)),
@@ -148,6 +150,7 @@ class Endpoints(auth: EndpointInput[AuthCredentials], streamProvider: TapirStrea
       .out(statusCode(Ok))
       .errorOut(
         oneOf[ScenarioActivityError](
+          oneOfVariant(BadRequest, plainBody[InvalidComment].example(Examples.invalidCommentError)),
           oneOfVariant(NotFound, plainBody[NoScenario].example(Examples.noScenarioError)),
           oneOfVariant(InternalServerError, plainBody[NoComment].example(Examples.commentNotFoundError)),
           oneOfVariant(InternalServerError, plainBody[NoActivity].example(Examples.activityNotFoundError)),

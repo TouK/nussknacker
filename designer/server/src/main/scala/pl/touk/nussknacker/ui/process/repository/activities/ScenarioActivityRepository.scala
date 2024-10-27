@@ -7,6 +7,7 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  CommentModificationMetadata,
   DeleteAttachmentError,
   ModifyCommentError
 }
@@ -52,23 +53,20 @@ trait ScenarioActivityRepository {
   def editComment(
       scenarioId: ProcessId,
       scenarioActivityId: ScenarioActivityId,
-      comment: String,
-  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
-
-  def editComment(
-      scenarioId: ProcessId,
-      commentId: Long,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
       comment: String,
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def deleteComment(
       scenarioId: ProcessId,
       commentId: Long,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def deleteComment(
       scenarioId: ProcessId,
-      scenarioActivityId: ScenarioActivityId
+      scenarioActivityId: ScenarioActivityId,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
   )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]]
 
   def addAttachment(
@@ -102,9 +100,10 @@ object ScenarioActivityRepository {
   sealed trait ModifyCommentError
 
   object ModifyCommentError {
-    case object ActivityDoesNotExist  extends ModifyCommentError
-    case object CommentDoesNotExist   extends ModifyCommentError
-    case object CouldNotModifyComment extends ModifyCommentError
+    final case class InvalidContent(error: String) extends ModifyCommentError
+    case object ActivityDoesNotExist               extends ModifyCommentError
+    case object CommentDoesNotExist                extends ModifyCommentError
+    case object CouldNotModifyComment              extends ModifyCommentError
   }
 
   sealed trait DeleteAttachmentError
@@ -119,5 +118,7 @@ object ScenarioActivityRepository {
     case object ActivityDoesNotExist   extends ModifyActivityError
     case object CouldNotModifyActivity extends ModifyActivityError
   }
+
+  final case class CommentModificationMetadata(commentForScenarioDeployed: Boolean)
 
 }

@@ -12,7 +12,7 @@ class FeatureTogglesConfigTest extends AnyFunSuite with Matchers {
 
   test("should be ok with no deploymentCommentSettings") {
     val config = ConfigFactory
-      .parseResources("config/business-cases/simple-streaming-use-case-designer.conf")
+      .parseResources("config/business-cases/category-used-more-than-once-designer.conf")
     val parsedFeatures = FeatureTogglesConfig.create(config)
     parsedFeatures.deploymentCommentSettings shouldBe None
   }

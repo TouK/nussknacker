@@ -201,7 +201,7 @@ object DeploymentApiEndpoints {
     final case class RunDeploymentRequest(
         scenarioName: ProcessName,
         nodesDeploymentData: NodesDeploymentData,
-        comment: Option[Comment]
+        comment: Option[String]
     )
 
     implicit val deploymentStatusNameCodec: Schema[DeploymentStatusName] = Schema.string[DeploymentStatusName]

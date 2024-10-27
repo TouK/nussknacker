@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment.ProblemDeploymentStatus
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
@@ -32,7 +33,7 @@ class DeploymentApiHttpService(
                 nodesDeploymentData = request.nodesDeploymentData,
                 user = loggedUser
               ),
-              request.comment
+              request.comment.flatMap(Comment.from)
             )
             .map(_.left.map {
               case UnderlyingServiceError(err) =>

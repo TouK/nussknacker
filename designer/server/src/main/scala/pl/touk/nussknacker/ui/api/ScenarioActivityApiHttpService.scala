@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.{
   AllScenarioActivitiesStoredByNussknacker,
   ManagerSpecificScenarioActivitiesStoredByManager
@@ -11,19 +12,24 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityError.{
+  InvalidComment,
   NoActivity,
   NoAttachment,
   NoComment,
   NoPermission,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos._
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{Comment => _, _}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
-import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.DeleteAttachmentError
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  CommentModificationMetadata,
+  DeleteAttachmentError,
+  ModifyCommentError
+}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
@@ -42,6 +48,7 @@ class ScenarioActivityApiHttpService(
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
     attachmentService: ScenarioAttachmentService,
+    deploymentCommentSettings: Option[DeploymentCommentSettings],
     streamEndpointProvider: TapirStreamEndpointProvider,
     dbioActionRunner: DBIOActionRunner,
 )(implicit executionContext: ExecutionContext)
@@ -535,26 +542,84 @@ class ScenarioActivityApiHttpService(
         scenarioActivityRepository.editComment(
           scenarioId,
           ScenarioActivityId(request.scenarioActivityId),
-          request.commentContent
+          validateComment(_, request.commentContent),
+          request.commentContent,
         )
       )
-    ).leftMap(_ => NoActivity(request.scenarioActivityId))
+    ).leftMap {
+      case ModifyCommentError.InvalidContent(error) =>
+        InvalidComment(error)
+      case ModifyCommentError.ActivityDoesNotExist | ModifyCommentError.CommentDoesNotExist |
+          ModifyCommentError.CouldNotModifyComment =>
+        NoActivity(request.scenarioActivityId)
+    }
+
+  private def validateComment(commentModificationMetadata: CommentModificationMetadata, content: String) = {
+    val commentOpt = Comment.from(content)
+    val result = if (commentModificationMetadata.commentForScenarioDeployed) {
+      DeploymentComment.createDeploymentComment(commentOpt, deploymentCommentSettings).toEither match {
+        case Right(commentOpt) => Right(commentOpt)
+        case Left(error)       => Left(ModifyCommentError.InvalidContent(error.message))
+      }
+    } else {
+      Right(commentOpt)
+    }
+    result.flatMap {
+      case Some(_) => Right(())
+      case None    => Left(ModifyCommentError.InvalidContent("Empty comment"))
+    }
+  }
 
   private def deleteComment(request: DeprecatedDeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
+  ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] = {
+    DeploymentComment.createDeploymentComment(None, deploymentCommentSettings).toEither
     EitherT(
-      dbioActionRunner.run(scenarioActivityRepository.deleteComment(scenarioId, request.commentId))
-    ).leftMap(_ => NoComment(request.commentId))
+      dbioActionRunner.run(
+        scenarioActivityRepository.deleteComment(
+          scenarioId,
+          request.commentId,
+          validateCommentCanBeRemoved(_),
+        )
+      )
+    ).leftMap {
+      case ModifyCommentError.InvalidContent(error) =>
+        InvalidComment(error)
+      case ModifyCommentError.ActivityDoesNotExist | ModifyCommentError.CommentDoesNotExist |
+          ModifyCommentError.CouldNotModifyComment =>
+        NoComment(request.commentId)
+    }
+  }
 
   private def deleteComment(request: DeleteCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, ScenarioActivityError, ScenarioActivityId] =
     EitherT(
       dbioActionRunner.run(
-        scenarioActivityRepository.deleteComment(scenarioId, ScenarioActivityId(request.scenarioActivityId))
+        scenarioActivityRepository.deleteComment(
+          scenarioId,
+          ScenarioActivityId(request.scenarioActivityId),
+          validateCommentCanBeRemoved(_),
+        )
       )
-    ).leftMap(_ => NoActivity(request.scenarioActivityId))
+    ).leftMap {
+      case ModifyCommentError.InvalidContent(error) =>
+        InvalidComment(error)
+      case ModifyCommentError.ActivityDoesNotExist | ModifyCommentError.CommentDoesNotExist |
+          ModifyCommentError.CouldNotModifyComment =>
+        NoActivity(request.scenarioActivityId)
+    }
+
+  private def validateCommentCanBeRemoved(commentModificationMetadata: CommentModificationMetadata) = {
+    if (commentModificationMetadata.commentForScenarioDeployed) {
+      DeploymentComment.createDeploymentComment(None, deploymentCommentSettings).toEither match {
+        case Right(_)    => Right(())
+        case Left(error) => Left(ModifyCommentError.InvalidContent(error.message))
+      }
+    } else {
+      Right(())
+    }
+  }
 
   private def fetchAttachments(scenarioId: ProcessId): EitherT[Future, ScenarioActivityError, ScenarioAttachments] = {
     EitherT
