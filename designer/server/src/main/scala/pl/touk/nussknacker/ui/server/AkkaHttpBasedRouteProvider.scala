@@ -134,6 +134,7 @@ class AkkaHttpBasedRouteProvider(
         scenarioActivityRepository,
         dbioRunner,
         sttpBackend,
+        featureTogglesConfig,
       )
 
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -693,13 +694,18 @@ class AkkaHttpBasedRouteProvider(
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
+      featureTogglesConfig: FeatureTogglesConfig
   )(implicit executionContext: ExecutionContext): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
         acquire = IO(
           new ReloadableProcessingTypeDataProvider(
             processingTypeDataLoader.loadProcessingTypeData(
-              getModelDependencies(additionalUIConfigProvider, _),
+              getModelDependencies(
+                additionalUIConfigProvider,
+                _,
+                featureTogglesConfig.componentDefinitionExtractionMode
+              ),
               getDeploymentManagerDependencies(
                 actionServiceProvider,
                 scenarioActivityRepository,
@@ -740,7 +746,8 @@ class AkkaHttpBasedRouteProvider(
 
   private def getModelDependencies(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      processingType: ProcessingType
+      processingType: ProcessingType,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     ModelDependencies(
@@ -748,8 +755,7 @@ class AkkaHttpBasedRouteProvider(
       DesignerWideComponentId.default(processingType, _),
       workingDirectoryOpt = None, // we use the default working directory
       _ => true,
-      ComponentDefinitionExtractionMode.FinalDefinition
-      // todomkp load from config
+      componentDefinitionExtractionMode,
     )
   }
 

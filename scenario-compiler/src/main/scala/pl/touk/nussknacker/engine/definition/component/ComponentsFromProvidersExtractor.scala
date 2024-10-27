@@ -31,7 +31,16 @@ final case class Components(
     components: List[ComponentDefinitionWithImplementation],
     // components without enrichments from an additional provider
     basicComponents: List[ComponentDefinitionWithImplementation]
-)
+) {
+
+  def filter(predicate: ComponentDefinitionWithImplementation => Boolean): Components = {
+    copy(
+      components = components.filter(predicate),
+      basicComponents = components.filter(predicate),
+    )
+  }
+
+}
 
 object Components {
   val empty: Components = Components(List.empty, List.empty)

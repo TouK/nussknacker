@@ -95,8 +95,8 @@ object FeatureTogglesConfig extends LazyLogging {
   }
 
   private def parseComponentDefinitionExtractionMode(config: Config): ComponentDefinitionExtractionMode = {
-    val rootPath = "computeBasicDefinitionsForComponents"
-    if (config.hasPath(rootPath) && config.getBoolean(rootPath)) {
+    val configPath = "enableBasicDefinitionsForComponents"
+    if (config.hasPath(configPath) && config.getBoolean(configPath)) {
       ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
     } else {
       ComponentDefinitionExtractionMode.FinalDefinition

@@ -29,7 +29,8 @@ case class ModelDefinition private (
 
   def withComponents(componentsToAdd: List[ComponentDefinitionWithImplementation]): ModelDefinition = {
     val newComponents = components.copy(
-      components = components.components ++ componentsToAdd
+      components = components.components ++ componentsToAdd,
+      basicComponents = components.basicComponents ++ componentsToAdd
     )
     checkDuplicates(newComponents)
     copy(components = newComponents)
@@ -43,23 +44,27 @@ case class ModelDefinition private (
   }
 
   def filterComponents(predicate: ComponentDefinitionWithImplementation => Boolean): ModelDefinition =
-    copy(components = components.copy(components.components.filter(predicate)))
-
-  // todo remove
-  def mapComponents(
-      f: ComponentDefinitionWithImplementation => ComponentDefinitionWithImplementation
-  ): ModelDefinition = ???
+    copy(components = components.filter(predicate))
 
   private def checkDuplicates(components: Components): Unit = {
-    val duplicates = components.components
-      .map(component => component.id -> component)
-      .toGroupedMap
-      .filter(_._2.size > 1)
-      .keys
-      .toList
-      .sorted
-    if (duplicates.nonEmpty) {
-      throw new DuplicatedComponentsException(duplicates)
+
+    def findDuplicates(values: List[ComponentDefinitionWithImplementation]) = {
+      values
+        .map(component => component.id -> component)
+        .toGroupedMap
+        .filter(_._2.size > 1)
+        .keys
+        .toList
+        .sorted
+    }
+
+    val componentsDuplicates      = findDuplicates(components.components)
+    val basicComponentsDuplicates = findDuplicates(components.basicComponents)
+
+    if (componentsDuplicates.nonEmpty) {
+      throw new DuplicatedComponentsException(componentsDuplicates)
+    } else if (basicComponentsDuplicates.nonEmpty) {
+      throw new DuplicatedComponentsException(basicComponentsDuplicates)
     }
   }
 
