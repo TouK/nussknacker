@@ -30,18 +30,12 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
 
   private def hasDirectlyDefinedParameterlessMethod(targetClass: Class[_], methodName: String): Boolean = {
     get(targetClass)
-      .flatMap(definition =>
-        definition.methods.get(methodName)
-      ) // todo: in StaticPropertyAccessor we should check against staticMethods map
+      .map(definition =>
+        definition.methods.getOrElse(methodName, List.empty) ++ definition.staticMethods
+          .getOrElse(methodName, List.empty)
+      ) // todo: in some contexts should we force static only methods (in case of dealing with class type in variable)???
       .getOrElse(List.empty)
-      .exists { methodDefinition =>
-        methodDefinition match {
-          case StaticMethodDefinition(signature, _, _) =>
-            signature.parametersToList.isEmpty
-          case FunctionalMethodDefinition(_, signatures, _, _) =>
-            signatures.find(methodInfo => methodInfo.parametersToList.isEmpty).isDefined
-        }
-      }
+      .exists(_.signatures.find(_.parametersToList.isEmpty).isDefined)
   }
 
 }

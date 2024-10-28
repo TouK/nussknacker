@@ -26,7 +26,12 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
+import pl.touk.nussknacker.engine.definition.clazz.{
+  ClassDefinitionSet,
+  ClassDefinitionTestUtils,
+  JavaClassWithStaticMethod,
+  JavaClassWithVarargs
+}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
@@ -95,15 +100,16 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val ctx = Context("abc").withVariables(
     Map(
-      "obj"                        -> testValue,
-      "strVal"                     -> "",
-      "mapValue"                   -> Map("foo" -> "bar").asJava,
-      "array"                      -> Array("a", "b"),
-      "intArray"                   -> Array(1, 2, 3),
-      "nestedArray"                -> Array(Array(1, 2), Array(3, 4)),
-      "arrayOfUnknown"             -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"              -> ContainerOfUnknown("unknown"),
-      "containerWithUnknownObject" -> ContainerOfUnknown(SampleValue(1))
+      "obj"                                         -> testValue,
+      "strVal"                                      -> "",
+      "mapValue"                                    -> Map("foo" -> "bar").asJava,
+      "array"                                       -> Array("a", "b"),
+      "intArray"                                    -> Array(1, 2, 3),
+      "nestedArray"                                 -> Array(Array(1, 2), Array(3, 4)),
+      "arrayOfUnknown"                              -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"                               -> ContainerOfUnknown("unknown"),
+      "containerWithUnknownObject"                  -> ContainerOfUnknown(SampleValue(1)),
+      "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticMethod()),
     )
   )
 
@@ -237,6 +243,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[LocalDate],
       classOf[ChronoLocalDate],
       classOf[SampleValue],
+      classOf[JavaClassWithStaticMethod],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     )
     ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
@@ -300,6 +307,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   ) {
     a[SpelExpressionEvaluationException] should be thrownBy {
       parse[Any]("#containerWithUnknownObject.value['getSomeHiddenGetter']").validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test(
+    "indexer access on unknown - static methods on objects case"
+  ) {
+    parse[Any](
+      "#containerWithUnknownObjectWithStaticMethods.value['someAllowedParameterlessStaticMethod']"
+    ).validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "allowed"
+
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownObjectWithStaticMethods.value['someHiddenParameterlessStaticMethod']"
+      ).validExpression
         .evaluateSync[AnyRef](ctx)
     }
   }
