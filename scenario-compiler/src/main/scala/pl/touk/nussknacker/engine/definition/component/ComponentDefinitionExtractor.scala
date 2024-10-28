@@ -87,17 +87,17 @@ object ComponentDefinitionExtractor {
       val designerWideId =
         combinedConfigWithoutConfigFromProvider.componentId.getOrElse(determineDesignerWideId(componentId))
 
-      val configWithConfigFromProvider =
+      val finalCombinedConfig =
         additionalConfigFromProvider(designerWideId) |+| combinedConfigWithoutConfigFromProvider
 
-      configWithConfigFromProvider.copy(
+      finalCombinedConfig.copy(
         componentId = Some(designerWideId)
       )
     }
 
     def withUiDefinitionForNotDisabledComponent[T <: ComponentDefinitionWithImplementation](
         returnType: Option[TypingResult]
-    )(toComponentDefinition: FinalComponentUiDefinition => T): Option[T] = {
+    )(f: (ComponentUiDefinition, Map[ParameterName, ParameterConfig]) => T): Option[T] = {
       val defaultConfig =
         DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
           componentType,
@@ -105,11 +105,7 @@ object ComponentDefinitionExtractor {
           customCanBeEnding
         )
 
-      val uiDefinition = filterOutDisabledAndComputeFinalUiDefinition(
-        finalCombinedConfig = configFor(defaultConfig),
-        translateGroupName = additionalConfigs.groupName
-      )
-      uiDefinition.map(toComponentDefinition)
+      filterOutDisabledAndComputeFinalUiDefinition(configFor(defaultConfig), additionalConfigs.groupName).map(f.tupled)
     }
 
     (component match {
@@ -118,7 +114,7 @@ object ComponentDefinitionExtractor {
         Right(
           withUiDefinitionForNotDisabledComponent(
             DynamicComponentStaticDefinitionDeterminer.staticReturnType(dynamicComponent)
-          ) { componentUiDefinition =>
+          ) { (uiDefinition, parametersConfig) =>
             val componentSpecificData = extractComponentSpecificData(component) {
               dynamicComponent match {
                 case _: JoinDynamicComponent[_]        => true
@@ -130,8 +126,8 @@ object ComponentDefinitionExtractor {
               implementationInvoker = invoker,
               component = dynamicComponent,
               componentTypeSpecificData = componentSpecificData,
-              uiDefinition = componentUiDefinition.uiDefinition,
-              parametersConfig = componentUiDefinition.parameters,
+              uiDefinition = uiDefinition,
+              parametersConfig = parametersConfig
             )
           }
         )
@@ -151,13 +147,9 @@ object ComponentDefinitionExtractor {
             def notReturnAnything(typ: TypingResult) =
               Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
             val returnType = Option(methodDef.returnType).filterNot(notReturnAnything)
-            withUiDefinitionForNotDisabledComponent(returnType) { componentUiDefinition =>
-              val staticDefinition =
-                ComponentStaticDefinition(
-                  parameters = methodDef.definedParameters,
-                  returnType = returnType,
-                )
-              val invoker = extractComponentImplementationInvoker(component, methodDef)
+            withUiDefinitionForNotDisabledComponent(returnType) { (uiDefinition, _) =>
+              val staticDefinition = ComponentStaticDefinition(methodDef.definedParameters, returnType)
+              val invoker          = extractComponentImplementationInvoker(component, methodDef)
               val componentSpecificData = extractComponentSpecificData(component) {
                 methodDef.runtimeClass == classOf[JoinContextTransformation]
               }
@@ -167,7 +159,7 @@ object ComponentDefinitionExtractor {
                 component = component,
                 componentTypeSpecificData = componentSpecificData,
                 staticDefinition = staticDefinition,
-                uiDefinition = componentUiDefinition.uiDefinition
+                uiDefinition = uiDefinition
               )
             }
           }
@@ -216,7 +208,7 @@ object ComponentDefinitionExtractor {
   def filterOutDisabledAndComputeFinalUiDefinition(
       finalCombinedConfig: ComponentConfig,
       translateGroupName: ComponentGroupName => Option[ComponentGroupName]
-  ): Option[FinalComponentUiDefinition] = {
+  ): Option[(ComponentUiDefinition, Map[ParameterName, ParameterConfig])] = {
     // At this stage, after combining all properties with default config, we are sure that some properties are defined
     def getDefinedProperty[T](propertyName: String, getProperty: ComponentConfig => Option[T]) =
       getProperty(finalCombinedConfig).getOrElse(
@@ -234,13 +226,8 @@ object ComponentDefinitionExtractor {
         finalCombinedConfig.docsUrl,
         getDefinedProperty("componentId", _.componentId),
       )
-      FinalComponentUiDefinition(uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
+      (uiDefinition, finalCombinedConfig.params.getOrElse(Map.empty))
     }
   }
-
-  final case class FinalComponentUiDefinition(
-      uiDefinition: ComponentUiDefinition,
-      parameters: Map[ParameterName, ParameterConfig]
-  )
 
 }
