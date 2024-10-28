@@ -22,21 +22,15 @@ import {
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
+import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
-import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
+import { BackendNotification } from "../containers/Notifications";
+import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
 import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
-import { BackendNotification } from "../containers/Notifications";
-import { ProcessCounts } from "../reducers/graph";
-import { TestResults } from "../common/TestResultUtils";
-import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
-import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
-import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
-import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
