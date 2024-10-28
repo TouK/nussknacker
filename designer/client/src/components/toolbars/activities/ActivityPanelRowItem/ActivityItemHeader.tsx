@@ -17,6 +17,7 @@ import * as DialogMessages from "../../../../common/DialogMessages";
 import { StyledActionIcon } from "./StyledActionIcon";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import { getLoggedUser } from "../../../../reducers/selectors/settings";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -60,6 +61,7 @@ const HeaderActivity = ({
     const currentScenarioVersionId = useSelector(getProcessVersionId);
     const { t } = useTranslation();
     const dispatch = useDispatch();
+    const loggedUser = useSelector(getLoggedUser);
 
     switch (activityAction.id) {
         case "compare": {
@@ -101,7 +103,7 @@ const HeaderActivity = ({
         case "delete_attachment": {
             const attachmentStatus = activityAttachment.file.status;
 
-            if (attachmentStatus === "DELETED") {
+            if (attachmentStatus === "DELETED" || activityAttachment.lastModifiedBy !== loggedUser.id) {
                 return null;
             }
 
@@ -131,7 +133,7 @@ const HeaderActivity = ({
         }
 
         case "add_comment": {
-            if (activityComment.content.status === "AVAILABLE") {
+            if (activityComment.content.status === "AVAILABLE" || activityComment.lastModifiedBy !== loggedUser.id) {
                 return null;
             }
 

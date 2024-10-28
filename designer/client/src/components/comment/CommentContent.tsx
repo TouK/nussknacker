@@ -18,14 +18,14 @@ interface Props {
 }
 
 const withHighlightText = (text: string, searchWords: string[], theme: Theme) => {
-    const handleReplaceText = (textToReplace: string, valueToReplace: string) => {
+    const handleReplaceText = (textToReplace: string) => {
         return textToReplace.replace(
-            valueToReplace,
+            textToReplace,
             renderToString(
                 <Highlighter
                     searchWords={searchWords}
                     autoEscape={true}
-                    textToHighlight={valueToReplace}
+                    textToHighlight={textToReplace}
                     highlightTag={`span`}
                     highlightStyle={{
                         color: theme.palette.warning.main,
@@ -37,33 +37,10 @@ const withHighlightText = (text: string, searchWords: string[], theme: Theme) =>
         );
     };
 
-    let replacedText = text;
-    const beforeHtmlTagTextRegexp = /^(.*?)(?=<[a-zA-Z][^\s>]*\b[^>]*>)/;
-    const beforeHtmlTagText = text.match(beforeHtmlTagTextRegexp)?.[0];
-
-    if (beforeHtmlTagText) {
-        replacedText = handleReplaceText(replacedText, beforeHtmlTagText);
-    }
-
-    const htmlTagInsideTextRegexp = /<([a-zA-Z][^\s>]*)(?:\s[^>]*)?>(.*?)<\/\1>/;
-    const htmlTagInsideText = text.match(htmlTagInsideTextRegexp)?.[2];
-
-    if (htmlTagInsideText) {
-        replacedText = handleReplaceText(replacedText, htmlTagInsideText);
-    }
-
-    const afterHtmlTagTextRegexp = /<([a-zA-Z][^\s>]*)(?:\s[^>]*)?>(.*?)<\/\1>(\s.*)?/;
-    const afterHtmlTagText = text.match(afterHtmlTagTextRegexp)?.[3];
-
-    if (afterHtmlTagText) {
-        replacedText = handleReplaceText(replacedText, afterHtmlTagText);
-    }
-
-    if (!beforeHtmlTagText && !htmlTagInsideText && !afterHtmlTagText) {
-        replacedText = handleReplaceText(replacedText, text);
-    }
-
-    return replacedText;
+    const beforeHtmlTagTextRegexp = /([^<>]+)(?=<|$)/g;
+    return text.replaceAll(beforeHtmlTagTextRegexp, (match, p1: string) => {
+        return searchWords.some((searchWord) => p1.includes(searchWord)) ? `${handleReplaceText(p1)}` : p1;
+    });
 };
 
 function CommentContent({ commentSettings, content, searchWords, variant = "caption" }: Props): JSX.Element {
@@ -99,7 +76,7 @@ function CommentContent({ commentSettings, content, searchWords, variant = "capt
     );
 
     const __html = useMemo(
-        () => (searchWords ? withHighlightText(sanitizedContent, searchWords, theme) : sanitizedContent),
+        () => (searchWords?.length > 0 ? withHighlightText(sanitizedContent, searchWords, theme) : sanitizedContent),
         [sanitizedContent, searchWords, theme],
     );
 

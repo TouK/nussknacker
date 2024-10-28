@@ -3,7 +3,7 @@ import CommentContent from "../../../comment/CommentContent";
 import { ActionMetadata, ActivityComment, ActivityType } from "../types";
 import { useDispatch, useSelector } from "react-redux";
 import { createSelector } from "reselect";
-import { getFeatureSettings } from "../../../../reducers/selectors/settings";
+import { getFeatureSettings, getLoggedUser } from "../../../../reducers/selectors/settings";
 import { Box } from "@mui/material";
 import { StyledActionIcon } from "./StyledActionIcon";
 import { useActivityItemInfo } from "./ActivityItemProvider";
@@ -20,21 +20,26 @@ const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSe
 const CommentActivity = ({
     activityAction,
     scenarioActivityId,
-    commentContent,
+    activityComment,
     activityType,
 }: {
     activityAction: ActionMetadata;
     scenarioActivityId: string;
-    commentContent: ActivityComment["content"];
+    activityComment: ActivityComment;
     activityType: ActivityType;
 }) => {
     const { t } = useTranslation();
     const { confirm } = useWindows();
     const processName = useSelector(getProcessName);
     const dispatch = useDispatch();
+    const loggedUser = useSelector(getLoggedUser);
 
     switch (activityAction.id) {
         case "delete_comment": {
+            if (activityComment.lastModifiedBy !== loggedUser.id) {
+                return null;
+            }
+
             return (
                 <StyledActionIcon
                     data-testid={`delete-comment-icon`}
@@ -56,16 +61,21 @@ const CommentActivity = ({
                     key={activityAction.id}
                     src={activityAction.icon}
                     title={activityAction.displayableName}
+                    delete-testid={`delete-comment-icon`}
                 />
             );
         }
         case "edit_comment": {
+            if (activityComment.lastModifiedBy !== loggedUser.id) {
+                return null;
+            }
+
             return (
                 <ActivityItemCommentModify
                     activityAction={activityAction}
                     activityType={activityType}
                     scenarioActivityId={scenarioActivityId}
-                    commentContent={commentContent}
+                    commentContent={activityComment.content}
                     data-testid={`edit-comment-icon`}
                     key={activityAction.id}
                 />
@@ -98,7 +108,7 @@ export const ActivityItemComment = ({ comment, searchQuery, activityActions, sce
             <CommentContent
                 content={comment.content.value}
                 commentSettings={commentSettings}
-                searchWords={[searchQuery]}
+                searchWords={searchQuery ? [searchQuery] : undefined}
                 variant={"overline"}
             />
             {isActivityHovered && (
@@ -114,7 +124,7 @@ export const ActivityItemComment = ({ comment, searchQuery, activityActions, sce
                             key={activityAction.id}
                             activityAction={activityAction}
                             scenarioActivityId={scenarioActivityId}
-                            commentContent={comment.content}
+                            activityComment={comment}
                             activityType={activityType}
                         />
                     ))}

@@ -35,7 +35,7 @@ export const ActivityItemCommentModify = ({ commentContent, scenarioActivityId, 
 
     return (
         <StyledActionIcon
-            data-testid={`delete-comment-icon`}
+            data-testid={`add-comment-icon`}
             onClick={handleOpenModifyComment}
             key={activityAction.id}
             src={activityAction.icon}
