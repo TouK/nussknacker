@@ -22,11 +22,9 @@ class DictApiHttpServiceSpec
         .basicAuthAllPermUser()
         .jsonBody("""{
                     |  "expectedType" : {
-                    |    "value" : {
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.String",
                     |      "params" : []
-                    |    }
                     |  }
                     |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
@@ -56,11 +54,9 @@ class DictApiHttpServiceSpec
         .basicAuthAllPermUser()
         .jsonBody("""{
                     |  "expectedType" : {
-                    |    "value" : {
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.Long",
                     |      "params" : []
-                    |    }
                     |  }
                     |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
@@ -95,11 +91,9 @@ class DictApiHttpServiceSpec
         .basicAuthAllPermUser()
         .jsonBody("""{
                     |  "expectedType" : {
-                    |    "value" : {
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.Long",
                     |      "params" : []
-                    |    }
                     |  }
                     |}""".stripMargin)
         .post(s"$nuDesignerHttpAddress/api/processDefinitionData/thisProcessingTypeDoesNotExist/dicts")
