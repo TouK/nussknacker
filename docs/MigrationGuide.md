@@ -75,6 +75,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
   If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
 
+* [#6805](https://github.com/TouK/nussknacker/pull/6805) Updated Flink 1.18.1 -> 1.19.1. Due to backwards incompatible
+  changes in this Flink version update, Nussknacker 1.18 will not work with Flink versions pre-1.19 right away. If you
+  want to keep using Flink pre-1.19 with current Nussknacker, please refer to compatibility providing plugins in
+  https://github.com/TouK/nussknacker-flink-compatibility.
+
 * [#7058](https://github.com/TouK/nussknacker/pull/7058) Performance optimization: Add missing Flink TypeInformation for better serialization
     * In case of using base (bounded and unbounded) Flink components state will be probably not compatible
     * `FlinkCustomNodeContext.typeInformationDetection` has been removed, please use `TypeInformationDetection.instance` instead
