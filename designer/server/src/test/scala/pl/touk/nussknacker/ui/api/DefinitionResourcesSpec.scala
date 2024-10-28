@@ -28,9 +28,6 @@ import pl.touk.nussknacker.ui.definition.{
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 class DefinitionResourcesSpec
     extends AnyFunSpec
     with ScalatestRouteTest

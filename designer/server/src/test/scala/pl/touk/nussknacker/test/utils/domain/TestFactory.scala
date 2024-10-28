@@ -126,7 +126,7 @@ object TestFactory {
       componentId => DesignerWideComponentId(componentId.toString),
       workingDirectoryOpt = None,
       _ => true,
-      ComponentDefinitionExtractionMode.FinalDefinition
+      ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
     )
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = {

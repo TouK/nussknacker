@@ -141,7 +141,7 @@ trait NuResourcesTest
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig.deploymentConfig,
         processingTypeConfig.category,
-        ComponentDefinitionExtractionMode.FinalDefinition
+        modelDependencies.componentDefinitionExtractionMode
       )
     )
 

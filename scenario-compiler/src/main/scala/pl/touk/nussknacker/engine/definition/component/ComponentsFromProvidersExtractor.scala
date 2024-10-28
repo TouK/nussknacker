@@ -68,11 +68,11 @@ object Components {
     }
   )
 
-  sealed trait ComponentDefinitionExtractionMode
+  sealed abstract class ComponentDefinitionExtractionMode(val extractBasicDefinitions: Boolean)
 
   object ComponentDefinitionExtractionMode {
-    case object FinalDefinition          extends ComponentDefinitionExtractionMode
-    case object FinalAndBasicDefinitions extends ComponentDefinitionExtractionMode
+    case object FinalDefinition          extends ComponentDefinitionExtractionMode(false)
+    case object FinalAndBasicDefinitions extends ComponentDefinitionExtractionMode(true)
   }
 
   def withComponent(
@@ -100,17 +100,14 @@ object Components {
         )
     }
 
-    val finalDefinitions = extractComponentDefinition(componentsUiConfig, additionalConfigsFromProvider)
-    componentDefinitionExtractionMode match {
-      case ComponentDefinitionExtractionMode.FinalDefinition =>
-        Components(components = finalDefinitions.toList, basicComponents = None)
-      case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
-        Components(
-          components = finalDefinitions.toList,
-          basicComponents =
-            Some(extractComponentDefinition(uiConfig = ComponentsUiConfig.Empty, configFromProvider = Map.empty).toList)
-        )
-    }
+    Components(
+      components = extractComponentDefinition(componentsUiConfig, additionalConfigsFromProvider).toList,
+      basicComponents =
+        if (componentDefinitionExtractionMode.extractBasicDefinitions)
+          Some(extractComponentDefinition(uiConfig = ComponentsUiConfig.Empty, configFromProvider = Map.empty).toList)
+        else
+          None
+    )
   }
 
   def forList(
@@ -120,28 +117,29 @@ object Components {
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
-    val componentsWithAdditionalConfig = ComponentDefinitionWithImplementation.forList(
-      components,
-      componentsUiConfig,
-      determineDesignerWideId,
-      additionalConfigsFromProvider
-    )
-    componentDefinitionExtractionMode match {
-      case ComponentDefinitionExtractionMode.FinalDefinition =>
-        Components(components = componentsWithAdditionalConfig, basicComponents = None)
-      case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
-        Components(
-          components = componentsWithAdditionalConfig,
-          basicComponents = Some(
-            ComponentDefinitionWithImplementation.forList(
-              components,
-              componentsUiConfig,
-              determineDesignerWideId,
-              additionalConfigsFromProvider = Map.empty
-            )
-          )
-        )
+
+    def extractComponentDefinitions(
+        uiConfig: ComponentsUiConfig,
+        configFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    ) = {
+      ComponentDefinitionWithImplementation.forList(
+        components,
+        uiConfig,
+        determineDesignerWideId,
+        configFromProvider
+      )
     }
+
+    Components(
+      components = extractComponentDefinitions(componentsUiConfig, additionalConfigsFromProvider).toList,
+      basicComponents =
+        if (componentDefinitionExtractionMode.extractBasicDefinitions)
+          Some(
+            extractComponentDefinitions(uiConfig = ComponentsUiConfig.Empty, configFromProvider = Map.empty).toList
+          )
+        else
+          None
+    )
   }
 
   def combine(x: Components, y: Components): Components = {
