@@ -18,6 +18,8 @@ import { StyledActionIcon } from "./StyledActionIcon";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
+import { getCapabilities } from "../../../../reducers/selectors/other";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -62,6 +64,7 @@ const HeaderActivity = ({
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const loggedUser = useSelector(getLoggedUser);
+    const { write } = useSelector(getCapabilities);
 
     switch (activityAction.id) {
         case "compare": {
@@ -77,6 +80,7 @@ const HeaderActivity = ({
                     onClick={() => open(handleOpenCompareVersionDialog(scenarioVersionId.toString()))}
                     key={activityAction.id}
                     src={activityAction.icon}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesCompare })}
                 />
             );
         }
@@ -97,13 +101,14 @@ const HeaderActivity = ({
                     key={attachmentId}
                     src={activityAction.icon}
                     title={activityAction.displayableName}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesDownloadAttachment })}
                 />
             );
         }
         case "delete_attachment": {
             const attachmentStatus = activityAttachment.file.status;
 
-            if (attachmentStatus === "DELETED" || activityAttachment.lastModifiedBy !== loggedUser.id) {
+            if (attachmentStatus === "DELETED" || activityAttachment.lastModifiedBy !== loggedUser.id || !write) {
                 return null;
             }
 
@@ -128,12 +133,13 @@ const HeaderActivity = ({
                             denyText: t("panels.actions.process-unarchive.no", "No"),
                         })
                     }
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesDeleteAttachment })}
                 />
             );
         }
 
         case "add_comment": {
-            if (activityComment.content.status === "AVAILABLE" || activityComment.lastModifiedBy !== loggedUser.id) {
+            if (activityComment.content.status === "AVAILABLE" || activityComment.lastModifiedBy !== loggedUser.id || !write) {
                 return null;
             }
 
@@ -143,6 +149,7 @@ const HeaderActivity = ({
                     scenarioActivityId={scenarioActivityId}
                     activityType={activityType}
                     activityAction={activityAction}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddCommentToActivity })}
                 />
             );
         }
@@ -210,6 +217,7 @@ const WithOpenVersion = ({
             onClick={() => {
                 changeVersion(scenarioVersion);
             }}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesOpenVersion })}
         >
             {children}
         </Button>

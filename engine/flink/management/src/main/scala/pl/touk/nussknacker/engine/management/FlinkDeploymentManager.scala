@@ -5,7 +5,6 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
@@ -263,9 +262,6 @@ abstract class FlinkDeploymentManager(
   ): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
-
-  override def scenarioActivityHandling: ScenarioActivityHandling =
-    AllScenarioActivitiesStoredByNussknacker
 
 }
 

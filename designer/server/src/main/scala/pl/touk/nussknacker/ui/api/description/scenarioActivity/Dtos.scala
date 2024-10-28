@@ -721,11 +721,15 @@ object Dtos {
       user = user,
       date = date,
       scenarioVersionId = scenarioVersionId,
-      comment = None,
-      attachment = None,
-      additionalFields = List(
-        AdditionalField("changes", changes),
+      comment = Some(
+        ScenarioActivityComment(
+          content = ScenarioActivityCommentContent.Available(changes),
+          lastModifiedBy = user,
+          lastModifiedAt = date
+        )
       ),
+      attachment = None,
+      additionalFields = List.empty,
     )
 
     def forCustomAction(

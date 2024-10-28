@@ -6,7 +6,6 @@ import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
-import { displayProcessActivity } from "./displayProcessActivity";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
@@ -79,9 +78,4 @@ export function clearProcess(): ThunkAction {
 export function hideRunProcessDetails() {
     replaceSearchQuery(omit(["from", "to", "refresh"]));
     return { type: "HIDE_RUN_PROCESS_DETAILS" };
-}
-
-export function addAttachment(processName: ProcessName, processVersionId: ProcessVersionId, file: File) {
-    return (dispatch) =>
-        HttpService.addAttachment(processName, processVersionId, file).then(() => dispatch(displayProcessActivity(processName)));
 }

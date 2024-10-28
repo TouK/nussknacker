@@ -55,6 +55,15 @@ enum ClickEventsSelector {
     ScenarioUnarchive = "SCENARIO_UNARCHIVE",
     ScenarioCustomAction = "SCENARIO_CUSTOM_ACTION",
     ScenarioCustomLink = "SCENARIO_CUSTOM_LINK",
+    ScenarioActivitiesAddAttachment = "SCENARIO_ACTIVITIES_ADD_ATTACHMENT",
+    ScenarioActivitiesAddComment = "SCENARIO_ACTIVITIES_ADD_COMMENT",
+    ScenarioActivitiesAddCommentToActivity = "SCENARIO_ACTIVITIES_ADD_COMMENT_TO_ACTIVITY",
+    ScenarioActivitiesCompare = "SCENARIO_ACTIVITIES_COMPARE",
+    ScenarioActivitiesDownloadAttachment = "SCENARIO_ACTIVITIES_DOWNLOAD_ATTACHMENT",
+    ScenarioActivitiesDeleteAttachment = "SCENARIO_ACTIVITIES_DELETE_ATTACHMENT",
+    ScenarioActivitiesDeleteComment = "SCENARIO_ACTIVITIES_DELETE_COMMENT",
+    ScenarioActivitiesEditComment = "SCENARIO_ACTIVITIES_EDIT_COMMENT",
+    ScenarioActivitiesOpenVersion = "SCENARIO_ACTIVITIES_OPEN_VERSION",
 }
 
 enum SearchEventsSelector {

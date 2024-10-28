@@ -14,6 +14,8 @@ import { useWindows } from "../../../../windowManager";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { getCapabilities } from "../../../../reducers/selectors/other";
 
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
 
@@ -33,10 +35,11 @@ const CommentActivity = ({
     const processName = useSelector(getProcessName);
     const dispatch = useDispatch();
     const loggedUser = useSelector(getLoggedUser);
+    const { write } = useSelector(getCapabilities);
 
     switch (activityAction.id) {
         case "delete_comment": {
-            if (activityComment.lastModifiedBy !== loggedUser.id) {
+            if (activityComment.lastModifiedBy !== loggedUser.id || !write) {
                 return null;
             }
 
@@ -61,12 +64,12 @@ const CommentActivity = ({
                     key={activityAction.id}
                     src={activityAction.icon}
                     title={activityAction.displayableName}
-                    delete-testid={`delete-comment-icon`}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesDeleteComment })}
                 />
             );
         }
         case "edit_comment": {
-            if (activityComment.lastModifiedBy !== loggedUser.id) {
+            if (activityComment.lastModifiedBy !== loggedUser.id || !write) {
                 return null;
             }
 
@@ -78,6 +81,7 @@ const CommentActivity = ({
                     commentContent={activityComment.content}
                     data-testid={`edit-comment-icon`}
                     key={activityAction.id}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesEditComment })}
                 />
             );
         }

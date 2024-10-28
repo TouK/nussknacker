@@ -45,7 +45,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       |        }
       |      ]
       |      bottomRight: [
-      |        { type: "versions-panel" }
+      |        { type: "activities-panel" }
       |      ]
       |    }
       |  }
@@ -119,7 +119,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
           None
         )
       ),
-      List(ToolbarPanelConfig(VersionsPanel, None, None, None, None, None))
+      List(ToolbarPanelConfig(ActivitiesPanel, None, None, None, None, None))
     )
 
     val testingConfigs = Table(

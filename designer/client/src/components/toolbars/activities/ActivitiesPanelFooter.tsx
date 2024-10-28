@@ -2,6 +2,9 @@ import React, { useCallback } from "react";
 import { Box, Button, lighten, styled } from "@mui/material";
 import { useWindows, WindowKind } from "../../../windowManager";
 import { useTranslation } from "react-i18next";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
+import { useSelector } from "react-redux";
+import { getCapabilities } from "../../../reducers/selectors/other";
 
 const StyledFooterButton = styled(Button)(({ theme }) => ({
     textTransform: "none",
@@ -18,6 +21,7 @@ const StyledFooterButton = styled(Button)(({ theme }) => ({
 export const ActivitiesPanelFooter = () => {
     const { t } = useTranslation();
     const { open } = useWindows();
+    const { write } = useSelector(getCapabilities);
 
     const handleOpenAddComment = useCallback(() => {
         open({
@@ -39,12 +43,24 @@ export const ActivitiesPanelFooter = () => {
 
     return (
         <Box my={2} mx={1} display={"flex"} justifyContent={"space-between"} gap={1.5}>
-            <StyledFooterButton variant={"contained"} onClick={handleOpenAddComment}>
-                {t("activities.footer.addComment", "Add comment")}
-            </StyledFooterButton>
-            <StyledFooterButton variant={"contained"} onClick={handleOpenAddAttachment}>
-                {t("activities.footer.addAttachment", "Add attachment")}
-            </StyledFooterButton>
+            {write && (
+                <>
+                    <StyledFooterButton
+                        variant={"contained"}
+                        onClick={handleOpenAddComment}
+                        {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddComment })}
+                    >
+                        {t("activities.footer.addComment", "Add comment")}
+                    </StyledFooterButton>
+                    <StyledFooterButton
+                        variant={"contained"}
+                        onClick={handleOpenAddAttachment}
+                        {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddAttachment })}
+                    >
+                        {t("activities.footer.addAttachment", "Add attachment")}
+                    </StyledFooterButton>
+                </>
+            )}
         </Box>
     );
 };

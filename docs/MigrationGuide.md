@@ -32,14 +32,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Added field `scenarioActivityManager: ScenarioActivityManager`
     * `scenarioActivityManager` can be used by any `DeploymentManager` to save scenario activities in the Nu database
     * there is `NoOpScenarioActivityManager` implementation available (if needed for tests etc.)
-* [#6971](https://github.com/TouK/nussknacker/pull/6971) `DeploymentManager` API changes:
-    * Added method `scenarioActivityHandling: ScenarioActivityHandling`
-    * `ScenarioActivityHandling` has two variants:
-      * `AllScenarioActivitiesStoredByNussknacker` 
-        * `DeploymentManager` does not handle any custom ScenarioActivities outside the core Nussknacker mechanism
-      * `ManagerSpecificScenarioActivitiesStoredByManager` 
-        * `DeploymentManager` handles custom ScenarioActivities and may be queried about those custom activities for scenario
-    * default value of `scenarioActivityHandling` is `ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker`
+* [#6971](https://github.com/TouK/nussknacker/pull/6971) `DeploymentManager` compatible API changes:
+    * `DeploymentManager` may now optionally extend `ManagerSpecificScenarioActivitiesStoredByManager`
+    * managers extending that trait may internally handle some manager-specific ScenarioActivities and may be queried about those custom activities
 * [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
   * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
 * [#6766](https://github.com/TouK/nussknacker/pull/6766)
@@ -75,13 +70,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
   If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
 
+* [#6805](https://github.com/TouK/nussknacker/pull/6805) Updated Flink 1.18.1 -> 1.19.1. Due to backwards incompatible
+  changes in this Flink version update, Nussknacker 1.18 will not work with Flink versions pre-1.19 right away. If you
+  want to keep using Flink pre-1.19 with current Nussknacker, please refer to compatibility providing plugins in
+  https://github.com/TouK/nussknacker-flink-compatibility.
+
 * [#7058](https://github.com/TouK/nussknacker/pull/7058) Performance optimization: Add missing Flink TypeInformation for better serialization
     * In case of using base (bounded and unbounded) Flink components state will be probably not compatible
     * `FlinkCustomNodeContext.typeInformationDetection` has been removed, please use `TypeInformationDetection.instance` instead
     * `FlinkCustomNodeContext.forCustomContext` has been removed, please use `TypeInformationDetection.instance.forValueWithContext` instead
 
 ### Configuration changes
-* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to The `processToolbarConfig` which replace deprecated `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
+* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
 
 ## In version 1.17.0
 
