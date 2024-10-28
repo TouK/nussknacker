@@ -4282,9 +4282,13 @@ paths:
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
-                      additionalFields:
-                      - name: changes
-                        value: JIRA-12345, JIRA-32146
+                      comment:
+                        content:
+                          value: JIRA-12345, JIRA-32146
+                          status: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      additionalFields: []
                       type: AUTOMATIC_UPDATE
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user
