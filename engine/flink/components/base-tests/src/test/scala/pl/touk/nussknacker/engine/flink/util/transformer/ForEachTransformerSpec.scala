@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.ConfigFactory
+import org.apache.flink.api.common.typeinfo.TypeInfo
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
@@ -129,6 +131,11 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
 }
 
+object TestRecord {
+  class TypeInfoFactory extends CaseClassTypeInfoFactory[TestRecord]
+}
+
+@TypeInfo(classOf[TestRecord.TypeInfoFactory])
 case class TestRecord(id: String = "1", timeHours: Int = 0, eId: Int = 1, str: String = "a") {
   def timestamp: Long = timeHours * 3600L * 1000
 }

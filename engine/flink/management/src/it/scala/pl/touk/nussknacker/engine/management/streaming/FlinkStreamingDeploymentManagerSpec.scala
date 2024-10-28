@@ -109,12 +109,12 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
     try {
       // we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
-      messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
+      messagesFromTopic(outTopic, 1) shouldBe List("[One element]")
 
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
 
       val messages = messagesFromTopic(outTopic, 2)
-      messages shouldBe List("List(One element)", "List(One element, One element)")
+      messages shouldBe List("[One element]", "[One element, One element]")
     } finally {
       cancelProcess(processName)
     }
@@ -130,7 +130,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
     try {
       // we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
-      messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
+      messagesFromTopic(outTopic, 1) shouldBe List("[One element]")
 
       val savepointDir = Files.createTempDirectory("customSavepoint")
       val savepointPathFuture = deploymentManager
@@ -152,7 +152,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       )
 
       val messages = messagesFromTopic(outTopic, 2)
-      messages shouldBe List("List(One element)", "List(One element, One element)")
+      messages shouldBe List("[One element]", "[One element, One element]")
     } finally {
       cancelProcess(processName)
     }
@@ -167,7 +167,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processName))
     try {
-      messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
+      messagesFromTopic(outTopic, 1) shouldBe List("[One element]")
 
       val savepointPath =
         deploymentManager
@@ -185,7 +185,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       )
 
       val messages = messagesFromTopic(outTopic, 2)
-      messages shouldBe List("List(One element)", "List(One element, One element)")
+      messages shouldBe List("[One element]", "[One element, One element]")
     } finally {
       cancelProcess(processName)
     }
