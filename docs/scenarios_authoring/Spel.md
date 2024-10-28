@@ -207,7 +207,6 @@ listOfPersons = {person1, person2}
 | `#listOfPersons.![7]`                                           | {7, 7}               | List[Integer]        |
 | `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24} | Map[String, Integer] |
 
-
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
 ### Safe navigation
@@ -305,35 +304,28 @@ More usage examples can be found in [this section](#conversions-between-datetime
 
 #### Explicit conversions
 
-Explicit conversions are available in utility classes and build-in java conversion mechanisms:
+Explicit conversions are available in utility classes, build-in java conversion mechanisms and via extension methods:
 
-| Expression                                                      | Result                    | Type           |
-|-----------------------------------------------------------------|---------------------------|----------------|
-| `#NUMERIC.toNumber('42')`                                       | 42                        | Number         |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                      | String         |
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000             | OffsetDateTime |
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00 | LocalDateTime  |
-| `'true'.toBoolean`                                              | true                      | Boolean        |
-| `'11'.toLong`                                                   | 11                        | Long           |
-| `'1.1'.toDouble`                                                | 1.1                       | Double         |
-| `2.1.toBigDecimal`                                              | 2.1                       | BigDecimal     |
+| Expression                                                      | Result                     | Type          |
+|-----------------------------------------------------------------|----------------------------|---------------|
+| `#NUMERIC.toNumber('42')`                                       | 42                         | Number        |
+| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String        |
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime|
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime |
+| `'true'.toBoolean`                                              | true                       | Boolean       |
+| `'11'.toLong`                                                   | 11                         | Long          |
+| `'1.1'.toDouble`                                                | 1.1                        | Double        |
+| `2.1.toBigDecimal`                                              | 2.1                        | BigDecimal    |
+| `{a: 1, b: 2}.keySet.toList`                                    | {'a', 'b'}                 | List[String]  |
 
-Functions which start with `to`, e.g. `toBoolean`, have their equivalents:
-- to check if a given value can be converted to appropriate type, e.g. `'true'.isBoolean`.
-- and to return null if conversion fails, e.g. `'false'.toBooleanOrNull'`.
+Functions which start with `to` are extension methods which allows convert value to appropriate type. 
+Except function e.g. `toLong` which is shorthand of: `to('Long')` we have also:
+- `isLong` which checks if a given value can be converted to Long.
+- `toLongOrNull` which returns null on failed conversion instead of throwing exception.
 
-### Casting
-
-When a type cannot be determined by parser, the type is presented as `Unknown`. When we know what the type will be on
-runtime, we can cast a given type, and then we can operate on the cast type.
-
-E.g. having a variable `obj` of a type: `List[Unknown]` and we know the elements are strings then we can cast elements
-to String: `#obj.![#this.castToOrNull('String')]`.
-
-Available methods:
-- `canCastTo` - checks if a type can be cast to a given class.
-- `castTo` - casts a type to a given class or throws exception if type cannot be cast.
-- `castToOrNull` - casts a type to a given class or return null if type cannot be cast.
+Additionally, we can use generic conversion functions like: `is(className)`, `to(className)` or `toOrNull(className)`,
+e.g. `is('Long'), to('Long), toOrNull('Long')`. Thanks to them, we have a single function to make all available
+conversions.
 
 
 ## Built-in helpers

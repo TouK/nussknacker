@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.extension
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.extension.Conversion.toNumber
-import pl.touk.nussknacker.engine.spel.internal.RuntimeConversionHandler
+import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
 import scala.util.{Success, Try}
@@ -56,7 +56,7 @@ object Conversion {
 
 }
 
-object LongConversion extends Conversion {
+object ToLongConversion extends Conversion {
   override type ResultType = JLong
   override val resultTypeClass: Class[JLong] = classOf[JLong]
 
@@ -74,15 +74,15 @@ object LongConversion extends Conversion {
 
   private def toLongEither(value: Any): Either[Throwable, JLong] = {
     value match {
-      case v: String => Try(JLong.valueOf(toNumber(v).longValue())).toEither
       case v: Number => Right(v.longValue())
+      case v: String => Try(JLong.valueOf(toNumber(v).longValue())).toEither
       case _         => Left(new IllegalArgumentException(s"Cannot convert: $value to Long"))
     }
   }
 
 }
 
-object DoubleConversion extends Conversion {
+object ToDoubleConversion extends Conversion {
   override type ResultType = JDouble
   override val resultTypeClass: Class[JDouble] = classOf[JDouble]
 
@@ -100,15 +100,15 @@ object DoubleConversion extends Conversion {
 
   private def toDoubleEither(value: Any): Either[Throwable, JDouble] = {
     value match {
-      case v: String => Try(JDouble.valueOf(toNumber(v).doubleValue())).toEither
       case v: Number => Right(v.doubleValue())
+      case v: String => Try(JDouble.valueOf(toNumber(v).doubleValue())).toEither
       case _         => Left(new IllegalArgumentException(s"Cannot convert: $value to Double"))
     }
   }
 
 }
 
-object BigDecimalConversion extends Conversion {
+object ToBigDecimalConversion extends Conversion {
   override type ResultType = JBigDecimal
   override val resultTypeClass: Class[JBigDecimal] = classOf[JBigDecimal]
 
@@ -126,16 +126,16 @@ object BigDecimalConversion extends Conversion {
 
   private def toBigDecimalEither(value: Any): Either[Throwable, JBigDecimal] =
     value match {
-      case v: String      => Try(new JBigDecimal(v)).toEither
-      case v: JBigInteger => Right(new JBigDecimal(v))
       case v: JBigDecimal => Right(v)
+      case v: JBigInteger => Right(new JBigDecimal(v))
+      case v: String      => Try(new JBigDecimal(v)).toEither
       case v: Number      => Try(new JBigDecimal(v.toString)).toEither
       case _              => Left(new IllegalArgumentException(s"Cannot convert: $value to BigDecimal"))
     }
 
 }
 
-object BooleanConversion extends Conversion {
+object ToBooleanConversion extends Conversion {
   private val cannotConvertException = (value: Any) =>
     new IllegalArgumentException(s"Cannot convert: $value to Boolean")
 
@@ -155,8 +155,8 @@ object BooleanConversion extends Conversion {
   }
 
   private def convertToBoolean(value: Any): Either[Throwable, JBoolean] = value match {
-    case s: String   => stringToBoolean(s).toRight(cannotConvertException(value))
     case b: JBoolean => Right(b)
+    case s: String   => stringToBoolean(s).toRight(cannotConvertException(value))
     case _           => Left(cannotConvertException(value))
   }
 
@@ -171,7 +171,7 @@ object BooleanConversion extends Conversion {
 
 }
 
-object StringConversion extends Conversion {
+object ToStringConversion extends Conversion {
   override type ResultType = String
   override val resultTypeClass: Class[ResultType] = classOf[String]
 
@@ -180,7 +180,7 @@ object StringConversion extends Conversion {
   override def convertOrNull(value: Any): ResultType = value.toString
 }
 
-object MapConversion extends Conversion {
+object ToMapConversion extends Conversion {
   private[extension] val keyName          = "key"
   private[extension] val valueName        = "value"
   private[extension] val keyAndValueNames = JSet.of(keyName, valueName)
@@ -190,9 +190,9 @@ object MapConversion extends Conversion {
   override def typingResult: TypingResult         = Typed.genericTypeClass(resultTypeClass, List(Unknown, Unknown))
 
   override def canConvert(value: Any): JBoolean = value match {
-    case c: JCollection[_] => canConvertToMap(c)
     case _: JMap[_, _]     => true
-    case a: Array[_]       => canConvertToMap(RuntimeConversionHandler.convert(a))
+    case c: JCollection[_] => canConvertToMap(c)
+    case a: Array[_]       => canConvertToMap(ConversionHandler.convertArrayToList(a))
     case _                 => false
   }
 
@@ -208,13 +208,13 @@ object MapConversion extends Conversion {
 
   private def convertToMap[K, V](value: Any): Either[Throwable, JMap[K, V]] =
     value match {
+      case m: JMap[K, V] @unchecked => Right(m)
+      case a: Array[_]              => convertToMap[K, V](ConversionHandler.convertArrayToList(a))
       case c: JCollection[JMap[_, _] @unchecked] if canConvertToMap(c) =>
         val map = new JHashMap[K, V]()
         c.forEach(e => map.put(e.get(keyName).asInstanceOf[K], e.get(valueName).asInstanceOf[V]))
         Right(map)
-      case m: JMap[K, V] @unchecked => Right(m)
-      case a: Array[_]              => convertToMap[K, V](RuntimeConversionHandler.convert(a))
-      case x                        => Left(new IllegalArgumentException(s"Cannot convert: $x to a Map"))
+      case x => Left(new IllegalArgumentException(s"Cannot convert: $x to a Map"))
     }
 
   private def canConvertToMap(c: JCollection[_]): Boolean = c.isEmpty || c
@@ -226,8 +226,8 @@ object MapConversion extends Conversion {
 
 }
 
-object ListConversion extends Conversion {
-  private[extension] val collectionClass = classOf[JCollection[_]]
+object ToListConversion extends Conversion {
+  private val collectionClass = classOf[JCollection[_]]
 
   override type ResultType = JList[_]
   override val resultTypeClass: Class[JList[_]] = classOf[JList[_]]
@@ -249,7 +249,7 @@ object ListConversion extends Conversion {
     value match {
       case l: JList[T @unchecked]       => Right(l)
       case c: JCollection[T @unchecked] => Right(new JArrayList[T](c))
-      case a: Array[T @unchecked]       => Right(RuntimeConversionHandler.convert(a).asInstanceOf[JList[T]])
+      case a: Array[T @unchecked]       => Right(ConversionHandler.convertArrayToList(a).asInstanceOf[JList[T]])
       case x                            => Left(new IllegalArgumentException(s"Cannot convert: $x to a List"))
     }
   }

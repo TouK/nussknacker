@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDe
 import java.lang.{Boolean => JBoolean}
 
 class BooleanConversionExt(target: Any) {
-  def isBoolean(): JBoolean       = BooleanConversion.canConvert(target)
-  def toBoolean(): JBoolean       = BooleanConversion.convert(target)
-  def toBooleanOrNull(): JBoolean = BooleanConversion.convertOrNull(target)
+  def isBoolean(): JBoolean       = ToBooleanConversion.canConvert(target)
+  def toBoolean(): JBoolean       = ToBooleanConversion.convert(target)
+  def toBooleanOrNull(): JBoolean = ToBooleanConversion.convertOrNull(target)
 }
 
 object BooleanConversionExt extends ExtensionMethodsHandler {

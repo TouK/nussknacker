@@ -10,15 +10,15 @@ import java.math.{BigDecimal => JBigDecimal}
 
 class NumericConversionExt(target: Any) {
 
-  def isLong(): JBoolean                = LongConversion.canConvert(target)
-  def toLong(): JLong                   = LongConversion.convert(target)
-  def toLongOrNull(): JLong             = LongConversion.convertOrNull(target)
-  def isDouble(): JBoolean              = DoubleConversion.canConvert(target)
-  def toDouble(): JDouble               = DoubleConversion.convert(target)
-  def toDoubleOrNull(): JDouble         = DoubleConversion.convertOrNull(target)
-  def isBigDecimal(): JBoolean          = BigDecimalConversion.canConvert(target)
-  def toBigDecimal(): JBigDecimal       = BigDecimalConversion.convert(target)
-  def toBigDecimalOrNull(): JBigDecimal = BigDecimalConversion.convertOrNull(target)
+  def isLong(): JBoolean                = ToLongConversion.canConvert(target)
+  def toLong(): JLong                   = ToLongConversion.convert(target)
+  def toLongOrNull(): JLong             = ToLongConversion.convertOrNull(target)
+  def isDouble(): JBoolean              = ToDoubleConversion.canConvert(target)
+  def toDouble(): JDouble               = ToDoubleConversion.convert(target)
+  def toDoubleOrNull(): JDouble         = ToDoubleConversion.convertOrNull(target)
+  def isBigDecimal(): JBoolean          = ToBigDecimalConversion.canConvert(target)
+  def toBigDecimal(): JBigDecimal       = ToBigDecimalConversion.convert(target)
+  def toBigDecimalOrNull(): JBigDecimal = ToBigDecimalConversion.convertOrNull(target)
 }
 
 object NumericConversionExt extends ExtensionMethodsHandler {

@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.extension
 
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
-import pl.touk.nussknacker.engine.spel.internal.RuntimeConversionHandler
+import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 
 import java.util
 import java.util.{List => JList}
 
 class ArrayExt(target: Any) extends util.AbstractList[Object] {
-  private val asList = RuntimeConversionHandler.convert(target)
+  private val asList = ConversionHandler.convertArrayToList(target)
 
   override def get(index: Int): AnyRef                     = asList.get(index)
   override def size(): Int                                 = asList.size()
