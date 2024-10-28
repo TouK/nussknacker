@@ -33,17 +33,14 @@ class DynamicComponentStaticDefinitionDeterminer(
   private def determineStaticDefinition(
       dynamic: DynamicComponentDefinitionWithImplementation
   ): ComponentStaticDefinition = {
-    val parameters = determineInitialParameters(dynamic.component, dynamic.parametersConfig)
+    val parameters = determineInitialParameters(dynamic)
     ComponentStaticDefinition(
-      parameters = parameters,
-      returnType = staticReturnType(dynamic.component),
+      parameters,
+      staticReturnType(dynamic.component)
     )
   }
 
-  private def determineInitialParameters(
-      component: DynamicComponent[_],
-      parametersConfig: Map[ParameterName, ParameterConfig]
-  ): List[Parameter] = {
+  private def determineInitialParameters(dynamic: DynamicComponentDefinitionWithImplementation): List[Parameter] = {
     def inferParameters(transformer: DynamicComponent[_])(inputContext: transformer.InputContext) = {
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
@@ -56,9 +53,9 @@ class DynamicComponentStaticDefinitionDeterminer(
           transformer,
           Nil,
           Nil,
-          if (component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
+          if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
           else None,
-          parametersConfig
+          dynamic.parametersConfig
         )(inputContext)
         .map(_.parameters)
         .valueOr { err =>
@@ -71,9 +68,9 @@ class DynamicComponentStaticDefinitionDeterminer(
         }
     }
 
-    component match {
+    dynamic.component match {
       case withStatic: WithStaticParameters =>
-        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, parametersConfig)
+        StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
       case single: SingleInputDynamicComponent[_] =>
         inferParameters(single)(ValidationContext())
       case join: JoinDynamicComponent[_] =>

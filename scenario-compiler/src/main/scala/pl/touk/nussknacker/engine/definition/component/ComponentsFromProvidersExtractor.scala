@@ -159,7 +159,7 @@ class ComponentsFromProvidersExtractor(
           computeBasic
         )
       }
-      .reduceLeft(Components.combine)
+      .foldLeft(Components.empty)(Components.combine)
   }
 
   private def loadCorrectProviders(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {

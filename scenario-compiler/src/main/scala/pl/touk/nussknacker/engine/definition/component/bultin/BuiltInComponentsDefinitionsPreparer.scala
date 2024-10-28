@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   BuiltInComponentSpecificData,
   ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
-  ComponentStaticDefinition,
-  ComponentUiDefinitions
+  ComponentStaticDefinition
 }
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 

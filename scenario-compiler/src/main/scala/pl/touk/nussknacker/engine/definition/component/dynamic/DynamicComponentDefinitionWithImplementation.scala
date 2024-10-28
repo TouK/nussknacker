@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
   ComponentTypeSpecificData,
-  ComponentUiDefinition,
-  ComponentUiDefinitions
+  ComponentUiDefinition
 }
 
 final case class DynamicComponentDefinitionWithImplementation(

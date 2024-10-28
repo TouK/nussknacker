@@ -72,8 +72,6 @@ final case class ComponentUiDefinition(
     designerWideId: DesignerWideComponentId
 )
 
-final case class ComponentUiDefinitions(finalDefinition: ComponentUiDefinition, basicDefinition: ComponentUiDefinition)
-
 object ComponentDefinitionWithImplementation {
 
   def forList(

@@ -141,37 +141,36 @@ object ComponentDefinitionExtractor {
         // which need method definition
         val componentConfigForParametersExtraction = configFor(defaultConfig = ComponentConfig.zero)
 
-        for {
-          finalMethodDef <- methodDefinitionExtractor
-            .extractMethodDefinition(
-              component,
-              findMainComponentMethod(component),
-              componentConfigForParametersExtraction.params.getOrElse(Map.empty)
-            )
-        } yield {
-          def notReturnAnything(typ: TypingResult) =
-            Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
-          val returnType = Option(finalMethodDef.returnType).filterNot(notReturnAnything)
-          withUiDefinitionForNotDisabledComponent(returnType) { componentUiDefinition =>
-            val staticDefinition =
-              ComponentStaticDefinition(
-                parameters = finalMethodDef.definedParameters,
-                returnType = returnType,
+        methodDefinitionExtractor
+          .extractMethodDefinition(
+            component,
+            findMainComponentMethod(component),
+            componentConfigForParametersExtraction.params.getOrElse(Map.empty)
+          )
+          .map { methodDef =>
+            def notReturnAnything(typ: TypingResult) =
+              Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
+            val returnType = Option(methodDef.returnType).filterNot(notReturnAnything)
+            withUiDefinitionForNotDisabledComponent(returnType) { componentUiDefinition =>
+              val staticDefinition =
+                ComponentStaticDefinition(
+                  parameters = methodDef.definedParameters,
+                  returnType = returnType,
+                )
+              val invoker = extractComponentImplementationInvoker(component, methodDef)
+              val componentSpecificData = extractComponentSpecificData(component) {
+                methodDef.runtimeClass == classOf[JoinContextTransformation]
+              }
+              MethodBasedComponentDefinitionWithImplementation(
+                name = componentName,
+                implementationInvoker = invoker,
+                component = component,
+                componentTypeSpecificData = componentSpecificData,
+                staticDefinition = staticDefinition,
+                uiDefinition = componentUiDefinition.uiDefinition
               )
-            val invoker = extractComponentImplementationInvoker(component, finalMethodDef)
-            val componentSpecificData = extractComponentSpecificData(component) {
-              finalMethodDef.runtimeClass == classOf[JoinContextTransformation]
             }
-            MethodBasedComponentDefinitionWithImplementation(
-              name = componentName,
-              implementationInvoker = invoker,
-              component = component,
-              componentTypeSpecificData = componentSpecificData,
-              staticDefinition = staticDefinition,
-              uiDefinition = componentUiDefinition.uiDefinition
-            )
           }
-        }
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }
