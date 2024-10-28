@@ -118,18 +118,6 @@ class ScenarioActivityApiHttpService(
   }
 
   expose {
-    endpoints.deleteAttachmentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
-      .serverLogicEitherT { implicit loggedUser => request: DeleteAttachmentRequest =>
-        for {
-          scenarioId <- getScenarioIdByName(request.scenarioName)
-          _          <- isAuthorized(scenarioId, Permission.Write)
-          _          <- markAttachmentAsDeleted(request, scenarioId)
-        } yield ()
-      }
-  }
-
-  expose {
     endpoints.downloadAttachmentEndpoint
       .serverSecurityLogic(authorizeKnownUser[ScenarioActivityError])
       .serverLogicEitherT { implicit loggedUser => request: GetAttachmentRequest =>
