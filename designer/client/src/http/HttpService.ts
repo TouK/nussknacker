@@ -854,13 +854,7 @@ class HttpService {
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
-                expectedType: {
-                    value: {
-                        type: type,
-                        refClazzName,
-                        params: [],
-                    },
-                },
+                    expectedType: { type: type, refClazzName, params: [] },
             })
             .catch((error) =>
                 Promise.reject(

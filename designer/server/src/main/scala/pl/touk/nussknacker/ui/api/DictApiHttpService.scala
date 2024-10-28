@@ -56,7 +56,7 @@ class DictApiHttpService(
           case Some((_, dictionaries, classLoader)) =>
             val decoder = new TypingResultDecoder(ClassUtils.forName(_, classLoader)).decodeTypingResults
 
-            decoder.decodeJson(dictListRequestDto.expectedType.value) match {
+            decoder.decodeJson(dictListRequestDto.expectedType) match {
               case Left(failure) => Future.successful(businessError(MalformedTypingResult(failure.getMessage())))
               case Right(expectedType) =>
                 Future {
