@@ -4,12 +4,7 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
-import pl.touk.nussknacker.engine.api.deployment.{
-  BaseDeploymentManager,
-  DMTestScenarioCommand,
-  ScenarioActivityHandling
-}
+import pl.touk.nussknacker.engine.api.deployment.{BaseDeploymentManager, DMTestScenarioCommand}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.testmode.TestProcess
 

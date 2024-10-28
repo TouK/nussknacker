@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
@@ -28,7 +28,9 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
@@ -130,6 +132,7 @@ class FullOuterJoinTransformer(
     val aggregateByByBranchId: Map[String, LazyParameter[AnyRef]] =
       AggregateByParamDeclaration.extractValueUnsafe(params)
     val window: Duration = WindowLengthParamDeclaration.extractValueUnsafe(params)
+    val typeInfoDetector = TypeInformationDetection.instance
 
     val aggregator: Aggregator = new MapAggregator(
       aggregatorByBranchId.mapValuesNow(new OptionAggregator(_).asInstanceOf[Aggregator]).asJava
@@ -139,16 +142,34 @@ class FullOuterJoinTransformer(
 
     (inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext) => {
       val keyedStreams = inputs.map { case (id, stream) =>
+        val valueParameter: LazyParameter[AnyRef] = aggregateByByBranchId(id)
+        val valueTypeInfo                         = typeInfoDetector.forType[AnyRef](valueParameter.returnType)
+
+        val branchTypeInfo = context.valueWithContextInfo.forBranch(id, KeyedValueType.info(valueTypeInfo))
+
         stream
-          .flatMap(new StringKeyedValueMapper(context, keyByBranchId(id), aggregateByByBranchId(id)))
+          .flatMap(
+            new StringKeyedValueMapper(context, keyByBranchId(id), valueParameter),
+            branchTypeInfo
+          )
           .map(_.map(_.mapValue { x =>
             val sanitizedId = ContextTransformation.sanitizeBranchName(id)
             (baseElement + (sanitizedId -> Some(x))).asJava.asInstanceOf[AnyRef]
           }))
-          // FIXME: TypeInformation better map type
           .returns(
-            context.valueWithContextInfo
-              .forBranch[StringKeyedValue[AnyRef]](id, Typed.fromDetailedType[KeyedValue[String, AnyRef]])
+            context.valueWithContextInfo.forBranch[KeyedValue[String, AnyRef]](
+              id,
+              KeyedValueType.info[String, AnyRef](
+                Types.STRING,
+                Types
+                  .MAP(
+                    Types.STRING,
+                    // FIXME: Passing the valueTypeInfo here will cause serialisation problems with a List[Int]
+                    new OptionTypeInfo(TypeInformation.of(classOf[AnyRef]))
+                  )
+                  .asInstanceOf[TypeInformation[AnyRef]]
+              )
+            )
           )
       }
 
@@ -170,7 +191,6 @@ class FullOuterJoinTransformer(
         TypeInformationDetection.instance.forValueWithContext[AnyRef](ValidationContext(), outputType)
 
       val stream = keyedStreams
-        .map(_.asInstanceOf[DataStream[ValueWithContext[StringKeyedValue[AnyRef]]]])
         .reduce(_.connectAndMerge(_))
         .keyBy((v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
         .process(aggregatorFunction, outputTypeInfo)

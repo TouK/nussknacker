@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyOnlyMapper
 
 import java.time.Duration
 import java.util
@@ -21,28 +20,35 @@ object DelayTransformer extends DelayTransformer
 
 class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport with Serializable {
 
+  import pl.touk.nussknacker.engine.flink.util.richflink._
+
   @MethodToInvoke(returnType = classOf[Void])
   def invoke(
       @ParamName("key") @Nullable key: LazyParameter[CharSequence],
       @ParamName("delay") delay: Duration
   ): FlinkCustomStreamTransformation =
-    FlinkCustomStreamTransformation { (stream: DataStream[Context], nodeCtx: FlinkCustomNodeContext) =>
+    FlinkCustomStreamTransformation { (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
       val keyedStream =
         Option(key)
           .map { _ =>
             stream
-              .flatMap(new StringKeyOnlyMapper(nodeCtx.lazyParameterHelper, key))
-              .keyBy((v: ValueWithContext[String]) => v.value)
+              .groupBy(key)(ctx)
           }
           .getOrElse {
             stream
-              .map(ctx => ValueWithContext(defaultKey(ctx), ctx))
+              .map(
+                (value: Context) => ValueWithContext(defaultKey(value), value),
+                ctx.valueWithContextInfo.forClass[String]
+              )
               .keyBy((v: ValueWithContext[String]) => v.value)
           }
       setUidToNodeIdIfNeed(
-        nodeCtx,
+        ctx,
         keyedStream
-          .process(prepareDelayFunction(nodeCtx, delay))
+          .process(
+            prepareDelayFunction(ctx, delay),
+            ctx.valueWithContextInfo.forNull[AnyRef]
+          )
       )
     }
 
@@ -57,8 +63,9 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
 class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration)
     extends KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]] {
 
-  type FlinkCtx      = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#Context
-  type FlinkTimerCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#OnTimerContext
+  private type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#Context
+  private type FlinkTimerCtx =
+    KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#OnTimerContext
 
   private val descriptor = new MapStateDescriptor[Long, java.util.List[api.Context]](
     "state",
