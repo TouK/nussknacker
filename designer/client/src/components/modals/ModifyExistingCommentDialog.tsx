@@ -5,31 +5,37 @@ import { css, cx } from "@emotion/css";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { useTranslation } from "react-i18next";
 import CommentInput from "../comment/CommentInput";
-import { Typography } from "@mui/material";
+import { FormHelperText, Typography } from "@mui/material";
 import httpService from "../../http/HttpService";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import { getProcessName } from "../../reducers/selectors/graph";
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
+import { ModifyActivityCommentMeta } from "../toolbars/activities/types";
 
-const AddCommentDialog = (props: WindowContentProps) => {
-    const [comment, setState] = useState("");
+const ModifyExistingCommentDialog = (props: WindowContentProps<number, ModifyActivityCommentMeta>) => {
+    const meta = props.data.meta;
+    const [comment, setState] = useState(meta.existingComment);
     const { t } = useTranslation();
     const processName = useSelector(getProcessName);
-    const processVersionId = useSelector(getProcessVersionId);
     const dispatch = useDispatch();
+    const [validationError, setValidationError] = useState("");
 
     const confirmAction = useCallback(async () => {
-        const { status } = await httpService.addComment(processName, processVersionId, comment);
-        if (status === "success") {
+        const response = await httpService.updateComment(processName, comment, meta.scenarioActivityId);
+        if (response.status === "success") {
             await dispatch(await getScenarioActivities(processName));
             props.close();
         }
-    }, [comment, dispatch, processName, processVersionId, props]);
+
+        if (response.status === "error") {
+            setValidationError(response.error.response.data);
+        }
+    }, [comment, dispatch, meta.scenarioActivityId, processName, props]);
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.add", "Add"), action: () => confirmAction() },
+            { title: t("dialog.button.modify", "Modify"), action: () => confirmAction() },
         ],
         [confirmAction, props, t],
     );
@@ -39,6 +45,7 @@ const AddCommentDialog = (props: WindowContentProps) => {
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
                 <Typography variant={"h3"}>{props.data.title}</Typography>
                 <CommentInput
+                    defaultValue={meta.placeholder}
                     onChange={(e) => setState(e.target.value)}
                     value={comment}
                     className={css({
@@ -46,10 +53,16 @@ const AddCommentDialog = (props: WindowContentProps) => {
                         minHeight: 80,
                     })}
                     autoFocus
+                    onFocus={(event) => {
+                        event.target.setSelectionRange(event.target.value.length, event.target.value.length);
+                    }}
                 />
+                <FormHelperText title={validationError} error>
+                    {validationError}
+                </FormHelperText>
             </div>
         </PromptContent>
     );
 };
 
-export default AddCommentDialog;
+export default ModifyExistingCommentDialog;
