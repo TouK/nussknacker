@@ -22,8 +22,8 @@ object DesignerModelData {
 
   final case class DynamicComponentsStaticDefinitions(
       finalDefinitions: Map[ComponentId, ComponentStaticDefinition],
-      // components definitions without enrichments from an additional provider
-      basicDefinitions: Option[Map[ComponentId, ComponentStaticDefinition]]
+      // component definitions not enriched with ui config
+      private val basicDefinitions: Option[Map[ComponentId, ComponentStaticDefinition]]
   ) {
 
     def basicDefinitionsUnsafe: Map[ComponentId, ComponentStaticDefinition] =

@@ -70,20 +70,22 @@ object ModelDefinitionFromConfigCreatorExtractor {
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
-    collectAvailableForCategory(components, categoryOpt)
-      .map { case (componentName, component, componentConfig) =>
-        Components
-          .withComponent(
-            componentName,
-            component,
-            componentConfig,
-            componentsUiConfig,
-            determineDesignerWideId,
-            additionalConfigsFromProvider,
-            componentDefinitionExtractionMode
-          )
-      }
-      .foldLeft(Components.empty(componentDefinitionExtractionMode))(Components.combine)
+    Components.fold(
+      componentDefinitionExtractionMode,
+      collectAvailableForCategory(components, categoryOpt)
+        .map { case (componentName, component, componentConfig) =>
+          Components
+            .withComponent(
+              componentName,
+              component,
+              componentConfig,
+              componentsUiConfig,
+              determineDesignerWideId,
+              additionalConfigsFromProvider,
+              componentDefinitionExtractionMode
+            )
+        }
+    )
   }
 
   private def toDefinition(

@@ -27,130 +27,6 @@ object ComponentsFromProvidersExtractor {
 
 }
 
-final case class Components(
-    components: List[ComponentDefinitionWithImplementation],
-    // components without enrichments from an additional provider
-    basicComponents: Option[List[ComponentDefinitionWithImplementation]]
-) {
-
-  def withComponents(componentsToAdd: List[ComponentDefinitionWithImplementation]): Components = {
-    copy(
-      components = components ::: componentsToAdd,
-      basicComponents = basicComponents.map(values => values ::: componentsToAdd)
-    )
-  }
-
-  def withComponents(componentsToAdd: Components): Components = {
-    Components.combine(this, componentsToAdd)
-  }
-
-  def filter(predicate: ComponentDefinitionWithImplementation => Boolean): Components = {
-    copy(
-      components = components.filter(predicate),
-      basicComponents = basicComponents.map(_.filter(predicate)),
-    )
-  }
-
-  def basicComponentsUnsafe: List[ComponentDefinitionWithImplementation] =
-    basicComponents.getOrElse(
-      throw new IllegalStateException("Basic components requested but they are not precomputed")
-    )
-
-}
-
-object Components {
-
-  def empty(mode: ComponentDefinitionExtractionMode): Components = Components(
-    components = List.empty,
-    basicComponents = mode match {
-      case ComponentDefinitionExtractionMode.FinalDefinition          => None
-      case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions => Some(List.empty)
-    }
-  )
-
-  sealed abstract class ComponentDefinitionExtractionMode(val extractBasicDefinitions: Boolean)
-
-  object ComponentDefinitionExtractionMode {
-    case object FinalDefinition          extends ComponentDefinitionExtractionMode(false)
-    case object FinalAndBasicDefinitions extends ComponentDefinitionExtractionMode(true)
-  }
-
-  def withComponent(
-      componentName: String,
-      component: Component,
-      configFromDefinition: ComponentConfig,
-      componentsUiConfig: ComponentsUiConfig,
-      determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
-  ): Components = {
-
-    def extractComponentDefinition(
-        uiConfig: ComponentsUiConfig,
-        configFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-    ) = {
-      ComponentDefinitionExtractor
-        .extract(
-          componentName,
-          component,
-          configFromDefinition,
-          uiConfig,
-          determineDesignerWideId,
-          configFromProvider
-        )
-    }
-
-    Components(
-      components = extractComponentDefinition(componentsUiConfig, additionalConfigsFromProvider).toList,
-      basicComponents =
-        if (componentDefinitionExtractionMode.extractBasicDefinitions)
-          Some(extractComponentDefinition(uiConfig = ComponentsUiConfig.Empty, configFromProvider = Map.empty).toList)
-        else
-          None
-    )
-  }
-
-  def forList(
-      components: List[ComponentDefinition],
-      componentsUiConfig: ComponentsUiConfig,
-      determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
-  ): Components = {
-
-    def extractComponentDefinitions(
-        uiConfig: ComponentsUiConfig,
-        configFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-    ) = {
-      ComponentDefinitionWithImplementation.forList(
-        components,
-        uiConfig,
-        determineDesignerWideId,
-        configFromProvider
-      )
-    }
-
-    Components(
-      components = extractComponentDefinitions(componentsUiConfig, additionalConfigsFromProvider).toList,
-      basicComponents =
-        if (componentDefinitionExtractionMode.extractBasicDefinitions)
-          Some(
-            extractComponentDefinitions(uiConfig = ComponentsUiConfig.Empty, configFromProvider = Map.empty).toList
-          )
-        else
-          None
-    )
-  }
-
-  def combine(x: Components, y: Components): Components = {
-    x.copy(
-      components = x.components ::: y.components,
-      basicComponents = x.basicComponents.map(components => components ::: y.basicComponents.getOrElse(List.empty)),
-    )
-  }
-
-}
-
 class ComponentsFromProvidersExtractor(
     classLoader: ClassLoader,
     shouldIncludeComponentProvider: ComponentProvider => Boolean,
@@ -170,19 +46,22 @@ class ComponentsFromProvidersExtractor(
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
-    loadCorrectProviders(modelDependencies.config).toList
-      .map { case (_, (config, provider)) =>
-        extract(
-          config,
-          provider,
-          modelDependencies,
-          componentsUiConfig,
-          determineDesignerWideId,
-          additionalConfigsFromProvider,
-          componentDefinitionExtractionMode
-        )
-      }
-      .foldLeft(Components.empty(componentDefinitionExtractionMode))(Components.combine)
+    Components
+      .fold(
+        componentDefinitionExtractionMode,
+        loadCorrectProviders(modelDependencies.config).toList
+          .map { case (_, (config, provider)) =>
+            extract(
+              config,
+              provider,
+              modelDependencies,
+              componentsUiConfig,
+              determineDesignerWideId,
+              additionalConfigsFromProvider,
+              componentDefinitionExtractionMode
+            )
+          }
+      )
   }
 
   private def loadCorrectProviders(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {

@@ -73,7 +73,7 @@ class DefinitionResourcesSpec
   }
 
   it("should return enriched definition data for existing scenario type") {
-    getProcessDefinitionData(enrichedWithAdditionalConfig = Some(true)) ~> check {
+    getProcessDefinitionData(enrichedWithUiConfig = Some(true)) ~> check {
       status shouldBe StatusCodes.OK
 
       val response = responseAs[Json]
@@ -82,7 +82,7 @@ class DefinitionResourcesSpec
   }
 
   it("should return basic definition data without enrichments for existing scenario type") {
-    getProcessDefinitionData(enrichedWithAdditionalConfig = Some(false)) ~> check {
+    getProcessDefinitionData(enrichedWithUiConfig = Some(false)) ~> check {
       status shouldBe StatusCodes.OK
 
       val response = responseAs[Json]
@@ -297,19 +297,19 @@ class DefinitionResourcesSpec
 
   private def getProcessDefinitionData(
       processingType: String = "streaming",
-      enrichedWithAdditionalConfig: Option[Boolean] = None
+      enrichedWithUiConfig: Option[Boolean] = None
   ): RouteTestResult = {
-    getProcessDefinitionDataUsingRawProcessingType(processingType, enrichedWithAdditionalConfig)
+    getProcessDefinitionDataUsingRawProcessingType(processingType, enrichedWithUiConfig)
   }
 
   private def getProcessDefinitionDataUsingRawProcessingType(
       processingType: String,
-      enrichedWithAdditionalConfig: Option[Boolean] = None
+      enrichedWithUiConfig: Option[Boolean] = None
   ) = {
-    val maybeEnrichedWithAdditionalConfig =
-      enrichedWithAdditionalConfig.fold("")(value => s"&enrichedWithAdditionalConfig=$value")
+    val maybeEnrichedWithUiConfig =
+      enrichedWithUiConfig.fold("")(value => s"&enrichedWithUiConfig=$value")
     Get(
-      s"/processDefinitionData/$processingType?isFragment=false$maybeEnrichedWithAdditionalConfig"
+      s"/processDefinitionData/$processingType?isFragment=false$maybeEnrichedWithUiConfig"
     ) ~> withPermissions(
       definitionResources,
       Permission.Read

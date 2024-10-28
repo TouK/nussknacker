@@ -288,7 +288,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   private def prepareDefinitions(
       model: ModelData,
       fragmentScenarios: List[CanonicalProcess],
-      componentUiConfigMode: ComponentUiConfigMode = ComponentUiConfigMode.EnrichedWithAdditionalConfig
+      componentUiConfigMode: ComponentUiConfigMode = ComponentUiConfigMode.EnrichedWithUiConfig
   ): UIDefinitions = {
     val processingType = Streaming
 
@@ -308,8 +308,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       staticDefinitionForDynamicComponents = DynamicComponentsStaticDefinitions(
         finalDefinitions = Map.empty,
         basicDefinitions = componentUiConfigMode match {
-          case ComponentUiConfigMode.EnrichedWithAdditionalConfig => None
-          case ComponentUiConfigMode.BasicConfig                  => Some(Map.empty)
+          case ComponentUiConfigMode.EnrichedWithUiConfig => None
+          case ComponentUiConfigMode.BasicConfig          => Some(Map.empty)
         }
       ),
       fragmentPropertiesConfig = Map.empty,

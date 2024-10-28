@@ -51,7 +51,7 @@ class DefinitionsService(
 
       val withStaticDefinition = {
         val (components, cachedStaticDefinitionsForDynamicComponents) = componentUiConfigMode match {
-          case ComponentUiConfigMode.EnrichedWithAdditionalConfig =>
+          case ComponentUiConfigMode.EnrichedWithUiConfig =>
             (alignedComponentsDefinition.components, staticDefinitionForDynamicComponents.finalDefinitions)
           case ComponentUiConfigMode.BasicConfig =>
             (
@@ -77,7 +77,7 @@ class DefinitionsService(
       }
 
       val finalizedScenarioPropertiesConfig = componentUiConfigMode match {
-        case ComponentUiConfigMode.EnrichedWithAdditionalConfig =>
+        case ComponentUiConfigMode.EnrichedWithUiConfig =>
           scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioPropertiesConfig)
         case ComponentUiConfigMode.BasicConfig =>
           scenarioPropertiesConfig
@@ -182,8 +182,8 @@ object DefinitionsService {
   sealed trait ComponentUiConfigMode
 
   object ComponentUiConfigMode {
-    case object EnrichedWithAdditionalConfig extends ComponentUiConfigMode
-    case object BasicConfig                  extends ComponentUiConfigMode
+    case object EnrichedWithUiConfig extends ComponentUiConfigMode
+    case object BasicConfig          extends ComponentUiConfigMode
   }
 
 }

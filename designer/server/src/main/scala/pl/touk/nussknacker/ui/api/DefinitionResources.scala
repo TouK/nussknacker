@@ -42,8 +42,8 @@ class DefinitionResources(
 
   private val componentUiConfigModeParam: Directive1[ComponentUiConfigMode] = {
     // parameter used only by an external project to fetch component definitions without enrichments
-    parameter("enrichedWithAdditionalConfig".as[Boolean].optional).flatMap {
-      case Some(true) | None => provide(ComponentUiConfigMode.EnrichedWithAdditionalConfig)
+    parameter("enrichedWithUiConfig".as[Boolean].optional).flatMap {
+      case Some(true) | None => provide(ComponentUiConfigMode.EnrichedWithUiConfig)
       case Some(false)       => provide(ComponentUiConfigMode.BasicConfig)
     }
   }
