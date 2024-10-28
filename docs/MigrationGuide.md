@@ -32,14 +32,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Added field `scenarioActivityManager: ScenarioActivityManager`
     * `scenarioActivityManager` can be used by any `DeploymentManager` to save scenario activities in the Nu database
     * there is `NoOpScenarioActivityManager` implementation available (if needed for tests etc.)
-* [#6971](https://github.com/TouK/nussknacker/pull/6971) `DeploymentManager` API changes:
-    * Added method `scenarioActivityHandling: ScenarioActivityHandling`
-    * `ScenarioActivityHandling` has two variants:
-      * `AllScenarioActivitiesStoredByNussknacker` 
-        * `DeploymentManager` does not handle any custom ScenarioActivities outside the core Nussknacker mechanism
-      * `ManagerSpecificScenarioActivitiesStoredByManager` 
-        * `DeploymentManager` handles custom ScenarioActivities and may be queried about those custom activities for scenario
-    * default value of `scenarioActivityHandling` is `ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker`
+* [#6971](https://github.com/TouK/nussknacker/pull/6971) `DeploymentManager` compatible API changes:
+    * `DeploymentManager` may now optionally extend `ManagerSpecificScenarioActivitiesStoredByManager`
+    * managers extending that trait may internally handle some manager-specific ScenarioActivities and may be queried about those custom activities
 * [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
   * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
 * [#6766](https://github.com/TouK/nussknacker/pull/6766)
