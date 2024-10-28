@@ -105,6 +105,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "unknownString"                               -> ContainerOfUnknown("unknown"),
       "containerWithUnknownObject"                  -> ContainerOfUnknown(SampleValue(1)),
       "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticParameterlessMethod()),
+      "containerWithUnknownClassWithStaticMethods" -> ContainerOfUnknown(
+        classOf[JavaClassWithStaticParameterlessMethod]
+      ),
     )
   )
 
@@ -317,6 +320,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     a[SpelExpressionEvaluationException] should be thrownBy {
       parse[Any](
         "#containerWithUnknownObjectWithStaticMethods.value['someHiddenParameterlessStaticMethod']"
+      ).validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test(
+    "indexer access on unknown - static methods on class types case"
+  ) {
+    parse[Any](
+      "#containerWithUnknownClassWithStaticMethods.value['someAllowedParameterlessStaticMethod']"
+    ).validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "allowed"
+
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownClassWithStaticMethods.value['someHiddenParameterlessStaticMethod']"
       ).validExpression
         .evaluateSync[AnyRef](ctx)
     }

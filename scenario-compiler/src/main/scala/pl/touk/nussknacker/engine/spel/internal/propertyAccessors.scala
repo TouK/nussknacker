@@ -48,6 +48,8 @@ object propertyAccessors {
 
     override def canRead(context: EvaluationContext, target: Any, name: String): Boolean = {
       val canReadFromSupper = super.canRead(context, target, name)
+      // for access check we have to keep behaviour of the method consistent
+      // with the way in which ReflectivePropertyAccessor looks for member to use during read
       if (canReadFromSupper && checkAccess) {
         val targetClass = computeTargetClass(target)
         if (!(targetClass.isArray && name == "length")) {
@@ -56,7 +58,7 @@ object propertyAccessors {
               checkAccessIfMethodFound(targetClass)(Some(getterMethod))
             case None =>
               findFieldMember(name, targetClass, target).foreach { field =>
-                checkAccessForMethodName(targetClass, field.getName)
+                checkAccessForMethodName(targetClass, field.getName, target.isInstanceOf[Class[_]])
               }
           }
         }
@@ -177,7 +179,7 @@ object propertyAccessors {
       with ClassDefinitionSetChecking {
 
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
-      checkAccessIfMethodFound(target) {
+      checkAccessIfMethodFound(target, onlyStaticMethods = true) {
         target
           .asInstanceOf[Class[_]]
           .getMethods
@@ -382,25 +384,35 @@ object propertyAccessors {
 
     protected def checkAccess: Boolean
 
-    protected def checkAccessIfMethodFound(targetClass: Class[_])(methodOpt: Option[Method]): Option[Method] = {
+    protected def checkAccessIfMethodFound(targetClass: Class[_], onlyStaticMethods: Boolean = false)(
+        methodOpt: Option[Method]
+    ): Option[Method] = {
       // todo: memoization of found method?
       methodOpt match {
         case s @ Some(method) =>
-          checkAccessForMethodName(targetClass, method.getName)
+          checkAccessForMethodName(targetClass, method.getName, onlyStaticMethods)
           s
         case None => None
       }
     }
 
-    protected def checkAccessForMethodName(targetClass: Class[_], methodName: String): Unit = {
+    protected def checkAccessForMethodName(
+        targetClass: Class[_],
+        methodName: String,
+        onlyStaticMethods: Boolean
+    ): Unit = {
       if (checkAccess) {
         // todo: should we differentiate static/non-static methods here basing on context?
-        throwIfMethodNotInDefinitionSet(methodName, targetClass)
+        throwIfMethodNotInDefinitionSet(methodName, targetClass, onlyStaticMethods)
       }
     }
 
-    private def throwIfMethodNotInDefinitionSet(method: String, targetClass: Class[_]): Unit = {
-      if (!classDefinitionSet.isParameterlessMethodAllowed(targetClass, method)) {
+    private def throwIfMethodNotInDefinitionSet(
+        method: String,
+        targetClass: Class[_],
+        onlyStaticMethods: Boolean
+    ): Unit = {
+      if (!classDefinitionSet.isParameterlessMethodAllowed(targetClass, method, onlyStaticMethods)) {
         throw new IllegalStateException(
           s"The $method method call on type ${targetClass.getSimpleName} is not allowed"
         )
