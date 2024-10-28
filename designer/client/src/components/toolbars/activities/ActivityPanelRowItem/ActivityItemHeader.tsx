@@ -18,6 +18,7 @@ import { StyledActionIcon } from "./StyledActionIcon";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -77,6 +78,7 @@ const HeaderActivity = ({
                     onClick={() => open(handleOpenCompareVersionDialog(scenarioVersionId.toString()))}
                     key={activityAction.id}
                     src={activityAction.icon}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesCompare })}
                 />
             );
         }
@@ -97,6 +99,7 @@ const HeaderActivity = ({
                     key={attachmentId}
                     src={activityAction.icon}
                     title={activityAction.displayableName}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesDownloadAttachment })}
                 />
             );
         }
@@ -128,6 +131,7 @@ const HeaderActivity = ({
                             denyText: t("panels.actions.process-unarchive.no", "No"),
                         })
                     }
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesDeleteAttachment })}
                 />
             );
         }
@@ -143,6 +147,7 @@ const HeaderActivity = ({
                     scenarioActivityId={scenarioActivityId}
                     activityType={activityType}
                     activityAction={activityAction}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddCommentToActivity })}
                 />
             );
         }
@@ -210,6 +215,7 @@ const WithOpenVersion = ({
             onClick={() => {
                 changeVersion(scenarioVersion);
             }}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesOpenVersion })}
         >
             {children}
         </Button>

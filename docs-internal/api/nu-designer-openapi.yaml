@@ -4283,9 +4283,13 @@ paths:
                       user: some user
                       date: '2024-01-17T14:21:17Z'
                       scenarioVersionId: 1
-                      additionalFields:
-                      - name: changes
-                        value: JIRA-12345, JIRA-32146
+                      comment:
+                        content:
+                          value: JIRA-12345, JIRA-32146
+                          status: AVAILABLE
+                        lastModifiedBy: some user
+                        lastModifiedAt: '2024-01-17T14:21:17Z'
+                      additionalFields: []
                       type: AUTOMATIC_UPDATE
                     - id: 33509d37-7657-4229-940f-b5736c82fb13
                       user: some user
@@ -6719,6 +6723,15 @@ components:
       - CLICK_MORE_SCENARIO_DETAILS
       - CLICK_EXPAND_PANEL
       - CLICK_COLLAPSE_PANEL
+      - CLICK_SCENARIO_ACTIVITIES_ADD_ATTACHMENT
+      - CLICK_SCENARIO_ACTIVITIES_ADD_COMMENT
+      - CLICK_SCENARIO_ACTIVITIES_ADD_COMMENT_TO_ACTIVITY
+      - CLICK_SCENARIO_ACTIVITIES_COMPARE
+      - CLICK_SCENARIO_ACTIVITIES_DOWNLOAD_ATTACHMENT
+      - CLICK_SCENARIO_ACTIVITIES_DELETE_ATTACHMENT
+      - CLICK_SCENARIO_ACTIVITIES_DELETE_COMMENT
+      - CLICK_SCENARIO_ACTIVITIES_EDIT_COMMENT
+      - CLICK_SCENARIO_ACTIVITIES_OPEN_VERSION
       - MOVE_TOOLBAR_PANEL
       - SEARCH_NODES_IN_SCENARIO
       - SEARCH_COMPONENTS_IN_SCENARIO

@@ -379,8 +379,12 @@ class PeriodicDeploymentManagerTest
       PeriodicProcessDeploymentStatus.Scheduled
     )
 
-    val activities =
-      f.periodicDeploymentManager.scenarioActivityHandling.managerSpecificScenarioActivities(idWithName).futureValue
+    val activities = f.periodicDeploymentManager match {
+      case manager: ManagerSpecificScenarioActivitiesStoredByManager =>
+        manager.managerSpecificScenarioActivities(idWithName).futureValue
+      case _ =>
+        List.empty
+    }
     val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
@@ -418,8 +422,12 @@ class PeriodicDeploymentManagerTest
 
     f.getMergedStatusDetails.status shouldEqual SimpleStateStatus.Canceled
 
-    val activities =
-      f.periodicDeploymentManager.scenarioActivityHandling.managerSpecificScenarioActivities(idWithName).futureValue
+    val activities = f.periodicDeploymentManager match {
+      case manager: ManagerSpecificScenarioActivitiesStoredByManager =>
+        manager.managerSpecificScenarioActivities(idWithName).futureValue
+      case _ =>
+        List.empty
+    }
     val headActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(

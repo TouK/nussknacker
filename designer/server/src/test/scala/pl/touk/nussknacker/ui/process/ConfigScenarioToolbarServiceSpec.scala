@@ -54,23 +54,17 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
       |      "Category1" {
       |        topLeft: [
       |          { type: "creator-panel", hidden: {fragment: true, archived: false, type: "allof"} }
-      |          { type: "attachments-panel", hidden: {fragment: true, archived: true, type: "allof"} }
-      |          { type: "comments-panel", hidden: {fragment: false, archived: true, type: "allof"} }
+      |          { type: "activities-panel" }
       |        ]
-      |        bottomRight: [
-      |          { type: "versions-panel" }
-      |        ]
+      |        bottomRight: []
       |      },
       |      "Category3" {
       |        uuid: "68013242-2007-462b-9526-7a9f8684227c"
       |        topLeft: [
       |          { type: "creator-panel", hidden: {fragment: true, archived: false} }
-      |          { type: "attachments-panel", hidden: {fragment: true, archived: true } }
-      |          { type: "comments-panel", hidden: {fragment: false, archived: true } }
+      |          { type: "activities-panel" }
       |        ]
-      |        bottomRight: [
-      |          { type: "versions-panel" }
-      |        ]
+      |        bottomRight: []
       |      }
       |    }
       |  }
@@ -205,8 +199,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           id,
           List(
             ToolbarPanel(CreatorPanel, None, None, None),
-            ToolbarPanel(AttachmentsPanel, None, None, None),
-            ToolbarPanel(CommentsPanel, None, None, None)
+            ToolbarPanel(ActivitiesPanel, None, None, None),
           ),
           Nil,
           List(
@@ -254,14 +247,14 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               )
             )
           ),
-          List(ToolbarPanel(VersionsPanel, None, None, None))
+          List.empty,
         )
       case (false, true, "Category1") =>
         ScenarioToolbarSettings(
           id,
           List(
             ToolbarPanel(CreatorPanel, None, None, None),
-            ToolbarPanel(AttachmentsPanel, None, None, None)
+            ToolbarPanel(ActivitiesPanel, None, None, None)
           ),
           Nil,
           List(
@@ -299,14 +292,13 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               )
             )
           ),
-          List(ToolbarPanel(VersionsPanel, None, None, None))
+          List.empty,
         )
       case (true, false, "Category1") =>
         ScenarioToolbarSettings(
           id,
           List(
-            ToolbarPanel(AttachmentsPanel, None, None, None),
-            ToolbarPanel(CommentsPanel, None, None, None)
+            ToolbarPanel(ActivitiesPanel, None, None, None),
           ),
           Nil,
           List(
@@ -365,14 +357,14 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               )
             )
           ),
-          List(ToolbarPanel(VersionsPanel, None, None, None))
+          List.empty,
         )
       case (true, true, "Category1") =>
         ScenarioToolbarSettings(
           id,
           List(
             ToolbarPanel(CreatorPanel, None, None, None),
-            ToolbarPanel(CommentsPanel, None, None, None)
+            ToolbarPanel(ActivitiesPanel, None, None, None)
           ),
           Nil,
           List(
@@ -420,7 +412,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               )
             )
           ),
-          List(ToolbarPanel(VersionsPanel, None, None, None))
+          List.empty,
         )
       case (false, false, "Category2") =>
         ScenarioToolbarSettings(
@@ -480,7 +472,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
         ScenarioToolbarSettings(
           id,
           List(
-            ToolbarPanel(AttachmentsPanel, None, None, None)
+            ToolbarPanel(ActivitiesPanel, None, None, None)
           ),
           Nil,
           List(
@@ -528,7 +520,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               )
             )
           ),
-          List(ToolbarPanel(VersionsPanel, None, None, None))
+          List.empty,
         )
       case (_, _, _) =>
         ScenarioToolbarSettings("not-exist", Nil, Nil, Nil, Nil)

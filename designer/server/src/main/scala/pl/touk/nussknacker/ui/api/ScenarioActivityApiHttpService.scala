@@ -3,10 +3,6 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.{
-  AllScenarioActivitiesStoredByNussknacker,
-  ManagerSpecificScenarioActivitiesStoredByManager
-}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, _}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.security.Permission
@@ -250,14 +246,9 @@ class ScenarioActivityApiHttpService(
         generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
         deploymentManager <- deploymentManagerDispatcher.deploymentManager(processIdWithName)
         deploymentManagerSpecificActivities <- deploymentManager match {
-          case Some(manager) =>
-            manager.scenarioActivityHandling match {
-              case AllScenarioActivitiesStoredByNussknacker =>
-                Future.successful(List.empty)
-              case handling: ManagerSpecificScenarioActivitiesStoredByManager =>
-                handling.managerSpecificScenarioActivities(processIdWithName)
-            }
-          case None =>
+          case Some(manager: ManagerSpecificScenarioActivitiesStoredByManager) =>
+            manager.managerSpecificScenarioActivities(processIdWithName)
+          case Some(_) | None =>
             Future.successful(List.empty)
         }
         combinedActivities = generalActivities ++ deploymentManagerSpecificActivities

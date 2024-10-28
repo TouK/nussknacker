@@ -2,6 +2,7 @@ import React, { useCallback } from "react";
 import { Box, Button, lighten, styled } from "@mui/material";
 import { useWindows, WindowKind } from "../../../windowManager";
 import { useTranslation } from "react-i18next";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 
 const StyledFooterButton = styled(Button)(({ theme }) => ({
     textTransform: "none",
@@ -39,10 +40,18 @@ export const ActivitiesPanelFooter = () => {
 
     return (
         <Box my={2} mx={1} display={"flex"} justifyContent={"space-between"} gap={1.5}>
-            <StyledFooterButton variant={"contained"} onClick={handleOpenAddComment}>
+            <StyledFooterButton
+                variant={"contained"}
+                onClick={handleOpenAddComment}
+                {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddComment })}
+            >
                 {t("activities.footer.addComment", "Add comment")}
             </StyledFooterButton>
-            <StyledFooterButton variant={"contained"} onClick={handleOpenAddAttachment}>
+            <StyledFooterButton
+                variant={"contained"}
+                onClick={handleOpenAddAttachment}
+                {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddAttachment })}
+            >
                 {t("activities.footer.addAttachment", "Add attachment")}
             </StyledFooterButton>
         </Box>

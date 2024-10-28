@@ -14,6 +14,7 @@ import { useWindows } from "../../../../windowManager";
 import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
 
@@ -61,7 +62,7 @@ const CommentActivity = ({
                     key={activityAction.id}
                     src={activityAction.icon}
                     title={activityAction.displayableName}
-                    delete-testid={`delete-comment-icon`}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesDeleteComment })}
                 />
             );
         }
@@ -78,6 +79,7 @@ const CommentActivity = ({
                     commentContent={activityComment.content}
                     data-testid={`edit-comment-icon`}
                     key={activityAction.id}
+                    {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesEditComment })}
                 />
             );
         }
