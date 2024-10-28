@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.{
   MethodBasedComponentDefinitionWithImplementation,
@@ -209,7 +210,8 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       ProcessObjectDependencies.withConfig(modelConfig),
       ComponentsUiConfigParser.parse(modelConfig),
       id => DesignerWideComponentId(id.toString),
-      Map.empty
+      Map.empty,
+      FinalAndBasicDefinitions
     )
     ModelDefinitionWithClasses(modelDefinition)
   }

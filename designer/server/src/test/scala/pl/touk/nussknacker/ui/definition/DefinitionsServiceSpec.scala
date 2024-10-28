@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -212,7 +213,9 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     returnedParamDefaultValues should contain(expectedOverridenParamDefaultValue)
   }
 
-  test("should not override component's parameter config with additionally provided config when raw config requested") {
+  test(
+    "should not override component's parameter config with additionally provided config when basic config requested"
+  ) {
     val model: ModelData = localModelWithAdditionalConfig
     val definitions      = prepareDefinitions(model, List.empty, ComponentUiConfigMode.BasicConfig)
 
@@ -247,7 +250,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
           ),
           componentGroup = None
         )
-      )
+      ),
+      componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
     )
   }
 

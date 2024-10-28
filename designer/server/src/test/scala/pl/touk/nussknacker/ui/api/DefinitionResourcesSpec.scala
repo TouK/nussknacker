@@ -85,7 +85,7 @@ class DefinitionResourcesSpec
     }
   }
 
-  it("should return raw definition data for existing scenario type") {
+  it("should return basic definition data without enrichments for existing scenario type") {
     getProcessDefinitionData(enrichWithAdditionalConfig = Some(false)) ~> check {
       status shouldBe StatusCodes.OK
 

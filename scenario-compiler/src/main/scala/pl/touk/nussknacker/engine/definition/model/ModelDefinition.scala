@@ -19,19 +19,13 @@ case class ModelDefinition private (
   }
 
   def withComponents(componentsToAdd: Components): ModelDefinition = {
-    val newComponents = components.copy(
-      components = components.components ++ componentsToAdd.components,
-      basicComponents = components.basicComponents ++ componentsToAdd.basicComponents
-    )
+    val newComponents = components.withComponents(componentsToAdd)
     checkDuplicates(newComponents)
     copy(components = newComponents)
   }
 
   def withComponents(componentsToAdd: List[ComponentDefinitionWithImplementation]): ModelDefinition = {
-    val newComponents = components.copy(
-      components = components.components ++ componentsToAdd,
-      basicComponents = components.basicComponents ++ componentsToAdd
-    )
+    val newComponents = Components(components = componentsToAdd, basicComponents = componentsToAdd)
     checkDuplicates(newComponents)
     copy(components = newComponents)
   }
@@ -76,6 +70,13 @@ class DuplicatedComponentsException(duplicates: List[ComponentId])
     )
 
 object ModelDefinition {
+
+  def apply(
+      components: Components,
+      expressionConfig: ExpressionConfigDefinition,
+      settings: ClassExtractionSettings
+  ): ModelDefinition =
+    new ModelDefinition(Components.empty, expressionConfig, settings).withComponents(components)
 
   def apply(
       components: List[ComponentDefinitionWithImplementation],

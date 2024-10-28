@@ -91,7 +91,8 @@ object LocalModelData {
           modelDependencies,
           componentsUiConfig,
           determineDesignerWideId,
-          additionalConfigsFromProvider
+          additionalConfigsFromProvider,
+          componentDefinitionExtractionMode
         )
         .withComponents(componentDefs)
     }

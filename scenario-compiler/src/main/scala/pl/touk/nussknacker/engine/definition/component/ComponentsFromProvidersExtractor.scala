@@ -33,6 +33,10 @@ final case class Components(
     basicComponents: List[ComponentDefinitionWithImplementation]
 ) {
 
+  def withComponents(componentsToAdd: Components): Components = {
+    Components.combine(this, componentsToAdd)
+  }
+
   def filter(predicate: ComponentDefinitionWithImplementation => Boolean): Components = {
     copy(
       components = components.filter(predicate),
@@ -50,6 +54,40 @@ object Components {
   object ComponentDefinitionExtractionMode {
     case object FinalDefinition          extends ComponentDefinitionExtractionMode
     case object FinalAndBasicDefinitions extends ComponentDefinitionExtractionMode
+  }
+
+  def withComponent(
+      componentName: String,
+      component: Component,
+      configFromDefinition: ComponentConfig,
+      componentsUiConfig: ComponentsUiConfig,
+      determineDesignerWideId: ComponentId => DesignerWideComponentId,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+  ): Components = {
+
+    def extractComponentDefinition(configFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]) = {
+      ComponentDefinitionExtractor
+        .extract(
+          componentName,
+          component,
+          configFromDefinition,
+          componentsUiConfig,
+          determineDesignerWideId,
+          configFromProvider
+        )
+    }
+
+    val finalDefinitions = extractComponentDefinition(additionalConfigsFromProvider)
+    componentDefinitionExtractionMode match {
+      case ComponentDefinitionExtractionMode.FinalDefinition =>
+        Components(components = finalDefinitions.toList, basicComponents = List.empty)
+      case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
+        Components(
+          components = finalDefinitions.toList,
+          basicComponents = extractComponentDefinition(configFromProvider = Map.empty).toList
+        )
+    }
   }
 
   def forList(

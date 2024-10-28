@@ -32,7 +32,8 @@ object ModelDefinitionExtractor {
         modelDependencies,
         componentsUiConfig,
         determineDesignerWideId,
-        additionalConfigsFromProvider
+        additionalConfigsFromProvider,
+        componentDefinitionExtractionMode
       )
     val componentsFromProviders =
       ComponentsFromProvidersExtractor(classLoader, shouldIncludeComponentProvider).extractComponents(
