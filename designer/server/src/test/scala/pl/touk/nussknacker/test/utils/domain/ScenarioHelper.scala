@@ -2,9 +2,9 @@ package pl.touk.nussknacker.test.utils.domain
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{Comment, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -33,17 +33,17 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
-  private val actionRepository: DbScenarioActionRepository = new DbScenarioActionRepository(
+  private val actionRepository: ScenarioActionRepository = DbScenarioActionRepository.create(
     dbRef,
     mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
-  ) with DbioRepository
+  )
 
   private val scenarioLabelsRepository: ScenarioLabelsRepository = new ScenarioLabelsRepository(dbRef)
 
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
     clock,
-    new DbScenarioActivityRepository(dbRef, clock),
+    DbScenarioActivityRepository.create(dbRef, clock),
     scenarioLabelsRepository,
     mapProcessingTypeDataProvider(1)
   )
@@ -131,19 +131,19 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
     dbioRunner.runInTransaction(
       DBIOAction.seq(
         writeScenarioRepository.archive(processId = idWithName, isArchived = true),
-        actionRepository.markProcessAsArchived(processId = idWithName.id, version)
+        actionRepository.addInstantAction(idWithName.id, version, ScenarioActionName.Archive, None, None)
       )
     )
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
     val actionName = ScenarioActionName.Deploy
-    val comment    = Comment("Deploy comment")
+    val comment    = Comment.from("Deploy comment")
     dbioRunner.run(
       actionRepository.addInstantAction(
         scenarioId,
         VersionId.initialVersionId,
         actionName,
-        Some(comment),
+        comment,
         Some(processingType)
       )
     )
@@ -151,17 +151,17 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
 
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Cancel
-    val comment    = Comment("Cancel comment")
+    val comment    = Comment.from("Cancel comment")
     dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
     )
   }
 
   private def prepareCustomAction(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName("Custom")
-    val comment    = Comment("Execute custom action")
+    val comment    = Comment.from("Execute custom action")
     dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, comment, None)
     )
   }
 

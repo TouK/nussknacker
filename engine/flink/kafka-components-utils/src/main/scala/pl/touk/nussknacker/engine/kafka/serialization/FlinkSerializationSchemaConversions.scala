@@ -44,7 +44,7 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
         }
         .getOrElse {
           logger.debug(
-            "Used KafkaDeserializationSchema not implementing ResultTypeQueryable - will be used class tag based produced type"
+            s"Used KafkaDeserializationSchema: ${deserializationSchema.getClass} not implementing ResultTypeQueryable - will be used class tag based produced type"
           )
           val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
           TypeInformation.of(clazz)

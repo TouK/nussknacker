@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { Button, styled, Typography } from "@mui/material";
 import { SearchHighlighter } from "../../creator/SearchHighlighter";
 import HttpService from "../../../../http/HttpService";
-import { ActionMetadata, ActivityAttachment, ActivityTypes } from "../types";
+import { ActionMetadata, ActivityAttachment, ActivityComment, ActivityType } from "../types";
 import UrlIcon from "../../../UrlIcon";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,6 +12,12 @@ import { displayScenarioVersion } from "../../../../actions/nk";
 import { ItemActivity } from "../ActivitiesPanel";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
 import { getHeaderColors } from "../helpers/activityItemColors";
+import { useTranslation } from "react-i18next";
+import * as DialogMessages from "../../../../common/DialogMessages";
+import { StyledActionIcon } from "./StyledActionIcon";
+import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
+import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
+import { getLoggedUser } from "../../../../reducers/selectors/settings";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
@@ -19,19 +25,17 @@ const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     color: theme.palette.primary.main,
 }));
 
-const StyledHeaderActionIcon = styled(UrlIcon)(({ theme }) => ({
-    width: "1.25rem",
-    height: "1.25rem",
+const StyledHeaderActionRoot = styled("div")(({ theme }) => ({
+    display: "flex",
     marginLeft: "auto",
-    cursor: "pointer",
-    color: theme.palette.text.secondary,
+    gap: theme.spacing(0.5),
 }));
 
 const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunning: boolean; isActiveFound: boolean }>(
     ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
         display: "flex",
         alignItems: "center",
-        padding: theme.spacing(0.5, 0.75),
+        padding: theme.spacing(0.5, 0, 0.5, 0.75),
         borderRadius: theme.spacing(0.5),
         ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
     }),
@@ -41,14 +45,23 @@ const HeaderActivity = ({
     activityAction,
     scenarioVersionId,
     activityAttachment,
+    activityComment,
+    scenarioActivityId,
+    activityType,
 }: {
     activityAction: ActionMetadata;
     scenarioVersionId: number;
     activityAttachment: ActivityAttachment;
+    activityComment: ActivityComment;
+    scenarioActivityId: string;
+    activityType: ActivityType;
 }) => {
-    const { open } = useWindows();
+    const { open, confirm } = useWindows();
     const processName = useSelector(getProcessName);
     const currentScenarioVersionId = useSelector(getProcessVersionId);
+    const { t } = useTranslation();
+    const dispatch = useDispatch();
+    const loggedUser = useSelector(getLoggedUser);
 
     switch (activityAction.id) {
         case "compare": {
@@ -58,7 +71,7 @@ const HeaderActivity = ({
             }
 
             return (
-                <StyledHeaderActionIcon
+                <StyledActionIcon
                     title={activityAction.displayableName}
                     data-testid={`compare-${scenarioVersionId}`}
                     onClick={() => open(handleOpenCompareVersionDialog(scenarioVersionId.toString()))}
@@ -74,16 +87,62 @@ const HeaderActivity = ({
                 return null;
             }
 
-            const attachmentId = attachmentStatus === "AVAILABLE" && activityAttachment.file.id;
+            const attachmentId = attachmentStatus && activityAttachment.file.id;
             const attachmentName = activityAttachment.filename;
 
-            const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId, attachmentName);
+            const handleDownloadAttachment = () => HttpService.downloadAttachment(processName, attachmentId.toString(), attachmentName);
             return (
-                <StyledHeaderActionIcon
+                <StyledActionIcon
                     onClick={handleDownloadAttachment}
                     key={attachmentId}
                     src={activityAction.icon}
                     title={activityAction.displayableName}
+                />
+            );
+        }
+        case "delete_attachment": {
+            const attachmentStatus = activityAttachment.file.status;
+
+            if (attachmentStatus === "DELETED" || activityAttachment.lastModifiedBy !== loggedUser.id) {
+                return null;
+            }
+
+            const attachmentId = activityAttachment.file.id;
+
+            return (
+                <StyledActionIcon
+                    title={activityAction.displayableName}
+                    src={activityAction.icon}
+                    onClick={() =>
+                        confirm({
+                            text: DialogMessages.deleteAttachment(activityAttachment.filename),
+                            onConfirmCallback: (confirmed) => {
+                                confirmed &&
+                                    HttpService.deleteAttachment(processName, attachmentId.toString()).then(({ status }) => {
+                                        if (status === "success") {
+                                            dispatch(getScenarioActivities(processName));
+                                        }
+                                    });
+                            },
+                            confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
+                            denyText: t("panels.actions.process-unarchive.no", "No"),
+                        })
+                    }
+                />
+            );
+        }
+
+        case "add_comment": {
+            if (activityComment.content.status === "AVAILABLE" || activityComment.lastModifiedBy !== loggedUser.id) {
+                return null;
+            }
+
+            return (
+                <ActivityItemCommentModify
+                    commentContent={activityComment.content}
+                    scenarioActivityId={scenarioActivityId}
+                    activityType={activityType}
+                    activityAction={activityAction}
                 />
             );
         }
@@ -109,7 +168,7 @@ const WithOpenVersion = ({
 }: PropsWithChildren<{
     scenarioVersion: number;
     isFound: boolean;
-    activityType: ActivityTypes;
+    activityType: ActivityType;
 }>) => {
     const nothingToSave = useSelector(isSaveDisabled);
     const scenario = useSelector(getScenario);
@@ -199,6 +258,7 @@ const ActivityItemHeader = ({ activity, isRunning, isFound, isActiveFound, searc
         activity.activities.displayableName,
         activity.overrideDisplayableName,
         activity.scenarioVersionId,
+        activity.type,
         isFound,
         openVersionEnable,
         searchQuery,
@@ -208,14 +268,19 @@ const ActivityItemHeader = ({ activity, isRunning, isFound, isActiveFound, searc
         <StyledActivityItemHeader isHighlighted={isHighlighted} isRunning={isRunning} isActiveFound={isActiveFound}>
             <StyledHeaderIcon src={activity.activities.icon} id={activity.uiGeneratedId} />
             {getHeaderTitle}
-            {activity.actions.map((activityAction) => (
-                <HeaderActivity
-                    key={activityAction.id}
-                    activityAction={activityAction}
-                    scenarioVersionId={activity.scenarioVersionId}
-                    activityAttachment={activity.attachment}
-                />
-            ))}
+            <StyledHeaderActionRoot>
+                {activity.actions.map((activityAction) => (
+                    <HeaderActivity
+                        key={activityAction.id}
+                        activityAction={activityAction}
+                        scenarioVersionId={activity.scenarioVersionId}
+                        activityAttachment={activity.attachment}
+                        activityComment={activity.comment}
+                        activityType={activity.type}
+                        scenarioActivityId={activity.id}
+                    />
+                ))}
+            </StyledHeaderActionRoot>
         </StyledActivityItemHeader>
     );
 };

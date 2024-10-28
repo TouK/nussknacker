@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
+import { ActivityItemProvider } from "./ActivityPanelRowItem/ActivityItemProvider";
 
 interface Props {
     index: number;
@@ -38,7 +39,11 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
     const itemToRender = useMemo(() => {
         switch (activity.uiType) {
             case "item": {
-                return <ActivityItem activity={activity} ref={rowRef} isRunning={isRunning} searchQuery={searchQuery} />;
+                return (
+                    <ActivityItemProvider>
+                        <ActivityItem activity={activity} ref={rowRef} isRunning={isRunning} searchQuery={searchQuery} />
+                    </ActivityItemProvider>
+                );
             }
             case "date": {
                 return <DateItem activity={activity} ref={rowRef} isFirstDateItem={isFirstDateItem} />;
@@ -66,7 +71,11 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
         }
     }, [activity, handleHideRows, handleShowRows, isRunning, isFirstDateItem, searchQuery, t]);
 
-    return <div style={style}>{itemToRender}</div>;
+    return (
+        <div style={style} data-testid={`activity-row-${index}`}>
+            {itemToRender}
+        </div>
+    );
 });
 
 ActivitiesPanelRow.displayName = "ActivitiesPanelRow";

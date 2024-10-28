@@ -21,8 +21,8 @@ import sttp.tapir.derevo.schema
 import sttp.tapir.generic.Configuration
 
 import java.io.InputStream
-import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
 import java.util.UUID
 import scala.collection.immutable
 
@@ -220,7 +220,7 @@ object Dtos {
       override def displayableNameForScenario: String = displayableName
       override def displayableNameForFragment: String = displayableName
       override def icon: String                       = "/assets/activities/migration.svg"
-      override def supportedActions: List[String]     = commentRelatedActions
+      override def supportedActions: List[String]     = List.empty
     }
 
     case object PerformedSingleExecution extends ScenarioActivityType {
@@ -826,6 +826,7 @@ object Dtos {
     final case class NoActivity(scenarioActivityId: UUID)  extends ScenarioActivityError
     final case class NoComment(commentId: Long)            extends ScenarioActivityError
     final case class NoAttachment(attachmentId: Long)      extends ScenarioActivityError
+    final case class InvalidComment(error: String)         extends ScenarioActivityError
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e => s"No scenario ${e.scenarioName} found")
@@ -834,6 +835,9 @@ object Dtos {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoComment](e =>
         s"Unable to delete comment with id: ${e.commentId}"
       )
+
+    implicit val invalidCommentCodec: Codec[String, InvalidComment, CodecFormat.TextPlain] =
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[InvalidComment](_.error)
 
     implicit val noAttachmentCodec: Codec[String, NoAttachment, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoAttachment](e =>

@@ -257,7 +257,7 @@
         "start-prod": "BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} node server.js",
         "start:backend-docker": "npm run clean-translations && (! wait-on -t 250 tcp:localhost:${BE_PORT:-8080} 2> /dev/null || (echo \"Port: ${BE_PORT:-8080} already in use!\" && exit 1)) && start-server-and-test backend:docker http-get://localhost:${BE_PORT:-8080}/static/main.html start",
         "start:backend-remote": "npm run clean-translations && webpack serve",
-        "start:backend-staging": "BACKEND_DOMAIN=https://activities-demo.sandbox.nussknacker.io npm run start:backend-remote",
+        "start:backend-staging": "BACKEND_DOMAIN=https://staging.nussknacker.io npm run start:backend-remote",
         "start:backend-demo": "BACKEND_DOMAIN=https://demo.nussknacker.io npm run start:backend-remote",
         "backend:docker": "docker-compose kill && docker-compose rm -f -v && docker-compose up --no-recreate",
         "pretest": "npm run check",

@@ -53,6 +53,10 @@ const AddCommentDialog = loadable(() => import("../components/modals/AddCommentD
     fallback: <LoaderSpinner show />,
 });
 
+const ModifyExistingCommentDialog = loadable(() => import("../components/modals/ModifyExistingCommentDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -93,6 +97,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <ScenarioDetailsDialog {...props} />;
         case WindowKind.addComment:
             return <AddCommentDialog {...props} />;
+        case WindowKind.modifyComment:
+            return <ModifyExistingCommentDialog {...props} />;
         case WindowKind.addAttachment:
             return <AddAttachmentDialog {...props} />;
         default:
