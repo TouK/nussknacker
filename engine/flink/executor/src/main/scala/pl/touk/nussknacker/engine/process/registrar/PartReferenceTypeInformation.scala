@@ -26,8 +26,8 @@ class PartReferenceTypeInformation extends TypeInformation[PartReference] {
 
   @silent("deprecated")
   override def createSerializer(config: ExecutionConfig): TypeSerializer[PartReference] = {
-    val fragmentEndReferenceSerializer = new KryoSerializer[FragmentEndReference](classOf[FragmentEndReference], config)
-    new PartReferenceSerializer(fragmentEndReferenceSerializer)
+    val fragmentOutputFieldsSerializer = new KryoSerializer[Map[String, Any]](classOf[Map[String, Any]], config)
+    new PartReferenceSerializer(fragmentOutputFieldsSerializer)
   }
 
   override def toString: String =
@@ -51,8 +51,8 @@ private object PartReferenceSerializer {
 }
 
 // TODO: It's a experimental version, there can be some issues with this serializer
-// TODO: For FragmentEndReference we still use KryoSerializer :(
-class PartReferenceSerializer(val fragmentEndReferenceSerializer: KryoSerializer[FragmentEndReference])
+// TODO: For the FragmentEndReference type, fragmentOutputFieldsSerializer field is still serialized by the KryoSerializer :(
+class PartReferenceSerializer(val fragmentOutputFieldsSerializer: KryoSerializer[Map[String, Any]])
     extends TypeSerializer[PartReference] {
 
   import PartReferenceSerializer._
@@ -60,7 +60,7 @@ class PartReferenceSerializer(val fragmentEndReferenceSerializer: KryoSerializer
   override def isImmutableType: Boolean = false
 
   override def duplicate(): TypeSerializer[PartReference] =
-    new PartReferenceSerializer(fragmentEndReferenceSerializer)
+    new PartReferenceSerializer(fragmentOutputFieldsSerializer)
 
   override def createInstance(): PartReference =
     throw new NotImplementedError("There is no base implementation for PartReference")
@@ -105,8 +105,8 @@ class PartReferenceSerializer(val fragmentEndReferenceSerializer: KryoSerializer
         target.writeUTF(r.nodeId)
       case r: FragmentEndReference =>
         target.writeShort(FragmentEndReferenceType)
-        // TODO: Maybe we can use here TypeInformationDetection.instance.forType(Typed.fromInstance(r)).createSerializer ??
-        fragmentEndReferenceSerializer.serialize(r, target)
+        target.writeUTF(r.nodeId)
+        fragmentOutputFieldsSerializer.serialize(r.outputFields, target)
     }
 
   override def deserialize(reuse: PartReference, source: DataInputView): PartReference =
@@ -124,7 +124,8 @@ class PartReferenceSerializer(val fragmentEndReferenceSerializer: KryoSerializer
       case EndReferenceType =>
         EndReference(source.readUTF())
       case FragmentEndReferenceType =>
-        fragmentEndReferenceSerializer.deserialize(source)
+        FragmentEndReference(source.readUTF(), fragmentOutputFieldsSerializer.deserialize(source))
+
     }
   }
 
@@ -135,7 +136,7 @@ class PartReferenceSerializer(val fragmentEndReferenceSerializer: KryoSerializer
     obj.isInstanceOf[PartReferenceSerializer]
 
   override def hashCode(): Int =
-    Objects.hashCode(fragmentEndReferenceSerializer)
+    Objects.hashCode(fragmentOutputFieldsSerializer)
 }
 
 object PartReferenceSerializerSnapshot extends CompositeTypeSerializerSnapshot[PartReference, PartReferenceSerializer] {
@@ -143,12 +144,12 @@ object PartReferenceSerializerSnapshot extends CompositeTypeSerializerSnapshot[P
   override def getCurrentOuterSnapshotVersion: Int = 1
 
   override def getNestedSerializers(outerSerializer: PartReferenceSerializer): Array[TypeSerializer[_]] =
-    Array[TypeSerializer[_]](outerSerializer.fragmentEndReferenceSerializer)
+    Array[TypeSerializer[_]](outerSerializer.fragmentOutputFieldsSerializer)
 
   override def createOuterSerializerWithNestedSerializers(
       nestedSerializers: Array[TypeSerializer[_]]
   ): PartReferenceSerializer = {
-    val fragmentEndReferenceSerializer = nestedSerializers.head.asInstanceOf[KryoSerializer[FragmentEndReference]]
+    val fragmentEndReferenceSerializer = nestedSerializers.head.asInstanceOf[KryoSerializer[Map[String, Any]]]
     new PartReferenceSerializer(fragmentEndReferenceSerializer)
   }
 
