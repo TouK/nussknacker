@@ -19,5 +19,6 @@ export enum WindowKind {
     viewDescription,
     editDescription,
     addComment,
+    modifyComment,
     addAttachment,
 }
