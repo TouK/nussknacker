@@ -1,5 +1,4 @@
 import { lighten, styled } from "@mui/material";
-import { NkButton } from "../button/NkButton";
 
 export const AddAttachmentsWrapper = styled("div")`
     font-size: 12px;
@@ -48,22 +47,6 @@ export const AttachmentDetails = styled("div")`
     word-break: break-word;
 `;
 
-export const DownloadAttachment = styled("div")({
-    display: "flex",
-    alignItems: "center",
-    marginRight: "5px",
-    cursor: "pointer",
-    fontSize: "25px",
-});
-
-export const DownloadButton = styled(NkButton)(() => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "27px !important",
-    height: "27px !important",
-}));
-
 export const AttachHeader = styled("div")(
     () => `
     span {
@@ -76,24 +59,3 @@ export const AttachHeader = styled("div")(
     }
 `,
 );
-
-export const ProcessAttachmentsStyled = styled("div")`
-    cursor: default;
-    padding: 0 13px;
-    display: grid;
-`;
-
-export const ProcessAttachmentsList = styled("div")`
-    font-size: 10px;
-    margin: 15px 0;
-    padding: 0;
-    .footer {
-        font-style: italic;
-        p {
-            margin-bottom: 0;
-        }
-    }
-    p {
-        font-size: 12px;
-    }
-`;

@@ -3,7 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { displayCurrentProcessVersion, displayProcessActivity, loadProcessToolbarsConfiguration } from "../../actions/nk";
+import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../actions/nk";
 import { PromptContent } from "../../windowManager";
 import { CommentInput } from "../comment/CommentInput";
 import { ThunkAction } from "../../actions/reduxTypes";
@@ -42,7 +42,6 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
 
                 await dispatch(UndoActionCreators.clearHistory());
                 await dispatch(displayCurrentProcessVersion(processName));
-                await dispatch(displayProcessActivity(processName));
                 await dispatch(await getScenarioActivities(processName));
 
                 if (isRenamed) {
