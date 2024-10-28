@@ -76,7 +76,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `FlinkCustomNodeContext.forCustomContext` has been removed, please use `TypeInformationDetection.instance.forValueWithContext` instead
 
 ### Configuration changes
-* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to The `processToolbarConfig` which replace deprecated `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
+* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
 
 ## In version 1.17.0
 
