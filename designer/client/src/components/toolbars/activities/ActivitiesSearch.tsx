@@ -27,7 +27,7 @@ export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, fo
     const areResults = foundResults.length > 0;
 
     return (
-        <>
+        <Box sx={(theme) => ({ borderBottom: `0.5px solid ${getBorderColor(theme)}` })}>
             <SearchInputWithIcon
                 placeholder={i18next.t("activities.search.placeholder", "type here to find past event")}
                 onChange={handleSearch}
@@ -38,7 +38,6 @@ export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, fo
                         changeResult(selectedResult + 1);
                     }
                 }}
-                rootStyles={(theme) => ({ borderBottom: `0.5px solid ${getBorderColor(theme)}` })}
             >
                 <SearchIcon isEmpty={isEmpty(searchQuery)} />
             </SearchInputWithIcon>
@@ -63,6 +62,6 @@ export const ActivitiesSearch = ({ handleSearch, searchQuery, selectedResult, fo
                     </>
                 )}
             </Box>
-        </>
+        </Box>
     );
 };
