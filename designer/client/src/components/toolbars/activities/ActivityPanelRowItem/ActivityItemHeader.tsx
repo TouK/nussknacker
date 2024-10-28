@@ -18,6 +18,7 @@ import { StyledActionIcon } from "./StyledActionIcon";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
 import { getLoggedUser } from "../../../../reducers/selectors/settings";
+import { getCapabilities } from "../../../../reducers/selectors/other";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 
 const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
@@ -63,6 +64,7 @@ const HeaderActivity = ({
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const loggedUser = useSelector(getLoggedUser);
+    const { write } = useSelector(getCapabilities);
 
     switch (activityAction.id) {
         case "compare": {
@@ -106,7 +108,7 @@ const HeaderActivity = ({
         case "delete_attachment": {
             const attachmentStatus = activityAttachment.file.status;
 
-            if (attachmentStatus === "DELETED" || activityAttachment.lastModifiedBy !== loggedUser.id) {
+            if (attachmentStatus === "DELETED" || activityAttachment.lastModifiedBy !== loggedUser.id || !write) {
                 return null;
             }
 
@@ -137,7 +139,7 @@ const HeaderActivity = ({
         }
 
         case "add_comment": {
-            if (activityComment.content.status === "AVAILABLE" || activityComment.lastModifiedBy !== loggedUser.id) {
+            if (activityComment.content.status === "AVAILABLE" || activityComment.lastModifiedBy !== loggedUser.id || !write) {
                 return null;
             }
 

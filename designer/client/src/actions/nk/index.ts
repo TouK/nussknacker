@@ -1,7 +1,5 @@
 export * from "./assignSettings";
 export * from "./assignUser";
-export * from "./comment";
-export * from "./displayProcessActivity";
 export * from "./displayProcessCounts";
 export * from "./editNode";
 export * from "./importExport";

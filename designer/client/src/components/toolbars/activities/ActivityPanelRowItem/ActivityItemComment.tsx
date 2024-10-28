@@ -15,6 +15,7 @@ import { getProcessName } from "../../../../reducers/selectors/graph";
 import { getScenarioActivities } from "../../../../actions/nk/scenarioActivities";
 import { ActivityItemCommentModify } from "./ActivityItemCommentModify";
 import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { getCapabilities } from "../../../../reducers/selectors/other";
 
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
 
@@ -34,10 +35,11 @@ const CommentActivity = ({
     const processName = useSelector(getProcessName);
     const dispatch = useDispatch();
     const loggedUser = useSelector(getLoggedUser);
+    const { write } = useSelector(getCapabilities);
 
     switch (activityAction.id) {
         case "delete_comment": {
-            if (activityComment.lastModifiedBy !== loggedUser.id) {
+            if (activityComment.lastModifiedBy !== loggedUser.id || !write) {
                 return null;
             }
 
@@ -67,7 +69,7 @@ const CommentActivity = ({
             );
         }
         case "edit_comment": {
-            if (activityComment.lastModifiedBy !== loggedUser.id) {
+            if (activityComment.lastModifiedBy !== loggedUser.id || !write) {
                 return null;
             }
 
