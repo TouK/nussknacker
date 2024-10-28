@@ -27,11 +27,11 @@ export const ActivityItemCommentModify = ({ commentContent, scenarioActivityId, 
                 existingComment: commentContent.value,
                 scenarioActivityId,
                 placeholder: permittedModifyCommentTypes.includes(activityType)
-                    ? featuresSettings.deploymentCommentSettings.exampleComment
+                    ? featuresSettings?.deploymentCommentSettings?.exampleComment
                     : undefined,
             },
         });
-    }, [activityType, commentContent.value, featuresSettings.deploymentCommentSettings.exampleComment, open, scenarioActivityId]);
+    }, [activityType, commentContent.value, featuresSettings?.deploymentCommentSettings?.exampleComment, open, scenarioActivityId]);
 
     return (
         <StyledActionIcon
