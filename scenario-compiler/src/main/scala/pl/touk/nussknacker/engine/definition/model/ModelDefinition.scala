@@ -25,7 +25,8 @@ case class ModelDefinition private (
   }
 
   def withComponents(componentsToAdd: List[ComponentDefinitionWithImplementation]): ModelDefinition = {
-    val newComponents = Components(components = componentsToAdd, basicComponents = componentsToAdd)
+    val newComponents =
+      components.withComponents(Components(components = componentsToAdd, basicComponents = componentsToAdd))
     checkDuplicates(newComponents)
     copy(components = newComponents)
   }
