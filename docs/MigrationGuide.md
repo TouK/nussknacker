@@ -75,10 +75,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   want to keep using Flink pre-1.19 with current Nussknacker, please refer to compatibility providing plugins in
   https://github.com/TouK/nussknacker-flink-compatibility.
 
-* [#7058](https://github.com/TouK/nussknacker/pull/7058) Performance optimization: Add missing Flink TypeInformation for better serialization
+* Performance optimization:
+  * [#7058](https://github.com/TouK/nussknacker/pull/7058) Add missing Flink TypeInformation for better serialization
     * In case of using base (bounded and unbounded) Flink components state will be probably not compatible
     * `FlinkCustomNodeContext.typeInformationDetection` has been removed, please use `TypeInformationDetection.instance` instead
     * `FlinkCustomNodeContext.forCustomContext` has been removed, please use `TypeInformationDetection.instance.forValueWithContext` instead
+  * [#7097](https://github.com/TouK/nussknacker/pull/7097) Flink base types registration mechanism
+    * In case of using types: java.time.LocalDate, java.time.LocalTime, java.time.LocalDateTime, java.time.Instant,
+    java.sql.Date, java.sql.Time, java.sql.Timestamp with CaseClassTypeInfo mechanism, state probably will be lost
 
 ### Configuration changes
 * [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
