@@ -1,20 +1,24 @@
 package pl.touk.nussknacker.engine.flink.api.typeinformation
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.util.Implicits.RichStringList
 
 import java.net.URLClassLoader
 import java.util.ServiceLoader
 import scala.jdk.CollectionConverters._
+import scala.reflect.{ClassTag, classTag}
 
 /**
  * This is trait that allows for providing more details TypeInformation when ValidationContext is known,
  * by default generic Flink mechanisms are used
  */
 trait TypeInformationDetection extends Serializable {
+
+  // Flink doesn't have any special null serializer, so we use String TypeInfo
+  def forNull[T]: TypeInformation[T] = forType[T](Typed.typedClass[String])
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context]
 
@@ -28,6 +32,14 @@ trait TypeInformationDetection extends Serializable {
       validationContext: ValidationContext,
       value: TypeInformation[T]
   ): TypeInformation[ValueWithContext[T]]
+
+  def forClass[T: ClassTag]: TypeInformation[T] = {
+    val klass = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    forClass(klass)
+  }
+
+  def forClass[T](klass: Class[T]): TypeInformation[T] =
+    forType[T](Typed.typedClass(klass))
 
   def forType[T](typingResult: TypingResult): TypeInformation[T]
 
