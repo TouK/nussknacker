@@ -38,6 +38,7 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
 
   private def mockProcessingTypeData(processingTypeName: String, processingTypeNames: String*) = {
     val allProcessingTypes = (processingTypeName :: processingTypeNames.toList).toSet
+    val modelDependencies  = TestFactory.modelDependencies
     val loader = new LocalProcessingTypeDataLoader(
       modelData = allProcessingTypes.map { name =>
         name -> (
@@ -46,14 +47,15 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
             ConfigFactory.empty(),
             List(
               ComponentDefinition(s"${name}Component", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {}))
-            )
+            ),
+            componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
           )
         )
       }.toMap,
       deploymentManagerProvider = new DeploymentManagerProviderStub
     )
     loader
-      .loadProcessingTypeData(_ => TestFactory.modelDependencies, _ => TestFactory.deploymentManagerDependencies)
+      .loadProcessingTypeData(_ => modelDependencies, _ => TestFactory.deploymentManagerDependencies)
       .unsafeRunSync()
   }
 

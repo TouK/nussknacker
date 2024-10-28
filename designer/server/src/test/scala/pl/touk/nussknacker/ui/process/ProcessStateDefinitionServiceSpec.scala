@@ -189,7 +189,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       processingType,
       LocalModelData(
         ConfigFactory.empty(),
-        List(ComponentDefinition("source", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {})))
+        List(ComponentDefinition("source", SourceFactory.noParamUnboundedStreamFactory[Any](new Source {}))),
+        componentDefinitionExtractionMode = modelDependencies.componentDefinitionExtractionMode
       ),
       new MockManagerProvider(
         new MockDeploymentManager() {
