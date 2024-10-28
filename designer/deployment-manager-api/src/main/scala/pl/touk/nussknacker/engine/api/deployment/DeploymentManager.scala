@@ -70,11 +70,16 @@ trait DeploymentManager extends AutoCloseable {
 
   def customActionsDefinitions: List[CustomActionDefinition]
 
-  def scenarioActivityHandling: ScenarioActivityHandling =
-    ScenarioActivityHandling.AllScenarioActivitiesStoredByNussknacker
-
   protected final def notImplemented: Future[Nothing] =
     Future.failed(new NotImplementedError())
+
+}
+
+trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>
+
+  def managerSpecificScenarioActivities(
+      processIdWithName: ProcessIdWithName
+  ): Future[List[ScenarioActivity]]
 
 }
 

@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.ManagerSpecificScenarioActivitiesStoredByManager
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -53,7 +52,10 @@ object MockableDeploymentManagerProvider {
 
   type ScenarioName = String
 
-  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData]) extends DeploymentManager with StubbingCommands {
+  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData])
+      extends DeploymentManager
+      with ManagerSpecificScenarioActivitiesStoredByManager
+      with StubbingCommands {
 
     private lazy val testRunnerOpt =
       modelDataOpt.map(modelData => new FlinkProcessTestRunner(modelData.asInvokableModelData))
@@ -131,15 +133,10 @@ object MockableDeploymentManagerProvider {
 
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-    override def scenarioActivityHandling: ScenarioActivityHandling =
-      new ManagerSpecificScenarioActivitiesStoredByManager {
-
-        override def managerSpecificScenarioActivities(
-            processIdWithName: ProcessIdWithName
-        ): Future[List[ScenarioActivity]] =
-          Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
-
-      }
+    override def managerSpecificScenarioActivities(
+        processIdWithName: ProcessIdWithName
+    ): Future[List[ScenarioActivity]] =
+      Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
 
     override def close(): Unit = {}
   }

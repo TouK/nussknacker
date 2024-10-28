@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActivityHandling.ManagerSpecificScenarioActivitiesStoredByManager
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -104,6 +103,7 @@ class PeriodicDeploymentManager private[periodic] (
     toClose: () => Unit
 )(implicit val ec: ExecutionContext)
     extends DeploymentManager
+    with ManagerSpecificScenarioActivitiesStoredByManager
     with LazyLogging {
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
@@ -237,14 +237,10 @@ class PeriodicDeploymentManager private[periodic] (
   //    - we have to migrate information about old periodic deployments, or decide that we don't need it
   //    - we have to modify the logic of the PeriodicDeploymentManager
   //    - we may need to refactor PeriodicDeploymentManager data source first
-  override val scenarioActivityHandling: ManagerSpecificScenarioActivitiesStoredByManager =
-    new ManagerSpecificScenarioActivitiesStoredByManager {
 
-      override def managerSpecificScenarioActivities(
-          processIdWithName: ProcessIdWithName
-      ): Future[List[ScenarioActivity]] =
-        service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName)
-
-    }
+  override def managerSpecificScenarioActivities(
+      processIdWithName: ProcessIdWithName
+  ): Future[List[ScenarioActivity]] =
+    service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName)
 
 }
