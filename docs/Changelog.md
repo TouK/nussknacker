@@ -66,6 +66,15 @@
   * [#7058](https://github.com/TouK/nussknacker/pull/7058) Add missing Flink TypeInformation for better serialization
   * [#7097](https://github.com/TouK/nussknacker/pull/7097) Flink base types registration mechanism
 * [#7021](https://github.com/TouK/nussknacker/pull/7021) Definitions service can return definition without UI config
+* [#7058](https://github.com/TouK/nussknacker/pull/7058) Performance optimization: Add missing Flink TypeInformation for better serialization
+* [#7063](https://github.com/TouK/nussknacker/pull/7063) Introduce conversion extension methods in SpeL:
+  * is(className)/to(className)/toOrNull(className)
+  * isBoolean/toBoolean/toBooleanOrNull
+  * isLong/toLong/toLongOrNull
+  * isDouble/toDouble/toDoubleOrNull
+  * isBigDecimal/toBigDecimal/toBigDecimalOrNull
+  * isList/toList/toListOrNull - a collection or unknown collection can be converted to a list.
+  * isMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
 
 ## 1.17
 

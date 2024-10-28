@@ -67,13 +67,13 @@ object ConversionExt extends ExtensionMethodsHandler {
   private val convertMethodsNames = definitions.keySet
 
   private val conversionsRegistry: List[Conversion] = List(
-    LongConversion,
-    DoubleConversion,
-    BigDecimalConversion,
-    BooleanConversion,
-    StringConversion,
-    MapConversion,
-    ListConversion,
+    ToLongConversion,
+    ToDoubleConversion,
+    ToBigDecimalConversion,
+    ToBooleanConversion,
+    ToStringConversion,
+    ToMapConversion,
+    ToListConversion,
   )
 
   private val conversionsByType: Map[String, Conversion] = conversionsRegistry

@@ -5,78 +5,76 @@ import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
-import pl.touk.nussknacker.engine.extension.ListConversion.collectionClass
-import pl.touk.nussknacker.engine.extension.MapConversion.{keyName, valueName}
+import pl.touk.nussknacker.engine.extension.ToMapConversion.{keyName, valueName}
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
-import java.util.{List => JList, Map => JMap}
+import java.util.{Collection => JCollection, List => JList, Map => JMap}
 
 class CollectionConversionExt(target: Any) {
 
-  def isList(): Boolean         = ListConversion.canConvert(target)
-  def toList(): JList[_]        = ListConversion.convert(target)
-  def toListOrNull(): JList[_]  = ListConversion.convertOrNull(target)
-  def isMap(): Boolean          = MapConversion.canConvert(target)
-  def toMap(): JMap[_, _]       = MapConversion.convert(target)
-  def toMapOrNull(): JMap[_, _] = MapConversion.convertOrNull(target)
+  def isList(): Boolean         = ToListConversion.canConvert(target)
+  def toList(): JList[_]        = ToListConversion.convert(target)
+  def toListOrNull(): JList[_]  = ToListConversion.convertOrNull(target)
+  def isMap(): Boolean          = ToMapConversion.canConvert(target)
+  def toMap(): JMap[_, _]       = ToMapConversion.convert(target)
+  def toMapOrNull(): JMap[_, _] = ToMapConversion.convertOrNull(target)
 
 }
 
 object CollectionConversionExt extends ExtensionMethodsHandler {
-  private val unknownClass  = classOf[Object]
-  private val booleanTyping = Typed.typedClass[Boolean]
-
-  private val toMapDefinition = FunctionalMethodDefinition(
-    typeFunction = (invocationTarget, _) => toMapTypeFunction(invocationTarget),
-    signature = MethodTypeInfo(
-      noVarArgs = Nil,
-      varArg = None,
-      result = Unknown
-    ),
-    name = "toMap",
-    description = Option("Convert to a map or throw exception in case of failure")
-  )
-
-  private val toListDefinition = FunctionalMethodDefinition(
-    typeFunction = (invocationTarget, _) => toListTypeFunction(invocationTarget),
-    signature = MethodTypeInfo(
-      noVarArgs = Nil,
-      varArg = None,
-      result = Unknown
-    ),
-    name = "toList",
-    description = Option("Convert to a list or throw exception in case of failure")
-  )
+  private val unknownClass    = classOf[Object]
+  private val booleanTyping   = Typed.typedClass[Boolean]
+  private val collectionClass = classOf[JCollection[_]]
 
   private val isMapMethodDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toMapTypeFunction(invocationTarget).map(_ => booleanTyping),
-    signature = MethodTypeInfo(
-      noVarArgs = Nil,
-      varArg = None,
-      result = Unknown
-    ),
+    signature = MethodTypeInfo.noArgTypeInfo,
     name = "isMap",
     description = Some("Check whether can be convert to a map")
   )
 
+  private val toMapDefinition = FunctionalMethodDefinition(
+    typeFunction = (invocationTarget, _) => toMapTypeFunction(invocationTarget),
+    signature = MethodTypeInfo.noArgTypeInfo,
+    name = "toMap",
+    description = Option("Convert to a map or throw exception in case of failure")
+  )
+
+  private val toMapOrNullDefinition = FunctionalMethodDefinition(
+    typeFunction = (invocationTarget, _) => toMapTypeFunction(invocationTarget),
+    signature = MethodTypeInfo.noArgTypeInfo,
+    name = "toMapOrNull",
+    description = Option("Convert to a map or null in case of failure")
+  )
+
   private val isListMethodDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toListTypeFunction(invocationTarget).map(_ => booleanTyping),
-    signature = MethodTypeInfo(
-      noVarArgs = Nil,
-      varArg = None,
-      result = Unknown
-    ),
+    signature = MethodTypeInfo.noArgTypeInfo,
     name = "isList",
     description = Some("Check whether can be convert to a list")
+  )
+
+  private val toListDefinition = FunctionalMethodDefinition(
+    typeFunction = (invocationTarget, _) => toListTypeFunction(invocationTarget),
+    signature = MethodTypeInfo.noArgTypeInfo,
+    name = "toList",
+    description = Option("Convert to a list or throw exception in case of failure")
+  )
+
+  private val toListOrNullDefinition = FunctionalMethodDefinition(
+    typeFunction = (invocationTarget, _) => toListTypeFunction(invocationTarget),
+    signature = MethodTypeInfo.noArgTypeInfo,
+    name = "toListOrNull",
+    description = Option("Convert to a list or null in case of failure")
   )
 
   private val definitions = List(
     isMapMethodDefinition,
     toMapDefinition,
-    toMapDefinition.copy(name = "toMapOrNull", description = Some("Convert to a map or null in case of failure")),
+    toMapOrNullDefinition,
     isListMethodDefinition,
     toListDefinition,
-    toListDefinition.copy(name = "toListOrNull", description = Some("Convert to a list or null in case of failure")),
+    toListOrNullDefinition,
   ).groupBy(_.name)
 
   override type ExtensionMethodInvocationTarget = CollectionConversionExt
