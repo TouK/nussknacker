@@ -389,7 +389,7 @@ class HttpService {
     async updateComment(processName: string, comment: string, scenarioActivityId: string): Promise<ResponseStatus> {
         try {
             await api.put(`/processes/${encodeURIComponent(processName)}/activity/comment/${scenarioActivityId}`, comment);
-            this.#addInfo(i18next.t("notification.info.commentAdded", "Comment modified"));
+            this.#addInfo(i18next.t("notification.info.commentModified", "Comment modified"));
             return { status: "success" };
         } catch (error) {
             if (error?.response?.status != 400) {

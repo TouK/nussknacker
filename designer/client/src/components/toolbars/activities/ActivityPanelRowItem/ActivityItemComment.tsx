@@ -99,7 +99,7 @@ export const ActivityItemComment = ({ comment, searchQuery, activityActions, sce
             <CommentContent
                 content={comment.content.value}
                 commentSettings={commentSettings}
-                searchWords={[searchQuery]}
+                searchWords={searchQuery ? [searchQuery] : undefined}
                 variant={"overline"}
             />
             {isActivityHovered && (
