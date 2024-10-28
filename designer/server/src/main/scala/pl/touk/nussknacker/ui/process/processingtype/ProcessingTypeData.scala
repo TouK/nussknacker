@@ -156,8 +156,9 @@ object ProcessingTypeData {
     DynamicComponentsStaticDefinitions(
       finalDefinitions = createStaticDefinitions(_.components),
       basicDefinitions = componentDefinitionExtractionMode match {
-        case ComponentDefinitionExtractionMode.FinalDefinition          => Map.empty
-        case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions => createStaticDefinitions(_.basicComponents)
+        case ComponentDefinitionExtractionMode.FinalDefinition => None
+        case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
+          Some(createStaticDefinitions(_.basicComponentsUnsafe))
       }
     )
   }

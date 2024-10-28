@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.model
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 
@@ -25,8 +26,7 @@ case class ModelDefinition private (
   }
 
   def withComponents(componentsToAdd: List[ComponentDefinitionWithImplementation]): ModelDefinition = {
-    val newComponents =
-      components.withComponents(Components(components = componentsToAdd, basicComponents = componentsToAdd))
+    val newComponents = components.withComponents(componentsToAdd)
     checkDuplicates(newComponents)
     copy(components = newComponents)
   }
@@ -54,7 +54,7 @@ case class ModelDefinition private (
     }
 
     val componentsDuplicates      = findDuplicates(components.components)
-    val basicComponentsDuplicates = findDuplicates(components.basicComponents)
+    val basicComponentsDuplicates = components.basicComponents.map(findDuplicates).getOrElse(List.empty)
 
     if (componentsDuplicates.nonEmpty) {
       throw new DuplicatedComponentsException(componentsDuplicates)
@@ -75,15 +75,15 @@ object ModelDefinition {
   def apply(
       components: Components,
       expressionConfig: ExpressionConfigDefinition,
-      settings: ClassExtractionSettings
-  ): ModelDefinition =
-    new ModelDefinition(Components.empty, expressionConfig, settings).withComponents(components)
+      settings: ClassExtractionSettings,
+  ): ModelDefinition = {
+    val componentDefinitionExtractionMode = components.basicComponents match {
+      case Some(_) => ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
+      case None    => ComponentDefinitionExtractionMode.FinalDefinition
+    }
 
-  def apply(
-      components: List[ComponentDefinitionWithImplementation],
-      expressionConfig: ExpressionConfigDefinition,
-      settings: ClassExtractionSettings
-  ): ModelDefinition =
-    new ModelDefinition(Components.empty, expressionConfig, settings).withComponents(components)
+    new ModelDefinition(Components.empty(componentDefinitionExtractionMode), expressionConfig, settings)
+      .withComponents(components)
+  }
 
 }

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{PredefinedFromEntityUnmarshallers, Unmarshal}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Json, parser}
 import org.scalatest.funspec.AnyFunSpec
@@ -77,7 +76,7 @@ class DefinitionResourcesSpec
   }
 
   it("should return enriched definition data for existing scenario type") {
-    getProcessDefinitionData(enrichWithAdditionalConfig = Some(true)) ~> check {
+    getProcessDefinitionData(enrichedWithAdditionalConfig = Some(true)) ~> check {
       status shouldBe StatusCodes.OK
 
       val response = responseAs[Json]
@@ -86,7 +85,7 @@ class DefinitionResourcesSpec
   }
 
   it("should return basic definition data without enrichments for existing scenario type") {
-    getProcessDefinitionData(enrichWithAdditionalConfig = Some(false)) ~> check {
+    getProcessDefinitionData(enrichedWithAdditionalConfig = Some(false)) ~> check {
       status shouldBe StatusCodes.OK
 
       val response = responseAs[Json]
@@ -301,19 +300,19 @@ class DefinitionResourcesSpec
 
   private def getProcessDefinitionData(
       processingType: String = "streaming",
-      enrichWithAdditionalConfig: Option[Boolean] = None
+      enrichedWithAdditionalConfig: Option[Boolean] = None
   ): RouteTestResult = {
-    getProcessDefinitionDataUsingRawProcessingType(processingType, enrichWithAdditionalConfig)
+    getProcessDefinitionDataUsingRawProcessingType(processingType, enrichedWithAdditionalConfig)
   }
 
   private def getProcessDefinitionDataUsingRawProcessingType(
       processingType: String,
-      enrichWithAdditionalConfig: Option[Boolean] = None
+      enrichedWithAdditionalConfig: Option[Boolean] = None
   ) = {
-    val maybeEnrichWithAdditionalConfig =
-      enrichWithAdditionalConfig.fold("")(value => s"&enrichWithAdditionalConfig=$value")
+    val maybeEnrichedWithAdditionalConfig =
+      enrichedWithAdditionalConfig.fold("")(value => s"&enrichedWithAdditionalConfig=$value")
     Get(
-      s"/processDefinitionData/$processingType?isFragment=false$maybeEnrichWithAdditionalConfig"
+      s"/processDefinitionData/$processingType?isFragment=false$maybeEnrichedWithAdditionalConfig"
     ) ~> withPermissions(
       definitionResources,
       Permission.Read

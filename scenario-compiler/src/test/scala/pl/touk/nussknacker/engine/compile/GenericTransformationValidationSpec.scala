@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -29,8 +29,9 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
-import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 
+import scala.jdk.CollectionConverters._
 import scala.jdk.CollectionConverters._
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
@@ -55,8 +56,14 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
   private val modelDefinition = ModelDefinition(
-    ComponentDefinitionWithImplementation
-      .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
+    Components
+      .forList(
+        components,
+        ComponentsUiConfig.Empty,
+        id => DesignerWideComponentId(id.toString),
+        Map.empty,
+        ComponentDefinitionExtractionMode.FinalDefinition
+      ),
     ModelDefinitionBuilder.emptyExpressionConfig,
     ClassExtractionSettings.Default
   )

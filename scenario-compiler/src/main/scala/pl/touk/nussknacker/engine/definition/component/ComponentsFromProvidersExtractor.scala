@@ -30,8 +30,15 @@ object ComponentsFromProvidersExtractor {
 final case class Components(
     components: List[ComponentDefinitionWithImplementation],
     // components without enrichments from an additional provider
-    basicComponents: List[ComponentDefinitionWithImplementation]
+    basicComponents: Option[List[ComponentDefinitionWithImplementation]]
 ) {
+
+  def withComponents(componentsToAdd: List[ComponentDefinitionWithImplementation]): Components = {
+    copy(
+      components = components ::: componentsToAdd,
+      basicComponents = basicComponents.map(values => values ::: componentsToAdd)
+    )
+  }
 
   def withComponents(componentsToAdd: Components): Components = {
     Components.combine(this, componentsToAdd)
@@ -40,14 +47,26 @@ final case class Components(
   def filter(predicate: ComponentDefinitionWithImplementation => Boolean): Components = {
     copy(
       components = components.filter(predicate),
-      basicComponents = components.filter(predicate),
+      basicComponents = basicComponents.map(_.filter(predicate)),
     )
   }
+
+  def basicComponentsUnsafe: List[ComponentDefinitionWithImplementation] =
+    basicComponents.getOrElse(
+      throw new IllegalStateException("Basic components requested but they are not precomputed")
+    )
 
 }
 
 object Components {
-  val empty: Components = Components(List.empty, List.empty)
+
+  def empty(mode: ComponentDefinitionExtractionMode): Components = Components(
+    components = List.empty,
+    basicComponents = mode match {
+      case ComponentDefinitionExtractionMode.FinalDefinition          => None
+      case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions => Some(List.empty)
+    }
+  )
 
   sealed trait ComponentDefinitionExtractionMode
 
@@ -66,26 +85,30 @@ object Components {
       componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
 
-    def extractComponentDefinition(configFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]) = {
+    def extractComponentDefinition(
+        uiConfig: ComponentsUiConfig,
+        configFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    ) = {
       ComponentDefinitionExtractor
         .extract(
           componentName,
           component,
           configFromDefinition,
-          componentsUiConfig,
+          uiConfig,
           determineDesignerWideId,
           configFromProvider
         )
     }
 
-    val finalDefinitions = extractComponentDefinition(additionalConfigsFromProvider)
+    val finalDefinitions = extractComponentDefinition(componentsUiConfig, additionalConfigsFromProvider)
     componentDefinitionExtractionMode match {
       case ComponentDefinitionExtractionMode.FinalDefinition =>
-        Components(components = finalDefinitions.toList, basicComponents = List.empty)
+        Components(components = finalDefinitions.toList, basicComponents = None)
       case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
         Components(
           components = finalDefinitions.toList,
-          basicComponents = extractComponentDefinition(configFromProvider = Map.empty).toList
+          basicComponents =
+            Some(extractComponentDefinition(uiConfig = ComponentsUiConfig.Empty, configFromProvider = Map.empty).toList)
         )
     }
   }
@@ -105,15 +128,17 @@ object Components {
     )
     componentDefinitionExtractionMode match {
       case ComponentDefinitionExtractionMode.FinalDefinition =>
-        Components(components = componentsWithAdditionalConfig, basicComponents = List.empty)
+        Components(components = componentsWithAdditionalConfig, basicComponents = None)
       case ComponentDefinitionExtractionMode.FinalAndBasicDefinitions =>
         Components(
           components = componentsWithAdditionalConfig,
-          basicComponents = ComponentDefinitionWithImplementation.forList(
-            components,
-            componentsUiConfig,
-            determineDesignerWideId,
-            additionalConfigsFromProvider = Map.empty
+          basicComponents = Some(
+            ComponentDefinitionWithImplementation.forList(
+              components,
+              componentsUiConfig,
+              determineDesignerWideId,
+              additionalConfigsFromProvider = Map.empty
+            )
           )
         )
     }
@@ -122,7 +147,7 @@ object Components {
   def combine(x: Components, y: Components): Components = {
     x.copy(
       components = x.components ::: y.components,
-      basicComponents = x.basicComponents ::: y.basicComponents,
+      basicComponents = x.basicComponents.map(components => components ::: y.basicComponents.getOrElse(List.empty)),
     )
   }
 
@@ -145,7 +170,7 @@ class ComponentsFromProvidersExtractor(
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-      computeBasic: ComponentDefinitionExtractionMode
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): Components = {
     loadCorrectProviders(modelDependencies.config).toList
       .map { case (_, (config, provider)) =>
@@ -156,10 +181,10 @@ class ComponentsFromProvidersExtractor(
           componentsUiConfig,
           determineDesignerWideId,
           additionalConfigsFromProvider,
-          computeBasic
+          componentDefinitionExtractionMode
         )
       }
-      .foldLeft(Components.empty)(Components.combine)
+      .foldLeft(Components.empty(componentDefinitionExtractionMode))(Components.combine)
   }
 
   private def loadCorrectProviders(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {

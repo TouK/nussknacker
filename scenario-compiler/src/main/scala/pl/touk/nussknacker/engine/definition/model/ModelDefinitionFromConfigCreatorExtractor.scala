@@ -83,7 +83,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
             componentDefinitionExtractionMode
           )
       }
-      .foldLeft(Components.empty)(Components.combine)
+      .foldLeft(Components.empty(componentDefinitionExtractionMode))(Components.combine)
   }
 
   private def toDefinition(

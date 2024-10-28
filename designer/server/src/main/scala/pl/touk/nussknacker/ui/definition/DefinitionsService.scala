@@ -54,7 +54,10 @@ class DefinitionsService(
           case ComponentUiConfigMode.EnrichedWithAdditionalConfig =>
             (alignedComponentsDefinition.components, staticDefinitionForDynamicComponents.finalDefinitions)
           case ComponentUiConfigMode.BasicConfig =>
-            (alignedComponentsDefinition.basicComponents, staticDefinitionForDynamicComponents.basicDefinitions)
+            (
+              alignedComponentsDefinition.basicComponentsUnsafe,
+              staticDefinitionForDynamicComponents.basicDefinitionsUnsafe
+            )
         }
 
         components.map {

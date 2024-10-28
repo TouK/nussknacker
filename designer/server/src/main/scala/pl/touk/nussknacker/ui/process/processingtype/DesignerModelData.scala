@@ -23,7 +23,14 @@ object DesignerModelData {
   final case class DynamicComponentsStaticDefinitions(
       finalDefinitions: Map[ComponentId, ComponentStaticDefinition],
       // components definitions without enrichments from an additional provider
-      basicDefinitions: Map[ComponentId, ComponentStaticDefinition]
-  )
+      basicDefinitions: Option[Map[ComponentId, ComponentStaticDefinition]]
+  ) {
+
+    def basicDefinitionsUnsafe: Map[ComponentId, ComponentStaticDefinition] =
+      basicDefinitions.getOrElse(
+        throw new IllegalStateException("Basic definitions were requested but they are not precomputed")
+      )
+
+  }
 
 }
