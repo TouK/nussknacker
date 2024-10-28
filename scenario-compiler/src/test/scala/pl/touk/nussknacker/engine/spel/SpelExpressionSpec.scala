@@ -26,12 +26,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.definition.clazz.{
-  ClassDefinitionSet,
-  ClassDefinitionTestUtils,
-  JavaClassWithStaticMethod,
-  JavaClassWithVarargs
-}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
@@ -109,7 +104,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       "arrayOfUnknown"                              -> Array("unknown".asInstanceOf[Any]),
       "unknownString"                               -> ContainerOfUnknown("unknown"),
       "containerWithUnknownObject"                  -> ContainerOfUnknown(SampleValue(1)),
-      "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticMethod()),
+      "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticParameterlessMethod()),
     )
   )
 
@@ -243,7 +238,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[LocalDate],
       classOf[ChronoLocalDate],
       classOf[SampleValue],
-      classOf[JavaClassWithStaticMethod],
+      classOf[JavaClassWithStaticParameterlessMethod],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     )
     ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)

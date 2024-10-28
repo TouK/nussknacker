@@ -35,7 +35,7 @@ case class ClassDefinitionSet(classDefinitionsMap: Map[Class[_], ClassDefinition
           .getOrElse(methodName, List.empty)
       ) // todo: in some contexts should we force static only methods (in case of dealing with class type in variable)???
       .getOrElse(List.empty)
-      .exists(_.signatures.find(_.parametersToList.isEmpty).isDefined)
+      .exists(_.signatures.exists(_.parametersToList.isEmpty))
   }
 
 }

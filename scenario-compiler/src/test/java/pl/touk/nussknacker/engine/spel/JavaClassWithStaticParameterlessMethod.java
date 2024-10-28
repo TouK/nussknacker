@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.definition.clazz;
+package pl.touk.nussknacker.engine.spel;
 
 import pl.touk.nussknacker.engine.api.Hidden;
 
-public class JavaClassWithStaticMethod {
+public class JavaClassWithStaticParameterlessMethod {
 
     public static String someAllowedParameterlessStaticMethod() {
         return "allowed";
