@@ -32,7 +32,7 @@ export type FeaturesSettings = {
     remoteEnvironment: { targetEnvironmentId: string };
     environmentAlert: EnvironmentTagSettings;
     commentSettings: { substitutionPattern: string; substitutionLink: string };
-    deploymentCommentSettings?: { exampleComment: string };
+    deploymentCommentSettings?: { exampleComment: string } | null;
     intervalTimeSettings: { processes: number; healthCheck: number }; // TODO: verify usage
     tabs: DynamicTabData[];
     testDataSettings?: TestDataSettings;
