@@ -71,6 +71,7 @@ import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessi
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
+import pl.touk.nussknacker.ui.process.repository.stickynotes.DbStickyNotesRepository
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -169,6 +170,7 @@ class AkkaHttpBasedRouteProvider(
       implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
       val scenarioActivityRepository                    = DbScenarioActivityRepository.create(dbRef, designerClock)
       val actionRepository                              = DbScenarioActionRepository.create(dbRef, modelBuildInfo)
+      val stickyNotesRepository                         = DbStickyNotesRepository.create(dbRef, designerClock)
       val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
