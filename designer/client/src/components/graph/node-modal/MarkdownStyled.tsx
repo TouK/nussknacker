@@ -1,11 +1,14 @@
 import { PropsOf } from "@emotion/react";
+import { lighten, styled } from "@mui/material";
+import React, { PropsWithChildren } from "react";
 import Markdown from "react-markdown";
+import { Link } from "react-router-dom";
+import rehypeExternalLinks from "rehype-external-links";
+import rehypeRaw from "rehype-raw";
 import remarkDirective from "remark-directive";
 import remarkDirectiveRehype from "remark-directive-rehype";
-import React, { PropsWithChildren } from "react";
-import { lighten, styled } from "@mui/material";
+import remarkHtml from "remark-html";
 import { getBorderColor } from "../../../containers/theme/helpers";
-import { Link } from "react-router-dom";
 
 const RouterLink = ({
     to,
@@ -23,20 +26,21 @@ declare global {
     }
 }
 
+type MarkdownWithPluginsProps = PropsOf<typeof Markdown> & { linkTarget?: string };
 const MarkdownWithPlugins = ({
     remarkPlugins = [],
     children,
     components = {},
     linkTarget = "_blank",
     ...props
-}: PropsOf<typeof Markdown>) => (
+}: MarkdownWithPluginsProps) => (
     <Markdown
-        linkTarget={linkTarget}
         components={{
             "router-link": RouterLink,
             ...components,
         }}
-        remarkPlugins={[remarkDirective, remarkDirectiveRehype, ...remarkPlugins]}
+        remarkPlugins={[remarkDirective, remarkDirectiveRehype, remarkHtml, ...remarkPlugins]}
+        rehypePlugins={[[rehypeExternalLinks, { target: linkTarget, rel: ["noopener", "noreferrer"] }], rehypeRaw]}
         {...props}
     >
         {children}
