@@ -7,18 +7,18 @@ import java.lang.reflect.Type
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util
 
-object FlinkBaseTypeInfoRegistrar {
+object FlinkTypeInfoRegistrar {
 
   private case class RegistrationEntry[T, K <: TypeInfoFactory[T]](klass: Class[T], factoryClass: Class[K])
 
-  private val baseTypes = List(
+  private val typesToRegister = List(
     RegistrationEntry(classOf[LocalDate], classOf[LocalDateTypeInfoFactory]),
     RegistrationEntry(classOf[LocalTime], classOf[LocalTimeTypeInfoFactory]),
     RegistrationEntry(classOf[LocalDateTime], classOf[LocalDateTimeTypeInfoFactory]),
   )
 
   def ensureBaseTypesAreRegistered(): Unit =
-    baseTypes.foreach { base =>
+    typesToRegister.foreach { base =>
       register(base)
     }
 
