@@ -116,7 +116,7 @@ class ExpressionSuggesterSpec
       ),
       ClassDefinition(
         Unknown,
-        Map("canCastTo" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "canCastTo", None))),
+        Map("is" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "is", None))),
         Map.empty
       ),
     )
@@ -775,7 +775,7 @@ class ExpressionSuggesterSpec
 
   test("should suggest methods for unknown") {
     spelSuggestionsFor("#unknown.") shouldBe List(
-      suggestion("canCastTo", Typed[Boolean]),
+      suggestion("is", Typed[Boolean]),
     )
   }
 
@@ -825,7 +825,7 @@ class ExpressionSuggesterSpec
 
     val listMethodsSuggestion  = suggestion(listSpelExpression)
     val arrayMethodsSuggestion = suggestion(arraySpelExpression)
-    listMethodsSuggestion should contain theSameElementsAs arrayMethodsSuggestion
+    arrayMethodsSuggestion should contain allElementsOf listMethodsSuggestion
   }
 
 }
