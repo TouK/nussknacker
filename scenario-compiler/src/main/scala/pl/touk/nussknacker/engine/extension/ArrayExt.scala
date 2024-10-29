@@ -40,5 +40,5 @@ object ArrayExt extends ExtensionMethodsHandler {
       Map.empty
     }
 
-  override def applies(clazz: Class[_]): Boolean = clazz.isArray
+  override def appliesToClassInRuntime(clazz: Class[_]): Boolean = clazz.isArray
 }

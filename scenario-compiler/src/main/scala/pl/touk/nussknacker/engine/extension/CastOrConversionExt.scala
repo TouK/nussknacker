@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, Meth
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
-import pl.touk.nussknacker.engine.extension.CastOrToConversionExt.getConversion
+import pl.touk.nussknacker.engine.extension.CastOrConversionExt.getConversion
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
@@ -14,33 +14,19 @@ import java.lang.{Boolean => JBoolean}
 import scala.util.Try
 
 // todo: lbg - add casting methods to UTIL
-class CastOrToConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]]) {
+class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]]) {
 
   def is(className: String): Boolean =
     getClass(className).exists(clazz => clazz.isAssignableFrom(target.getClass)) ||
       getConversion(className).exists(_.canConvert(target))
 
-  def to(className: String): Any = tryCast(className) match {
-    case Right(value) => value
-    case Left(ex1) =>
-      tryConvert(className) match {
-        case Right(value) => value
-        case Left(ex2) =>
-          val exception = new IllegalStateException(s"Cannot cast or convert value: $target to: '$className'")
-          exception.addSuppressed(ex1)
-          exception.addSuppressed(ex2)
-          throw exception
-      }
-  }
+  def to(className: String): Any =
+    orElse(tryCast(className), tryConvert(className))
+    .getOrElse(throw new IllegalStateException(s"Cannot cast or convert value: $target to: '$className'"))
 
-  def toOrNull(className: String): Any = tryCast(className) match {
-    case Right(value) => value
-    case Left(_) =>
-      tryConvert(className) match {
-        case Right(value) => value
-        case Left(_)      => null
-      }
-  }
+  def toOrNull(className: String): Any =
+    orElse(tryCast(className), tryConvert(className))
+    .getOrElse(null)
 
   private def tryCast(className: String): Either[Throwable, Any] = getClass(className) match {
     case Some(clazz) => Try(clazz.cast(target)).toEither
@@ -54,9 +40,15 @@ class CastOrToConversionExt(target: Any, classesBySimpleName: Map[String, Class[
     getConversion(className)
       .flatMap(_.convertEither(target))
 
+  // scala 2.12 does not support either.orElse
+  private def orElse(e1: Either[Throwable, Any], e2: => Either[Throwable, Any]): Either[Throwable, Any] =
+    e1 match {
+      case Left(_) => e2
+      case r@Right(_) => r
+    }
 }
 
-object CastOrToConversionExt extends ExtensionMethodsHandler {
+object CastOrConversionExt extends ExtensionMethodsHandler {
   private val isMethodName              = "is"
   private val toMethodName              = "to"
   private val toOrNullMethodName        = "toOrNull"
@@ -64,37 +56,37 @@ object CastOrToConversionExt extends ExtensionMethodsHandler {
   private val stringClass               = classOf[String]
 
   private val conversionsRegistry: List[Conversion] = List(
-    ToLongConversion,
-    ToDoubleConversion,
-    ToBigDecimalConversion,
-    ToBooleanConversion,
+    ToLongConversionExt,
+    ToDoubleConversionExt,
+    ToBigDecimalConversionExt,
+    ToBooleanConversionExt,
     ToStringConversion,
-    ToMapConversion,
-    ToListConversion,
+    ToMapConversionExt,
+    ToListConversionExt,
   )
 
   private val conversionsByType: Map[String, Conversion] = conversionsRegistry
     .flatMap(c => c.resultTypeClass.classByNameAndSimpleNameLowerCase().map(n => n._1 -> c))
     .toMap
 
-  override type ExtensionMethodInvocationTarget = CastOrToConversionExt
-  override val invocationTargetClass: Class[CastOrToConversionExt] = classOf[CastOrToConversionExt]
+  override type ExtensionMethodInvocationTarget = CastOrConversionExt
+  override val invocationTargetClass: Class[CastOrConversionExt] = classOf[CastOrConversionExt]
 
   def isCastOrToConversionMethod(methodName: String): Boolean =
     castOrToConversionMethods.contains(methodName)
 
-  def allowedConversions(clazz: Class[_]): List[Conversion] = conversionsRegistry.filter(_.applies(clazz))
+  def allowedConversions(clazz: Class[_]): List[Conversion] = conversionsRegistry.filter(_.appliesToConversion(clazz))
 
   override def createConverter(
       set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[CastOrToConversionExt] = {
+  ): ToExtensionMethodInvocationTargetConverter[CastOrConversionExt] = {
     val classesBySimpleName = set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase()
-    (target: Any) => new CastOrToConversionExt(target, classesBySimpleName)
+    (target: Any) => new CastOrConversionExt(target, classesBySimpleName)
   }
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
     val castAllowedClasses = clazz.findAllowedClassesForCastParameter(set).mapValuesNow(_.clazzName)
-    val isConvertibleClass = conversionsRegistry.exists(_.applies(clazz))
+    val isConvertibleClass = conversionsRegistry.exists(_.appliesToConversion(clazz))
     if (castAllowedClasses.nonEmpty || isConvertibleClass) {
       definitions(castAllowedClasses)
     } else {
@@ -105,7 +97,7 @@ object CastOrToConversionExt extends ExtensionMethodsHandler {
   // Convert methods should visible in runtime for every class because we allow invoke convert methods on an unknown
   // object in Typer, but in the runtime the same type could be known and that's why should add convert method for an
   // every class.
-  override def applies(clazz: Class[_]): Boolean = true
+  override def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
 
   private def getConversion(className: String): Either[Throwable, Conversion] =
     conversionsByType.get(className.toLowerCase) match {
@@ -116,19 +108,19 @@ object CastOrToConversionExt extends ExtensionMethodsHandler {
   private def definitions(allowedClasses: Map[Class[_], TypingResult]): Map[String, List[MethodDefinition]] =
     List(
       FunctionalMethodDefinition(
-        (_, x) => canConvertToTyping(allowedClasses)(x),
+        (target, params) => canConvertToTyping(allowedClasses)(target, params),
         methodTypeInfoWithStringParam(Typed.typedClass[JBoolean]),
         "is",
         Some("Checks if a type can be converted to a given class")
       ),
       FunctionalMethodDefinition(
-        (_, x) => convertToTyping(allowedClasses)(x),
+        (target, params) => convertToTyping(allowedClasses)(target, params),
         methodTypeInfoWithStringParam(Unknown),
         "to",
         Some("Converts a type to a given class or throws exception if type cannot be converted.")
       ),
       FunctionalMethodDefinition(
-        (_, x) => convertToTyping(allowedClasses)(x),
+        (target, params) => convertToTyping(allowedClasses)(target, params),
         methodTypeInfoWithStringParam(Unknown),
         "toOrNull",
         Some("Converts a type to a given class or return null if type cannot be converted.")
@@ -136,23 +128,24 @@ object CastOrToConversionExt extends ExtensionMethodsHandler {
     ).groupBy(_.name)
 
   private def convertToTyping(allowedClasses: Map[Class[_], TypingResult])(
-      arguments: List[typing.TypingResult]
+    invocationTarget: TypingResult,
+    arguments: List[TypingResult]
   ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-    case TypedObjectWithValue(_, clazzName: String) :: Nil =>
-      allowedClasses
-        .find(_._1.equalsScalaClassNameIgnoringCase(clazzName))
-        .map(_._2)
-        .orElse(getConversion(clazzName).map(_.typingResult).toOption) match {
-        case Some(result) => result.validNel
-        case None => GenericFunctionTypingError.OtherError(s"Cannot cast or convert to: '$clazzName'").invalidNel
+    case TypedObjectWithValue(_, clazzName: String) :: Nil => allowedClasses
+      .find(_._1.equalsScalaClassNameIgnoringCase(clazzName))
+      .map(_._2.validNel)
+      .orElse(getConversion(clazzName).map(_.typingFunction(invocationTarget)).toOption) match {
+        case Some(result) => result
+        case _ => GenericFunctionTypingError.OtherError(s"Cannot cast or convert to: '$clazzName'").invalidNel
       }
     case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }
 
   private def canConvertToTyping(allowedClasses: Map[Class[_], TypingResult])(
-      arguments: List[typing.TypingResult]
-  ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
-    convertToTyping(allowedClasses)(arguments).map(_ => Typed.typedClass[Boolean])
+    invocationTarget: TypingResult,
+    arguments: List[TypingResult]
+  ): ValidatedNel[GenericFunctionTypingError, TypingResult] =
+    convertToTyping(allowedClasses)(invocationTarget, arguments).map(_ => Typed.typedClass[Boolean])
 
   private def methodTypeInfoWithStringParam(result: TypingResult) = MethodTypeInfo(
     noVarArgs = List(

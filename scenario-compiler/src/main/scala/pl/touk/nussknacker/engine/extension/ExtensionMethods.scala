@@ -33,17 +33,20 @@ object ExtensionAwareMethodsDiscovery {
   // Calculating methods should not be cached because it's calculated only once at the first execution of
   // parsed expression (org.springframework.expression.spel.ast.MethodReference.getCachedExecutor).
   def discover(clazz: Class[_]): Array[Method] =
-    clazz.getMethods ++ extensionMethodsHandlers.filter(_.applies(clazz)).flatMap(_.nonStaticMethods)
+    clazz.getMethods ++ extensionMethodsHandlers.filter(_.appliesToClassInRuntime(clazz)).flatMap(_.nonStaticMethods)
 }
 
 object ExtensionMethods {
 
   val extensionMethodsHandlers: List[ExtensionMethodsHandler] = List(
-    CastOrToConversionExt,
+    CastOrConversionExt,
     ArrayExt,
-    NumericConversionExt,
-    BooleanConversionExt,
-    CollectionConversionExt,
+    ToLongConversionExt,
+    ToDoubleConversionExt,
+    ToBigDecimalConversionExt,
+    ToBooleanConversionExt,
+    ToListConversionExt,
+    ToMapConversionExt,
   )
 
   def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {
@@ -74,7 +77,7 @@ trait ExtensionMethodsHandler {
   def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
 
   // For what classes is extension available in the runtime invocation
-  def applies(clazz: Class[_]): Boolean
+  def appliesToClassInRuntime(clazz: Class[_]): Boolean
 }
 
 trait ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget] {

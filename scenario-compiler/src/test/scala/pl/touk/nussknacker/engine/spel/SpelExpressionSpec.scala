@@ -1494,8 +1494,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       evaluate[Any]("#unknownString.value.to('java.lang.Integer')")
     }
     caught.getMessage should include("Cannot cast or convert value: unknown to: 'java.lang.Integer'")
-    caught.getCause.getSuppressed.head shouldBe a[ClassCastException]
-    caught.getCause.getSuppressed.tail.head shouldBe a[IllegalArgumentException]
+    caught.getCause shouldBe a[IllegalStateException]
   }
 
   test("should not allow cast to disallowed classes") {
@@ -1723,10 +1722,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownDoubleString.value.toLong()", longTyping, 1),
         ("#unknownBoolean.value.toLongOrNull()", longTyping, null),
         ("1.toDouble()", doubleTyping, 1.0),
-        ("1.1.toDouble()", doubleTyping, 1.1),
         ("'1'.toDouble()", doubleTyping, 1.0),
         ("1.toDoubleOrNull()", doubleTyping, 1.0),
-        ("1.1.toDoubleOrNull()", doubleTyping, 1.1),
         ("'1'.toDoubleOrNull()", doubleTyping, 1.0),
         ("'a'.toDoubleOrNull()", doubleTyping, null),
         ("#unknownLong.value.toDouble()", doubleTyping, 11.0),

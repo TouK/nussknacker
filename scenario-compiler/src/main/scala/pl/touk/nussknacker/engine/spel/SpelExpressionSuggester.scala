@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.validation.Validations.isVariableNameValid
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
-import pl.touk.nussknacker.engine.extension.CastOrToConversionExt
+import pl.touk.nussknacker.engine.extension.CastOrConversionExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -287,7 +287,7 @@ class SpelExpressionSuggester(
                     Future.successful(fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil)))
                   case _ => successfulNil
                 }
-              case m: MethodReference if CastOrToConversionExt.isCastOrToConversionMethod(m.getName) =>
+              case m: MethodReference if CastOrConversionExt.isCastOrToConversionMethod(m.getName) =>
                 parentPrevNodeTyping match {
                   case Unknown =>
                     castOrToConversionMethodsSuggestions(classOf[Object])
@@ -350,7 +350,7 @@ class SpelExpressionSuggester(
         .map { case (name, clazz) =>
           ExpressionSuggestion(name, allowedClassesForCastParameter.getOrElse(clazz, Unknown), false, None, Nil)
         }
-      val conversionSuggestions = CastOrToConversionExt
+      val conversionSuggestions = CastOrConversionExt
         .allowedConversions(klass)
         .map(c => ExpressionSuggestion(c.resultTypeClass.simpleName(), c.typingResult, false, None, Nil))
       (castSuggestions ++ conversionSuggestions).toSet
