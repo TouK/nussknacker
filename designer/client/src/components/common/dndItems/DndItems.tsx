@@ -11,10 +11,11 @@ import { alpha, Box } from "@mui/material";
 interface DndListProps<I> extends ItemsProps<I> {
     disabled?: boolean;
     onChange: (value: I[]) => void;
+    onDestinationChange?: (index: number | null) => void;
 }
 
 export function DndItems<I>(props: DndListProps<I>): JSX.Element {
-    const { items, onChange, disabled } = props;
+    const { items, onChange, onDestinationChange, disabled } = props;
 
     const moveItem = useCallback(
         (source: number, target: number) => {
@@ -28,8 +29,9 @@ export function DndItems<I>(props: DndListProps<I>): JSX.Element {
                 });
                 onChange(newFields);
             }
+            onDestinationChange?.(null);
         },
-        [items, onChange],
+        [items, onChange, onDestinationChange],
     );
 
     const droppableId = useRef(Date.now().toString());
@@ -61,6 +63,8 @@ export function DndItems<I>(props: DndListProps<I>): JSX.Element {
             renderClone={renderDraggable}
             CloneWrapper={FakeFormWindow}
             onDragEnd={({ destination, source }) => moveItem(source?.index, destination?.index)}
+            onDragStart={({ source }) => onDestinationChange?.(source?.index)}
+            onDragUpdate={({ destination }) => onDestinationChange?.(destination?.index)}
         >
             {items.map((_, index) => (
                 <Draggable key={index} draggableId={`${index}`} index={index} isDragDisabled={disabled}>

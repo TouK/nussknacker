@@ -1,6 +1,8 @@
 import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
 import { FieldsControl } from "./FieldsControl";
 import { NodeRow, NodeValue } from "../node";
+import { FieldError } from "../editors/Validators";
+import ValidationLabels from "../../../modals/ValidationLabels";
 
 interface FieldsContext {
     add?: () => void;
@@ -16,6 +18,7 @@ interface NodeRowFieldsProps {
     onFieldAdd?: (namespace: string) => void;
     onFieldRemove?: (namespace: string, uuid: string) => void;
     readOnly?: boolean;
+    errors?: FieldError[];
 }
 
 const Context = createContext<FieldsContext>(null);
@@ -28,7 +31,7 @@ export function useFieldsContext(): FieldsContext {
     return fieldsContext;
 }
 
-export function NodeRowFieldsProvider({ children, ...props }: PropsWithChildren<NodeRowFieldsProps>): JSX.Element {
+export function NodeRowFieldsProvider({ children, errors = [], ...props }: PropsWithChildren<NodeRowFieldsProps>): JSX.Element {
     const { label, path, onFieldAdd, onFieldRemove, readOnly } = props;
     const [isOpen, setIsOpen] = useState<Record<string, boolean>>({});
 
@@ -67,6 +70,7 @@ export function NodeRowFieldsProvider({ children, ...props }: PropsWithChildren<
                 <Context.Provider value={ctx}>
                     <FieldsControl readOnly={readOnly}>{children}</FieldsControl>
                 </Context.Provider>
+                <ValidationLabels fieldErrors={errors} />
             </NodeValue>
         </NodeRow>
     );
