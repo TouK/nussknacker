@@ -5,11 +5,11 @@ import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensionMethodsHan
 
 import java.lang.reflect.{Method, Modifier}
 
-class ExtensionsAwareMethodInvoker {
+class ExtensionsAwareMethodInvoker(classDefinitionSet: ClassDefinitionSet) {
 
   private val toInvocationTargetConvertersByClass =
     extensionMethodsHandlers
-      .map(e => e.invocationTargetClass -> e.createConverter())
+      .map(e => e.invocationTargetClass -> e.createConverter(classDefinitionSet))
       .toMap[Class[_], ToExtensionMethodInvocationTargetConverter[_]]
 
   def invoke(method: Method)(target: Any, arguments: Array[Object]): Any = {
@@ -39,7 +39,7 @@ object ExtensionAwareMethodsDiscovery {
 object ExtensionMethods {
 
   val extensionMethodsHandlers: List[ExtensionMethodsHandler] = List(
-    ConversionExt,
+    CastOrToConversionExt,
     ArrayExt,
     NumericConversionExt,
     BooleanConversionExt,
@@ -67,7 +67,9 @@ trait ExtensionMethodsHandler {
     invocationTargetClass.getDeclaredMethods
       .filter(m => Modifier.isPublic(m.getModifiers) && !Modifier.isStatic(m.getModifiers))
 
-  def createConverter(): ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget]
+  def createConverter(
+      set: ClassDefinitionSet
+  ): ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget]
 
   def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
 

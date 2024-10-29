@@ -22,48 +22,49 @@ class CollectionConversionExt(target: Any) {
 }
 
 object CollectionConversionExt extends ExtensionMethodsHandler {
-  private val unknownClass    = classOf[Object]
   private val booleanTyping   = Typed.typedClass[Boolean]
+  private val mapTyping       = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+  private val listTyping      = Typed.genericTypeClass[JList[_]](List(Unknown))
   private val collectionClass = classOf[JCollection[_]]
 
   private val isMapMethodDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toMapTypeFunction(invocationTarget).map(_ => booleanTyping),
-    signature = MethodTypeInfo.noArgTypeInfo,
+    signature = MethodTypeInfo.noArgTypeInfo(booleanTyping),
     name = "isMap",
     description = Some("Check whether can be convert to a map")
   )
 
   private val toMapDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toMapTypeFunction(invocationTarget),
-    signature = MethodTypeInfo.noArgTypeInfo,
+    signature = MethodTypeInfo.noArgTypeInfo(mapTyping),
     name = "toMap",
     description = Option("Convert to a map or throw exception in case of failure")
   )
 
   private val toMapOrNullDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toMapTypeFunction(invocationTarget),
-    signature = MethodTypeInfo.noArgTypeInfo,
+    signature = MethodTypeInfo.noArgTypeInfo(mapTyping),
     name = "toMapOrNull",
     description = Option("Convert to a map or null in case of failure")
   )
 
   private val isListMethodDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toListTypeFunction(invocationTarget).map(_ => booleanTyping),
-    signature = MethodTypeInfo.noArgTypeInfo,
+    signature = MethodTypeInfo.noArgTypeInfo(booleanTyping),
     name = "isList",
     description = Some("Check whether can be convert to a list")
   )
 
   private val toListDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toListTypeFunction(invocationTarget),
-    signature = MethodTypeInfo.noArgTypeInfo,
+    signature = MethodTypeInfo.noArgTypeInfo(listTyping),
     name = "toList",
     description = Option("Convert to a list or throw exception in case of failure")
   )
 
   private val toListOrNullDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => toListTypeFunction(invocationTarget),
-    signature = MethodTypeInfo.noArgTypeInfo,
+    signature = MethodTypeInfo.noArgTypeInfo(listTyping),
     name = "toListOrNull",
     description = Option("Convert to a list or null in case of failure")
   )
@@ -80,11 +81,13 @@ object CollectionConversionExt extends ExtensionMethodsHandler {
   override type ExtensionMethodInvocationTarget = CollectionConversionExt
   override val invocationTargetClass: Class[CollectionConversionExt] = classOf[CollectionConversionExt]
 
-  override def createConverter(): ToExtensionMethodInvocationTargetConverter[CollectionConversionExt] =
+  override def createConverter(
+      set: ClassDefinitionSet
+  ): ToExtensionMethodInvocationTargetConverter[CollectionConversionExt] =
     (target: Any) => new CollectionConversionExt(target)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
-    if (clazz.isAOrChildOf(collectionClass) || clazz == unknownClass || clazz.isArray) definitions
+    if (ToListConversion.applies(clazz) || ToMapConversion.applies(clazz)) definitions
     else Map.empty
 
   // Conversion extension should be available for every class in a runtime

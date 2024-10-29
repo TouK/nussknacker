@@ -25,7 +25,9 @@ object ArrayExt extends ExtensionMethodsHandler {
   override type ExtensionMethodInvocationTarget = ArrayExt
   override val invocationTargetClass: Class[ArrayExt] = classOf[ArrayExt]
 
-  override def createConverter(): ToExtensionMethodInvocationTargetConverter[ArrayExt] =
+  override def createConverter(
+      set: ClassDefinitionSet
+  ): ToExtensionMethodInvocationTargetConverter[ArrayExt] =
     (target: Any) => new ArrayExt(target)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.extension
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.extension.Conversion.toNumber
 import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
@@ -19,16 +18,34 @@ import java.lang.{Boolean => JBoolean, Double => JDouble, Long => JLong, Number 
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 
 sealed trait Conversion {
-  type ResultType
+  type ResultType >: Null <: AnyRef
   val resultTypeClass: Class[ResultType]
 
-  def canConvert(value: Any): JBoolean
-  def convert(value: Any): ResultType
-  def convertOrNull(value: Any): ResultType
+  def convertEither(value: Any): Either[Throwable, ResultType]
+  def applies(clazz: Class[_]): Boolean
 
-  def typingResult: TypingResult        = Typed.typedClass(resultTypeClass)
-  def simpleSupportedResultTypeName     = ReflectUtils.simpleNameWithoutSuffix(resultTypeClass)
-  def supportedResultTypes: Set[String] = Set(resultTypeClass.getName, simpleSupportedResultTypeName)
+  def canConvert(value: Any): JBoolean = convertEither(value).isRight
+
+  def convert(value: Any): ResultType = convertEither(value) match {
+    case Right(value) => value
+    case Left(ex)     => throw ex
+  }
+
+  def convertOrNull(value: Any): ResultType = convertEither(value) match {
+    case Right(value) => value
+    case Left(_)      => null
+  }
+
+  def typingResult: TypingResult = Typed.typedClass(resultTypeClass)
+}
+
+sealed trait NumericConversion extends Conversion {
+  private val numberClass  = classOf[JNumber]
+  private val stringClass  = classOf[String]
+  private val unknownClass = classOf[Object]
+
+  override def applies(clazz: Class[_]): Boolean =
+    clazz.isAOrChildOf(numberClass) || clazz == stringClass || clazz == unknownClass
 }
 
 object Conversion {
@@ -56,23 +73,11 @@ object Conversion {
 
 }
 
-object ToLongConversion extends Conversion {
+object ToLongConversion extends NumericConversion {
   override type ResultType = JLong
   override val resultTypeClass: Class[JLong] = classOf[JLong]
 
-  override def canConvert(value: Any): JBoolean = toLongEither(value).isRight
-
-  override def convert(value: Any): JLong = toLongEither(value) match {
-    case Right(result) => result
-    case Left(ex)      => throw ex
-  }
-
-  override def convertOrNull(value: Any): JLong = toLongEither(value) match {
-    case Right(result) => result
-    case Left(_)       => null
-  }
-
-  private def toLongEither(value: Any): Either[Throwable, JLong] = {
+  override def convertEither(value: Any): Either[Throwable, JLong] = {
     value match {
       case v: Number => Right(v.longValue())
       case v: String => Try(JLong.valueOf(toNumber(v).longValue())).toEither
@@ -82,23 +87,11 @@ object ToLongConversion extends Conversion {
 
 }
 
-object ToDoubleConversion extends Conversion {
+object ToDoubleConversion extends NumericConversion {
   override type ResultType = JDouble
   override val resultTypeClass: Class[JDouble] = classOf[JDouble]
 
-  override def canConvert(value: Any): JBoolean = toDoubleEither(value).isRight
-
-  override def convert(value: Any): JDouble = toDoubleEither(value) match {
-    case Right(result) => result
-    case Left(ex)      => throw ex
-  }
-
-  override def convertOrNull(value: Any): JDouble = toDoubleEither(value) match {
-    case Right(result) => result
-    case Left(_)       => null
-  }
-
-  private def toDoubleEither(value: Any): Either[Throwable, JDouble] = {
+  override def convertEither(value: Any): Either[Throwable, JDouble] = {
     value match {
       case v: Number => Right(v.doubleValue())
       case v: String => Try(JDouble.valueOf(toNumber(v).doubleValue())).toEither
@@ -108,23 +101,11 @@ object ToDoubleConversion extends Conversion {
 
 }
 
-object ToBigDecimalConversion extends Conversion {
+object ToBigDecimalConversion extends NumericConversion {
   override type ResultType = JBigDecimal
   override val resultTypeClass: Class[JBigDecimal] = classOf[JBigDecimal]
 
-  override def canConvert(value: Any): JBoolean = toBigDecimalEither(value).isRight
-
-  override def convert(value: Any): JBigDecimal = toBigDecimalEither(value) match {
-    case Right(result) => result
-    case Left(ex)      => throw ex
-  }
-
-  override def convertOrNull(value: Any): JBigDecimal = toBigDecimalEither(value) match {
-    case Right(result) => result
-    case Left(_)       => null
-  }
-
-  private def toBigDecimalEither(value: Any): Either[Throwable, JBigDecimal] =
+  override def convertEither(value: Any): Either[Throwable, JBigDecimal] =
     value match {
       case v: JBigDecimal => Right(v)
       case v: JBigInteger => Right(new JBigDecimal(v))
@@ -138,23 +119,14 @@ object ToBigDecimalConversion extends Conversion {
 object ToBooleanConversion extends Conversion {
   private val cannotConvertException = (value: Any) =>
     new IllegalArgumentException(s"Cannot convert: $value to Boolean")
+  private val allowedClassesForConversion: Set[Class[_]] = Set(classOf[String], classOf[Object])
 
   override type ResultType = JBoolean
   override val resultTypeClass: Class[JBoolean] = classOf[JBoolean]
 
-  override def canConvert(value: Any): JBoolean = convertToBoolean(value).isRight
+  override def applies(clazz: Class[_]): Boolean = allowedClassesForConversion.contains(clazz)
 
-  override def convert(value: Any): JBoolean = convertToBoolean(value) match {
-    case Right(value) => value
-    case Left(ex)     => throw ex
-  }
-
-  override def convertOrNull(value: Any): JBoolean = convertToBoolean(value) match {
-    case Right(value) => value
-    case Left(_)      => null
-  }
-
-  private def convertToBoolean(value: Any): Either[Throwable, JBoolean] = value match {
+  override def convertEither(value: Any): Either[Throwable, JBoolean] = value match {
     case b: JBoolean => Right(b)
     case s: String   => stringToBoolean(s).toRight(cannotConvertException(value))
     case _           => Left(cannotConvertException(value))
@@ -173,14 +145,20 @@ object ToBooleanConversion extends Conversion {
 
 object ToStringConversion extends Conversion {
   override type ResultType = String
-  override val resultTypeClass: Class[ResultType] = classOf[String]
-
-  override def canConvert(value: Any): JBoolean      = true
-  override def convert(value: Any): ResultType       = value.toString
-  override def convertOrNull(value: Any): ResultType = value.toString
+  override val resultTypeClass: Class[ResultType]                   = classOf[String]
+  override def applies(clazz: Class[_]): Boolean                    = true
+  override def convertEither(value: Any): Either[Throwable, String] = Right(value.toString)
 }
 
-object ToMapConversion extends Conversion {
+sealed trait CollectionConversion extends Conversion {
+  private val unknownClass    = classOf[Object]
+  private val collectionClass = classOf[JCollection[_]]
+
+  override def applies(clazz: Class[_]): Boolean =
+    clazz.isAOrChildOf(collectionClass) || clazz == unknownClass || clazz.isArray
+}
+
+object ToMapConversion extends CollectionConversion {
   private[extension] val keyName          = "key"
   private[extension] val valueName        = "value"
   private[extension] val keyAndValueNames = JSet.of(keyName, valueName)
@@ -196,23 +174,13 @@ object ToMapConversion extends Conversion {
     case _                 => false
   }
 
-  override def convert(value: Any): ResultType = convertToMap[Any, Any](value) match {
-    case Right(value) => value
-    case Left(ex)     => throw ex
-  }
-
-  override def convertOrNull(value: Any): ResultType = convertToMap[Any, Any](value) match {
-    case Right(value) => value
-    case Left(_)      => null
-  }
-
-  private def convertToMap[K, V](value: Any): Either[Throwable, JMap[K, V]] =
+  override def convertEither(value: Any): Either[Throwable, JMap[_, _]] =
     value match {
-      case m: JMap[K, V] @unchecked => Right(m)
-      case a: Array[_]              => convertToMap[K, V](ConversionHandler.convertArrayToList(a))
+      case m: JMap[_, _] => Right(m)
+      case a: Array[_]   => convertEither(ConversionHandler.convertArrayToList(a))
       case c: JCollection[JMap[_, _] @unchecked] if canConvertToMap(c) =>
-        val map = new JHashMap[K, V]()
-        c.forEach(e => map.put(e.get(keyName).asInstanceOf[K], e.get(valueName).asInstanceOf[V]))
+        val map = new JHashMap[Any, Any]()
+        c.forEach(e => map.put(e.get(keyName), e.get(valueName)))
         Right(map)
       case x => Left(new IllegalArgumentException(s"Cannot convert: $x to a Map"))
     }
@@ -226,7 +194,7 @@ object ToMapConversion extends Conversion {
 
 }
 
-object ToListConversion extends Conversion {
+object ToListConversion extends CollectionConversion {
   private val collectionClass = classOf[JCollection[_]]
 
   override type ResultType = JList[_]
@@ -235,22 +203,12 @@ object ToListConversion extends Conversion {
 
   override def canConvert(value: Any): JBoolean = value.getClass.isAOrChildOf(collectionClass) || value.getClass.isArray
 
-  override def convert(value: Any): ResultType = convertToList[Any](value) match {
-    case Right(value) => value
-    case Left(ex)     => throw ex
-  }
-
-  override def convertOrNull(value: Any): ResultType = convertToList[Any](value) match {
-    case Right(value) => value
-    case Left(_)      => null
-  }
-
-  private def convertToList[T](value: Any): Either[Throwable, JList[T]] = {
+  override def convertEither(value: Any): Either[Throwable, JList[_]] = {
     value match {
-      case l: JList[T @unchecked]       => Right(l)
-      case c: JCollection[T @unchecked] => Right(new JArrayList[T](c))
-      case a: Array[T @unchecked]       => Right(ConversionHandler.convertArrayToList(a).asInstanceOf[JList[T]])
-      case x                            => Left(new IllegalArgumentException(s"Cannot convert: $x to a List"))
+      case l: JList[_]       => Right(l)
+      case c: JCollection[_] => Right(new JArrayList[Any](c))
+      case a: Array[_]       => Right(ConversionHandler.convertArrayToList(a))
+      case x                 => Left(new IllegalArgumentException(s"Cannot convert: $x to a List"))
     }
   }
 

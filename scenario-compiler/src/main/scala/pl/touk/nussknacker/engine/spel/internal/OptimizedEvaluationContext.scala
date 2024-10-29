@@ -5,6 +5,7 @@ import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.extension.{ExtensionAwareMethodsDiscovery, ExtensionsAwareMethodInvoker}
 import pl.touk.nussknacker.engine.spel.internal.propertyAccessors.MethodAccessChecker
@@ -21,6 +22,7 @@ class EvaluationContextPreparer(
     propertyAccessors: Seq[PropertyAccessor],
     conversionService: ConversionService,
     spelExpressionExcludeList: SpelExpressionExcludeList,
+    classDefinitionSet: ClassDefinitionSet
 ) {
 
   // this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
@@ -41,7 +43,7 @@ class EvaluationContextPreparer(
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      private val methodInvoker = new ExtensionsAwareMethodInvoker()
+      private val methodInvoker = new ExtensionsAwareMethodInvoker(classDefinitionSet)
 
       override def resolve(
           context: EvaluationContext,
@@ -89,6 +91,7 @@ object EvaluationContextPreparer {
   def default(
       classLoader: ClassLoader,
       expressionConfig: ExpressionConfigDefinition,
+      classDefinitionSet: ClassDefinitionSet
   ): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
     val propertyAccessors =
@@ -101,6 +104,7 @@ object EvaluationContextPreparer {
       propertyAccessors,
       conversionService,
       expressionConfig.spelExpressionExcludeList,
+      classDefinitionSet
     )
   }
 

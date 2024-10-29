@@ -3,9 +3,8 @@ package pl.touk.nussknacker.engine.extension
 import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition, StaticMethodDefinition}
-import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
-import java.lang.{Boolean => JBoolean, Double => JDouble, Long => JLong, Number => JNumber}
+import java.lang.{Boolean => JBoolean, Double => JDouble, Long => JLong}
 import java.math.{BigDecimal => JBigDecimal}
 
 class NumericConversionExt(target: Any) {
@@ -22,9 +21,6 @@ class NumericConversionExt(target: Any) {
 }
 
 object NumericConversionExt extends ExtensionMethodsHandler {
-  private val numberClass  = classOf[JNumber]
-  private val stringClass  = classOf[String]
-  private val unknownClass = classOf[Object]
 
   private val definitions = List(
     definition(Typed.typedClass[JBoolean], "isLong", Some("Check whether can be convert to a Long")),
@@ -49,11 +45,13 @@ object NumericConversionExt extends ExtensionMethodsHandler {
   override type ExtensionMethodInvocationTarget = NumericConversionExt
   override val invocationTargetClass: Class[NumericConversionExt] = classOf[NumericConversionExt]
 
-  override def createConverter(): ToExtensionMethodInvocationTargetConverter[NumericConversionExt] =
+  override def createConverter(
+      set: ClassDefinitionSet
+  ): ToExtensionMethodInvocationTargetConverter[NumericConversionExt] =
     (target: Any) => new NumericConversionExt(target)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
-    if (clazz.isAOrChildOf(numberClass) || clazz == stringClass || clazz == unknownClass) {
+    if (ToLongConversion.applies(clazz) || ToBigDecimalConversion.applies(clazz) || ToDoubleConversion.applies(clazz)) {
       definitions
     } else {
       Map.empty
@@ -63,11 +61,7 @@ object NumericConversionExt extends ExtensionMethodsHandler {
   override def applies(clazz: Class[_]): Boolean = true
 
   private def definition(result: TypingResult, methodName: String, desc: Option[String]) = StaticMethodDefinition(
-    signature = MethodTypeInfo(
-      noVarArgs = Nil,
-      varArg = None,
-      result = result
-    ),
+    signature = MethodTypeInfo.noArgTypeInfo(result),
     name = methodName,
     description = desc
   )

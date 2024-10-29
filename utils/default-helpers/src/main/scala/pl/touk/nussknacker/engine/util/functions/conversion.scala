@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.util.functions
 
+import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.api.generics.GenericType
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
 import pl.touk.nussknacker.engine.util.json.{JsonUtils, ToJsonEncoder}
-
-import scala.util.Try
 
 object conversion extends ConversionUtils
 
@@ -18,17 +17,12 @@ trait ConversionUtils extends HideToString {
     value
   }
 
-  @Documentation(description = "Parse string to number")
+  // TODO - remove in 1.19
+  @Documentation(description = "Deprecated - will be removed in 1.19")
   @GenericType(typingFunction = classOf[ToNumberTypingFunction])
+  @silent("deprecated")
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number =
     numeric.toNumber(stringOrNumber)
-
-  @Documentation(description = "Parse any value to Number or null in case failure")
-  def toNumberOrNull(@ParamName("value") value: Any): java.lang.Number = value match {
-    case v: String => Try(numeric.toNumber(v)).getOrElse(null)
-    case v: Number => v
-    case _         => null
-  }
 
   @Documentation(description = "Convert String value to JSON")
   def toJson(@ParamName("value") value: String): Any = {
