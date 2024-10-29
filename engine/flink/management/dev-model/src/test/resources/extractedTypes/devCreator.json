@@ -338,48 +338,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toString": [
         {
           "name": "toString",
@@ -437,20 +395,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "name": [
         {
           "name": "name",
@@ -467,34 +411,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -597,48 +513,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toString": [
         {
           "name": "toString",
@@ -703,20 +577,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isMatchDayOfWeekAndDayOfMonth": [
         {
           "name": "isMatchDayOfWeekAndDayOfMonth",
@@ -733,34 +593,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -787,20 +619,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "matchDayOfWeekAndDayOfMonth": [
         {
           "name": "matchDayOfWeekAndDayOfMonth",
@@ -808,34 +626,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "com.cronutils.model.definition.CronDefinitionBuilder"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -885,20 +675,6 @@
   {
     "clazzName": {"refClazzName": "com.cronutils.parser.CronParser"},
     "methods": {
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "parse": [
         {
           "name": "parse",
@@ -908,34 +684,6 @@
             ],
             "result": {"refClazzName": "com.cronutils.model.Cron"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -953,20 +701,6 @@
   {
     "clazzName": {"refClazzName": "io.circe.Json"},
     "methods": {
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "noSpaces": [
         {
           "name": "noSpaces",
@@ -1021,34 +755,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toString": [
         {
           "name": "toString",
@@ -1091,48 +797,6 @@
             ],
             "result": {"refClazzName": "java.lang.Integer"}
           }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -1724,48 +1388,6 @@
   {
     "clazzName": {"refClazzName": "java.lang.Character"},
     "methods": {
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toString": [
         {
           "name": "toString",
@@ -7358,20 +6980,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "minus": [
         {
           "name": "minus",
@@ -7410,34 +7018,6 @@
             ],
             "result": {"refClazzName": "java.time.DayOfWeek"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -7645,20 +7225,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Long"}
           }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
         }
       ],
       "isNegative": [
@@ -7891,20 +7457,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toDays": [
         {
           "name": "toDays",
@@ -7993,20 +7545,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toSeconds": [
@@ -8251,20 +7789,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isAfter": [
         {
           "name": "isAfter",
@@ -8362,20 +7886,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toEpochMilli": [
         {
           "name": "toEpochMilli",
@@ -8383,20 +7893,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Long"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -8677,20 +8173,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isAfter": [
         {
           "name": "isAfter",
@@ -8866,20 +8348,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toEpochDay": [
         {
           "name": "toEpochDay",
@@ -8899,20 +8367,6 @@
             ],
             "result": {"refClazzName": "java.lang.Long"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -9312,20 +8766,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isAfter": [
         {
           "name": "isAfter",
@@ -9619,20 +9059,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toEpochSecond": [
         {
           "name": "toEpochSecond",
@@ -9671,20 +9097,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.time.LocalTime"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -10076,20 +9488,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isAfter": [
         {
           "name": "isAfter",
@@ -10227,20 +9625,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toEpochSecond": [
         {
           "name": "toEpochSecond",
@@ -10260,20 +9644,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Long"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toSecondOfDay": [
@@ -10563,20 +9933,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "length": [
         {
           "name": "length",
@@ -10644,34 +10000,6 @@
             ],
             "result": {"refClazzName": "java.time.Month"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -11036,20 +10364,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isAfter": [
         {
           "name": "isAfter",
@@ -11313,20 +10627,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toEpochSecond": [
         {
           "name": "toEpochSecond",
@@ -11379,20 +10679,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.time.OffsetTime"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -11762,20 +11048,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isAfter": [
         {
           "name": "isAfter",
@@ -11933,20 +11205,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toEpochSecond": [
         {
           "name": "toEpochSecond",
@@ -11965,20 +11223,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.time.LocalTime"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -12204,20 +11448,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isNegative": [
         {
           "name": "isNegative",
@@ -12358,34 +11588,6 @@
             ],
             "result": {"refClazzName": "java.time.temporal.Temporal"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -12844,20 +12046,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "normalized": [
         {
           "name": "normalized",
@@ -12865,34 +12053,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.time.ZoneId"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -13306,20 +12466,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isAfter": [
         {
           "name": "isAfter",
@@ -13622,20 +12768,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toEpochSecond": [
         {
           "name": "toEpochSecond",
@@ -13688,20 +12820,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.time.OffsetDateTime"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -14322,48 +13440,6 @@
       "refClazzName": "java.util.Comparator"
     },
     "methods": {
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toString": [
         {
           "name": "toString",
@@ -14741,20 +13817,6 @@
           ]
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -14792,34 +13854,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -15138,20 +14172,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "leastSignificantBits": [
         {
           "name": "leastSignificantBits",
@@ -15186,34 +14206,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Long"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -15312,20 +14304,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "name": [
         {
           "name": "name",
@@ -15342,34 +14320,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -15489,20 +14439,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "name": [
         {
           "name": "name",
@@ -15521,20 +14457,6 @@
           }
         }
       ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toInt": [
         {
           "name": "toInt",
@@ -15542,20 +14464,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -15649,20 +14557,6 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.source.ReturningTestCaseClass"},
     "methods": {
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "someMethod": [
         {
           "name": "someMethod",
@@ -15670,34 +14564,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -15771,20 +14637,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "name": [
         {
           "name": "name",
@@ -15801,34 +14653,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -15913,20 +14737,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "name": [
         {
           "name": "name",
@@ -15943,34 +14753,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -16035,20 +14817,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "originalDisplay": [
         {
           "name": "originalDisplay",
@@ -16056,34 +14824,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -16177,20 +14917,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "originalDisplay": [
         {
           "name": "originalDisplay",
@@ -16198,34 +14924,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -16268,48 +14966,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
           }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -16372,20 +15028,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "name": [
         {
           "name": "name",
@@ -16411,34 +15053,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -16529,20 +15143,6 @@
           ]
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "plus": [
         {
           "name": "plus",
@@ -16560,20 +15160,6 @@
                 {"name": "right", "refClazz": {"refClazzName": "java.lang.String"}}
               ],
               "result": {"refClazzName": "java.lang.String"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
             }
           ]
         }
@@ -16596,20 +15182,6 @@
                 "refClazzName": "java.util.List"
               },
               "varArg": {"name": "elems", "refClazz": {"type": "Unknown"}}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
             }
           ]
         }
@@ -16816,48 +15388,6 @@
           ]
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toString": [
         {
           "name": "toString",
@@ -16920,48 +15450,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "toString": [
         {
           "name": "toString",
@@ -16977,20 +15465,6 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper$"},
     "methods": {
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "noDocsMethod": [
         {
           "name": "noDocsMethod",
@@ -17036,34 +15510,6 @@
             "result": {"refClazzName": "java.time.LocalDateTime"}
           }
         }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
       ]
     },
     "staticMethods": {}
@@ -17071,20 +15517,6 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.variables.MetaVariables"},
     "methods": {
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "processName": [
         {
           "name": "processName",
@@ -17136,34 +15568,6 @@
               "refClazzName": "java.util.List"
             }
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
@@ -17260,20 +15664,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "name": [
         {
           "name": "name",
@@ -17290,34 +15680,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
-        }
-      ],
-      "to": [
-        {
-          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
-          "name": "to",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "toOrNull": [
-        {
-          "description": "Converts a type to a given class or return null if type cannot be converted.",
-          "name": "toOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
         }
       ],
       "toString": [
