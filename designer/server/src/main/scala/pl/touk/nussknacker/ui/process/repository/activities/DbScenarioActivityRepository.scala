@@ -634,7 +634,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         createEntity(scenarioActivity)(
           additionalProperties = AdditionalProperties(
             Map(
-              "description" -> activity.changes.mkString(",\n"),
+              "description" -> activity.changes,
             )
           )
         )
