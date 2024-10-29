@@ -72,6 +72,7 @@ private class TestSpelExpression(expression: String) extends CompiledExpression 
       .default(
         getClass.getClassLoader,
         expressionConfig,
+        ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions
       )
       .prepareEvaluationContext(ctx, globals)
 

@@ -781,6 +781,14 @@ class ExpressionSuggesterSpec
 
   test("should suggest parameters for casts methods") {
     spelSuggestionsFor("#unknown.to('')", column = 13) should contain theSameElementsAs List(
+      suggestion("Duration", Typed[Duration]),
+      suggestion("LocalDateTime", Typed[LocalDateTime]),
+      suggestion("A", Typed[A]),
+      suggestion("AA", Typed[AA]),
+      suggestion("B", Typed[B]),
+      suggestion("C", Typed[C]),
+      suggestion("Util", Typed[Util]),
+      suggestion("WithList", Typed[WithList]),
       suggestion("BigDecimal", Typed[java.math.BigDecimal]),
       suggestion("Boolean", Typed[java.lang.Boolean]),
       suggestion("Double", Typed[java.lang.Double]),

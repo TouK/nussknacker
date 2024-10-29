@@ -276,28 +276,12 @@ More usage examples can be found in [this section](#conversions-between-datetime
 
 #### Explicit conversions
 
-Explicit conversions are available in utility classes, build-in java conversion mechanisms and via extension methods:
+Explicit conversions are available in utility classes and build-in java conversion mechanisms:
 
-| Expression                                                      | Result                     | Type          |
-|-----------------------------------------------------------------|----------------------------|---------------|
-| `#NUMERIC.toNumber('42')`                                       | 42                         | Number        |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String        |
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime|
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime |
-| `'true'.toBoolean`                                              | true                       | Boolean       |
-| `'11'.toLong`                                                   | 11                         | Long          |
-| `'1.1'.toDouble`                                                | 1.1                        | Double        |
-| `2.1.toBigDecimal`                                              | 2.1                        | BigDecimal    |
-| `{a: 1, b: 2}.keySet.toList`                                    | {'a', 'b'}                 | List[String]  |
-
-Functions which start with `to` are extension methods which allows convert value to appropriate type. 
-Except function e.g. `toLong` which is shorthand of: `to('Long')` we have also:
-- `isLong` which checks if a given value can be converted to Long.
-- `toLongOrNull` which returns null on failed conversion instead of throwing exception.
-
-Additionally, we can use generic conversion functions like: `is(className)`, `to(className)` or `toOrNull(className)`,
-e.g. `is('Long'), to('Long), toOrNull('Long')`. Thanks to them, we have a single function to make all available
-conversions.
+| Expression                                                      | Result                     | Type            |
+|-----------------------------------------------------------------|----------------------------|-----------------|
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
 
 ## Built-in helpers
 

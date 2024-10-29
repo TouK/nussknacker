@@ -31,7 +31,6 @@
 * [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`.
 * [#6778](https://github.com/TouK/nussknacker/pull/6778) SpeL: check for methods if a property for a given name does not exist.
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
-* [#6807](https://github.com/TouK/nussknacker/pull/6807) Add `toNumberOrNull` conversion function, to `#CONV`.
 * [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `toJson` and `toJsonString` conversions (in the `#CONV` helper)
 * [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `#BASE64` helper to decode/encode Base64 values
 * [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside 
@@ -73,7 +72,7 @@
   * isLong/toLong/toLongOrNull
   * isDouble/toDouble/toDoubleOrNull
   * isBigDecimal/toBigDecimal/toBigDecimalOrNull
-  * isList/toList/toListOrNull - a collection or unknown collection can be converted to a list.
+  * isList/toList/toListOrNull
   * isMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
 
 ## 1.17

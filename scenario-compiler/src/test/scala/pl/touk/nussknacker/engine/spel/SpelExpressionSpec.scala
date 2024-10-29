@@ -1363,6 +1363,53 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("should check if a type can be casted to a given type") {
+    forAll(
+      Table(
+        ("expression", "expectedResult"),
+        ("#unknownString.value.is('java.lang.String')", true),
+        ("#unknownString.value.is('java.lang.Integer')", false),
+      )
+    ) { (expression, expectedResult) =>
+      evaluate[Any](expression) shouldBe expectedResult
+    }
+  }
+
+  test("should compute correct result type based on parameter") {
+    val parsed = parse[Any]("#unknownString.value.to('java.lang.String')", ctx).validValue
+    parsed.returnType shouldBe Typed.typedClass[String]
+    parsed.expression.evaluateSync[Any](ctx) shouldBe a[java.lang.String]
+  }
+
+  test("should return an error if the cast return type cannot be determined at parse time") {
+    parse[Any]("#unknownString.value.to('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
+      case GenericFunctionError("Cannot cast or convert to: 'java.util.XYZ'") :: Nil =>
+    }
+    parse[Any]("#unknownString.value.to(#obj.id)", ctx).invalidValue.toList should matchPattern {
+      case ArgumentTypeError("to", _, _) :: Nil =>
+    }
+  }
+
+  test("should throw exception if cast fails") {
+    val caught = intercept[SpelExpressionEvaluationException] {
+      evaluate[Any]("#unknownString.value.to('java.lang.Integer')")
+    }
+    caught.getMessage should include("Cannot cast or convert value: unknown to: 'java.lang.Integer'")
+    caught.getCause.getSuppressed.head shouldBe a[ClassCastException]
+    caught.getCause.getSuppressed.tail.head shouldBe a[IllegalArgumentException]
+  }
+
+  test("should not allow cast to disallowed classes") {
+    parse[Any](
+      "#hashMap.value.to('java.util.HashMap').remove('testKey')",
+      ctx.withVariable("hashMap", ContainerOfUnknown(new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava)))
+    ).invalidValue.toList should matchPattern {
+      case GenericFunctionError("Cannot cast or convert to: 'java.util.HashMap'") :: IllegalInvocationError(
+            Unknown
+          ) :: Nil =>
+    }
+  }
+
   test(
     "should allow invoke discovered methods for unknown objects - not matter how methodExecutionForUnknownAllowed is set"
   ) {

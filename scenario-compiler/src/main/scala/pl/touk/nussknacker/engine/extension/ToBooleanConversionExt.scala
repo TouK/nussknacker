@@ -13,17 +13,9 @@ class BooleanConversionExt(target: Any) {
 }
 
 object BooleanConversionExt extends ExtensionMethodsHandler {
-  private val stringClass                                 = classOf[String]
-  private val unknownClass                                = classOf[Object]
-  private val allowedClassesForDefinitions: Set[Class[_]] = Set(stringClass, unknownClass)
-  private val booleanTyping                               = Typed.typedClass[JBoolean]
 
   private val definition = StaticMethodDefinition(
-    signature = MethodTypeInfo(
-      noVarArgs = Nil,
-      varArg = None,
-      result = booleanTyping
-    ),
+    signature = MethodTypeInfo.noArgTypeInfo(Typed.typedClass[JBoolean]),
     name = "",
     description = None
   )
@@ -37,11 +29,13 @@ object BooleanConversionExt extends ExtensionMethodsHandler {
   override type ExtensionMethodInvocationTarget = BooleanConversionExt
   override val invocationTargetClass: Class[BooleanConversionExt] = classOf[BooleanConversionExt]
 
-  override def createConverter(): ToExtensionMethodInvocationTargetConverter[BooleanConversionExt] =
+  override def createConverter(
+      set: ClassDefinitionSet
+  ): ToExtensionMethodInvocationTargetConverter[BooleanConversionExt] =
     (target: Any) => new BooleanConversionExt(target)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
-    if (allowedClassesForDefinitions.contains(clazz)) definitions
+    if (ToBooleanConversion.applies(clazz)) definitions
     else Map.empty
 
   override def applies(clazz: Class[_]): Boolean = true

@@ -11,26 +11,6 @@ import java.util.{Map => JMap}
 
 class ConversionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
-  test("primitives conversions") {
-    Table(
-      ("expression", "expected"),
-      ("#CONV.toNumberOrNull(1)", 1),
-      ("#CONV.toNumberOrNull(1.1)", 1.1),
-      ("#CONV.toNumberOrNull('a')", null),
-      ("#CONV.toNumberOrNull(null)", null),
-      ("#CONV.toNumberOrNull(true)", null),
-    ).forEvery { (expression, expected) =>
-      evaluateAny(expression) shouldBe expected
-    }
-
-    Table(
-      ("expression", "expected"),
-      ("#CONV.toNumberOrNull(1)", "Number"),
-    ).forEvery { (expression, expected) =>
-      evaluateType(expression, types = Map.empty) shouldBe expected.valid
-    }
-  }
-
   test("parse JSON") {
     Table(
       ("expression", "expected"),

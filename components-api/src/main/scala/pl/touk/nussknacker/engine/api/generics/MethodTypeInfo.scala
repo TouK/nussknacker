@@ -5,12 +5,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingRes
 object MethodTypeInfo {
   private val arrayClass = classOf[Array[Object]]
 
-  val noArgTypeInfo = MethodTypeInfo(
-    noVarArgs = Nil,
-    varArg = None,
-    result = Unknown
-  )
-
   def fromList(lst: List[Parameter], varArgs: Boolean, result: TypingResult): MethodTypeInfo = (varArgs, lst) match {
     case (true, noVarArgParameters :+ Parameter(paramName, TypedClass(`arrayClass`, varArgType :: Nil))) =>
       MethodTypeInfo(noVarArgParameters, Some(Parameter(paramName, varArgType)), result)
@@ -27,6 +21,12 @@ object MethodTypeInfo {
 
   def withoutVarargs(params: List[Parameter], result: TypingResult): MethodTypeInfo =
     MethodTypeInfo(params, None, result)
+
+  def noArgTypeInfo(returnType: TypingResult) = MethodTypeInfo(
+    noVarArgs = Nil,
+    varArg = None,
+    result = returnType
+  )
 
 }
 
