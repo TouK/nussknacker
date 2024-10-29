@@ -146,7 +146,7 @@ object ToBooleanConversion extends Conversion {
 object ToStringConversion extends Conversion {
   override type ResultType = String
   override val resultTypeClass: Class[ResultType]                   = classOf[String]
-  override def applies(clazz: Class[_]): Boolean                    = true
+  override def applies(clazz: Class[_]): Boolean                    = clazz == classOf[Object]
   override def convertEither(value: Any): Either[Throwable, String] = Right(value.toString)
 }
 
