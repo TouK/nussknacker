@@ -607,8 +607,12 @@ private[spel] class Typer(
       val w = Writer.value[List[ExpressionParseError], TypingResult](Unknown)
       if (methodExecutionForUnknownAllowed)
         w
-      else
-        w.tell(List(IllegalPropertyAccessError(Unknown)))
+      else {
+        // we allow some methods to be used on unknown
+        unknownPropertyTypeBasedOnMethod(e)
+          .map(valid)
+          .getOrElse(w.tell(List(IllegalPropertyAccessError(Unknown))))
+      }
     case TypedNull =>
       invalid(IllegalPropertyAccessError(TypedNull), fallbackType = TypedNull)
     case s: SingleTypingResult =>
@@ -678,6 +682,9 @@ private[spel] class Typer(
   ) = {
     classDefinitionSet.get(clazz.klass).flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
   }
+
+  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference): Option[TypingResult] =
+    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(Unknown, e.getName))
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
     case tc: SingleTypingResult
