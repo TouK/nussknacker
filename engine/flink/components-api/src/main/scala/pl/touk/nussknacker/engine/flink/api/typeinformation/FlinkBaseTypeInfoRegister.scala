@@ -4,22 +4,17 @@ import org.apache.flink.api.common.typeinfo.{TypeInfoFactory, TypeInformation, T
 import org.apache.flink.api.java.typeutils.TypeExtractor
 
 import java.lang.reflect.Type
-import java.sql.{Date => SqlDate, Time => SqlTime, Timestamp => SqlTimestamp}
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util
 
 object FlinkBaseTypeInfoRegister {
 
-  private case class Base[T, K <: TypeInfoFactory[T]](klass: Class[T], factoryClass: Class[K])
+  private[typeinformation] case class Base[T, K <: TypeInfoFactory[T]](klass: Class[T], factoryClass: Class[K])
 
-  private val baseTypes = List(
+  private[typeinformation] val baseTypes = List(
     Base(classOf[LocalDate], classOf[LocalDateTypeInfoFactory]),
     Base(classOf[LocalTime], classOf[LocalTimeTypeInfoFactory]),
     Base(classOf[LocalDateTime], classOf[LocalDateTimeTypeInfoFactory]),
-    Base(classOf[Instant], classOf[InstantTypeInfoFactory]),
-    Base(classOf[SqlDate], classOf[SqlDateTypeInfoFactory]),
-    Base(classOf[SqlTime], classOf[SqlTimeTypeInfoFactory]),
-    Base(classOf[SqlTimestamp], classOf[SqlTimestampTypeInfoFactory]),
   )
 
   def makeSureBaseTypesAreRegistered(): Unit =
@@ -61,46 +56,6 @@ object FlinkBaseTypeInfoRegister {
         genericParameters: util.Map[String, TypeInformation[_]]
     ): TypeInformation[LocalDateTime] =
       Types.LOCAL_DATE_TIME
-
-  }
-
-  class InstantTypeInfoFactory extends TypeInfoFactory[Instant] {
-
-    override def createTypeInfo(
-        t: Type,
-        genericParameters: util.Map[String, TypeInformation[_]]
-    ): TypeInformation[Instant] =
-      Types.INSTANT
-
-  }
-
-  class SqlDateTypeInfoFactory extends TypeInfoFactory[SqlDate] {
-
-    override def createTypeInfo(
-        t: Type,
-        genericParameters: util.Map[String, TypeInformation[_]]
-    ): TypeInformation[SqlDate] =
-      Types.SQL_DATE
-
-  }
-
-  class SqlTimeTypeInfoFactory extends TypeInfoFactory[SqlTime] {
-
-    override def createTypeInfo(
-        t: Type,
-        genericParameters: util.Map[String, TypeInformation[_]]
-    ): TypeInformation[SqlTime] =
-      Types.SQL_TIME
-
-  }
-
-  class SqlTimestampTypeInfoFactory extends TypeInfoFactory[SqlTimestamp] {
-
-    override def createTypeInfo(
-        t: Type,
-        genericParameters: util.Map[String, TypeInformation[_]]
-    ): TypeInformation[SqlTimestamp] =
-      Types.SQL_TIMESTAMP
 
   }
 
