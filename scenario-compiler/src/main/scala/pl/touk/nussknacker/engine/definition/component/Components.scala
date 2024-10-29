@@ -39,11 +39,21 @@ final case class Components private (
 }
 
 object Components {
-  sealed abstract class ComponentDefinitionExtractionMode(val extractBasicDefinitions: Boolean)
+
+  sealed trait ComponentDefinitionExtractionMode {
+    def extractBasicDefinitions: Boolean
+  }
 
   object ComponentDefinitionExtractionMode {
-    case object FinalDefinition          extends ComponentDefinitionExtractionMode(false)
-    case object FinalAndBasicDefinitions extends ComponentDefinitionExtractionMode(true)
+
+    case object FinalDefinition extends ComponentDefinitionExtractionMode {
+      override def extractBasicDefinitions: Boolean = false
+    }
+
+    case object FinalAndBasicDefinitions extends ComponentDefinitionExtractionMode {
+      override def extractBasicDefinitions: Boolean = true
+    }
+
   }
 
   def empty(mode: ComponentDefinitionExtractionMode): Components = new Components(
