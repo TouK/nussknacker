@@ -29,27 +29,6 @@ import pl.touk.nussknacker.engine.util.Implicits._
  */
 class TypingResultAwareTypeInformationDetection extends TypeInformationDetection {
 
-  private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
-    Typed.typedClass[String]                  -> Types.STRING,
-    Typed.typedClass[Boolean]                 -> Types.BOOLEAN,
-    Typed.typedClass[Byte]                    -> Types.BYTE,
-    Typed.typedClass[Short]                   -> Types.SHORT,
-    Typed.typedClass[Integer]                 -> Types.INT,
-    Typed.typedClass[Long]                    -> Types.LONG,
-    Typed.typedClass[Float]                   -> Types.FLOAT,
-    Typed.typedClass[Double]                  -> Types.DOUBLE,
-    Typed.typedClass[Character]               -> Types.CHAR,
-    Typed.typedClass[java.math.BigDecimal]    -> Types.BIG_DEC,
-    Typed.typedClass[java.math.BigInteger]    -> Types.BIG_INT,
-    Typed.typedClass[java.time.LocalDate]     -> Types.LOCAL_DATE,
-    Typed.typedClass[java.time.LocalTime]     -> Types.LOCAL_TIME,
-    Typed.typedClass[java.time.LocalDateTime] -> Types.LOCAL_DATE_TIME,
-    Typed.typedClass[java.time.Instant]       -> Types.INSTANT,
-    Typed.typedClass[java.sql.Date]           -> Types.SQL_DATE,
-    Typed.typedClass[java.sql.Time]           -> Types.SQL_TIME,
-    Typed.typedClass[java.sql.Timestamp]      -> Types.SQL_TIMESTAMP,
-  )
-
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val variables = forType(
       Typed.record(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
@@ -82,8 +61,6 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
       // We generally don't use scala Maps in our runtime, but it is useful for some internal type infos: TODO move it somewhere else
       case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Map[String, _]] =>
         createScalaMapTypeInformation(a)
-      case a: SingleTypingResult if registeredTypeInfos.contains(a.runtimeObjType) =>
-        registeredTypeInfos(a.runtimeObjType)
       // TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
       case a: SingleTypingResult if a.runtimeObjType.params.isEmpty =>
         TypeInformation.of(a.runtimeObjType.klass)
