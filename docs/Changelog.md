@@ -80,6 +80,7 @@
 * Performance optimization: 
   * [#7058](https://github.com/TouK/nussknacker/pull/7058) Add missing Flink TypeInformation for better serialization
   * [#7097](https://github.com/TouK/nussknacker/pull/7097) Flink base types registration mechanism
+* [#7021](https://github.com/TouK/nussknacker/pull/7021) Definitions service can return definition without UI config
 
 ## 1.17
 

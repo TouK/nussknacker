@@ -31,7 +31,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
       .modelDefinition()
       .withComponent(sampleFragmentDef)
 
-    val edgeTypes = EdgeTypesPreparer.prepareEdgeTypes(definitionsWithFragments.components)
+    val edgeTypes = EdgeTypesPreparer.prepareEdgeTypes(definitionsWithFragments.components.components)
 
     edgeTypes.toSet shouldBe Set(
       UINodeEdges(

@@ -54,6 +54,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       * PUT `/api/processes/{processName}` - optional `scenarioLabels` field added
   * Migration API changes:
       * POST `/api/migrate` supports v2 request format (with `scenarioLabels` field)
+* [#7021](https://github.com/TouK/nussknacker/pull/7021)
+  * Definitions API changes:
+      * GET `/api/processDefinitionData/*}` 
+        * added optional query param `enrichedWithUiConfig`
+        * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 
 ### Configuration changes
 
