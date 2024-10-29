@@ -7,25 +7,25 @@ import java.lang.reflect.Type
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util
 
-object FlinkBaseTypeInfoRegister {
+object FlinkBaseTypeInfoRegistrar {
 
-  private[typeinformation] case class Base[T, K <: TypeInfoFactory[T]](klass: Class[T], factoryClass: Class[K])
+  private case class RegistrationEntry[T, K <: TypeInfoFactory[T]](klass: Class[T], factoryClass: Class[K])
 
-  private[typeinformation] val baseTypes = List(
-    Base(classOf[LocalDate], classOf[LocalDateTypeInfoFactory]),
-    Base(classOf[LocalTime], classOf[LocalTimeTypeInfoFactory]),
-    Base(classOf[LocalDateTime], classOf[LocalDateTimeTypeInfoFactory]),
+  private val baseTypes = List(
+    RegistrationEntry(classOf[LocalDate], classOf[LocalDateTypeInfoFactory]),
+    RegistrationEntry(classOf[LocalTime], classOf[LocalTimeTypeInfoFactory]),
+    RegistrationEntry(classOf[LocalDateTime], classOf[LocalDateTimeTypeInfoFactory]),
   )
 
-  def makeSureBaseTypesAreRegistered(): Unit =
+  def ensureBaseTypesAreRegistered(): Unit =
     baseTypes.foreach { base =>
       register(base)
     }
 
-  private def register(base: Base[_, _ <: TypeInfoFactory[_]]): Unit = {
-    val opt = Option(TypeExtractor.getTypeInfoFactory(base.klass))
+  private def register(entry: RegistrationEntry[_, _ <: TypeInfoFactory[_]]): Unit = {
+    val opt = Option(TypeExtractor.getTypeInfoFactory(entry.klass))
     if (opt.isEmpty) {
-      TypeExtractor.registerFactory(base.klass, base.factoryClass)
+      TypeExtractor.registerFactory(entry.klass, entry.factoryClass)
     }
   }
 

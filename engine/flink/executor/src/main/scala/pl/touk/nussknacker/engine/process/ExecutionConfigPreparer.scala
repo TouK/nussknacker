@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkBaseTypeInfoRegister
+import pl.touk.nussknacker.engine.flink.api.typeinformation.FlinkBaseTypeInfoRegistrar
 import pl.touk.nussknacker.engine.flink.api.{NamespaceMetricsTags, NkGlobalParameters}
 import pl.touk.nussknacker.engine.process.util.Serializers
 
@@ -101,7 +101,7 @@ object ExecutionConfigPreparer extends LazyLogging {
     override def prepareExecutionConfig(
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
-      FlinkBaseTypeInfoRegister.makeSureBaseTypesAreRegistered()
+      FlinkBaseTypeInfoRegistrar.ensureBaseTypesAreRegistered()
       Serializers.registerSerializers(modelData, config)
       if (enableObjectReuse) {
         config.enableObjectReuse()
