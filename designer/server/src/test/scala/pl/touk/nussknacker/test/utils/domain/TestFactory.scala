@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -124,7 +125,8 @@ object TestFactory {
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
       componentId => DesignerWideComponentId(componentId.toString),
       workingDirectoryOpt = None,
-      _ => true
+      _ => true,
+      ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
     )
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = {

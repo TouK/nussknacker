@@ -9,7 +9,7 @@ object ModelClassDefinitionDiscovery {
   // We don't do it during component extraction because this is needed only in some cases (e.g. suggestions/validations) and it is costly
   def discoverClasses(definition: ModelDefinition): Set[ClassDefinition] = {
     val componentsAndGlobalVariables =
-      definition.components ++ definition.expressionConfig.globalVariables.values
+      definition.components.components ++ definition.expressionConfig.globalVariables.values
     val classesToExtractDefinitions = componentsAndGlobalVariables.flatMap(
       _.definedTypes
     ) ++ definition.expressionConfig.additionalClasses.map(Typed(_))

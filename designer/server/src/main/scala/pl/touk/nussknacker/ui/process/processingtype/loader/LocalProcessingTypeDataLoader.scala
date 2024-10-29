@@ -28,6 +28,7 @@ class LocalProcessingTypeDataLoader(
         engineSetupName = deploymentManagerProvider.defaultEngineSetupName,
         deploymentConfig = ConfigFactory.empty(),
         category = category,
+        componentDefinitionExtractionMode = getModelDependencies(processingType).componentDefinitionExtractionMode
       )
       processingType -> data
     }

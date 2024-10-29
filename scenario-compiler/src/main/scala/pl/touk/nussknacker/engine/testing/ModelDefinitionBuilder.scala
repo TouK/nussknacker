@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
@@ -169,12 +170,11 @@ final case class ModelDefinitionBuilder(
           canBeEnding
         }
       )
-    val configWithOverridenGroupName =
-      componentGroupName.map(group => defaultConfig.copy(componentGroup = Some(group))).getOrElse(defaultConfig)
     val id = ComponentId(componentTypeSpecificData.componentType, name)
     val configWithDesignerWideComponentId =
-      configWithOverridenGroupName.copy(componentId =
-        Some(designerWideComponentId.getOrElse(determineDesignerWideId(id)))
+      defaultConfig.copy(
+        componentGroup = componentGroupName.orElse(defaultConfig.componentGroup),
+        componentId = Some(designerWideComponentId.getOrElse(determineDesignerWideId(id)))
       )
     ComponentDefinitionExtractor
       .filterOutDisabledAndComputeFinalUiDefinition(
@@ -199,8 +199,10 @@ final case class ModelDefinitionBuilder(
   def build: ModelDefinition = {
     val globalVariablesDefinition: Map[String, GlobalVariableDefinitionWithImplementation] =
       globalVariables.mapValuesNow(GlobalVariableDefinitionWithImplementation(_))
+
+    val componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition
     ModelDefinition(
-      components,
+      Components.empty(componentDefinitionExtractionMode).withComponents(components),
       emptyExpressionConfig.copy(globalVariables = globalVariablesDefinition),
       ClassExtractionSettings.Default
     )

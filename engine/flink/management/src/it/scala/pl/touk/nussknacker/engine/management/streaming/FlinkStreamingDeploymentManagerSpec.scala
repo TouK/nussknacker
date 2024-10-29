@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import java.net.URI
@@ -268,11 +269,12 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        _ => true
+        _ => true,
+        ComponentDefinitionExtractionMode.FinalDefinition
       )
     )
     val definition = modelData.modelDefinition
-    definition.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))
+    definition.components.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))
   }
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] =

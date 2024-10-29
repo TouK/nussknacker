@@ -13,7 +13,7 @@ export interface InputProps
     > {
     value: string;
     inputClassName?: string;
-    fieldErrors: FieldError[];
+    fieldErrors?: FieldError[];
     isMarked?: boolean;
     showValidation?: boolean;
 }
@@ -24,7 +24,7 @@ export default function Input(props: InputProps): JSX.Element {
         showValidation,
         className,
         value,
-        fieldErrors,
+        fieldErrors = [],
         type = "text",
         inputClassName,
         autoFocus,
@@ -38,7 +38,7 @@ export default function Input(props: InputProps): JSX.Element {
 
     return (
         <div className={className}>
-            <div className={isMarked ? " marked" : ""}>
+            <div className={cx({ marked: isMarked })}>
                 <NodeInput
                     {...rest}
                     autoFocus={autoFocus}

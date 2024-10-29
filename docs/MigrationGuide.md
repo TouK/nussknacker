@@ -54,6 +54,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       * PUT `/api/processes/{processName}` - optional `scenarioLabels` field added
   * Migration API changes:
       * POST `/api/migrate` supports v2 request format (with `scenarioLabels` field)
+* [#7021](https://github.com/TouK/nussknacker/pull/7021)
+  * Definitions API changes:
+      * GET `/api/processDefinitionData/*}` 
+        * added optional query param `enrichedWithUiConfig`
+        * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 
 ### Configuration changes
 
@@ -75,10 +80,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   want to keep using Flink pre-1.19 with current Nussknacker, please refer to compatibility providing plugins in
   https://github.com/TouK/nussknacker-flink-compatibility.
 
-* [#7058](https://github.com/TouK/nussknacker/pull/7058) Performance optimization: Add missing Flink TypeInformation for better serialization
+* Performance optimization:
+  * [#7058](https://github.com/TouK/nussknacker/pull/7058) Add missing Flink TypeInformation for better serialization
     * In case of using base (bounded and unbounded) Flink components state will be probably not compatible
     * `FlinkCustomNodeContext.typeInformationDetection` has been removed, please use `TypeInformationDetection.instance` instead
     * `FlinkCustomNodeContext.forCustomContext` has been removed, please use `TypeInformationDetection.instance.forValueWithContext` instead
+  * [#7097](https://github.com/TouK/nussknacker/pull/7097) Flink base types registration mechanism
+    * In case of using types: java.time.LocalDate, java.time.LocalTime, java.time.LocalDateTime with CaseClassTypeInfo mechanism, state probably will be lost
 
 ### Configuration changes
 * [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`

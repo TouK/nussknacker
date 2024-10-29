@@ -12,9 +12,11 @@ import pl.touk.nussknacker.engine.api.process.{
   ProcessObjectDependencies,
   WithCategories
 }
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionExtractor,
-  ComponentDefinitionWithImplementation
+  ComponentDefinitionWithImplementation,
+  Components
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.{
   ExpressionConfigDefinition,
@@ -30,7 +32,8 @@ object ModelDefinitionFromConfigCreatorExtractor {
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ): ModelDefinition = {
 
     val sourceFactories          = creator.sourceFactories(modelDependencies).toList
@@ -46,7 +49,8 @@ object ModelDefinitionFromConfigCreatorExtractor {
       categoryOpt,
       componentsUiConfig,
       determineDesignerWideId,
-      additionalConfigsFromProvider
+      additionalConfigsFromProvider,
+      componentDefinitionExtractionMode,
     )
 
     val settings = creator.classExtractionSettings(modelDependencies)
@@ -63,19 +67,25 @@ object ModelDefinitionFromConfigCreatorExtractor {
       categoryOpt: Option[String],
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[ComponentDefinitionWithImplementation] = {
-    collectAvailableForCategory(components, categoryOpt).flatMap { case (componentName, component, componentConfig) =>
-      ComponentDefinitionExtractor
-        .extract(
-          componentName,
-          component,
-          componentConfig,
-          componentsUiConfig,
-          determineDesignerWideId,
-          additionalConfigsFromProvider
-        )
-    }
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+  ): Components = {
+    Components.fold(
+      componentDefinitionExtractionMode,
+      collectAvailableForCategory(components, categoryOpt)
+        .map { case (componentName, component, componentConfig) =>
+          Components
+            .withComponent(
+              componentName,
+              component,
+              componentConfig,
+              componentsUiConfig,
+              determineDesignerWideId,
+              additionalConfigsFromProvider,
+              componentDefinitionExtractionMode
+            )
+        }
+    )
   }
 
   private def toDefinition(

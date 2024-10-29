@@ -4,6 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
@@ -27,6 +28,7 @@ final case class FeatureTogglesConfig(
     testDataSettings: TestDataSettings,
     enableConfigEndpoint: Boolean,
     redirectAfterArchive: Boolean,
+    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
 )
 
 object FeatureTogglesConfig extends LazyLogging {
@@ -55,6 +57,7 @@ object FeatureTogglesConfig extends LazyLogging {
     val intervalTimeSettings                     = config.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings                         = config.as[TestDataSettings]("testDataSettings")
     val redirectAfterArchive                     = config.getAs[Boolean]("redirectAfterArchive").getOrElse(true)
+    val componentDefinitionExtractionMode        = parseComponentDefinitionExtractionMode(config)
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
@@ -72,6 +75,7 @@ object FeatureTogglesConfig extends LazyLogging {
       testDataSettings = testDataSettings,
       enableConfigEndpoint = enableConfigEndpoint,
       redirectAfterArchive = redirectAfterArchive,
+      componentDefinitionExtractionMode = componentDefinitionExtractionMode,
     )
   }
 
@@ -87,6 +91,15 @@ object FeatureTogglesConfig extends LazyLogging {
       }
     } else {
       None
+    }
+  }
+
+  private def parseComponentDefinitionExtractionMode(config: Config): ComponentDefinitionExtractionMode = {
+    val configPath = "enableBasicDefinitionsForComponents"
+    if (config.hasPath(configPath) && config.getBoolean(configPath)) {
+      ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
+    } else {
+      ComponentDefinitionExtractionMode.FinalDefinition
     }
   }
 

@@ -49,7 +49,9 @@ package object definition {
       // should be invalidated
       branchParam: Boolean,
       hintText: Option[String],
-      label: String
+      label: String,
+      // This attribute is used only by external project
+      requiredParam: Boolean,
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(

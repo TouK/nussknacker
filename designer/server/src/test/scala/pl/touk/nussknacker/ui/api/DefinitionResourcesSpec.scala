@@ -44,14 +44,12 @@ class DefinitionResourcesSpec
     definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData)
 
-      (
-        DefinitionsService(
-          processingTypeData,
-          modelDefinitionEnricher,
-          new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
-          fragmentRepository,
-          None
-        )
+      DefinitionsService(
+        processingTypeData,
+        modelDefinitionEnricher,
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
+        fragmentRepository,
+        None
       )
     }
   )
@@ -71,6 +69,24 @@ class DefinitionResourcesSpec
         .downField("custom-noneReturnTypeTransformer")
 
       noneReturnType.downField("returnType").focus shouldBe Some(Json.Null)
+    }
+  }
+
+  it("should return enriched definition data for existing scenario type") {
+    getProcessDefinitionData(enrichedWithUiConfig = Some(true)) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val response = responseAs[Json]
+      hasScenarioProperty(response, "someScenarioProperty1") should be(true)
+    }
+  }
+
+  it("should return basic definition data without enrichments for existing scenario type") {
+    getProcessDefinitionData(enrichedWithUiConfig = Some(false)) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val response = responseAs[Json]
+      hasScenarioProperty(response, "someScenarioProperty1") should be(false)
     }
   }
 
@@ -279,15 +295,33 @@ class DefinitionResourcesSpec
     }
   }
 
-  private def getProcessDefinitionData(processingType: String = "streaming"): RouteTestResult = {
-    getProcessDefinitionDataUsingRawProcessingType(processingType)
+  private def getProcessDefinitionData(
+      processingType: String = "streaming",
+      enrichedWithUiConfig: Option[Boolean] = None
+  ): RouteTestResult = {
+    getProcessDefinitionDataUsingRawProcessingType(processingType, enrichedWithUiConfig)
   }
 
-  private def getProcessDefinitionDataUsingRawProcessingType(processingType: String) = {
-    Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(
+  private def getProcessDefinitionDataUsingRawProcessingType(
+      processingType: String,
+      enrichedWithUiConfig: Option[Boolean] = None
+  ) = {
+    val maybeEnrichedWithUiConfig =
+      enrichedWithUiConfig.fold("")(value => s"&enrichedWithUiConfig=$value")
+    Get(
+      s"/processDefinitionData/$processingType?isFragment=false$maybeEnrichedWithUiConfig"
+    ) ~> withPermissions(
       definitionResources,
       Permission.Read
     )
+  }
+
+  private def hasScenarioProperty(response: Json, property: String) = {
+    response.hcursor
+      .downField("scenarioProperties")
+      .downField("propertiesConfig")
+      .downField(property)
+      .succeeded
   }
 
 }

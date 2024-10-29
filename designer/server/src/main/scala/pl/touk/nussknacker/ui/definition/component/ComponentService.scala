@@ -207,6 +207,7 @@ class DefaultComponentService(
         forFragment = false, // It excludes fragment's components: input / output
         fragments
       )
+      .components
 
   private def createComponentLinks(
       designerWideId: DesignerWideComponentId,

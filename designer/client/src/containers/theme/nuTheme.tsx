@@ -4,7 +4,7 @@ import { blendDarken, blendLighten } from "./helpers";
 import { deepmerge } from "@mui/utils";
 import { lightModePalette } from "./lightModePalette";
 import { darkModePalette } from "./darkModePalette";
-import { WindowKind } from "../../windowManager";
+import { WindowKind } from "../../windowManager/WindowKind";
 import { EnvironmentTagColor } from "../EnvironmentTag";
 import { NodeType } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";

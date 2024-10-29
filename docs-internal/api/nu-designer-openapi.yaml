@@ -2942,6 +2942,7 @@ paths:
                       variablesToHide: []
                       branchParam: false
                       label: name
+                      requiredParam: true
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
@@ -7001,6 +7002,7 @@ components:
       - additionalVariables
       - branchParam
       - label
+      - requiredParam
       properties:
         name:
           type: string
@@ -7033,6 +7035,8 @@ components:
           - 'null'
         label:
           type: string
+        requiredParam:
+          type: boolean
     UIValueParameterDto:
       title: UIValueParameterDto
       type: object

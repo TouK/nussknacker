@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ParameterConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   WithStaticParameters
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
@@ -83,7 +84,8 @@ object DynamicComponentStaticDefinitionDeterminer {
 
   def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
-      createMetaData: ProcessName => MetaData
+      createMetaData: ProcessName => MetaData,
+      extractComponentsDefinitions: Components => List[ComponentDefinitionWithImplementation]
   ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
@@ -91,7 +93,7 @@ object DynamicComponentStaticDefinitionDeterminer {
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
-      modelDataForType.modelDefinition.components.collect {
+      extractComponentsDefinitions(modelDataForType.modelDefinition.components).collect {
         case dynamic: DynamicComponentDefinitionWithImplementation =>
           dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
       }.toMap
