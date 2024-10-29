@@ -80,6 +80,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   want to keep using Flink pre-1.19 with current Nussknacker, please refer to compatibility providing plugins in
   https://github.com/TouK/nussknacker-flink-compatibility.
 
+* [#6912](https://github.com/TouK/nussknacker/pull/6912) Improvement: Make TimeMeasuringService usable with other Lifecycle traits
+  * Services that use `TimeMeasuringService` must be rebuilt
+
 * Performance optimization:
   * [#7058](https://github.com/TouK/nussknacker/pull/7058) Add missing Flink TypeInformation for better serialization
     * In case of using base (bounded and unbounded) Flink components state will be probably not compatible
