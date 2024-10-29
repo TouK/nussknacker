@@ -1,4 +1,4 @@
-describe("aggregations", () => {
+describe("Aggregations", () => {
     const seed = "aggregations";
 
     before(() => {
