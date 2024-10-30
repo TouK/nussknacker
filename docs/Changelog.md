@@ -39,14 +39,20 @@
 * [#6880](https://github.com/TouK/nussknacker/pull/6880) Performance optimization of generating Avro messages with unions
   - shorter message in logs
 * [#6766](https://github.com/TouK/nussknacker/pull/6766) Scenario labels support - you can assign labels to scenarios and use them to filter the scenario list
-* [#6176](https://github.com/TouK/nussknacker/pull/6176) [#6996](https://github.com/TouK/nussknacker/pull/6996) [7012](https://github.com/TouK/nussknacker/pull/7012) [7014](https://github.com/TouK/nussknacker/pull/7014) Update most dependencies to latest versions, most important ones:
+* [#6176](https://github.com/TouK/nussknacker/pull/6176)
+  [#6996](https://github.com/TouK/nussknacker/pull/6996)
+  [#7012](https://github.com/TouK/nussknacker/pull/7012)
+  [#7014](https://github.com/TouK/nussknacker/pull/7014)
+  [#7113](https://github.com/TouK/nussknacker/pull/7113)
+  Update most dependencies to latest versions, most important ones:
   * Flink 1.18.1 -> 1.19.1
   * Jackson 2.15.4 -> 2.17.2
-  * cats 2.10 -> 2.12
+  * Cats 2.10 -> 2.12
   * Avro 1.11.3 -> 1.11.4
   * swagger-parser 2.1.15 -> 2.1.22
   * Tapir -> 1.11.7
   * openapi-circe-yaml -> 0.11.3
+  * Scala 2.13 to 2.13.15
 * Scenario activities mechanism replacing old process actions:
   * [#6822](https://github.com/TouK/nussknacker/pull/6822), [#6929](https://github.com/TouK/nussknacker/pull/6929)
     * Scenario Activity API contract (without BE implementation)
