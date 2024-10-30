@@ -4,6 +4,7 @@ import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -207,8 +208,17 @@ trait CanBeSubclassDeterminer {
   }
 
   // we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
-  private def isAssignable(from: Class[_], to: Class[_]): ValidatedNel[String, Unit] =
-    condNel(ClassUtils.isAssignable(from, to, true), (), s"$to is not assignable from $from")
+  private def isAssignable(from: Class[_], to: Class[_]): ValidatedNel[String, Unit] = {
+    val isAssignable = (from, to) match {
+      case (f, t) if ClassUtils.isAssignable(f, t, true) => true
+      // Number double check by hand because lang3 can incorrectly throw false when dealing with java types
+      case (f, t) if AllNumbers.contains(f) && AllNumbers.contains(t) =>
+        AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
+      case _ => false
+    }
+    condNel(isAssignable, (), s"$to is not assignable from $from")
+  }
+
 }
 
 object CanBeSubclassDeterminer extends CanBeSubclassDeterminer
