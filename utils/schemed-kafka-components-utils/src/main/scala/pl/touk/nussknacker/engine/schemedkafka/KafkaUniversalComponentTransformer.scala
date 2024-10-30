@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object KafkaUniversalComponentTransformer {
@@ -75,8 +75,10 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     val allTopics = getAllTopics
     val topics = allTopics match {
       // TODO: previously schemaRegistryClient made validation
-      case Some(topicsFromKafka) => Valid(topicsFromKafka)
-      case None                  => topicSelectionStrategy.getTopics(schemaRegistryClient)
+      case Some(topicsFromKafka) =>
+        // For test purposes mostly
+        topicSelectionStrategy.getTopics(schemaRegistryClient).map(_.appendedAll(topicsFromKafka).distinct)
+      case None => topicSelectionStrategy.getTopics(schemaRegistryClient)
     }
 
     (topics match {

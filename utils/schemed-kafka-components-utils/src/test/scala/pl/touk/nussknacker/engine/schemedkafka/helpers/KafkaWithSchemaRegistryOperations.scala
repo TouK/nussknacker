@@ -138,8 +138,7 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
    */
   protected def createAndRegisterTopicConfig(name: String, schemas: List[Schema]): TopicConfig = {
     val topicConfig = TopicConfig(name, schemas)
-    kafkaClient.createTopic(topicConfig.input.name)
-    kafkaClient.createTopic(topicConfig.output.name)
+
     schemas.foreach(schema => {
       registerSchema(topicConfig.input.toUnspecialized, schema, topicConfig.isKey)
       registerSchema(topicConfig.output.toUnspecialized, schema, topicConfig.isKey)
