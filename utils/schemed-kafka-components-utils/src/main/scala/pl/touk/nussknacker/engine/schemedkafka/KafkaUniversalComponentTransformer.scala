@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{Validated, Writer}
+import cats.data.Writer
 import org.apache.kafka.clients.admin.ListTopicsOptions
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.util.Try
 
 object KafkaUniversalComponentTransformer {
   final val schemaVersionParamName      = ParameterName("Schema version")
@@ -72,9 +73,11 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val allTopics = getAllTopics
-
-    // TODO: previously schemaRegistryClient made validation
-    val topics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = Valid(allTopics)
+    val topics = allTopics match {
+      // TODO: previously schemaRegistryClient made validation
+      case Some(topicsFromKafka) => Valid(topicsFromKafka)
+      case None                  => topicSelectionStrategy.getTopics(schemaRegistryClient)
+    }
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)
@@ -239,20 +242,24 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   // override it if you use other parameter name for topic
   @transient protected lazy val topicParamName: ParameterName = KafkaUniversalComponentTransformer.topicParamName
 
-  protected def getAllTopics: List[UnspecializedTopicName] = {
-    val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
+  protected def getAllTopics: Option[List[UnspecializedTopicName]] = {
+    Try {
+      val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
 
-    KafkaUtils
-      .usingAdminClient(kafkaConfig) {
-        _.listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
-          .names()
-          .get()
-          .asScala
-          .toSet
-          .map(UnspecializedTopicName.apply)
-          .filterNot(topic => topic.name.startsWith("_"))
-      }
-      .toList
+      // TODO: check here if can check before logging that server is unavailable
+      KafkaUtils
+        .usingAdminClient(kafkaConfig) {
+          _.listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
+            .names()
+            .get()
+            .asScala
+            .toSet
+            .map(UnspecializedTopicName.apply)
+            .filterNot(topic => topic.name.startsWith("_"))
+        }
+        .toList
+    }.toOption
+
   }
 
 }

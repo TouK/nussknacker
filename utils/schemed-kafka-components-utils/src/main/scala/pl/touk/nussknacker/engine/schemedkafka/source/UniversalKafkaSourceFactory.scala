@@ -115,7 +115,11 @@ class UniversalKafkaSourceFactory(
                   Unknown
                 )
               )
-            case _ => Invalid(FatalUnknownError("Wrong dynamic type"))
+            case _ =>
+              determineSchemaAndType(
+                prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
+                Some(schemaVersionParamName)
+              )
           }
         }
 
