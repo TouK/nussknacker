@@ -19,7 +19,7 @@ class ToListConversionExt(target: Any) {
 
 }
 
-object ToListConversionExt extends ExtensionMethodsHandler with ToCollectionConversion {
+object ToListConversionExt extends ConversionExt with ToCollectionConversion {
   private val booleanTyping   = Typed.typedClass[Boolean]
   private val listTyping      = Typed.genericTypeClass[JList[_]](List(Unknown))
   private val collectionClass = classOf[JCollection[_]]
@@ -45,11 +45,11 @@ object ToListConversionExt extends ExtensionMethodsHandler with ToCollectionConv
     description = Option("Convert to a list or null in case of failure")
   )
 
-  private val definitions = List(
+  override val definitions: List[MethodDefinition] = List(
     isListMethodDefinition,
     toListDefinition,
     toListOrNullDefinition,
-  ).groupBy(_.name)
+  )
 
   override type ExtensionMethodInvocationTarget = ToListConversionExt
   override val invocationTargetClass: Class[ToListConversionExt] = classOf[ToListConversionExt]
@@ -58,14 +58,6 @@ object ToListConversionExt extends ExtensionMethodsHandler with ToCollectionConv
       set: ClassDefinitionSet
   ): ToExtensionMethodInvocationTargetConverter[ToListConversionExt] =
     (target: Any) => new ToListConversionExt(target)
-
-  override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
-    if (appliesToConversion(clazz)) definitions
-    else Map.empty
-
-  // Conversion extension should be available for every class in a runtime
-  override def appliesToClassInRuntime(clazz: Class[_]): Boolean =
-    true
 
   override type ResultType = JList[_]
   override val resultTypeClass: Class[JList[_]] = classOf[JList[_]]

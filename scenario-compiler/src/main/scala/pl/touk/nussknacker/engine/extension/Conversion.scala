@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.extension
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import org.springframework.util.NumberUtils
-import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError
+import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition, StaticMethodDefinition}
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
 import java.lang.{
@@ -65,6 +66,29 @@ object Conversion {
 
     case n: JNumber => Right(n)
   }
+
+}
+
+trait ConversionExt extends ExtensionMethodsHandler with Conversion {
+  val definitions: List[MethodDefinition]
+
+  // Conversion extension should be available for every class in a runtime
+  override def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
+
+  override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
+    if (appliesToConversion(clazz)) {
+      definitions.groupBy(_.name)
+    } else {
+      Map.empty
+    }
+  }
+
+  private[extension] def definition(result: TypingResult, methodName: String, desc: Option[String]) =
+    StaticMethodDefinition(
+      signature = MethodTypeInfo.noArgTypeInfo(result),
+      name = methodName,
+      description = desc
+    )
 
 }
 

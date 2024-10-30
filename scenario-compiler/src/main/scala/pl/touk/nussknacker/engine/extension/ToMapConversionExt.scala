@@ -18,7 +18,7 @@ class ToMapConversionExt(target: Any) {
 
 }
 
-object ToMapConversionExt extends ExtensionMethodsHandler with ToCollectionConversion {
+object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
   private val booleanTyping    = Typed.typedClass[Boolean]
   private val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
   private val keyName          = "key"
@@ -46,11 +46,11 @@ object ToMapConversionExt extends ExtensionMethodsHandler with ToCollectionConve
     description = Option("Convert to a map or null in case of failure")
   )
 
-  private val definitions = List(
+  override val definitions: List[MethodDefinition] = List(
     isMapMethodDefinition,
     toMapDefinition,
     toMapOrNullDefinition,
-  ).groupBy(_.name)
+  )
 
   override type ExtensionMethodInvocationTarget = ToMapConversionExt
   override val invocationTargetClass: Class[ToMapConversionExt] = classOf[ToMapConversionExt]
@@ -59,14 +59,6 @@ object ToMapConversionExt extends ExtensionMethodsHandler with ToCollectionConve
       set: ClassDefinitionSet
   ): ToExtensionMethodInvocationTargetConverter[ToMapConversionExt] =
     (target: Any) => new ToMapConversionExt(target)
-
-  override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
-    if (appliesToConversion(clazz)) definitions
-    else Map.empty
-
-  // Conversion extension should be available for every class in a runtime
-  override def appliesToClassInRuntime(clazz: Class[_]): Boolean =
-    true
 
   override type ResultType = JMap[_, _]
   override val resultTypeClass: Class[JMap[_, _]] = classOf[ResultType]

@@ -15,17 +15,17 @@ class ToLongConversionExt(target: Any) {
   def toLongOrNull(): JLong = ToLongConversionExt.convertOrNull(target)
 }
 
-object ToLongConversionExt extends ToNumericConversionExt {
+object ToLongConversionExt extends ConversionExt with ToNumericConversion {
   override type ExtensionMethodInvocationTarget = ToLongConversionExt
   override val invocationTargetClass: Class[ToLongConversionExt] = classOf[ToLongConversionExt]
   override type ResultType = JLong
   override val resultTypeClass: Class[JLong] = classOf[JLong]
 
-  override val definitions: Map[String, List[MethodDefinition]] = List(
+  override val definitions: List[MethodDefinition] = List(
     definition(Typed.typedClass[JBoolean], "isLong", Some("Check whether can be convert to a Long")),
     definition(Typed.typedClass[JLong], "toLong", Some("Convert to Long or throw exception in case of failure")),
     definition(Typed.typedClass[JLong], "toLongOrNull", Some("Convert to Long or null in case of failure")),
-  ).groupBy(_.name)
+  )
 
   override def createConverter(
       set: ClassDefinitionSet

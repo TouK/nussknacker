@@ -15,13 +15,13 @@ class ToBigDecimalConversionExt(target: Any) {
   def toBigDecimalOrNull(): JBigDecimal = ToBigDecimalConversionExt.convertOrNull(target)
 }
 
-object ToBigDecimalConversionExt extends ToNumericConversionExt {
+object ToBigDecimalConversionExt extends ConversionExt with ToNumericConversion {
   override type ExtensionMethodInvocationTarget = ToBigDecimalConversionExt
   override val invocationTargetClass: Class[ToBigDecimalConversionExt] = classOf[ToBigDecimalConversionExt]
   override type ResultType = JBigDecimal
   override val resultTypeClass: Class[JBigDecimal] = classOf[JBigDecimal]
 
-  override val definitions: Map[String, List[MethodDefinition]] = List(
+  override val definitions: List[MethodDefinition] = List(
     definition(Typed.typedClass[JBoolean], "isBigDecimal", Some("Check whether can be convert to a BigDecimal")),
     definition(
       Typed.typedClass[JBigDecimal],
@@ -33,7 +33,7 @@ object ToBigDecimalConversionExt extends ToNumericConversionExt {
       "toBigDecimalOrNull",
       Some("Convert to BigDecimal or null in case of failure")
     ),
-  ).groupBy(_.name)
+  )
 
   override def createConverter(
       set: ClassDefinitionSet
