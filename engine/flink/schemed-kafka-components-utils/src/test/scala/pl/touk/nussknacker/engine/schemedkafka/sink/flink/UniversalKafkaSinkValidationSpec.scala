@@ -46,11 +46,6 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       .get
   }
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    kafkaClient.createTopic(KafkaAvroSinkMockSchemaRegistry.fullnameTopic)
-  }
-
   test("should validate specific version") {
     val result = validate(
       sinkKeyParamName.value            -> "".spel,

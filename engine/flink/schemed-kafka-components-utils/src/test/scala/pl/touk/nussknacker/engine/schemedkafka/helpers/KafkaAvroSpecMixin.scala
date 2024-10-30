@@ -203,9 +203,9 @@ trait KafkaAvroSpecMixin
       expected: List[AnyRef],
       additionalVerificationBeforeScenarioCancel: => Unit
   ): Unit = {
-//    kafkaClient.createTopic(topic.input.name, partitions = 1)
+    kafkaClient.createTopic(topic.input.name, partitions = 1)
     events.foreach(obj => pushMessage(obj, topic.input))
-//    kafkaClient.createTopic(topic.output.name, partitions = 1)
+    kafkaClient.createTopic(topic.output.name, partitions = 1)
 
     run(process) {
       consumeAndVerifyMessages(topic.output, expected)

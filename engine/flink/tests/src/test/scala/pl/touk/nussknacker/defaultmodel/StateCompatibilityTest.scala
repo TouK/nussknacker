@@ -129,10 +129,8 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     * 3. go back to ignore :)
     */
   ignore("should create savepoint and save to disk") {
-    val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
-    kafkaClient.createTopic(inTopic)
+    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
-    kafkaClient.createTopic(outTopic)
 
     val clusterClient = flinkMiniCluster.asInstanceOf[FlinkMiniClusterHolderImpl].getClusterClient
     sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
@@ -153,12 +151,9 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     )
   }
 
-  // TODO: This doesn't yet work
   test("should restore from snapshot") {
-    val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
-    kafkaClient.createTopic(inTopic)
+    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
-    kafkaClient.createTopic(outTopic)
 
     val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
     val env                       = flinkMiniCluster.createExecutionEnvironment()
