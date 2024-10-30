@@ -526,7 +526,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -536,7 +536,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -546,7 +546,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -588,7 +588,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -598,7 +598,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -608,7 +608,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -618,7 +618,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -628,7 +628,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -638,7 +638,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -1092,7 +1092,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -1111,7 +1111,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -1171,7 +1171,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -1181,7 +1181,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -1191,7 +1191,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -1201,7 +1201,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -1577,7 +1577,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -1587,7 +1587,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -1606,7 +1606,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -1666,7 +1666,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -1676,7 +1676,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -1686,7 +1686,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -1696,7 +1696,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -1706,7 +1706,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -1716,7 +1716,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -2083,7 +2083,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -2093,7 +2093,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -2103,7 +2103,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -2145,7 +2145,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -2155,7 +2155,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -2165,7 +2165,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -2175,7 +2175,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -2185,7 +2185,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -2195,7 +2195,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -2751,7 +2751,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -2761,7 +2761,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -2803,7 +2803,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -2813,7 +2813,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -2823,7 +2823,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -2833,7 +2833,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3358,7 +3358,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -3368,7 +3368,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -3378,7 +3378,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -3420,7 +3420,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -3430,7 +3430,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3440,7 +3440,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -3450,7 +3450,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3460,7 +3460,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -3470,7 +3470,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3523,7 +3523,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -3533,7 +3533,7 @@
       ],
       "isBoolean": [
         {
-          "description": "Check whether can be convert to a Boolean",
+          "description": "Check whether the value can be convert to a Boolean",
           "name": "isBoolean",
           "signature": {
             "noVarArgs": [],
@@ -3543,7 +3543,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -3565,7 +3565,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -3601,7 +3601,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -3611,7 +3611,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3621,7 +3621,7 @@
       ],
       "toBoolean": [
         {
-          "description": "Convert to Boolean or throw exception in case of failure",
+          "description": "Convert the value to Boolean or throw exception in case of failure",
           "name": "toBoolean",
           "signature": {
             "noVarArgs": [],
@@ -3631,7 +3631,7 @@
       ],
       "toBooleanOrNull": [
         {
-          "description": "Convert to Boolean or null in case of failure",
+          "description": "Convert the value to Boolean or null in case of failure",
           "name": "toBooleanOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3641,7 +3641,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -3651,7 +3651,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3705,7 +3705,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -3715,7 +3715,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3880,7 +3880,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -3890,7 +3890,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -3900,7 +3900,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -3942,7 +3942,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -3952,7 +3952,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3962,7 +3962,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -3972,7 +3972,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -3982,7 +3982,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -3992,7 +3992,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -4356,7 +4356,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -4375,7 +4375,7 @@
       ],
       "isBoolean": [
         {
-          "description": "Check whether can be convert to a Boolean",
+          "description": "Check whether the value can be convert to a Boolean",
           "name": "isBoolean",
           "signature": {
             "noVarArgs": [],
@@ -4385,7 +4385,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -4404,7 +4404,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -4644,7 +4644,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -4654,7 +4654,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -4664,7 +4664,7 @@
       ],
       "toBoolean": [
         {
-          "description": "Convert to Boolean or throw exception in case of failure",
+          "description": "Convert the value to Boolean or throw exception in case of failure",
           "name": "toBoolean",
           "signature": {
             "noVarArgs": [],
@@ -4674,7 +4674,7 @@
       ],
       "toBooleanOrNull": [
         {
-          "description": "Convert to Boolean or null in case of failure",
+          "description": "Convert the value to Boolean or null in case of failure",
           "name": "toBooleanOrNull",
           "signature": {
             "noVarArgs": [],
@@ -4684,7 +4684,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -4694,7 +4694,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -4704,7 +4704,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -4714,7 +4714,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -5109,7 +5109,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -5119,7 +5119,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -5461,7 +5461,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -5471,7 +5471,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -5490,7 +5490,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -5500,7 +5500,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
@@ -5918,7 +5918,7 @@
       ],
       "isBigDecimal": [
         {
-          "description": "Check whether can be convert to a BigDecimal",
+          "description": "Check whether the value can be convert to a BigDecimal",
           "name": "isBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -5928,7 +5928,7 @@
       ],
       "isDouble": [
         {
-          "description": "Check whether can be convert to a Double",
+          "description": "Check whether the value can be convert to a Double",
           "name": "isDouble",
           "signature": {
             "noVarArgs": [],
@@ -5938,7 +5938,7 @@
       ],
       "isLong": [
         {
-          "description": "Check whether can be convert to a Long",
+          "description": "Check whether the value can be convert to a Long",
           "name": "isLong",
           "signature": {
             "noVarArgs": [],
@@ -6237,7 +6237,7 @@
       ],
       "toBigDecimal": [
         {
-          "description": "Convert to BigDecimal or throw exception in case of failure",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
           "name": "toBigDecimal",
           "signature": {
             "noVarArgs": [],
@@ -6247,7 +6247,7 @@
       ],
       "toBigDecimalOrNull": [
         {
-          "description": "Convert to BigDecimal or null in case of failure",
+          "description": "Convert the value to BigDecimal or null in case of failure",
           "name": "toBigDecimalOrNull",
           "signature": {
             "noVarArgs": [],
@@ -6276,7 +6276,7 @@
       ],
       "toDouble": [
         {
-          "description": "Convert to Double or throw exception in case of failure",
+          "description": "Convert the value to Double or throw exception in case of failure",
           "name": "toDouble",
           "signature": {
             "noVarArgs": [],
@@ -6286,7 +6286,7 @@
       ],
       "toDoubleOrNull": [
         {
-          "description": "Convert to Double or null in case of failure",
+          "description": "Convert the value to Double or null in case of failure",
           "name": "toDoubleOrNull",
           "signature": {
             "noVarArgs": [],
@@ -6296,7 +6296,7 @@
       ],
       "toLong": [
         {
-          "description": "Convert to Long or throw exception in case of failure",
+          "description": "Convert the value to Long or throw exception in case of failure",
           "name": "toLong",
           "signature": {
             "noVarArgs": [],
@@ -6306,7 +6306,7 @@
       ],
       "toLongOrNull": [
         {
-          "description": "Convert to Long or null in case of failure",
+          "description": "Convert the value to Long or null in case of failure",
           "name": "toLongOrNull",
           "signature": {
             "noVarArgs": [],
