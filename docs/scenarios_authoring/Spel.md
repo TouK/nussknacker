@@ -199,13 +199,13 @@ person2 = name: "John"; age: 24
 listOfPersons = {person1, person2}
 ```
 
-| Expression                     | Result           | Type          |
-| ------------                   | --------         | --------      |
-| `{1,2,3,4}.![#this * 2]`       | {2, 4, 6, 8}     | List[Integer] |
-| `#listOfPersons.![#this.name]` | {'Alex', 'John'} | List[String]  |
-| `#listOfPersons.![#this.age]`  | {42, 24}         | List[Integer] |
-| `#listOfPersons.![7]`          | {7, 7}           | List[Integer] |
-
+| Expression                                                      | Result               | Type                 |
+|-----------------------------------------------------------------|----------------------|----------------------|
+| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}         | List[Integer]        |
+| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}     | List[String]         |
+| `#listOfPersons.![#this.age]`                                   | {42, 24}             | List[Integer]        |
+| `#listOfPersons.![7]`                                           | {7, 7}               | List[Integer]        |
+| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24} | Map[String, Integer] |
 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
@@ -308,23 +308,8 @@ Explicit conversions are available in utility classes and build-in java conversi
 
 | Expression                                                      | Result                     | Type            |
 |-----------------------------------------------------------------|----------------------------|-----------------|
-| `#NUMERIC.toNumber('42')`                                       | 42                         | Number          |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
 | `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
 | `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
-
-### Casting
-
-When a type cannot be determined by parser, the type is presented as `Unknown`. When we know what the type will be on
-runtime, we can cast a given type, and then we can operate on the cast type.
-
-E.g. having a variable `obj` of a type: `List[Unknown]` and we know the elements are strings then we can cast elements
-to String: `#obj.![#this.castToOrNull('String')]`.
-
-Available methods:
-- `canCastTo` - checks if a type can be cast to a given class.
-- `castTo` - casts a type to a given class or throws exception if type cannot be cast.
-- `castToOrNull` - casts a type to a given class or return null if type cannot be cast.
 
 
 ## Built-in helpers

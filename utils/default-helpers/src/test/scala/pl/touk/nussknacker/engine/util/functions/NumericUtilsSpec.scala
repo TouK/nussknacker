@@ -4,8 +4,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
 
-import java.math.BigInteger
-
 class NumericUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
   test("string to number conversion should return narrow numeric types in the runtime") {

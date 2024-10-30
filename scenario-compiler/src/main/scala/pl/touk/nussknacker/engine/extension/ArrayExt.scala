@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.extension
 
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
-import pl.touk.nussknacker.engine.spel.internal.RuntimeConversionHandler
+import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 
 import java.util
 import java.util.{List => JList}
 
 class ArrayExt(target: Any) extends util.AbstractList[Object] {
-  private val asList = RuntimeConversionHandler.convert(target)
+  private val asList = ConversionHandler.convertArrayToList(target)
 
   override def get(index: Int): AnyRef                     = asList.get(index)
   override def size(): Int                                 = asList.size()
@@ -26,7 +26,6 @@ object ArrayExt extends ExtensionMethodsHandler {
   override val invocationTargetClass: Class[ArrayExt] = classOf[ArrayExt]
 
   override def createConverter(
-      classLoader: ClassLoader,
       set: ClassDefinitionSet
   ): ToExtensionMethodInvocationTargetConverter[ArrayExt] =
     (target: Any) => new ArrayExt(target)
@@ -41,5 +40,5 @@ object ArrayExt extends ExtensionMethodsHandler {
       Map.empty
     }
 
-  override def applies(clazz: Class[_]): Boolean = clazz.isArray
+  override def appliesToClassInRuntime(clazz: Class[_]): Boolean = clazz.isArray
 }

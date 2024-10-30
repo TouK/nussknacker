@@ -43,7 +43,7 @@ class EvaluationContextPreparer(
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      private val methodInvoker = new ExtensionsAwareMethodInvoker(classLoader, classDefinitionSet)
+      private val methodInvoker = new ExtensionsAwareMethodInvoker(classDefinitionSet)
 
       override def resolve(
           context: EvaluationContext,

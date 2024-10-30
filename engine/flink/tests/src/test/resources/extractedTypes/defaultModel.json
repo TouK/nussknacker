@@ -80,6 +80,20 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -87,6 +101,30 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
+        }
+      ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
         }
       ],
       "lastIndexOf": [
@@ -107,6 +145,134 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -344,6 +510,50 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "longValue": [
         {
           "name": "longValue",
@@ -360,6 +570,94 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Short"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -533,48 +831,6 @@
   {
     "clazzName": {"refClazzName": "java.lang.CharSequence"},
     "methods": {
-      "canCastTo": [
-        {
-          "description": "Checks if a type can be cast to a given class",
-          "name": "canCastTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castTo": [
-        {
-          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
-          "name": "castTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castToOrNull": [
-        {
-          "description": "Casts a type to a given class or return null if type cannot be cast.",
-          "name": "castToOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "charAt": [
         {
           "name": "charAt",
@@ -586,6 +842,20 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "length": [
         {
           "name": "length",
@@ -593,6 +863,34 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -656,10 +954,24 @@
       "refClazzName": "java.lang.Comparable"
     },
     "methods": {
-      "canCastTo": [
+      "is": [
         {
-          "description": "Checks if a type can be cast to a given class",
-          "name": "canCastTo",
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
           "signatures": [
             {
               "noVarArgs": [
@@ -670,24 +982,10 @@
           ]
         }
       ],
-      "castTo": [
+      "toOrNull": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
-          "name": "castTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castToOrNull": [
-        {
-          "description": "Casts a type to a given class or return null if type cannot be cast.",
-          "name": "castToOrNull",
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
           "signatures": [
             {
               "noVarArgs": [
@@ -778,9 +1076,43 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "isInfinite": [
         {
           "name": "isInfinite",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -821,6 +1153,74 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Short"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -1161,9 +1561,53 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "isInfinite": [
         {
           "name": "isInfinite",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -1204,6 +1648,94 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Short"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -1535,6 +2067,50 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "longValue": [
         {
           "name": "longValue",
@@ -1551,6 +2127,94 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Short"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -2071,6 +2735,40 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "longValue": [
         {
           "name": "longValue",
@@ -2087,6 +2785,74 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Short"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -2549,48 +3315,6 @@
           }
         }
       ],
-      "canCastTo": [
-        {
-          "description": "Checks if a type can be cast to a given class",
-          "name": "canCastTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castTo": [
-        {
-          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
-          "name": "castTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castToOrNull": [
-        {
-          "description": "Casts a type to a given class or return null if type cannot be cast.",
-          "name": "castToOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "doubleValue": [
         {
           "name": "doubleValue",
@@ -2618,6 +3342,50 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "longValue": [
         {
           "name": "longValue",
@@ -2636,6 +3404,94 @@
           }
         }
       ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toString": [
         {
           "name": "toString",
@@ -2651,10 +3507,88 @@
   {
     "clazzName": {"type": "Unknown"},
     "methods": {
-      "canCastTo": [
+      "is": [
         {
-          "description": "Checks if a type can be cast to a given class",
-          "name": "canCastTo",
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isBoolean": [
+        {
+          "description": "Check whether the value can be convert to a Boolean",
+          "name": "isBoolean",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
           "signatures": [
             {
               "noVarArgs": [
@@ -2665,24 +3599,190 @@
           ]
         }
       ],
-      "castTo": [
+      "toBigDecimal": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
-          "name": "castTo",
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBoolean": [
+        {
+          "description": "Convert the value to Boolean or throw exception in case of failure",
+          "name": "toBoolean",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "toBooleanOrNull": [
+        {
+          "description": "Convert the value to Boolean or null in case of failure",
+          "name": "toBooleanOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
           "signatures": [
             {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
             }
           ]
         }
       ],
-      "castToOrNull": [
+      "toListOrNull": [
         {
-          "description": "Casts a type to a given class or return null if type cannot be cast.",
-          "name": "castToOrNull",
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
           "signatures": [
             {
               "noVarArgs": [
@@ -2764,6 +3864,50 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "longValue": [
         {
           "name": "longValue",
@@ -2780,6 +3924,94 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Short"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -3108,6 +4340,30 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "isBlank": [
         {
           "name": "isBlank",
@@ -3117,9 +4373,39 @@
           }
         }
       ],
+      "isBoolean": [
+        {
+          "description": "Check whether the value can be convert to a Boolean",
+          "name": "isBoolean",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "isEmpty": [
         {
           "name": "isEmpty",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -3342,6 +4628,100 @@
           }
         }
       ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBoolean": [
+        {
+          "description": "Convert the value to Boolean or throw exception in case of failure",
+          "name": "toBoolean",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "toBooleanOrNull": [
+        {
+          "description": "Convert the value to Boolean or null in case of failure",
+          "name": "toBooleanOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
       "toLowerCase": [
         {
           "name": "toLowerCase",
@@ -3358,6 +4738,20 @@
             ],
             "result": {"refClazzName": "java.lang.String"}
           }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -3699,6 +5093,40 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "longValue": [
         {
           "name": "longValue",
@@ -3999,6 +5427,20 @@
           }
         }
       ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
       "toBigInteger": [
         {
           "name": "toBigInteger",
@@ -4017,6 +5459,26 @@
           }
         }
       ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
       "toEngineeringString": [
         {
           "name": "toEngineeringString",
@@ -4024,6 +5486,40 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
           }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toPlainString": [
@@ -4406,6 +5902,50 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "isBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "isDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "isLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "isLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "isProbablePrime": [
         {
           "name": "isProbablePrime",
@@ -4681,6 +6221,40 @@
           }
         }
       ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toBigDecimal": [
+        {
+          "description": "Convert the value to BigDecimal or throw exception in case of failure",
+          "name": "toBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
+      "toBigDecimalOrNull": [
+        {
+          "description": "Convert the value to BigDecimal or null in case of failure",
+          "name": "toBigDecimalOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.math.BigDecimal"}
+          }
+        }
+      ],
       "toByteArray": [
         {
           "name": "toByteArray",
@@ -4698,6 +6272,60 @@
               "refClazzName": "[Ljava.lang.Object;"
             }
           }
+        }
+      ],
+      "toDouble": [
+        {
+          "description": "Convert the value to Double or throw exception in case of failure",
+          "name": "toDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toDoubleOrNull": [
+        {
+          "description": "Convert the value to Double or null in case of failure",
+          "name": "toDoubleOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "toLong": [
+        {
+          "description": "Convert the value to Long or throw exception in case of failure",
+          "name": "toLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toLongOrNull": [
+        {
+          "description": "Convert the value to Long or null in case of failure",
+          "name": "toLongOrNull",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -9639,48 +11267,6 @@
   {
     "clazzName": {"refClazzName": "java.time.ZoneId"},
     "methods": {
-      "canCastTo": [
-        {
-          "description": "Checks if a type can be cast to a given class",
-          "name": "canCastTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castTo": [
-        {
-          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
-          "name": "castTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castToOrNull": [
-        {
-          "description": "Casts a type to a given class or return null if type cannot be cast.",
-          "name": "castToOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "getDisplayName": [
         {
           "name": "getDisplayName",
@@ -9711,6 +11297,20 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "normalized": [
         {
           "name": "normalized",
@@ -9718,6 +11318,34 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.time.ZoneId"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -11722,10 +13350,24 @@
   {
     "clazzName": {"refClazzName": "java.time.temporal.Temporal"},
     "methods": {
-      "canCastTo": [
+      "is": [
         {
-          "description": "Checks if a type can be cast to a given class",
-          "name": "canCastTo",
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
           "signatures": [
             {
               "noVarArgs": [
@@ -11736,24 +13378,10 @@
           ]
         }
       ],
-      "castTo": [
+      "toOrNull": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
-          "name": "castTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castToOrNull": [
-        {
-          "description": "Casts a type to a given class or return null if type cannot be cast.",
-          "name": "castToOrNull",
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
           "signatures": [
             {
               "noVarArgs": [
@@ -11779,10 +13407,24 @@
   {
     "clazzName": {"refClazzName": "java.time.temporal.TemporalAccessor"},
     "methods": {
-      "canCastTo": [
+      "is": [
         {
-          "description": "Checks if a type can be cast to a given class",
-          "name": "canCastTo",
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
           "signatures": [
             {
               "noVarArgs": [
@@ -11793,24 +13435,10 @@
           ]
         }
       ],
-      "castTo": [
+      "toOrNull": [
         {
-          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
-          "name": "castTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castToOrNull": [
-        {
-          "description": "Casts a type to a given class or return null if type cannot be cast.",
-          "name": "castToOrNull",
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
           "signatures": [
             {
               "noVarArgs": [
@@ -11846,48 +13474,6 @@
       "refClazzName": "java.util.Collection"
     },
     "methods": {
-      "canCastTo": [
-        {
-          "description": "Checks if a type can be cast to a given class",
-          "name": "canCastTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castTo": [
-        {
-          "description": "Casts a type to a given class or throws exception if type cannot be cast.",
-          "name": "castTo",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
-      "castToOrNull": [
-        {
-          "description": "Casts a type to a given class or return null if type cannot be cast.",
-          "name": "castToOrNull",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"type": "Unknown"}
-            }
-          ]
-        }
-      ],
       "contains": [
         {
           "name": "contains",
@@ -11932,6 +13518,20 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -11941,6 +13541,30 @@
           }
         }
       ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "size": [
         {
           "name": "size",
@@ -11948,6 +13572,134 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -12068,6 +13820,20 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -12075,6 +13841,18 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
         }
       ],
       "lastIndexOf": [
@@ -12095,6 +13873,90 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -12397,6 +14259,20 @@
           }
         }
       ],
+      "is": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "is",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -12406,6 +14282,30 @@
           }
         }
       ],
+      "isList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "isList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "isMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "isMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "size": [
         {
           "name": "size",
@@ -12413,6 +14313,134 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toMap": [
+        {
+          "description": "Convert to a map or throw exception in case of failure",
+          "name": "toMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toMapOrNull": [
+        {
+          "description": "Convert to a map or null in case of failure",
+          "name": "toMapOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [
@@ -14208,126 +16236,6 @@
           }
         }
       ],
-      "toBigDecimal": [
-        {
-          "description": "Convert any value to BigDecimal or throw exception in case of failure",
-          "name": "toBigDecimal",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.math.BigDecimal"}
-          }
-        }
-      ],
-      "toBigDecimalOrNull": [
-        {
-          "description": "Convert any value to BigDecimal or null in case of failure",
-          "name": "toBigDecimalOrNull",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.math.BigDecimal"}
-          }
-        }
-      ],
-      "toBigInteger": [
-        {
-          "description": "Convert any value to BigInteger or throw exception in case of failure",
-          "name": "toBigInteger",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.math.BigInteger"}
-          }
-        }
-      ],
-      "toBigIntegerOrNull": [
-        {
-          "description": "Convert any value to BigInteger or null in case of failure",
-          "name": "toBigIntegerOrNull",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.math.BigInteger"}
-          }
-        }
-      ],
-      "toBoolean": [
-        {
-          "description": "Convert any value to Boolean or throw exception in case of failure",
-          "name": "toBoolean",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "toBooleanOrNull": [
-        {
-          "description": "Convert any value to Boolean or throw exception in case of failure",
-          "name": "toBooleanOrNull",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "toDouble": [
-        {
-          "description": "Convert any value to Double or throw exception in case of failure",
-          "name": "toDouble",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Double"}
-          }
-        }
-      ],
-      "toDoubleOrNull": [
-        {
-          "description": "Convert any value to Double or null in case of failure",
-          "name": "toDoubleOrNull",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Double"}
-          }
-        }
-      ],
-      "toInteger": [
-        {
-          "description": "Convert any value to Integer or throw exception in case of failure",
-          "name": "toInteger",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "toIntegerOrNull": [
-        {
-          "description": "Convert any value to Integer or null in case of failure",
-          "name": "toIntegerOrNull",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
       "toJson": [
         {
           "description": "Convert String value to JSON",
@@ -14364,33 +16272,9 @@
           }
         }
       ],
-      "toLong": [
-        {
-          "description": "Convert any value to Long or throw exception in case of failure",
-          "name": "toLong",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
-      "toLongOrNull": [
-        {
-          "description": "Convert any value to Long or null in case of failure",
-          "name": "toLongOrNull",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Long"}
-          }
-        }
-      ],
       "toNumber": [
         {
-          "description": "Parse string to number",
+          "description": "Deprecated - will be removed in 1.19",
           "name": "toNumber",
           "signatures": [
             {
@@ -14419,30 +16303,6 @@
               "result": {"refClazzName": "java.lang.Number"}
             }
           ]
-        }
-      ],
-      "toNumberOrNull": [
-        {
-          "description": "Parse any value to Number or null in case failure",
-          "name": "toNumberOrNull",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Number"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "description": "Convert any value to String",
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [
-              {"name": "value", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.String"}
-          }
         }
       ]
     },

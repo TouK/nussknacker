@@ -5,11 +5,11 @@ import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensionMethodsHan
 
 import java.lang.reflect.{Method, Modifier}
 
-class ExtensionsAwareMethodInvoker(classLoader: ClassLoader, classDefinitionSet: ClassDefinitionSet) {
+class ExtensionsAwareMethodInvoker(classDefinitionSet: ClassDefinitionSet) {
 
   private val toInvocationTargetConvertersByClass =
     extensionMethodsHandlers
-      .map(e => e.invocationTargetClass -> e.createConverter(classLoader, classDefinitionSet))
+      .map(e => e.invocationTargetClass -> e.createConverter(classDefinitionSet))
       .toMap[Class[_], ToExtensionMethodInvocationTargetConverter[_]]
 
   def invoke(method: Method)(target: Any, arguments: Array[Object]): Any = {
@@ -33,14 +33,20 @@ object ExtensionAwareMethodsDiscovery {
   // Calculating methods should not be cached because it's calculated only once at the first execution of
   // parsed expression (org.springframework.expression.spel.ast.MethodReference.getCachedExecutor).
   def discover(clazz: Class[_]): Array[Method] =
-    clazz.getMethods ++ extensionMethodsHandlers.filter(_.applies(clazz)).flatMap(_.nonStaticMethods)
+    clazz.getMethods ++ extensionMethodsHandlers.filter(_.appliesToClassInRuntime(clazz)).flatMap(_.nonStaticMethods)
 }
 
 object ExtensionMethods {
 
   val extensionMethodsHandlers: List[ExtensionMethodsHandler] = List(
-    Cast,
+    CastOrConversionExt,
     ArrayExt,
+    ToLongConversionExt,
+    ToDoubleConversionExt,
+    ToBigDecimalConversionExt,
+    ToBooleanConversionExt,
+    ToListConversionExt,
+    ToMapConversionExt,
   )
 
   def enrichWithExtensionMethods(set: ClassDefinitionSet): ClassDefinitionSet = {
@@ -65,14 +71,13 @@ trait ExtensionMethodsHandler {
       .filter(m => Modifier.isPublic(m.getModifiers) && !Modifier.isStatic(m.getModifiers))
 
   def createConverter(
-      classLoader: ClassLoader,
       set: ClassDefinitionSet
   ): ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget]
 
   def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
 
   // For what classes is extension available in the runtime invocation
-  def applies(clazz: Class[_]): Boolean
+  def appliesToClassInRuntime(clazz: Class[_]): Boolean
 }
 
 trait ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget] {

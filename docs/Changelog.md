@@ -31,21 +31,6 @@
 * [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`.
 * [#6778](https://github.com/TouK/nussknacker/pull/6778) SpeL: check for methods if a property for a given name does not exist.
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
-* [#6807](https://github.com/TouK/nussknacker/pull/6807) Add conversion functions to primitives to: `#CONV`:
-  * toNumberOrNull
-  * toString
-  * toBoolean
-  * toBooleanOrNull
-  * toInteger
-  * toIntegerOrNull
-  * toLong
-  * toLongOrNull
-  * toDouble
-  * toDoubleOrNull
-  * toBigInteger
-  * toBigIntegerOrNull
-  * toBigDecimal
-  * toBigDecimalOrNull
 * [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `toJson` and `toJsonString` conversions (in the `#CONV` helper)
 * [#6995](https://github.com/TouK/nussknacker/pull/6995) Add `#BASE64` helper to decode/encode Base64 values
 * [#6826](https://github.com/TouK/nussknacker/pull/6826) Security fix: added validation of expression used inside 
@@ -71,7 +56,6 @@
 * [#6925](https://github.com/TouK/nussknacker/pull/6925) Fix situation when preset labels were presented as `null` when node didn't pass the validation.
 * [#6935](https://github.com/TouK/nussknacker/pull/6935) Spel: Scenario labels added to meta variable - `#meta.scenarioLabels`
 * [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option
-* [#6840](https://github.com/TouK/nussknacker/pull/6840) Introduce canCastTo, castTo and castToOrNull extension methods in SpeL.
 * [#6974](https://github.com/TouK/nussknacker/pull/6974) Add SpeL suggestions for cast methods parameter.
 * [#6958](https://github.com/TouK/nussknacker/pull/6958) Add message size limit in the "Kafka" exceptionHandler
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Remove unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`
@@ -82,6 +66,14 @@
   * [#7097](https://github.com/TouK/nussknacker/pull/7097) Flink base types registration mechanism
 * [#7021](https://github.com/TouK/nussknacker/pull/7021) Definitions service can return definition without UI config
 * [#7010](https://github.com/TouK/nussknacker/pull/7010) Dynamic access allowed via indexer operator (`[]`) on expressions typed as `Unknown`
+* [#7063](https://github.com/TouK/nussknacker/pull/7063) Introduce conversion extension methods in SpeL:
+  * is(className)/to(className)/toOrNull(className)
+  * isBoolean/toBoolean/toBooleanOrNull
+  * isLong/toLong/toLongOrNull
+  * isDouble/toDouble/toDoubleOrNull
+  * isBigDecimal/toBigDecimal/toBigDecimalOrNull
+  * isList/toList/toListOrNull
+  * isMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
 
 ## 1.17
 
