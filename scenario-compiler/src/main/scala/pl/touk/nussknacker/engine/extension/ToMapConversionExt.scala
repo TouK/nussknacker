@@ -46,7 +46,7 @@ object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
     description = Option("Convert to a map or null in case of failure")
   )
 
-  override val definitions: List[MethodDefinition] = List(
+  override def definitions(): List[MethodDefinition] = List(
     isMapMethodDefinition,
     toMapDefinition,
     toMapOrNullDefinition,

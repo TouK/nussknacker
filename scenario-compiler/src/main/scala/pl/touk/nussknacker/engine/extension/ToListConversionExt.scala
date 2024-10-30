@@ -45,14 +45,14 @@ object ToListConversionExt extends ConversionExt with ToCollectionConversion {
     description = Option("Convert to a list or null in case of failure")
   )
 
-  override val definitions: List[MethodDefinition] = List(
+  override type ExtensionMethodInvocationTarget = ToListConversionExt
+  override val invocationTargetClass: Class[ToListConversionExt] = classOf[ToListConversionExt]
+
+  override def definitions(): List[MethodDefinition] = List(
     isListMethodDefinition,
     toListDefinition,
     toListOrNullDefinition,
   )
-
-  override type ExtensionMethodInvocationTarget = ToListConversionExt
-  override val invocationTargetClass: Class[ToListConversionExt] = classOf[ToListConversionExt]
 
   override def createConverter(
       set: ClassDefinitionSet

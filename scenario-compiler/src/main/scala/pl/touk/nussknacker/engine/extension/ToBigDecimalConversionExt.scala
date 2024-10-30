@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.extension
 
 import org.springframework.util.NumberUtils
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
 import java.lang.{Boolean => JBoolean}
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
@@ -20,20 +19,6 @@ object ToBigDecimalConversionExt extends ConversionExt with ToNumericConversion 
   override val invocationTargetClass: Class[ToBigDecimalConversionExt] = classOf[ToBigDecimalConversionExt]
   override type ResultType = JBigDecimal
   override val resultTypeClass: Class[JBigDecimal] = classOf[JBigDecimal]
-
-  override val definitions: List[MethodDefinition] = List(
-    definition(Typed.typedClass[JBoolean], "isBigDecimal", Some("Check whether can be convert to a BigDecimal")),
-    definition(
-      Typed.typedClass[JBigDecimal],
-      "toBigDecimal",
-      Some("Convert to BigDecimal or throw exception in case of failure")
-    ),
-    definition(
-      Typed.typedClass[JBigDecimal],
-      "toBigDecimalOrNull",
-      Some("Convert to BigDecimal or null in case of failure")
-    ),
-  )
 
   override def createConverter(
       set: ClassDefinitionSet

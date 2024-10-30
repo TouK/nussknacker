@@ -70,14 +70,35 @@ object Conversion {
 }
 
 trait ConversionExt extends ExtensionMethodsHandler with Conversion {
-  val definitions: List[MethodDefinition]
+  private lazy val definitionsByName = definitions().groupBy(_.name)
+
+  def definitions(): List[MethodDefinition] = {
+    val targetTypeSimpleName = resultTypeClass.simpleName()
+    List(
+      definition(
+        Typed.typedClass[JBoolean],
+        s"is$targetTypeSimpleName",
+        Some(s"Check whether the value can be convert to a $targetTypeSimpleName")
+      ),
+      definition(
+        typingResult,
+        s"to$targetTypeSimpleName",
+        Some(s"Convert the value to $targetTypeSimpleName or throw exception in case of failure")
+      ),
+      definition(
+        typingResult,
+        s"to${targetTypeSimpleName}OrNull",
+        Some(s"Convert the value to $targetTypeSimpleName or null in case of failure")
+      ),
+    )
+  }
 
   // Conversion extension should be available for every class in a runtime
   override def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
     if (appliesToConversion(clazz)) {
-      definitions.groupBy(_.name)
+      definitionsByName
     } else {
       Map.empty
     }
