@@ -36,9 +36,7 @@ class FinkExactlyOnceItSpec
       |""".stripMargin
 
   test("should read message from kafka and write message in transaction to kafka on checkpoint") {
-    val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions", RecordSchemas)
-    kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
-    kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
+    val topicConfig = createAndRegisterAvroTopicConfig("cash-transactions", RecordSchemas, 1)
 
     val sendResult = sendAsJson(inputOutputMessage, topicConfig.input).futureValue
     logger.info(s"Messages sent successful: $sendResult")

@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  DynamicSchemaVersion,
   ExistingSchemaVersion,
   LatestSchemaVersion,
   SchemaRegistryClientFactory,
@@ -178,18 +179,29 @@ abstract class FlinkWithKafkaSuite
     versionOption match {
       case LatestSchemaVersion            => s"'${SchemaVersionOption.LatestOptionName}'"
       case ExistingSchemaVersion(version) => s"'$version'"
+      case DynamicSchemaVersion(typ)      => s"'$typ'"
     }
 
-  protected def createAndRegisterAvroTopicConfig(name: String, schemas: List[Schema]): TopicConfig =
-    createAndRegisterTopicConfig(name, schemas.map(s => ConfluentUtils.convertToAvroSchema(s)))
+  protected def createAndRegisterAvroTopicConfig(
+      name: String,
+      schemas: List[Schema],
+      partitions: Int = 5
+  ): TopicConfig =
+    createAndRegisterTopicConfig(name, schemas.map(s => ConfluentUtils.convertToAvroSchema(s)), partitions)
 
   /**
     * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
     * and we can have wrong results of tests..
     */
-  protected def createAndRegisterTopicConfig(name: String, schemas: List[ParsedSchema]): TopicConfig = {
+  protected def createAndRegisterTopicConfig(
+      name: String,
+      schemas: List[ParsedSchema],
+      partitions: Int = 5
+  ): TopicConfig = {
     val topicConfig = TopicConfig(name, schemas)
 
+    kafkaClient.createTopic(topicConfig.input.name, partitions)
+    kafkaClient.createTopic(topicConfig.output.name, partitions)
     schemas.foreach(schema => {
       val inputSubject  = ConfluentUtils.topicSubject(topicConfig.input.toUnspecialized, topicConfig.isKey)
       val outputSubject = ConfluentUtils.topicSubject(topicConfig.output.toUnspecialized, topicConfig.isKey)

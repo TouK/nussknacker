@@ -46,7 +46,9 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
     val inputSubject  = ConfluentUtils.topicSubject(namespacedInputTopic.toUnspecialized, isKey = false)
     val outputSubject = ConfluentUtils.topicSubject(namespacedOutputTopic.toUnspecialized, isKey = false)
     schemaRegistryMockClient.register(inputSubject, schema)
+    kafkaClient.createTopic(namespacedInputTopic.name)
     schemaRegistryMockClient.register(outputSubject, schema)
+    kafkaClient.createTopic(namespacedOutputTopic.name)
 
     sendAsJson(record, namespacedInputTopic)
 

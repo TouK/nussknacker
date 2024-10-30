@@ -37,6 +37,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  DynamicSchemaVersion,
   ExistingSchemaVersion,
   LatestSchemaVersion,
   SchemaRegistryClientFactory,
@@ -174,6 +175,7 @@ trait KafkaAvroSpecMixin
     versionOption match {
       case LatestSchemaVersion            => s"'${SchemaVersionOption.LatestOptionName}'"
       case ExistingSchemaVersion(version) => s"'$version'"
+      case DynamicSchemaVersion(typ)      => s"'$typ'"
     }
 
   protected def runAndVerifyResultSingleEvent(
@@ -201,9 +203,9 @@ trait KafkaAvroSpecMixin
       expected: List[AnyRef],
       additionalVerificationBeforeScenarioCancel: => Unit
   ): Unit = {
-    kafkaClient.createTopic(topic.input.name, partitions = 1)
+//    kafkaClient.createTopic(topic.input.name, partitions = 1)
     events.foreach(obj => pushMessage(obj, topic.input))
-    kafkaClient.createTopic(topic.output.name, partitions = 1)
+//    kafkaClient.createTopic(topic.output.name, partitions = 1)
 
     run(process) {
       consumeAndVerifyMessages(topic.output, expected)
@@ -310,8 +312,9 @@ trait KafkaAvroSpecMixin
 
   protected def versionOptionToString(versionOption: SchemaVersionOption): String = {
     versionOption match {
-      case LatestSchemaVersion      => SchemaVersionOption.LatestOptionName
-      case ExistingSchemaVersion(v) => v.toString
+      case LatestSchemaVersion       => SchemaVersionOption.LatestOptionName
+      case ExistingSchemaVersion(v)  => v.toString
+      case DynamicSchemaVersion(typ) => typ.toString
     }
   }
 

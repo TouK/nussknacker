@@ -44,6 +44,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
 
   test("should handle exceptions in kafka sinks") {
     registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)
+    kafkaClient.createTopic(topic.name)
 
     val schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
     val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)

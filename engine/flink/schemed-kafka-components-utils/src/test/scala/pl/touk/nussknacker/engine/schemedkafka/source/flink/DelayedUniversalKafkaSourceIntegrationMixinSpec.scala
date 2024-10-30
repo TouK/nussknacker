@@ -59,7 +59,7 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
   }
 
   protected def runAndVerify(topic: TopicName.ForSource, process: CanonicalProcess, givenObj: AnyRef): Unit = {
-    kafkaClient.createTopic(topic.name, partitions = 1)
+//    kafkaClient.createTopic(topic.name, partitions = 1)
     pushMessage(givenObj, topic)
     run(process) {
       eventually {
