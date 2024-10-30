@@ -77,7 +77,9 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       // TODO: previously schemaRegistryClient made validation
       case Some(topicsFromKafka) =>
         // For test purposes mostly
-        topicSelectionStrategy.getTopics(schemaRegistryClient).map(_.appendedAll(topicsFromKafka).distinct)
+        topicSelectionStrategy
+          .getTopics(schemaRegistryClient)
+          .map(fromRegistry => (fromRegistry ++ topicsFromKafka).distinct)
       case None => topicSelectionStrategy.getTopics(schemaRegistryClient)
     }
 
