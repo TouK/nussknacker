@@ -779,7 +779,7 @@ class ExpressionSuggesterSpec
     )
   }
 
-  test("should suggest parameters for casts methods") {
+  test("should suggest parameters for casts/conversions methods on unknown") {
     spelSuggestionsFor("#unknown.to('')", column = 13) should contain theSameElementsAs List(
       suggestion("Duration", Typed[Duration]),
       suggestion("LocalDateTime", Typed[LocalDateTime]),
@@ -790,12 +790,40 @@ class ExpressionSuggesterSpec
       suggestion("Util", Typed[Util]),
       suggestion("WithList", Typed[WithList]),
       suggestion("BigDecimal", Typed[java.math.BigDecimal]),
+      suggestion("BigInteger", Typed[java.math.BigInteger]),
       suggestion("Boolean", Typed[java.lang.Boolean]),
       suggestion("Double", Typed[java.lang.Double]),
+      suggestion("Float", Typed[java.lang.Float]),
       suggestion("Long", Typed[java.lang.Long]),
+      suggestion("Integer", Typed[java.lang.Integer]),
+      suggestion("Short", Typed[java.lang.Short]),
+      suggestion("Byte", Typed[java.lang.Byte]),
       suggestion("String", Typed[java.lang.String]),
       suggestion("List", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
       suggestion("Map", Typed.genericTypeClass[java.util.Map[_, _]](List(Unknown, Unknown))),
+    )
+  }
+
+  test("should suggest parameters for casts/conversions methods on string") {
+    spelSuggestionsFor("'11'.to('')", column = 9) should contain theSameElementsAs List(
+      suggestion("BigDecimal", Typed[java.math.BigDecimal]),
+      suggestion("BigInteger", Typed[java.math.BigInteger]),
+      suggestion("Boolean", Typed[java.lang.Boolean]),
+      suggestion("Double", Typed[java.lang.Double]),
+      suggestion("Float", Typed[java.lang.Float]),
+      suggestion("Long", Typed[java.lang.Long]),
+      suggestion("Integer", Typed[java.lang.Integer]),
+      suggestion("Short", Typed[java.lang.Short]),
+      suggestion("Byte", Typed[java.lang.Byte]),
+    )
+  }
+
+  test("should suggest parameters for casts/conversions methods on list to map") {
+    spelSuggestionsFor("{{key: 'a', value: 1}}.to('')", column = 27) should contain theSameElementsAs List(
+      suggestion(
+        "Map",
+        Typed.genericTypeClass[java.util.Map[_, _]](List(Typed.typedClass[String], Typed.typedClass[Integer]))
+      ),
     )
   }
 

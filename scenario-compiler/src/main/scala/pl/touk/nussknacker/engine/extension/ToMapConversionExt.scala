@@ -18,7 +18,7 @@ class ToMapConversionExt(target: Any) {
 
 }
 
-object ToMapConversionExt extends ExtensionMethodsHandler with CollectionConversion {
+object ToMapConversionExt extends ExtensionMethodsHandler with ToCollectionConversion {
   private val booleanTyping    = Typed.typedClass[Boolean]
   private val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
   private val keyName          = "key"

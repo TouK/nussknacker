@@ -19,7 +19,7 @@ class ToListConversionExt(target: Any) {
 
 }
 
-object ToListConversionExt extends ExtensionMethodsHandler with CollectionConversion {
+object ToListConversionExt extends ExtensionMethodsHandler with ToCollectionConversion {
   private val booleanTyping   = Typed.typedClass[Boolean]
   private val listTyping      = Typed.genericTypeClass[JList[_]](List(Unknown))
   private val collectionClass = classOf[JCollection[_]]

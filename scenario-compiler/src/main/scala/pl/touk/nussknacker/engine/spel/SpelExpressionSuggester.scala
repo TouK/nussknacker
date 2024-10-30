@@ -287,12 +287,12 @@ class SpelExpressionSuggester(
                     Future.successful(fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil)))
                   case _ => successfulNil
                 }
-              case m: MethodReference if CastOrConversionExt.isCastOrToConversionMethod(m.getName) =>
-                parentPrevNodeTyping match {
-                  case Unknown =>
-                    castOrToConversionMethodsSuggestions(classOf[Object])
-                  case TypedClass(klass, _) =>
-                    castOrToConversionMethodsSuggestions(klass)
+              case m: MethodReference if CastOrConversionExt.isCastOrConversionMethod(m.getName) =>
+                parentPrevNodeTyping.withoutValue match {
+                  case t @ Unknown =>
+                    castOrConversionMethodsSuggestions(classOf[Object], t)
+                  case t @ TypedClass(klass, _) =>
+                    castOrConversionMethodsSuggestions(klass, t)
                   case _ => successfulNil
                 }
               case _ => successfulNil
@@ -338,11 +338,12 @@ class SpelExpressionSuggester(
     suggestions
   }
 
-  private def castOrToConversionMethodsSuggestions(
-      klass: Class[_]
+  private def castOrConversionMethodsSuggestions(
+      invocationTargetClass: Class[_],
+      invocationTargetTyping: TypingResult,
   )(implicit ec: ExecutionContext): Future[Iterable[ExpressionSuggestion]] =
     Future {
-      val allowedClassesForCastParameter = klass
+      val allowedClassesForCastParameter = invocationTargetClass
         .findAllowedClassesForCastParameter(clssDefinitions)
         .mapValuesNow(_.clazzName)
       val castSuggestions = allowedClassesForCastParameter.keySet
@@ -351,8 +352,16 @@ class SpelExpressionSuggester(
           ExpressionSuggestion(name, allowedClassesForCastParameter.getOrElse(clazz, Unknown), false, None, Nil)
         }
       val conversionSuggestions = CastOrConversionExt
-        .allowedConversions(klass)
-        .map(c => ExpressionSuggestion(c.resultTypeClass.simpleName(), c.typingResult, false, None, Nil))
+        .allowedConversions(invocationTargetClass)
+        .map(c =>
+          ExpressionSuggestion(
+            c.resultTypeClass.simpleName(),
+            c.typingFunction(invocationTargetTyping).getOrElse(c.typingResult),
+            false,
+            None,
+            Nil
+          )
+        )
       (castSuggestions ++ conversionSuggestions).toSet
     }
 

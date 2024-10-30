@@ -12,6 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
@@ -52,7 +53,15 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-import java.lang.{Boolean => JBoolean, Double => JDouble, Long => JLong}
+import java.lang.{
+  Boolean => JBoolean,
+  Byte => JByte,
+  Double => JDouble,
+  Float => JFloat,
+  Integer => JInteger,
+  Long => JLong,
+  Short => JShort
+}
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.nio.charset.Charset
 import java.time.chrono.ChronoLocalDate
@@ -1622,12 +1631,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should convert value to a given type") {
-    val map             = Map("a" -> "b").asJava
-    val emptyMap        = Map().asJava
-    val list            = List("a").asJava
-    val listOfTuples    = List(Map("key" -> "a", "value" -> "b").asJava).asJava
-    val emptyList       = List().asJava
-    val emptyTuplesList = List(Map().asJava).asJava
+    val map                         = Map("a" -> "b").asJava
+    val emptyMap                    = Map().asJava
+    val list                        = List("a").asJava
+    val listOfTuples                = List(Map("key" -> "a", "value" -> "b").asJava).asJava
+    val emptyList                   = List().asJava
+    val emptyTuplesList             = List(Map().asJava).asJava
+    val convertedDoubleToBigDecimal = NumberUtils.convertNumberToTargetClass(1.1, classOf[JBigDecimal])
     val customCtx = ctx
       .withVariable("unknownInteger", ContainerOfUnknown(1))
       .withVariable("unknownBoolean", ContainerOfUnknown(false))
@@ -1643,9 +1653,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .withVariable("unknownListOfTuples", ContainerOfUnknown(listOfTuples))
       .withVariable("unknownEmptyList", ContainerOfUnknown(emptyList))
       .withVariable("unknownEmptyTuplesList", ContainerOfUnknown(emptyTuplesList))
+    val byteTyping       = Typed.typedClass[JByte]
+    val shortTyping      = Typed.typedClass[JShort]
+    val integerTyping    = Typed.typedClass[JInteger]
     val longTyping       = Typed.typedClass[JLong]
+    val floatTyping      = Typed.typedClass[JFloat]
     val doubleTyping     = Typed.typedClass[JDouble]
     val bigDecimalTyping = Typed.typedClass[JBigDecimal]
+    val bigIntegerTyping = Typed.typedClass[JBigInteger]
     val booleanTyping    = Typed.typedClass[JBoolean]
     val stringTyping     = Typed.typedClass[String]
     val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
@@ -1678,15 +1693,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownDoubleString.value.to('Double')", doubleTyping, 1.1),
         ("#unknownBoolean.value.toOrNull('Double')", doubleTyping, null),
         ("1.to('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
-        ("1.1.to('BigDecimal')", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("1.1.to('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
         ("'1'.to('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
         ("1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
-        ("1.1.toOrNull('BigDecimal')", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("1.1.toOrNull('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
         ("'1'.toOrNull('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
         ("'a'.toOrNull('BigDecimal')", bigDecimalTyping, null),
         ("#unknownLong.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(11).bigDecimal),
         ("#unknownLongString.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(11).bigDecimal),
-        ("#unknownDouble.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("#unknownDouble.value.to('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
         ("#unknownDoubleString.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
         ("#unknownBoolean.value.toOrNull('BigDecimal')", bigDecimalTyping, null),
         ("'true'.to('Boolean')", booleanTyping, true),
@@ -1696,6 +1711,26 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownBoolean.value.to('Boolean')", booleanTyping, false),
         ("'a'.to('String')", stringTyping, "a"),
         ("'a'.toOrNull('String')", stringTyping, "a"),
+        ("1.to('Byte')", byteTyping, 1.byteValue),
+        ("'1'.to('Byte')", byteTyping, 1.byteValue),
+        ("1.toOrNull('Byte')", byteTyping, 1.byteValue),
+        ("'1'.toOrNull('Byte')", byteTyping, 1.byteValue),
+        ("1.to('Short')", shortTyping, 1.shortValue),
+        ("'1'.to('Short')", shortTyping, 1.shortValue),
+        ("1.toOrNull('Short')", shortTyping, 1.shortValue),
+        ("'1'.toOrNull('Short')", shortTyping, 1.shortValue),
+        ("1.to('Integer')", integerTyping, 1),
+        ("'1'.to('Integer')", integerTyping, 1),
+        ("1.toOrNull('Integer')", integerTyping, 1),
+        ("'1'.toOrNull('Integer')", integerTyping, 1),
+        ("1.1.to('Float')", floatTyping, 1.1.floatValue),
+        ("'1.1'.to('Float')", floatTyping, 1.1.floatValue),
+        ("1.1.toOrNull('Float')", floatTyping, 1.1.floatValue),
+        ("'1.1'.toOrNull('Float')", floatTyping, 1.1.floatValue),
+        ("1.to('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("'1'.to('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("1.toOrNull('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("'1'.toOrNull('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
         ("#unknownString.value.to('String')", stringTyping, "unknown"),
         ("#unknownMap.value.to('Map')", mapTyping, map),
         ("#unknownMap.value.toOrNull('Map')", mapTyping, map),
@@ -1732,15 +1767,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownDoubleString.value.toDouble()", doubleTyping, 1.1),
         ("#unknownBoolean.value.toDoubleOrNull()", doubleTyping, null),
         ("1.toBigDecimal()", bigDecimalTyping, BigDecimal(1).bigDecimal),
-        ("1.1.toBigDecimal()", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("1.1.toBigDecimal()", bigDecimalTyping, convertedDoubleToBigDecimal),
         ("'1'.toBigDecimal()", bigDecimalTyping, BigDecimal(1).bigDecimal),
         ("1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
-        ("1.1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("1.1.toBigDecimalOrNull()", bigDecimalTyping, convertedDoubleToBigDecimal),
         ("'1'.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
         ("'a'.toBigDecimalOrNull()", bigDecimalTyping, null),
         ("#unknownLong.value.toBigDecimal()", bigDecimalTyping, BigDecimal(11).bigDecimal),
         ("#unknownLongString.value.toBigDecimal()", bigDecimalTyping, BigDecimal(11).bigDecimal),
-        ("#unknownDouble.value.toBigDecimal()", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("#unknownDouble.value.toBigDecimal()", bigDecimalTyping, convertedDoubleToBigDecimal),
         ("#unknownDoubleString.value.toBigDecimal()", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
         ("#unknownBoolean.value.toBigDecimalOrNull()", bigDecimalTyping, null),
         ("'true'.toBoolean()", booleanTyping, true),
@@ -1791,12 +1826,27 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownBoolean.value.is('Boolean')", true),
         ("#unknownBooleanString.value.is('Boolean')", true),
         ("#unknownString.value.is('Boolean')", false),
+        ("#unknownLong.value.is('Byte')", true),
+        ("#unknownLongString.value.is('Byte')", true),
+        ("#unknownString.value.is('Byte')", false),
+        ("#unknownLong.value.is('Short')", true),
+        ("#unknownLongString.value.is('Short')", true),
+        ("#unknownString.value.is('Short')", false),
+        ("#unknownLong.value.is('Integer')", true),
+        ("#unknownLongString.value.is('Integer')", true),
+        ("#unknownString.value.is('Integer')", false),
         ("#unknownLong.value.is('Long')", true),
         ("#unknownLongString.value.is('Long')", true),
         ("#unknownString.value.is('Long')", false),
+        ("#unknownLong.value.is('BigInteger')", true),
+        ("#unknownLongString.value.is('BigInteger')", true),
+        ("#unknownString.value.is('BigInteger')", false),
         ("#unknownDouble.value.is('Double')", true),
         ("#unknownDoubleString.value.is('Double')", true),
         ("#unknownString.value.is('Double')", false),
+        ("#unknownDouble.value.is('Float')", true),
+        ("#unknownDoubleString.value.is('Float')", true),
+        ("#unknownString.value.is('Float')", false),
         ("#unknownBigDecimal.value.is('BigDecimal')", true),
         ("#unknownBigDecimalString.value.is('BigDecimal')", true),
         ("#unknownString.value.is('BigDecimal')", false),
