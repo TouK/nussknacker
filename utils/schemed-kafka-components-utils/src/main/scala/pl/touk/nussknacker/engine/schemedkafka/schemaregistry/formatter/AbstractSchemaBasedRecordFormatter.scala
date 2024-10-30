@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter
 
-import cats.data.Validated
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json}
 import io.confluent.kafka.schemaregistry.ParsedSchema
@@ -111,39 +110,34 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
           .map(keyJson => readRecordKeyMessage(keySchemaOpt, topic, keyJson))
           .getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid avro key"))
       }
-      schemaRegistryClient.getFreshSchema(
-        UnspecializedTopicName.apply(topic.name),
-        record.valueSchemaId.map(_.asInt),
-        isKey = false
-      ) match {
-        case Validated.Valid(a) =>
-          val valueSchemaOpt = Option(a.schema)
-          val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)
-          (keyBytes, valueBytes)
-        case Validated.Invalid(e) =>
-          val valueSchemaOpt =
-            record.valueSchemaId match {
-              case Some(IntSchemaId(JsonTypes.Json.value)) =>
-                Option(
-                  SchemaWithMetadata(
-                    OpenAPIJsonSchema("""{"type": "object"}"""),
-                    SchemaId.fromInt(JsonTypes.Json.value)
-                  ).schema
-                )
-              case Some(IntSchemaId(JsonTypes.Plain.value)) =>
-                Option(
-                  SchemaWithMetadata(
-                    OpenAPIJsonSchema("""{"type": "string"}"""),
-                    SchemaId.fromInt(JsonTypes.Plain.value)
-                  ).schema
-                )
-              case None =>
-                Option(SchemaWithMetadata(OpenAPIJsonSchema("""{}"""), SchemaId.fromInt(JsonTypes.Json.value)).schema)
-              case _ => throw new IllegalStateException(e)
-            }
 
-          val valueBytes = readValueMessage(valueSchemaOpt, topic, value)
-          (keyBytes, valueBytes)
+      if (schemaRegistryClient.getAllTopics.exists(_.contains(UnspecializedTopicName(topic.name)))) {
+        val valueSchemaOpt = record.valueSchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
+        val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)
+        (keyBytes, valueBytes)
+      } else {
+        val valueSchemaOpt =
+          record.valueSchemaId match {
+            case Some(IntSchemaId(JsonTypes.Json.value)) =>
+              Option(
+                SchemaWithMetadata(
+                  OpenAPIJsonSchema("""{"type": "object"}"""),
+                  SchemaId.fromInt(JsonTypes.Json.value)
+                ).schema
+              )
+            case Some(IntSchemaId(JsonTypes.Plain.value)) =>
+              Option(
+                SchemaWithMetadata(
+                  OpenAPIJsonSchema("""{"type": "string"}"""),
+                  SchemaId.fromInt(JsonTypes.Plain.value)
+                ).schema
+              )
+            case None =>
+              Option(SchemaWithMetadata(OpenAPIJsonSchema("{}"), SchemaId.fromInt(JsonTypes.Json.value)).schema)
+            case _ => throw new IllegalStateException()
+          }
+        val valueBytes = readValueMessage(valueSchemaOpt, topic, value)
+        (keyBytes, valueBytes)
       }
 
     }

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
-import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.common.header.Headers
@@ -14,7 +13,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   JsonTypes,
   SchemaId,
   SchemaRegistryClient,
-  SchemaTopicError,
   SchemaWithMetadata
 }
 
@@ -42,26 +40,26 @@ class UniversalKafkaDeserializer[T](
       .getSchemaId(headers, data, isKey)
       .getOrElse(throw MessageWithoutSchemaIdException)
 
-    val schemaWithMetadata =
-      schemaRegistryClient.getFreshSchema(UnspecializedTopicName(topic), None, isKey = false) match {
-        case Validated.Valid(schema) => schema
-        case Validated.Invalid(SchemaTopicError(_)) =>
-          writerSchemaId.value.asInt match {
-            case JsonTypes.Json.value =>
-              SchemaWithMetadata(
-                // I don't know how these schemas affect deserialization later
-                OpenAPIJsonSchema("""{"type": "object"}"""),
-                SchemaId.fromInt(JsonTypes.Json.value)
-              )
-            case JsonTypes.Plain.value =>
-              SchemaWithMetadata(
-                OpenAPIJsonSchema("""{"type": "string"}"""),
-                SchemaId.fromInt(JsonTypes.Plain.value)
-              )
-          }
-        case Validated.Invalid(error) =>
-          throw error
+    val schemaWithMetadata = {
+      if (schemaRegistryClient.getAllTopics.exists(_.contains(UnspecializedTopicName(topic)))) {
+        schemaRegistryClient.getSchemaById(writerSchemaId.value)
+      } else {
+        writerSchemaId.value.asInt match {
+          case JsonTypes.Json.value =>
+            SchemaWithMetadata(
+              // I don't know how these schemas affect deserialization later
+              OpenAPIJsonSchema("""{"type": "object"}"""),
+              SchemaId.fromInt(JsonTypes.Json.value)
+            )
+          case JsonTypes.Plain.value =>
+            SchemaWithMetadata(
+              OpenAPIJsonSchema("""{"type": "string"}"""),
+              SchemaId.fromInt(JsonTypes.Plain.value)
+            )
+        }
+
       }
+    }
 
     val writerSchema = schemaWithMetadata.schema
     readerSchemaDataOpt

@@ -74,7 +74,7 @@ class UniversalKafkaSourceFactory(
       val preparedTopic    = prepareTopic(topic)
       val topicsWithSchema = topicSelectionStrategy.getTopics(schemaRegistryClient)
       val hasSchema: Boolean =
-        topicsWithSchema.exists(topics => topics.contains(UnspecializedTopicName(preparedTopic.prepared.name)))
+        topicsWithSchema.exists(_.contains(UnspecializedTopicName(topic)))
       val versionOption = parseVersionOption(version)
 
       val valueValidationResult =
@@ -112,7 +112,7 @@ class UniversalKafkaSourceFactory(
                     )
                   ),
                   // This is the type after it leaves source
-                  Typed[Array[java.lang.Byte]]
+                  Unknown
                 )
               )
             case _ => Invalid(FatalUnknownError("Wrong dynamic type"))
