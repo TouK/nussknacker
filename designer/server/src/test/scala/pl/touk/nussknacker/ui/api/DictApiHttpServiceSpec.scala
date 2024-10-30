@@ -16,6 +16,28 @@ class DictApiHttpServiceSpec
     with RestAssuredVerboseLoggingIfValidationFails {
 
   "The endpoint for listing available dictionaries of expected type should" - {
+
+    "return proper empty list for expected type Integer - check subclassing" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody("""{
+            | "expectedType" : {
+            |     "type" : "TypedClass",
+            |     "refClazzName" : "java.lang.Integer",
+            |     "params":[]
+            |     }
+            |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""[
+             |]""".stripMargin
+        )
+
+    }
+
     "return proper list for expected type String" in {
       given()
         .when()
@@ -56,6 +78,30 @@ class DictApiHttpServiceSpec
                     |  "expectedType" : {
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.Long",
+                    |      "params" : []
+                    |  }
+                    |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""[
+             |  {
+             |    "id" : "long_dict",
+             |    "label" : "long_dict"
+             |  }
+             |]""".stripMargin
+        )
+    }
+
+    "return proper list for expected type BigDecimal" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody("""{
+                    |  "expectedType" : {
+                    |      "type" : "TypedClass",
+                    |      "refClazzName" : "java.math.BigInteger",
                     |      "params" : []
                     |  }
                     |}""".stripMargin)
