@@ -20,8 +20,8 @@ object TypeConversionHandler {
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
-    * Given to this we cannot to be sure if conversion is safe or not based on type (without scale knowledge).
-    * So we have two options: enforce user to convert to some type without floating point (e.g. BigInteger) or be loose in this point.
+    * Given to this we cannot be sure if conversion is safe or not based on type (without scale knowledge).
+    * So we have two options: force user to convert to some type without floating point (e.g. BigInteger) or be loose in this point.
     * Be default we will be loose.
     */
   // TODO: Add feature flag: strictBigDecimalChecking (default false?)
@@ -74,14 +74,24 @@ object TypeConversionHandler {
     val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
     // We can't check precision here so we need to be loose here
     // TODO: Add feature flag: strictNumberPrecisionChecking (default false?)
-    if (NumberTypesPromotionStrategy
-        .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
-      ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
-    } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
-      ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _, true))
-    } else {
-      false
+
+    def isFloating(candidate: Class[_]): Boolean = {
+      NumberTypesPromotionStrategy.isFloatingNumber(candidate) || candidate == classOf[java.math.BigDecimal]
     }
+    def isDecimalNumber(candidate: Class[_]): Boolean = {
+      NumberTypesPromotionStrategy.isDecimalNumber(candidate)
+    }
+
+    boxedSuperclassCandidate match {
+      case candidate if isFloating(candidate) =>
+        ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
+
+      case candidate if isDecimalNumber(candidate) =>
+        ConversionFromClassesForDecimals.filter(ClassUtils.isAssignable(boxedGivenClass, _, true)).contains(candidate)
+
+      case _ => false
+    }
+
   }
 
   private def handleStringToValueClassConversions(
