@@ -190,6 +190,9 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
       forwardedUserName = None
     )
     for {
+      // FIXME: Using method `runInSerializableTransactionWithRetry` is a workaround for problem with flaky tests
+      // (some tests failed with [java.sql.SQLTransactionRollbackException: transaction rollback: serialization failure])
+      // the underlying cause of that errors needs investigating
       _  <- dbioRunner.runInSerializableTransactionWithRetry(writeScenarioRepository.saveNewProcess(action))
       id <- futureFetchingScenarioRepository.fetchProcessId(scenarioName).map(_.get)
     } yield id
