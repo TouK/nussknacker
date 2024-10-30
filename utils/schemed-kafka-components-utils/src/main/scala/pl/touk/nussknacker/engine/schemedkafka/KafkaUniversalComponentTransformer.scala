@@ -111,7 +111,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       preparedTopic: PreparedKafkaTopic[TN],
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val topicsWithSchema = topicSelectionStrategy.getTopics(schemaRegistryClient)
-    if (topicsWithSchema.exists(topics => topics.contains(preparedTopic.prepared.topicName.toUnspecialized))) {
+    if (topicsWithSchema.exists(_.contains(preparedTopic.prepared.topicName.toUnspecialized))) {
       val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
       (versions match {
         case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
