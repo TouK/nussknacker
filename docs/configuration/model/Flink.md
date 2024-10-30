@@ -34,6 +34,7 @@ description: Flink specific model configuration
 Exception handling can be customized using provided `EspExceptionConsumer`. By default, there are two available:
 - `BrieflyLogging`
 - `VerboselyLogging`
+
 More of them can be added with custom extensions. By default, basic error metrics are collected. If for some reason
   it's not desirable, metrics collector can be turned off with `withRateMeter: false` setting. 
 When an exception is raised within a scenario, the handler uses `WithExceptionExtractor` to determine if it should be consumed

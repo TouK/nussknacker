@@ -16,7 +16,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 // Warning: Flink doesn't work correctly with 2.12.11
 val scala212 = "2.12.10"
-val scala213 = "2.13.12"
+val scala213 = "2.13.15"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
@@ -27,10 +27,10 @@ lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
-// Silencer 1.7.x require Scala 2.12.11 (see warning above)
+// Silencer 1.7.x requires Scala 2.12.11+
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.17"
+lazy val silencerV      = "1.7.19"
 lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
