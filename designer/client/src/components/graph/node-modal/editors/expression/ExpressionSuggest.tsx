@@ -2,23 +2,29 @@ import "ace-builds/src-noconflict/ace";
 import { isEmpty, isEqual } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
-import { getProcessingType } from "../../../../../reducers/selectors/graph";
-import { BackendExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
-import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
+import { getProcessingType } from "../../../../../reducers/selectors/graph";
+import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { VariableTypes } from "../../../../../types";
+import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import { CustomCompleterAceEditor, CustomCompleterAceEditorProps } from "./CustomCompleterAceEditor";
+import { BackendExpressionSuggester } from "./ExpressionSuggester";
 
 export type ExpressionSuggestProps = Omit<CustomCompleterAceEditorProps, "completer" | "isLoading"> & {
     variableTypes: VariableTypes;
 };
 
 function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
-    const ref = useRef<{ value: T; deps: React.DependencyList }>();
+    const ref = useRef<{
+        value: T;
+        deps: React.DependencyList;
+    }>();
 
     if (!ref.current || !isEqual(deps, ref.current.deps)) {
-        ref.current = { value: factory(), deps };
+        ref.current = {
+            value: factory(),
+            deps,
+        };
     }
 
     return ref.current.value;

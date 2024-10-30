@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.{Directive1, Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.definition.DefinitionsService
+import pl.touk.nussknacker.ui.definition.DefinitionsService.ComponentUiConfigMode
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.NuPathMatchers
@@ -25,8 +26,8 @@ class DefinitionResources(
         .map { case (definitionsService) =>
           pathEndOrSingleSlash {
             get {
-              parameter(Symbol("isFragment").as[Boolean]) { isFragment =>
-                complete(definitionsService.prepareUIDefinitions(processingType, isFragment))
+              (isFragmentParam & componentUiConfigModeParam) { (isFragment, componentUiConfigMode) =>
+                complete(definitionsService.prepareUIDefinitions(processingType, isFragment, componentUiConfigMode))
               }
             }
           }
@@ -34,6 +35,16 @@ class DefinitionResources(
         .getOrElse {
           complete(HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario type: $processingType not found"))
         }
+    }
+  }
+
+  private val isFragmentParam: Directive1[Boolean] = parameter(Symbol("isFragment").as[Boolean])
+
+  private val componentUiConfigModeParam: Directive1[ComponentUiConfigMode] = {
+    // parameter used only by an external project to fetch component definitions without enrichments
+    parameter("enrichedWithUiConfig".as[Boolean].optional).flatMap {
+      case Some(true) | None => provide(ComponentUiConfigMode.EnrichedWithUiConfig)
+      case Some(false)       => provide(ComponentUiConfigMode.BasicConfig)
     }
   }
 

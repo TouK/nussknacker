@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   ProcessingTypeDeployedScenariosProviderStub,
   ScenarioActivityManager
 }
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.{
   ConfigWithUnresolvedVersion,
@@ -32,7 +33,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        _ => true
+        _ => true,
+        ComponentDefinitionExtractionMode.FinalDefinition
       )
     )
     val actorSystem = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")

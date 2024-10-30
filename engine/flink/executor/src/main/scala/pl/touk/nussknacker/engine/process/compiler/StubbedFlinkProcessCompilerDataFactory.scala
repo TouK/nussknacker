@@ -50,7 +50,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       .flatten
       .toSet
 
-    val processedComponents = originalModelDefinition.components.map {
+    val processedComponents = originalModelDefinition.components.components.map {
       case source if usedSourceIds.contains(source.id) =>
         prepareSourceFactory(source, definitionContext)
       case service if service.componentType == ComponentType.Service =>
@@ -74,7 +74,7 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
       }
 
     originalModelDefinition
-      .copy(components = processedComponents)
+      .copy(components = originalModelDefinition.components.copy(components = processedComponents))
       .withComponents(stubbedSourceForFragments)
   }
 

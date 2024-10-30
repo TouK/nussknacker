@@ -15,7 +15,7 @@ describe("JSON editor", () => {
             .should("be.enabled")
             .click();
         cy.get("[data-testid=window]").as("modal");
-        cy.get("[title='Input schema']").next().find(".ace_editor").should("be.visible").as("editor");
+        cy.get("[title='Input schema']").next().find(".ace_editor").should("be.visible").parent().as("editor");
 
         cy.get("@editor").matchImage({
             maxDiffThreshold: 0.0025,

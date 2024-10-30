@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractorTest.largeMajorVersion
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, DefaultModelConfigLoader}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.ClassLoaderWithServices
@@ -149,7 +150,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     extractComponents(
       componentsConfig.toMap,
       ComponentsFromProvidersExtractor(_, _ => true)
-    )
+    ).components
 
   private def extractComponents(
       componentsConfig: Map[String, Any],
@@ -171,7 +172,8 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
         ProcessObjectDependencies.withConfig(resolved.config),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
-        Map.empty
+        Map.empty,
+        ComponentDefinitionExtractionMode.FinalDefinition
       )
     }
   }
@@ -185,7 +187,8 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
         ProcessObjectDependencies.withConfig(resolved.config),
         ComponentsUiConfig.Empty,
         id => DesignerWideComponentId(id.toString),
-        Map.empty
+        Map.empty,
+        ComponentDefinitionExtractionMode.FinalDefinition
       )
     }
   }

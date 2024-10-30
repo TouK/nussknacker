@@ -35,7 +35,7 @@ object ProcessCompilerData {
       customProcessValidator: CustomProcessValidator,
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
   ): ProcessCompilerData = {
-    val servicesDefs = definitionWithTypes.modelDefinition.components
+    val servicesDefs = definitionWithTypes.modelDefinition.components.components
       .filter(_.componentType == ComponentType.Service)
 
     val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)

@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
@@ -44,7 +45,8 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
         case _: DevProcessConfigCreator => true
         case _                          => false
       },
-      shouldIncludeComponentProvider = _ => true
+      shouldIncludeComponentProvider = _ => true,
+      ComponentDefinitionExtractionMode.FinalDefinition
     )
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {

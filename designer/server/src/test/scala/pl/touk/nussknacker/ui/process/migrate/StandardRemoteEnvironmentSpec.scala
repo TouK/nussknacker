@@ -6,6 +6,7 @@ import akka.http.scaladsl.model._
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.parser
+import io.circe.syntax.EncoderOps
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -350,9 +351,14 @@ class StandardRemoteEnvironmentSpec
 
       (uri, method) match {
         case GetProcessesDetailsWithoutScenarioGraph() =>
-          Marshal(allProcesses.map(_.copy(scenarioGraph = None))).to[ResponseEntity].map { entity =>
-            HttpResponse(entity = entity)
-          }
+          // response without labels to test decoder fallback
+          val response =
+            allProcesses.map(_.copy(scenarioGraph = None)).asJson.mapArray(_.map(_.mapObject(_.remove("labels"))))
+          Marshal(response)
+            .to[ResponseEntity]
+            .map { entity =>
+              HttpResponse(entity = entity)
+            }
         case GetProcessesDetails(names) =>
           Marshal(allProcesses.filter(p => names(p.name))).to[ResponseEntity].map { entity =>
             HttpResponse(entity = entity)

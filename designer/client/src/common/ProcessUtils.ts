@@ -1,5 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
+import { Scenario } from "src/components/Process/types";
+import { ScenarioLabelValidationError } from "../components/Labels/types";
+import { RootState } from "../reducers";
+import { isProcessRenamed } from "../reducers/selectors/graph";
 import {
     ComponentDefinition,
     NodeId,
@@ -13,10 +17,6 @@ import {
     ValidationResult,
     VariableTypes,
 } from "../types";
-import { RootState } from "../reducers";
-import { isProcessRenamed } from "../reducers/selectors/graph";
-import { Scenario } from "src/components/Process/types";
-import { ScenarioLabelValidationError } from "../components/Labels/types";
 
 class ProcessUtils {
     nothingToSave = (state: RootState): boolean => {
@@ -204,7 +204,7 @@ class ProcessUtils {
         }
     };
 
-    extractComponentDefinition = (node: NodeType, components: Record<string, ComponentDefinition>): ComponentDefinition | null => {
+    extractComponentDefinition = (node: NodeType, components?: Record<string, ComponentDefinition>): ComponentDefinition | null => {
         return components?.[this.determineComponentId(node)];
     };
 
