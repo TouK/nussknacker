@@ -363,7 +363,7 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
     ) // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
   case (2, 13) =>
     Seq(
-      "pl.touk" %% "flink-scala-2-13" % "1.1.1"
+      "pl.touk" %% "flink-scala-2-13" % "1.1.2"
     ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
 }.map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
