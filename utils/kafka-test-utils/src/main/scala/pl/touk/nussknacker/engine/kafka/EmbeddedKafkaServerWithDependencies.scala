@@ -30,17 +30,24 @@ object EmbeddedKafkaServerWithDependencies {
 
   private val localhost: String = "127.0.0.1"
 
-  def run(brokerPort: Int, controllerPort: Int, kafkaBrokerConfig: Map[String, String]): EmbeddedKafkaServerWithDependencies = {
-    val tempDir     = Files.createTempDirectory("embeddedKafka").toFile
-    val clusterId   = Uuid.randomUuid()
-    val kafkaConfig = prepareKafkaServerConfig(brokerPort, controllerPort, tempDir, kafkaBrokerConfig, clusterId)
+  def run(
+      brokerPort: Int,
+      controllerPort: Int,
+      kafkaBrokerConfig: Map[String, String]
+  ): EmbeddedKafkaServerWithDependencies = {
+    val kafkaServerLogDir = Files.createTempDirectory("embeddedKafka").toFile
+    val clusterId         = Uuid.randomUuid()
+    val kafkaConfig =
+      prepareKafkaServerConfig(brokerPort, controllerPort, kafkaServerLogDir, kafkaBrokerConfig, clusterId)
     val kafkaServer = if (kRaftEnabled) {
-      prepareRaftStorage(tempDir, kafkaConfig, clusterId)
       new EmbeddedKafkaServerWithDependencies(
         None,
-        () => new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM),
+        () => {
+          prepareRaftStorage(kafkaServerLogDir, kafkaConfig, clusterId)
+          new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM)
+        },
         s"$localhost:$brokerPort",
-        tempDir
+        kafkaServerLogDir
       )
     } else {
       val zk = createZookeeperServer(controllerPort)
@@ -48,7 +55,7 @@ object EmbeddedKafkaServerWithDependencies {
         Some(zk),
         () => new KafkaServer(kafkaConfig, time = Time.SYSTEM),
         s"$localhost:$brokerPort",
-        tempDir
+        kafkaServerLogDir
       )
     }
     kafkaServer.startupKafkaServerAndDependencies()
@@ -119,7 +126,7 @@ class EmbeddedKafkaServerWithDependencies(
     zooKeeperServerOpt: Option[(NIOServerCnxnFactory, ZooKeeperServer, File)],
     createKafkaServer: () => Server,
     val kafkaAddress: String,
-    tempDir: File
+    kafkaServerLogDir: File
 ) extends LazyLogging {
 
   private var kafkaServer: Server = createKafkaServer()
@@ -151,7 +158,7 @@ class EmbeddedKafkaServerWithDependencies(
   def shutdownKafkaServer(): Unit = {
     kafkaServer.shutdown()
     kafkaServer.awaitShutdown()
-    cleanDirectorySilently(tempDir)
+    cleanDirectorySilently(kafkaServerLogDir)
   }
 
   private def cleanDirectorySilently(directory: File): Unit = {
@@ -159,7 +166,7 @@ class EmbeddedKafkaServerWithDependencies(
       FileUtils.deleteDirectory(directory)
     } catch {
       case NonFatal(e) =>
-        logger.warn(s"Cannot remove $tempDir", e)
+        logger.warn(s"Cannot remove $kafkaServerLogDir", e)
     }
   }
 
