@@ -1,8 +1,7 @@
 import React from "react";
 import TestResultUtils, { NodeTestResults, StateForSelectTestResults } from "../../../../common/TestResultUtils";
-import { SelectNode } from "../../../FormElements";
 import { css, cx } from "@emotion/css";
-import { Box, FormControl, FormLabel, useTheme } from "@mui/material";
+import { FormControl, FormLabel, useTheme } from "@mui/material";
 import { Option, TypeSelect } from "../fragment-input-definition/TypeSelect";
 
 export interface TestResultsSelectProps {
