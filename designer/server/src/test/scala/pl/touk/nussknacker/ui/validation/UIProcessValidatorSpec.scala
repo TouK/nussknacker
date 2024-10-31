@@ -1950,7 +1950,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(fragmentId, List(FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short])))
+      createFragmentDefinition(fragmentId, List(FragmentParameter(ParameterName("P1"), FragmentClazzRef[Integer])))
     val processWithFragment =
       createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName("P1"), "123".spel)))
 
