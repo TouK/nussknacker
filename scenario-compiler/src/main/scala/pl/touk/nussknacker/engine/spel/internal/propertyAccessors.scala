@@ -6,6 +6,7 @@ import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.extension.{ExtensionAwareMethodsDiscovery, ExtensionsAwareMethodInvoker}
 
 import java.lang.reflect.{Field, Method, Modifier}
 import java.util.Optional
@@ -17,7 +18,8 @@ object propertyAccessors {
   // This general order can be overridden - each accessor can define target classes for which it will have precedence -
   // through the `getSpecificTargetClasses` method.
   def configured(
-      accessChecker: MethodAccessChecker
+      accessChecker: MethodAccessChecker,
+      set: ClassDefinitionSet
   ): Seq[PropertyAccessor] = {
     Seq(
       MapPropertyAccessor, // must be before NoParamMethodPropertyAccessor and ReflectivePropertyAccessor
@@ -31,7 +33,8 @@ object propertyAccessors {
       new NoParamMethodPropertyAccessor(accessChecker),
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor,
-      MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor
+      new ExtensionMethodsPropertyAccessor(accessChecker, set),
+      MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor, ExtensionMethodsPropertyAccessor
     )
   }
 
@@ -302,6 +305,34 @@ object propertyAccessors {
     }
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
+  }
+
+  // It's not optimized to generate byteCode like in ReflectivePropertyAccessor so it's running only in interpreted mode
+  private class ExtensionMethodsPropertyAccessor(
+      accessChecker: MethodAccessChecker,
+      set: ClassDefinitionSet
+  ) extends PropertyAccessor
+      with ReadOnly
+      with Caching {
+    private val methodInvoker = new ExtensionsAwareMethodInvoker(set)
+    private val emptyArray    = Array[AnyRef]()
+
+    override def getSpecificTargetClasses: Array[Class[_]] = null
+
+    override protected def invokeMethod(
+        propertyName: String,
+        method: Method,
+        target: Any,
+        context: EvaluationContext
+    ): Any = methodInvoker.invoke(method)(target, emptyArray)
+
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
+      accessChecker.checkAccessIfMethodFound(target) {
+        ExtensionAwareMethodsDiscovery
+          .discover(target)
+          .find(m => m.getParameterCount == 0 && m.getName == name)
+      }
+
   }
 
   trait Caching extends CachingBase { self: PropertyAccessor =>

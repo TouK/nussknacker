@@ -17,6 +17,8 @@ class ExtensionsAwareMethodInvoker(classDefinitionSet: ClassDefinitionSet) {
       toInvocationTargetConvertersByClass
         .get(method.getDeclaringClass)
         .map(_.toInvocationTarget(target))
+        // Maybe in future we could write some mechanism to invoke extension methods statically. What I mean is to
+        // find correct extension based on target and then implement simple switch to fire method based on name
         .map(impl => method.invoke(impl, arguments: _*))
         .getOrElse {
           throw new IllegalArgumentException(s"Extension method: ${method.getName} is not implemented")
