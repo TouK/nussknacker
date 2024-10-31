@@ -21,23 +21,22 @@ import java.util.{Locale, Properties}
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
-object EmbeddedKafkaServer {
+// We should consider switching to KafkaClusterTestKit (https://github.com/apache/kafka/blob/3.6/core/src/test/java/kafka/testkit/KafkaClusterTestKit.java),
+// it's used by spring-kafka (https://github.com/spring-projects/spring-kafka/blob/3.1.x/spring-kafka-test/src/main/java/org/springframework/kafka/test/EmbeddedKafkaKraftBroker.java).
+object EmbeddedKafkaServerWithDependencies {
 
-  // In Kafka 3.2.0 doesn't work create topic and describe topic instantly after it - it doesn't return newly created topic
-  // Also there is erro "maybeBalancePartitionLeaders: unable to start processing because of TimeoutException" in log
-  // We should consider switching to KafkaClusterTestKit (https://github.com/apache/kafka/blob/3.6/core/src/test/java/kafka/testkit/KafkaClusterTestKit.java),
-  // it's used by spring-kafka (https://github.com/spring-projects/spring-kafka/blob/3.1.x/spring-kafka-test/src/main/java/org/springframework/kafka/test/EmbeddedKafkaKraftBroker.java).
-  val kRaftEnabled: Boolean = true
+  // TODO: Remove supprot for legacy zk setup
+  private val kRaftEnabled: Boolean = true
 
-  val localhost: String = "127.0.0.1"
+  private val localhost: String = "127.0.0.1"
 
-  def run(brokerPort: Int, controllerPort: Int, kafkaBrokerConfig: Map[String, String]): EmbeddedKafkaServer = {
+  def run(brokerPort: Int, controllerPort: Int, kafkaBrokerConfig: Map[String, String]): EmbeddedKafkaServerWithDependencies = {
     val tempDir     = Files.createTempDirectory("embeddedKafka").toFile
     val clusterId   = Uuid.randomUuid()
-    val kafkaConfig = prepareServerConfig(brokerPort, controllerPort, tempDir, kafkaBrokerConfig, clusterId)
-    val server = if (kRaftEnabled) {
+    val kafkaConfig = prepareKafkaServerConfig(brokerPort, controllerPort, tempDir, kafkaBrokerConfig, clusterId)
+    val kafkaServer = if (kRaftEnabled) {
       prepareRaftStorage(tempDir, kafkaConfig, clusterId)
-      new EmbeddedKafkaServer(
+      new EmbeddedKafkaServerWithDependencies(
         None,
         () => new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM),
         s"$localhost:$brokerPort",
@@ -45,18 +44,18 @@ object EmbeddedKafkaServer {
       )
     } else {
       val zk = createZookeeperServer(controllerPort)
-      new EmbeddedKafkaServer(
+      new EmbeddedKafkaServerWithDependencies(
         Some(zk),
         () => new KafkaServer(kafkaConfig, time = Time.SYSTEM),
         s"$localhost:$brokerPort",
         tempDir
       )
     }
-    server.startup()
-    server
+    kafkaServer.startupKafkaServerAndDependencies()
+    kafkaServer
   }
 
-  private def prepareServerConfig(
+  private def prepareKafkaServerConfig(
       brokerPort: Int,
       controllerPort: Int,
       logDir: File,
@@ -116,38 +115,46 @@ object EmbeddedKafkaServer {
 
 }
 
-class EmbeddedKafkaServer(
+class EmbeddedKafkaServerWithDependencies(
     zooKeeperServerOpt: Option[(NIOServerCnxnFactory, ZooKeeperServer, File)],
     createKafkaServer: () => Server,
     val kafkaAddress: String,
     tempDir: File
 ) extends LazyLogging {
 
-  var kafkaServer: Server = createKafkaServer()
+  private var kafkaServer: Server = createKafkaServer()
 
   def recreateKafkaServer(): Unit = {
+    shutdownKafkaServer()
     kafkaServer = createKafkaServer()
   }
 
-  def startup(): Unit = {
+  def startupKafkaServerAndDependencies(): Unit = {
     zooKeeperServerOpt.foreach(t => t._1.startup(t._2))
+    startupKafkaServer()
+  }
+
+  def startupKafkaServer(): Unit = {
     kafkaServer.startup()
   }
 
-  def shutdown(): Unit = {
-    kafkaServer.shutdown()
-    kafkaServer.awaitShutdown()
-    cleanDirectory(tempDir)
-
+  def shutdownKafkaServerAndDependencies(): Unit = {
+    shutdownKafkaServer()
     zooKeeperServerOpt.foreach { case (cnxnFactory, zkServer, zkTempDir) =>
       cnxnFactory.shutdown()
       // factory shutdown doesn't pass 'fullyShutDown' flag to ZkServer.shutdown, we need to explicitly close database
       zkServer.getZKDatabase.close()
-      cleanDirectory(zkTempDir)
+      cleanDirectorySilently(zkTempDir)
     }
   }
 
-  private def cleanDirectory(directory: File): Unit = {
+  def shutdownKafkaServer(): Unit = {
+    kafkaServer.shutdown()
+    kafkaServer.awaitShutdown()
+    cleanDirectorySilently(tempDir)
+  }
+
+  private def cleanDirectorySilently(directory: File): Unit = {
     try {
       FileUtils.deleteDirectory(directory)
     } catch {
