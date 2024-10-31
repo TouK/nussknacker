@@ -165,4 +165,15 @@ describe("Node window", () => {
             .click();
         cy.get("[data-testid=window]").its("length").should("eq", 0);
     });
+
+    it("should remove input focus and close the window on double escape click", () => {
+        cy.intercept("POST", "/api/nodes/*/validation").as("inputValidation");
+        cy.visitNewProcess(NAME, "testProcess");
+        cy.getNode("enricher").dblclick();
+        cy.wait("@inputValidation");
+        cy.get("[data-testid=window]").should("be.visible");
+        cy.get("body").type("{esc}");
+        cy.get("body").type("{esc}");
+        cy.get("[data-testid=window]").should("not.exist");
+    });
 });
