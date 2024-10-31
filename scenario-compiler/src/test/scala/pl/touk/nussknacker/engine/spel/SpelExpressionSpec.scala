@@ -105,15 +105,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val ctx = Context("abc").withVariables(
     Map(
-      "obj"            -> testValue,
-      "strVal"         -> "",
-      "mapValue"       -> Map("foo" -> "bar").asJava,
-      "array"          -> Array("a", "b"),
-      "intArray"       -> Array(1, 2, 3),
-      "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
-      "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"  -> ContainerOfUnknown("unknown"),
-      "setVal"         -> Set("a").asJava,
+      "obj"                                         -> testValue,
+      "strVal"                                      -> "",
+      "mapValue"                                    -> Map("foo" -> "bar").asJava,
+      "array"                                       -> Array("a", "b"),
+      "intArray"                                    -> Array(1, 2, 3),
+      "nestedArray"                                 -> Array(Array(1, 2), Array(3, 4)),
+      "arrayOfUnknown"                              -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"                               -> ContainerOfUnknown("unknown"),
+      "setVal"                                      -> Set("a").asJava,
       "containerWithUnknownObject"                  -> ContainerOfUnknown(SampleValue(1)),
       "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticParameterlessMethod()),
       "containerWithUnknownClassWithStaticMethods" -> ContainerOfUnknown(
@@ -1398,17 +1398,33 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should not validate array constructor") {
+  test("should not allow array constructor") {
     List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
       illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
     )
   }
 
-  test("indexing on maps and lists should validate nodes inside indexer") {
+  test("indexing on maps and lists should validate expression inside indexer") {
     List("#processHelper.stringOnStringMap[#invalidRef]", "{1,2,3}[#invalidRef]").map(expr =>
       parse[Any](expr, ctxWithGlobal).invalidValue shouldBe NonEmptyList.one(
         UnresolvedReferenceError("invalidRef")
       )
+    )
+  }
+
+  test("indexing on unknown should validate expression inside indexer") {
+    parse[Any]("#unknownString.value[#invalidRef]", ctx).invalidValue shouldBe NonEmptyList.one(
+      UnresolvedReferenceError("invalidRef")
+    )
+  }
+
+  test("indexing on class should validate expression inside indexer") {
+    parse[Any](
+      "T(java.time.LocalDate)[#invalidRef]",
+      ctx,
+      dynamicPropertyAccessAllowed = true
+    ).invalidValue shouldBe NonEmptyList.one(
+      UnresolvedReferenceError("invalidRef")
     )
   }
 
