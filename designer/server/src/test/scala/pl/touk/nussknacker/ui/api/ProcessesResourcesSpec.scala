@@ -13,12 +13,12 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
-import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{Comment, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -35,6 +35,17 @@ import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{
 import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActivityCommentContent.{
+  Available,
+  NotAvailable
+}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{
+  ScenarioActivities,
+  ScenarioActivity,
+  ScenarioActivityComment,
+  ScenarioActivityType
+}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
@@ -45,8 +56,7 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
 }
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, UpdateProcessComment}
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
@@ -590,6 +600,93 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("update scenario labels when the scenario does not have any") {
+    val properties = ProcessProperties(
+      ProcessAdditionalFields(
+        description = None,
+        properties = Map.empty,
+        metaDataType = "StreamMetaData"
+      )
+    )
+    val scenarioGraph = ScenarioGraph(
+      properties = properties,
+      nodes = List.empty,
+      edges = List.empty
+    )
+    val command = UpdateScenarioCommand(scenarioGraph, None, Some(List("tag1", "tag2")), None)
+
+    createProcessRequest(processName, category = Category1, isFragment = false) { code =>
+      code shouldBe StatusCodes.Created
+      forScenarioReturned(processName) { scenario =>
+        scenario.labels shouldBe List.empty[String]
+      }
+      doUpdateProcess(command, processName) {
+        forScenarioReturned(processName) { scenario =>
+          scenario.labels shouldBe List("tag1", "tag2")
+        }
+        status shouldEqual StatusCodes.OK
+      }
+    }
+  }
+
+  test("update scenario labels when the scenario does have some") {
+    val properties = ProcessProperties(
+      ProcessAdditionalFields(
+        description = None,
+        properties = Map.empty,
+        metaDataType = "StreamMetaData"
+      )
+    )
+    val scenarioGraph = ScenarioGraph(
+      properties = properties,
+      nodes = List.empty,
+      edges = List.empty
+    )
+
+    createProcessRequest(processName, category = Category1, isFragment = false) { code =>
+      code shouldBe StatusCodes.Created
+      forScenarioReturned(processName) { scenario =>
+        scenario.labels shouldBe List.empty[String]
+      }
+      val command1 = UpdateScenarioCommand(
+        scenarioGraph = scenarioGraph,
+        comment = None,
+        scenarioLabels = Some(List("tag2", "tag1")),
+        forwardedUserName = None
+      )
+      doUpdateProcess(command1, processName) {
+        forScenarioReturned(processName) { scenario =>
+          scenario.labels shouldBe List("tag1", "tag2")
+        }
+        status shouldEqual StatusCodes.OK
+      }
+      val command2 = UpdateScenarioCommand(
+        scenarioGraph = scenarioGraph,
+        comment = None,
+        scenarioLabels = Some(List("tag3", "tag1", "tag4")),
+        forwardedUserName = None
+      )
+      doUpdateProcess(command2, processName) {
+        forScenarioReturned(processName) { scenario =>
+          scenario.labels shouldBe List("tag1", "tag3", "tag4")
+        }
+        status shouldEqual StatusCodes.OK
+      }
+      val command3 = UpdateScenarioCommand(
+        scenarioGraph = scenarioGraph,
+        comment = None,
+        scenarioLabels = Some(List("tag3")),
+        forwardedUserName = None
+      )
+      doUpdateProcess(command3, processName) {
+        forScenarioReturned(processName) { scenario =>
+          scenario.labels shouldBe List("tag3")
+        }
+        status shouldEqual StatusCodes.OK
+      }
+    }
+  }
+
   test("update process with the same json should add comment for current version") {
     val process = ProcessTestData.validProcess
     val comment = "Update the same version"
@@ -608,9 +705,73 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    getActivity(processName) ~> check {
+    updateCanonicalProcess(process, None) {
+      forScenarioReturned(processName) { process =>
+        process.history.map(_.size) shouldBe Some(2)
+      }
+      status shouldEqual StatusCodes.OK
+    }
+
+    getDeprecatedActivity(processName) ~> check {
       val comments = responseAs[ProcessActivity].comments
       comments.loneElement.content shouldBe comment
+    }
+
+    getScenarioActivities(processName) ~> check {
+      val activities = responseAs[ScenarioActivities].activities
+
+      activities.length shouldBe 3
+      activities(0) shouldBe ScenarioActivity(
+        id = activities(0).id,
+        user = "allpermuser",
+        date = activities(0).date,
+        scenarioVersionId = Some(1L),
+        comment = None,
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = None,
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioCreated
+      )
+      activities(1) shouldBe ScenarioActivity(
+        id = activities(1).id,
+        user = "allpermuser",
+        date = activities(1).date,
+        scenarioVersionId = Some(2L),
+        comment = Some(
+          ScenarioActivityComment(
+            content = NotAvailable,
+            lastModifiedBy = "allpermuser",
+            lastModifiedAt = activities(1).comment.get.lastModifiedAt
+          )
+        ),
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = Some("Version 2 saved"),
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioModified
+      )
+      activities(2) shouldBe ScenarioActivity(
+        id = activities(2).id,
+        user = "allpermuser",
+        date = activities(2).date,
+        scenarioVersionId = Some(2L),
+        comment = Some(
+          ScenarioActivityComment(
+            content = Available("Update the same version"),
+            lastModifiedBy = "allpermuser",
+            lastModifiedAt = activities(2).comment.get.lastModifiedAt
+          )
+        ),
+        attachment = None,
+        additionalFields = Nil,
+        overrideIcon = None,
+        overrideDisplayableName = None,
+        overrideSupportedActions = None,
+        `type` = ScenarioActivityType.ScenarioModified
+      )
     }
   }
 
@@ -1265,8 +1426,11 @@ class ProcessesResourcesSpec
   private def getProcess(processName: ProcessName): RouteTestResult =
     Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute
 
-  private def getActivity(processName: ProcessName): RouteTestResult =
+  private def getDeprecatedActivity(processName: ProcessName): RouteTestResult =
     Get(s"/api/processes/$processName/activity") ~> withAllPermUser() ~> applicationRoute
+
+  private def getScenarioActivities(processName: ProcessName): RouteTestResult =
+    Get(s"/api/processes/$processName/activity/activities") ~> withAllPermUser() ~> applicationRoute
 
   private def saveCanonicalProcessAndAssertSuccess(process: CanonicalProcess, category: TestCategory): Assertion =
     saveCanonicalProcess(process, category) {
@@ -1296,7 +1460,8 @@ class ProcessesResourcesSpec
     doUpdateProcess(
       UpdateScenarioCommand(
         CanonicalProcessConverter.toScenarioGraph(process),
-        comment.map(UpdateProcessComment(_)),
+        comment,
+        Some(List.empty),
         None
       ),
       process.name
@@ -1354,7 +1519,12 @@ class ProcessesResourcesSpec
   private def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, comment = None, forwardedUserName = None), name)(testCode)
+    doUpdateProcess(
+      UpdateScenarioCommand(process, comment = None, scenarioLabels = Some(List.empty), forwardedUserName = None),
+      name
+    )(
+      testCode
+    )
 
   private lazy val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
     TestFactory.newFutureFetchingScenarioRepository(testDbRef)

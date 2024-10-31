@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScena
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
-    with DockerBasedInstallationExampleNuEnvironment
+    with BaseE2ESpec
     with Matchers
     with VeryPatientScalaFutures
     with NuRestAssureExtensions
@@ -22,7 +22,7 @@ class BatchDataGenerationSpec
 
   private val simpleBatchTableScenario = ScenarioBuilder
     .streaming("SumTransactions")
-    .source("sourceId", "table", "Table" -> "'transactions'".spel)
+    .source("sourceId", "table", "Table" -> "'`default_catalog`.`default_database`.`transactions`'".spel)
     .emptySink("end", "dead-end")
 
   private val designerServiceUrl = "http://localhost:8080"
@@ -44,7 +44,7 @@ class BatchDataGenerationSpec
         .basicAuthAdmin()
         .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
         .post(
-          s"$designerServiceUrl/api/testInfo/$randomDataGenScenarioName/generate/10"
+          s"$designerServiceUrl/api/scenarioTesting/$randomDataGenScenarioName/generate/10"
         )
         .Then()
         .statusCode(200)
@@ -69,7 +69,7 @@ class BatchDataGenerationSpec
         .basicAuthAdmin()
         .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
         .post(
-          s"$designerServiceUrl/api/testInfo/$liveDataGenScenarioName/generate/1"
+          s"$designerServiceUrl/api/scenarioTesting/$liveDataGenScenarioName/generate/1"
         )
         .Then()
         .statusCode(200)

@@ -1,0 +1,283 @@
+{
+    "metaData": {
+        "id": "test",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "spillStateToDisk": "true",
+                "useAsyncInterpretation": "",
+                "checkpointIntervalInSeconds": ""
+            },
+            "metaDataType": "StreamMetaData",
+            "showDescription": false
+        }
+    },
+    "nodes": [
+        {
+            "id": "periodic",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "1"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "nexts": [
+                [
+                    {
+                        "id": "aggregate-session",
+                        "outputVar": "outputVar",
+                        "nodeType": "aggregate-session",
+                        "parameters": [
+                            {
+                                "name": "groupBy",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "{ #input.floatValue }.toString"
+                                }
+                            },
+                            {
+                                "name": "aggregator",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#AGG.map({\n  count: #AGG.sum\n})"
+                                }
+                            },
+                            {
+                                "name": "aggregateBy",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "{\n  count: 1\n}"
+                                }
+                            },
+                            {
+                                "name": "endSessionCondition",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "true"
+                                }
+                            },
+                            {
+                                "name": "sessionTimeout",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "T(java.time.Duration).parse('PT1H')"
+                                }
+                            },
+                            {
+                                "name": "emitWhen",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger).OnEvent"
+                                }
+                            }
+                        ],
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 720,
+                                "y": 360
+                            }
+                        },
+                        "type": "CustomNode"
+                    },
+                    {
+                        "id": "dead-end",
+                        "ref": {
+                            "typ": "dead-end",
+                            "parameters": []
+                        },
+                        "endResult": null,
+                        "isDisabled": null,
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 720,
+                                "y": 540
+                            }
+                        },
+                        "type": "Sink"
+                    }
+                ],
+                [
+                    {
+                        "id": "aggregate-sliding",
+                        "outputVar": "outputVar",
+                        "nodeType": "aggregate-sliding",
+                        "parameters": [
+                            {
+                                "name": "groupBy",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "{ #input.longValue }.toString"
+                                }
+                            },
+                            {
+                                "name": "aggregator",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#AGG.map({\n  count: #AGG.sum\n})"
+                                }
+                            },
+                            {
+                                "name": "aggregateBy",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "{\n  count: 1\n}"
+                                }
+                            },
+                            {
+                                "name": "windowLength",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "T(java.time.Duration).parse('PT1H')"
+                                }
+                            },
+                            {
+                                "name": "emitWhenEventLeft",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "false"
+                                }
+                            }
+                        ],
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 0,
+                                "y": 360
+                            }
+                        },
+                        "type": "CustomNode"
+                    },
+                    {
+                        "id": "dead-end 1",
+                        "ref": {
+                            "typ": "dead-end",
+                            "parameters": []
+                        },
+                        "endResult": null,
+                        "isDisabled": null,
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 0,
+                                "y": 540
+                            }
+                        },
+                        "type": "Sink"
+                    }
+                ],
+                [
+                    {
+                        "id": "aggregate-tumbling",
+                        "outputVar": "outputVar",
+                        "nodeType": "aggregate-tumbling",
+                        "parameters": [
+                            {
+                                "name": "groupBy",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "{ #input.longValue }.toString"
+                                }
+                            },
+                            {
+                                "name": "aggregator",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#AGG.map({\n  count: #AGG.sum\n})"
+                                }
+                            },
+                            {
+                                "name": "aggregateBy",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "{\n  count: 1\n}"
+                                }
+                            },
+                            {
+                                "name": "windowLength",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "T(java.time.Duration).parse('PT1H')"
+                                }
+                            },
+                            {
+                                "name": "emitWhen",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEvent"
+                                }
+                            }
+                        ],
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 360,
+                                "y": 360
+                            }
+                        },
+                        "type": "CustomNode"
+                    },
+                    {
+                        "id": "dead-end 2",
+                        "ref": {
+                            "typ": "dead-end",
+                            "parameters": []
+                        },
+                        "endResult": null,
+                        "isDisabled": null,
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 360,
+                                "y": 540
+                            }
+                        },
+                        "type": "Sink"
+                    }
+                ]
+            ],
+            "id": "split",
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 180
+                }
+            },
+            "type": "Split"
+        }
+    ],
+    "additionalBranches": []
+}

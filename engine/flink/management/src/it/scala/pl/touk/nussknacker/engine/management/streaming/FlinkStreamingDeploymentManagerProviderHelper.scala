@@ -5,9 +5,12 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
+  NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub
+  ProcessingTypeDeployedScenariosProviderStub,
+  ScenarioActivityManager
 }
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.{
   ConfigWithUnresolvedVersion,
@@ -30,7 +33,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         additionalConfigsFromProvider = Map.empty,
         determineDesignerWideId = id => DesignerWideComponentId(id.toString),
         workingDirectoryOpt = None,
-        _ => true
+        _ => true,
+        ComponentDefinitionExtractionMode.FinalDefinition
       )
     )
     val actorSystem = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
@@ -38,6 +42,7 @@ object FlinkStreamingDeploymentManagerProviderHelper {
     val deploymentManagerDependencies = DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
+      NoOpScenarioActivityManager,
       actorSystem.dispatcher,
       actorSystem,
       backend

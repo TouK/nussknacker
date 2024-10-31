@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, KeyedStream, SingleOutputStreamOperator}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -16,12 +15,13 @@ object richflink {
 
     def groupBy(
         groupBy: LazyParameter[CharSequence]
-    )(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] = {
-      val typeInfo = ctx.valueWithContextInfo.forType(TypeInformation.of(classOf[String]))
+    )(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] =
       dataStream
-        .flatMap(new StringKeyOnlyMapper(ctx.lazyParameterHelper, groupBy), typeInfo)
+        .flatMap(
+          new StringKeyOnlyMapper(ctx.lazyParameterHelper, groupBy),
+          ctx.valueWithContextInfo.forClass[String]
+        )
         .keyBy((k: ValueWithContext[String]) => k.value)
-    }
 
     def groupByWithValue[T <: AnyRef: TypeTag](groupBy: LazyParameter[CharSequence], value: LazyParameter[T])(
         implicit ctx: FlinkCustomNodeContext

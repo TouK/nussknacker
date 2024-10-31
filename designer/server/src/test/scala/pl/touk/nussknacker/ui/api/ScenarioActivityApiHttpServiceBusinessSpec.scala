@@ -3,12 +3,9 @@ package pl.touk.nussknacker.ui.api
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  NuRestAssureMatchers,
-  RestAssuredVerboseLoggingIfValidationFails
-}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
@@ -16,6 +13,11 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails
+}
 
 import java.util.UUID
 
@@ -47,7 +49,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     .source("sourceId", "barSource")
     .emptySink("sinkId", "barSink")
 
-  "The scenario activity endpoint when" - {
+  "Deprecated scenario activity endpoint when" - {
     "return empty comments and attachment for existing process without them" in {
       given()
         .applicationState {
@@ -78,7 +80,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     }
   }
 
-  "The scenario add comment endpoint when" - {
+  "Deprecated scenario add comment endpoint when" - {
     "add comment in existing scenario" in {
       given()
         .applicationState {
@@ -113,7 +115,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     }
   }
 
-  "The scenario remove comment endpoint when" - {
+  "Deprecated scenario remove comment endpoint when" - {
     "remove comment in existing scenario" in {
       val commentId = given()
         .applicationState {
@@ -226,6 +228,67 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     }
   }
 
+  "The scenario delete attachment endpoint when" - {
+    "add and delete attachment to existing scenario" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(200)
+
+      val attachmentId = verifyAttachmentAddedActivityExists(
+        user = "allpermuser",
+        scenarioName = exampleScenarioName,
+        fileIdPresent = true,
+        filename = fileName,
+        fileStatus = "AVAILABLE",
+        overrideDisplayableName = fileName
+      ).getAddedAttachmentId
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/attachments/$attachmentId")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState {
+          verifyAttachmentAddedActivityExists(
+            user = "allpermuser",
+            scenarioName = exampleScenarioName,
+            fileIdPresent = false,
+            filename = fileName,
+            fileStatus = "DELETED",
+            overrideDisplayableName = "File removed"
+          )
+        }
+    }
+    "return 404 for no existing attachment" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+    "return 404 for no existing scenario" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .streamBody(fileContent = fileContent, fileName = fileName)
+        .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/attachments")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+  }
+
   "The scenario download attachment endpoint when" - {
     "download existing attachment" in {
       val attachmentId = given()
@@ -296,13 +359,407 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     }
   }
 
+  "The scenario activity endpoint when" - {
+    "return only SCENARIO_CREATED activity for existing process that has only been created" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""
+               |{
+               |  "activities": [
+               |    {
+               |      "id": "${regexes.looseUuidRegex}",
+               |      "user": "admin",
+               |      "date": "${regexes.zuluDateRegex}",
+               |      "scenarioVersionId": 1,
+               |      "additionalFields": [],
+               |      "type": "SCENARIO_CREATED"
+               |     }
+               |  ]
+               |}
+               |""".stripMargin
+          )
+        )
+    }
+
+    "return SCENARIO_CREATED activity and activities returned by deployment manager, without failed non-batch activity" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          MockableDeploymentManager.configureManagerSpecificScenarioActivities(
+            List(
+              ScenarioActivity.CustomAction(
+                scenarioId = ScenarioId(123),
+                scenarioActivityId = ScenarioActivityId.random,
+                user = ScenarioUser(None, UserName("custom-user"), None, None),
+                date = clock.instant(),
+                scenarioVersionId = None,
+                actionName = "Custom action handled by deployment manager",
+                comment = ScenarioComment.WithContent(
+                  comment = "Executed on custom deployment manager",
+                  lastModifiedByUserName = UserName("custom-user"),
+                  lastModifiedAt = clock.instant()
+                ),
+                result = DeploymentResult.Success(clock.instant())
+              ),
+              ScenarioActivity.CustomAction(
+                scenarioId = ScenarioId(123),
+                scenarioActivityId = ScenarioActivityId.random,
+                user = ScenarioUser(None, UserName("custom-user"), None, None),
+                date = clock.instant(),
+                scenarioVersionId = None,
+                actionName = "Custom action handled by deployment manager",
+                comment = ScenarioComment.WithContent(
+                  comment = "Executed on custom deployment manager",
+                  lastModifiedByUserName = UserName("custom-user"),
+                  lastModifiedAt = clock.instant()
+                ),
+                result = DeploymentResult.Failure(clock.instant(), None)
+              )
+            )
+          )
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""
+               |{
+               |  "activities": [
+               |     {
+               |      "id": "${regexes.looseUuidRegex}",
+               |      "user": "admin",
+               |      "date": "${regexes.zuluDateRegex}",
+               |      "scenarioVersionId": 1,
+               |      "additionalFields": [],
+               |      "type": "SCENARIO_CREATED"
+               |     },
+               |     {
+               |       "id": "${regexes.looseUuidRegex}",
+               |       "user": "custom-user",
+               |       "date": "${regexes.zuluDateRegex}",
+               |       "comment": {
+               |         "content": {
+               |           "value": "Executed on custom deployment manager",
+               |           "status": "AVAILABLE"
+               |         },
+               |         "lastModifiedBy": "custom-user",
+               |         "lastModifiedAt": "${regexes.zuluDateRegex}"
+               |       },
+               |       "additionalFields": [
+               |         {"name": "actionName", "value": "Custom action handled by deployment manager"}
+               |       ],
+               |       "type": "CUSTOM_ACTION"
+               |     }
+               |  ]
+               |}
+               |""".stripMargin
+          )
+        )
+    }
+
+    "return SCENARIO_CREATED activity and activities returned by deployment manager, with failed batch activity" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          MockableDeploymentManager.configureManagerSpecificScenarioActivities(
+            List(
+              ScenarioActivity.PerformedSingleExecution(
+                scenarioId = ScenarioId(123),
+                scenarioActivityId = ScenarioActivityId.random,
+                user = ScenarioUser(None, UserName("custom-user"), None, None),
+                date = clock.instant(),
+                scenarioVersionId = None,
+                comment = ScenarioComment.WithContent(
+                  comment = "Immediate execution",
+                  lastModifiedByUserName = UserName("custom-user"),
+                  lastModifiedAt = clock.instant()
+                ),
+                result = DeploymentResult.Success(clock.instant())
+              )
+            )
+          )
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .statusCode(200)
+        .body(
+          matchJsonWithRegexValues(
+            s"""
+               |{
+               |  "activities": [
+               |     {
+               |      "id": "${regexes.looseUuidRegex}",
+               |      "user": "admin",
+               |      "date": "${regexes.zuluDateRegex}",
+               |      "scenarioVersionId": 1,
+               |      "additionalFields": [],
+               |      "type": "SCENARIO_CREATED"
+               |     },
+               |     {
+               |       "id": "${regexes.looseUuidRegex}",
+               |       "user": "custom-user",
+               |       "date": "${regexes.zuluDateRegex}",
+               |       "comment": {
+               |         "content": {
+               |           "value": "Immediate execution",
+               |           "status": "AVAILABLE"
+               |         },
+               |         "lastModifiedBy": "custom-user",
+               |         "lastModifiedAt": "${regexes.zuluDateRegex}"
+               |       },
+               |       "additionalFields": [
+               |         {
+               |           "name": "status",
+               |           "value": "Run now execution finished"
+               |         },
+               |         {
+               |           "name": "started",
+               |           "value": "${regexes.formattedDateRegex}"
+               |         },
+               |         {
+               |           "name": "finished",
+               |           "value": "${regexes.formattedDateRegex}"
+               |         }
+               |       ],
+               |       "type": "PERFORMED_SINGLE_EXECUTION"
+               |     }
+               |  ]
+               |}
+               |""".stripMargin
+          )
+        )
+    }
+
+    "return 404 for no existing scenario" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/activity/activities")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+  }
+
+  "The scenario add comment endpoint when" - {
+    "add comment in existing scenario" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(commentContent)
+        .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comment")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState {
+          verifyCommentExists(
+            scenarioName = exampleScenarioName,
+            commentContent = commentContent,
+            commentUser = "allpermuser"
+          )
+        }
+    }
+    "return 404 for no existing scenario" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(commentContent)
+        .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/comment")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+  }
+
+  "The scenario edit comment endpoint when" - {
+    "edit comment in existing scenario" in {
+      val newContent = "New comment content after modification"
+
+      val commentActivityId = given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          createComment(scenarioName = exampleScenarioName, commentContent = commentContent)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .extractString("activities[1].id") // First activity (0) is SCENARIO_CREATED, second (1) is COMMENT_ADDED
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(newContent)
+        .put(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comment/$commentActivityId")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState {
+          verifyCommentExists(
+            scenarioName = exampleScenarioName,
+            commentContent = newContent,
+            commentUser = "allpermuser"
+          )
+        }
+    }
+    "return 200 when editing deployment comment with valid format" in {
+      val newContent = "[JIRA-12345] Very important feature"
+
+      val scenarioDeployedActivityId = given()
+        .applicationState {
+          createDeployedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .extractString("activities[1].id")
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(newContent)
+        .put(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comment/$scenarioDeployedActivityId")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState {
+          verifyCommentExists(
+            scenarioName = exampleScenarioName,
+            commentContent = s"Deployment: $newContent",
+            commentUser = "admin"
+          )
+        }
+    }
+    "return 400 when editing deployment comment with invalid format" in {
+      val newContent = "New comment content after modification"
+
+      val scenarioDeployedActivityId = given()
+        .applicationState {
+          createDeployedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .extractString("activities[1].id")
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(newContent)
+        .put(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comment/$scenarioDeployedActivityId")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody(
+          "Bad comment format 'New comment content after modification'. Example comment: [JIRA-1234] description."
+        )
+    }
+    "return 404 for no existing scenario" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          createComment(scenarioName = exampleScenarioName, commentContent = commentContent)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(commentContent)
+        .post(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/1/activity/comment")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+  }
+
+  "The scenario remove comment endpoint when" - {
+    "remove comment in existing scenario" in {
+      val commentActivityId = given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+          createComment(scenarioName = exampleScenarioName, commentContent = commentContent)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .extractString("activities[1].id") // First activity (0) is SCENARIO_CREATED, second (1) is COMMENT_ADDED
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comment/$commentActivityId")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState {
+          verifyEmptyCommentsAndAttachments(exampleScenarioName)
+        }
+    }
+    "return 400 when removing deployment comment with required non-empty content" in {
+      val commentActivityId = given()
+        .applicationState {
+          createDeployedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/activities")
+        .Then()
+        .extractString("activities[1].id") // First activity (0) is SCENARIO_CREATED, second (1) is SCENARIO_DEPLOYED
+
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comment/$commentActivityId")
+        .Then()
+        .statusCode(400)
+        .equalsPlainBody("Comment is required.")
+    }
+    "return 500 for no existing comment" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comments/1")
+        .Then()
+        .statusCode(500)
+        .equalsPlainBody("Unable to delete comment with id: 1")
+    }
+    "return 404 for no existing scenario" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .delete(s"$nuDesignerHttpAddress/api/processes/$wrongScenarioName/activity/comments/1")
+        .Then()
+        .statusCode(404)
+        .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+  }
+
   private def createComment(scenarioName: String, commentContent: String): Unit = {
     given()
       .when()
       .plainBody(commentContent)
       .basicAuthAllPermUser()
       .when()
-      .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/comments")
+      .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/comment")
   }
 
   private def createAttachment(

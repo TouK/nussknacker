@@ -12,7 +12,7 @@ describe("Fragment", () => {
     });
 
     beforeEach(() => {
-        cy.viewport(1440, 1200);
+        cy.viewport("macbook-16");
     });
 
     it("should allow adding input parameters and display used fragment graph in modal", () => {
@@ -189,6 +189,7 @@ describe("Fragment", () => {
 
         cy.wait("@fragmentInputValidation");
         cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.viewport(1600, 1200);
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
 
         cy.get("[data-testid=window]").find("section").scrollTo("bottom");
@@ -241,13 +242,18 @@ describe("Fragment", () => {
                 request.alias = "suggestions";
             }
         });
-        cy.get('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
+        cy.get("[data-testid=window]").find('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
         // We wait for validation result to be sure that red message below the form field will be visible
         cy.wait("@validation")
             .its("response.statusCode")
             .should("eq", 200)
             .then(() => {
-                cy.get("@window").get("[title='Value']").siblings().eq(0).find("[data-testid='form-helper-text']").should("exist");
+                cy.get("[data-testid=window]")
+                    .find("[title='Value']")
+                    .siblings()
+                    .eq(0)
+                    .find("[data-testid='form-helper-text']")
+                    .should("exist");
             });
         cy.wait("@suggestions").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
@@ -297,6 +303,7 @@ describe("Fragment", () => {
             .should("be.visible");
 
         cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.viewport(1600, 1200);
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
     });
 
@@ -378,6 +385,7 @@ describe("Fragment", () => {
                 force: true,
             });
         cy.layoutScenario();
+
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
@@ -389,17 +397,25 @@ describe("Fragment", () => {
         // and it can be a situation that dead-end node is dropped before the scenario is visible.
         // To be sure that element is visible, let's click on it first
         cy.get("@output").click();
-        cy.contains("dead-end")
-            .first()
-            .should("be.visible")
-            .drag("@output", {
-                target: {
-                    x: 30,
-                    y: 30,
-                },
-                force: true,
+        cy.get("@output").then((node) => {
+            const { left, top } = node.position();
+            cy.contains("dead-end")
+                .first()
+                .should("be.visible")
+                .drag("@output", {
+                    target: {
+                        x: 0,
+                        y: node.height() / 2,
+                    },
+                    force: true,
+                });
+            // make sure dropped on edge
+            cy.dragNode("dead-end", {
+                x: left,
+                y: top + node.height() / 2,
             });
-        cy.get("@output").click().type("{backspace}");
+        });
+        cy.get("@output").click({ force: true }).type("{backspace}");
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
         cy.contains(/^save$/i).should("be.disabled");
@@ -419,10 +435,13 @@ describe("Fragment", () => {
                 },
                 force: true,
             });
+
+        cy.viewport("macbook-16");
         cy.layoutScenario();
 
-        cy.get("@sendSms")
-            .parent()
-            .matchImage({ screenshotConfig: { padding: 16 } });
+        cy.get('[joint-selector="layers"]').matchImage({
+            maxDiffThreshold: 0.015,
+            screenshotConfig: { padding: 16 },
+        });
     });
 });

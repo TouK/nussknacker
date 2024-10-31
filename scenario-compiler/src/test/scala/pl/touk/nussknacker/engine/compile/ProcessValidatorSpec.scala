@@ -417,7 +417,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ListMap(
         "Field1" -> Typed.fromInstance("Field1Value"),
         "Field2" -> Typed.fromInstance("Field2Value"),
-        "Field3" -> Typed[BigDecimal]
+        "Field3" -> Typed[java.math.BigDecimal]
       )
     )
     varsType.fields.get("spelVariable").value shouldEqual Typed[Boolean]
@@ -1282,13 +1282,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("should propagate error from source creation") {
     val base = baseDefinition
     val failingDefinition = base
-      .mapComponents {
-        case component if component.componentType == ComponentType.Source =>
-          component.withImplementationInvoker((_: Params, _: Option[String], _: Seq[AnyRef]) => {
-            throw new RuntimeException("You passed incorrect parameter, cannot proceed")
-          })
-        case other => other
-      }
+      .copy(
+        base.components.copy(
+          base.components.components.map {
+            case component if component.componentType == ComponentType.Source =>
+              component.withImplementationInvoker((_: Params, _: Option[String], _: Seq[AnyRef]) => {
+                throw new RuntimeException("You passed incorrect parameter, cannot proceed")
+              })
+            case other => other
+          }
+        )
+      )
 
     val processWithInvalidExpresssion =
       ScenarioBuilder
@@ -1734,6 +1738,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       definitions: ModelDefinition,
       isFragment: Boolean = false
   ): CompilationResult[Unit] = {
+    implicit val jobData: JobData =
+      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     ProcessValidator
       .default(
         ModelDefinitionWithClasses(definitions),
@@ -1745,8 +1751,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   case class SimpleRecord(
       value1: AnotherSimpleRecord,
-      plainValue: BigDecimal,
-      plainValueOpt: Option[BigDecimal],
+      plainValue: java.math.BigDecimal,
+      plainValueOpt: Option[java.math.BigDecimal],
       intAsAny: Any,
       list: java.util.List[SimpleRecord]
   ) {
@@ -1760,8 +1766,18 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   case class AnotherSimpleRecord(value2: Long)
 
   class SampleEnricher extends Service {
+
     def invoke()(implicit ec: ExecutionContext): Future[SimpleRecord] =
-      Future.successful(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, Collections.emptyList[SimpleRecord]))
+      Future.successful(
+        SimpleRecord(
+          AnotherSimpleRecord(1),
+          new java.math.BigDecimal(1),
+          Option(new java.math.BigDecimal(2)),
+          1,
+          Collections.emptyList[SimpleRecord]
+        )
+      )
+
   }
 
   object ProcessHelper {

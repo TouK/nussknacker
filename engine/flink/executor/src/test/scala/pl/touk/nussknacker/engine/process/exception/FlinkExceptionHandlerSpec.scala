@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.exception
 
+import com.github.ghik.silencer.silent
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.scalatest.funsuite.AnyFunSuite
@@ -12,6 +13,7 @@ import pl.touk.nussknacker.test.ClassLoaderWithServices
 
 import scala.jdk.CollectionConverters._
 
+@silent("deprecated")
 class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
 
   private val config = ConfigFactory.parseMap(

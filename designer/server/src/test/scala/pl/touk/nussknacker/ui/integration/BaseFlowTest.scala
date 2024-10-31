@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.integration
 
-import io.circe.Json.{Null, arr, fromFields, fromString, obj}
+import io.circe.Json.{Null, arr, fromBoolean, fromFields, fromString, obj}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json, JsonObject}
 import org.apache.commons.io.FileUtils
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentO
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.restmodel.definition.UiScenarioPropertyConfig
+import pl.touk.nussknacker.restmodel.definition.{UiScenarioProperties, UiScenarioPropertyConfig}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -117,11 +117,12 @@ class BaseFlowTest
       "service-enricher" -> obj(
         "parameters" -> arr(
           obj(
-            "name"         -> fromString("param"),
-            "label"        -> fromString("param"),
-            "defaultValue" -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
-            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-            "hintText"     -> fromString("hint-text-from-additional-ui-config-provider"),
+            "name"          -> fromString("param"),
+            "label"         -> fromString("param"),
+            "defaultValue"  -> Expression.spel("'default-from-additional-ui-config-provider'").asJson,
+            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "hintText"      -> fromString("hint-text-from-additional-ui-config-provider"),
+            "requiredParam" -> fromBoolean(true),
           ),
           obj(
             "name"  -> fromString("tariffType"),
@@ -140,7 +141,8 @@ class BaseFlowTest
                 DualEditorMode.SIMPLE
               )
             ),
-            "hintText" -> Null,
+            "hintText"      -> Null,
+            "requiredParam" -> fromBoolean(true),
           ),
         ),
         "icon"    -> fromString("/assets/components/Filter.svg"),
@@ -149,18 +151,20 @@ class BaseFlowTest
       "service-multipleParamsService" -> obj(
         "parameters" -> arr(
           obj(
-            "name"         -> fromString("foo"),
-            "label"        -> fromString("foo"),
-            "defaultValue" -> Expression.spel("'test'").asJson,
-            "editor"       -> encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
-            "hintText"     -> Null,
+            "name"          -> fromString("foo"),
+            "label"         -> fromString("foo"),
+            "defaultValue"  -> Expression.spel("'test'").asJson,
+            "editor"        -> encodeEditor(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+            "hintText"      -> Null,
+            "requiredParam" -> fromBoolean(true),
           ),
           obj(
-            "name"         -> fromString("bar"),
-            "label"        -> fromString("bar"),
-            "defaultValue" -> Expression.spel("''").asJson,
-            "editor"       -> encodeEditor(StringParameterEditor),
-            "hintText"     -> Null,
+            "name"          -> fromString("bar"),
+            "label"         -> fromString("bar"),
+            "defaultValue"  -> Expression.spel("''").asJson,
+            "editor"        -> encodeEditor(StringParameterEditor),
+            "hintText"      -> Null,
+            "requiredParam" -> fromBoolean(true),
           ),
           obj(
             "name"         -> fromString("baz"),
@@ -169,14 +173,16 @@ class BaseFlowTest
             "editor" -> encodeEditor(
               FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))
             ),
-            "hintText" -> fromString("some hint text"),
+            "hintText"      -> fromString("some hint text"),
+            "requiredParam" -> fromBoolean(true),
           ),
           obj(
-            "name"         -> fromString("quax"),
-            "label"        -> fromString("quax"),
-            "defaultValue" -> Expression.spel("''").asJson,
-            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-            "hintText"     -> Null,
+            "name"          -> fromString("quax"),
+            "label"         -> fromString("quax"),
+            "defaultValue"  -> Expression.spel("''").asJson,
+            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "hintText"      -> Null,
+            "requiredParam" -> fromBoolean(true),
           ),
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
@@ -190,11 +196,12 @@ class BaseFlowTest
       "service-providedComponent-component-v1" -> obj(
         "parameters" -> arr(
           obj(
-            "name"         -> fromString("fromConfig-v1"),
-            "label"        -> fromString("fromConfig-v1"),
-            "defaultValue" -> Expression.spel("''").asJson,
-            "editor"       -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
-            "hintText"     -> Null,
+            "name"          -> fromString("fromConfig-v1"),
+            "label"         -> fromString("fromConfig-v1"),
+            "defaultValue"  -> Expression.spel("''").asJson,
+            "editor"        -> encodeEditor(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+            "hintText"      -> Null,
+            "requiredParam" -> fromBoolean(true),
           )
         ),
         "icon"    -> fromString(DefaultsComponentIcon.ServiceIcon),
@@ -254,10 +261,11 @@ class BaseFlowTest
     )
     response.code shouldEqual StatusCode.Ok
 
-    val settingsJson        = response.extractFieldJsonValue("scenarioPropertiesConfig")
+    val settingsJson        = response.extractFieldJsonValue("scenarioProperties")
     val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-    val settings = Decoder[Map[String, UiScenarioPropertyConfig]].decodeJson(settingsJson).toOption.get
+    val properties       = Decoder[UiScenarioProperties].decodeJson(settingsJson).toOption.get
+    val additionalFields = properties.propertiesConfig
     val streamingDefaultPropertyConfig =
       FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioPropertyConfig(p._2))
 
@@ -287,7 +295,7 @@ class BaseFlowTest
       )
     ) ++ streamingDefaultPropertyConfig
 
-    settings shouldBe underTest
+    additionalFields shouldBe underTest
   }
 
   test("validate process scenario properties") {

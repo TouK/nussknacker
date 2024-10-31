@@ -199,13 +199,13 @@ person2 = name: "John"; age: 24
 listOfPersons = {person1, person2}
 ```
 
-| Expression                     | Result           | Type          |
-| ------------                   | --------         | --------      |
-| `{1,2,3,4}.![#this * 2]`       | {2, 4, 6, 8}     | List[Integer] |
-| `#listOfPersons.![#this.name]` | {'Alex', 'John'} | List[String]  |
-| `#listOfPersons.![#this.age]`  | {42, 24}         | List[Integer] |
-| `#listOfPersons.![7]`          | {7, 7}           | List[Integer] |
-
+| Expression                                                      | Result               | Type                 |
+|-----------------------------------------------------------------|----------------------|----------------------|
+| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}         | List[Integer]        |
+| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}     | List[String]         |
+| `#listOfPersons.![#this.age]`                                   | {42, 24}             | List[Integer]        |
+| `#listOfPersons.![7]`                                           | {7, 7}               | List[Integer]        |
+| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24} | Map[String, Integer] |
 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
@@ -237,6 +237,34 @@ If you need to invoke the same method in many places, probably the best solution
 | Expression                                                   | Result    | Type     |
 | ------------                                                 | --------  | -------- |
 | `{1, 2, 3, 4}.?[#this > 1].![#this > 2 ? #this * 2 : #this]` | {2, 6, 8} | Double   |
+
+### Dynamic navigation
+
+When we deal with structures which schema is not known to Nussknacker (e.g. data from kafka topics without existing avro/json schema) we will end-up
+with `Unknown` type in designer. For such a type (`Unknown`) we allow dynamic-like access using `[]` operator to access nested fields/elements.
+
+Example `exampleObject` json-like variable
+```
+{
+    "someField": 123,
+    "someNestedObject": {
+        "someFieldInNestedObject": "value"
+    },
+    "someArrayWithObjects": [
+        {
+            "someFieldInObjectInArray": "value" 
+        }
+    ]
+}
+```
+
+can be accessed in e.g. in following ways:
+
+* `#exampleObjects['someField']`
+* `#exampleObjects['someNestedObject']['someFieldInNestedObject']`
+* `#exampleObjects['someArrayWithObjects'][0]['someFieldInObjectInArray']`
+
+Every unknown accessed field/element will produce `Unknown` data type which can be further navigated or [cast](#Casting) to a desired type.
 
 ### Type conversions
 
@@ -280,26 +308,25 @@ Explicit conversions are available in utility classes and build-in java conversi
 
 | Expression                                                      | Result                     | Type            |
 |-----------------------------------------------------------------|----------------------------|-----------------|
-| `#NUMERIC.toNumber('42')`                                       | 42                         | Number          |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
 | `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
 | `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
+
 
 ## Built-in helpers
 
 Nussknacker comes with the following helpers:
 
-| Helper        | Functions                                      |
-|---------------|------------------------------------------------|
-| `COLLECTION`  | Operations on collections                      |
-| `CONV`        | General conversion functions                   |
-| `DATE`        | Date operations (conversions, useful helpers)  |
-| `DATE_FORMAT` | Date formatting/parsing operations             |
-| `GEO`         | Simple distance measurements                   |
-| `NUMERIC`     | Number parsing                                 |
-| `RANDOM`      | Random value generators                        |
-| `UTIL`        | Various utilities (e.g. identifier generation) |
-
+| Helper        | Functions                                                          |
+|---------------|--------------------------------------------------------------------|
+| `COLLECTION`  | Operations on collections                                          |
+| `CONV`        | General conversion functions                                       |
+| `DATE`        | Date operations (conversions, useful helpers)                      |
+| `DATE_FORMAT` | Date formatting/parsing operations                                 |
+| `GEO`         | Simple distance measurements                                       |
+| `NUMERIC`     | Number parsing                                                     |
+| `RANDOM`      | Random value generators                                            |
+| `UTIL`        | Various utilities (e.g. identifier generation)                     |
+| `BASE64`      | Encoding & decoding [Base64](https://en.wikipedia.org/wiki/Base64) |
 
 ## Handling date/time.
 
@@ -376,3 +403,4 @@ On the other hand, formatter created using `#DATE_FORMAT.formatter()` method wil
 - `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
 
 For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).
+

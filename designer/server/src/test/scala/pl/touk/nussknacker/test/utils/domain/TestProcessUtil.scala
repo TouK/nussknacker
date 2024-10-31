@@ -100,6 +100,7 @@ object TestProcessUtil {
       processingType: ProcessingType = ProcessingTypeStreaming,
       lastAction: Option[ScenarioActionName] = None,
       description: Option[String] = None,
+      scenarioLabels: List[String] = List.empty,
       history: Option[List[ScenarioVersion]] = None
   ): ScenarioWithDetailsEntity[ScenarioGraph] = {
     val jsonData = scenarioGraph
@@ -119,7 +120,7 @@ object TestProcessUtil {
       modifiedBy = "user1",
       createdAt = Instant.now(),
       createdBy = "user1",
-      tags = None,
+      scenarioLabels = scenarioLabels,
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
         case action if ScenarioActionName.StateActions.contains(action) => createProcessAction(action)
@@ -137,6 +138,7 @@ object TestProcessUtil {
       scenarioGraph: ScenarioGraph,
       name: ProcessName = ProcessTestData.sampleProcessName,
       isFragment: Boolean = false,
+      labels: List[String] = List.empty,
       validationResult: ValidationResult = ValidationResult.success
   ): ScenarioWithDetailsForMigrations = {
     ScenarioWithDetailsForMigrations(
@@ -145,6 +147,7 @@ object TestProcessUtil {
       isFragment = isFragment,
       processingType = ProcessingTypeStreaming,
       processCategory = "Category1",
+      labels = labels,
       scenarioGraph = Some(scenarioGraph),
       validationResult = Some(validationResult),
       history = None,

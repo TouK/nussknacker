@@ -20,9 +20,7 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails,
   StandardPatientScalaFutures
 }
-import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.util.ApiAdapter
 
 // FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)
 class MigrationApiHttpServiceBusinessSpec
@@ -37,8 +35,6 @@ class MigrationApiHttpServiceBusinessSpec
     with Eventually
     with StandardPatientScalaFutures {
 
-  val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = MigrationApiAdapters.adapters
-
   "The endpoint for migration api version should" - {
     "return current api version" in {
       given()
@@ -49,64 +45,128 @@ class MigrationApiHttpServiceBusinessSpec
         .statusCode(200)
         .body(
           "version",
-          equalTo[Int](1)
+          equalTo[Int](2)
         )
     }
   }
 
   "The endpoint for scenario migration between environments should" - {
-    "migrate scenario and add update comment when scenario does not exist on target environment" in {
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(validRequestData)
-        .post(s"$nuDesignerHttpAddress/api/migrate")
-        .Then()
-        .statusCode(200)
-        .verifyApplicationState {
-          eventually {
-            verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
-            verifyScenarioAfterMigration(
-              exampleProcessName.value,
-              processVersionId = 2,
-              isFragment = false,
-              modifiedBy = "remoteUser",
-              createdBy = "remoteUser",
-              modelVersion = 0,
-              historyProcessVersions = List(1, 2),
-              scenarioGraphNodeIds = List("sink", "source")
-            )
+    "migrate scenario and add update comment when scenario does not exist on target environment when" - {
+      "migration from current data version" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(validRequestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .verifyApplicationState {
+            eventually {
+              verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyIncomingMigrationActivityExists(
+                scenarioName = exampleProcessName.value,
+                sourceEnvironment = "DEV",
+                sourceUser = "remoteUser",
+                targetEnvironment = "test",
+              )
+              verifyScenarioAfterMigration(
+                exampleProcessName.value,
+                processVersionId = 2,
+                isFragment = false,
+                scenarioLabels = exampleScenarioLabels,
+                modifiedBy = "remoteUser",
+                createdBy = "remoteUser",
+                modelVersion = 0,
+                historyProcessVersions = List(1, 2),
+                scenarioGraphNodeIds = List("sink", "source")
+              )
+            }
           }
-        }
-    }
-    "migrate scenario and add update comment when scenario exists on target environment" in {
-      given()
-        .applicationState(
-          createSavedScenario(exampleScenario)
-        )
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(validRequestDataV2)
-        .post(s"$nuDesignerHttpAddress/api/migrate")
-        .Then()
-        .statusCode(200)
-        .verifyApplicationState {
-          eventually {
-            verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
-            verifyScenarioAfterMigration(
-              scenarioName = exampleProcessName.value,
-              processVersionId = 2,
-              isFragment = false,
-              modifiedBy = "remoteUser",
-              createdBy = "admin",
-              modelVersion = 0,
-              historyProcessVersions = List(1, 2),
-              scenarioGraphNodeIds = List("sink2", "source2")
-            )
+      }
+      "migration from data version 1" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(prepareRequestJsonDataV1(exampleProcessName.value, exampleGraph, isFragment = false))
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .verifyApplicationState {
+            eventually {
+              verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyScenarioAfterMigration(
+                exampleProcessName.value,
+                processVersionId = 2,
+                isFragment = false,
+                scenarioLabels = List.empty,
+                modifiedBy = "remoteUser",
+                createdBy = "remoteUser",
+                modelVersion = 0,
+                historyProcessVersions = List(1, 2),
+                scenarioGraphNodeIds = List("sink", "source")
+              )
+            }
           }
-        }
+      }
     }
-
+    "migrate scenario and add update comment when scenario exists on target environment when" - {
+      "migration from current data version" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(validRequestDataV2)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .verifyApplicationState {
+            eventually {
+              verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyScenarioAfterMigration(
+                scenarioName = exampleProcessName.value,
+                processVersionId = 2,
+                isFragment = false,
+                scenarioLabels = exampleScenarioLabels,
+                modifiedBy = "remoteUser",
+                createdBy = "admin",
+                modelVersion = 0,
+                historyProcessVersions = List(1, 2),
+                scenarioGraphNodeIds = List("sink2", "source2")
+              )
+            }
+          }
+      }
+      "migration from data version 1" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(prepareRequestJsonDataV1(exampleProcessName.value, exampleGraphV2, isFragment = false))
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .verifyApplicationState {
+            eventually {
+              verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyScenarioAfterMigration(
+                scenarioName = exampleProcessName.value,
+                processVersionId = 2,
+                isFragment = false,
+                scenarioLabels = List.empty,
+                modifiedBy = "remoteUser",
+                createdBy = "admin",
+                modelVersion = 0,
+                historyProcessVersions = List(1, 2),
+                scenarioGraphNodeIds = List("sink2", "source2")
+              )
+            }
+          }
+      }
+    }
     "fail when scenario name contains illegal character(s)" in {
       given()
         .when()
@@ -134,63 +194,124 @@ class MigrationApiHttpServiceBusinessSpec
           s"Cannot migrate, scenario ${exampleProcessName.value} is archived on test. You have to unarchive scenario on test in order to migrate."
         )
     }
-    "migrate fragment and add update comment when fragment exists in target environment" in {
-      given()
-        .applicationState(
-          createSavedFragment(validFragment)
-        )
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(validRequestDataForFragmentV2)
-        .post(s"$nuDesignerHttpAddress/api/migrate")
-        .Then()
-        .statusCode(200)
-        .verifyApplicationState {
-          eventually {
-            verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
-            verifyScenarioAfterMigration(
-              validFragment.name.value,
-              processVersionId = 2,
-              isFragment = true,
-              modifiedBy = "remoteUser",
-              createdBy = "admin",
-              modelVersion = 0,
-              historyProcessVersions = List(1, 2),
-              scenarioGraphNodeIds = List("sink2", "csv-source-lite")
-            )
+    "migrate fragment and add update comment when fragment exists in target environment when" - {
+      "migration from current data version" in {
+        given()
+          .applicationState(
+            createSavedFragment(validFragment)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(validRequestDataForFragmentV2)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .verifyApplicationState {
+            eventually {
+              verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyScenarioAfterMigration(
+                validFragment.name.value,
+                processVersionId = 2,
+                isFragment = true,
+                scenarioLabels = exampleScenarioLabels,
+                modifiedBy = "remoteUser",
+                createdBy = "admin",
+                modelVersion = 0,
+                historyProcessVersions = List(1, 2),
+                scenarioGraphNodeIds = List("sink2", "csv-source-lite")
+              )
+            }
           }
-        }
+      }
+      "migration from data version 1" in {
+        given()
+          .applicationState(
+            createSavedFragment(validFragment)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(prepareRequestJsonDataV1(validFragment.name.value, exampleFragmentGraphV2, isFragment = true))
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .verifyApplicationState {
+            eventually {
+              verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyScenarioAfterMigration(
+                validFragment.name.value,
+                processVersionId = 2,
+                isFragment = true,
+                scenarioLabels = List.empty,
+                modifiedBy = "remoteUser",
+                createdBy = "admin",
+                modelVersion = 0,
+                historyProcessVersions = List(1, 2),
+                scenarioGraphNodeIds = List("sink2", "csv-source-lite")
+              )
+            }
+          }
+      }
+
     }
-    "migrate fragment and add update comment when fragment does not exist in target environment" in {
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(validRequestDataForFragment)
-        .post(s"$nuDesignerHttpAddress/api/migrate")
-        .Then()
-        .statusCode(200)
-        .verifyApplicationState {
-          eventually {
-            verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
-            verifyScenarioAfterMigration(
-              validFragment.name.value,
-              processVersionId = 2,
-              isFragment = true,
-              modifiedBy = "remoteUser",
-              createdBy = "remoteUser",
-              modelVersion = 0,
-              historyProcessVersions = List(1, 2),
-              scenarioGraphNodeIds = List("sink", "csv-source-lite")
-            )
+    "migrate fragment and add update comment when fragment does not exist in target environment when" - {
+      "migration from current data version" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(validRequestDataForFragment)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .verifyApplicationState {
+            eventually {
+              verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyScenarioAfterMigration(
+                validFragment.name.value,
+                processVersionId = 2,
+                isFragment = true,
+                scenarioLabels = exampleScenarioLabels,
+                modifiedBy = "remoteUser",
+                createdBy = "remoteUser",
+                modelVersion = 0,
+                historyProcessVersions = List(1, 2),
+                scenarioGraphNodeIds = List("sink", "csv-source-lite")
+              )
+            }
           }
-        }
+      }
+      "migration from data version 1" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(prepareRequestJsonDataV1(validFragment.name.value, exampleFragmentGraph, isFragment = true))
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .verifyApplicationState {
+            eventually {
+              verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+              verifyScenarioAfterMigration(
+                validFragment.name.value,
+                processVersionId = 2,
+                isFragment = true,
+                scenarioLabels = List.empty,
+                modifiedBy = "remoteUser",
+                createdBy = "remoteUser",
+                modelVersion = 0,
+                historyProcessVersions = List(1, 2),
+                scenarioGraphNodeIds = List("sink", "csv-source-lite")
+              )
+            }
+          }
+      }
     }
   }
 
   private lazy val sourceEnvironmentId = "DEV"
 
-  private lazy val exampleProcessName = ProcessName("test2")
-  private lazy val illegalProcessName = ProcessName("#test")
+  private lazy val exampleProcessName    = ProcessName("test2")
+  private lazy val exampleScenarioLabels = List("tag1", "tag2")
+  private lazy val illegalProcessName    = ProcessName("#test")
 
   private lazy val exampleScenario =
     ScenarioBuilder
@@ -218,7 +339,7 @@ class MigrationApiHttpServiceBusinessSpec
 
   private lazy val exampleFragmentGraphV2 = CanonicalProcessConverter.toScenarioGraph(validFragmentV2)
 
-  private def prepareRequestJsonData(
+  private def prepareRequestJsonDataV1(
       scenarioName: String,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean
@@ -237,25 +358,72 @@ class MigrationApiHttpServiceBusinessSpec
        |}
        |""".stripMargin
 
+  private def prepareRequestJsonDataV2(
+      scenarioName: String,
+      scenarioGraph: ScenarioGraph,
+      isFragment: Boolean,
+      scenarioLabels: List[String]
+  ): String =
+    s"""
+       |{
+       |  "version": "2",
+       |  "sourceEnvironmentId": "$sourceEnvironmentId",
+       |  "remoteUserName": "remoteUser",
+       |  "processingMode": "Unbounded-Stream",
+       |  "engineSetupName": "Mockable",
+       |  "processName": "$scenarioName",
+       |  "isFragment": $isFragment,
+       |  "processCategory": "${Category1.stringify}",
+       |  "scenarioLabels": ${scenarioLabels.asJson.noSpaces},
+       |  "scenarioGraph": ${scenarioGraph.asJson.noSpaces}
+       |}
+       |""".stripMargin
+
   private lazy val validRequestData: String =
-    prepareRequestJsonData(exampleProcessName.value, exampleGraph, isFragment = false)
+    prepareRequestJsonDataV2(
+      exampleProcessName.value,
+      exampleGraph,
+      isFragment = false,
+      scenarioLabels = List("tag1", "tag2")
+    )
 
   private lazy val validRequestDataV2: String =
-    prepareRequestJsonData(exampleProcessName.value, exampleGraphV2, isFragment = false)
+    prepareRequestJsonDataV2(
+      exampleProcessName.value,
+      exampleGraphV2,
+      isFragment = false,
+      scenarioLabels = exampleScenarioLabels
+    )
 
   private lazy val requestDataWithInvalidScenarioName: String =
-    prepareRequestJsonData(illegalProcessName.value, exampleGraph, isFragment = false)
+    prepareRequestJsonDataV2(
+      illegalProcessName.value,
+      exampleGraph,
+      isFragment = false,
+      scenarioLabels = exampleScenarioLabels
+    )
 
   private lazy val validRequestDataForFragment: String =
-    prepareRequestJsonData(validFragment.name.value, exampleFragmentGraph, isFragment = true)
+    prepareRequestJsonDataV2(
+      validFragment.name.value,
+      exampleFragmentGraph,
+      isFragment = true,
+      scenarioLabels = exampleScenarioLabels
+    )
 
   private lazy val validRequestDataForFragmentV2: String =
-    prepareRequestJsonData(validFragment.name.value, exampleFragmentGraphV2, isFragment = true)
+    prepareRequestJsonDataV2(
+      validFragment.name.value,
+      exampleFragmentGraphV2,
+      isFragment = true,
+      scenarioLabels = exampleScenarioLabels
+    )
 
   private def verifyScenarioAfterMigration(
       scenarioName: String,
       processVersionId: Int,
       isFragment: Boolean,
+      scenarioLabels: List[String],
       modifiedBy: String,
       createdBy: String,
       modelVersion: Int,
@@ -276,6 +444,8 @@ class MigrationApiHttpServiceBusinessSpec
         equalTo(processVersionId),
         "isFragment",
         equalTo(isFragment),
+        "labels",
+        containsInAnyOrder(scenarioLabels: _*),
         "modifiedBy",
         equalTo(modifiedBy),
         "createdBy",

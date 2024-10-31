@@ -19,6 +19,7 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import cats.effect.unsafe.implicits.global
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 
 import java.nio.file.Path
@@ -293,7 +294,8 @@ class ScenarioParametersServiceTest
             Map.empty,
             componentId => DesignerWideComponentId(componentId.toString),
             Some(workPath),
-            shouldIncludeComponentProvider(processingType, _)
+            shouldIncludeComponentProvider(processingType, _),
+            ComponentDefinitionExtractionMode.FinalDefinition
           ),
         _ => TestFactory.deploymentManagerDependencies,
       )

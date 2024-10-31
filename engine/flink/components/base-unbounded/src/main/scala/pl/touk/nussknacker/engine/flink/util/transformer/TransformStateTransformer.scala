@@ -6,7 +6,12 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkCustomNodeContext,
+  FlinkCustomStreamTransformation,
+  FlinkLazyParameterFunctionHelper,
+  LazyParameterInterpreterFunction
+}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 
@@ -39,19 +44,20 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
     ContextTransformation
       .definedBy(_.withVariable(OutputVar.customNode(variableName), newValue.returnType))
       .implementedBy(
-        FlinkCustomStreamTransformation { (stream, nodeContext) =>
-          implicit val nctx: FlinkCustomNodeContext = nodeContext
+        FlinkCustomStreamTransformation { (stream, ctx) =>
+          implicit val nctx: FlinkCustomNodeContext = ctx
           setUidToNodeIdIfNeed(
-            nodeContext,
+            ctx,
             stream
               .groupBy(groupBy)
               .process(
                 new TransformStateFunction[String](
-                  nodeContext.lazyParameterHelper,
+                  ctx.lazyParameterHelper,
                   transformWhen,
                   newValue,
                   stateTimeoutSeconds.seconds
-                )
+                ),
+                ctx.valueWithContextInfo.forClass[AnyRef](classOf[String])
               )
           )
         }

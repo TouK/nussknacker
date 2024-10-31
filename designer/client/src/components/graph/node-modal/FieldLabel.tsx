@@ -4,10 +4,9 @@ import { UIParameter } from "../../../types";
 import NodeTip from "./NodeTip";
 import InfoIcon from "@mui/icons-material/Info";
 import ProcessUtils from "../../../common/ProcessUtils";
-
-export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
-    return definitions?.find((param) => param.name === paramName);
-}
+import { findParamDefinitionByName } from "./parameterHelpers";
+import { ErrorBoundary } from "react-error-boundary";
+import { PlaceholderIconFallbackComponent } from "../../common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
 
 export const StyledNodeTip = styled(NodeTip)({
     margin: "0 8px",
@@ -53,15 +52,19 @@ export function FieldLabel({ title, label, type, hintText }: FieldLabelProps): J
     );
 }
 
-export function ParamFieldLabel({
-    paramName,
-    parameterDefinitions,
-}: {
+interface Props {
     paramName: string;
     parameterDefinitions: UIParameter[];
-}): JSX.Element {
+}
+function ParamFieldLabelComponent({ paramName, parameterDefinitions }: Props): JSX.Element {
     const parameter = findParamDefinitionByName(parameterDefinitions, paramName);
     const label = parameter?.label || paramName; // Fallback to paramName is for hard-coded parameters like Description
     const readableType = ProcessUtils.humanReadableType(parameter?.typ || null);
     return <FieldLabel title={paramName} label={label} type={readableType} hintText={parameter?.hintText} />;
 }
+
+export const ParamFieldLabel = (props: Props) => (
+    <ErrorBoundary FallbackComponent={PlaceholderIconFallbackComponent}>
+        <ParamFieldLabelComponent {...props} />
+    </ErrorBoundary>
+);

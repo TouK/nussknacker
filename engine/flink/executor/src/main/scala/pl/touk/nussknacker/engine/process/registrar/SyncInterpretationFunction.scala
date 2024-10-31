@@ -52,7 +52,7 @@ private[registrar] class SyncInterpretationFunction(
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       compilerData.interpreter
-        .interpret[IO](compiledNode, compilerData.metaData, input, serviceExecutionContext)
+        .interpret[IO](compiledNode, compilerData.jobData, input, serviceExecutionContext)
         .unsafeRunTimed(compilerData.processTimeout) match {
         case Some(result) => result
         case None =>
@@ -61,7 +61,7 @@ private[registrar] class SyncInterpretationFunction(
     } else {
       Await.result(
         awaitable = compilerData.interpreter
-          .interpret[Future](compiledNode, compilerData.metaData, input, serviceExecutionContext),
+          .interpret[Future](compiledNode, compilerData.jobData, input, serviceExecutionContext),
         atMost = compilerData.processTimeout
       )
     }

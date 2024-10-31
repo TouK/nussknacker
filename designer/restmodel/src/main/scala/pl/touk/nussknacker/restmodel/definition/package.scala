@@ -21,11 +21,10 @@ package object definition {
 
   // This class contains various views on definitions, used in a different FE contexts
   @JsonCodec(encodeOnly = true) final case class UIDefinitions(
-      // This is dedicated view for the components toolbox panel
       componentGroups: List[UIComponentGroup],
       components: Map[ComponentId, UIComponentDefinition],
       classes: List[TypingResult],
-      scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
+      scenarioProperties: UiScenarioProperties,
       edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
   )
@@ -36,7 +35,7 @@ package object definition {
       expression: Expression
   )
 
-  @JsonCodec(encodeOnly = true) final case class UIParameter(
+  @JsonCodec final case class UIParameter(
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
@@ -50,7 +49,9 @@ package object definition {
       // should be invalidated
       branchParam: Boolean,
       hintText: Option[String],
-      label: String
+      label: String,
+      // This attribute is used only by external project
+      requiredParam: Boolean,
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
@@ -75,7 +76,7 @@ package object definition {
       outputParameters: Option[List[String]]
   )
 
-  @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
+  @JsonCodec final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
   final case class UINodeEdges(
       componentId: ComponentId,
@@ -117,6 +118,11 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UIComponentGroup(
       name: ComponentGroupName,
       components: List[UIComponentNodeTemplate]
+  )
+
+  @JsonCodec final case class UiScenarioProperties(
+      propertiesConfig: Map[String, UiScenarioPropertyConfig],
+      docsUrl: Option[String]
   )
 
   @JsonCodec final case class UiScenarioPropertyConfig(

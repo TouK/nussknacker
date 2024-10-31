@@ -7,6 +7,12 @@
         </encoder>
     </appender>
 
+    <appender name="STDOUT_FOR_SCENARIO_ACTIVITY_AUDIT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [scenarioId=%X{scenarioId}][version=%X{scenarioVersionId}][user=%X{username}] %msg%n</Pattern>
+        </encoder>
+    </appender>
+
     <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
@@ -63,6 +69,10 @@
     <!-- skuber by default logs all requests to k8s on INFO -->
     <logger name="skuber" level="${SKUBER_LOG_LEVEL:-WARN}"/>
     <logger name="com.azure" level="INFO"/>
-    <logger name="org.testcontainers" level="DEBUG"/>
+    <logger name="org.testcontainers" level="INFO"/>
+
+    <logger name="scenario-activity-audit" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT_FOR_SCENARIO_ACTIVITY_AUDIT"/>
+    </logger>
 
 </configuration>

@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.graph.node.asProcessor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory, TestProcessUtil}
-import pl.touk.nussknacker.ui.process.repository.MigrationComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import shapeless.syntax.typeable.typeableOps
 
@@ -41,9 +40,8 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
 
     extractParallelism(migrationResult) shouldBe 11
 
-    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe Some(
-      MigrationComment(migrationResult.migrationsApplied)
-    )
+    migrationResult.toAutomaticProcessUpdateAction(ProcessId(1L), List.empty).migrationsApplies shouldBe
+      migrationResult.migrationsApplied
 
     val processor = extractProcessor(migrationResult)
     processor shouldBe ServiceRef(ProcessTestData.otherExistingServiceId, List())
@@ -64,9 +62,9 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
     extractParallelism(migrationResult) shouldBe 11
 
     val processor = extractProcessor(migrationResult)
-    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe Some(
-      MigrationComment(migrationResult.migrationsApplied)
-    )
+
+    migrationResult.toAutomaticProcessUpdateAction(ProcessId(1L), List.empty).migrationsApplies shouldBe
+      migrationResult.migrationsApplied
     processor shouldBe ServiceRef(ProcessTestData.existingServiceId, List())
   }
 

@@ -21,7 +21,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
 
   private val timestamp = 1640769008000L
 
-  private val version = ProcessVersion(VersionId(4), ProcessName("AAAAA"), ProcessId(7), "admin", Some(2))
+  private val version = ProcessVersion(VersionId(4), ProcessName("AAAAA"), ProcessId(7), List.empty, "admin", Some(2))
 
   private def parseResource[T](source: String)(implicit format: Format[T]): T = {
     val value = Json.parse(ResourceLoader.load(s"/k8sResponses/$source"))

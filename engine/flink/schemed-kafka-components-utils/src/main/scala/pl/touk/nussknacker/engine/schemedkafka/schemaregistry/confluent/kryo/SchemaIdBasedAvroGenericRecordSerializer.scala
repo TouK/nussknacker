@@ -1,32 +1,36 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo
 
-import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.github.ghik.silencer.silent
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
-import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
+import pl.touk.nussknacker.engine.flink.api.serialization.InstanceBasedKryoSerializerRegistrar
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  GenericRecordWithSchemaId,
-  IntSchemaId,
-  SchemaId,
-  SchemaRegistryClientFactory,
-  StringSchemaId
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 
 import java.io.ByteArrayOutputStream
 
 object SchemaIdBasedAvroGenericRecordSerializer {
 
-  def apply(
-      schemaRegistryClientFactory: SchemaRegistryClientFactory,
-      kafkaConfig: KafkaConfig
-  ): SchemaIdBasedAvroGenericRecordSerializer = {
-    new SchemaIdBasedAvroGenericRecordSerializer(
-      schemaRegistryClientFactory,
-      kafkaConfig.schemaRegistryClientKafkaConfig
+  // TODO: We shouldn't use InstanceBasedKryoSerializerRegistrar here. This causes that we can't use any RawType
+  //       in table-api components. This happens because RawType become not comparable if there is any instance-based serializer
+  //       registered in ExecutionConfig.
+  //       See:
+  //         - RawType.equals checks serializer.equals(rawType.serializer)
+  //         - KryoSerializer.equals checks Objects.equals(defaultSerializers, other.defaultSerializers)
+  //         - KryoSerializer.defaultSerializers is a LinkedHashMap<Class<?>, ExecutionConfig.SerializableSerializer<?>>
+  //         - SerializableSerializer has equals method not implemented (so it checks reference equality)
+  @silent("deprecated")
+  def registrar(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig) = {
+    new InstanceBasedKryoSerializerRegistrar(
+      new SchemaIdBasedAvroGenericRecordSerializer(
+        schemaRegistryClientFactory,
+        kafkaConfig.schemaRegistryClientKafkaConfig
+      ),
+      classOf[GenericRecordWithSchemaId]
     )
   }
 
@@ -36,16 +40,15 @@ object SchemaIdBasedAvroGenericRecordSerializer {
 class SchemaIdBasedAvroGenericRecordSerializer(
     schemaRegistryClientFactory: SchemaRegistryClientFactory,
     schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig
-) extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false)
-    with DatumReaderWriterMixin {
+) extends Serializer[GenericRecordWithSchemaId](false, false)
+    with DatumReaderWriterMixin
+    with Serializable {
 
   @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig)
 
   @transient protected lazy val encoderFactory: EncoderFactory = EncoderFactory.get
 
   @transient protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get
-
-  override def clazz: Class[_] = classOf[GenericRecordWithSchemaId]
 
   private val stringSchemaMarker: Int = -1
 
@@ -67,7 +70,7 @@ class SchemaIdBasedAvroGenericRecordSerializer(
   }
 
   private def writeDataBytes(record: GenericRecordWithSchemaId, bos: ByteArrayOutputStream): Unit = {
-    val writer  = createDatumWriter(record, record.getSchema, useSchemaReflection = false)
+    val writer  = createDatumWriter(record.getSchema)
     val encoder = this.encoderFactory.directBinaryEncoder(bos, null)
     writer.write(record, encoder)
   }
@@ -91,10 +94,9 @@ class SchemaIdBasedAvroGenericRecordSerializer(
   }
 
   private def readRecord(lengthOfData: Int, schemaId: SchemaId, dataBuffer: Array[Byte]) = {
-    val parsedSchema = schemaRegistry.getSchemaById(schemaId).schema
-    val writerSchema = AvroUtils.extractSchema(parsedSchema)
-    val reader =
-      createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
+    val parsedSchema  = schemaRegistry.getSchemaById(schemaId).schema
+    val writerSchema  = AvroUtils.extractSchema(parsedSchema)
+    val reader        = createDatumReader(writerSchema, writerSchema)
     val binaryDecoder = decoderFactory.binaryDecoder(dataBuffer, 0, lengthOfData, null)
     reader.read(null, binaryDecoder).asInstanceOf[GenericData.Record]
   }

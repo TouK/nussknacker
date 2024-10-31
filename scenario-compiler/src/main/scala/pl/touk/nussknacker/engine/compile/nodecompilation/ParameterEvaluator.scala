@@ -29,7 +29,7 @@ class ParameterEvaluator(
       typedParameter: TypedParameter,
       definition: ParameterDef
   )(
-      implicit processMetaData: MetaData,
+      implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): (AnyRef, BaseDefinedParameter) = {
@@ -43,14 +43,14 @@ class ParameterEvaluator(
   def evaluate(
       parameters: Iterable[CompiledParameter],
       context: Context
-  )(implicit nodeId: NodeId, metaData: MetaData): Map[ParameterName, AnyRef] = {
+  )(implicit nodeId: NodeId, jobData: JobData): Map[ParameterName, AnyRef] = {
     parameters
       .map(p => p.name -> runtimeExpressionEvaluator.evaluateParameter(p, context).value)
       .toMap
   }
 
   private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
-      implicit processMetaData: MetaData,
+      implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): (AnyRef, BaseDefinedParameter) = {
@@ -69,7 +69,7 @@ class ParameterEvaluator(
   private def evaluateParam[T](
       param: TypedParameter,
       definition: ParameterDef
-  )(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
+  )(implicit jobData: JobData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
 
     val additionalDefinitions = definition.additionalVariables.collect {
       case (name, AdditionalVariableWithFixedValue(value, _)) =>
@@ -89,7 +89,7 @@ class ParameterEvaluator(
   }
 
   private def prepareLazyParameterExpression[T](definition: ParameterDef, exprValue: TypedExpression)(
-      implicit processMetaData: MetaData,
+      implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
   ): LazyParameter[Nothing] = {
@@ -99,7 +99,7 @@ class ParameterEvaluator(
           CompiledParameter(exprValue, definition),
           runtimeExpressionEvaluator,
           nodeId,
-          processMetaData
+          jobData
         )
       case PostponedEvaluatorLazyParameterStrategy =>
         new EvaluableLazyParameterCreator(
@@ -114,7 +114,7 @@ class ParameterEvaluator(
   private def evaluateSync(
       param: CompiledParameter,
       ctx: Context
-  )(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
+  )(implicit jobData: JobData, nodeId: NodeId): AnyRef = {
     compileTimeExpressionEvaluator.evaluateParameter(param, ctx).value
   }
 

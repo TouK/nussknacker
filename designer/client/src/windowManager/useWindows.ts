@@ -1,6 +1,6 @@
 import { useWindowManager, WindowId, WindowType } from "@touk/window-manager";
 import { defaults } from "lodash";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useUserSettings } from "../common/userSettings";
 import { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
 import { InfoDialogData } from "../components/modals/GenericInfoDialog";
@@ -28,8 +28,33 @@ function mapModeToKind(mode: NodeViewMode): WindowKind {
     return WindowKind.editNode;
 }
 
+const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
+    useEffect(() => {
+        if (!isWindowOpen) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const activeElement = document.activeElement as HTMLElement;
+            const tagName = activeElement.tagName.toLowerCase();
+            const allowedTagNames = ["input", "textarea", "select"];
+
+            if (event.key === "Escape" && allowedTagNames.includes(tagName)) {
+                activeElement.blur(); // Removes focus from the current active element
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isWindowOpen]);
+};
+
 export function useWindows(parent?: WindowId) {
-    const { open: _open, closeAll } = useWindowManager(parent);
+    const { open: _open, closeAll, windows } = useWindowManager(parent);
+    useRemoveFocusOnEscKey(windows.length > 0);
     const [settings] = useUserSettings();
     const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);
 

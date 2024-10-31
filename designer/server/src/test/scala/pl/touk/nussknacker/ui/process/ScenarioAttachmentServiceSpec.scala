@@ -1,23 +1,37 @@
 package pl.touk.nussknacker.ui.process
 
+import db.util.DBIOActionInstances.DB
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActivity, ScenarioActivityId}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.ProcessActivity
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
-import pl.touk.nussknacker.ui.listener.Comment
-import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
+import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
+  CommentModificationMetadata,
+  ModifyCommentError
+}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import slick.dbio.DBIO
 
 import java.io.ByteArrayInputStream
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import java.time.Clock
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
 class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaFutures {
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   private implicit val user: LoggedUser             = RealLoggedUser("test user", "test user")
-  private val service = new ScenarioAttachmentService(AttachmentsConfig(10), TestProcessActivityRepository)
+
+  private val service = new ScenarioAttachmentService(
+    AttachmentsConfig(10),
+    TestProcessActivityRepository,
+    TestFactory.newDummyDBIOActionRunner()
+  )
 
   test("should respect size limit") {
     val random12bytes = new ByteArrayInputStream(nextBytes(12))
@@ -41,27 +55,57 @@ class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with Scala
 
 }
 
-private object TestProcessActivityRepository extends ProcessActivityRepository {
+private object TestProcessActivityRepository extends ScenarioActivityRepository {
 
-  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: Comment)(
-      implicit ec: ExecutionContext,
-      loggedUser: LoggedUser
-  ): Future[Unit] = ???
+  override def clock: Clock = Clock.systemUTC()
 
-  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]] = ???
+  override def findActivities(scenarioId: ProcessId): DB[Seq[ScenarioActivity]] = notSupported("findActivities")
 
-  override def findActivity(processId: ProcessId)(
-      implicit ec: ExecutionContext
-  ): Future[DbProcessActivityRepository.ProcessActivity] = ???
+  override def addActivity(scenarioActivity: ScenarioActivity): DB[ScenarioActivityId] = notSupported("addActivity")
 
-  override def addAttachment(
-      attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd
-  )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = Future.successful(())
+  override def addAttachment(attachmentToAdd: ScenarioAttachmentService.AttachmentToAdd)(
+      implicit user: LoggedUser
+  ): DB[ScenarioActivityId] =
+    DBIO.successful(ScenarioActivityId.random)
 
-  override def findAttachment(attachmentId: Long, scenarioId: ProcessId)(
-      implicit ec: ExecutionContext
-  ): Future[Option[AttachmentEntityData]] =
-    ???
+  override def markAttachmentAsDeleted(
+      scenarioId: ProcessId,
+      attachmentId: Long
+  )(implicit user: LoggedUser): DB[Either[ScenarioActivityRepository.DeleteAttachmentError, Unit]] =
+    notSupported("markAttachmentAsDeleted")
 
-  override def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]] = ???
+  override def findAttachments(scenarioId: ProcessId): DB[Seq[AttachmentEntityData]] = notSupported("findAttachments")
+
+  override def findAttachment(scenarioId: ProcessId, attachmentId: Long): DB[Option[AttachmentEntityData]] =
+    notSupported("findAttachment")
+
+  override def findActivity(processId: ProcessId): DB[ProcessActivity] = notSupported("findActivity")
+
+  override def getActivityStats: DB[Map[String, Int]] = notSupported("getActivityStats")
+
+  override def editComment(
+      scenarioId: ProcessId,
+      scenarioActivityId: ScenarioActivityId,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+      comment: String,
+  )(
+      implicit user: LoggedUser
+  ): DB[Either[ScenarioActivityRepository.ModifyCommentError, ScenarioActivityId]] = notSupported("editComment")
+
+  override def deleteComment(
+      scenarioId: ProcessId,
+      commentId: Long,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
+
+  override def deleteComment(
+      scenarioId: ProcessId,
+      scenarioActivityId: ScenarioActivityId,
+      validate: CommentModificationMetadata => Either[ModifyCommentError, Unit],
+  )(implicit user: LoggedUser): DB[Either[ModifyCommentError, ScenarioActivityId]] = notSupported("deleteComment")
+
+  private def notSupported(methodName: String): Nothing = throw new Exception(
+    s"Method $methodName not supported by TestProcessActivityRepository test implementation"
+  )
+
 }

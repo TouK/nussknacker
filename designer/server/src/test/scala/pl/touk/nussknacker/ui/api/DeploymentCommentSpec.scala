@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.api
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DeploymentComment, UserComment}
+import pl.touk.nussknacker.engine.api.Comment
+import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DeploymentComment}
 
 class DeploymentCommentSpec extends AnyFunSuite with Matchers {
 
@@ -18,8 +19,8 @@ class DeploymentCommentSpec extends AnyFunSuite with Matchers {
       exampleComment = None
     )
 
-  private val validComment   = UserComment("issues/123123")
-  private val invalidComment = UserComment("invalid_comment")
+  private val validComment   = Comment.unsafeFrom("issues/123123")
+  private val invalidComment = Comment.unsafeFrom("invalid_comment")
   private val emptyComment   = None
 
   private val emptyValidationPattern    = ""
@@ -36,7 +37,7 @@ class DeploymentCommentSpec extends AnyFunSuite with Matchers {
   }
 
   test("Comment not required, should pass validation for any comment") {
-    DeploymentComment.createDeploymentComment(Some(validComment), None) shouldEqual Valid(_: DeploymentComment)
+    DeploymentComment.createDeploymentComment(Some(validComment), None) shouldEqual Valid(_: Comment)
   }
 
   test("Comment required but got empty, should fail validation") {
@@ -47,7 +48,7 @@ class DeploymentCommentSpec extends AnyFunSuite with Matchers {
   test("Comment validation for valid comment") {
     val deploymentComment =
       DeploymentComment.createDeploymentComment(Some(validComment), Some(mockDeploymentCommentSettings))
-    deploymentComment shouldEqual Valid(_: DeploymentComment)
+    deploymentComment shouldEqual Valid(_: Comment)
   }
 
   test("Comment validation for invalid comment") {

@@ -24,6 +24,11 @@ jest.mock("../src/windowManager", () => ({
     WindowContent: ({ children }) => <div>{children}</div>,
 }));
 
+// this module brings nothing but problems with some nested imports to this test, so it could be safely mocked
+jest.mock("../src/components/graph/node-modal/NodeDetailsContent", () => ({
+    NodeDetailsContent: ({ children }) => <div>{children}</div>,
+}));
+
 const mockStore = configureMockStore([thunk]);
 const graphReducer = {
     history: {
@@ -88,6 +93,7 @@ describe(CompareVersionsDialog.name, () => {
                             title: "compare versions",
                             kind: 12,
                             id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                            meta: { scenarioVersionId: undefined },
                         }}
                     />
                 </Provider>
@@ -132,6 +138,7 @@ describe(CompareVersionsDialog.name, () => {
                             title: "compare versions",
                             kind: 12,
                             id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                            meta: { scenarioVersionId: undefined },
                         }}
                     />
                 </Provider>

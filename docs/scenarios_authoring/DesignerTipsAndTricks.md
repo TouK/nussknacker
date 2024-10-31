@@ -86,7 +86,7 @@ and the expected result list is below.
 
 The expression to use is as follows:
 
-`#myRecord.![{"fieldName":  #this.key, "numValue": #CONV.toNumber(#this.value)}]`
+`#myRecord.![{"fieldName":  #this.key, "numValue": #this.value.toDouble}]`
 
 &nbsp;
 **Not trivial list transformations**

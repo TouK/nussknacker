@@ -2,11 +2,11 @@ import React, { useCallback, useMemo } from "react";
 import { flatten, sortBy, uniq } from "lodash";
 import { useFilterContext } from "../../common";
 import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
-import { useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
+import { useScenarioLabelsQuery, useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
 import { SimpleOptionsStack } from "./simpleOptionsStack";
-import { OtherOptionsStack, StatusOptionsStack } from "./otherOptionsStack";
+import { TypeOptionsStack, StatusOptionsStack } from "./typeOptionsStack";
 import { SortOptionsStack } from "./sortOptionsStack";
 import { ActiveFilters } from "./activeFilters";
 import { RowType } from "../list/listPart";
@@ -20,6 +20,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
     const { data: statusDefinitions = [] } = useStatusDefinitions();
+    const { data: availableLabels } = useScenarioLabelsQuery();
 
     const filterableKeys = useMemo(() => ["createdBy", "modifiedBy"], []);
     const filterableValues = useMemo(() => {
@@ -31,6 +32,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                 .map((v) => ({ name: v })),
             status: sortBy(statusDefinitions, (v) => v.displayableName),
             processCategory: (userData?.categories || []).map((name) => ({ name })),
+            label: (availableLabels?.labels || []).map((name) => ({ name })),
             processingMode: processingModeItems,
         };
     }, [data, filterableKeys, statusDefinitions, userData?.categories]);
@@ -111,6 +113,17 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             })}
                         />
                     </FilterMenu>
+                    <FilterMenu label={t("table.filter.LABEL", "Label")} count={getFilter("LABEL", true).length}>
+                        <SimpleOptionsStack
+                            label={t("table.filter.LABEL", "Label")}
+                            options={filterableValues.label}
+                            value={getFilter("LABEL", true)}
+                            onChange={setFilter("LABEL")}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ScenariosByLabel,
+                            })}
+                        />
+                    </FilterMenu>
                     <FilterMenu label={t("table.filter.CREATED_BY", "Author")} count={getFilter("CREATED_BY", true).length}>
                         <SimpleOptionsStack
                             label={t("table.filter.CREATED_BY", "Author")}
@@ -122,8 +135,8 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             })}
                         />
                     </FilterMenu>
-                    <FilterMenu label={t("table.filter.other", "Type")} count={getFilter("TYPE", true).length}>
-                        <OtherOptionsStack />
+                    <FilterMenu label={t("table.filter.TYPE", "Type")} count={getFilter("TYPE", true).length}>
+                        <TypeOptionsStack />
                     </FilterMenu>
                     {withSort ? (
                         <FilterMenu label={t("table.filter.SORT_BY", "Sort")}>

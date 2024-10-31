@@ -9,9 +9,11 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.{
+  NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -36,6 +38,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -66,11 +69,12 @@ object TestFactory {
 
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
 
-  val processValidator: UIProcessValidator = ProcessTestData.processValidator.withFragmentResolver(sampleResolver)
+  val processValidator: UIProcessValidator = ProcessTestData.testProcessValidator(fragmentResolver = sampleResolver)
 
-  val flinkProcessValidator: UIProcessValidator = ProcessTestData.processValidator
-    .withFragmentResolver(sampleResolver)
-    .withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
+  val flinkProcessValidator: UIProcessValidator = ProcessTestData.testProcessValidator(
+    fragmentResolver = sampleResolver,
+    scenarioProperties = FlinkStreamingPropertiesConfig.properties
+  )
 
   val processValidatorByProcessingType: ProcessingTypeDataProvider[UIProcessValidator, _] =
     mapProcessingTypeDataProvider(Streaming.stringify -> flinkProcessValidator)
@@ -121,7 +125,8 @@ object TestFactory {
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
       componentId => DesignerWideComponentId(componentId.toString),
       workingDirectoryOpt = None,
-      _ => true
+      _ => true,
+      ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
     )
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = {
@@ -129,6 +134,7 @@ object TestFactory {
     DeploymentManagerDependencies(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
+      NoOpScenarioActivityManager,
       actorSystem.dispatcher,
       actorSystem,
       SttpBackendStub.asynchronousFuture
@@ -143,23 +149,32 @@ object TestFactory {
   def newDummyDBIOActionRunner(): DBIOActionRunner =
     newDBIOActionRunner(dummyDbRef)
 
-  def newCommentRepository(dbRef: DbRef) = new CommentRepository(dbRef)
+  def newScenarioActivityRepository(dbRef: DbRef, clock: Clock) = DbScenarioActivityRepository.create(dbRef, clock)
+
+  def newScenarioLabelsRepository(dbRef: DbRef) = new ScenarioLabelsRepository(dbRef)
 
   def newFutureFetchingScenarioRepository(dbRef: DbRef) =
-    new DBFetchingProcessRepository[Future](dbRef, newActionProcessRepository(dbRef)) with BasicRepository
+    new DBFetchingProcessRepository[Future](
+      dbRef,
+      newActionProcessRepository(dbRef),
+      newScenarioLabelsRepository(dbRef)
+    ) with BasicRepository
 
   def newFetchingProcessRepository(dbRef: DbRef) =
-    new DBFetchingProcessRepository[DB](dbRef, newActionProcessRepository(dbRef)) with DbioRepository
+    new DBFetchingProcessRepository[DB](dbRef, newActionProcessRepository(dbRef), newScenarioLabelsRepository(dbRef))
+      with DbioRepository
 
-  def newWriteProcessRepository(dbRef: DbRef, modelVersions: Option[Int] = Some(1)) =
+  def newWriteProcessRepository(dbRef: DbRef, clock: Clock, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(
       dbRef,
-      newCommentRepository(dbRef),
-      mapProcessingTypeDataProvider(modelVersions.map(Streaming.stringify -> _).toList: _*)
+      clock,
+      newScenarioActivityRepository(dbRef, clock),
+      newScenarioLabelsRepository(dbRef),
+      mapProcessingTypeDataProvider(modelVersions.map(Streaming.stringify -> _).toList: _*),
     )
 
   def newDummyWriteProcessRepository(): DBProcessRepository =
-    newWriteProcessRepository(dummyDbRef)
+    newWriteProcessRepository(dummyDbRef, Clock.systemUTC())
 
   def newScenarioGraphVersionService(dbRef: DbRef) = new ScenarioGraphVersionService(
     newScenarioGraphVersionRepository(dbRef),
@@ -174,16 +189,13 @@ object TestFactory {
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
-    new DbProcessActionRepository(
+    DbScenarioActionRepository.create(
       dbRef,
-      newCommentRepository(dbRef),
       mapProcessingTypeDataProvider(Streaming.stringify -> buildInfo)
-    ) with DbioRepository
+    )
 
-  def newDummyActionRepository(): DbProcessActionRepository =
+  def newDummyActionRepository(): ScenarioActionRepository =
     newActionProcessRepository(dummyDbRef)
-
-  def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef, newCommentRepository(dbRef))
 
   def newScenarioMetadataRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)
 

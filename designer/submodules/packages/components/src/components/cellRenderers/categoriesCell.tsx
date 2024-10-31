@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { TruncateWrapper } from "../utils";
+import { TruncateWrapper } from "../../common/utils";
 import { CategoryChip, useFilterContext } from "../../common";
 import { ComponentsFiltersModel } from "../filters";
 import { CellRendererParams } from "../tableWrapper";
@@ -10,9 +10,9 @@ export function CategoriesCell(props: CellRendererParams): JSX.Element {
     const filterValue = useMemo(() => getFilter("CATEGORY", true), [getFilter]);
 
     return (
-        <TruncateWrapper {...props}>
+        <TruncateWrapper>
             {value.map((name) => (
-                <CategoryChip key={name} value={name} filterValue={filterValue} setFilter={setFilter("CATEGORY")} />
+                <CategoryChip key={name} category={name} filterValues={filterValue} setFilter={setFilter("CATEGORY")} />
             ))}
         </TruncateWrapper>
     );

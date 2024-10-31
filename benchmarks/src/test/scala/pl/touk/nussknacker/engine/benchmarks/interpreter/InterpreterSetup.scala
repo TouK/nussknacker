@@ -12,7 +12,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
@@ -30,19 +31,20 @@ class InterpreterSetup[T: ClassTag] {
       process: CanonicalProcess,
       additionalComponents: List[ComponentDefinition]
   ): (Context, ServiceExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
-    val compilerData = prepareCompilerData(additionalComponents)
+    val jobData      = JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    val compilerData = prepareCompilerData(jobData, additionalComponents)
     val interpreter  = compilerData.interpreter
     val parts        = failOnErrors(compilerData.compile(process))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compilerData.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
+      failOnErrors(compilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
 
     val compiled = compileNode(parts.sources.head)
-    (initialCtx: Context, ec: ServiceExecutionContext) =>
-      interpreter.interpret[F](compiled, process.metaData, initialCtx, ec)
+    (initialCtx: Context, ec: ServiceExecutionContext) => interpreter.interpret[F](compiled, jobData, initialCtx, ec)
   }
 
   def prepareCompilerData(
+      jobData: JobData,
       additionalComponents: List[ComponentDefinition],
   ): ProcessCompilerData = {
     val components = List(
@@ -51,14 +53,21 @@ class InterpreterSetup[T: ClassTag] {
     ) ::: additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation
-        .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
+      Components
+        .forList(
+          components,
+          ComponentsUiConfig.Empty,
+          id => DesignerWideComponentId(id.toString),
+          Map.empty,
+          ComponentDefinitionExtractionMode.FinalDefinition
+        ),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
     ProcessCompilerData.prepare(
+      jobData,
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
       List.empty,

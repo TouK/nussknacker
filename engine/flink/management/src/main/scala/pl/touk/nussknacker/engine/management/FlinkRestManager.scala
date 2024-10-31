@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.engine.management
 
-import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobID, JobStatus}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkRestManager.ParsedJobConfig
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview, JobTasksOverview}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.BaseJobStatusCounts
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
@@ -164,9 +163,10 @@ class FlinkRestManager(
         user    <- userConfig.get("user").map(_.asString.getOrElse(""))
         modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
         processId    = ProcessId(userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L))
+        labels       = userConfig.get("labels").flatMap(_.asArray).map(_.toList.flatMap(_.asString)).toList.flatten
         deploymentId = userConfig.get("deploymentId").flatMap(_.asString).map(DeploymentId(_))
       } yield {
-        val versionDetails = ProcessVersion(version, name, processId, user, modelVersion)
+        val versionDetails = ProcessVersion(version, name, processId, labels, user, modelVersion)
         ParsedJobConfig(versionDetails, deploymentId)
       }
     }

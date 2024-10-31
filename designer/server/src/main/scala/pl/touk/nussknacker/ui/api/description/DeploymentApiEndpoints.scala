@@ -20,7 +20,7 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{UIGlobalError, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.process.repository.ApiCallComment
+import pl.touk.nussknacker.engine.api.Comment
 import sttp.model.StatusCode
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.{Example, Info}
@@ -193,12 +193,15 @@ object DeploymentApiEndpoints {
     implicit val deploymentIdCodec: PlainCodec[DeploymentId] =
       Codec.uuid.map(DeploymentId(_))(_.value)
 
+    implicit val commentSchema: Schema[Comment] =
+      Schema.string
+
     // TODO: scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
     final case class RunDeploymentRequest(
         scenarioName: ProcessName,
         nodesDeploymentData: NodesDeploymentData,
-        comment: Option[ApiCallComment]
+        comment: Option[String]
     )
 
     implicit val deploymentStatusNameCodec: Schema[DeploymentStatusName] = Schema.string[DeploymentStatusName]

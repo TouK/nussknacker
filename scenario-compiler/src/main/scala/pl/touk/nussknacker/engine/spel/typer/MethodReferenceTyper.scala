@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel.typer
 
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, MethodDefinition}
@@ -21,12 +21,15 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
       case TypedNull =>
         Left(IllegalInvocationError(TypedNull))
       case Unknown =>
-        if (methodExecutionForUnknownAllowed) Right(Unknown) else Left(IllegalInvocationError(Unknown))
+        typeFromClazzDefinitions(classDefinitionSet.unknown.toList) match {
+          case Right(Unknown) if !methodExecutionForUnknownAllowed => Left(IllegalInvocationError(Unknown))
+          case result @ _                                          => result
+        }
     }
   }
 
   private def extractClazzDefinitions(typedClasses: NonEmptyList[SingleTypingResult]): List[ClassDefinition] = {
-    typedClasses.toList.flatMap(tc => classDefinitionSet.get(tc.objType.klass))
+    typedClasses.toList.flatMap(tc => classDefinitionSet.get(tc.runtimeObjType.klass))
   }
 
   private def typeFromClazzDefinitions(

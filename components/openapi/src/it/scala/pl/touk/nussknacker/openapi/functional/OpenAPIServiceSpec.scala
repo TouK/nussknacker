@@ -34,6 +34,7 @@ class OpenAPIServiceSpec
   implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
   implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
   implicit val context: Context                   = Context("testContextId", Map.empty)
+  val jobData = JobData(metaData, ProcessVersion.empty.copy(processName = metaData.name))
 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType
 
@@ -58,7 +59,7 @@ class OpenAPIServiceSpec
           .head
           .service
           .asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
-        enricher.open(TestEngineRuntimeContext(JobData(metaData, ProcessVersion.empty)))
+        enricher.open(TestEngineRuntimeContext(jobData))
 
         withFixture(test.toNoArgTest(enricher))
       }

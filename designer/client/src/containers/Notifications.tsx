@@ -10,12 +10,12 @@ import Notification from "../components/notifications/Notification";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
-import { displayProcessActivity, loadProcessState } from "../actions/nk";
+import { loadProcessState } from "../actions/nk";
 import { getProcessName } from "../reducers/selectors/graph";
-import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import i18next from "i18next";
 import { ThunkAction } from "../actions/reduxTypes";
+import { getScenarioActivities } from "../actions/nk/scenarioActivities";
 
 const prepareNotification =
     ({ id, message, type }: BackendNotification): ThunkAction =>
@@ -52,9 +52,9 @@ const handleRefresh =
         toRefresh.forEach((data) => {
             switch (data) {
                 case "versions":
-                    return dispatch(loadProcessVersions(scenarioName));
+                    return dispatch(getScenarioActivities(scenarioName));
                 case "activity":
-                    return dispatch(displayProcessActivity(scenarioName));
+                    return dispatch(getScenarioActivities(scenarioName));
                 case "state":
                     return dispatch(loadProcessState(scenarioName));
             }

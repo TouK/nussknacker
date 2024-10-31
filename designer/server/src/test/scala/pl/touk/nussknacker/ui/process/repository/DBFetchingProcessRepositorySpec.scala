@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -12,17 +13,19 @@ import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.Comment
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
   ProcessUpdated,
   UpdateProcessAction
 }
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.time.Instant
@@ -36,29 +39,36 @@ class DBFetchingProcessRepositorySpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
+    with WithClock
     with PatientScalaFutures {
 
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
-  private val commentRepository = new CommentRepository(testDbRef)
+  private val activities = DbScenarioActivityRepository.create(testDbRef, clock)
+
+  private val scenarioLabelsRepository = new ScenarioLabelsRepository(testDbRef)
 
   private val writingRepo =
-    new DBProcessRepository(testDbRef, commentRepository, mapProcessingTypeDataProvider("Streaming" -> 0)) {
+    new DBProcessRepository(
+      testDbRef,
+      clock,
+      activities,
+      scenarioLabelsRepository,
+      mapProcessingTypeDataProvider("Streaming" -> 0)
+    ) {
       override protected def now: Instant = currentTime
     }
 
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    new DbProcessActionRepository(
+    DbScenarioActionRepository.create(
       testDbRef,
-      commentRepository,
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )
 
-  private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
-
-  private val activities = DbProcessActivityRepository(testDbRef, commentRepository)
+  private val fetching =
+    DBFetchingProcessRepository.createFutureRepository(testDbRef, actions, scenarioLabelsRepository)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 
@@ -134,8 +144,8 @@ class DBFetchingProcessRepositorySpec
     newAfter.toSet shouldBe Set(newName)
   }
 
-  // TODO: remove this in favour of process-audit-log
-  test("should add comment when renamed") {
+  // TODO: remove this test when deprecated endpoint is removed
+  test("deprecated - should add comment when renamed") {
     val oldName = ProcessName("oldName")
     val newName = ProcessName("newName")
 
@@ -152,12 +162,47 @@ class DBFetchingProcessRepositorySpec
 
     val comments = fetching
       .fetchProcessId(newName)
-      .flatMap(v => activities.findActivity(v.get).map(_.comments))
+      .flatMap(v => dbioRunner.run(activities.findActivity(v.get).map(_.comments)))
       .futureValue
 
     atLeast(1, comments) should matchPattern {
-      case Comment(_, VersionId(1L), "Rename: [oldName] -> [newName]", user.username, _) =>
+      case Comment(_, 1L, "Rename: [oldName] -> [newName]", user.username, _) =>
     }
+  }
+
+  test("should add scenario activity when renamed") {
+    val oldName = ProcessName("oldName")
+    val newName = ProcessName("newName")
+
+    saveProcess(
+      ScenarioBuilder
+        .streaming(oldName.value)
+        .source("s", "")
+        .emptySink("s2", ""),
+      Instant.now()
+    )
+
+    processExists(newName) shouldBe false
+
+    renameProcess(oldName, newName)
+
+    val (processId, scenarioActivities) = (for {
+      processId <- fetching
+        .fetchProcessId(newName)
+        .map(_.getOrElse(throw new IllegalStateException("Could not find process id")))
+      scenarioActivities <- dbioRunner.run(activities.findActivities(processId))
+    } yield (processId, scenarioActivities)).futureValue
+
+    scenarioActivities.size shouldBe 2
+    scenarioActivities(1) shouldBe ScenarioActivity.ScenarioNameChanged(
+      ScenarioId(processId.value),
+      scenarioActivities(1).scenarioActivityId,
+      ScenarioUser(Some(UserId("1")), UserName("admin"), None, None),
+      scenarioActivities(1).date,
+      Some(ScenarioVersionId(1)),
+      oldName.value,
+      newName.value,
+    )
   }
 
   test("should prevent rename to existing name") {
@@ -297,6 +342,7 @@ class DBFetchingProcessRepositorySpec
       processId,
       canonicalProcess,
       comment = None,
+      labels = List.empty,
       increaseVersionWhenJsonNotChanged,
       forwardedUserName = None
     )

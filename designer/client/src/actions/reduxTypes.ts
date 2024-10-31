@@ -2,22 +2,21 @@ import { AnyAction, Reducer as ReduxReducer } from "redux";
 import { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
 
 import { ActionTypes } from "./actionTypes";
-import { CountsActions, DisplayProcessActivityAction, HandleHTTPErrorAction, NodeActions, ScenarioActions, SelectionActions } from "./nk";
+import { CountsActions, NodeActions, ScenarioActions, SelectionActions, NodeDetailsActions } from "./nk";
 import { UserSettingsActions } from "./nk/userSettings";
 import { UiActions } from "./nk/ui/uiActions";
 import { SettingsActions } from "./settingsActions";
 import { ToolbarActions } from "./nk/toolbars";
 import { RootState } from "../reducers";
-import { NodeDetailsActions } from "./nk/nodeDetails";
 import { NotificationActions } from "./nk/notifications";
 import { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
-import { LoadProcessVersionsAction } from "./nk/loadProcessVersions";
+import { GetScenarioActivitiesAction, UpdateScenarioActivitiesAction } from "./nk/scenarioActivities";
 
 type TypedAction =
-    | HandleHTTPErrorAction
     | UiActions
     | SettingsActions
-    | DisplayProcessActivityAction
+    | GetScenarioActivitiesAction
+    | UpdateScenarioActivitiesAction
     | NodeActions
     | ToolbarActions
     | NodeDetailsActions
@@ -26,7 +25,6 @@ type TypedAction =
     | NotificationActions
     | DisplayTestResultsDetailsAction
     | CountsActions
-    | LoadProcessVersionsAction
     | ScenarioActions;
 
 interface UntypedAction extends AnyAction {

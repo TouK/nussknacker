@@ -16,15 +16,17 @@ import scala.jdk.CollectionConverters._
   */
 object ForEachTransformer extends CustomStreamTransformer with Serializable {
 
+  import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
+
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(
-      @ParamName("Elements") elements: LazyParameter[java.util.Collection[AnyRef]],
+      @ParamName("Elements") elements: LazyParameter[util.Collection[AnyRef]],
       @OutputVariableName outputVariable: String
   ): FlinkCustomStreamTransformation with ReturningType = {
     FlinkCustomStreamTransformation(
       { (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
         stream
-          .flatMap(ctx.lazyParameterHelper.lazyMapFunction(elements))
+          .flatMap(elements)(ctx)
           .flatMap(
             (valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
               valueWithContext.value.asScala.zipWithIndex
@@ -43,8 +45,8 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
   private def returnType(elements: LazyParameter[util.Collection[AnyRef]]): typing.TypingResult =
     elements.returnType match {
       case tc: SingleTypingResult
-          if tc.objType.canBeSubclassOf(Typed[util.Collection[_]]) && tc.objType.params.nonEmpty =>
-        tc.objType.params.head
+          if tc.runtimeObjType.canBeSubclassOf(Typed[util.Collection[_]]) && tc.runtimeObjType.params.nonEmpty =>
+        tc.runtimeObjType.params.head
       case _ => Unknown
     }
 

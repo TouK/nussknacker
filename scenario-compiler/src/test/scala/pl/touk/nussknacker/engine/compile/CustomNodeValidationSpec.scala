@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
@@ -22,6 +22,8 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 import scala.collection.Set
@@ -49,10 +51,15 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
   private val modelDefinition = ModelDefinition(
-    ComponentDefinitionWithImplementation
-      .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
+    Components.forList(
+      components,
+      ComponentsUiConfig.Empty,
+      id => DesignerWideComponentId(id.toString),
+      Map.empty,
+      ComponentDefinitionExtractionMode.FinalDefinition
+    ),
     ModelDefinitionBuilder.emptyExpressionConfig,
-    ClassExtractionSettings.Default
+    ClassExtractionSettings.Default,
   )
 
   private val validator = ProcessValidator.default(
@@ -61,7 +68,11 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )
 
-  private def validate(process: CanonicalProcess) = validator.validate(process, isFragment = false)
+  private def validate(process: CanonicalProcess) = {
+    implicit val jobData: JobData =
+      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
+    validator.validate(process, isFragment = false)
+  }
 
   test("valid scenario") {
     val validProcess = processBase

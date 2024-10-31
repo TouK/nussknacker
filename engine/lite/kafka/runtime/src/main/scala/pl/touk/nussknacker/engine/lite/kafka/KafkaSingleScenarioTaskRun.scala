@@ -17,7 +17,10 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
-import pl.touk.nussknacker.engine.kafka.exception.{KafkaErrorTopicInitializer, KafkaJsonExceptionSerializationSchema}
+import pl.touk.nussknacker.engine.kafka.exception.{
+  DefaultKafkaErrorTopicInitializer,
+  KafkaJsonExceptionSerializationSchema
+}
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes
@@ -72,7 +75,7 @@ class KafkaSingleScenarioTaskRun(
 
   def init(): Unit = {
     configSanityCheck()
-    new KafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig).init()
+    new DefaultKafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig).init()
 
     producer = prepareProducer
     consumer = prepareConsumer

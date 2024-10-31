@@ -17,6 +17,7 @@ export type AceWrapperInputProps = {
     style?: SerializedStyles;
     rows?: number;
     cols?: number;
+    placeholder?: string;
 };
 
 export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
@@ -26,13 +27,13 @@ export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChan
     commands?: AceKeyCommand[];
 }
 
-const DEFAULT_OPTIONS: IAceOptions = {
+export const DEFAULT_OPTIONS: IAceOptions = {
     indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
     enableLiveAutocompletion: true,
     enableSnippets: false,
     fontSize: 14,
-    highlightGutterLine: false,
     highlightActiveLine: false,
+    highlightGutterLine: true,
 };
 
 const DEFAULF_EDITOR_PROPS: IEditorProps = {
@@ -44,7 +45,14 @@ export interface AceKeyCommand extends Omit<ICommand, "exec"> {
     exec: (editor: Ace.Editor) => boolean | void;
 }
 
-function getTabindexedElements(root: Element, currentElement?: HTMLElement) {
+function splitElements(sortedElements: HTMLElement[], currentElement: HTMLElement): [HTMLElement[], HTMLElement[]] {
+    const index = sortedElements.indexOf(currentElement);
+    const nextElements = sortedElements.slice(index + 1);
+    const prevElements = sortedElements.slice(0, index);
+    return [nextElements, prevElements];
+}
+
+export function getTabindexedElements(root: Element, currentElement?: HTMLElement): [HTMLElement[], HTMLElement[]] {
     const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, (node: HTMLElement) => {
         if (currentElement === node) {
             return NodeFilter.FILTER_ACCEPT;
@@ -68,18 +76,23 @@ function getTabindexedElements(root: Element, currentElement?: HTMLElement) {
         elements.push(node as HTMLElement);
     }
 
-    if (elements.length <= 1) {
+    const sortedElements = elements.sort((a, b) => Math.max(0, a.tabIndex) - Math.max(0, b.tabIndex));
+
+    if (sortedElements.length <= 1 && root !== document.body) {
         return getTabindexedElements(root.parentElement, currentElement);
     }
 
-    const htmlElements = elements.sort((a, b) => Math.max(0, a.tabIndex) - Math.max(0, b.tabIndex));
-    if (currentElement) {
-        const index = htmlElements.indexOf(currentElement);
-        const nextElements = htmlElements.slice(index + 1);
-        const prevElements = htmlElements.slice(0, index);
-        return [nextElements, prevElements];
+    if (!currentElement) {
+        return [sortedElements, []];
     }
-    return [htmlElements, []];
+
+    const [nextElements, prevElements] = splitElements(sortedElements, currentElement);
+
+    if ((prevElements.length <= 0 || nextElements.length <= 0) && root !== document.body) {
+        return getTabindexedElements(root.parentElement, currentElement);
+    }
+
+    return [nextElements, prevElements];
 }
 
 function handleTab(editor: Ace.Editor, shiftKey?: boolean): boolean {
@@ -104,7 +117,7 @@ function handleTab(editor: Ace.Editor, shiftKey?: boolean): boolean {
 
     editor.blur();
 
-    const [nextElements, prevElements] = getTabindexedElements(editor.container.offsetParent, editor.container);
+    const [nextElements, prevElements] = getTabindexedElements(editor.container.parentElement.offsetParent, editor.container);
     const element = shiftKey ? prevElements.pop() : nextElements.shift();
     element?.focus();
 }
@@ -129,17 +142,26 @@ export default forwardRef(function AceWrapper(
         () => [
             {
                 name: "find",
-                bindKey: { win: "Ctrl-F", mac: "Command-F" },
+                bindKey: {
+                    win: "Ctrl-F",
+                    mac: "Command-F",
+                },
                 exec: () => false,
             },
             {
                 name: "focusNext",
-                bindKey: { win: "Tab", mac: "Tab" },
+                bindKey: {
+                    win: "Tab",
+                    mac: "Tab",
+                },
                 exec: (editor) => handleTab(editor),
             },
             {
                 name: "focusPrevious",
-                bindKey: { win: "Shift-Tab", mac: "Shift-Tab" },
+                bindKey: {
+                    win: "Shift-Tab",
+                    mac: "Shift-Tab",
+                },
                 exec: (editor) => handleTab(editor, true),
             },
         ],
@@ -161,11 +183,14 @@ export default forwardRef(function AceWrapper(
             className={readOnly ? " read-only" : ""}
             wrapEnabled={!!wrapEnabled}
             showGutter={!!showLineNumbers}
-            highlightActiveLine={false}
             editorProps={DEFAULF_EDITOR_PROPS}
-            setOptions={{ ...DEFAULT_OPTIONS, showLineNumbers }}
+            setOptions={{
+                ...DEFAULT_OPTIONS,
+                showLineNumbers,
+            }}
             enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
             commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
+            placeholder={inputProps.placeholder}
         />
     );
 });

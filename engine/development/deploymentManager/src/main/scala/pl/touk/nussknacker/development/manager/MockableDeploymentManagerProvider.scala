@@ -27,7 +27,6 @@ import scala.util.Try
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
   import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   override def createDeploymentManager(
       modelData: BaseModelData,
@@ -53,7 +52,10 @@ object MockableDeploymentManagerProvider {
 
   type ScenarioName = String
 
-  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData]) extends DeploymentManager with StubbingCommands {
+  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData])
+      extends DeploymentManager
+      with ManagerSpecificScenarioActivitiesStoredByManager
+      with StubbingCommands {
 
     private lazy val testRunnerOpt =
       modelDataOpt.map(modelData => new FlinkProcessTestRunner(modelData.asInvokableModelData))
@@ -113,15 +115,15 @@ object MockableDeploymentManagerProvider {
               .flatMap(MockableDeploymentManager.deploymentResults.get().get)
               .flatMap(_.get)
           }
-        case DMTestScenarioCommand(scenarioName, scenario, testData) =>
+        case DMTestScenarioCommand(processVersion, scenario, testData) =>
           MockableDeploymentManager.testResults
             .get()
-            .get(scenarioName.value)
+            .get(processVersion.processName.value)
             .map(Future.successful)
             .orElse(testRunnerOpt.map(_.test(scenario, testData)))
             .getOrElse(
               throw new IllegalArgumentException(
-                s"Tests results not mocked for scenario [${scenarioName.value}] and no model data provided"
+                s"Tests results not mocked for scenario [${processVersion.processName.value}] and no model data provided"
               )
             )
         case other =>
@@ -131,6 +133,11 @@ object MockableDeploymentManagerProvider {
 
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
+    override def managerSpecificScenarioActivities(
+        processIdWithName: ProcessIdWithName
+    ): Future[List[ScenarioActivity]] =
+      Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
+
     override def close(): Unit = {}
   }
 
@@ -138,10 +145,10 @@ object MockableDeploymentManagerProvider {
   //       improved, but there is no need to do it ATM.
   object MockableDeploymentManager {
 
-    private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
-    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
-    private val deploymentResults =
-      new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
+    private val scenarioStatuses  = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
+    private val testResults       = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
+    private val deploymentResults = new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
+    private val managerSpecificScenarioActivities = new AtomicReference[List[ScenarioActivity]](List.empty)
 
     def configureScenarioStatuses(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
       MockableDeploymentManager.scenarioStatuses.set(scenarioStates)
@@ -155,10 +162,15 @@ object MockableDeploymentManagerProvider {
       MockableDeploymentManager.testResults.set(scenarioTestResults)
     }
 
+    def configureManagerSpecificScenarioActivities(scenarioActivities: List[ScenarioActivity]): Unit = {
+      MockableDeploymentManager.managerSpecificScenarioActivities.set(scenarioActivities)
+    }
+
     def clean(): Unit = {
       MockableDeploymentManager.scenarioStatuses.set(Map.empty)
       MockableDeploymentManager.deploymentResults.set(Map.empty)
       MockableDeploymentManager.testResults.set(Map.empty)
+      MockableDeploymentManager.managerSpecificScenarioActivities.set(List.empty)
     }
 
   }

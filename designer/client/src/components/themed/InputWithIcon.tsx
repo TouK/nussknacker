@@ -1,12 +1,14 @@
 import { css, cx } from "@emotion/css";
-import { styled, useTheme } from "@mui/material";
-import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useImperativeHandle, useRef } from "react";
+import { useTheme } from "@mui/material";
+import React, { forwardRef, PropsWithChildren, ReactElement, ReactNode, useCallback, useImperativeHandle, useRef } from "react";
 import { ClearIcon } from "../table/SearchFilter";
 import { InputProps, ThemedInput } from "./ThemedInput";
 
 type Props = PropsWithChildren<InputProps> & {
     onClear?: () => void;
     onAddonClick?: () => void;
+    endAdornment?: ReactNode;
+    onKeyDown?: (e: KeyboardEvent) => void;
 };
 
 export type Focusable = {
@@ -23,6 +25,9 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
 
     const wrapperWithAddonStyles = css({
         position: "relative",
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
     });
 
     const addonWrapperStyles = css({
@@ -59,6 +64,11 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
 
     return (
         <div className={cx(children && wrapperWithAddonStyles)}>
+            {children && (
+                <div className={addonStyles} onClick={onAddonClick ?? (() => focus())}>
+                    {children}
+                </div>
+            )}
             <ThemedInput ref={ref} {...props} />
             <div className={addonWrapperStyles}>
                 {!!props.value && onClear && (
@@ -66,11 +76,7 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
                         <ClearIcon />
                     </div>
                 )}
-                {children && (
-                    <div className={addonStyles} onClick={onAddonClick ?? (() => focus())}>
-                        {children}
-                    </div>
-                )}
+                {props.endAdornment && <div className={addonStyles}>{props.endAdornment}</div>}
             </div>
         </div>
     );

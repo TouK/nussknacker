@@ -1,5 +1,6 @@
 import { TrackEventParams } from "./use-event-tracking";
-import { BuiltinButtonTypes, CustomButtonTypes } from "../../components/toolbarSettings/buttons";
+import { BuiltinButtonTypes } from "../../components/toolbarSettings/buttons/BuiltinButtonTypes";
+import { CustomButtonTypes } from "../../components/toolbarSettings/buttons/CustomButtonTypes";
 import { EventTrackingSelector, EventTrackingSelectorType, EventTrackingType } from "./use-register-tracking-events";
 
 const selectorName = "data-selector";
@@ -79,7 +80,7 @@ export const mapToolbarButtonToStatisticsEvent = (
         case BuiltinButtonTypes.testGenerate: {
             return EventTrackingSelector.TestGenerated;
         }
-        case CustomButtonTypes.testWithForm: {
+        case CustomButtonTypes.adhocTesting: {
             return EventTrackingSelector.TestAdhoc;
         }
         case BuiltinButtonTypes.processSave: {

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.annotation.PublicEvolving
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -88,6 +89,7 @@ object transformers {
     )
   }
 
+  @silent("deprecated")
   def tumblingTransformer(
       groupBy: LazyParameter[CharSequence],
       aggregateBy: LazyParameter[AnyRef],
@@ -152,6 +154,7 @@ object transformers {
       )
 
   // Experimental component, API may change in the future
+  @silent("deprecated")
   def sessionWindowTransformer(
       groupBy: LazyParameter[CharSequence],
       aggregateBy: LazyParameter[AnyRef],

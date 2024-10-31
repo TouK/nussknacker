@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionTestUtils
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.DynamicPropertyAccessError
@@ -54,6 +54,14 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
         testRecordTyped.withoutValue,
         List(testRecordTyped.valueOpt.get).asJava
       )
+  }
+
+  test("access dynamic field on unknown by indexing operator should return unknown") {
+    typeExpressionForcedType(
+      s"#unknown['foo']",
+      List("unknown" -> Unknown): _*
+    ).validValue.finalResult.typingResult shouldBe
+      Unknown
   }
 
   test("detect proper List type with value") {
@@ -172,7 +180,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     dictTyper = new KeysDictTyper(new SimpleDictRegistry(Map.empty)),
     strictMethodsChecking = false,
     staticMethodInvocationsChecking = false,
-    classDefinitionSet = ClassDefinitionSet.forDefaultAdditionalClasses,
+    classDefinitionSet = ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
     evaluationContextPreparer = null,
     methodExecutionForUnknownAllowed = false,
     dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed
@@ -186,6 +194,17 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
+    typer.typeExpression(parsed, validationCtx)
+  }
+
+  private def typeExpressionForcedType(
+      expr: String,
+      variablesTypes: (String, TypingResult)*
+  )(
+      implicit typer: Typer
+  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+    val parsed        = parser.parseExpression(expr)
+    val validationCtx = ValidationContext(variablesTypes.toMap)
     typer.typeExpression(parsed, validationCtx)
   }
 

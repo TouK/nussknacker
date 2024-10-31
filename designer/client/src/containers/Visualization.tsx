@@ -1,33 +1,33 @@
-import { useDispatch, useSelector } from "react-redux";
-import { getGraph, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
+import { useWindowManager } from "@touk/window-manager";
 import { isEmpty } from "lodash";
-import { getProcessDefinitionData } from "../reducers/selectors/settings";
-import { getCapabilities } from "../reducers/selectors/other";
-import { GraphPage } from "./Page";
-import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
-import { GraphProvider } from "../components/graph/GraphContext";
-import SelectionContextProvider from "../components/graph/SelectionContextProvider";
-import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
-import Toolbars from "../components/toolbars/Toolbars";
-import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
-import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
+import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ProcessUtils from "../common/ProcessUtils";
-import { useWindows } from "../windowManager";
+import { DndProvider } from "react-dnd-multi-backend";
+import { useErrorBoundary } from "react-error-boundary";
+import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
+import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
+import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
+import ProcessUtils from "../common/ProcessUtils";
+import { useDecodedParams } from "../common/routerUtils";
 import * as VisualizationUrl from "../common/VisualizationUrl";
 import { Graph } from "../components/graph/Graph";
-import { ErrorHandler } from "./ErrorHandler";
-import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState, toggleSelection } from "../actions/nk";
-import { HTML5toTouch } from "rdndmb-html5-to-touch";
-import { DndProvider } from "react-dnd-multi-backend";
-import { useDecodedParams } from "../common/routerUtils";
-import { RootState } from "../reducers";
-import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
+import { GraphProvider } from "../components/graph/GraphContext";
+import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
+import SelectionContextProvider from "../components/graph/SelectionContextProvider";
 import { Scenario } from "../components/Process/types";
+import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
+import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
+import Toolbars from "../components/toolbars/Toolbars";
+import { RootState } from "../reducers";
+import { getGraph, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
+import { getCapabilities } from "../reducers/selectors/other";
+import { getProcessDefinitionData } from "../reducers/selectors/settings";
+import { useWindows } from "../windowManager";
+import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
+import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { useInterval } from "./Interval";
-import { useWindowManager } from "@touk/window-manager";
+import { GraphPage } from "./Page";
 import { ScenarioDescription } from "./ScenarioDescription";
 
 function useUnmountCleanup() {
@@ -72,7 +72,7 @@ function useCountsIfNeeded() {
     const to = searchParams.get("to");
     const refresh = searchParams.get("refresh");
     useEffect(() => {
-        if (!scenario || scenario.isFragment) return;
+        if (!scenario?.name || scenario.isFragment) return;
 
         const countParams = VisualizationUrl.extractCountParams({ from, to, refresh });
         if (!countParams) return;
@@ -92,6 +92,7 @@ function Visualization() {
         processName: string;
     }>();
     const dispatch = useDispatch();
+    const { showBoundary } = useErrorBoundary();
 
     const graphRef = useRef<Graph>();
     const getGraphInstance = useCallback(() => graphRef.current, [graphRef]);
@@ -100,10 +101,19 @@ function Visualization() {
 
     const fetchData = useCallback(
         async (processName: string) => {
-            await dispatch(fetchVisualizationData(processName));
-            setDataResolved(true);
+            dispatch(
+                fetchVisualizationData(
+                    processName,
+                    () => {
+                        setDataResolved(true);
+                    },
+                    (error) => {
+                        showBoundary(error);
+                    },
+                ),
+            );
         },
-        [dispatch],
+        [dispatch, showBoundary],
     );
 
     const { scenarioLoading } = useSelector(getGraph);
@@ -153,24 +163,22 @@ function Visualization() {
     const { windows } = useWindowManager();
 
     return (
-        <ErrorHandler>
-            <DndProvider options={HTML5toTouch}>
-                <GraphPage data-testid="graphPage">
-                    <SpinnerWrapper isReady={!graphNotReady}>
-                        {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
-                    </SpinnerWrapper>
+        <DndProvider options={HTML5toTouch}>
+            <GraphPage data-testid="graphPage">
+                <SpinnerWrapper isReady={!graphNotReady}>
+                    {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
+                </SpinnerWrapper>
 
-                    <GraphProvider graph={getGraphInstance}>
-                        <SelectionContextProvider pastePosition={getPastePosition}>
-                            <BindKeyboardShortcuts disabled={windows.length > 0} />
-                            <Toolbars isReady={dataResolved}>
-                                <ScenarioDescription />
-                            </Toolbars>
-                        </SelectionContextProvider>
-                    </GraphProvider>
-                </GraphPage>
-            </DndProvider>
-        </ErrorHandler>
+                <GraphProvider graph={getGraphInstance}>
+                    <SelectionContextProvider pastePosition={getPastePosition}>
+                        <BindKeyboardShortcuts disabled={windows.length > 0} />
+                        <Toolbars isReady={dataResolved}>
+                            <ScenarioDescription />
+                        </Toolbars>
+                    </SelectionContextProvider>
+                </GraphProvider>
+            </GraphPage>
+        </DndProvider>
     );
 }
 

@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
   UnresolvedReferenceError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.PartTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, PartTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{
   IllegalProjectionError,
   IllegalSelectionError,
@@ -216,9 +216,9 @@ private[spel] class Typer(
         case TypedClass(clazz, param :: Nil)
             if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
-          validNodeResult(param)
+          withTypedChildren(_ => valid(param))
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
-          validNodeResult(valueParam)
+          withTypedChildren(_ => valid(valueParam))
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case union: TypedUnion               => typeUnion(e, union)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
@@ -228,7 +228,9 @@ private[spel] class Typer(
         case TypedNull =>
           invalidNodeResult(IllegalIndexingOperation)
         case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
-        case _ =>
+        case Unknown =>
+          validNodeResult(Unknown)
+        case _: TypedClass =>
           val w = validNodeResult(Unknown)
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
       }
@@ -425,7 +427,7 @@ private[spel] class Typer(
             case result :: Nil =>
               // Limitation: projection on an iterative type makes it loses it's known value,
               // as properly determining it would require evaluating the projection expression for each element (likely working on the AST)
-              valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
+              projectionResult(iterateType, result)
             case other =>
               invalid(IllegalSelectionTypeError(other))
           }
@@ -434,6 +436,7 @@ private[spel] class Typer(
       case e: PropertyOrFieldReference =>
         current.stackHead
           .map(extractProperty(e, _))
+          .map(mapErrorAndCheckMethodsIfPropertyNotExists)
           .getOrElse(invalid(NonReferenceError(e.toStringAST)))
           .map(toNodeResult)
       // TODO: what should be here?
@@ -516,11 +519,11 @@ private[spel] class Typer(
       // Limitation: selection from an iterative type makes it loses it's known value,
       // as properly determining it would require evaluating the selection expression for each element (likely working on the AST)
       parentType match {
-        case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+        case tc: SingleTypingResult
+            if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) ||
+              tc.runtimeObjType.klass.isArray =>
           tc.withoutValue
-        case tc: SingleTypingResult if tc.objType.klass.isArray =>
-          tc.withoutValue
-        case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+        case tc: SingleTypingResult if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
           Typed.record(Map.empty)
         case _ =>
           parentType
@@ -653,7 +656,7 @@ private[spel] class Typer(
   private def extractSingleProperty(e: PropertyOrFieldReference)(t: SingleTypingResult): TypingR[TypingResult] = {
     t match {
       case typedObjectWithData: TypedObjectWithData =>
-        extractSingleProperty(e)(typedObjectWithData.objType)
+        extractSingleProperty(e)(typedObjectWithData.runtimeObjType)
       case typedClass: TypedClass =>
         propertyTypeBasedOnMethod(typedClass, typedClass, e)
           .orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
@@ -679,24 +682,30 @@ private[spel] class Typer(
   }
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
-      valid(tc.objType.params.headOption.getOrElse(Unknown))
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+    case tc: SingleTypingResult
+        if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) ||
+          tc.runtimeObjType.klass.isArray =>
+      valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
+    case tc: SingleTypingResult if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
       valid(
         Typed.record(
           Map(
-            "key"   -> tc.objType.params.headOption.getOrElse(Unknown),
-            "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown)
+            "key"   -> tc.runtimeObjType.params.headOption.getOrElse(Unknown),
+            "value" -> tc.runtimeObjType.params.drop(1).headOption.getOrElse(Unknown)
           )
         )
       )
-    case tc: SingleTypingResult if tc.objType.klass.isArray =>
-      valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult =>
       invalid(IllegalProjectionSelectionError(tc))
     // FIXME: what if more results are present?
     case _ => valid(Unknown)
   }
+
+  private def projectionResult(iterableType: TypingResult, elementType: TypingResult): TypingR[TypingResult] =
+    iterableType.withoutValue match {
+      case tc: TypedClass if tc.klass.isArray => valid(Typed.genericTypeClass(tc.klass, List(elementType)))
+      case _                                  => valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
+    }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(
       result: TypingResult
@@ -728,6 +737,19 @@ private[spel] class Typer(
     }
   }
 
+  private def mapErrorAndCheckMethodsIfPropertyNotExists(typing: TypingR[TypingResult]): TypingR[TypingResult] =
+    typing.mapWritten(_.map {
+      case e: NoPropertyError =>
+        methodReferenceTyper.typeMethodReference(typer.MethodReference(e.typ, false, e.property, Nil)) match {
+          // Right is not mapped because of: pl.touk.nussknacker.engine.spel.Typer.propertyTypeBasedOnMethod and
+          // pl.touk.nussknacker.engine.spel.internal.propertyAccessors.NoParamMethodPropertyAccessor
+          // Methods without parameters can be treated as properties.
+          case Left(me: ArgumentTypeError) => me
+          case _                           => e
+        }
+      case e => e
+    })
+
   private def valid[T](value: T): TypingR[T] = Writer(List.empty[ExpressionParseError], value)
 
   private def invalid[T](err: ExpressionParseError, fallbackType: TypingResult = Unknown): TypingR[TypingResult] =
@@ -754,7 +776,7 @@ object Typer {
       spelDictTyper: SpelDictTyper,
       classDefinitionSet: ClassDefinitionSet
   ): Typer = {
-    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
+    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
 
     new Typer(
       spelDictTyper,

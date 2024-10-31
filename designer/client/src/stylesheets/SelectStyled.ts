@@ -77,15 +77,15 @@ export const selectStyled = (theme: Theme) => {
         }
 
         ::-webkit-scrollbar-track {
-            background: ${blendLighten(theme.palette.background.paper, 0.5)};
+            background: ${blendDarken(theme.palette.common.white, 0.75)};
         }
 
         ::-webkit-scrollbar-thumb {
-            background: ${alpha(theme.palette.background.paper, 0.85)};
+            background: ${blendLighten(theme.palette.background.paper, 0.5)};
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: ${theme.palette.action.hover};
+            background: ${blendLighten(theme.palette.background.paper, 0.5)};
         }
     `;
 

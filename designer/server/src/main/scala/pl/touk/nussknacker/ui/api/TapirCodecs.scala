@@ -5,11 +5,16 @@ import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.restmodel.definition.{UIParameter, UISourceParameters}
+import pl.touk.nussknacker.ui.process.test.RawScenarioTestData
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
-import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
 
 import java.net.URL
 
@@ -116,6 +121,14 @@ object TapirCodecs {
     implicit val processNameSchema: Schema[ProcessName] = Schema.string
   }
 
+  object ScenarioTestingCodecs {
+
+    implicit val testingCapabilitiesSchema: Schema[TestingCapabilities] = Schema.derived
+    implicit val uiSourceParametersSchema: Schema[UISourceParameters]   = Schema.anyObject
+    implicit val typingResultDecoder: Decoder[TypingResult]             = Decoder.decodeJson.map(_ => typing.Unknown)
+
+  }
+
   object URLCodec {
 
     implicit val circeCodec: CirceCodec[URL] = {
@@ -132,5 +145,16 @@ object TapirCodecs {
   object ClassCodec {
     implicit val classSchema: Schema[Class[_]] = Schema.string[Class[_]]
   }
+
+  def enumSchema[T](
+      items: List[T],
+      encoder: T => String,
+  ): Schema[T] =
+    Schema.string.validate(
+      Validator.enumeration(
+        items,
+        (i: T) => Some(encoder(i)),
+      ),
+    )
 
 }

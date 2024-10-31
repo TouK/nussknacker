@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.exception
 
+import com.github.ghik.silencer.silent
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
@@ -10,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, Stream
 
 import scala.jdk.CollectionConverters._
 
+@silent("deprecated")
 class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
   private val metaData = MetaData.combineTypeSpecificProperties(

@@ -75,6 +75,14 @@ trait DeploymentManager extends AutoCloseable {
 
 }
 
+trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>
+
+  def managerSpecificScenarioActivities(
+      processIdWithName: ProcessIdWithName
+  ): Future[List[ScenarioActivity]]
+
+}
+
 sealed trait DeploymentSynchronisationSupport
 
 trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSupport {

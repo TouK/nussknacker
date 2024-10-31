@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ParameterConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DynamicComponent,
@@ -11,9 +11,10 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   WithStaticParameters
 }
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.compile.nodecompilation.DynamicNodeValidator
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer.staticReturnType
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
@@ -43,9 +44,10 @@ class DynamicComponentStaticDefinitionDeterminer(
     def inferParameters(transformer: DynamicComponent[_])(inputContext: transformer.InputContext) = {
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
-      val scenarioName                = ProcessName("fakeScenarioName")
-      implicit val metaData: MetaData = createMetaData(scenarioName)
-      implicit val nodeId: NodeId     = NodeId("fakeNodeId")
+      val scenarioName              = ProcessName("fakeScenarioName")
+      val metaData                  = createMetaData(scenarioName)
+      implicit val jobData: JobData = JobData(metaData, ProcessVersion.empty.copy(processName = scenarioName))
+      implicit val nodeId: NodeId   = NodeId("fakeNodeId")
       nodeValidator
         .validateNode(
           transformer,
@@ -82,7 +84,8 @@ object DynamicComponentStaticDefinitionDeterminer {
 
   def collectStaticDefinitionsForDynamicComponents(
       modelDataForType: ModelData,
-      createMetaData: ProcessName => MetaData
+      createMetaData: ProcessName => MetaData,
+      extractComponentsDefinitions: Components => List[ComponentDefinitionWithImplementation]
   ): Map[ComponentId, ComponentStaticDefinition] = {
     val nodeValidator = DynamicNodeValidator(modelDataForType)
     val toStaticComponentDefinitionTransformer =
@@ -90,7 +93,7 @@ object DynamicComponentStaticDefinitionDeterminer {
 
     // We have to wrap this block with model's class loader because it invokes node compilation under the hood
     modelDataForType.withThisAsContextClassLoader {
-      modelDataForType.modelDefinition.components.collect {
+      extractComponentsDefinitions(modelDataForType.modelDefinition.components).collect {
         case dynamic: DynamicComponentDefinitionWithImplementation =>
           dynamic.id -> toStaticComponentDefinitionTransformer.determineStaticDefinition(dynamic)
       }.toMap

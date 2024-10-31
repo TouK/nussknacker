@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant, LocalDateTime, ZoneId}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -57,6 +57,30 @@ class PeriodicProcessService(
   private val emptyCallback: Callback = () => Future.successful(())
 
   private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+
+  def getScenarioActivitiesSpecificToPeriodicProcess(
+      processIdWithName: ProcessIdWithName
+  ): Future[List[ScenarioActivity]] = for {
+    schedulesState <- scheduledProcessesRepository.getSchedulesState(processIdWithName.name).run
+    groupedByProcess        = schedulesState.groupedByPeriodicProcess
+    deployments             = groupedByProcess.flatMap(_.deployments)
+    deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
+    activities = deploymentsWithStatuses.map { case (deployment, (status, dateFinished)) =>
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(processIdWithName.id.value),
+        scenarioActivityId = ScenarioActivityId.random,
+        user = ScenarioUser.internalNuUser,
+        date = instantAtSystemDefaultZone(deployment.runAt),
+        scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
+        scheduledExecutionStatus = status,
+        dateFinished = dateFinished,
+        scheduleName = deployment.scheduleName.display,
+        createdAt = instantAtSystemDefaultZone(deployment.createdAt),
+        nextRetryAt = deployment.nextRetryAt.map(instantAtSystemDefaultZone),
+        retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
+      )
+    }
+  } yield activities
 
   def schedule(
       schedule: ScheduleProperty,
@@ -494,6 +518,33 @@ class PeriodicProcessService(
     def getStatus(deploymentId: PeriodicProcessDeploymentId): Option[StatusDetails] =
       runtimeStatusesMap.get(DeploymentId(deploymentId.toString))
 
+  }
+
+  private def scheduledExecutionStatusAndDateFinished(
+      entity: PeriodicProcessDeployment[Unit],
+  ): Option[(ScheduledExecutionStatus, Instant)] = {
+    for {
+      dateFinished <- entity.state.completedAt.map(instantAtSystemDefaultZone)
+      status <- entity.state.status match {
+        case PeriodicProcessDeploymentStatus.Scheduled =>
+          None
+        case PeriodicProcessDeploymentStatus.Deployed =>
+          None
+        case PeriodicProcessDeploymentStatus.Finished =>
+          Some(ScheduledExecutionStatus.Finished)
+        case PeriodicProcessDeploymentStatus.Failed =>
+          Some(ScheduledExecutionStatus.Failed)
+        case PeriodicProcessDeploymentStatus.RetryingDeploy =>
+          Some(ScheduledExecutionStatus.DeploymentWillBeRetried)
+        case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
+          Some(ScheduledExecutionStatus.DeploymentFailed)
+      }
+    } yield (status, dateFinished)
+  }
+
+  // LocalDateTime's in the context of PeriodicProcess are created using clock with system default timezone
+  private def instantAtSystemDefaultZone(localDateTime: LocalDateTime): Instant = {
+    localDateTime.atZone(ZoneId.systemDefault).toInstant
   }
 
 }

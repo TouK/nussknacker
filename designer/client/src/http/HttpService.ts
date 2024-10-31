@@ -4,8 +4,14 @@ import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
 import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
 import { UserData } from "../common/models/User";
+import { TestResults } from "../common/TestResultUtils";
+import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
+import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
+import { AvailableScenarioLabels, ScenarioLabelsValidationResponse } from "../components/Labels/types";
 import {
     ActionName,
     PredefinedActionName,
@@ -16,19 +22,15 @@ import {
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
+import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
-import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
-import { Instant, WithId } from "../types/common";
+import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
-import { TestResults } from "../common/TestResultUtils";
-import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
-import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { GenericValidationRequest } from "../actions/nk/genericAction";
-import { EventTrackingSelector } from "../containers/event-tracking";
-import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
+import { AuthenticationSettings } from "../reducers/settings";
+import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Instant, WithId } from "../types/common";
+import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -92,7 +94,9 @@ export type ComponentType = {
 
 export type SourceWithParametersTest = {
     sourceId: string;
-    parameterExpressions: { [paramName: string]: Expression };
+    parameterExpressions: {
+        [paramName: string]: Expression;
+    };
 };
 
 export type NodeUsageData = {
@@ -157,8 +161,16 @@ export interface ScenarioParametersCombinations {
     engineSetupErrors: Record<string, string[]>;
 }
 
-export type ProcessDefinitionDataDictOption = { key: string; label: string };
-type DictOption = { id: string; label: string };
+export type ProcessDefinitionDataDictOption = {
+    key: string;
+    label: string;
+};
+type DictOption = {
+    id: string;
+    label: string;
+};
+
+type ResponseStatus = { status: "success" } | { status: "error"; error: AxiosError<string> };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -180,7 +192,11 @@ class HttpService {
             .then(() => ({ state: HealthState.ok }))
             .catch((error) => {
                 const { message, processes }: HealthCheckProcessDeploymentType = error.response?.data || {};
-                return { state: HealthState.error, error: message, processes: processes };
+                return {
+                    state: HealthState.error,
+                    error: message,
+                    processes: processes,
+                };
             });
     }
 
@@ -188,7 +204,11 @@ class HttpService {
         return api.get<SettingsData>("/settings");
     }
 
-    fetchSettingsWithAuth(): Promise<SettingsData & { authentication: AuthenticationSettings }> {
+    fetchSettingsWithAuth(): Promise<
+        SettingsData & {
+            authentication: AuthenticationSettings;
+        }
+    > {
         return this.fetchSettings().then(({ data }) => {
             const { provider } = data.authentication;
             const settings = data;
@@ -218,19 +238,18 @@ class HttpService {
     }
 
     fetchProcessDefinitionData(processingType: string, isFragment: boolean) {
-        const promise = api
-            .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`)
-            .then((response) => {
-                // This is a walk-around for having part of node template (branch parameters) outside of itself.
-                // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
-                response.data.componentGroups.forEach((group) => {
-                    group.components.forEach((component) => {
-                        component.node.branchParametersTemplate = component.branchParametersTemplate;
-                    });
-                });
-
-                return response;
-            });
+        const promise = api.get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`).then(
+            ({ data, ...response }): AxiosResponse<ProcessDefinitionData> => ({
+                ...response,
+                data: {
+                    ...data,
+                    componentGroups: data.componentGroups.map(({ components, ...group }) => ({
+                        ...group,
+                        components: components.map(fixBranchParametersTemplate).map(fixAggregateParameters),
+                    })),
+                },
+            }),
+        );
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true),
         );
@@ -253,7 +272,7 @@ class HttpService {
         return api.get<Scenario[]>("/processes", { params: data });
     }
 
-    fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId) {
+    fetchProcessDetails(processName: ProcessName, versionId?: ProcessVersionId): Promise<AxiosResponse<Scenario>> {
         const id = encodeURIComponent(processName);
         const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`;
         return api.get<Scenario>(url);
@@ -273,6 +292,16 @@ class HttpService {
             .catch((error) =>
                 Promise.reject(
                     this.#addError(i18next.t("notification.error.cannotFetchStatusDefinitions", "Cannot fetch status definitions"), error),
+                ),
+            );
+    }
+
+    fetchScenarioLabels() {
+        return api
+            .get<AvailableScenarioLabels>(`/scenarioLabels`)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotFetchScenarioLabels", "Cannot fetch scenario labels"), error),
                 ),
             );
     }
@@ -304,7 +333,12 @@ class HttpService {
             );
     }
 
-    deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
+    deploy(
+        processName: string,
+        comment?: string,
+    ): Promise<{
+        isSuccess: boolean;
+    }> {
         return api
             .post(`/processManagement/deploy/${encodeURIComponent(processName)}`, comment)
             .then(() => {
@@ -326,17 +360,27 @@ class HttpService {
     }
 
     customAction(processName: string, actionName: string, params: Record<string, unknown>, comment?: string) {
-        const data = { actionName: actionName, comment: comment, params: params };
+        const data = {
+            actionName: actionName,
+            comment: comment,
+            params: params,
+        };
         return api
             .post(`/processManagement/customAction/${encodeURIComponent(processName)}`, data)
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);
-                return { isSuccess: res.data.isSuccess, msg: msg };
+                return {
+                    isSuccess: res.data.isSuccess,
+                    msg: msg,
+                };
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
-                const result = { isSuccess: false, msg: msg };
+                const result = {
+                    isSuccess: false,
+                    msg: msg,
+                };
                 if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
                 return result;
             });
@@ -358,36 +402,55 @@ class HttpService {
         });
     }
 
-    fetchProcessActivity(processName) {
-        return api.get(`/processes/${encodeURIComponent(processName)}/activity`);
+    async addComment(processName: string, versionId: number, comment: string): Promise<ResponseStatus> {
+        try {
+            await api.post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/comment`, comment);
+            this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added"));
+            return { status: "success" };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error);
+            return { status: "error", error };
+        }
     }
 
-    addComment(processName, versionId, data) {
-        return api
-            .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/comments`, data)
-            .then(() => this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added")))
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error));
+    async updateComment(processName: string, comment: string, scenarioActivityId: string): Promise<ResponseStatus> {
+        try {
+            await api.put(`/processes/${encodeURIComponent(processName)}/activity/comment/${scenarioActivityId}`, comment);
+            this.#addInfo(i18next.t("notification.info.commentModified", "Comment modified"));
+            return { status: "success" };
+        } catch (error) {
+            if (error?.response?.status != 400) {
+                await this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error);
+            }
+            return { status: "error", error };
+        }
     }
 
-    deleteComment(processName, commentId) {
-        return api
-            .delete(`/processes/${encodeURIComponent(processName)}/activity/comments/${commentId}`)
-            .then(() => this.#addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted")))
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error));
+    async deleteActivityComment(processName: string, scenarioActivityId: string): Promise<ResponseStatus> {
+        try {
+            await api.delete(`/processes/${encodeURIComponent(processName)}/activity/comment/${scenarioActivityId}`);
+            this.#addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted"));
+            return { status: "success" };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error);
+            return { status: "error", error };
+        }
     }
 
-    addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File) {
-        return api
-            .post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
+    async addAttachment(processName: ProcessName, versionId: ProcessVersionId, file: File): Promise<ResponseStatus> {
+        try {
+            await api.post(`/processes/${encodeURIComponent(processName)}/${versionId}/activity/attachments`, file, {
                 headers: { "Content-Disposition": `attachment; filename="${file.name}"` },
-            })
-            .then(() => this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added")))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true),
-            );
+            });
+            this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added"));
+            return { status: "success" };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true);
+            return { status: "error", error };
+        }
     }
 
-    downloadAttachment(processName: ProcessName, attachmentId, fileName: string) {
+    downloadAttachment(processName: ProcessName, attachmentId: string, fileName: string) {
         return api
             .get(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`, {
                 responseType: "blob",
@@ -396,6 +459,17 @@ class HttpService {
             .catch((error) =>
                 this.#addError(i18next.t("notification.error.failedToDownloadAttachment", "Failed to download attachment"), error),
             );
+    }
+
+    async deleteAttachment(processName: ProcessName, attachmentId: string): Promise<ResponseStatus> {
+        try {
+            await api.delete(`/processes/${encodeURIComponent(processName)}/activity/attachments/${attachmentId}`);
+
+            return { status: "success" };
+        } catch (error) {
+            await this.#addError(i18next.t("notification.error.failedToDeleteAttachment", "Failed to delete attachment"), error);
+            return { status: "error", error };
+        }
     }
 
     changeProcessName(processName, newProcessName): Promise<boolean> {
@@ -463,6 +537,32 @@ class HttpService {
             this.#addError(i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"), error, true),
         );
         return promise;
+    }
+
+    validateAdhocTestParameters(
+        scenarioName: string,
+        validationRequest: TestAdhocValidationRequest,
+    ): Promise<AxiosResponse<ValidationData>> {
+        const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/adhoc/validate`, validationRequest);
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToValidateAdhocTestParameters", "Failed to validate parameters"),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    validateScenarioLabels(labels: string[]): Promise<AxiosResponse<ScenarioLabelsValidationResponse>> {
+        const data = { labels: labels };
+        return api
+            .post<ScenarioLabelsValidationResponse>(`/scenarioLabels/validation`, data)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(i18next.t("notification.error.cannotValidateScenarioLabels", "Cannot validate scenario labels"), error),
+                ),
+            );
     }
 
     getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {
@@ -544,7 +644,10 @@ class HttpService {
     //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
 
     getTestCapabilities(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(`/testInfo/${encodeURIComponent(processName)}/capabilities`, this.#sanitizeScenarioGraph(scenarioGraph));
+        const promise = api.post(
+            `/scenarioTesting/${encodeURIComponent(processName)}/capabilities`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true),
         );
@@ -552,7 +655,10 @@ class HttpService {
     }
 
     getTestFormParameters(processName: string, scenarioGraph: ScenarioGraph) {
-        const promise = api.post(`/testInfo/${encodeURIComponent(processName)}/testParameters`, this.#sanitizeScenarioGraph(scenarioGraph));
+        const promise = api.post(
+            `/scenarioTesting/${encodeURIComponent(processName)}/parameters`,
+            this.#sanitizeScenarioGraph(scenarioGraph),
+        );
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
@@ -565,7 +671,7 @@ class HttpService {
 
     generateTestData(processName: string, testSampleSize: string, scenarioGraph: ScenarioGraph): Promise<AxiosResponse> {
         const promise = api.post(
-            `/testInfo/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
+            `/scenarioTesting/${encodeURIComponent(processName)}/generate/${testSampleSize}`,
             this.#sanitizeScenarioGraph(scenarioGraph),
             {
                 responseType: "blob",
@@ -583,7 +689,10 @@ class HttpService {
         //we use offset date time instead of timestamp to pass info about user time zone to BE
         const format = (date: Moment) => date?.format("YYYY-MM-DDTHH:mm:ssZ");
 
-        const data = { dateFrom: format(dateFrom), dateTo: format(dateTo) };
+        const data = {
+            dateFrom: format(dateFrom),
+            dateTo: format(dateTo),
+        };
         const promise = api.get(`/processCounts/${encodeURIComponent(processName)}`, { params: data });
 
         promise.catch((error) =>
@@ -593,8 +702,12 @@ class HttpService {
     }
 
     //to prevent closing edit node modal and corrupting graph display
-    saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string) {
-        const data = { scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph), comment: comment };
+    saveProcess(processName: ProcessName, scenarioGraph: ScenarioGraph, comment: string, labels: string[]) {
+        const data = {
+            scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
+            comment: comment,
+            scenarioLabels: labels,
+        };
         return api.put(`/processes/${encodeURIComponent(processName)}`, data).catch((error) => {
             this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true);
             return Promise.reject(error);
@@ -742,7 +855,11 @@ class HttpService {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
                 expectedType: {
-                    value: { type: type, refClazzName, params: [] },
+                    value: {
+                        type: type,
+                        refClazzName,
+                        params: [],
+                    },
                 },
             })
             .catch((error) =>
@@ -756,11 +873,25 @@ class HttpService {
     }
 
     fetchStatisticUsage() {
-        return api.get<{ urls: string[] }>(`/statistic/usage`);
+        return api.get<{
+            urls: string[];
+        }>(`/statistic/usage`);
     }
 
-    sendStatistics(statistics: { name: `${EventTrackingType}_${EventTrackingSelectorType}` }[]) {
+    sendStatistics(
+        statistics: {
+            name: `${EventTrackingType}_${EventTrackingSelectorType}`;
+        }[],
+    ) {
         return api.post(`/statistic`, { statistics });
+    }
+
+    fetchActivitiesMetadata(scenarioName: string) {
+        return api.get<ActivityMetadataResponse>(`/processes/${scenarioName}/activity/activities/metadata`);
+    }
+
+    fetchActivities(scenarioName: string) {
+        return api.get<ActivitiesResponse>(`/processes/${scenarioName}/activity/activities`);
     }
 
     #addInfo(message: string) {

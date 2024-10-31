@@ -33,7 +33,9 @@ describe("Process", () => {
             cy.contains(/^ok$/i).should("be.enabled").click();
             cy.wait("@save").its("response.statusCode").should("eq", 200);
             cy.contains(/^ok$/i).should("not.exist");
-            cy.contains(/scenario name changed/i).should("be.visible");
+            cy.get('[role="alert"]')
+                .contains(/scenario name changed/i)
+                .should("be.visible");
             cy.location("href").should("contain", "-renamed");
         });
 
@@ -44,8 +46,8 @@ describe("Process", () => {
                 .should("be.enabled")
                 .click();
             cy.get("[data-testid=window]").should("be.visible");
-            cy.get('[title="Name"]').siblings().first().click().type("-renamed");
-            cy.get('[title="Description"]').siblings().first().type("RENAMED");
+            cy.get("[data-testid=window]").find('[title="Name"]').siblings().first().click().type("-renamed");
+            cy.get("[data-testid=window]").find('[title="Description"]').siblings().first().type("RENAMED");
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
@@ -55,12 +57,14 @@ describe("Process", () => {
             cy.wait("@save").its("response.statusCode").should("eq", 200);
 
             cy.contains(/^ok$/i).should("not.exist");
-            cy.contains(/scenario name changed/i).should("be.visible");
+            cy.get('[role="alert"]')
+                .contains(/scenario name changed/i)
+                .should("be.visible");
             cy.location("href").should("contain", "-renamed");
             cy.contains(/^properties/i)
                 .should("be.enabled")
                 .click();
-            cy.get('[title="Description"]').siblings().first().should("contain", "RENAMED");
+            cy.get("[data-testid=window]").find('[title="Description"]').siblings().first().should("contain", "RENAMED");
         });
 
         it("should allow archive with redirect to list", function () {

@@ -138,7 +138,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         "start",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest1'".spel
+        TableComponentFactory.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest1`'".spel
       )
       .filter("filterId", "#input.someInt != 1".spel)
       .emptySink(
@@ -176,13 +176,13 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         sourceId,
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest2'".spel
+        TableComponentFactory.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest2`'".spel
       )
       .filter("filterId", "#input.someInt != 1".spel)
       .emptySink(
         "end",
         tableComponentName,
-        "Table"      -> s"'$sqlOutputTableNameTest2'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$sqlOutputTableNameTest2`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -209,12 +209,12 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .source(
         "start",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest3'".spel
+        TableComponentFactory.tableNameParamName.value -> s"'`default_catalog`.`default_database`.`$sqlInputTableNameTest3`'".spel
       )
       .emptySink(
         "end",
         tableComponentName,
-        "Table"      -> s"'$sqlOutputTableNameTest3'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$sqlOutputTableNameTest3`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "{someInt: 2, someString: 'BBB'}".spel
       )

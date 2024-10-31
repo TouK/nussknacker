@@ -21,7 +21,7 @@ class SchemaIdBasedAvroGenericRecordSerializerSpec extends AnyFunSuite with Matc
       MockSchemaRegistryClientFactory.confluentBased(SchemaIdBasedAvroGenericRecordSerializerSpec.schemaRegistryClient)
 
     val ec = new ExecutionConfig
-    SchemaIdBasedAvroGenericRecordSerializer(factory, config).registerIn(ec)
+    SchemaIdBasedAvroGenericRecordSerializer.registrar(factory, config).registerIn(ec)
 
     val kryoS = new KryoSerializer(classOf[GenericRecordWithSchemaId], ec)
     checkSerializationRoundTrip(kryoS)

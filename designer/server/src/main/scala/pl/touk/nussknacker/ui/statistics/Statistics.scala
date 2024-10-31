@@ -47,16 +47,13 @@ object Statistics extends LazyLogging {
         queryParams: Iterable[String],
         cfg: StatisticUrlConfig
     ): Either[StatisticError, Option[String]] = {
-      cfg.maybePublicEncryptionKey match {
-        case Some(key) if queryParams.nonEmpty =>
-          val joinedQP          = joinQueryParamsToString(queryParams, cfg)
-          val encryptedJoinedQP = encryptQueryParams(key, joinedQP)
-          encryptedJoinedQP.map(qp => Some(prependWithAddress(qp, cfg)))
-        case None if queryParams.nonEmpty =>
-          val joinedQP = joinQueryParamsToString(queryParams, cfg)
-          val url      = prependWithAddress(joinedQP, cfg)
-          Right(Some(url))
-        case _ => Right(None)
+      if (queryParams.nonEmpty) {
+        val key               = cfg.publicEncryptionKey
+        val joinedQP          = joinQueryParamsToString(queryParams, cfg)
+        val encryptedJoinedQP = encryptQueryParams(key, joinedQP)
+        encryptedJoinedQP.map(qp => Some(prependWithAddress(qp, cfg)))
+      } else {
+        Right(None)
       }
     }
 

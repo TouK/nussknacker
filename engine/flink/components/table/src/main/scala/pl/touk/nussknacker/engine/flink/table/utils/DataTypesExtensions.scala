@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.utils
 
 import org.apache.flink.table.types.DataType
-import org.apache.flink.table.types.logical.{ArrayType, LogicalType, MapType, MultisetType, RowType}
+import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset

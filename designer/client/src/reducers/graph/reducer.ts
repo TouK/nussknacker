@@ -149,6 +149,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 unsavedNewName: action.name,
             };
         }
+        case "EDIT_LABELS": {
+            return {
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    labels: action.labels,
+                },
+            };
+        }
         case "DELETE_NODES": {
             return action.ids.reduce((state, idToDelete) => {
                 const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete);
@@ -347,7 +356,7 @@ const undoableReducer = undoable<GraphState, Action>(reducer, {
     groupBy: batchGroupBy.init(),
     filter: combineFilters((action, nextState, prevState) => {
         return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
-    }, excludeAction(["VALIDATION_RESULT", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "DISPLAY_PROCESS_ACTIVITY", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS"])),
+    }, excludeAction(["VALIDATION_RESULT", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "GET_SCENARIO_ACTIVITIES", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS"])),
 });
 
 // apply only undoable changes for undo actions

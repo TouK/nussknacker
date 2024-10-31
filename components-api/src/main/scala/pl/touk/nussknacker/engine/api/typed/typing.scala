@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
@@ -21,6 +21,7 @@ object typing {
 
   object TypingResult {
     implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
+    implicit val decoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown) // TODO?
   }
 
   // TODO: Rename to Typed, maybe NuType?
@@ -49,7 +50,7 @@ object typing {
   sealed trait SingleTypingResult extends KnownTypingResult {
     override def withoutValue: SingleTypingResult
 
-    def objType: TypedClass
+    def runtimeObjType: TypedClass
   }
 
   object TypedObjectTypingResult {
@@ -67,7 +68,7 @@ object typing {
   case class TypedObjectTypingResult protected (
       // Order is important because we base on it in case of Flink's table-api Row serialization, see TypingResultAwareTypeInformationDetection
       fields: ListMap[String, TypingResult],
-      objType: TypedClass,
+      runtimeObjType: TypedClass,
       additionalInfo: Map[String, AdditionalDataValue] = Map.empty
   ) extends SingleTypingResult {
 
@@ -82,7 +83,7 @@ object typing {
         fields.map { case (fieldName, fieldType) =>
           fieldName -> fieldType.withoutValue
         },
-        objType,
+        runtimeObjType.withoutValue,
         additionalInfo
       )
 
@@ -92,7 +93,7 @@ object typing {
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
 
-    override def objType: TypedClass = valueType.objType
+    override def runtimeObjType: TypedClass = valueType.runtimeObjType
 
     override def valueOpt: Option[Any] = valueType.valueOpt
 
@@ -106,7 +107,7 @@ object typing {
   sealed trait TypedObjectWithData extends SingleTypingResult {
     def underlying: SingleTypingResult
 
-    override def objType: TypedClass = underlying.objType
+    override def runtimeObjType: TypedClass = underlying.runtimeObjType
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
@@ -205,17 +206,15 @@ object typing {
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
     override val valueOpt: None.type = None
 
-    override def withoutValue: TypedClass = this
+    override def withoutValue: TypedClass = TypedClass(klass, params.map(_.withoutValue))
 
     override def display: String = {
-      val className =
-        if (klass.isArray) "Array"
-        else ReflectUtils.simpleNameWithoutSuffix(klass)
+      val className = if (klass.isArray) "List" else ReflectUtils.simpleNameWithoutSuffix(runtimeObjType.klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else className
     }
 
-    override def objType: TypedClass = this
+    override def runtimeObjType: TypedClass = this
 
     def primitiveClass: Class[_] = Option(ClassUtils.wrapperToPrimitive(klass)).getOrElse(klass)
 
@@ -354,8 +353,9 @@ object typing {
             supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
             javaList
           )
+        case set: java.util.Set[_] =>
+          genericTypeClass(classOf[java.util.Set[_]], List(supertypeOfElementTypes(set.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        // TODO: handle more types, for example Set
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>

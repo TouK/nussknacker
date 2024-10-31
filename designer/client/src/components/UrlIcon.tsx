@@ -1,9 +1,9 @@
 import React, { ComponentType, DetailedHTMLProps, ImgHTMLAttributes, useEffect, useState } from "react";
 import { absoluteBePath } from "../common/UrlUtils";
 import { InlineSvg, InlineSvgProps } from "./SvgDiv";
-import { ErrorBoundaryFallbackComponent } from "./common/ErrorBoundary";
+import { PlaceholderIconFallbackComponent } from "./common/error-boundary/fallbackComponent/PlaceholderIconFallbackComponent";
 
-interface ImageWithFallbackProps extends DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> {
+export interface ImageWithFallbackProps extends DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> {
     src: string;
     FallbackComponent?: ComponentType;
 }
@@ -24,7 +24,7 @@ function ImageWithFallback({ src, FallbackComponent, ...props }: ImageWithFallba
 
 export type UrlIconProps = InlineSvgProps & ImageWithFallbackProps;
 
-export default function UrlIcon({ FallbackComponent = ErrorBoundaryFallbackComponent, ...props }: UrlIconProps): JSX.Element {
+export default function UrlIcon({ FallbackComponent = PlaceholderIconFallbackComponent, ...props }: UrlIconProps): JSX.Element {
     switch (true) {
         case /\.svg$/i.test(props.src):
             return <InlineSvg {...props} FallbackComponent={FallbackComponent} />;

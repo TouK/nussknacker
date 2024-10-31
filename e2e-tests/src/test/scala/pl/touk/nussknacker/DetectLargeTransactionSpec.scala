@@ -4,11 +4,7 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class DetectLargeTransactionSpec
-    extends AnyFreeSpecLike
-    with DockerBasedInstallationExampleNuEnvironment
-    with Matchers
-    with VeryPatientScalaFutures {
+class DetectLargeTransactionSpec extends AnyFreeSpecLike with BaseE2ESpec with Matchers with VeryPatientScalaFutures {
 
   "Large transactions should be properly detected" in {
     val smallAmountTransactions = List(
@@ -23,18 +19,18 @@ class DetectLargeTransactionSpec
     )
 
     (smallAmountTransactions ::: largeAmountTransactions).foreach { transaction =>
-      sendMessageToKafka("Transactions", transaction)
+      client.sendMessageToKafka("Transactions", transaction)
     }
 
     eventually {
-      val processedTransactions = readAllMessagesFromKafka("ProcessedTransactions")
+      val processedTransactions = client.readAllMessagesFromKafka("ProcessedTransactions")
       processedTransactions should equal(largeAmountTransactions)
     }
   }
 
   override protected def afterEach(): Unit = {
-    purgeKafkaTopic("Transactions")
-    purgeKafkaTopic("ProcessedTransactions")
+    client.purgeKafkaTopic("Transactions")
+    client.purgeKafkaTopic("ProcessedTransactions")
     super.afterEach()
   }
 

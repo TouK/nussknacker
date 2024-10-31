@@ -32,16 +32,16 @@ on [Streaming](../scenarios_authoring/DataSourcesAndSinks.md). You need
 
 #### [Primitive types](https://avro.apache.org/docs/1.11.0/spec.html#schema_primitive)
 
-| Avro type | Java type     | Comment                                                                                                                                         |
-|-----------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| null      | null          |                                                                                                                                                 |
-| string    | String / Char | Defaults to Java `String` (UTF-8). Use the advanced configuration option `AVRO_USE_STRING_FOR_STRING_TYPE=false` to change it to `CharSequence` |
-| boolean   | Boolean       |                                                                                                                                                 |
-| int       | Integer       | 32 bit                                                                                                                                          |
-| long      | Long          | 64 bit                                                                                                                                          |
-| float     | Float         | single precision                                                                                                                                |
-| double    | Double        | double precision                                                                                                                                |
-| bytes     | ByteBuffer    |                                                                                                                                                 |
+| Avro type | Java type  | Comment          |
+|-----------|------------|------------------|
+| null      | null       |                  |
+| string    | String     |                  |
+| boolean   | Boolean    |                  |
+| int       | Integer    | 32 bit           |
+| long      | Long       | 64 bit           |
+| float     | Float      | single precision |
+| double    | Double     | double precision |
+| bytes     | ByteBuffer |                  |
 
 #### [Logical types](https://avro.apache.org/docs/1.11.0/spec.html#Logical+Types)
 
@@ -64,14 +64,14 @@ end-user has access to methods of these objects.
 
 #### [Complex types](https://avro.apache.org/docs/1.11.0/spec.html#schema_complex)
 
-| Avro type | Java type                                                  | Comment                                                     |
-|-----------|------------------------------------------------------------|-------------------------------------------------------------|
-| array     | [list](../scenarios_authoring/Spel.md#arrayslists)      |                                                             |
-| map       | [map](../scenarios_authoring/Spel.md#recordsobjects)    | Key - value map, where key is always represented by String. |
-| record    | [record](../scenarios_authoring/Spel.md#recordsobjects) |                                                             |
-| enums     | org.apache.avro.generic.GenericData.EnumSymbol             |                                                             |
-| fixed     | org.apache.avro.generic.GenericData.Fixed                  |                                                             |
-| union     | Any of the above types                                     | It can be any of the defined type in union.                 |
+| Avro type | Java type                                                   | Comment                                                     |
+|-----------|-------------------------------------------------------------|-------------------------------------------------------------|
+| array     | [list](../scenarios_authoring/Spel.md#arrayslists)          |                                                             |
+| map       | [map](../scenarios_authoring/Spel.md#recordsobjectsmaps)    | Key - value map, where key is always represented by String. |
+| record    | [record](../scenarios_authoring/Spel.md#recordsobjectsmaps) |                                                             |
+| enums     | org.apache.avro.generic.GenericData.EnumSymbol              |                                                             |
+| fixed     | org.apache.avro.generic.GenericData.Fixed                   |                                                             |
+| union     | Any of the above types                                      | It can be any of the defined type in union.                 |
 
 ### Sink validation & encoding
 
@@ -85,9 +85,9 @@ end-user has access to methods of these objects.
 | Float                                                        | float                                    |                                                                                                                               |
 | Double                                                       | double                                   |                                                                                                                               |
 | ByteBuffer                                                   | bytes                                    |                                                                                                                               |
-| [list](../scenarios_authoring/Spel.md#arrayslists)        | array                                    |                                                                                                                               |
-| [map](../scenarios_authoring/Spel.md#recordsobjects)      | map                                      |                                                                                                                               |
-| [map](../scenarios_authoring/Spel.md#recordsobjects)      | record                                   |                                                                                                                               |
+| [list](../scenarios_authoring/Spel.md#arrayslists)           | array                                    |                                                                                                                               |
+| [map](../scenarios_authoring/Spel.md#recordsobjectsmaps)     | map                                      |                                                                                                                               |
+| [map](../scenarios_authoring/Spel.md#recordsobjectsmaps)     | record                                   |                                                                                                                               |
 | org.apache.avro.generic.GenericRecord                        | record                                   |                                                                                                                               |
 | org.apache.avro.generic.GenericData.EnumSymbol               | enums                                    |                                                                                                                               |
 | String                                                       | enums                                    | On the Designer we allow to pass `Typing Information String`, but we can't verify whether value is a valid Enum's symbol.     |
@@ -126,25 +126,27 @@ We support [JSON Schema](https://json-schema.org/) in version: `Draft 7` without
 
 JSON Schema is available on [Streaming](../scenarios_authoring/DataSourcesAndSinks.md)
 and [Request-Response](../scenarios_authoring/RRDataSourcesAndSinks.md). To integrate with JSON on
-streaming we use [Schema Registry](../integration/KafkaIntegration.md#schema-registry-integration). On the
+streaming we use [Schema Registry](../integration/KafkaIntegration.md#schemas). On the
 other hand, we have Request-Response
-where [schemas](../scenarios_authoring/RRDataSourcesAndSinks.md#request-response-schema) are stored in scenario
+where [schemas](../scenarios_authoring/RRDataSourcesAndSinks.md#schemas) are stored in scenario
 properties.
 
 ### Source conversion mapping
 
-| JSON Schema                                                                                        | Java type                                             | Comment                                                                                                                                                                                  |
-|----------------------------------------------------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [null](https://json-schema.org/understanding-json-schema/reference/null.html)                      | null                                                  |                                                                                                                                                                                          |
-| [string](https://json-schema.org/understanding-json-schema/reference/string.html)                  | String                                                | UTF-8                                                                                                                                                                                    |
-| [boolean](https://json-schema.org/understanding-json-schema/reference/boolean.html)                | Boolean                                               |                                                                                                                                                                                          |
-| [integer](https://json-schema.org/understanding-json-schema/reference/numeric.html#integer)        | Integer/Long/BigInteger                               | There will be chosen narrowest type depending upon minimum maximum value defined in the json schema. In the case when no min/max boundaries are available it will map to Long by default |
-| [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)          | BigDecimal                                            |                                                                                                                                                                                          |
-| [enum](https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values) | String                                                |                                                                                                                                                                                          |
+| JSON Schema                                                                                        | Java type                                          | Comment                                                                                                                                                                                  |
+|----------------------------------------------------------------------------------------------------|----------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [null](https://json-schema.org/understanding-json-schema/reference/null.html)                      | null                                               |                                                                                                                                                                                          |
+| [string](https://json-schema.org/understanding-json-schema/reference/string.html)                  | String                                             | UTF-8                                                                                                                                                                                    |
+| [boolean](https://json-schema.org/understanding-json-schema/reference/boolean.html)                | Boolean                                            |                                                                                                                                                                                          |
+| [integer](https://json-schema.org/understanding-json-schema/reference/numeric.html#integer)        | Integer/Long/BigInteger                            | There will be chosen narrowest type depending upon minimum maximum value defined in the json schema. In the case when no min/max boundaries are available it will map to Long by default |
+| [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)          | BigDecimal                                         |                                                                                                                                                                                          |
+| [enum](https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values) | String                                             |                                                                                                                                                                                          |
 | [array](https://json-schema.org/understanding-json-schema/reference/array.html)                    | [list](../scenarios_authoring/Spel.md#arrayslists) |                                                                                                                                                                                          |
 
 #### String Format
-We support the following JSON [string format](https://json-schema.org/understanding-json-schema/reference/string.html#format) keywords.
+
+We support the following
+JSON [string format](https://json-schema.org/understanding-json-schema/reference/string.html#format) keywords.
 
 | JSON Schema | Java type     | Sample                    | Comment                     |
 |-------------|---------------|---------------------------|-----------------------------|
@@ -154,12 +156,12 @@ We support the following JSON [string format](https://json-schema.org/understand
 
 #### [Objects](https://json-schema.org/understanding-json-schema/reference/object.html)
 
-| object configuration                                                      | Java type                                               | Comment                                                                      |
-|---------------------------------------------------------------------------|---------------------------------------------------------|------------------------------------------------------------------------------|
-| object with properties                                                    | [map](../scenarios_authoring/Spel.md#recordsobjects) | `Map[String, _]`                                                             |
-| object with properties and enabled `additionalProperties`                 | [map](../scenarios_authoring/Spel.md#recordsobjects) | Additional properties are available at runtime. Similar to `Map[String, _]`. |
-| object without properties and `additionalProperties: true`                | [map](../scenarios_authoring/Spel.md#recordsobjects) | `Map[String, Unknown]`                                                       |
-| object without properties and `additionalProperties: {"type": "integer"}` | [map](../scenarios_authoring/Spel.md#recordsobjects) | `Map[String, Integer]`                                                       |
+| object configuration                                                      | Java type                                                | Comment                                                                      |
+|---------------------------------------------------------------------------|----------------------------------------------------------|------------------------------------------------------------------------------|
+| object with properties                                                    | [map](../scenarios_authoring/Spel.md#recordsobjectsmaps) | `Map[String, _]`                                                             |
+| object with properties and enabled `additionalProperties`                 | [map](../scenarios_authoring/Spel.md#recordsobjectsmaps) | Additional properties are available at runtime. Similar to `Map[String, _]`. |
+| object without properties and `additionalProperties: true`                | [map](../scenarios_authoring/Spel.md#recordsobjectsmaps) | `Map[String, Unknown]`                                                       |
+| object without properties and `additionalProperties: {"type": "integer"}` | [map](../scenarios_authoring/Spel.md#recordsobjectsmaps) | `Map[String, Integer]`                                                       |
 
 We support `additionalProperties`, but additional fields won't be available in the hints on the Designer. To get
 an additional field you have to do `#inpute.get("additional-field")`, but remember that result of this expression is
@@ -185,8 +187,8 @@ depends on `additionalProperties` type configuration and can be `Unknown`.
 | Float                                                        | [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)                      |                                                                                                                                          |
 | Double                                                       | [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)                      |                                                                                                                                          |
 | BigDecimal                                                   | [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)                      |                                                                                                                                          |
-| [list](../scenarios_authoring/Spel.md#arrayslists)        | [array](https://json-schema.org/understanding-json-schema/reference/array.html)                                |                                                                                                                                          |
-| [map](../scenarios_authoring/Spel.md#recordsobjects)      | [object](https://json-schema.org/understanding-json-schema/reference/object.html)                              |                                                                                                                                          |
+| [list](../scenarios_authoring/Spel.md#arrayslists)           | [array](https://json-schema.org/understanding-json-schema/reference/array.html)                                |                                                                                                                                          |
+| [map](../scenarios_authoring/Spel.md#recordsobjectsmaps)     | [object](https://json-schema.org/understanding-json-schema/reference/object.html)                              |                                                                                                                                          |
 | String                                                       | [enum](https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values)             | On the Designer we allow to pass `Typed[String]`, but we can't verify whether value is a valid Enum's symbol.                            |
 | Any matching type from the list of types in the union schema | [schema composition](https://json-schema.org/understanding-json-schema/reference/combining.html): oneOf, anyOf | Read more about [validation modes](#validation-and-encoding).                                                                            |
 
@@ -195,9 +197,9 @@ depends on `additionalProperties` type configuration and can be `Unknown`.
 | JSON Schema                                                                               | Properties                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Comment                                                       |
 |-------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
 | [string](https://json-schema.org/understanding-json-schema/reference/string.html)         | [length](https://json-schema.org/understanding-json-schema/reference/string.html#length), [regular expressions](https://json-schema.org/understanding-json-schema/reference/string.html#length), [format](https://json-schema.org/understanding-json-schema/reference/string.html#length)                                                                                                                                                                                                                                                                                                                                  |                                                               |
-| [numeric](https://json-schema.org/understanding-json-schema/reference/numeric.html)       | [multiples](https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples)                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                               |
+| [numeric](https://json-schema.org/understanding-json-schema/reference/numeric.html)       | [multiples](https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |                                                               |
 | [array](https://json-schema.org/understanding-json-schema/reference/array.html)           | [additional items](https://json-schema.org/understanding-json-schema/reference/array.html#additional-items), [tuple validation](https://json-schema.org/understanding-json-schema/reference/array.html#tuple-validation), [contains](https://json-schema.org/understanding-json-schema/reference/array.html#contains), [min/max](https://json-schema.org/understanding-json-schema/reference/array.html#mincontains-maxcontains), [length](https://json-schema.org/understanding-json-schema/reference/array.html#length), [uniqueness](https://json-schema.org/understanding-json-schema/reference/array.html#uniqueness) |                                                               |
-| [object](https://json-schema.org/understanding-json-schema/reference/object.html)         | [unevaluatedProperties](https://json-schema.org/understanding-json-schema/reference/object.html#unevaluated-properties), [extending closed](https://json-schema.org/understanding-json-schema/reference/object.html#extending-closed-schemas), [property names](https://json-schema.org/understanding-json-schema/reference/object.html#property-names), [size](https://json-schema.org/understanding-json-schema/reference/object.html#size)                                                            |                                                               |
+| [object](https://json-schema.org/understanding-json-schema/reference/object.html)         | [unevaluatedProperties](https://json-schema.org/understanding-json-schema/reference/object.html#unevaluated-properties), [extending closed](https://json-schema.org/understanding-json-schema/reference/object.html#extending-closed-schemas), [property names](https://json-schema.org/understanding-json-schema/reference/object.html#property-names), [size](https://json-schema.org/understanding-json-schema/reference/object.html#size)                                                                                                                                                                              |                                                               |
 | [composition](https://json-schema.org/understanding-json-schema/reference/combining.html) | [allOf](https://json-schema.org/understanding-json-schema/reference/combining.html#allof), [not](https://json-schema.org/understanding-json-schema/reference/combining.html#not)                                                                                                                                                                                                                                                                                                                                                                                                                                           | Read more about [validation modes](#validation-and-encoding). |
 
 These properties will be not validated by the Designer, because on during scenario authoring time we work only on
@@ -206,20 +208,32 @@ These properties will be not validated by the Designer, because on during scenar
 #### Pattern properties
 
 ##### Sources
+
 Object (also nested) in source schema will be represented during scenario authoring as:
+
 * Map - when there is no property defined in `properties` field
-  * if only `additionalProperties` are defined then map values will be typed to according to schema in `additionalProperties` field
-  * if both `additionalProperties` and `patternProperties` are defined then values will be typed as `Union` with all possible types from `additionalProperties` and `patternProperties`
+    * if only `additionalProperties` are defined then map values will be typed to according to schema
+      in `additionalProperties` field
+    * if both `additionalProperties` and `patternProperties` are defined then values will be typed as `Union` with all
+      possible types from `additionalProperties` and `patternProperties`
 * Record otherwise
-  * all non explicit properties can then be accessed using `record["patternOrAdditionalPropertyName"]` syntax but for now only if `pl.touk.nussknacker.engine.api.process.ExpressionConfig.dynamicPropertyAccessAllowed` is enabled (only possible in deprecated instalations with own `ProcessConfigCreator`)
+    * all non explicit properties can then be accessed using `record["patternOrAdditionalPropertyName"]` syntax but for
+      now only if `pl.touk.nussknacker.engine.api.process.ExpressionConfig.dynamicPropertyAccessAllowed` is enabled (
+      only possible in deprecated instalations with own `ProcessConfigCreator`)
 
 ##### Sinks
-Pattern properties add additional requirements during scenario authoring for types that should be encoded into JSON Schema object type:
+
+Pattern properties add additional requirements during scenario authoring for types that should be encoded into JSON
+Schema object type:
+
 * Strict mode
-  * only records types are allowed (no map types) and only if their fields' types are valid according to pattern properties restrictions (in addition to properties and additionalProperties)
+    * only records types are allowed (no map types) and only if their fields' types are valid according to pattern
+      properties restrictions (in addition to properties and additionalProperties)
 * Lax mode
-  * records are allowed under the same conditions as in strict mode but additionally Unknown type is allowed as a value's type
-  * map types are allowed if their value's type matches any of property, patternProperty or additionalProperties schema or is an Unknown type
+    * records are allowed under the same conditions as in strict mode but additionally Unknown type is allowed as a
+      value's type
+    * map types are allowed if their value's type matches any of property, patternProperty or additionalProperties
+      schema or is an Unknown type
 
 ## Validation and encoding
 
@@ -259,8 +273,11 @@ enabled.
 | allow passing `Unknown`           | no                                                                            | yes                                                             | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
 | passing `Union`                   | `Typing Information` union has to<br/>be the same as union schema of the sink | Any of element from `Typing Information`<br/>union should match | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
 
-General intuition is that in `strict` mode a scenario that was successfully validated should not produce any type connect encoding errors during runtime (it can still produce errors e.g. for range validation in JSON Schema or valid enum entry validation in Avro).
-On the other hand, in `lax` mode NU allows to deploy scenario if there is any chance it can encode data properly, but responsibility for passing valid type to sink (e.g. in Unknown type) is on end-user side.
+General intuition is that in `strict` mode a scenario that was successfully validated should not produce any type
+connect encoding errors during runtime (it can still produce errors e.g. for range validation in JSON Schema or valid
+enum entry validation in Avro).
+On the other hand, in `lax` mode NU allows to deploy scenario if there is any chance it can encode data properly, but
+responsibility for passing valid type to sink (e.g. in Unknown type) is on end-user side.
 
 We leave to the user the decision of which validation mode to choose. But be aware of it, and remember it only impacts
 how we validate data during scenario authoring, and some errors can still occur during encoding at runtime.

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import cats.data.NonEmptyList
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -90,6 +91,11 @@ object DelayedFlinkKafkaConsumer {
   type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
 }
 
+/**
+ * Warning: this consumer works correctly only when it's handling a single partition (so job's parallelism must be
+ * at least equal to the number of topic partitions). Otherwise, a single message will block reading
+ * from multiple partitions, leading bigger delays than intended.
+ */
 class DelayedFlinkKafkaConsumer[T](
     topics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     schema: KafkaDeserializationSchema[T],
@@ -108,6 +114,7 @@ class DelayedFlinkKafkaConsumer[T](
       nodeId
     ) {
 
+  @silent("deprecated")
   override def createFetcher(
       sourceContext: SourceFunction.SourceContext[T],
       assignedPartitionsWithInitialOffsets: util.Map[KafkaTopicPartition, lang.Long],
@@ -205,7 +212,8 @@ class DelayedKafkaFetcher[T](
 
       if (sleepTime >= maxSleepTime) {
         val logMessage = s"Sleeping for $sleepTime ms of total $remainingDelay ms for ${records.size()} events. " +
-          s"Max event timestamp is $maxEventTimestamp, fetcher delay is $delay, partition:offset is ${partitionState.getPartition}:$offset"
+          s"Max event timestamp is $maxEventTimestamp, fetcher delay is $delay, topic:partition:offset is " +
+          s"${partitionState.getTopic}:${partitionState.getPartition}:$offset"
         logger.info(logMessage)
       }
 

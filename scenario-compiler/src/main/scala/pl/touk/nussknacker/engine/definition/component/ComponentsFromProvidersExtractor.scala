@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor.componentConfigPath
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -42,19 +43,25 @@ class ComponentsFromProvidersExtractor(
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[ComponentDefinitionWithImplementation] = {
-    loadCorrectProviders(modelDependencies.config).toList
-      .flatMap { case (_, (config, provider)) =>
-        extract(
-          config,
-          provider,
-          modelDependencies,
-          componentsUiConfig,
-          determineDesignerWideId,
-          additionalConfigsFromProvider
-        )
-      }
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+  ): Components = {
+    Components
+      .fold(
+        componentDefinitionExtractionMode,
+        loadCorrectProviders(modelDependencies.config).toList
+          .map { case (_, (config, provider)) =>
+            extract(
+              config,
+              provider,
+              modelDependencies,
+              componentsUiConfig,
+              determineDesignerWideId,
+              additionalConfigsFromProvider,
+              componentDefinitionExtractionMode
+            )
+          }
+      )
   }
 
   private def loadCorrectProviders(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {
@@ -144,18 +151,23 @@ class ComponentsFromProvidersExtractor(
       modelDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig,
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): List[ComponentDefinitionWithImplementation] = {
-    ComponentDefinitionWithImplementation.forList(
-      provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
-        config.componentPrefix
-          .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
-          .getOrElse(inputComponentDefinition)
-      },
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+  ): Components = {
+    val components = provider.create(config.config, modelDependencies).map { inputComponentDefinition =>
+      config.componentPrefix
+        .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
+        .getOrElse(inputComponentDefinition)
+    }
+
+    Components.forList(
+      components,
       componentsUiConfig,
       determineDesignerWideId,
-      additionalConfigsFromProvider
+      additionalConfigsFromProvider,
+      componentDefinitionExtractionMode
     )
+
   }
 
 }

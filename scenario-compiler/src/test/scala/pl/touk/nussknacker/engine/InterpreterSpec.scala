@@ -33,7 +33,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -105,14 +106,14 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     AccountService.clear()
     NameDictService.clear()
 
-    val metaData = scenario.metaData
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty.copy(processName = scenario.metaData.name))
     val processCompilerData =
-      prepareCompilerData(additionalComponents, listeners)
+      prepareCompilerData(jobData, additionalComponents, listeners)
     val interpreter = processCompilerData.interpreter
     val parts       = failOnErrors(processCompilerData.compile(scenario))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(jobData).result)
 
     val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
@@ -121,7 +122,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val resultBeforeSink = interpreter
       .interpret[IO](
         compileNode(parts.sources.head),
-        scenario.metaData,
+        jobData,
         initialCtx,
         serviceExecutionContext
       )
@@ -140,7 +141,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         interpreter
           .interpret[IO](
             compileNode(sink),
-            metaData,
+            jobData,
             resultBeforeSink.finalContext,
             serviceExecutionContext
           )
@@ -165,6 +166,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
   }
 
   def prepareCompilerData(
+      jobData: JobData,
       additionalComponents: List[ComponentDefinition],
       listeners: Seq[ProcessListener]
   ): ProcessCompilerData = {
@@ -174,13 +176,20 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         additionalComponents
 
     val definitions = ModelDefinition(
-      ComponentDefinitionWithImplementation
-        .forList(components, ComponentsUiConfig.Empty, id => DesignerWideComponentId(id.toString), Map.empty),
+      Components
+        .forList(
+          components,
+          ComponentsUiConfig.Empty,
+          id => DesignerWideComponentId(id.toString),
+          Map.empty,
+          ComponentDefinitionExtractionMode.FinalDefinition
+        ),
       ModelDefinitionBuilder.emptyExpressionConfig,
       ClassExtractionSettings.Default
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
     ProcessCompilerData.prepare(
+      jobData,
       definitionsWithTypes,
       new SimpleDictRegistry(
         Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))

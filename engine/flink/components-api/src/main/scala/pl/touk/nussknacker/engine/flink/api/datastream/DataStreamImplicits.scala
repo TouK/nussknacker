@@ -1,15 +1,32 @@
 package pl.touk.nussknacker.engine.flink.api.datastream
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
 object DataStreamImplicits {
 
-  implicit class DataStreamExtension[T](stream: DataStream[T]) {
+  implicit class DataStreamWithContextExtension(stream: DataStream[Context]) {
 
+    def flatMap[T <: AnyRef](
+        lazyParam: LazyParameter[T]
+    )(implicit ctx: FlinkCustomNodeContext): SingleOutputStreamOperator[ValueWithContext[T]] =
+      stream
+        .flatMap(
+          ctx.lazyParameterHelper.lazyMapFunction(lazyParam),
+          ctx.valueWithContextInfo.forType[T](lazyParam.returnType)
+        )
+
+  }
+
+  implicit class DataStreamExtension[T <: AnyRef](stream: DataStream[T]) {
+
+    @silent("deprecated")
     def mapWithState[R: TypeInformation, S: TypeInformation](fun: (T, Option[S]) => (R, Option[S])): DataStream[R] = {
       val cleanFun                          = stream.getExecutionEnvironment.clean(fun)
       val stateTypeInfo: TypeInformation[S] = implicitly[TypeInformation[S]]

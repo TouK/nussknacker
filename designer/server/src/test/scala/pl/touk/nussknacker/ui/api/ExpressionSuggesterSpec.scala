@@ -6,16 +6,14 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
 import pl.touk.nussknacker.engine.definition.clazz.{
   ClassDefinition,
-  ClassDefinitionExtractor,
   ClassDefinitionSet,
+  ClassDefinitionTestUtils,
   StaticMethodDefinition
 }
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -71,7 +69,7 @@ class ExpressionSuggesterSpec
     with Matchers
     with PatientScalaFutures
     with TableDrivenPropertyChecks {
-  implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
+  private val classDefinitionExtractor = ClassDefinitionTestUtils.DefaultExtractor
 
   private val dictRegistry = new SimpleDictRegistry(
     Map(
@@ -84,11 +82,11 @@ class ExpressionSuggesterSpec
 
   private val clazzDefinitions: ClassDefinitionSet = ClassDefinitionSet(
     Set(
-      ClassDefinitionExtractor.extract(classOf[A]),
-      ClassDefinitionExtractor.extract(classOf[B]),
-      ClassDefinitionExtractor.extract(classOf[C]),
-      ClassDefinitionExtractor.extract(classOf[AA]),
-      ClassDefinitionExtractor.extract(classOf[WithList]),
+      classDefinitionExtractor.extract(classOf[A]),
+      classDefinitionExtractor.extract(classOf[B]),
+      classDefinitionExtractor.extract(classOf[C]),
+      classDefinitionExtractor.extract(classOf[AA]),
+      classDefinitionExtractor.extract(classOf[WithList]),
       ClassDefinition(
         Typed.typedClass[String],
         Map(
@@ -109,11 +107,16 @@ class ExpressionSuggesterSpec
         ),
         Map.empty
       ),
-      ClassDefinitionExtractor.extract(classOf[Util]),
-      ClassDefinitionExtractor.extract(classOf[Duration]),
+      classDefinitionExtractor.extract(classOf[Util]),
+      classDefinitionExtractor.extract(classOf[Duration]),
       ClassDefinition(
         Typed.typedClass[java.util.Map[_, _]],
         Map("empty" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),
+        Map.empty
+      ),
+      ClassDefinition(
+        Unknown,
+        Map("is" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "is", None))),
         Map.empty
       ),
     )
@@ -151,6 +154,7 @@ class ExpressionSuggesterSpec
     "listOfUnions" -> Typed.genericTypeClass[java.util.List[A]](List(Typed(Typed[A], Typed[B]))),
     "dictFoo"      -> DictInstance("dictFoo", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
     "dictBar"      -> DictInstance("dictBar", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
+    "unknown"      -> Unknown
   )
 
   private def spelSuggestionsFor(input: String, row: Int = 0, column: Int = -1): List[ExpressionSuggestion] = {
@@ -204,6 +208,7 @@ class ExpressionSuggesterSpec
       "#other",
       "#union",
       "#unionOfLists",
+      "#unknown",
       "#util"
     )
   }
@@ -221,6 +226,7 @@ class ExpressionSuggesterSpec
       "#other",
       "#union",
       "#unionOfLists",
+      "#unknown",
       "#util"
     )
   }
@@ -327,6 +333,7 @@ class ExpressionSuggesterSpec
       ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil),
       suggestion("processName", Typed[String]),
       suggestion("properties", Typed.record(Map("scenarioProperty" -> Typed[String]))),
+      suggestion("scenarioLabels", Typed.genericTypeClass[java.util.List[String]](List(Typed[String]))),
     )
   }
 
@@ -764,6 +771,89 @@ class ExpressionSuggesterSpec
     spelTemplateSuggestionsFor(s"Hello #{!1 + a} and #{#in}", 0, "Hello #{!1 + a} and #{#in".length) shouldBe List(
       suggestion("#input", Typed[A]),
     )
+  }
+
+  test("should suggest methods for unknown") {
+    spelSuggestionsFor("#unknown.") shouldBe List(
+      suggestion("is", Typed[Boolean]),
+    )
+  }
+
+  test("should suggest parameters for casts/conversions methods on unknown") {
+    spelSuggestionsFor("#unknown.to('')", column = 13) should contain theSameElementsAs List(
+      suggestion("Duration", Typed[Duration]),
+      suggestion("LocalDateTime", Typed[LocalDateTime]),
+      suggestion("A", Typed[A]),
+      suggestion("AA", Typed[AA]),
+      suggestion("B", Typed[B]),
+      suggestion("C", Typed[C]),
+      suggestion("Util", Typed[Util]),
+      suggestion("WithList", Typed[WithList]),
+      suggestion("BigDecimal", Typed[java.math.BigDecimal]),
+      suggestion("BigInteger", Typed[java.math.BigInteger]),
+      suggestion("Boolean", Typed[java.lang.Boolean]),
+      suggestion("Double", Typed[java.lang.Double]),
+      suggestion("Float", Typed[java.lang.Float]),
+      suggestion("Long", Typed[java.lang.Long]),
+      suggestion("Integer", Typed[java.lang.Integer]),
+      suggestion("Short", Typed[java.lang.Short]),
+      suggestion("Byte", Typed[java.lang.Byte]),
+      suggestion("String", Typed[java.lang.String]),
+      suggestion("List", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
+      suggestion("Map", Typed.genericTypeClass[java.util.Map[_, _]](List(Unknown, Unknown))),
+    )
+  }
+
+  test("should suggest parameters for casts/conversions methods on string") {
+    spelSuggestionsFor("'11'.to('')", column = 9) should contain theSameElementsAs List(
+      suggestion("BigDecimal", Typed[java.math.BigDecimal]),
+      suggestion("BigInteger", Typed[java.math.BigInteger]),
+      suggestion("Boolean", Typed[java.lang.Boolean]),
+      suggestion("Double", Typed[java.lang.Double]),
+      suggestion("Float", Typed[java.lang.Float]),
+      suggestion("Long", Typed[java.lang.Long]),
+      suggestion("Integer", Typed[java.lang.Integer]),
+      suggestion("Short", Typed[java.lang.Short]),
+      suggestion("Byte", Typed[java.lang.Byte]),
+    )
+  }
+
+  test("should suggest parameters for casts/conversions methods on list to map") {
+    spelSuggestionsFor("{{key: 'a', value: 1}}.to('')", column = 27) should contain theSameElementsAs List(
+      suggestion(
+        "Map",
+        Typed.genericTypeClass[java.util.Map[_, _]](List(Typed.typedClass[String], Typed.typedClass[Integer]))
+      ),
+    )
+  }
+
+  test("should suggest the same methods for list and array") {
+    val suggester = new ExpressionSuggester(
+      expressionConfig,
+      ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
+      dictServices,
+      getClass.getClassLoader,
+      Nil
+    )
+    val variables = Map(
+      "list"  -> Typed[java.util.List[String]],
+      "array" -> Typed.genericTypeClass(classOf[Array[String]], List(Typed[String])),
+    )
+    val listSpelExpression  = Expression.spel("#list.")
+    val arraySpelExpression = Expression.spel("#array.")
+
+    def suggestion(expression: Expression): List[ExpressionSuggestion] =
+      suggester
+        .expressionSuggestions(
+          expression,
+          CaretPosition2d(0, expression.expression.length),
+          variables
+        )(ExecutionContext.global)
+        .futureValue
+
+    val listMethodsSuggestion  = suggestion(listSpelExpression)
+    val arrayMethodsSuggestion = suggestion(arraySpelExpression)
+    arrayMethodsSuggestion should contain allElementsOf listMethodsSuggestion
   }
 
 }

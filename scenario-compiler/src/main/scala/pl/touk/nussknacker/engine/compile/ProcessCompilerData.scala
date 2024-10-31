@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
+import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter}
 object ProcessCompilerData {
 
   def prepare(
+      jobData: JobData,
       definitionWithTypes: ModelDefinitionWithClasses,
       dictRegistry: EngineDictRegistry,
       listeners: Seq[ProcessListener],
@@ -34,7 +35,7 @@ object ProcessCompilerData {
       customProcessValidator: CustomProcessValidator,
       nonServicesLazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
   ): ProcessCompilerData = {
-    val servicesDefs = definitionWithTypes.modelDefinition.components
+    val servicesDefs = definitionWithTypes.modelDefinition.components.components
       .filter(_.componentType == ComponentType.Service)
 
     val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
@@ -78,6 +79,7 @@ object ProcessCompilerData {
       expressionEvaluator,
       interpreter,
       listeners,
+      jobData,
       servicesDefs.map(service => service.name -> service.component.asInstanceOf[Lifecycle]).toMap
     )
 
@@ -92,6 +94,7 @@ final class ProcessCompilerData(
     val expressionEvaluator: ExpressionEvaluator,
     val interpreter: Interpreter,
     val listeners: Seq[ProcessListener],
+    val jobData: JobData,
     services: Map[String, Lifecycle]
 ) {
 
@@ -108,5 +111,5 @@ final class ProcessCompilerData(
   }
 
   def compile(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
-    compiler.compile(process).result
+    compiler.compile(process)(jobData).result
 }

@@ -58,7 +58,7 @@ class ScenarioParametersCombinationProviderTest extends AnyFunSuite with Matcher
       .build
       .components
 
-    ScenarioParametersDeterminer.determineProcessingMode(components, "foo-processing-type")
+    ScenarioParametersDeterminer.determineProcessingMode(components.components, "foo-processing-type")
   }
 
 }

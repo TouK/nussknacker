@@ -1,10 +1,10 @@
 import { alpha, createTheme, Palette, PaletteMode } from "@mui/material";
-import { fontFamily, globalStyles } from "./styles";
+import { fontFamily, formLabelWidth, globalStyles } from "./styles";
 import { blendDarken, blendLighten } from "./helpers";
 import { deepmerge } from "@mui/utils";
 import { lightModePalette } from "./lightModePalette";
 import { darkModePalette } from "./darkModePalette";
-import { WindowKind } from "../../windowManager";
+import { WindowKind } from "../../windowManager/WindowKind";
 import { EnvironmentTagColor } from "../EnvironmentTag";
 import { NodeType } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
@@ -190,7 +190,7 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                             ...theme.typography.body2,
                             display: "flex",
                             marginTop: "9px",
-                            flexBasis: "20%",
+                            flexBasis: formLabelWidth,
                             maxWidth: "20em",
                             overflowWrap: "anywhere",
                         }),

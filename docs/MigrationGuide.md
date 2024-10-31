@@ -2,7 +2,101 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.17.0 (Not released yet)
+## In version 1.18.0 (Not released yet)
+
+### Configuration changes
+
+* [6944](https://github.com/TouK/nussknacker/pull/6944)
+  * Button name for 'test adhoc' was renamed from `test-with-form` to `adhoc-testing`
+    If you are using custom button config remember to update button type to `type: "adhoc-testing"` in `processToolbarConfig`
+
+* [7039](https://github.com/TouK/nussknacker/pull/7039)
+    * Scenario Activity audit log is available
+    * logger name, `scenario-activity-audit`, it is optional, does not have to be configured
+    * it uses MDC context, example of configuration in `logback.xml`:
+    ```
+        <logger name="scenario-activity-audit" level="INFO" additivity="false">
+            <appender-ref ref="STDOUT_FOR_SCENARIO_ACTIVITY_AUDIT"/>
+        </logger>
+  
+        <appender name="STDOUT_FOR_SCENARIO_ACTIVITY_AUDIT" class="ch.qos.logback.core.ConsoleAppender">
+          <encoder>
+              <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [scenarioId=%X{scenarioId}][version=%X{scenarioVersionId}][user=%X{username}] %msg%n</Pattern>
+          </encoder>
+        </appender>
+    ```
+
+### Code API changes
+
+* [#6971](https://github.com/TouK/nussknacker/pull/6971) `DeploymentManagerDependencies` API changes:
+    * Added field `scenarioActivityManager: ScenarioActivityManager`
+    * `scenarioActivityManager` can be used by any `DeploymentManager` to save scenario activities in the Nu database
+    * there is `NoOpScenarioActivityManager` implementation available (if needed for tests etc.)
+* [#6971](https://github.com/TouK/nussknacker/pull/6971) `DeploymentManager` compatible API changes:
+    * `DeploymentManager` may now optionally extend `ManagerSpecificScenarioActivitiesStoredByManager`
+    * managers extending that trait may internally handle some manager-specific ScenarioActivities and may be queried about those custom activities
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) `SingleTypingResult` API changes:
+  * Renamed `objType` to `runtimeObjType` which indicates a current object in a runtime.
+* [#6766](https://github.com/TouK/nussknacker/pull/6766)
+  * Process API changes:
+     * Field `ScenarioWithDetails.labels` was added
+     * Field `ScenarioWithDetails.tags` was removed (it had the same value as `labels` and was not used)
+* [#6988](https://github.com/TouK/nussknacker/pull/6988) Removed unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`.
+  `MultiMap` was incorrectly handled by Flink's default Kryo serializer, so if you want to copy it to your code
+  you should write and register a proper serializer.
+
+### REST API changes
+
+* [6944](https://github.com/TouK/nussknacker/pull/6944)
+  *  New endpoint `/api/scenarioTesting/{scenarioName}/adhoc/validate`
+* [#6766](https://github.com/TouK/nussknacker/pull/6766)
+  * Process API changes:
+      * PUT `/api/processes/{processName}` - optional `scenarioLabels` field added
+  * Migration API changes:
+      * POST `/api/migrate` supports v2 request format (with `scenarioLabels` field)
+* [#7021](https://github.com/TouK/nussknacker/pull/7021)
+  * Definitions API changes:
+      * GET `/api/processDefinitionData/*}` 
+        * added optional query param `enrichedWithUiConfig`
+        * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
+
+### Configuration changes
+
+* [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
+  Its default value reflects Kafka's default size limit of 1 MB (`max.message.bytes`), you need to increase it if your
+  error topic allows for larger messages. Remember to add some margin for Kafka protocol overhead (100 bytes should be enough).
+
+### Other changes
+
+* [#6692](https://github.com/TouK/nussknacker/pull/6692) Kryo serializers for `UnmodifiableCollection`, `scala.Product` etc.
+  are registered based on class of Serializer instead of instance of Serializer. If you have values that were
+  serialized by these Serializers in some state, the state won't be restored after upgrade.
+
+* [#6952](https://github.com/TouK/nussknacker/pull/6952) Improvement: TypeInformation support for scala.Option:
+  If you used CaseClassTypeInfoFactory with case classes that contain the Option type, the state won't be restored after the upgrade.
+
+* [#6805](https://github.com/TouK/nussknacker/pull/6805) Updated Flink 1.18.1 -> 1.19.1. Due to backwards incompatible
+  changes in this Flink version update, Nussknacker 1.18 will not work with Flink versions pre-1.19 right away. If you
+  want to keep using Flink pre-1.19 with current Nussknacker, please refer to compatibility providing plugins in
+  https://github.com/TouK/nussknacker-flink-compatibility.
+
+* [#6912](https://github.com/TouK/nussknacker/pull/6912) Improvement: Make TimeMeasuringService usable with other Lifecycle traits
+  * Services that use `TimeMeasuringService` must be rebuilt
+
+* Performance optimization:
+  * [#7058](https://github.com/TouK/nussknacker/pull/7058) Add missing Flink TypeInformation for better serialization
+    * In case of using base (bounded and unbounded) Flink components state will be probably not compatible
+    * `FlinkCustomNodeContext.typeInformationDetection` has been removed, please use `TypeInformationDetection.instance` instead
+    * `FlinkCustomNodeContext.forCustomContext` has been removed, please use `TypeInformationDetection.instance.forValueWithContext` instead
+  * [#7097](https://github.com/TouK/nussknacker/pull/7097) Flink base types registration mechanism
+    * In case of using types: java.time.LocalDate, java.time.LocalTime, java.time.LocalDateTime with CaseClassTypeInfo mechanism, state probably will be lost
+
+* [#7113](https://github.com/TouK/nussknacker/pull/7113) Scala 2.13 was updated to 2.13.15, you should update your `flink-scala-2.13` to 1.1.2
+
+### Configuration changes
+* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
+
+## In version 1.17.0
 
 ### Code API changes
 
@@ -13,6 +107,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
 * Component's API changes
+  * [#6711](https://github.com/TouK/nussknacker/pull/6711) `SingleComponentConfig` changed to `ComponentConfig` for better domain naming.
+    Associated functions and objects also changed to `...ComponentConfig...`.
   * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
     Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
   * [#6462](https://github.com/TouK/nussknacker/pull/6462) `CustomStreamTransformer.canHaveManyInputs` field was
@@ -83,6 +179,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Configuration changes
 * [#6635](https://github.com/TouK/nussknacker/pull/6635) `globalParameters.useTypingResultTypeInformation` parameter was removed.
   Now we always use TypingResultTypeInformation
+* [#6797](https://github.com/TouK/nussknacker/pull/6797) `AVRO_USE_STRING_FOR_STRING_TYPE` environment variable
+  is not supported anymore - we always use String for String type in Avro. If you didn't set up this
+  environment variable, no action is needed
+
 
 ## In version 1.16.3
 
@@ -541,7 +641,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4583](https://github.com/TouK/nussknacker/pull/4583) `DeploymentManager` has new variants of method `cancel` and `stop`
   taking `DeployomentId` next to `ProcessName`. They will be used with batch processing mechanism (periodic DM) so it is necessary
   to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
-* [#4685]((https://github.com/TouK/nussknacker/pull/4685)) In `AuthenticationResources` trait it was added two new
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) In `AuthenticationResources` trait it was added two new
   methods that have to be implemented in the child classes: `def authenticationMethod(): Auth[AuthCredentials, _]` and
   `def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]`. The first one tells what
   authentication method will be used (it's for Tapir-based API purposes) and the latter one is the authentication

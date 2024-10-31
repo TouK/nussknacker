@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -27,7 +28,6 @@ import pl.touk.nussknacker.engine.process.compiler.{
   FlinkProcessCompilerDataFactory,
   UsedNodes
 }
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkCompatibilityProvider, FlinkJobConfig}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
@@ -57,6 +57,7 @@ class FlinkProcessRegistrar(
 
   import FlinkProcessRegistrar._
 
+  @silent("deprecated")
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(
@@ -127,8 +128,6 @@ class FlinkProcessRegistrar(
       resultCollector: ResultCollector,
       deploymentData: DeploymentData
   ): Unit = {
-
-    val metaData         = compilerData.metaData
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
 
     def nodeContext(
@@ -153,7 +152,6 @@ class FlinkProcessRegistrar(
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
         validationContext,
-        TypeInformationDetection.instance,
         compilerData.componentUseCase,
         // TODO: we should verify if component supports given node data type. If not, we should throw some error instead
         //       of silently skip these data
@@ -303,7 +301,7 @@ class FlinkProcessRegistrar(
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
       }
 
-      withSinkAdded.name(operatorName(metaData, part.node, "sink"))
+      withSinkAdded.name(operatorName(compilerData.jobData, part.node, "sink"))
       Map()
     }
 
@@ -344,8 +342,8 @@ class FlinkProcessRegistrar(
         case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
         case _                       => Map.empty
       })
+      val metaData                      = compilerData.jobData.metaData
       val asyncExecutionContextPreparer = compilerData.asyncExecutionContextPreparer
-      val metaData                      = compilerData.metaData
       val streamMetaData =
         MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](metaData, StreamMetaData())
 
@@ -442,11 +440,11 @@ object FlinkProcessRegistrar {
   }
 
   private[registrar] def operatorName(
-      metaData: MetaData,
+      jobData: JobData,
       splittedNode: splittednode.SplittedNode[NodeData],
       operation: String
   ) = {
-    s"${metaData.name}-${splittedNode.id}-$operation"
+    s"${jobData.metaData.name}-${splittedNode.id}-$operation"
   }
 
   private[registrar] def interpretationOperatorName(

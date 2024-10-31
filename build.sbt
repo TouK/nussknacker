@@ -16,7 +16,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 // Warning: Flink doesn't work correctly with 2.12.11
 val scala212 = "2.12.10"
-val scala213 = "2.13.12"
+val scala213 = "2.13.15"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
@@ -27,10 +27,10 @@ lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
-// Silencer 1.7.x require Scala 2.12.11 (see warning above)
+// Silencer 1.7.x requires Scala 2.12.11+
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.14"
+lazy val silencerV      = "1.7.19"
 lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
@@ -164,14 +164,14 @@ lazy val commonSettings =
   publishSettings ++
     Seq(
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-      crossScalaVersions := supportedScalaVersions,
-      scalaVersion       := defaultScalaV,
+      crossScalaVersions               := supportedScalaVersions,
+      scalaVersion                     := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
-      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
+      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
       libraryDependencies += compilerPlugin(
         "com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value) {
           case (2, 12) => silencerV_2_12
@@ -182,7 +182,7 @@ lazy val commonSettings =
         case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
         case _       => Seq()
       },
-      scalacOptions      := Seq(
+      scalacOptions                    := Seq(
         "-unchecked",
         "-deprecation",
         "-encoding",
@@ -207,7 +207,7 @@ lazy val commonSettings =
             "-Ymacro-annotations"
           )
       },
-      javacOptions       := Seq(
+      Compile / compile / javacOptions := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
         // Using --release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
@@ -226,14 +226,14 @@ lazy val commonSettings =
       ),
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
-        // currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version
-        "org.apache.avro"    % "avro"          % avroV,
-        "com.typesafe"       % "config"        % configV,
-        "commons-io"         % "commons-io"    % flinkCommonsIOV,
-        "org.apache.commons" % "commons-text"  % flinkCommonsTextV, // dependency of commons-lang3
-        "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
-        "io.circe"          %% "circe-core"    % circeV,
-        "io.circe"          %% "circe-parser"  % circeV,
+        "org.apache.avro"    % "avro"             % avroV,
+        "com.typesafe"       % "config"           % configV,
+        "commons-io"         % "commons-io"       % flinkCommonsIOV,       // dependency of avro via commons-compress
+        "org.apache.commons" % "commons-compress" % flinkCommonsCompressV, // dependency of avro
+        "org.apache.commons" % "commons-text"     % flinkCommonsTextV,     // dependency of commons-lang3, avro via commons-compress
+        "org.apache.commons" % "commons-lang3"    % flinkCommonsLang3V,
+        "io.circe"          %% "circe-core"       % circeV,
+        "io.circe"          %% "circe-parser"     % circeV,
 
         // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
         "com.typesafe.akka"      %% "akka-http"          % akkaHttpV,
@@ -280,32 +280,33 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV               = "1.18.1"
-val flinkConnectorKafkaV = "3.1.0-1.18"
-val flinkCommonsLang3V   = "3.12.0"
-val flinkCommonsTextV    = "1.10.0"
-val flinkCommonsIOV      = "2.11.0"
-val avroV                = "1.11.3"
+val flinkV                = "1.19.1"
+val flinkConnectorKafkaV  = "3.2.0-1.19"
+val flinkCommonsCompressV = "1.26.0"
+val flinkCommonsLang3V    = "3.12.0"
+val flinkCommonsTextV     = "1.10.0"
+val flinkCommonsIOV       = "2.15.1"
+val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV               = "3.8.0"
+val kafkaV                = "3.8.0"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV              = "5.2.23.RELEASE"
-val scalaTestV           = "3.2.18"
-val scalaCheckV          = "1.17.0"
-val scalaCheckVshort     = scalaCheckV.take(4).replace(".", "-")
-val scalaTestPlusV       =
+val springV               = "5.2.23.RELEASE"
+val scalaTestV            = "3.2.18"
+val scalaCheckV           = "1.17.1"
+val scalaCheckVshort      = scalaCheckV.take(4).replace(".", "-")
+val scalaTestPlusV        =
   "3.2.18.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.13"
 // this is used in cloud, official JsonEncoder uses different field layout
 val logbackJsonV            = "0.1.5"
 val betterFilesV            = "3.9.2"
-val circeV                  = "0.14.6"
-val circeGenericExtrasV     = "0.14.3"
-val circeYamlV              = "0.15.2"
-val jwtCirceV               = "10.0.0"
-val jacksonV                = "2.15.4"
-val catsV                   = "2.10.0"
+val circeV                  = "0.14.10"
+val circeGenericExtrasV     = "0.14.4"
+val circeYamlV              = "0.15.2" // 0.15.3 drops Scala 2.12
+val jwtCirceV               = "10.0.1"
+val jacksonV                = "2.17.2"
+val catsV                   = "2.12.0"
 val catsEffectV             = "3.5.4"
 val everitSchemaV           = "1.14.4"
 val slf4jV                  = "1.7.36"
@@ -318,40 +319,40 @@ val configV                 = "1.4.3"
 // rc16+ depend on slf4j 2.x
 val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.12.0"
-val testContainersScalaV    = "0.41.3"
-val testContainersJavaV     = "1.19.8"
-val nettyV                  = "4.1.109.Final"
+val testContainersScalaV    = "0.41.4"
+val testContainersJavaV     = "1.20.1"
+val nettyV                  = "4.1.113.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
 val akkaV                     = "2.6.20"
 val akkaHttpV                 = "10.2.10"
 val akkaManagementV           = "1.1.4"
 val akkaHttpCirceV            = "1.39.2"
-val slickV                    = "3.4.1"
-val slickPgV                  = "0.21.1"
+val slickV                    = "3.4.1"  // 3.5 drops Scala 2.12
+val slickPgV                  = "0.21.1" // 0.22.2 uses Slick 3.5
 val hikariCpV                 = "5.1.0"
-val hsqldbV                   = "2.7.2"
-val postgresV                 = "42.7.3"
+val hsqldbV                   = "2.7.3"
+val postgresV                 = "42.7.4"
 // Flway 10 requires Java 17
 val flywayV                   = "9.22.3"
 val confluentV                = "7.5.1"
 val azureKafkaSchemaRegistryV = "1.1.1"
-val azureSchemaRegistryV      = "1.4.4"
-val azureIdentityV            = "1.12.0"
+val azureSchemaRegistryV      = "1.4.9"
+val azureIdentityV            = "1.13.3"
 val bcryptV                   = "0.10.2"
-val cronParserV               = "9.1.6" // 9.1.7+ requires JDK 16+
+val cronParserV               = "9.1.6"  // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.1.8"
-val sttpV                     = "3.9.5"
-val tapirV                    = "1.10.5"
-val openapiCirceYamlV         = "0.9.0"
+val sttpV                     = "3.9.8"
+val tapirV                    = "1.11.7"
+val openapiCirceYamlV         = "0.11.3"
 //we use legacy version because this one supports Scala 2.12
 val monocleV                  = "2.1.0"
 val jmxPrometheusJavaagentV   = "0.20.0"
-val wireMockV                 = "2.35.2"
+val wireMockV                 = "3.9.1"
 val findBugsV                 = "3.0.2"
-val enumeratumV               = "1.7.3"
-val ujsonV                    = "3.1.2"
+val enumeratumV               = "1.7.4"
+val ujsonV                    = "4.0.1"
 val igniteV                   = "2.10.0"
 val retryV                    = "0.3.6"
 
@@ -363,7 +364,7 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
     ) // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
   case (2, 13) =>
     Seq(
-      "pl.touk" %% "flink-scala-2-13" % "1.1.1"
+      "pl.touk" %% "flink-scala-2-13" % "1.1.2"
     ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
 }.map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
@@ -618,8 +619,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
           ),
         "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
         "com.softwaremill.retry" %% "retry"                      % retryV,
-        "com.github.tomakehurst"  % "wiremock-jre8"              % wireMockV      % Test,
-        "org.scalatestplus"      %% "mockito-4-11"               % scalaTestPlusV % Test,
+        "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
+        "org.scalatestplus"      %% "mockito-5-10"               % scalaTestPlusV % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
@@ -669,9 +670,8 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
   .settings(commonSettings)
   .settings(
-    name                                   := "nussknacker-flink-metrics-deferred-reporter",
-    crossPaths                             := false,
-    Compile / packageDoc / publishArtifact := false,
+    name       := "nussknacker-flink-metrics-deferred-reporter",
+    crossPaths := false,
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java" % flinkV % Provided
@@ -787,6 +787,7 @@ lazy val flinkExecutor = (project in flink("executor"))
         "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
         "org.apache.flink" % "flink-runtime"              % flinkV % Provided,
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided,
+        // This dependency must be provided, because some cloud providers, such as Ververica, already have it on their classpath, which may cause a conflict
         "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % Provided,
       )
     },
@@ -836,8 +837,9 @@ lazy val benchmarks = (project in file("benchmarks"))
     name                                 := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
-        "org.apache.flink" % "flink-runtime"        % flinkV
+        "org.apache.flink" % "flink-streaming-java"           % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
+        "org.apache.flink" % "flink-runtime"                  % flinkV,
+        "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       )
     },
     Jmh / run / javaOptions ++= (
@@ -853,16 +855,37 @@ lazy val benchmarks = (project in file("benchmarks"))
     Jmh / dependencyClasspath            := (Test / dependencyClasspath).value,
     Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
   )
+  .settings {
+    // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
+    forScalaVersion(defaultScalaV) {
+      case (2, 12) => doExecuteMainFromTestSources
+      case (2, 13) => executeMainFromTestSourcesNotSupported
+    }
+  }
   .dependsOn(
     designer,
     extensionsApi,
-    scenarioCompiler,
+    scenarioCompiler % "test->test;test->compile",
     flinkSchemedKafkaComponentsUtils,
     flinkExecutor,
     flinkBaseComponents,
     flinkBaseUnboundedComponents,
-    testUtils % Test
+    testUtils        % Test
   )
+
+lazy val doExecuteMainFromTestSources = Seq(
+  (Test / runMain) := (Test / runMain)
+    .dependsOn(distribution / Docker / publishLocal)
+    .evaluated
+)
+
+lazy val executeMainFromTestSourcesNotSupported = Seq(
+  (Test / runMain) := {
+    streams.value.log.info(
+      "E2E benchmarks are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12"
+    )
+  }
+)
 
 lazy val kafkaUtils = (project in utils("kafka-utils"))
   .settings(commonSettings)
@@ -870,7 +893,8 @@ lazy val kafkaUtils = (project in utils("kafka-utils"))
     name := "nussknacker-kafka-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" % "kafka-clients" % kafkaV
+        "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "org.scalatest"   %% "scalatest"     % scalaTestV % Test,
       )
     }
     // Depends on componentsApi because of dependency to NuExceptionInfo and NonTransientException -
@@ -938,7 +962,7 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
   .dependsOn(
     componentsUtils  % Provided,
     kafkaComponentsUtils,
-    scenarioCompiler % Test,
+    scenarioCompiler % "test->test;test->compile",
     kafkaTestUtils   % Test,
     jsonUtils
   )
@@ -1104,7 +1128,7 @@ lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(
     name := "nussknacker-default-helpers"
   )
-  .dependsOn(mathUtils, testUtils % Test, scenarioCompiler % Test)
+  .dependsOn(mathUtils, commonUtils, testUtils % Test, scenarioCompiler % "test->test;test->compile")
 
 lazy val testUtils = (project in utils("test-utils"))
   .settings(commonSettings)
@@ -1112,24 +1136,26 @@ lazy val testUtils = (project in utils("test-utils"))
     name := "nussknacker-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.scalatest"                 %% "scalatest"               % scalaTestV,
-        "com.typesafe.scala-logging"    %% "scala-logging"           % scalaLoggingV,
-        "com.typesafe"                   % "config"                  % configV,
-        "org.typelevel"                 %% "cats-core"               % catsV,
-        "ch.qos.logback"                 % "logback-classic"         % logbackV,
-        "org.springframework"            % "spring-jcl"              % springV,
-        "commons-io"                     % "commons-io"              % flinkCommonsIOV,
-        "org.scala-lang.modules"        %% "scala-collection-compat" % scalaCollectionsCompatV,
-        "com.softwaremill.sttp.client3" %% "slf4j-backend"           % sttpV,
-        "org.typelevel"                 %% "cats-effect"             % catsEffectV,
-        "io.circe"                      %% "circe-parser"            % circeV,
-        "org.testcontainers"             % "testcontainers"          % testContainersJavaV,
-        "com.lihaoyi"                   %% "ujson"                   % ujsonV,
+        "com.github.pathikrit"          %% "better-files"              % betterFilesV,
+        "org.scalatest"                 %% "scalatest"                 % scalaTestV,
+        "com.typesafe.scala-logging"    %% "scala-logging"             % scalaLoggingV,
+        "com.typesafe"                   % "config"                    % configV,
+        "org.typelevel"                 %% "cats-core"                 % catsV,
+        "ch.qos.logback"                 % "logback-classic"           % logbackV,
+        "org.springframework"            % "spring-jcl"                % springV,
+        "commons-io"                     % "commons-io"                % flinkCommonsIOV,
+        "org.scala-lang.modules"        %% "scala-collection-compat"   % scalaCollectionsCompatV,
+        "com.softwaremill.sttp.client3" %% "slf4j-backend"             % sttpV,
+        "org.typelevel"                 %% "cats-effect"               % catsEffectV,
+        "io.circe"                      %% "circe-parser"              % circeV,
+        "org.testcontainers"             % "testcontainers"            % testContainersJavaV,
+        "com.dimafeng"                  %% "testcontainers-scala-core" % testContainersScalaV,
+        "com.lihaoyi"                   %% "ujson"                     % ujsonV,
         // This lib produces more descriptive errors during validation than everit
-        "com.networknt"                  % "json-schema-validator"   % "1.4.0",
-        "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
-        "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"      % tapirV,
-        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % openapiCirceYamlV,
+        "com.networknt"                  % "json-schema-validator"     % "1.5.1",
+        "com.softwaremill.sttp.tapir"   %% "tapir-core"                % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"        % tapirV,
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"        % openapiCirceYamlV,
       ) ++ restAssuredDependency(scalaVersion.value)
     }
   )
@@ -1137,7 +1163,7 @@ lazy val testUtils = (project in utils("test-utils"))
 // rest-assured is not cross compiled, so we have to use different versions
 def restAssuredDependency(scalaVersion: String) = forScalaVersion(scalaVersion) {
   case (2, 12) => Seq("io.rest-assured" % "scala-support" % "4.0.0")
-  case (2, 13) => Seq("io.rest-assured" % "scala-support" % "5.3.1")
+  case (2, 13) => Seq("io.rest-assured" % "scala-support" % "5.5.0")
 }
 
 lazy val jsonUtils = (project in utils("json-utils"))
@@ -1150,7 +1176,9 @@ lazy val jsonUtils = (project in utils("json-utils"))
         ExclusionRule(organization = "javax.mail"),
         ExclusionRule(organization = "javax.validation"),
         ExclusionRule(organization = "jakarta.activation"),
-        ExclusionRule(organization = "jakarta.validation")
+        ExclusionRule(organization = "jakarta.validation"),
+        // due to swagger-parser duplicated files with different implementation https://github.com/swagger-api/swagger-parser/issues/2126
+        ExclusionRule("io.swagger", "swagger-parser-safe-url-resolver")
       ),
       "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
     )
@@ -1275,7 +1303,7 @@ lazy val liteKafkaComponentsTests: Project = (project in lite("components/kafka-
       Seq(
         "org.scalacheck"    %% "scalacheck"                    % scalaCheckV    % Test,
         "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
-        "org.scalatestplus" %% "mockito-4-11"                  % scalaTestPlusV % Test,
+        "org.scalatestplus" %% "mockito-5-10"                  % scalaTestPlusV % Test,
       )
     },
   )
@@ -1479,7 +1507,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
         "com.github.julien-truffaut" %% "monocle-core"  % monocleV,
         "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
         "com.typesafe.akka"          %% "akka-slf4j"    % akkaV     % Test,
-        "com.github.tomakehurst"      % "wiremock-jre8" % wireMockV % Test
+        "org.wiremock"                % "wiremock"      % wireMockV % Test,
       )
     },
     buildAndImportRuntimeImageToK3d := {
@@ -1518,7 +1546,7 @@ lazy val componentsApi = (project in file("components-api"))
         "com.beachape"                  %% "enumeratum"                       % enumeratumV,
         "com.typesafe.scala-logging"    %% "scala-logging"                    % scalaLoggingV,
         "com.typesafe"                   % "config"                           % configV,
-        "com.vdurmont"                   % "semver4j"                         % "3.1.0",
+        "org.semver4j"                   % "semver4j"                         % "5.4.0",
         "javax.validation"               % "validation-api"                   % javaxValidationApiV,
         "org.scala-lang.modules"        %% "scala-collection-compat"          % scalaCollectionsCompatV,
         "com.iheart"                    %% "ficus"                            % ficusV,
@@ -1598,15 +1626,15 @@ lazy val security = (project in file("security"))
       "io.circe"                    %% "circe-core"                     % circeV,
       "com.github.jwt-scala"        %% "jwt-circe"                      % jwtCirceV,
       "com.typesafe.scala-logging"  %% "scala-logging"                  % scalaLoggingV,
-      "com.auth0"                    % "jwks-rsa"                       % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
+      "com.auth0"                    % "jwks-rsa"                       % "0.22.1", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.tapir" %% "tapir-core"                     % tapirV,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe"               % tapirV,
       "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
-      "com.github.dasniko"           % "testcontainers-keycloak"        % "2.5.0"              % "it,test" excludeAll (
+      "com.github.dasniko"           % "testcontainers-keycloak"        % "2.6.0"              % "it,test" excludeAll (
         ExclusionRule("commons-logging", "commons-logging"),
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
-      )
+      ) // 3.x requires Java 17
     )
   )
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
@@ -1617,7 +1645,8 @@ lazy val flinkComponentsApi = (project in flink("components-api"))
     name := "nussknacker-flink-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
+        "org.apache.flink" % "flink-streaming-java" % flinkV     % Provided,
+        "org.scalatest"   %% "scalatest"            % scalaTestV % Test
       )
     }
   )
@@ -1645,7 +1674,7 @@ lazy val processReports = (project in file("designer/processReports"))
       Seq(
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-influxdb"  % testContainersScalaV % "it,test",
-        "org.influxdb"  % "influxdb-java"                  % "2.23"               % "it,test"
+        "org.influxdb"  % "influxdb-java"                  % "2.24"               % "it,test"
       )
     }
   )
@@ -1665,7 +1694,7 @@ lazy val httpUtils = (project in utils("http-utils"))
   )
   .dependsOn(componentsApi % Provided, testUtils % Test)
 
-val swaggerParserV      = "2.1.15"
+val swaggerParserV      = "2.1.22"
 val swaggerIntegrationV = "2.2.10"
 
 lazy val openapiComponents = (project in component("openapi"))
@@ -1873,7 +1902,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
         "com.typesafe.akka"             %% "akka-actor"   % akkaV,
         "com.softwaremill.sttp.client3" %% "core"         % sttpV,
         "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
-        "org.scalatestplus"             %% "mockito-4-11" % scalaTestPlusV % Test
+        "org.scalatestplus"             %% "mockito-5-10" % scalaTestPlusV % Test
       )
     }
   )
@@ -1961,7 +1990,7 @@ lazy val designer = (project in file("designer/server"))
         "org.hsqldb"                     % "hsqldb"                          % hsqldbV,
         "org.postgresql"                 % "postgresql"                      % postgresV,
         "org.flywaydb"                   % "flyway-core"                     % flywayV,
-        "org.apache.xmlgraphics"         % "fop"                             % "2.8" exclude ("commons-logging", "commons-logging"),
+        "org.apache.xmlgraphics"         % "fop"                             % "2.9" exclude ("commons-logging", "commons-logging"),
         "com.beachape"                  %% "enumeratum-circe"                % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % openapiCirceYamlV,
@@ -1972,32 +2001,33 @@ lazy val designer = (project in file("designer/server"))
         "com.softwaremill.sttp.tapir"   %% "tapir-json-circe"                % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-swagger-ui-bundle"         % tapirV,
         "io.circe"                      %% "circe-generic-extras"            % circeGenericExtrasV,
-        "org.reflections"                % "reflections"                     % "0.10.2",
+        "org.reflections"                % "reflections"                     % "0.10.2"             % Test,
         "com.github.pathikrit"          %% "better-files"                    % betterFilesV,
         "com.dimafeng"                  %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
         "com.dimafeng"                  %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
-        "org.scalatestplus"             %% "mockito-4-11"                    % scalaTestPlusV       % Test,
+        "org.scalatestplus"             %% "mockito-5-10"                    % scalaTestPlusV       % Test,
         "io.dropwizard.metrics5"         % "metrics-core"                    % dropWizardV,
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
         "org.scalacheck"                %% "scalacheck"                      % scalaCheckV          % Test,
         "com.github.erosb"               % "everit-json-schema"              % everitSchemaV exclude ("commons-logging", "commons-logging"),
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % Test,
-        "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
+        "org.wiremock"                   % "wiremock"                        % wireMockV            % Test,
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
+        "com.github.scopt"              %% "scopt"                           % "4.1.0"              % Test,
         "org.questdb"                    % "questdb"                         % "7.4.2",
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>
           Seq(
             "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
-            "org.scala-lang.modules" %% "scala-xml"                  % "2.1.0"
+            "org.scala-lang.modules" %% "scala-xml"                  % "2.3.0"
           )
         case _       => Seq()
       }
     }
   )
   .dependsOn(
-    scenarioCompiler,
+    scenarioCompiler                  % "compile;test->test;test->compile",
     processReports,
     security,
     deploymentManagerApi,

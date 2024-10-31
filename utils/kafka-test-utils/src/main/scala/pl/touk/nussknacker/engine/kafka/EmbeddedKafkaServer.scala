@@ -98,7 +98,7 @@ object EmbeddedKafkaServer {
 
   private def prepareRaftStorage(logDir: File, kafkaConfig: server.KafkaConfig, clusterId: Uuid) = {
     StorageTool.formatCommand(
-      new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM),
+      new PrintStream(NullOutputStream.INSTANCE),
       Seq(logDir.getAbsolutePath),
       StorageTool.buildMetadataProperties(clusterId.toString, kafkaConfig),
       MetadataVersion.LATEST_PRODUCTION,
@@ -178,7 +178,7 @@ object KafkaTestUtils {
     new KafkaProducer(props)
   }
 
-  private def createCommonProducerProps[K, T](kafkaAddress: String, id: String) = {
+  private def createCommonProducerProps[K, T](kafkaAddress: String, id: String): Properties = {
     val props = new Properties()
     props.put("bootstrap.servers", kafkaAddress)
     props.put("batch.size", "100000")

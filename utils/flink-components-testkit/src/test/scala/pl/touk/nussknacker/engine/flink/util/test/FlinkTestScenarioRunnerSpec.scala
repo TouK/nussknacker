@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSpec with ValidatedValuesDetailedMessage {
 
@@ -76,6 +77,29 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
         .runWithData[String, String](scenario, List("lcl"))
 
     runResults.validValue.successes shouldBe List(SampleHelper.foo)
+  }
+
+  test("should allow using meta variables") {
+    val scenario =
+      ScenarioBuilder
+        .streaming(getClass.getName)
+        .source("start", TestScenarioRunner.testDataSource)
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#meta.scenarioLabels".spel)
+
+    val runResults =
+      TestScenarioRunner
+        .flinkBased(config, flinkMiniCluster)
+        .build()
+        .runWithData[String, String](
+          scenario,
+          List("data"),
+          processVersion = ProcessVersion.empty.copy(
+            processName = scenario.name,
+            labels = List("abc", "def")
+          )
+        )
+
+    runResults.validValue.successes shouldBe List(List("abc", "def").asJava)
   }
 
   test("should allow using default global variables") {

@@ -95,7 +95,7 @@ class SpelExpression(
   private val expectedClass =
     expectedReturnType match {
       case r: SingleTypingResult =>
-        r.objType.klass
+        r.runtimeObjType.klass
       case _ =>
         // TODO: what should happen here?
         classOf[Any]
@@ -257,7 +257,7 @@ object SpelExpressionParser extends LazyLogging {
       // we have to pass classloader, because default contextClassLoader can be sth different than we expect...
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
-    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
+    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig, classDefinitionSet)
     val validator = new SpelExpressionValidator(
       Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), classDefinitionSet)
     )

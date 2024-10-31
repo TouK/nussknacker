@@ -1,21 +1,35 @@
+import { cx } from "@emotion/css";
+import { Box } from "@mui/material";
+import { isEmpty } from "lodash";
 import React, { useState } from "react";
-
-import AceEditor from "./ace";
-import { ExpressionObj } from "./types";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { SimpleEditor } from "./Editor";
+import { nodeInputWithError, nodeValue, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import { FieldError } from "../Validators";
+import AceEditor from "./ace";
+import { DEFAULT_OPTIONS } from "./AceWrapper";
+import { SimpleEditor } from "./Editor";
+import { ExpressionObj } from "./types";
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     className: string;
-    showValidation: boolean;
+    showValidation?: boolean;
     fieldErrors: FieldError[];
     fieldName: string;
+    readOnly?: boolean;
+    isMarked?: boolean;
 };
 
-export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expressionObj, fieldErrors, showValidation }: Props) => {
+export const JsonEditor: SimpleEditor<Props> = ({
+    onValueChange,
+    className,
+    expressionObj,
+    fieldErrors,
+    showValidation,
+    readOnly,
+    isMarked,
+}: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
 
     const onChange = (newValue: string) => {
@@ -27,32 +41,39 @@ export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expr
     const THEME = "nussknacker";
 
     return (
-        <div className={className}>
-            <AceEditor
-                mode={"json"}
-                width={"100%"}
-                minLines={5}
-                maxLines={50}
-                theme={THEME}
-                onChange={onChange}
-                value={value}
-                showPrintMargin={false}
-                cursorStart={-1} //line start
-                showGutter={true}
-                highlightActiveLine={true}
-                wrapEnabled={true}
-                setOptions={{
-                    indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
-                    enableLiveAutocompletion: false,
-                    enableSnippets: false,
-                    showLineNumbers: true,
-                    fontSize: 16,
-                    enableBasicAutocompletion: false,
-                    tabSize: 2,
-                }}
-            />
+        <Box className={cx(nodeValue, className)} sx={{ width: "100%" }}>
+            <Box
+                className={cx([
+                    rowAceEditor,
+                    showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
+                    isMarked && "marked",
+                    readOnly && "read-only",
+                ])}
+                sx={{ position: "relative" }}
+            >
+                <AceEditor
+                    mode={"json"}
+                    width={"100%"}
+                    minLines={5}
+                    maxLines={50}
+                    theme={THEME}
+                    onChange={onChange}
+                    value={value}
+                    showPrintMargin={false}
+                    cursorStart={-1} //line start
+                    wrapEnabled={true}
+                    showGutter={true}
+                    setOptions={{
+                        ...DEFAULT_OPTIONS,
+                        enableLiveAutocompletion: false,
+                        enableBasicAutocompletion: false,
+                        showLineNumbers: true,
+                        tabSize: 2,
+                    }}
+                />
+            </Box>
             {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
-        </div>
+        </Box>
     );
 };
 

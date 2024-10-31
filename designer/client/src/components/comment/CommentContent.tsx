@@ -2,8 +2,10 @@ import React, { useMemo } from "react";
 import { isEmpty } from "lodash";
 import xss from "xss";
 import { PanelComment } from "./StyledComment";
-import { Link, ThemeProvider, Typography, useTheme } from "@mui/material";
-import ReactDOMServer from "react-dom/server";
+import { Link, Theme, ThemeProvider, Typography, useTheme } from "@mui/material";
+import ReactDOMServer, { renderToString } from "react-dom/server";
+import Highlighter from "react-highlight-words";
+import { Variant } from "@mui/material/styles/createTypography";
 
 interface Props {
     content: string;
@@ -11,9 +13,37 @@ interface Props {
         substitutionPattern?: string;
         substitutionLink?: string;
     };
+    searchWords?: string[];
+    variant?: Variant;
 }
 
-function CommentContent({ commentSettings, content }: Props): JSX.Element {
+const withHighlightText = (text: string, searchWords: string[], theme: Theme) => {
+    const handleReplaceText = (textToReplace: string) => {
+        return textToReplace.replace(
+            textToReplace,
+            renderToString(
+                <Highlighter
+                    searchWords={searchWords}
+                    autoEscape={true}
+                    textToHighlight={textToReplace}
+                    highlightTag={`span`}
+                    highlightStyle={{
+                        color: theme.palette.warning.main,
+                        background: theme.palette.background.paper,
+                        fontWeight: "bold",
+                    }}
+                />,
+            ),
+        );
+    };
+
+    const beforeHtmlTagTextRegexp = /([^<>]+)(?=<|$)/g;
+    return text.replaceAll(beforeHtmlTagTextRegexp, (match, p1: string) => {
+        return searchWords.some((searchWord) => p1.includes(searchWord)) ? `${handleReplaceText(p1)}` : p1;
+    });
+};
+
+function CommentContent({ commentSettings, content, searchWords, variant = "caption" }: Props): JSX.Element {
     const theme = useTheme();
     const newContent = useMemo(() => {
         if (isEmpty(commentSettings)) {
@@ -34,7 +64,7 @@ function CommentContent({ commentSettings, content }: Props): JSX.Element {
         }
     }, [commentSettings, content, theme]);
 
-    const __html = useMemo(
+    const sanitizedContent = useMemo(
         () =>
             xss(newContent, {
                 whiteList: {
@@ -45,9 +75,14 @@ function CommentContent({ commentSettings, content }: Props): JSX.Element {
         [newContent],
     );
 
+    const __html = useMemo(
+        () => (searchWords?.length > 0 ? withHighlightText(sanitizedContent, searchWords, theme) : sanitizedContent),
+        [sanitizedContent, searchWords, theme],
+    );
+
     return (
         <PanelComment>
-            <Typography variant={"caption"} dangerouslySetInnerHTML={{ __html }} />
+            <Typography variant={variant} dangerouslySetInnerHTML={{ __html }} />
         </PanelComment>
     );
 }

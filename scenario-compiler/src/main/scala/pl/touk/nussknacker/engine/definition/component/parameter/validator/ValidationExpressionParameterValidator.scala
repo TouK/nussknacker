@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.{CompileTimeEvaluableValueValidator, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{Context, CustomMetaData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{Context, CustomMetaData, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
@@ -18,7 +18,7 @@ case class ValidationExpressionParameterValidator(
     validationExpression: CompiledExpression,
     validationFailedMessage: Option[String],
     expressionEvaluator: ExpressionEvaluator,
-    metaData: MetaData
+    jobData: JobData
 ) extends Validator {
 
   override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
@@ -41,7 +41,7 @@ case class ValidationExpressionParameterValidator(
 
     Try(
       expressionEvaluator.evaluate[java.lang.Boolean](validationExpression, "validationExpression", nodeId.id, context)(
-        metaData
+        jobData
       )
     ).fold(
       e =>

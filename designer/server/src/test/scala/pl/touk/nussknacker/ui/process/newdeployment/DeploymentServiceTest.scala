@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.base.it.WithClock
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
@@ -29,13 +30,14 @@ class DeploymentServiceTest
     with Matchers
     with PatientScalaFutures
     with WithHsqlDbTesting
+    with WithClock
     with DBIOActionValues
     with EitherValuesDetailedMessage
     with BeforeAndAfterEach {
 
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 
-  private val writeScenarioRepository = TestFactory.newWriteProcessRepository(testDbRef, modelVersions = None)
+  private val writeScenarioRepository = TestFactory.newWriteProcessRepository(testDbRef, clock, modelVersions = None)
 
   private val service = {
     val clock                      = Clock.fixed(Instant.ofEpochMilli(0), ZoneOffset.UTC)

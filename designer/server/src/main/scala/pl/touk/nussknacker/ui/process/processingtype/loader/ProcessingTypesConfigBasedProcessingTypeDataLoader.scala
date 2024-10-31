@@ -39,14 +39,16 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
         val processingTypesData = providerWithNameInputData
           .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
             logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
+            val modelDependencies = getModelDependencies(processingType)
             val processingTypeData = ProcessingTypeData.createProcessingTypeData(
               processingType,
-              ModelData(processingTypeConfig, getModelDependencies(processingType)),
+              ModelData(processingTypeConfig, modelDependencies),
               deploymentManagerProvider,
               getDeploymentManagerDependencies(processingType),
               engineSetupNames(processingType),
               processingTypeConfig.deploymentConfig,
-              processingTypeConfig.category
+              processingTypeConfig.category,
+              modelDependencies.componentDefinitionExtractionMode
             )
             processingType -> processingTypeData
           }

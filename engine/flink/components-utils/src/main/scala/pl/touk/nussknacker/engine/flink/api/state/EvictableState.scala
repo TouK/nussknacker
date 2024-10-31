@@ -47,20 +47,6 @@ abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFu
 
 }
 
-abstract class TimestampedEvictableStateFunction[In, Out, StateType]
-    extends EvictableStateFunction[In, Out, MultiMap[Long, StateType]] {
-
-  override protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context): Unit = {
-    super.moveEvictionTime(offset, ctx)
-    state.update(stateValue.from(ctx.timestamp() - offset))
-  }
-
-  protected def stateValue: MultiMap[Long, StateType] = {
-    Option(state.value()).getOrElse(MultiMap[Long, StateType](Ordering.Long))
-  }
-
-}
-
 abstract class LatelyEvictableStateFunction[In, Out, StateType]
     extends KeyedProcessFunction[String, In, Out]
     with LatelyEvictableStateFunctionMixin[StateType] {

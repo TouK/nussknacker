@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.table.sink
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import org.apache.commons.io.FileUtils
+import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.table.api.DataTypes
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
@@ -12,9 +13,8 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.{FlinkTableComponentProvider, SpelValues}
+import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
-import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.table.utils.NotConvertibleResultOfAlignmentException
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
@@ -209,6 +209,15 @@ class TableFileSinkTest
       |      'path' = 'file:///$datetimeExpressionOutputDirectory',
       |      'format' = 'json'
       |) LIKE `$datetimePingPongInputTableName`;
+      |
+      |CREATE DATABASE testdb;
+      |
+      |CREATE TABLE testdb.tablewithqualifiedname (
+      |      `quantity` INT
+      |) WITH (
+      |    'connector' = 'datagen',
+      |    'number-of-rows' = '1'
+      |);
       |""".stripMargin
 
   private lazy val sqlTablesDefinitionFilePath = {
@@ -232,7 +241,7 @@ class TableFileSinkTest
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
     .withExecutionMode(ExecutionMode.Batch)
-    .withExtraComponents(singleRecordBatchTable :: tableComponents)
+    .withExtraComponents(tableComponents)
     .build()
 
   override protected def afterAll(): Unit = {
@@ -253,7 +262,11 @@ class TableFileSinkTest
   test("should do file-to-file ping-pong for all basic types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$basicPingPongInputTableName'".spel)
+      .source(
+        "start",
+        "table",
+        "Table" -> s"'`default_catalog`.`default_database`.`$basicPingPongInputTableName`'".spel
+      )
       .buildVariable(
         "example-transformations",
         "out",
@@ -270,7 +283,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$basicPingPongOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$basicPingPongOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -305,11 +318,15 @@ class TableFileSinkTest
   test("should be able to access virtual columns in input table") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$virtualColumnInputTableName'".spel)
+      .source(
+        "start",
+        "table",
+        "Table" -> s"'`default_catalog`.`default_database`.`$virtualColumnInputTableName`'".spel
+      )
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$virtualColumnOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$virtualColumnOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -352,19 +369,17 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$basicExpressionOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$basicExpressionOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> basicTypesExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
-    result.validValue.errors shouldBe empty
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
+    result shouldBe Symbol("valid")
 
     getLinesOfSingleFileInDirectoryEventually(
       basicExpressionOutputDirectory
@@ -381,18 +396,16 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$oneColumnOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$oneColumnOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     getLinesOfSingleFileInDirectoryEventually(oneColumnOutputDirectory).loneElement shouldBe "123"
@@ -401,7 +414,11 @@ class TableFileSinkTest
   test("should do file-to-file ping-pong for advanced types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$advancedPingPongInputTableName'".spel)
+      .source(
+        "start",
+        "table",
+        "Table" -> s"'`default_catalog`.`default_database`.`$advancedPingPongInputTableName`'".spel
+      )
       .buildVariable(
         "example-transformations",
         "out",
@@ -413,7 +430,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$advancedPingPongOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$advancedPingPongOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -460,7 +477,7 @@ class TableFileSinkTest
       .noSpaces
 
     Files.writeString(advancedPingPongInputDirectory.resolve("file.json"), inputContent, StandardCharsets.UTF_8)
-    val result = runner.runWithoutData(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(advancedPingPongOutputDirectory)
@@ -487,18 +504,16 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$advancedExpressionOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$advancedExpressionOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     val expectedNestedRecord = Json.fromFields(
@@ -532,7 +547,11 @@ class TableFileSinkTest
   test("should do file-to-file ping-pong for datetime types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> s"'$datetimePingPongInputTableName'".spel)
+      .source(
+        "start",
+        "table",
+        "Table" -> s"'`default_catalog`.`default_database`.`$datetimePingPongInputTableName`'".spel
+      )
       .buildVariable(
         "example-transformations",
         "out",
@@ -544,7 +563,7 @@ class TableFileSinkTest
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$datetimePingPongOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$datetimePingPongOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> "#input".spel
       )
@@ -572,7 +591,7 @@ class TableFileSinkTest
       .noSpaces
 
     Files.writeString(datetimePingPongInputDirectory.resolve("file.json"), inputContent, StandardCharsets.UTF_8)
-    val result = runner.runWithoutData(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimePingPongOutputDirectory)
@@ -583,11 +602,11 @@ class TableFileSinkTest
   test("should be possible to provide values for datetime types by spel expressions") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
-        "Table"         -> s"'$datetimeExpressionOutputTableName'".spel,
+        "Table"         -> s"'`default_catalog`.`default_database`.`$datetimeExpressionOutputTableName`'".spel,
         "Raw editor"    -> "false".spel,
         "date"          -> "T(java.time.LocalDate).parse('2024-01-01')".spel,
         "time"          -> "T(java.time.LocalTime).parse('12:01:02.000000003')".spel,
@@ -607,7 +626,7 @@ class TableFileSinkTest
       )
       .noSpaces
 
-    val result = runner.runWithoutData(scenario)
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     result.validValue.errors shouldBe empty
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(datetimeExpressionOutputDirectory)
@@ -625,22 +644,20 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$genericsOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$genericsOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
+    val result = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
 
     val expectedMessage =
       """Provided value does not match scenario output - errors:
-        |Incorrect type: actual: 'Record{arrayOfInts: List[Double]({1.23, 2.34}), map: Record{foo: Double(1.23)}}' expected: 'Record{arrayOfInts: Array[Integer], map: Map[String,Integer]}'.""".stripMargin
+        |Incorrect type: actual: 'Record{arrayOfInts: List[Double]({1.23, 2.34}), map: Record{foo: Double(1.23)}}' expected: 'Record{arrayOfInts: List[Integer], map: Map[String,Integer]}'.""".stripMargin
     result.invalidValue.toList should matchPattern {
       case CustomNodeError(
             "end",
@@ -658,18 +675,16 @@ class TableFileSinkTest
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
-        "Table"      -> s"'$oneColumnOutputTableName'".spel,
+        "Table"      -> s"'`default_catalog`.`default_database`.`$oneColumnOutputTableName`'".spel,
         "Raw editor" -> "true".spel,
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
-    )
+    val result  = runner.runWithData(scenario, List(0), Boundedness.BOUNDED)
     val intType = DataTypes.INT().getLogicalType
     result.validValue.errors should matchPattern {
       case ExceptionResult(_, Some("end"), NotConvertibleResultOfAlignmentException("ala", "ala", `intType`)) :: Nil =>

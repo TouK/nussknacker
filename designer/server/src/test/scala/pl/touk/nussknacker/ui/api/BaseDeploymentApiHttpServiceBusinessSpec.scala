@@ -42,7 +42,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
 
   protected val scenario: CanonicalProcess = ScenarioBuilder
     .streaming(scenarioName)
-    .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
+    .source(sourceNodeId, "table", "Table" -> Expression.spel("'`default_catalog`.`default_database`.`transactions`'"))
     .customNode(
       id = "aggregate",
       outputVar = "agg",
@@ -60,7 +60,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     .emptySink(
       id = "sink",
       typ = "table",
-      "Table"      -> Expression.spel("'transactions_summary'"),
+      "Table"      -> Expression.spel("'`default_catalog`.`default_database`.`transactions_summary`'"),
       "Raw editor" -> Expression.spel("false"),
       "client_id"  -> Expression.spel("#keyValues[0]"),
       "date"       -> Expression.spel("#keyValues[1]"),

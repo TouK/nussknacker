@@ -12,6 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -49,10 +50,12 @@ import pl.touk.nussknacker.ui.process.deployment.{
   DefaultProcessingTypeDeployedScenariosProvider,
   DeploymentManagerDispatcher,
   DeploymentService => LegacyDeploymentService,
+  RepositoryBasedScenarioActivityManager,
   ScenarioResolver,
   ScenarioTestExecutorServiceImpl
 }
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.label.ScenarioLabelsService
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
 import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
@@ -65,6 +68,7 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -80,7 +84,12 @@ import pl.touk.nussknacker.ui.statistics.{
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util._
-import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
+import pl.touk.nussknacker.ui.validation.{
+  NodeValidator,
+  ParametersValidator,
+  ScenarioLabelsValidator,
+  UIProcessValidator
+}
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
@@ -88,6 +97,7 @@ import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -115,13 +125,18 @@ class AkkaHttpBasedRouteProvider(
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
       actionServiceSupplier      = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
+      deploymentRepository       = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
+      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
+      dbioRunner                 = DBIOActionRunner(dbRef)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         additionalUIConfigProvider,
         actionServiceSupplier,
+        scenarioActivityRepository,
+        dbioRunner,
         sttpBackend,
+        featureTogglesConfig,
       )
-      deploymentRepository = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
-      dbioRunner           = DBIOActionRunner(dbRef)
+
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
         deploymentRepository,
         processingTypeDataProvider.mapValues(
@@ -140,17 +155,25 @@ class AkkaHttpBasedRouteProvider(
           scheduler
         }
       )
+      statisticsPublicKey <- Resource.fromAutoCloseable(
+        IO {
+          Source.fromURL(getClass.getResource("/encryption.key"))
+        }
+      )
     } yield {
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
       implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
-      val commentRepository                             = new CommentRepository(dbRef)
-      val actionRepository  = new DbProcessActionRepository(dbRef, commentRepository, modelBuildInfo)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
+      val scenarioActivityRepository                    = DbScenarioActivityRepository.create(dbRef, designerClock)
+      val actionRepository                              = DbScenarioActionRepository.create(dbRef, modelBuildInfo)
+      val scenarioLabelsRepository                      = new ScenarioLabelsRepository(dbRef)
+      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository, scenarioLabelsRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
-      val writeProcessRepository  = ProcessRepository.create(dbRef, commentRepository, migrations)
+      val futureProcessRepository =
+        DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository, scenarioLabelsRepository)
+      val writeProcessRepository =
+        ProcessRepository.create(dbRef, designerClock, scenarioActivityRepository, scenarioLabelsRepository, migrations)
 
       val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
@@ -161,6 +184,7 @@ class AkkaHttpBasedRouteProvider(
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
           processingTypeData.deploymentData.scenarioPropertiesConfig,
           new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
+          new ScenarioLabelsValidator(featureTogglesConfig.scenarioLabelConfig),
           processingTypeData.deploymentData.additionalValidators,
           fragmentResolver
         )
@@ -227,12 +251,18 @@ class AkkaHttpBasedRouteProvider(
       // correct classloader and that won't cause further delays during handling requests
       processingTypeDataProvider.reloadAll().unsafeRunSync()
 
-      val processActivityRepository = new DbProcessActivityRepository(dbRef, commentRepository)
-
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
       val authManager             = new AuthManager(authenticationResources)
 
-      Initialization.init(migrations, dbRef, processRepository, commentRepository, environment)
+      Initialization.init(
+        migrations,
+        dbRef,
+        designerClock,
+        processRepository,
+        scenarioActivityRepository,
+        scenarioLabelsRepository,
+        environment
+      )
 
       val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
         new NewProcessPreparer(
@@ -256,7 +286,7 @@ class AkkaHttpBasedRouteProvider(
         dbioRunner,
         futureProcessRepository,
         actionRepository,
-        writeProcessRepository
+        writeProcessRepository,
       )
 
       val configProcessToolbarService = new ConfigScenarioToolbarService(
@@ -317,6 +347,15 @@ class AkkaHttpBasedRouteProvider(
         categories = processingTypeDataProvider.mapValues(_.category)
       )
 
+      val scenarioLabelsApiHttpService = new ScenarioLabelsApiHttpService(
+        authManager = authManager,
+        service = new ScenarioLabelsService(
+          scenarioLabelsRepository,
+          new ScenarioLabelsValidator(featureTogglesConfig.scenarioLabelConfig),
+          dbioRunner
+        )
+      )
+
       val managementApiHttpService = new ManagementApiHttpService(
         authManager = authManager,
         dispatcher = dmDispatcher,
@@ -341,19 +380,32 @@ class AkkaHttpBasedRouteProvider(
         processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
           new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
-        scenarioService = processService
+        scenarioService = processService,
+      )
+
+      val testingApiHttpService = new TestingApiHttpService(
+        authManager = authManager,
+        processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
+          new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
+        ),
+        processingTypeToScenarioTestServices = scenarioTestService,
+        scenarioService = processService,
       )
 
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         authManager = authManager,
-        scenarioActivityRepository = processActivityRepository,
+        deploymentManagerDispatcher = dmDispatcher,
+        scenarioActivityRepository = scenarioActivityRepository,
         scenarioService = processService,
         scenarioAuthorizer = processAuthorizer,
         new ScenarioAttachmentService(
           AttachmentsConfig.create(resolvedConfig),
-          processActivityRepository
+          scenarioActivityRepository,
+          dbioRunner,
         ),
-        new AkkaHttpBasedTapirStreamEndpointProvider()
+        featureTogglesConfig.deploymentCommentSettings,
+        new AkkaHttpBasedTapirStreamEndpointProvider(),
+        dbioRunner,
       )
       val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
         authManager = authManager,
@@ -388,13 +440,13 @@ class AkkaHttpBasedRouteProvider(
             dbioRunner,
             Clock.systemDefaultZone()
           )
-        val commentRepository = new CommentRepository(dbRef)
         val activityService =
           new ActivityService(
             featureTogglesConfig.deploymentCommentSettings,
-            commentRepository,
+            scenarioActivityRepository,
             deploymentService,
-            dbioRunner
+            dbioRunner,
+            designerClock,
           )
         new DeploymentApiHttpService(authManager, activityService, deploymentService)
       }
@@ -413,8 +465,9 @@ class AkkaHttpBasedRouteProvider(
           new ProcessesExportResources(
             futureProcessRepository,
             processService,
-            processActivityRepository,
-            processResolver
+            scenarioActivityRepository,
+            processResolver,
+            dbioRunner,
           ),
           new ManagementResources(
             processAuthorizer,
@@ -433,12 +486,12 @@ class AkkaHttpBasedRouteProvider(
                   processingTypeData,
                   prepareAlignedComponentsDefinitionProvider(processingTypeData),
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
-                  fragmentRepository
+                  fragmentRepository,
+                  resolvedConfig.getAs[String]("fragmentPropertiesDocsUrl")
                 )
               )
             }
           ),
-          new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new StatusResources(stateDefinitionService),
         )
 
@@ -458,7 +511,10 @@ class AkkaHttpBasedRouteProvider(
               new RemoteEnvironmentResources(
                 remoteEnvironment,
                 processService,
-                processAuthorizer
+                processAuthorizer,
+                scenarioActivityRepository,
+                dbioRunner,
+                designerClock,
               )
             },
           countsReporter.map(reporter =>
@@ -475,7 +531,7 @@ class AkkaHttpBasedRouteProvider(
         processService,
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
         fingerprintService,
-        processActivityRepository,
+        scenarioActivityRepository,
         componentService,
         feStatisticsRepository,
         processingTypeDataProvider
@@ -485,16 +541,14 @@ class AkkaHttpBasedRouteProvider(
           }
           .all
           .values
-          .flatten
+          .flatMap(_.components)
           .toList,
-        designerClock
+        designerClock,
+        dbioRunner,
       )
 
-      val statisticUrlConfig = if (usageStatisticsReportsConfig.encryptionEnabled) {
-        StatisticUrlConfig(maybePublicEncryptionKey = Some(PublicEncryptionKey.INSTANCE))
-      } else {
-        StatisticUrlConfig()
-      }
+      val statisticUrlConfig =
+        StatisticUrlConfig(publicEncryptionKey = PublicEncryptionKey(statisticsPublicKey.mkString.trim))
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authManager,
@@ -524,8 +578,10 @@ class AkkaHttpBasedRouteProvider(
           managementApiHttpService,
           migrationApiHttpService,
           nodesApiHttpService,
+          testingApiHttpService,
           notificationApiHttpService,
           scenarioActivityApiHttpService,
+          scenarioLabelsApiHttpService,
           scenarioParametersHttpService,
           userApiHttpService,
           statisticsApiHttpService
@@ -635,15 +691,28 @@ class AkkaHttpBasedRouteProvider(
   private def prepareProcessingTypeDataReload(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
+      scenarioActivityRepository: ScenarioActivityRepository,
+      dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
+      featureTogglesConfig: FeatureTogglesConfig
   )(implicit executionContext: ExecutionContext): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
         acquire = IO(
           new ReloadableProcessingTypeDataProvider(
             processingTypeDataLoader.loadProcessingTypeData(
-              getModelDependencies(additionalUIConfigProvider, _),
-              getDeploymentManagerDependencies(actionServiceProvider, sttpBackend, _),
+              getModelDependencies(
+                additionalUIConfigProvider,
+                _,
+                featureTogglesConfig.componentDefinitionExtractionMode
+              ),
+              getDeploymentManagerDependencies(
+                actionServiceProvider,
+                scenarioActivityRepository,
+                dbioActionRunner,
+                sttpBackend,
+                _
+              ),
             )
           )
         )
@@ -654,6 +723,8 @@ class AkkaHttpBasedRouteProvider(
 
   private def getDeploymentManagerDependencies(
       actionServiceProvider: Supplier[ActionService],
+      scenarioActivityRepository: ScenarioActivityRepository,
+      dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
   )(implicit executionContext: ExecutionContext) = {
@@ -663,6 +734,10 @@ class AkkaHttpBasedRouteProvider(
         processingType,
         actionServiceProvider.get(),
       ),
+      new RepositoryBasedScenarioActivityManager(
+        scenarioActivityRepository,
+        dbioActionRunner,
+      ),
       system.dispatcher,
       system,
       sttpBackend
@@ -671,14 +746,16 @@ class AkkaHttpBasedRouteProvider(
 
   private def getModelDependencies(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      processingType: ProcessingType
+      processingType: ProcessingType,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     ModelDependencies(
       additionalConfigsFromProvider,
       DesignerWideComponentId.default(processingType, _),
       workingDirectoryOpt = None, // we use the default working directory
-      _ => true
+      _ => true,
+      componentDefinitionExtractionMode,
     )
   }
 

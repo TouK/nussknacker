@@ -104,7 +104,10 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
         components,
         configCreator = new WithConvUtilConfigCreator(spelCustomConversionsProviderOpt)
       )
+    val jobData: JobData =
+      JobData(process.metaData, ProcessVersion.empty.copy(processName = process.metaData.name))
     val compilerData = ProcessCompilerData.prepare(
+      jobData,
       modelData.modelDefinitionWithClasses,
       modelData.engineDictRegistry,
       Seq.empty,
@@ -116,7 +119,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     val parts  = compilerData.compile(process).value
     val source = parts.sources.head
     val compiledNode =
-      compilerData.subPartCompiler.compile(source.node, source.validationContext)(process.metaData).result.value
+      compilerData.subPartCompiler.compile(source.node, source.validationContext)(jobData).result.value
 
     val inputContext                = Context("foo").withVariable(VariableConstants.InputVariableName, inputValue)
     implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
@@ -125,7 +128,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
         compilerData.interpreter
           .interpret[IO](
             compiledNode,
-            parts.metaData,
+            jobData,
             inputContext,
             ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
           )

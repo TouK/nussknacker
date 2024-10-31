@@ -103,6 +103,7 @@ class PeriodicDeploymentManager private[periodic] (
     toClose: () => Unit
 )(implicit val ec: ExecutionContext)
     extends DeploymentManager
+    with ManagerSpecificScenarioActivitiesStoredByManager
     with LazyLogging {
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
@@ -221,5 +222,25 @@ class PeriodicDeploymentManager private[periodic] (
   //      its statuses synchronization mechanism (see PeriodicProcessService.synchronizeDeploymentsStates)
   //      We should move periodic mechanism to the core and reuse new synchronization mechanism also in this case.
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+  // todo NU-1772
+  //  In the current implementation:
+  //    - PeriodicDeploymentManager is a kind of plugin, and it has its own data source (separate db)
+  //    - PeriodicDeploymentManager returns (by implementing ManagerSpecificScenarioActivitiesStoredByManager) custom ScenarioActivities, that are associated with operations performed internally by the manager
+  //  Why is it not the ideal solution:
+  //    - we have different data sources for ScenarioActivities, and merging data from two sources may be problematic, e.g. when paginating results
+  //  How can it be redesigned:
+  //    - we could do it using the ManagerSpecificScenarioActivitiesStoredByNussknacker instead
+  //    - that way, Nu would provide hooks, that would allow the manager to save and modify its custom activities in the Nu database
+  //    - only the Nussknacker database would then be used, as single source of Scenario Activities
+  //  Why not implemented that way in the first place?
+  //    - we have to migrate information about old periodic deployments, or decide that we don't need it
+  //    - we have to modify the logic of the PeriodicDeploymentManager
+  //    - we may need to refactor PeriodicDeploymentManager data source first
+
+  override def managerSpecificScenarioActivities(
+      processIdWithName: ProcessIdWithName
+  ): Future[List[ScenarioActivity]] =
+    service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName)
 
 }

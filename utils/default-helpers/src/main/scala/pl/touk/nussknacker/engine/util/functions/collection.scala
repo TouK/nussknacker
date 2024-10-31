@@ -1,21 +1,24 @@
 package pl.touk.nussknacker.engine.util.functions
 
 import cats.data.ValidatedNel
-import cats.implicits.catsSyntaxValidatedId
+import cats.implicits._
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{
+  SingleTypingResult,
   Typed,
   TypedClass,
   TypedObjectTypingResult,
   TypedObjectWithValue,
+  TypingResult,
   Unknown
 }
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import java.util.{Collections, Objects}
+import scala.annotation.{tailrec, varargs}
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.reflect.ClassTag
@@ -26,25 +29,31 @@ trait CollectionUtils extends HideToString {
 
   import CollectionUtils._
 
-  @Documentation(description = "Concatenates two lists")
+  @Documentation(description = "Concatenates lists")
   @GenericType(typingFunction = classOf[ListAdditionTyping])
+  @varargs
   def concat[T](
-      @ParamName("list1") list1: java.util.List[T],
-      @ParamName("list2") list2: java.util.List[T]
-  ): java.util.List[T] =
-    (list1.asScala.toList ++ list2.asScala).asJava
+      @ParamName("list") list: java.util.List[T],
+      @ParamName("lists") lists: java.util.List[T]*
+  ): java.util.List[T] = {
+    val result = new java.util.ArrayList[T](list.size() + lists.map(_.size()).sum)
+    result.addAll(list)
+    lists.foreach(result.addAll)
+    result
+  }
 
   @Documentation(description =
-    "Merges two maps. Values in the first map will be overwritten with values from the second map if keys are the same"
+    "Merges maps. Values in the first map will be overwritten with values from the other one if keys are the same"
   )
-  @GenericType(typingFunction = classOf[MapMergeTyping])
+  @GenericType(typingFunction = classOf[VarargsMapMergeTyping])
+  @varargs
   def merge[K, V](
-      @ParamName("map1") map1: java.util.Map[K, V],
-      @ParamName("map2") map2: java.util.Map[K, V]
+      @ParamName("map") map: java.util.Map[K, V],
+      @ParamName("maps") maps: java.util.Map[K, V]*
   ): java.util.Map[K, V] = {
-    val merged = new java.util.HashMap[K, V](map1.size() + map2.size())
-    merged.putAll(map1)
-    merged.putAll(map2)
+    val merged = new java.util.HashMap[K, V](map.size() + maps.map(_.size()).sum)
+    merged.putAll(map)
+    maps.foreach(merged.putAll)
     merged
   }
 
@@ -285,7 +294,29 @@ object CollectionUtils {
   }
 
   class CollectionMergeTyping[F[_]](implicit classTag: ClassTag[F[_]]) extends TypingFunction {
-    private val fClass: Class[F[_]] = classTag.runtimeClass.asInstanceOf[Class[F[_]]]
+    private[functions] val fClass: Class[F[_]] = classTag.runtimeClass.asInstanceOf[Class[F[_]]]
+
+    override def computeResultType(
+        arguments: List[typing.TypingResult]
+    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
+      case first :: second :: Nil => computeResultType(first, second).validNel
+      case _                      => Typed.genericTypeClass(fClass, List(Unknown)).validNel
+    }
+
+    private[functions] def computeResultType(first: TypingResult, second: TypingResult): TypingResult =
+      (first, second) match {
+        case (l1 @ TypedClass(`fClass`, _ :: Nil), l2 @ TypedClass(`fClass`, _ :: Nil)) => concatType(l1, l2)
+        case (l1 @ TypedClass(`fClass`, _ :: Nil), TypedObjectWithValue(l2 @ TypedClass(`fClass`, _ :: Nil), _)) =>
+          concatType(l1, l2)
+        case (TypedObjectWithValue(l1 @ TypedClass(`fClass`, _ :: Nil), _), l2 @ TypedClass(`fClass`, _ :: Nil)) =>
+          concatType(l1, l2)
+        case (
+              TypedObjectWithValue(l1 @ TypedClass(`fClass`, _ :: Nil), _),
+              TypedObjectWithValue(l2 @ TypedClass(`fClass`, _ :: Nil), _)
+            ) =>
+          concatType(l1, l2)
+        case _ => Typed.genericTypeClass(fClass, List(Unknown))
+      }
 
     private def commonFieldHasTheSameType(
         fields1: Map[String, typing.TypingResult],
@@ -298,28 +329,6 @@ object CollectionUtils {
         fields2.filter { case (key, _) => commonFields.contains(key) }.map { case (key, value) =>
           key -> value.withoutValue
         }
-    }
-
-    override def computeResultType(
-        arguments: List[typing.TypingResult]
-    ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case (list1 @ TypedClass(`fClass`, _ :: Nil)) ::
-          (list2 @ TypedClass(`fClass`, _ :: Nil)) :: Nil =>
-        concatType(list1, list2)
-
-      case (list1 @ TypedClass(`fClass`, _ :: Nil)) ::
-          TypedObjectWithValue(list2 @ TypedClass(`fClass`, _ :: Nil), _) :: Nil =>
-        concatType(list1, list2)
-
-      case TypedObjectWithValue(list1 @ TypedClass(`fClass`, _ :: Nil), _) ::
-          (list2 @ TypedClass(`fClass`, _ :: Nil)) :: Nil =>
-        concatType(list1, list2)
-
-      case TypedObjectWithValue(list1 @ TypedClass(`fClass`, _ :: Nil), _) ::
-          TypedObjectWithValue(list2 @ TypedClass(`fClass`, _ :: Nil), _) :: Nil =>
-        concatType(list1, list2)
-
-      case _ => Typed.genericTypeClass(fClass, List(Unknown)).validNel
     }
 
     private def concatType(list1: TypedClass, list2: TypedClass) = (list1, list2) match {
@@ -340,19 +349,34 @@ object CollectionUtils {
                   infoX ++ infoY
                 ) :: Nil
               )
-              .validNel
           case (_: TypedObjectTypingResult, _: TypedObjectTypingResult) =>
-            listType.copy(params = Unknown :: Nil).validNel
+            listType.copy(params = Unknown :: Nil)
           case (`unknownMapType`, _: TypedObjectTypingResult) | (_: TypedObjectTypingResult, `unknownMapType`) |
               (`unknownMapType`, `unknownMapType`) =>
-            listType.copy(params = unknownMapType :: Nil).validNel
+            listType.copy(params = unknownMapType :: Nil)
           case _ if firstComponentType.withoutValue == secondComponentType.withoutValue =>
-            listType.copy(params = firstComponentType.withoutValue :: Nil).validNel
+            listType.copy(params = firstComponentType.withoutValue :: Nil)
           case _ if firstComponentType.canBeSubclassOf(numberType) && secondComponentType.canBeSubclassOf(numberType) =>
-            Typed.genericTypeClass(fClass, List(numberType)).validNel
-          case _ => listType.copy(params = Unknown :: Nil).validNel
+            Typed.genericTypeClass(fClass, List(numberType))
+          case _ => listType.copy(params = Unknown :: Nil)
         }
-      case _ => Typed.genericTypeClass(fClass, List(Unknown)).validNel
+      case _ => Typed.genericTypeClass(fClass, List(Unknown))
+    }
+
+  }
+
+  class VarargsCollectionMergeTyping[F[_]](implicit classTag: ClassTag[F[_]]) extends CollectionMergeTyping[F] {
+
+    override def computeResultType(
+        arguments: List[TypingResult]
+    ): ValidatedNel[GenericFunctionTypingError, TypingResult] =
+      fold(arguments).validNel
+
+    @tailrec
+    private def fold(arguments: List[TypingResult]): TypingResult = arguments match {
+      case (x: SingleTypingResult) :: (y: SingleTypingResult) :: tail => fold(computeResultType(x, y) :: tail)
+      case (typingResult: TypingResult) :: Nil                        => typingResult
+      case _                                                          => Typed.genericTypeClass(fClass, List(Unknown))
     }
 
   }
@@ -362,18 +386,105 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case TypedObjectTypingResult(x, _, infoX) :: TypedObjectTypingResult(y, _, infoY) :: Nil =>
-        Typed.record(x ++ y, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY).validNel
-      case (typedClass: TypedClass) :: _      => typedClass.validNel
-      case _ :: (typedClass: TypedClass) :: _ => typedClass.validNel
-      case _                                  => unknownMapType.validNel
+      case first :: second :: Nil => computeResultType(first, second).validNel
+      case _                      => unknownMapType.validNel
+    }
+
+    private[functions] def computeResultType(first: TypingResult, second: TypingResult): TypingResult =
+      (first, second) match {
+        case (TypedObjectTypingResult(x, firstType, infoX), TypedObjectTypingResult(y, secondType, infoY)) =>
+          determineTypeWithGenerics(firstType, secondType) match {
+            case tc: TypedClass => Typed.record(x ++ y, tc, infoX ++ infoY)
+            case _              => unknownMapType
+          }
+        case (t1: SingleTypingResult, t2: SingleTypingResult) =>
+          determineTypeWithGenerics(t1.runtimeObjType, t2.runtimeObjType)
+        case _ => unknownMapType
+      }
+
+    private def determineTypeWithGenerics(firstType: TypedClass, secondType: TypedClass): TypingResult = {
+      (firstType.params.map(_.withoutValue), secondType.params.map(_.withoutValue)) match {
+        case ((k1: TypedClass) :: (v1: TypedClass) :: _, (k2: TypedClass) :: (v2: TypedClass) :: _) =>
+          val params = List(
+            determineType(k1, k2, determineGenerics(k1.params, k2.params)),
+            determineType(v1, v2, determineGenerics(v1.params, v2.params))
+          )
+          determineType(firstType, secondType, params)
+        case ((k1: TypedClass) :: _, (k2: TypedClass) :: _) =>
+          val params = List(determineType(k1, k2, determineGenerics(k1.params, k2.params)))
+          determineType(firstType, secondType, params)
+        case _ => determineType(firstType, secondType, Nil)
+      }
+    }
+
+    private def determineType(
+        firstType: TypedClass,
+        secondType: TypedClass,
+        genericTypes: List[TypingResult]
+    ): TypingResult =
+      if (firstType.klass.isAssignableFrom(secondType.klass) && genericTypes.nonEmpty) {
+        val params = fillParamsWithUnknownToRequiredSize(firstType, genericTypes)
+        Typed.genericTypeClass(firstType.klass, params)
+      } else if (secondType.klass.isAssignableFrom(firstType.klass) && genericTypes.nonEmpty) {
+        val params = fillParamsWithUnknownToRequiredSize(secondType, genericTypes)
+        Typed.genericTypeClass(secondType.klass, params)
+      } else if (firstType.klass.isAssignableFrom(secondType.klass) && genericTypes.isEmpty) {
+        Typed.typedClass(firstType.klass)
+      } else if (secondType.klass.isAssignableFrom(firstType.klass) && genericTypes.isEmpty) {
+        Typed.typedClass(secondType.klass)
+      } else {
+        Unknown
+      }
+
+    private def fillParamsWithUnknownToRequiredSize(
+        tc: TypedClass,
+        genericTypes: List[TypingResult]
+    ): List[TypingResult] =
+      genericTypes ++ List.fill(tc.klass.getTypeParameters.size - genericTypes.size)(Unknown)
+
+    private def determineGenerics(
+        firstParams: List[TypingResult],
+        secondParams: List[TypingResult]
+    ): List[TypingResult] = {
+      val firstParamsWithoutValue  = firstParams.map(_.withoutValue)
+      val secondParamsWithoutValue = secondParams.map(_.withoutValue)
+      if (firstParamsWithoutValue == secondParamsWithoutValue) {
+        firstParamsWithoutValue
+      } else if (firstParams.size == secondParams.size) {
+        firstParamsWithoutValue
+          .zip(secondParamsWithoutValue)
+          .map {
+            case (tc1: TypedClass, tc2: TypedClass) => Some(determineTypeWithGenerics(tc1, tc2))
+            case _                                  => None
+          }
+          .sequence
+          .getOrElse(Nil)
+      } else {
+        Nil
+      }
+    }
+
+  }
+
+  class VarargsMapMergeTyping extends MapMergeTyping {
+
+    override def computeResultType(
+        arguments: List[TypingResult]
+    ): ValidatedNel[GenericFunctionTypingError, TypingResult] =
+      fold(arguments).validNel
+
+    @tailrec
+    private def fold(arguments: List[TypingResult]): TypingResult = arguments match {
+      case (x: SingleTypingResult) :: (y: SingleTypingResult) :: tail => fold(computeResultType(x, y) :: tail)
+      case (typingResult: TypingResult) :: Nil                        => typingResult
+      case _                                                          => unknownMapType
     }
 
   }
 
   class ListTyping extends CollectionTyping[java.util.List]
 
-  class ListAdditionTyping extends CollectionMergeTyping[java.util.List]
+  class ListAdditionTyping extends VarargsCollectionMergeTyping[java.util.List]
 
   class ListElementTyping extends CollectionElementTyping[java.util.List]
 

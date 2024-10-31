@@ -3,17 +3,24 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { displayCurrentProcessVersion, displayProcessActivity, loadProcessToolbarsConfiguration } from "../../actions/nk";
+import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../actions/nk";
 import { PromptContent } from "../../windowManager";
 import { CommentInput } from "../comment/CommentInput";
 import { ThunkAction } from "../../actions/reduxTypes";
-import { getScenarioGraph, getProcessName, getProcessUnsavedNewName, isProcessRenamed } from "../../reducers/selectors/graph";
+import {
+    getScenarioGraph,
+    getProcessName,
+    getProcessUnsavedNewName,
+    isProcessRenamed,
+    getScenarioLabels,
+} from "../../reducers/selectors/graph";
 import HttpService from "../../http/HttpService";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { visualizationUrl } from "../../common/VisualizationUrl";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Typography } from "@mui/material";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 
 export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const location = useLocation();
@@ -24,9 +31,10 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
                 const state = getState();
                 const scenarioGraph = getScenarioGraph(state);
                 const currentProcessName = getProcessName(state);
+                const labels = getScenarioLabels(state);
 
                 // save changes before rename and force same processName everywhere
-                await HttpService.saveProcess(currentProcessName, scenarioGraph, comment);
+                await HttpService.saveProcess(currentProcessName, scenarioGraph, comment, labels);
 
                 const unsavedNewName = getProcessUnsavedNewName(state);
                 const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
@@ -34,7 +42,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
 
                 await dispatch(UndoActionCreators.clearHistory());
                 await dispatch(displayCurrentProcessVersion(processName));
-                await dispatch(displayProcessActivity(processName));
+                await dispatch(await getScenarioActivities(processName));
 
                 if (isRenamed) {
                     await dispatch(loadProcessToolbarsConfiguration(unsavedNewName));

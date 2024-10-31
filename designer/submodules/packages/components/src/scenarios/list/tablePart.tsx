@@ -49,7 +49,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
             {
                 field: "createdAt",
                 headerName: t("table.scenarios.title.CREATION_DATE", "Creation date"),
-                type: "dateTime",
+                type: "string",
                 flex: 2,
                 renderCell: (props) => <Highlight filterText={filterText} {...props} />,
                 hide: true,
@@ -63,9 +63,16 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 flex: 1,
             },
             {
+                field: "labels",
+                cellClassName: "stretch",
+                headerName: t("table.scenarios.title.LABEL", "Labels"),
+                renderCell: (props) => <FilterLinkCell<ScenariosFiltersModel> filterKey="LABEL" {...props} />,
+                flex: 1,
+            },
+            {
                 field: "modificationDate",
                 headerName: t("table.scenarios.title.MODIFICATION_DATE", "Modification date"),
-                type: "dateTime",
+                type: "string",
                 flex: 2,
                 renderCell: (props) => <Highlight filterText={filterText} {...props} value={formatDateTime(props.value)} />,
                 sortingOrder: ["desc", "asc", null],
@@ -117,12 +124,14 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                     const text = filter?.toString();
                     if (!text?.length) return true;
                     const segments = text.trim().split(/\s/);
-                    return segments.every((segment) =>
-                        ["id"]
-                            .map((field) => row[field]?.toString().toLowerCase())
+                    return segments.every((segment) => {
+                        return columns
+                            .filter((value) => visibleColumns[value.field])
+                            .filter((value) => ["id", "createdAt", "modificationDate"].includes(value.field))
+                            .map(({ field }) => row[field]?.toString().toLowerCase())
                             .filter(Boolean)
-                            .some((value) => value.includes(segment.toLowerCase())),
-                    );
+                            .some((value) => value.includes(segment.toLowerCase()));
+                    });
                 },
                 ARCHIVED: (row, filter) => (filter ? row.isArchived : !row.isArchived),
                 TYPE: (row, value) =>
@@ -135,6 +144,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                                 (f === ScenariosFiltersModelType.FRAGMENTS && row.isFragment),
                         ),
                 CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
+                LABEL: (row, value) => !value?.length || [].concat(value).some((f) => row["labels"] === f),
                 CREATED_BY: (row, value) =>
                     !value?.length ||
                     [].concat(value).some((f) =>
