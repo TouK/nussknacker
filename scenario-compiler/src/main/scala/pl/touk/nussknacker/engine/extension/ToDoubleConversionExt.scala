@@ -6,15 +6,21 @@ import pl.touk.nussknacker.engine.extension.Conversion.toNumberEither
 
 import java.lang.{Boolean => JBoolean, Double => JDouble}
 
-class ToDoubleConversionExt(target: Any) {
+class ToDoubleConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
+
+  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+    case "isDouble"       => isDouble()
+    case "toDouble"       => toDouble()
+    case "toDoubleOrNull" => toDoubleOrNull()
+    case _                => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
+  }
 
   def isDouble(): JBoolean      = ToDoubleConversionExt.canConvert(target)
   def toDouble(): JDouble       = ToDoubleConversionExt.convert(target)
   def toDoubleOrNull(): JDouble = ToDoubleConversionExt.convertOrNull(target)
 }
 
-object ToDoubleConversionExt extends ConversionExt with ToNumericConversion {
-  override type ExtensionMethodInvocationTarget = ToDoubleConversionExt
+object ToDoubleConversionExt extends ConversionExt[ToDoubleConversionExt] with ToNumericConversion {
   override val invocationTargetClass: Class[ToDoubleConversionExt] = classOf[ToDoubleConversionExt]
   override type ResultType = JDouble
   override val resultTypeClass: Class[JDouble] = classOf[JDouble]
