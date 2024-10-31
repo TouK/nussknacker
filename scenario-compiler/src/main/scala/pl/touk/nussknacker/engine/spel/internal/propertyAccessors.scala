@@ -31,9 +31,9 @@ object propertyAccessors {
       new StaticPropertyAccessor(accessChecker),
       TypedDictInstancePropertyAccessor, // must be before NoParamMethodPropertyAccessor
       new NoParamMethodPropertyAccessor(accessChecker),
+      new ExtensionMethodsPropertyAccessor(accessChecker, set),
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor,
-      new ExtensionMethodsPropertyAccessor(accessChecker, set),
       MapMissingPropertyToNullAccessor, // must be after NoParamMethodPropertyAccessor, ExtensionMethodsPropertyAccessor
     )
   }
