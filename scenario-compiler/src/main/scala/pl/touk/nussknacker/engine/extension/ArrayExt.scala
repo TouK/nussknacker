@@ -6,8 +6,19 @@ import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 import java.util
 import java.util.{List => JList}
 
-class ArrayExt(target: Any) extends util.AbstractList[Object] {
+class ArrayExt(target: Any) extends util.AbstractList[Object] with ExtensionMethodInvocationTarget {
   private val asList = ConversionHandler.convertArrayToList(target)
+
+  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+    case "get"               => get(arguments(0).asInstanceOf[Integer])
+    case "size"              => size()
+    case "lastIndexOf"       => lastIndexOf(arguments(0))
+    case "contains"          => contains(arguments(0))
+    case "indexOf"           => indexOf(arguments(0))
+    case "containsAll"       => containsAll(arguments(0).asInstanceOf[util.Collection[_]])
+    case "isEmpty" | "empty" => isEmpty
+    case _                   => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
+  }
 
   override def get(index: Int): AnyRef                     = asList.get(index)
   override def size(): Int                                 = asList.size()
@@ -20,9 +31,8 @@ class ArrayExt(target: Any) extends util.AbstractList[Object] {
 
 }
 
-object ArrayExt extends ExtensionMethodsHandler {
+object ArrayExt extends ExtensionMethodsHandler[ArrayExt] {
 
-  override type ExtensionMethodInvocationTarget = ArrayExt
   override val invocationTargetClass: Class[ArrayExt] = classOf[ArrayExt]
 
   override def createConverter(
