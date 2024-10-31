@@ -31,6 +31,7 @@ import { ZoomOutButton } from "../../toolbars/view/buttons/ZoomOutButton";
 import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
 import { CustomButtonTypes } from "./CustomButtonTypes";
 import { ToolbarButton, ToolbarButtonTypes } from "./types";
+import PropertiesButton_new from "../../toolbars/scenarioActions/buttons/PropertiesButton_new";
 
 export type PropsOfButton<T> = ToolbarButton & {
     type: T;
@@ -53,7 +54,7 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.editPaste]: PasteButton,
     [BuiltinButtonTypes.editDelete]: DeleteButton,
     [BuiltinButtonTypes.editLayout]: LayoutButton,
-    [BuiltinButtonTypes.processProperties]: PropertiesButton,
+    [BuiltinButtonTypes.processProperties]: PropertiesButton_new,
     [BuiltinButtonTypes.processCompare]: CompareButton,
     [BuiltinButtonTypes.processMigrate]: MigrateButton,
     [BuiltinButtonTypes.processImport]: ImportButton,

@@ -57,6 +57,10 @@ const ModifyExistingCommentDialog = loadable(() => import("../components/modals/
     fallback: <LoaderSpinner show />,
 });
 
+const EditPropertiesDialog = loadable(() => import("../components/modals/EditPropertiesDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
 const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
@@ -101,6 +105,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <ModifyExistingCommentDialog {...props} />;
         case WindowKind.addAttachment:
             return <AddAttachmentDialog {...props} />;
+        case WindowKind.editProperties:
+            return <EditPropertiesDialog {...props} />;
         default:
             return (
                 <WindowContent {...props}>
