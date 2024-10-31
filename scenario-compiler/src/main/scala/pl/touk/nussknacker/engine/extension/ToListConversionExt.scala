@@ -11,7 +11,14 @@ import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 import java.lang.{Boolean => JBoolean}
 import java.util.{ArrayList => JArrayList, Collection => JCollection, List => JList}
 
-class ToListConversionExt(target: Any) {
+class ToListConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
+
+  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+    case "isList"       => isList()
+    case "toList"       => toList()
+    case "toListOrNull" => toListOrNull()
+    case _              => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
+  }
 
   def isList(): Boolean        = ToListConversionExt.canConvert(target)
   def toList(): JList[_]       = ToListConversionExt.convert(target)
@@ -19,7 +26,7 @@ class ToListConversionExt(target: Any) {
 
 }
 
-object ToListConversionExt extends ConversionExt with ToCollectionConversion {
+object ToListConversionExt extends ConversionExt[ToListConversionExt] with ToCollectionConversion {
   private val booleanTyping   = Typed.typedClass[Boolean]
   private val listTyping      = Typed.genericTypeClass[JList[_]](List(Unknown))
   private val collectionClass = classOf[JCollection[_]]
@@ -45,7 +52,6 @@ object ToListConversionExt extends ConversionExt with ToCollectionConversion {
     description = Option("Convert to a list or null in case of failure")
   )
 
-  override type ExtensionMethodInvocationTarget = ToListConversionExt
   override val invocationTargetClass: Class[ToListConversionExt] = classOf[ToListConversionExt]
 
   override def definitions(): List[MethodDefinition] = List(

@@ -14,7 +14,15 @@ import java.lang.{Boolean => JBoolean}
 import scala.util.Try
 
 // todo: lbg - add casting methods to UTIL
-class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]]) {
+class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]])
+    extends ExtensionMethodInvocationTarget {
+
+  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+    case "is"       => is(arguments(0).asInstanceOf[String])
+    case "to"       => to(arguments(0).asInstanceOf[String])
+    case "toOrNull" => toOrNull(arguments(0).asInstanceOf[String])
+    case _          => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
+  }
 
   def is(className: String): Boolean =
     getClass(className).exists(clazz => clazz.isAssignableFrom(target.getClass)) ||
@@ -49,7 +57,7 @@ class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]
 
 }
 
-object CastOrConversionExt extends ExtensionMethodsHandler {
+object CastOrConversionExt extends ExtensionMethodsHandler[CastOrConversionExt] {
   private val isMethodName            = "is"
   private val toMethodName            = "to"
   private val toOrNullMethodName      = "toOrNull"
@@ -75,7 +83,6 @@ object CastOrConversionExt extends ExtensionMethodsHandler {
     .flatMap(c => c.resultTypeClass.classByNameAndSimpleNameLowerCase().map(n => n._1 -> c))
     .toMap
 
-  override type ExtensionMethodInvocationTarget = CastOrConversionExt
   override val invocationTargetClass: Class[CastOrConversionExt] = classOf[CastOrConversionExt]
 
   def isCastOrConversionMethod(methodName: String): Boolean =

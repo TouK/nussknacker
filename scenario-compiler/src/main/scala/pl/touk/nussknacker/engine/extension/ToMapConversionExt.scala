@@ -10,7 +10,14 @@ import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 import java.lang.{Boolean => JBoolean}
 import java.util.{Collection => JCollection, HashMap => JHashMap, Map => JMap, Set => JSet}
 
-class ToMapConversionExt(target: Any) {
+class ToMapConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
+
+  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+    case "isMap"       => isMap()
+    case "toMap"       => toMap()
+    case "toMapOrNull" => toMapOrNull()
+    case _             => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
+  }
 
   def isMap(): Boolean          = ToMapConversionExt.canConvert(target)
   def toMap(): JMap[_, _]       = ToMapConversionExt.convert(target)
@@ -18,7 +25,7 @@ class ToMapConversionExt(target: Any) {
 
 }
 
-object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
+object ToMapConversionExt extends ConversionExt[ToMapConversionExt] with ToCollectionConversion {
   private val booleanTyping    = Typed.typedClass[Boolean]
   private val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
   private val keyName          = "key"
@@ -52,7 +59,6 @@ object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
     toMapOrNullDefinition,
   )
 
-  override type ExtensionMethodInvocationTarget = ToMapConversionExt
   override val invocationTargetClass: Class[ToMapConversionExt] = classOf[ToMapConversionExt]
 
   override def createConverter(

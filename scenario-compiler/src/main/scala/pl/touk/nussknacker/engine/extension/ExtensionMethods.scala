@@ -3,29 +3,38 @@ package pl.touk.nussknacker.engine.extension
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
 import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensionMethodsHandlers
 
-import java.lang.reflect.{Method, Modifier}
+import java.lang.reflect.{InvocationTargetException, Method, Modifier}
+import scala.util.{Failure, Try}
 
 class ExtensionsAwareMethodInvoker(classDefinitionSet: ClassDefinitionSet) {
 
   private val toInvocationTargetConvertersByClass =
     extensionMethodsHandlers
       .map(e => e.invocationTargetClass -> e.createConverter(classDefinitionSet))
-      .toMap[Class[_], ToExtensionMethodInvocationTargetConverter[_]]
+      .toMap[Class[_], ToExtensionMethodInvocationTargetConverter[_ <: ExtensionMethodInvocationTarget]]
 
   def invoke(method: Method)(target: Any, arguments: Array[Object]): Any = {
     if (toInvocationTargetConvertersByClass.contains(method.getDeclaringClass)) {
       toInvocationTargetConvertersByClass
         .get(method.getDeclaringClass)
         .map(_.toInvocationTarget(target))
-        // Maybe in future we could write some mechanism to invoke extension methods statically. What I mean is to
-        // find correct extension based on target and then implement simple switch to fire method based on name
-        .map(impl => method.invoke(impl, arguments: _*))
+        .map(impl => invokeMethodStatically(method, arguments, impl))
         .getOrElse {
           throw new IllegalArgumentException(s"Extension method: ${method.getName} is not implemented")
         }
     } else {
       method.invoke(target, arguments: _*)
     }
+  }
+
+  private def invokeMethodStatically(
+      method: Method,
+      arguments: Array[Object],
+      impl: ExtensionMethodInvocationTarget
+  ): Any = {
+    Try(impl.invokeStatically(method.getName, arguments)).recoverWith { case ex: Throwable =>
+      Failure(new InvocationTargetException(ex))
+    }.get
   }
 
 }
@@ -40,7 +49,7 @@ object ExtensionAwareMethodsDiscovery {
 
 object ExtensionMethods {
 
-  val extensionMethodsHandlers: List[ExtensionMethodsHandler] = List(
+  val extensionMethodsHandlers: List[ExtensionMethodsHandler[_ <: ExtensionMethodInvocationTarget]] = List(
     CastOrConversionExt,
     ArrayExt,
     ToLongConversionExt,
@@ -63,10 +72,12 @@ object ExtensionMethods {
 
 }
 
-trait ExtensionMethodsHandler {
+trait ExtensionMethodInvocationTarget {
+  def invokeStatically(methodName: String, arguments: Array[Object]): Any
+}
 
-  type ExtensionMethodInvocationTarget
-  val invocationTargetClass: Class[ExtensionMethodInvocationTarget]
+trait ExtensionMethodsHandler[T <: ExtensionMethodInvocationTarget] {
+  val invocationTargetClass: Class[T]
 
   lazy val nonStaticMethods: Array[Method] =
     invocationTargetClass.getDeclaredMethods
@@ -74,7 +85,7 @@ trait ExtensionMethodsHandler {
 
   def createConverter(
       set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget]
+  ): ToExtensionMethodInvocationTargetConverter[T]
 
   def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
 
@@ -82,7 +93,7 @@ trait ExtensionMethodsHandler {
   def appliesToClassInRuntime(clazz: Class[_]): Boolean
 }
 
-trait ToExtensionMethodInvocationTargetConverter[ExtensionMethodInvocationTarget] {
+trait ToExtensionMethodInvocationTargetConverter[T <: ExtensionMethodInvocationTarget] {
   // This method should be as easy and lightweight as possible because it's fired with every method execution.
-  def toInvocationTarget(target: Any): ExtensionMethodInvocationTarget
+  def toInvocationTarget(target: Any): T
 }
