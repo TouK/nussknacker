@@ -12,7 +12,7 @@ trait SchemaRegistryMixin extends AnyFunSuite with KafkaSpec with KafkaWithSchem
   override protected def resolveConfig(config: Config): Config = {
     super
       .resolveConfig(config)
-      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.kafkaAddress))
+      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServerWithDependencies.kafkaAddress))
       // schema.registry.url have to be defined even for MockSchemaRegistryClient
       .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("not_used"))
       // we turn off auto registration to do it on our own passing mocked schema registry client // meaningful only in Flink tests

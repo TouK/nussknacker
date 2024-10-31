@@ -105,15 +105,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val ctx = Context("abc").withVariables(
     Map(
-      "obj"            -> testValue,
-      "strVal"         -> "",
-      "mapValue"       -> Map("foo" -> "bar").asJava,
-      "array"          -> Array("a", "b"),
-      "intArray"       -> Array(1, 2, 3),
-      "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
-      "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"  -> ContainerOfUnknown("unknown"),
-      "setVal"         -> Set("a").asJava,
+      "obj"                                         -> testValue,
+      "strVal"                                      -> "",
+      "mapValue"                                    -> Map("foo" -> "bar").asJava,
+      "array"                                       -> Array("a", "b"),
+      "intArray"                                    -> Array(1, 2, 3),
+      "nestedArray"                                 -> Array(Array(1, 2), Array(3, 4)),
+      "arrayOfUnknown"                              -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"                               -> ContainerOfUnknown("unknown"),
+      "setVal"                                      -> Set("a").asJava,
       "containerWithUnknownObject"                  -> ContainerOfUnknown(SampleValue(1)),
       "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticParameterlessMethod()),
       "containerWithUnknownClassWithStaticMethods" -> ContainerOfUnknown(
