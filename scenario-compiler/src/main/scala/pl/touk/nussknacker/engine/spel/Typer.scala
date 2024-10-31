@@ -229,9 +229,9 @@ private[spel] class Typer(
           invalidNodeResult(IllegalIndexingOperation)
         case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
         case Unknown =>
-          validNodeResult(Unknown)
+          withTypedChildren(_ => valid(Unknown))
         case _: TypedClass =>
-          val w = validNodeResult(Unknown)
+          val w = withTypedChildren(_ => valid(Unknown))
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
       }
     }
