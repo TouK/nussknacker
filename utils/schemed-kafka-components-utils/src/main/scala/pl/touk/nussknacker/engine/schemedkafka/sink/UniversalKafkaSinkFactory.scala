@@ -238,6 +238,7 @@ class UniversalKafkaSinkFactory(
       Option(finalState.schema),
       kafkaConfig
     )
+
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = if (params.extractUnsafe[Boolean](sinkRawEditorParamName)) {
       validationModeParamDeclaration.extractValue(params) match {

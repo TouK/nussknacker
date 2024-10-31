@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
+import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
@@ -40,12 +42,21 @@ class FlinkKafkaUniversalSink(
   override def registerSink(
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSink[_] =
-    // FIXME: Missing map TypeInformation
+  ): DataStreamSink[_] = {
+
+    // TODO: We're not able to detect the real type of data, because we can pass both here: GenericRecordWithSchemaId and Java Map
+    val typeInfo = KeyedValueType
+      .info(
+        Types.STRING, // KafkaSink for key supports only String
+        Types.GENERIC(classOf[AnyRef])
+      )
+      .asInstanceOf[TypeInformation[KeyedValue[AnyRef, AnyRef]]]
+
     dataStream
-      .map(new EncodeAvroRecordFunction(flinkNodeContext))
+      .map(new EncodeAvroRecordFunction(flinkNodeContext), typeInfo)
       .filter(_.value != null)
       .addSink(toFlinkFunction)
+  }
 
   def prepareValue(
       ds: DataStream[Context],
