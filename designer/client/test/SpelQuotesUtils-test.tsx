@@ -1,6 +1,6 @@
 import * as SpelQuotesUtils from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils";
 import { isQuoted, QuotationMark } from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils";
-import { describe, expect, jest } from "@jest/globals";
+import { jest } from "@jest/globals";
 import { stringSpelFormatter } from "../src/components/graph/node-modal/editors/expression/Formatter";
 
 const text = `a'b'c"d"e'f'g`;

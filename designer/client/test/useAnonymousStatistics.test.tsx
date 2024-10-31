@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { useSelector } from "react-redux";
-import { describe, expect, jest } from "@jest/globals";
+import { jest } from "@jest/globals";
 import { useAnonymousStatistics } from "../src/containers/useAnonymousStatistics";
 import httpService from "../src/http/HttpService";
 import { AxiosResponse } from "axios";
