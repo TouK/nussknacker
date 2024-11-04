@@ -264,18 +264,89 @@ can be accessed in e.g. in following ways:
 * `#exampleObjects['someNestedObject']['someFieldInNestedObject']`
 * `#exampleObjects['someArrayWithObjects'][0]['someFieldInObjectInArray']`
 
-Every unknown accessed field/element will produce `Unknown` data type which can be further navigated or [cast](#Casting) to a desired type.
+Every unknown accessed field/element will produce `Unknown` data type which can be further navigated or [converted](#type-conversions) to a desired type.
 
 ### Type conversions
 
-It is possible to convert from a type to another type and this can be done by implicit and explicit conversion.
+It is possible to convert or cast from a type to another type and this can be done by implicit and explicit conversion.
+
+#### Explicit conversions
+
+Explicit conversions/casts are available in built-in functions and in utility classes.
+List of built-in functions:
+- `is(className)`/`to(className)`/`toOrNull(className)`
+- `isBoolean`/`toBoolean`/`toBooleanOrNull`
+- `isLong`/`toLong`/`toLongOrNull`
+- `isDouble`/`toDouble`/`toDoubleOrNull`
+- `isBigDecimal`/`toBigDecimal`/`toBigDecimalOrNull`
+- `isList`/`toList`/`toListOrNull`
+- `isMap`/`toMap`/`toMapOrNull`
+
+Functions with the prefix `is` check whether a type can be converted or cast to the appropriate type. Functions with
+the `to` prefix convert or cast a value to the desired type, and if the conversion fails, an exception is propagated
+further. Functions with the `toOrNull` prefix convert or cast a value to the desired type, and if conversion fails, a
+null value is returned.
+The `is`, `to` and `toOrNull` functions are slightly different in that they take a class name as a parameter. They first
+attempt to cast a value to the specified class. If the cast fails and there is a defined conversion to that class, the
+conversion is applied. Below is the list of available conversion to classes:
+- BigDecimal 
+- BigInteger 
+- Boolean 
+- Byte 
+- Charset 
+- ChronoLocalDate 
+- ChronoLocalDateTime
+- Currency 
+- Double 
+- Float 
+- Integer 
+- List 
+- Locale 
+- LocalDate 
+- LocalDateTime 
+- LocalTime 
+- Long 
+- Map 
+- UUID 
+- Short 
+- String 
+- ZoneId 
+- ZoneOffset
+
+Conversions only make sens between specific types. Below is a matrix which shows which types can be converted with each
+other:
+
+| FROM TYPE (column) \ TO TYPE (row) | BigDecimal | BigInteger | Boolean | Byte | Charset | ChronoLocalDate | ChronoLocalDateTime | Currency | Double | Float | Integer | List | Locale | LocalDate | LocalDateTime | LocalTime | Long | Map | Unknown | UUID | Short | String | ZoneId | ZoneOffset | All existing types |
+|------------------------------------|------------|------------|---------|------|---------|-----------------|---------------------|----------|--------|-------|---------|------|--------|-----------|---------------|-----------|------|-----|---------|------|-------|--------|--------|------------|--------------------|
+| BigDecimal                         |            | X          |         | X    |         |                 |                     |          | X      | X     | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
+| BigInteger                         | X          |            |         | X    |         |                 |                     |          | X      | X     | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
+| Byte                               | X          | X          |         |      |         |                 |                     |          | X      | X     | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
+| Double                             | X          | X          |         | X    |         |                 |                     |          |        | X     | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
+| Float                              | X          | X          |         | X    |         |                 |                     |          | X      |       | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
+| Integer                            | X          | X          |         | X    |         |                 |                     |          | X      | X     |         |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
+| LocalDate                          |            |            |         |      |         | X               |                     |          |        |       |         |      |        |           |               |           |      |     |         |      |       | X      |        |            |                    |
+| LocalDateTime                      |            |            |         |      |         |                 | X                   |          |        |       |         |      |        |           |               |           |      |     |         |      |       | X      |        |            |                    |
+| Long                               | X          | X          |         | X    |         |                 |                     |          | X      | X     | X       |      |        |           |               |           |      |     |         |      | X     | X      |        |            |                    |
+| Unknown                            | X          | X          | X       | X    | X       | X               | X                   | X        | X      | X     | X       | X    | X      | X         | X             | X         | X    | X   | X       | X    | X     | X      | X      | X          | X                  |
+| UUID                               |            |            |         |      |         |                 |                     |          |        |       |         |      |        |           |               |           |      |     |         |      |       | X      |        |            |                    |
+| Short                              | X          | X          |         | X    |         |                 |                     |          | X      | X     | X       |      |        |           |               |           | X    |     |         |      |       | X      |        |            |                    |
+| String                             | X          | X          | X       | X    | X       | X               | X                   | X        | X      | X     | X       | X    | X      | X         | X             | X         | X    | X   | X       | X    | X     | X      | X      | X          | X                  |
+
+Examples of utility classes usage:
+
+| Expression                                                      | Result                     | Type            |
+|-----------------------------------------------------------------|----------------------------|-----------------|
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
 
 #### Implicit conversion
 
 SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
 numeric types and between `String` and some useful logical value types. Implicit conversion means that when finding
 the "input value" of type "input type" (see the table below) in the context where "target type" is expected, Nussknacker
-will try to convert the type of the "input value" to the "target type". Some examples:
+will try to convert the type of the "input value" to the "target type". This behaviour can be encountered in particular 
+when passing certain values to method parameters (these values can be automatically converted to the desired type). 
+Some conversions example:
 
 | Input value                              | Input type | Conversion target type |
 |------------------------------------------|------------|------------------------|
@@ -298,19 +369,9 @@ Usage example:
 | Expression                          | Input value       | Input type | Target type |
 |-------------------------------------|-------------------|------------|-------------|
 | `#DATE.now.atZone('Europe/Warsaw')` | `'Europe/Warsaw'` | String     | ZoneId      |
-| `'' + 42`                           | `42`              | Integer    | String      |
+| `'' + 42`                           | `'42'`            | Integer    | String      |
 
 More usage examples can be found in [this section](#conversions-between-datetime-types).
-
-#### Explicit conversions
-
-Explicit conversions are available in utility classes and build-in java conversion mechanisms:
-
-| Expression                                                      | Result                     | Type            |
-|-----------------------------------------------------------------|----------------------------|-----------------|
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
-
 
 ## Built-in helpers
 
