@@ -44,7 +44,8 @@ class FlinkKafkaUniversalSink(
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSink[_] = {
 
-    // TODO: We're not able to detect the real type of data, because we can pass both here: GenericRecordWithSchemaId and Java Map
+    // TODO: We're not able to detect the real type of data, because e.g. for Avro Record
+    //  we can pass both here: GenericRecordWithSchemaId and Java Map
     val typeInfo = KeyedValueType
       .info(
         Types.STRING, // KafkaSink for key supports only String

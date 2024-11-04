@@ -2,6 +2,13 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.19.0 (Not released yet)
+
+### Other changes
+
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+  If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored.
+
 ## In version 1.18.0 (Not released yet)
 
 ### Configuration changes

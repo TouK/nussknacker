@@ -12,7 +12,10 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo.ConsumerRecordTypeInfo
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.{AbstractSchemaRegistryBasedDeserializerFactory, SchemaRegistryBasedDeserializerFactory}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.{
+  AbstractSchemaRegistryBasedDeserializerFactory,
+  SchemaRegistryBasedDeserializerFactory
+}
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
 import scala.reflect.ClassTag
@@ -60,13 +63,15 @@ class FlinkKafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
         if (kafkaConfig.useStringForKey) {
           Types.STRING.asInstanceOf[TypeInformation[K]]
         } else {
-          typeInformationDetector.forClass[K] //We use Kryo serializer here
+          // TODO: Creating TypeInformation for Avro / Json Schema is difficult because of schema evolution, therefore we rely on Kryo, e.g. serializer for GenericRecordWithSchemaId
+          typeInformationDetector.forClass[K]
         }
       }
 
       @transient
       private val valueTypeInfo: TypeInformation[V] =
-        typeInformationDetector.forClass[V] //We use Kryo serializer here
+        // TODO: Creating TypeInformation for Avro / Json Schema is difficult because of schema evolution, therefore we rely on Kryo, e.g. serializer for GenericRecordWithSchemaId
+        typeInformationDetector.forClass[V]
 
       override def getProducedType: TypeInformation[ConsumerRecord[K, V]] =
         new ConsumerRecordTypeInfo(keyTypeInfo, valueTypeInfo)
