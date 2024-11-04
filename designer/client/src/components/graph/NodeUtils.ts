@@ -47,9 +47,8 @@ class NodeUtils {
 
     edgesFromScenarioGraph = (scenarioGraph: ScenarioGraph) => scenarioGraph.edges || [];
 
-    // For sake of consistency with other nodes, name must be renamed to id
     getProcessPropertiesNode = ({ name, scenarioGraph: { properties } }: Scenario, unsavedName?: string) => ({
-        id: name || unsavedName,
+        name: name || unsavedName,
         ...properties,
     });
 

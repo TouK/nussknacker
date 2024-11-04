@@ -1,13 +1,12 @@
 import { useSelector } from "react-redux";
 import { getProcessName, getScenarioPropertiesConfig } from "./NodeDetailsContent/selectors";
-import React, { useMemo, useState } from "react";
-import { sortBy } from "lodash";
+import React, { useEffect, useMemo, useState } from "react";
+import { debounce, isEmpty, sortBy } from "lodash";
 import { set } from "lodash/fp";
-import { IdField } from "./IdField";
 import ScenarioProperty from "./ScenarioProperty";
 import { DescriptionField } from "./DescriptionField";
 import { FieldLabel } from "./FieldLabel";
-import { FieldType } from "./editors/field/Field";
+import Field, { FieldType } from "./editors/field/Field";
 import { NodeField } from "./NodeField";
 import { getPropertiesErrors } from "./node/selectors";
 import { NodeTable } from "./NodeDetailsContent/NodeTable";
@@ -16,15 +15,17 @@ import { ContentSize } from "./node/ContentSize";
 import NodeUtils from "../NodeUtils";
 import { getProcessUnsavedNewName, getScenario } from "../../../reducers/selectors/graph";
 import HttpService from "../../../http/HttpService";
+import { NodeValidationError } from "../../../types";
+import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     isEditMode: boolean;
+    showValidation?: boolean;
 }
 
 export function PropertiesNew({ isEditMode }: Props): JSX.Element {
-    const errors = useSelector(getPropertiesErrors);
-
-    console.log("errors", errors);
+    const globalPropertiesErrors = useSelector(getPropertiesErrors);
+    const [errors, setErrors] = useState<NodeValidationError[]>(isEditMode ? globalPropertiesErrors : []);
 
     const scenarioProperties = useSelector(getScenarioPropertiesConfig);
     const scenarioPropertiesConfig = useMemo(() => scenarioProperties?.propertiesConfig ?? {}, [scenarioProperties?.propertiesConfig]);
@@ -44,32 +45,50 @@ export function PropertiesNew({ isEditMode }: Props): JSX.Element {
 
     const setProperty = (label: string | number, value: string) => {
         setNode((prevState) => set<typeof node>(label, value, prevState) as unknown as typeof node);
-        HttpService.validateProperties(scenarioName, { additionalFields: node.additionalFields, name: node.id }).then((data) => {
-            console.log("data", data);
-        });
     };
 
-    const showValidation = false;
-
     const showSwitch = false;
+
+    const debouncedValidateProperties = useMemo(() => {
+        return debounce((scenarioName, additionalFields, id) => {
+            HttpService.validateProperties(scenarioName, { additionalFields: additionalFields, name: id }).then((data) => {
+                if (data) {
+                    setErrors(data.validationErrors);
+                }
+            });
+        }, 500);
+    }, []);
+
+    useEffect(() => {
+        if (!isEditMode) {
+            return;
+        }
+
+        debouncedValidateProperties(scenarioName, node.additionalFields, node.name);
+    }, [debouncedValidateProperties, isEditMode, node.additionalFields, node.name, scenarioName]);
 
     return (
         <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
             <ContentSize>
                 <NodeTable>
-                    <IdField
-                        isEditMode={isEditMode}
-                        showValidation={showValidation}
-                        node={node}
-                        renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                        setProperty={setProperty}
-                        errors={errors}
-                    />
+                    <Field
+                        type={FieldType.input}
+                        isMarked={false}
+                        showValidation
+                        onChange={(newValue) => setProperty("name", newValue.toString())}
+                        readOnly={!isEditMode}
+                        className={isEmpty(errors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`}
+                        fieldErrors={errors}
+                        value={node.name}
+                        autoFocus
+                    >
+                        <FieldLabel title={"Name"} label={"Name"} />
+                    </Field>
                     {scenarioPropertiesSorted.map(([propName, propConfig]) => (
                         <ScenarioProperty
                             key={propName}
                             showSwitch={showSwitch}
-                            showValidation={showValidation}
+                            showValidation
                             propertyName={propName}
                             propertyConfig={propConfig}
                             errors={errors}
@@ -83,7 +102,7 @@ export function PropertiesNew({ isEditMode }: Props): JSX.Element {
                     ))}
                     <DescriptionField
                         isEditMode={isEditMode}
-                        showValidation={showValidation}
+                        showValidation
                         node={node}
                         renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
                         setProperty={setProperty}
@@ -91,7 +110,7 @@ export function PropertiesNew({ isEditMode }: Props): JSX.Element {
                     />
                     <NodeField
                         isEditMode={isEditMode}
-                        showValidation={showValidation}
+                        showValidation
                         node={node}
                         renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
                         setProperty={setProperty}

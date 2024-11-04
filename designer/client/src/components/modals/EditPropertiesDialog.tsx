@@ -4,7 +4,6 @@ import { css } from "@emotion/css";
 import React, { useMemo } from "react";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { useTranslation } from "react-i18next";
-import { PropertiesType } from "../../types";
 import { PropertiesNew } from "../graph/node-modal/properties_new";
 
 const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {

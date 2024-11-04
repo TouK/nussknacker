@@ -60,9 +60,7 @@ export interface Expression {
 }
 
 export type PropertiesType = {
-    // FE applies fake id as name, but it's not send by/to BE
-    id?: string;
-    type: "Properties";
+    name: string;
     additionalFields: ProcessAdditionalFields;
 };
 
