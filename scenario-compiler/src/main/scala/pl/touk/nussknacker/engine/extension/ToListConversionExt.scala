@@ -13,7 +13,7 @@ import java.util.{ArrayList => JArrayList, Collection => JCollection, List => JL
 
 class ToListConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
 
-  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
     case "isList"       => isList()
     case "toList"       => toList()
     case "toListOrNull" => toListOrNull()

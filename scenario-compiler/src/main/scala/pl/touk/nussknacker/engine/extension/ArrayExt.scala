@@ -9,7 +9,7 @@ import java.util.{List => JList}
 class ArrayExt(target: Any) extends util.AbstractList[Object] with ExtensionMethodInvocationTarget {
   private val asList = ConversionHandler.convertArrayToList(target)
 
-  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
     case "get"               => get(arguments(0).asInstanceOf[Integer])
     case "size"              => size()
     case "lastIndexOf"       => lastIndexOf(arguments(0))
