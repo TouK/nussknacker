@@ -8,7 +8,7 @@ import java.lang.{Boolean => JBoolean, Double => JDouble}
 
 class ToDoubleConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
 
-  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
     case "isDouble"       => isDouble()
     case "toDouble"       => toDouble()
     case "toDoubleOrNull" => toDoubleOrNull()

@@ -9,7 +9,7 @@ import scala.util.Try
 
 class ToLongConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
 
-  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
     case "isLong"       => isLong()
     case "toLong"       => toLong()
     case "toLongOrNull" => toLongOrNull()
