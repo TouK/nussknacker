@@ -80,6 +80,12 @@
   * isBigDecimal/toBigDecimal/toBigDecimalOrNull
   * isList/toList/toListOrNull
   * isMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
+* [#7106](https://github.com/TouK/nussknacker/pull/7106) Fix an issue where pressing the “Esc” key did not remove focus from input fields in dialogs, which prevented the dialog window from closing
+* [#7002](https://github.com/TouK/nussknacker/pull/7002) Resolve an issue with union nodes output expression when nodes were copied and pasted
+* [#6994](https://github.com/TouK/nussknacker/pull/6994) Fix styling issues for form checkboxes in Firefox
+* [#6721](https://github.com/TouK/nussknacker/pull/6721) Provide a popover to display additional information about count
+* [#7099](https://github.com/TouK/nussknacker/pull/7099) Provide an option to embedded video to the markdown
+* [#7102](https://github.com/TouK/nussknacker/pull/7102) Introduce a new UI to defining aggregations within nodes
 
 ## 1.17
 
