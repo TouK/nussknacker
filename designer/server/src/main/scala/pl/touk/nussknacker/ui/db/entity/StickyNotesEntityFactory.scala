@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.LayoutData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent.StickyNoteEvent
-import slick.lifted.{TableQuery => LTableQuery}
+import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 import io.circe.syntax._
 import io.circe._
@@ -17,20 +17,7 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
 
   import profile.api._
 
-  val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
   val processVersionsTable: LTableQuery[ProcessVersionEntityFactory#ProcessVersionEntity]
-
-  implicit val stickyNoteEventColumnTyped: BaseColumnType[StickyNoteEvent] =
-    MappedColumnType.base[StickyNoteEvent, String](_.toString, StickyNoteEvent.withName)
-
-  implicit val layoutDataColumnTyped: BaseColumnType[LayoutData] = MappedColumnType.base[LayoutData, String](
-    _.asJson.noSpaces,
-    jsonStr =>
-      parser.parse(jsonStr).flatMap(Decoder[LayoutData].decodeJson) match {
-        case Right(layoutData) => layoutData
-        case Left(error)       => throw error
-      }
-  )
 
   class StickyNotesEntity(tag: Tag) extends Table[StickyNoteEventEntityData](tag, "sticky_notes") {
 
@@ -39,14 +26,14 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
     def content           = column[String]("content", NotNull)
     def layoutData        = column[LayoutData]("layout_data", NotNull)
     def color             = column[String]("color", NotNull)
-    def targetEdge        = column[Option[String]]("target_edge", O.Default(null))
+    def targetEdge        = column[Option[String]]("target_edge")
     def eventCreator      = column[String]("event_creator", NotNull)
     def eventDate         = column[Timestamp]("event_date", NotNull)
     def eventType         = column[StickyNoteEvent]("event_type", NotNull)
     def scenarioId        = column[ProcessId]("scenario_id", NotNull)
     def scenarioVersionId = column[VersionId]("scenario_version_id", NotNull)
 
-    def * = (
+    def * : ProvenShape[StickyNoteEventEntityData] = (
       id,
       noteId,
       content,
@@ -60,21 +47,26 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
       scenarioVersionId
     ) <> (StickyNoteEventEntityData.apply _ tupled, StickyNoteEventEntityData.unapply)
 
-    def pk = primaryKey("pk_sticky_notes", id)
-
-    def scenario = foreignKey("sticky_notes-scenario-fk", scenarioId, processesTable)(
-      _.id,
-      onUpdate = ForeignKeyAction.Cascade,
-      onDelete = ForeignKeyAction.Cascade
-    )
-
-    def scenarioVersion = foreignKey("sticky_notes-scenario-version-fk", scenarioVersionId, processVersionsTable)(
-      _.id,
-      onUpdate = ForeignKeyAction.Cascade,
-      onDelete = ForeignKeyAction.Cascade
-    )
+    def scenarioVersion =
+      foreignKey("sticky_notes_scenario_version_fk", (scenarioId, scenarioVersionId), processVersionsTable)(
+        t => (t.processId, t.id),
+        onUpdate = ForeignKeyAction.Cascade,
+        onDelete = ForeignKeyAction.Cascade
+      )
 
   }
+
+  implicit def stickyNoteEventColumnTyped: BaseColumnType[StickyNoteEvent] =
+    MappedColumnType.base[StickyNoteEvent, String](_.toString, StickyNoteEvent.withName)
+
+  implicit def layoutDataColumnTyped: BaseColumnType[LayoutData] = MappedColumnType.base[LayoutData, String](
+    _.asJson.noSpaces,
+    jsonStr =>
+      parser.parse(jsonStr).flatMap(Decoder[LayoutData].decodeJson) match {
+        case Right(layoutData) => layoutData
+        case Left(error)       => throw error
+      }
+  )
 
   val stickyNotesTable: LTableQuery[StickyNotesEntityFactory#StickyNotesEntity] = LTableQuery(new StickyNotesEntity(_))
 
