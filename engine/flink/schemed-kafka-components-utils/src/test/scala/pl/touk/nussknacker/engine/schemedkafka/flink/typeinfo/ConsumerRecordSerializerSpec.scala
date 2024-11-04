@@ -70,7 +70,7 @@ class ConsumerRecordSerializerSpec extends AnyFunSuite with Matchers with TableD
   }
 
   private def createConsumerRecord[K, V](key: K, value: V): ConsumerRecord[K, V] = {
-    val timestampTypes = List.from(TimestampType.values())
+    val timestampTypes = TimestampType.values().toList
     val timestampType  = timestampTypes(Random.nextInt(timestampTypes.length))
 
     val leaderEpoch =
@@ -81,8 +81,6 @@ class ConsumerRecordSerializerSpec extends AnyFunSuite with Matchers with TableD
       headers.add(new RecordHeader(Random.nextString(), Random.nextString().getBytes(StandardCharsets.UTF_8)))
       headers
     }
-
-    val t = Random.nextString()
 
     new ConsumerRecord[K, V](
       Random.nextString(),
