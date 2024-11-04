@@ -12,7 +12,7 @@ import java.util.{Collection => JCollection, HashMap => JHashMap, Map => JMap, S
 
 class ToMapConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
 
-  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
     case "isMap"       => isMap()
     case "toMap"       => toMap()
     case "toMapOrNull" => toMapOrNull()

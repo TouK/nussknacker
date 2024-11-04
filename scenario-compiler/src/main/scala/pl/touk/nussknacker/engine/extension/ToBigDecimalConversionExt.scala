@@ -9,7 +9,7 @@ import scala.util.Try
 
 class ToBigDecimalConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
 
-  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
     case "isBigDecimal"       => isBigDecimal()
     case "toBigDecimal"       => toBigDecimal()
     case "toBigDecimalOrNull" => toBigDecimalOrNull()

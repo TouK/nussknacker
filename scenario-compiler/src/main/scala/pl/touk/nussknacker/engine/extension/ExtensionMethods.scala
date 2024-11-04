@@ -18,7 +18,7 @@ class ExtensionsAwareMethodInvoker(classDefinitionSet: ClassDefinitionSet) {
       toInvocationTargetConvertersByClass
         .get(method.getDeclaringClass)
         .map(_.toInvocationTarget(target))
-        .map(impl => invokeMethodStatically(method, arguments, impl))
+        .map(impl => invokeMethodWithoutReflection(method, arguments, impl))
         .getOrElse {
           throw new IllegalArgumentException(s"Extension method: ${method.getName} is not implemented")
         }
@@ -27,12 +27,12 @@ class ExtensionsAwareMethodInvoker(classDefinitionSet: ClassDefinitionSet) {
     }
   }
 
-  private def invokeMethodStatically(
+  private def invokeMethodWithoutReflection(
       method: Method,
       arguments: Array[Object],
       impl: ExtensionMethodInvocationTarget
   ): Any = {
-    Try(impl.invokeStatically(method.getName, arguments)).recoverWith { case ex: Throwable =>
+    Try(impl.invoke(method.getName, arguments)).recoverWith { case ex: Throwable =>
       Failure(new InvocationTargetException(ex))
     }.get
   }
@@ -73,7 +73,7 @@ object ExtensionMethods {
 }
 
 trait ExtensionMethodInvocationTarget {
-  def invokeStatically(methodName: String, arguments: Array[Object]): Any
+  def invoke(methodName: String, arguments: Array[Object]): Any
 }
 
 trait ExtensionMethodsHandler[T <: ExtensionMethodInvocationTarget] {

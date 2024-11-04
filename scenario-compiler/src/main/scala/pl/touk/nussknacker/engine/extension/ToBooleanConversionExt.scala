@@ -6,7 +6,7 @@ import java.lang.{Boolean => JBoolean}
 
 class ToBooleanConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
 
-  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
     case "isBoolean"       => isBoolean()
     case "toBoolean"       => toBoolean()
     case "toBooleanOrNull" => toBooleanOrNull()

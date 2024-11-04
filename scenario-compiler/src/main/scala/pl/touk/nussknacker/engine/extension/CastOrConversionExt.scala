@@ -17,7 +17,7 @@ import scala.util.Try
 class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]])
     extends ExtensionMethodInvocationTarget {
 
-  override def invokeStatically(methodName: String, arguments: Array[Object]): Any = methodName match {
+  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
     case "is"       => is(arguments(0).asInstanceOf[String])
     case "to"       => to(arguments(0).asInstanceOf[String])
     case "toOrNull" => toOrNull(arguments(0).asInstanceOf[String])
