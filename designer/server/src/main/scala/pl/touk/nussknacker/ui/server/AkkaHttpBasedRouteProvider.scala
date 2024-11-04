@@ -411,6 +411,14 @@ class AkkaHttpBasedRouteProvider(
         scenarioService = processService,
       )
 
+      val stickyNotesApiHttpService = new StickyNotesApiHttpService(
+        authManager = authManager,
+        stickyNotesRepository = stickyNotesRepository,
+        scenarioService = processService,
+        scenarioAuthorizer = processAuthorizer,
+        dbioRunner
+      )
+
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         authManager = authManager,
         fetchScenarioActivityService = fetchScenarioActivityService,
@@ -603,6 +611,7 @@ class AkkaHttpBasedRouteProvider(
           scenarioActivityApiHttpService,
           scenarioLabelsApiHttpService,
           scenarioParametersHttpService,
+          stickyNotesApiHttpService,
           userApiHttpService,
           statisticsApiHttpService
         )
