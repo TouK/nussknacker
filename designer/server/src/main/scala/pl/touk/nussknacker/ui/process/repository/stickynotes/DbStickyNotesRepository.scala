@@ -24,7 +24,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
     with StickyNotesRepository
     with LazyLogging {
 
-  import api._
+  import profile.api._
 
   // TODO, do we need to add it to DTO?
   private def findCreateEventForNote(noteId: UUID): DB[StickyNoteEventEntityData] = {
@@ -45,7 +45,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
     run(
       stickyNotesTable
         .filter(event =>
-          event.scenarioId === scenarioId && event.scenarioVersionId === scenarioVersionId && event.eventType =!= StickyNoteEvent.StickyNoteDeleted
+          event.scenarioId === scenarioId && event.scenarioVersionId <= scenarioVersionId && event.eventType =!= StickyNoteEvent.StickyNoteDeleted
         )
         .groupBy(_.noteId)
         .map { case (noteId, notes) => (noteId, notes.map(_.eventDate).max) }
@@ -102,7 +102,14 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
     } yield actionResult)
   }
 
-  override def updateStickyNote(id: Long, content: String, layoutData: LayoutData, color: String)(
+  override def updateStickyNote(
+      id: Long,
+      content: String,
+      layoutData: LayoutData,
+      color: String,
+      targetEdge: Option[String],
+      scenarioVersionId: VersionId,
+  )(
       implicit user: LoggedUser
   ): DB[Int] = {
     val now = Timestamp.from(clock.instant())
@@ -112,7 +119,9 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
       eventType = StickyNoteEvent.StickyNoteUpdated,
       content = content,
       color = color,
-      layoutData = layoutData
+      targetEdge = targetEdge,
+      layoutData = layoutData,
+      scenarioVersionId = scenarioVersionId
     )
     updateStickyNote(id, updateAction)
   }

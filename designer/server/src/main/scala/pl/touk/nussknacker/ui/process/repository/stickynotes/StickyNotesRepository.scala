@@ -30,7 +30,9 @@ trait StickyNotesRepository {
       id: Long,
       content: String,
       layoutData: LayoutData,
-      color: String
+      color: String,
+      targetEdge: Option[String],
+      scenarioVersionId: VersionId,
   )(implicit user: LoggedUser): DB[Int]
 
   def deleteStickyNote(id: Long)(implicit user: LoggedUser): DB[Int]
