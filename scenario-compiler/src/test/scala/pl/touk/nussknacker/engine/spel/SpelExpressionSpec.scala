@@ -12,7 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import org.springframework.util.NumberUtils
+import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
@@ -63,9 +63,9 @@ import java.lang.{
   Short => JShort
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
-import java.nio.charset.Charset
-import java.time.chrono.ChronoLocalDate
-import java.time.{LocalDate, LocalDateTime}
+import java.nio.charset.{Charset, StandardCharsets}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 import java.util
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import scala.annotation.varargs
@@ -1654,6 +1654,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val emptyList                   = List().asJava
     val emptyTuplesList             = List(Map().asJava).asJava
     val convertedDoubleToBigDecimal = NumberUtils.convertNumberToTargetClass(1.1, classOf[JBigDecimal])
+    val zoneOffset                  = ZoneOffset.of("+01:00")
+    val zoneId                      = ZoneId.of("Europe/Warsaw")
+    val locale                      = StringUtils.parseLocale("pl_PL")
+    val charset                     = StandardCharsets.UTF_8
+    val currency                    = Currency.getInstance("USD")
+    val uuid                        = UUID.fromString("7447e433-83dd-47d0-a115-769a03236bca")
+    val localTime                   = LocalTime.parse("10:15:30")
+    val localDate                   = LocalDate.parse("2024-11-04")
+    val localDateTime               = LocalDateTime.parse("2024-11-04T10:15:30")
     val customCtx = ctx
       .withVariable("unknownInteger", ContainerOfUnknown(1))
       .withVariable("unknownBoolean", ContainerOfUnknown(false))
@@ -1669,18 +1678,29 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .withVariable("unknownListOfTuples", ContainerOfUnknown(listOfTuples))
       .withVariable("unknownEmptyList", ContainerOfUnknown(emptyList))
       .withVariable("unknownEmptyTuplesList", ContainerOfUnknown(emptyTuplesList))
-    val byteTyping       = Typed.typedClass[JByte]
-    val shortTyping      = Typed.typedClass[JShort]
-    val integerTyping    = Typed.typedClass[JInteger]
-    val longTyping       = Typed.typedClass[JLong]
-    val floatTyping      = Typed.typedClass[JFloat]
-    val doubleTyping     = Typed.typedClass[JDouble]
-    val bigDecimalTyping = Typed.typedClass[JBigDecimal]
-    val bigIntegerTyping = Typed.typedClass[JBigInteger]
-    val booleanTyping    = Typed.typedClass[JBoolean]
-    val stringTyping     = Typed.typedClass[String]
-    val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
-    val listTyping       = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val byteTyping                = Typed.typedClass[JByte]
+    val shortTyping               = Typed.typedClass[JShort]
+    val integerTyping             = Typed.typedClass[JInteger]
+    val longTyping                = Typed.typedClass[JLong]
+    val floatTyping               = Typed.typedClass[JFloat]
+    val doubleTyping              = Typed.typedClass[JDouble]
+    val bigDecimalTyping          = Typed.typedClass[JBigDecimal]
+    val bigIntegerTyping          = Typed.typedClass[JBigInteger]
+    val booleanTyping             = Typed.typedClass[JBoolean]
+    val stringTyping              = Typed.typedClass[String]
+    val mapTyping                 = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    val listTyping                = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val zoneOffsetTyping          = Typed.typedClass[ZoneOffset]
+    val zoneIdTyping              = Typed.typedClass[ZoneId]
+    val localeTyping              = Typed.typedClass[Locale]
+    val charsetTyping             = Typed.typedClass[Charset]
+    val currencyTyping            = Typed.typedClass[Currency]
+    val uuidTyping                = Typed.typedClass[UUID]
+    val localTimeTyping           = Typed.typedClass[LocalTime]
+    val localDateTyping           = Typed.typedClass[LocalDate]
+    val localDateTimeTyping       = Typed.typedClass[LocalDateTime]
+    val chronoLocalDateTyping     = Typed.typedClass[ChronoLocalDate]
+    val chronoLocalDateTimeTyping = Typed.typedClass[ChronoLocalDateTime[_]]
     forAll(
       Table(
         ("expression", "expectedType", "expectedResult"),
@@ -1747,6 +1767,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("'1'.to('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
         ("1.toOrNull('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
         ("'1'.toOrNull('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("'+01:00'.to('ZoneOffset')", zoneOffsetTyping, zoneOffset),
+        ("'Europe/Warsaw'.to('ZoneId')", zoneIdTyping, zoneId),
+        ("'pl_PL'.to('Locale')", localeTyping, locale),
+        ("'UTF-8'.to('Charset')", charsetTyping, charset),
+        ("'USD'.to('Currency')", currencyTyping, currency),
+        ("'7447e433-83dd-47d0-a115-769a03236bca'.to('UUID')", uuidTyping, uuid),
+        ("'10:15:30'.to('LocalTime')", localTimeTyping, localTime),
+        ("'2024-11-04'.to('LocalDate')", localDateTyping, localDate),
+        ("'2024-11-04T10:15:30'.to('LocalDateTime')", localDateTimeTyping, localDateTime),
+        ("'2024-11-04'.to('ChronoLocalDate')", chronoLocalDateTyping, localDate),
+        ("'2024-11-04T10:15:30'.to('ChronoLocalDateTime')", chronoLocalDateTimeTyping, localDateTime),
         ("#unknownString.value.to('String')", stringTyping, "unknown"),
         ("#unknownMap.value.to('Map')", mapTyping, map),
         ("#unknownMap.value.toOrNull('Map')", mapTyping, map),

@@ -18,9 +18,14 @@ import java.lang.{
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import java.util.{Collection => JCollection}
+import scala.reflect.{ClassTag, classTag}
 import scala.util.{Success, Try}
 
 trait Conversion {
+  private[extension] val numberClass  = classOf[JNumber]
+  private[extension] val stringClass  = classOf[String]
+  private[extension] val unknownClass = classOf[Object]
+
   type ResultType >: Null <: AnyRef
   val resultTypeClass: Class[ResultType]
 
@@ -121,7 +126,6 @@ object ToStringConversion extends Conversion {
 }
 
 trait ToCollectionConversion extends Conversion {
-  private val unknownClass    = classOf[Object]
   private val collectionClass = classOf[JCollection[_]]
 
   override def appliesToConversion(clazz: Class[_]): Boolean =
@@ -129,10 +133,6 @@ trait ToCollectionConversion extends Conversion {
 }
 
 trait ToNumericConversion extends Conversion {
-  private val numberClass  = classOf[JNumber]
-  private val stringClass  = classOf[String]
-  private val unknownClass = classOf[Object]
-
   override def appliesToConversion(clazz: Class[_]): Boolean =
     clazz != resultTypeClass && (clazz.isAOrChildOf(numberClass) || clazz == stringClass || clazz == unknownClass)
 }
@@ -201,4 +201,14 @@ object ToBigIntegerConversion extends ToNumericConversion {
     case _              => Left(new IllegalArgumentException(s"Cannot convert: $value to BigInteger"))
   }
 
+}
+
+final case class FromStringConversion[T >: Null <: AnyRef: ClassTag](fromStringConversion: String => T)
+    extends Conversion {
+
+  override type ResultType = T
+  override val resultTypeClass: Class[T] = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+  override def convertEither(value: Any): Either[Throwable, T] =
+    Try(fromStringConversion(value.asInstanceOf[String])).toEither
+  override def appliesToConversion(clazz: Class[_]): Boolean = clazz == stringClass || clazz == unknownClass
 }

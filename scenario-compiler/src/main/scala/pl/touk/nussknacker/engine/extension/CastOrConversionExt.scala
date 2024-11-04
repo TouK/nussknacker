@@ -2,6 +2,9 @@ package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.lang3.LocaleUtils
+import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult, Unknown}
@@ -11,18 +14,24 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
 import java.lang.{Boolean => JBoolean}
+import java.nio.charset.Charset
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.util.{Currency, UUID}
 import scala.util.Try
 
 // todo: lbg - add casting methods to UTIL
-class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]]) {
+class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]]) extends LazyLogging {
 
   def is(className: String): Boolean =
     getClass(className).exists(clazz => clazz.isAssignableFrom(target.getClass)) ||
       getConversion(className).exists(_.canConvert(target))
 
   def to(className: String): Any =
-    orElse(tryCast(className), tryConvert(className))
-      .getOrElse(throw new IllegalStateException(s"Cannot cast or convert value: $target to: '$className'"))
+    orElse(tryCast(className), tryConvert(className)) match {
+      case Right(value) => value
+      case Left(ex) => throw new IllegalStateException(s"Cannot cast or convert value: $target to: '$className'", ex)
+    }
 
   def toOrNull(className: String): Any =
     orElse(tryCast(className), tryConvert(className))
@@ -37,8 +46,12 @@ class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]
     classesBySimpleName.get(className.toLowerCase())
 
   private def tryConvert(className: String): Either[Throwable, Any] =
-    getConversion(className)
-      .flatMap(_.convertEither(target))
+    getConversion(className).flatMap(_.convertEither(target)) match {
+      case r @ Right(_) => r
+      case l @ Left(ex) =>
+        logger.debug(s"Conversion from value: $target to '$className' failed", ex)
+        l
+    }
 
   // scala 2.12 does not support either.orElse
   private def orElse(e1: Either[Throwable, Any], e2: => Either[Throwable, Any]): Either[Throwable, Any] =
@@ -69,6 +82,23 @@ object CastOrConversionExt extends ExtensionMethodsHandler {
     ToIntegerConversion,
     ToFloatConversion,
     ToBigIntegerConversion,
+    FromStringConversion(ZoneOffset.of),
+    FromStringConversion(ZoneId.of),
+    FromStringConversion((source: String) => {
+      val locale = StringUtils.parseLocale(source)
+      assert(LocaleUtils.isAvailableLocale(locale)) // without this check even "qwerty" is considered a Locale
+      locale
+    }),
+    FromStringConversion(Charset.forName),
+    FromStringConversion(Currency.getInstance),
+    FromStringConversion[UUID]((source: String) =>
+      if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null
+    ),
+    FromStringConversion(LocalTime.parse),
+    FromStringConversion(LocalDate.parse),
+    FromStringConversion(LocalDateTime.parse),
+    FromStringConversion[ChronoLocalDate](LocalDate.parse),
+    FromStringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
   )
 
   private val conversionsByType: Map[String, Conversion] = conversionsRegistry
