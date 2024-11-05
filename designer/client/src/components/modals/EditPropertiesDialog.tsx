@@ -27,6 +27,7 @@ import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import { styled } from "@mui/material";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
+import NodeAdditionalInfoBox from "../graph/node-modal/NodeAdditionalInfoBox";
 
 export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(PropertiesSvg))(({ theme }) => ({
     backgroundColor: theme.palette.custom.getWindowStyles(WindowKind.editProperties).backgroundColor,
@@ -164,6 +165,7 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
                             fieldName={"additionalFields.showDescription"}
                             description={"Show description each time scenario is opened"}
                         />
+                        <NodeAdditionalInfoBox node={properties} handleGetAdditionalInfo={HttpService.getPropertiesAdditionalInfo} />
                     </NodeTable>
                 </ContentSize>
             </div>

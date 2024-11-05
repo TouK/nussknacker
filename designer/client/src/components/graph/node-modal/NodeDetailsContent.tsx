@@ -11,6 +11,7 @@ import { TestResultsWrapper } from "./TestResultsWrapper";
 import { NodeTypeDetailsContent } from "./NodeTypeDetailsContent";
 import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
 import { useUserSettings } from "../../../common/userSettings";
+import HttpService from "../../../http/HttpService";
 
 export const NodeDetailsContent = ({
     node,
@@ -47,7 +48,7 @@ export const NodeDetailsContent = ({
                     showSwitch={showSwitch}
                 />
             </TestResultsWrapper>
-            {/*<NodeAdditionalInfoBox node={node} />*/}
+            <NodeAdditionalInfoBox node={node} handleGetAdditionalInfo={HttpService.getNodeAdditionalInfo} />
             {userSettings["debug.nodesAsJson"] && <DebugNodeInspector node={node} />}
         </NodeTable>
     );
