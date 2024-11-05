@@ -3,8 +3,7 @@ import React, { SetStateAction, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import { Edge, NodeType, NodeValidationError, PropertiesType } from "../../../types";
-import NodeUtils from "../NodeUtils";
+import { Edge, NodeType, NodeValidationError } from "../../../types";
 import { CustomNode } from "./customNode";
 import { EnricherProcessor } from "./enricherProcessor";
 import { ParamFieldLabel } from "./FieldLabel";
@@ -24,7 +23,6 @@ import {
 } from "./NodeDetailsContent/selectors";
 import { generateUUIDs } from "./nodeUtils";
 import { adjustParameters } from "./ParametersUtils";
-import { Properties } from "./properties";
 import { Sink } from "./sink";
 import { Source } from "./source";
 import { Split } from "./split";
@@ -363,18 +361,6 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
                     node={node}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
-                    showValidation={showValidation}
-                />
-            );
-        case "Properties":
-            return (
-                <Properties
-                    errors={errors}
-                    isEditMode={isEditMode}
-                    node={node as PropertiesType}
-                    renderFieldLabel={renderFieldLabel}
-                    setProperty={setProperty}
-                    showSwitch={showSwitch}
                     showValidation={showValidation}
                 />
             );
