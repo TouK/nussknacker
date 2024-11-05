@@ -6,6 +6,7 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.springframework.expression.common.CompositeStringExpression
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
@@ -17,7 +18,12 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{
+  ContextTransformation,
+  OutputVar,
+  ProcessCompilationError,
+  ValidationContext
+}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -32,9 +38,10 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
+import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -46,7 +53,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
+import pl.touk.nussknacker.engine.spel.{ParsedSpelExpression, SpelExpressionParser, SpelExpressionRepr}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.service.{
   EagerServiceWithStaticParametersAndReturnType,
@@ -72,6 +79,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("spelNodeService", SpelNodeService),
     ComponentDefinition("withExplicitMethod", WithExplicitDefinitionService),
     ComponentDefinition("spelTemplateService", ServiceUsingSpelTemplate),
+    ComponentDefinition("spelTemplateAstOperationService", SpelTemplateServiceWithAstOperation),
     ComponentDefinition("optionTypesService", OptionTypesService),
     ComponentDefinition("optionalTypesService", OptionalTypesService),
     ComponentDefinition("nullableTypesService", NullableTypesService),
@@ -1020,6 +1028,22 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction()) shouldBe "someKey"
   }
 
+  test("its possible to parse and evaluate spel template subexpressions inside service") {
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source("start", "transaction-source")
+      .enricher(
+        "ex",
+        "out",
+        "spelTemplateAstOperationService",
+        "template" -> Expression.spelTemplate(s"#{'Hello'}#{#input.msisdn}")
+      )
+      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
+      .emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(msisdn = "foo")) should equal("Map(value-0 -> Hello, value-1 -> foo)")
+  }
+
 }
 
 class ThrowingService extends Service {
@@ -1286,6 +1310,76 @@ object InterpreterSpec {
 
     override def nodeDependencies: List[NodeDependency] = Nil
 
+  }
+
+  object SpelTemplateServiceWithAstOperation extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
+
+    private val spelTemplateParameter = ParameterDeclaration
+      .lazyMandatory[String](ParameterName("template"))
+      .withCreator(modify =
+        _.copy(
+          editor = Some(SpelTemplateParameterEditor),
+          defaultValue = Some(Expression.spelTemplate(""))
+        )
+      )
+
+    override type State = Any
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+        implicit nodeId: NodeId
+    ): SpelTemplateServiceWithAstOperation.ContextTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(List(spelTemplateParameter.createParameter()))
+      case TransformationStep((ParameterName("template"), DefinedLazyParameter(_)) :: Nil, _) =>
+        FinalResults.forValidation(context, List.empty)(validation =
+          ctx =>
+            ctx.withVariable(
+              OutputVariableNameDependency.extract(dependencies),
+              Typed[String],
+              Some(ParameterName(OutputVar.VariableFieldName))
+            )
+        )
+    }
+
+    override def implementation(
+        params: Params,
+        dependencies: List[NodeDependencyValue],
+        finalState: Option[Any]
+    ): ServiceInvoker = new ServiceInvoker {
+
+      override def invoke(context: Context)(
+          implicit ec: ExecutionContext,
+          collector: InvocationCollectors.ServiceInvocationCollector,
+          componentUseCase: ComponentUseCase
+      ): Future[Any] = {
+        val lazyParam = spelTemplateParameter.extractValueUnsafe(params).asInstanceOf[EvaluableLazyParameter[String]]
+        val baseExpr =
+          lazyParam.compiledParameter.expression.asInstanceOf[pl.touk.nussknacker.engine.spel.SpelExpression]
+        val parsedExpr    = baseExpr.parsed
+        val compositeExpr = parsedExpr.parsed.asInstanceOf[CompositeStringExpression]
+
+        val subValues = compositeExpr.getExpressions.toList.map { subExpr =>
+          val evalutorContextPreparer = baseExpr.evaluationContextPreparer
+
+          val parsedSubexpression = ParsedSpelExpression.apply(subExpr.getExpressionString, parsedExpr.parser, subExpr)
+          val compiledExpr = new pl.touk.nussknacker.engine.spel.SpelExpression(
+            parsedSubexpression,
+            typing.Typed[String],
+            SpelExpressionParser.Standard,
+            evalutorContextPreparer
+          )
+
+          val evaluator = lazyParam.expressionEvaluator
+          val jobData   = lazyParam.jobData
+          evaluator.evaluate[String](compiledExpr, "subexpression", "irrelevant", context)(jobData).value
+        }
+
+        val result = subValues.zipWithIndex.map { case (v, i) => s"value-$i" -> v }.toMap.toString
+        Future.successful(result)
+      }
+
+    }
+
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
   }
 
 }

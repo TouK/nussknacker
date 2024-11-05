@@ -81,10 +81,10 @@ class SpelExpressionEvaluationException(val expression: String, val ctxId: Strin
     )
 
 class SpelExpression(
-    parsed: ParsedSpelExpression,
+    val parsed: ParsedSpelExpression,
     expectedReturnType: TypingResult,
     flavour: Flavour,
-    evaluationContextPreparer: EvaluationContextPreparer
+    val evaluationContextPreparer: EvaluationContextPreparer
 ) extends CompiledExpression
     with LazyLogging {
 

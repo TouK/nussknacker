@@ -7,10 +7,10 @@ import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, Compiled
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 
 class EvaluableLazyParameter[T <: AnyRef](
-    compiledParameter: BaseCompiledParameter,
-    expressionEvaluator: ExpressionEvaluator,
+    val compiledParameter: BaseCompiledParameter,
+    val expressionEvaluator: ExpressionEvaluator,
     nodeId: NodeId,
-    jobData: JobData,
+    val jobData: JobData,
     override val returnType: TypingResult
 ) extends CustomLazyParameter[T] {
 
