@@ -47,7 +47,7 @@ export const NodeDetailsContent = ({
                     showSwitch={showSwitch}
                 />
             </TestResultsWrapper>
-            <NodeAdditionalInfoBox node={node} />
+            {/*<NodeAdditionalInfoBox node={node} />*/}
             {userSettings["debug.nodesAsJson"] && <DebugNodeInspector node={node} />}
         </NodeTable>
     );

@@ -47,7 +47,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
                     handleStatisticsEvent={trackEvent}
                 />
             </GraphStyledWrapper>
-            <NodeDescriptionPopover graphRef={graphRef} />
+            {/*<NodeDescriptionPopover graphRef={graphRef} />*/}
         </>
     );
 });

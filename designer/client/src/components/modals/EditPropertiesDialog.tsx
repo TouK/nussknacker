@@ -1,5 +1,5 @@
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import { WindowContent } from "../../windowManager";
+import { WindowContent, WindowKind } from "../../windowManager";
 import { css } from "@emotion/css";
 import React, { useEffect, useMemo, useState } from "react";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
@@ -23,6 +23,14 @@ import ScenarioProperty from "../graph/node-modal/ScenarioProperty";
 import { DescriptionField } from "../graph/node-modal/DescriptionField";
 import { NodeField } from "../graph/node-modal/NodeField";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
+import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
+import PropertiesSvg from "../../assets/img/properties.svg";
+import { styled } from "@mui/material";
+import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
+
+export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(PropertiesSvg))(({ theme }) => ({
+    backgroundColor: theme.palette.custom.getWindowStyles(WindowKind.editProperties).backgroundColor,
+}));
 
 const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
     const isEditMode = true;
@@ -31,7 +39,6 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
 
     const globalPropertiesErrors = useSelector(getPropertiesErrors);
     const [errors, setErrors] = useState<NodeValidationError[]>(isEditMode ? globalPropertiesErrors : []);
-
     const scenarioProperties = useSelector(getScenarioPropertiesConfig);
     const scenarioPropertiesConfig = useMemo(() => scenarioProperties?.propertiesConfig ?? {}, [scenarioProperties?.propertiesConfig]);
 
@@ -99,7 +106,9 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
             {...props}
             closeWithEsc
             buttons={[cancel, apply]}
-            title={"test"}
+            title={"Properties"}
+            icon={<NodeDetailsModalIcon />}
+            subheader={<NodeDocs href={scenarioProperties.docsUrl} />}
             classnames={{
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}

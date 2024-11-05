@@ -1,7 +1,7 @@
 import { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
 import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
 
-type Type = "Properties" | "FragmentInput" | string;
+type Type = "FragmentInput" | string;
 
 export type LayoutData = { x: number; y: number };
 
@@ -38,8 +38,6 @@ export type NodeType<F extends Field = Field> = {
         id: string;
         parameters?: Parameter[];
     };
-    nodeType?: string;
-    [key: string]: any;
 };
 
 export type FragmentNodeType = NodeType;

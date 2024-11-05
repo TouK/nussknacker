@@ -74,14 +74,16 @@ const custom = {
 
 const extendWithHelpers = (custom: CustomPalette) => ({
     ...custom,
-    getNodeStyles: function (this: CustomPalette, node: NodeType) {
-        return this.nodes[node.nodeType];
+    getNodeStyles: function (this: CustomPalette, nodeType: NodeType["type"]) {
+        return this.nodes[nodeType];
     },
     getWindowStyles: function (this: CustomPalette, type = WindowKind.default) {
         switch (type) {
             case WindowKind.compareVersions:
             case WindowKind.calculateCounts:
                 return this.windows.compareVersions;
+            case WindowKind.editProperties:
+                return this.windows.editProperties;
             case WindowKind.customAction:
                 return this.windows.customAction;
             default:

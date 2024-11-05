@@ -258,7 +258,7 @@ class ProcessUtils {
             }
             case "Join":
             case "CustomNode": {
-                return node.nodeType;
+                return node.type;
             }
             case "Filter": {
                 return "filter";

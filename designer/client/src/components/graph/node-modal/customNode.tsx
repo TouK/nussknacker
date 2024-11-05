@@ -40,9 +40,9 @@ export function CustomNode({
     );
 
     const ParametersComponent = useMemo(() => {
-        const isAggregate = ["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(node.nodeType);
+        const isAggregate = ["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(node.type);
         return isAggregate ? AggregateParametersList : ParametersList;
-    }, [node.nodeType]);
+    }, [node.type]);
 
     return (
         <>

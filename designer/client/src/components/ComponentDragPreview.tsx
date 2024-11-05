@@ -57,7 +57,7 @@ export const ComponentDragPreview = forwardRef<HTMLDivElement, { scale: () => nu
                     transform: `scale(${scale()})`,
                 }}
             >
-                <ComponentPreview node={node} isActive={active} isOver={isOver} />
+                {/*<ComponentPreview node={node} isActive={active} isOver={isOver} />*/}
             </div>
         </div>,
         document.body,

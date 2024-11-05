@@ -7,11 +7,11 @@ import { Scenario } from "../Process/types";
 
 class NodeUtils {
     nodeIsFragment = (node: NodeType): node is FragmentNodeType => {
-        return node.nodeType === "FragmentInput";
+        return node.type === "FragmentInput";
     };
 
     nodeIsJoin = (node: NodeType): boolean => {
-        return node && node.nodeType === "Join";
+        return node && node.type === "Join";
     };
 
     nodesFromScenarioGraph = (scenarioGraph: ScenarioGraph): NodeType[] => scenarioGraph.nodes || [];

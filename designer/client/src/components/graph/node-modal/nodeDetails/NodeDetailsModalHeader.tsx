@@ -4,7 +4,6 @@ import { useSelector } from "react-redux";
 import nodeAttributes from "../../../../assets/json/nodeAttributes.json";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import { NodeType } from "../../../../types";
-import NodeUtils from "../../NodeUtils";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { ModalHeader, WindowHeaderIconStyled } from "./NodeDetailsStyled";
 import { NodeDocs } from "./SubHeader";
@@ -51,13 +50,11 @@ export const getNodeDetailsModalTitle = (node: NodeType): string => {
 };
 
 export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactElement => {
-    const { components = {}, scenarioProperties } = useSelector(getProcessDefinitionData);
+    const { components = {} } = useSelector(getProcessDefinitionData);
 
     const docsUrl = useMemo(() => {
-        return NodeUtils.nodeIsProperties(node)
-            ? scenarioProperties?.docsUrl
-            : ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
-    }, [components, node, scenarioProperties]);
+        return ProcessUtils.extractComponentDefinition(node, components)?.docsUrl;
+    }, [components, node]);
 
     const nodeClass = findNodeClass(node);
 
@@ -65,5 +62,5 @@ export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactEl
 };
 
 export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(ComponentIcon))(({ node, theme }) => ({
-    backgroundColor: theme.palette.custom.getNodeStyles(node).fill,
+    backgroundColor: theme.palette.custom.getNodeStyles(node.type).fill,
 }));

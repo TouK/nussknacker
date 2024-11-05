@@ -135,7 +135,7 @@ export function enrichNodeWithProcessDependentData(
 ): NodeType {
     const node = cloneDeep(originalNode);
 
-    switch (node.nodeType) {
+    switch (node.type) {
         case "Join": {
             const parameters = ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.parameters;
             const declaredBranchParameters = parameters?.filter((p) => p.branchParam) || [];

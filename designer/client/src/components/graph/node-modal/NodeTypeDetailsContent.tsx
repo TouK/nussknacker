@@ -179,7 +179,7 @@ export function NodeTypeDetailsContent({ errors, showSwitch, ...props }: NodeTyp
         showValidation,
     } = useNodeTypeDetailsContentLogic(props);
 
-    switch (node.nodeType) {
+    switch (node.type) {
         case "Source":
             return (
                 <Source
