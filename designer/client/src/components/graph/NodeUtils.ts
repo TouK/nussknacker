@@ -9,7 +9,6 @@ import {
     NodeId,
     NodeType,
     ProcessDefinitionData,
-    PropertiesType,
     ScenarioGraph,
     UINodeType,
 } from "../../types";
@@ -22,16 +21,11 @@ class NodeUtils {
         return !isEmpty(obj) && has(obj, "id") && has(obj, "type");
     };
 
-    nodeType = (node: UINodeType) => {
-        return node?.type ? node.type : "Properties";
+    nodeType = (node: NodeType) => {
+        return node?.type;
     };
 
-    nodeIsProperties = (node: UINodeType): node is PropertiesType => {
-        const type = node && this.nodeType(node);
-        return type === "Properties";
-    };
-
-    nodeIsFragment = (node: UINodeType): node is FragmentNodeType => {
+    nodeIsFragment = (node: NodeType): node is FragmentNodeType => {
         return this.nodeType(node) === "FragmentInput";
     };
 
