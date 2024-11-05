@@ -20,7 +20,7 @@ const findNodeClass = (node: NodeType) =>
         nodeClassProperties.find((property) => has(node, property)),
     );
 
-const getNodeAttributes = (node: NodeType) => nodeAttributes[NodeUtils.nodeType(node)];
+const getNodeAttributes = (node: NodeType) => nodeAttributes[node.type];
 
 type IconModalHeaderProps = PropsWithChildren<{
     startIcon?: React.ReactElement;

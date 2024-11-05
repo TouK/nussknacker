@@ -27,7 +27,7 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                 {nodeIds.map((nodeId, index) => {
                     const details =
                         nodeId === "properties"
-                            ? NodeUtils.getProcessPropertiesNode(scenario, unsavedName)
+                            ? NodeUtils.getProcessProperties(scenario, unsavedName)
                             : NodeUtils.getNodeById(nodeId, scenario.scenarioGraph);
 
                     return (

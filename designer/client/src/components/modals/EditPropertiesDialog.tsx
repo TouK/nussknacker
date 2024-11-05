@@ -46,7 +46,7 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
     const scenarioName = useSelector(getProcessName);
     const name = useSelector(getProcessUnsavedNewName);
 
-    const [properties, setProperties] = useState(() => NodeUtils.getProcessPropertiesNode(scenario, name));
+    const [properties, setProperties] = useState(() => NodeUtils.getProcessProperties(scenario, name));
 
     const setProperty = (label: string | number, value: string) => {
         setProperties((prevState) => set<typeof properties>(label, value, prevState) as unknown as typeof properties);

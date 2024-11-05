@@ -14,7 +14,7 @@ export function useOpenProperties() {
     const { openNodeWindow } = useWindows();
     const scenario = useSelector(getScenario);
     const name = useSelector(getProcessUnsavedNewName);
-    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(scenario, name), [name, scenario]);
+    const processProperties = useMemo(() => NodeUtils.getProcessProperties(scenario, name), [name, scenario]);
     return useCallback(
         (mode?: NodeViewMode, layout?: WindowType["layoutData"]) => openNodeWindow(processProperties, scenario, mode, layout),
         [openNodeWindow, processProperties, scenario],

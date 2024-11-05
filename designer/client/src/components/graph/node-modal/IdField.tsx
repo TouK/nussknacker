@@ -37,7 +37,7 @@ export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showV
     const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node]);
     const marked = useMemo(() => isMarked(FAKE_NAME_PROP_NAME) || isMarked(propName), [isMarked]);
 
-    const isUniqueValueValidator = !NodeUtils.nodeIsProperties(node) && uniqueScenarioValueValidator(otherNodes);
+    const isUniqueValueValidator = uniqueScenarioValueValidator(otherNodes);
 
     const fieldErrors = getValidationErrorsForField(
         isUniqueValueValidator ? extendErrors(errors, value, FAKE_NAME_PROP_NAME, [isUniqueValueValidator]) : errors,

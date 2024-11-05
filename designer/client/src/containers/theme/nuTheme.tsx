@@ -75,7 +75,7 @@ const custom = {
 const extendWithHelpers = (custom: CustomPalette) => ({
     ...custom,
     getNodeStyles: function (this: CustomPalette, node: NodeType) {
-        return this.nodes[NodeUtils.nodeType(node)];
+        return this.nodes[node.nodeType];
     },
     getWindowStyles: function (this: CustomPalette, type = WindowKind.default) {
         switch (type) {

@@ -13,7 +13,7 @@ const findUnusedParameters = (parameters: Array<Parameter>, definitions: UIParam
 };
 
 const parametersPath = (node) => {
-    switch (NodeUtils.nodeType(node)) {
+    switch (node.nodeType) {
         case "CustomNode":
             return `parameters`;
         case "Join":
