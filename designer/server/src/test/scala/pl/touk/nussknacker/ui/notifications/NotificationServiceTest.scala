@@ -195,6 +195,7 @@ class NotificationServiceTest
       mock[ProcessChangeListener],
       None,
       None,
+      TestFactory.additionalComponentConfigsByProcessingType,
       clock
     ) {
       override protected def validateBeforeDeploy(
@@ -216,7 +217,8 @@ class NotificationServiceTest
               DeploymentId.fromActionId(actionId),
               user.toManagerUser,
               additionalDeploymentData,
-              nodesDeploymentData
+              nodesDeploymentData,
+              Map.empty
             ),
             processDetails.json
           )

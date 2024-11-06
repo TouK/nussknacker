@@ -4,11 +4,16 @@ import cats.Applicative
 import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId => LegacyDeploymentId}
+import pl.touk.nussknacker.engine.management.periodic.AdditionalDictComponentConfigsExtractor
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
@@ -19,6 +24,7 @@ import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.{DeploymentEntityData, WithModifiedAt}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService._
+import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioMetadataRepository}
 import pl.touk.nussknacker.ui.process.version.ScenarioGraphVersionService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -42,7 +48,11 @@ class DeploymentService(
     deploymentRepository: DeploymentRepository,
     dmDispatcher: DeploymentManagerDispatcher,
     dbioRunner: DBIOActionRunner,
-    clock: Clock
+    clock: Clock,
+    additionalComponentConfigs: ProcessingTypeDataProvider[
+      Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      _
+    ],
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -156,7 +166,10 @@ class DeploymentService(
       LegacyDeploymentId(""),
       user.toManagerUser,
       Map.empty,
-      NodesDeploymentData.empty
+      NodesDeploymentData.empty,
+      AdditionalDictComponentConfigsExtractor.getAdditionalConfigsWithDictParametersEditors(
+        additionalComponentConfigs.forProcessingType(scenarioMetadata.processingType)(user).getOrElse(Map.empty)
+      )
     )
     for {
       result <- EitherT[Future, RunDeploymentError, Unit](
@@ -189,7 +202,10 @@ class DeploymentService(
       toLegacyDeploymentId(command.id),
       command.user.toManagerUser,
       additionalDeploymentData = Map.empty,
-      command.nodesDeploymentData
+      command.nodesDeploymentData,
+      AdditionalDictComponentConfigsExtractor.getAdditionalConfigsWithDictParametersEditors(
+        additionalComponentConfigs.forProcessingType(scenarioMetadata.processingType)(command.user).getOrElse(Map.empty)
+      )
     )
     dmDispatcher
       .deploymentManagerUnsafe(scenarioMetadata.processingType)(command.user)

@@ -32,7 +32,14 @@ object FlinkTestMain extends FlinkRunner {
     val processVersion = ProcessVersion.empty.copy(processName =
       ProcessName("snapshot version")
     ) // testing process may be unreleased, so it has no version
-    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration).runTest
+    new FlinkTestMain(
+      modelData,
+      process,
+      scenarioTestData,
+      processVersion,
+      DeploymentData.empty.copy(configsFromProviderWithDictionaryEditor = modelData.additionalConfigsFromProvider),
+      configuration
+    ).runTest
   }
 
 }

@@ -120,7 +120,8 @@ class PeriodicProcessServiceTest
 
       },
       Clock.systemDefaultZone(),
-      actionService
+      actionService,
+      Map.empty
     )
 
   }

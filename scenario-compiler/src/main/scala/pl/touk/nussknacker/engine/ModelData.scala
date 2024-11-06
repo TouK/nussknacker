@@ -58,8 +58,11 @@ object ModelData extends LazyLogging {
   // Also a classloader is correct so we don't need to build the new one
   // This tiny method is Flink specific so probably the interpreter module is not the best one
   // but it is very convenient to keep in near normal, duringExecution method
-  def duringFlinkExecution(inputConfig: Config): ModelData = {
-    duringExecution(inputConfig, ModelClassLoader.empty, resolveConfigs = false)
+  def duringFlinkExecution(
+      inputConfig: Config,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+  ): ModelData = {
+    duringExecution(inputConfig, ModelClassLoader.empty, resolveConfigs = false, additionalConfigsFromProvider)
   }
 
   // On the runtime side, we get only model config, not the whole processing type config,
@@ -67,7 +70,12 @@ object ModelData extends LazyLogging {
   // But it is not a big deal, because scenario was already validated before deploy, so we already check that
   // we don't use not allowed components for a given category
   // and that the scenario doesn't violate validators introduced by additionalConfigsFromProvider
-  def duringExecution(inputConfig: Config, modelClassLoader: ModelClassLoader, resolveConfigs: Boolean): ModelData = {
+  def duringExecution(
+      inputConfig: Config,
+      modelClassLoader: ModelClassLoader,
+      resolveConfigs: Boolean,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty
+  ): ModelData = {
     def resolveInputConfigDuringExecution(modelConfigLoader: ModelConfigLoader): InputConfigDuringExecution = {
       if (resolveConfigs) {
         modelConfigLoader.resolveInputConfigDuringExecution(
@@ -83,7 +91,7 @@ object ModelData extends LazyLogging {
       modelClassLoader = modelClassLoader,
       category = None,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-      additionalConfigsFromProvider = Map.empty,
+      additionalConfigsFromProvider = additionalConfigsFromProvider,
       shouldIncludeConfigCreator = _ => true,
       shouldIncludeComponentProvider = _ => true,
       componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition
