@@ -52,7 +52,7 @@ object TypeInformationDetection {
   // We use SPI to provide implementation of TypeInformationDetection because we don't want to make
   // implementation classes available in flink-components-api module.
   val instance: TypeInformationDetection = {
-    FlinkTypeInfoRegistrar.ensureBaseTypesAreRegistered()
+    FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
 
     val classloader = Thread.currentThread().getContextClassLoader
     ServiceLoader
