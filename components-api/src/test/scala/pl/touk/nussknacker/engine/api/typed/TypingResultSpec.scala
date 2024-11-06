@@ -137,7 +137,7 @@ class TypingResultSpec
 
   test("determine if numbers can be converted") {
     Typed[Int].canBeSubclassOf(Typed[Long]) shouldBe true
-    Typed[Long].canBeSubclassOf(Typed[Int]) shouldBe true
+    Typed[Long].canBeSubclassOf(Typed[Int]) shouldBe false
     Typed[Long].canBeSubclassOf(Typed[Double]) shouldBe true
     Typed[Double].canBeSubclassOf(Typed[Long]) shouldBe false
     Typed[java.math.BigDecimal].canBeSubclassOf(Typed[Long]) shouldBe true
