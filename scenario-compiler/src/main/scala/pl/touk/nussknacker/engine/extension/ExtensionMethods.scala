@@ -1,50 +1,77 @@
 package pl.touk.nussknacker.engine.extension
 
+import org.springframework.core.MethodParameter
+import org.springframework.core.convert.TypeDescriptor
+import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, TypedValue}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
 import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensionMethodsHandlers
 
-import java.lang.reflect.{InvocationTargetException, Method, Modifier}
-import scala.util.{Failure, Try}
+import java.lang.reflect.{Method, Modifier}
+import java.util
+import scala.collection.concurrent.TrieMap
 
-class ExtensionsAwareMethodInvoker(classDefinitionSet: ClassDefinitionSet) {
+class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends MethodResolver {
+  private type TargetConverter = ToExtensionMethodInvocationTargetConverter[_ <: ExtensionMethodInvocationTarget]
 
-  private val toInvocationTargetConvertersByClass =
-    extensionMethodsHandlers
-      .map(e => e.invocationTargetClass -> e.createConverter(classDefinitionSet))
-      .toMap[Class[_], ToExtensionMethodInvocationTargetConverter[_ <: ExtensionMethodInvocationTarget]]
+  private val toInvocationTargetConvertersByHandler = extensionMethodsHandlers
+    .map(e => e -> e.createConverter(classDefinitionSet))
+    .toMap[ExtensionMethodsHandler[_], TargetConverter]
 
-  def invoke(method: Method)(target: Any, arguments: Array[Object]): Any = {
-    if (toInvocationTargetConvertersByClass.contains(method.getDeclaringClass)) {
-      toInvocationTargetConvertersByClass
-        .get(method.getDeclaringClass)
-        .map(_.toInvocationTarget(target))
-        .map(impl => invokeMethodWithoutReflection(method, arguments, impl))
-        .getOrElse {
-          throw new IllegalArgumentException(s"Extension method: ${method.getName} is not implemented")
+  private val executorsCache = new TrieMap[(String, Class[_]), Option[MethodExecutor]]()
+
+  override def resolve(
+      context: EvaluationContext,
+      targetObject: Any,
+      methodName: String,
+      argumentTypes: util.List[TypeDescriptor]
+  ): MethodExecutor = {
+    maybeResolve(context, targetObject, methodName, argumentTypes).orNull
+  }
+
+  def maybeResolve(
+      context: EvaluationContext,
+      targetObject: Any,
+      methodName: String,
+      argumentTypes: util.List[TypeDescriptor]
+  ): Option[MethodExecutor] = {
+    val targetClass = targetObject.getClass
+    executorsCache
+      .getOrElse(
+        (methodName, targetClass), {
+          val maybeExecutor = methodByConverter(targetClass, methodName, argumentTypes).map {
+            case (method, converter) => createExecutor(method, converter)
+          }
+          executorsCache.put((methodName, targetClass), maybeExecutor)
+          maybeExecutor
         }
-    } else {
-      method.invoke(target, arguments: _*)
+      )
+  }
+
+  private def methodByConverter(
+      targetClass: Class[_],
+      methodName: String,
+      argumentTypes: util.List[TypeDescriptor]
+  ): Option[(Method, TargetConverter)] = {
+    toInvocationTargetConvertersByHandler
+      .filter(_._1.appliesToClassInRuntime(targetClass))
+      .flatMap { case (handler, converter) =>
+        handler
+          .findMethod(methodName, argumentTypes.size())
+          .map(method => method -> converter)
+      }
+      .headOption
+  }
+
+  private def createExecutor(method: Method, converter: TargetConverter): MethodExecutor =
+    new MethodExecutor {
+
+      override def execute(context: EvaluationContext, target: Any, arguments: Object*): TypedValue = {
+        val value = converter.toInvocationTarget(target).invoke(method.getName, arguments.toArray)
+        new TypedValue(value, new TypeDescriptor(new MethodParameter(method, -1)).narrow(value))
+      }
+
     }
-  }
 
-  private def invokeMethodWithoutReflection(
-      method: Method,
-      arguments: Array[Object],
-      impl: ExtensionMethodInvocationTarget
-  ): Any = {
-    Try(impl.invoke(method.getName, arguments)).recoverWith { case ex: Throwable =>
-      Failure(new InvocationTargetException(ex))
-    }.get
-  }
-
-}
-
-object ExtensionAwareMethodsDiscovery {
-
-  // Calculating methods should not be cached because it's calculated only once at the first execution of
-  // parsed expression (org.springframework.expression.spel.ast.MethodReference.getCachedExecutor).
-  def discover(clazz: Class[_]): Array[Method] =
-    clazz.getMethods ++ extensionMethodsHandlers.filter(_.appliesToClassInRuntime(clazz)).flatMap(_.nonStaticMethods)
 }
 
 object ExtensionMethods {
@@ -79,9 +106,12 @@ trait ExtensionMethodInvocationTarget {
 trait ExtensionMethodsHandler[T <: ExtensionMethodInvocationTarget] {
   val invocationTargetClass: Class[T]
 
-  lazy val nonStaticMethods: Array[Method] =
+  private lazy val nonStaticMethods: Array[Method] =
     invocationTargetClass.getDeclaredMethods
       .filter(m => Modifier.isPublic(m.getModifiers) && !Modifier.isStatic(m.getModifiers))
+
+  def findMethod(methodName: String, argsSize: Int): Option[Method] =
+    nonStaticMethods.find(m => m.getName.equals(methodName) && m.getParameterCount == argsSize)
 
   def createConverter(
       set: ClassDefinitionSet
