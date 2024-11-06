@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
-import { NodeType, UINodeType } from "../../../types";
+import { UINodeType } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessName } from "./NodeDetailsContent/selectors";
 import { MarkdownStyled } from "./MarkdownStyled";
 
 interface Props {
     node: UINodeType;
-    handleGetAdditionalInfo: (processName: string, node: NodeType, controller: AbortController) => Promise<AdditionalInfo | null>;
+    handleGetAdditionalInfo: (processName: string, node: UINodeType, controller: AbortController) => Promise<AdditionalInfo | null>;
 }
 
 //Types should match implementations of AdditionalInfo on Backend!
@@ -29,13 +29,8 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     const [debouncedNode] = useDebounce(node, 1000);
 
     const getAdditionalInfo = useCallback(
-        (processName: string, debouncedNode: NodeType) => {
+        (processName: string, debouncedNode: UINodeType) => {
             const controller = new AbortController();
-            // const fetch = (node: NodeType) =>
-            //     NodeUtils.nodeIsProperties(node)
-            //         ? HttpService.getPropertiesAdditionalInfo(processName, node, controller)
-            //         : HttpService.getNodeAdditionalInfo(processName, node, controller);
-
             handleGetAdditionalInfo(processName, debouncedNode, controller).then((data) => {
                 // signal should cancel request, but for some reason it doesn't in dev
                 if (!controller.signal.aborted && data) {

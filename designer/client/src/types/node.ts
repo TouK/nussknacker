@@ -12,7 +12,6 @@ export interface BranchParams {
 
 export type BranchParametersTemplate = $TodoType;
 
-//FIXME: something wrong here, process and node mixed?
 export type NodeType<F extends Field = Field> = {
     id: string;
     type: Type;
@@ -38,6 +37,8 @@ export type NodeType<F extends Field = Field> = {
         id: string;
         parameters?: Parameter[];
     };
+    //TODO: Remove me and add correct properties
+    [key: string]: any;
 };
 
 export type FragmentNodeType = NodeType;
