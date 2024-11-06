@@ -13,7 +13,7 @@ import { getReadOnly } from "./selectors";
 import { StyledHeader } from "./StyledHeader";
 import { editProperties } from "../../../../actions/nk";
 import { getScenario } from "../../../../reducers/selectors/graph";
-import { usePropertiesState } from "../../../modals/EditPropertiesDialog";
+import { usePropertiesState } from "../../../modals/PropertiesDialog";
 
 interface DescriptionDialogProps extends WindowContentProps<WindowKind, { node: NodeType; scenario: Scenario }> {
     editMode?: boolean;
@@ -84,22 +84,24 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
         );
         const HeaderButtonZoom = (props) => (
             <>
-                <DefaultComponents.HeaderButton action={() => setPreviewMode(false)} name="edit">
-                    <Edit
-                        sx={{
-                            fontSize: "inherit",
-                            width: "unset",
-                            height: "unset",
-                            padding: ".25em",
-                        }}
-                    />
-                </DefaultComponents.HeaderButton>
+                {readOnly ? null : (
+                    <DefaultComponents.HeaderButton action={() => setPreviewMode(false)} name="edit">
+                        <Edit
+                            sx={{
+                                fontSize: "inherit",
+                                width: "unset",
+                                height: "unset",
+                                padding: ".25em",
+                            }}
+                        />
+                    </DefaultComponents.HeaderButton>
+                )}
                 <DefaultComponents.HeaderButtonZoom {...props} />
             </>
         );
 
         return { Header, HeaderTitle, HeaderButtonZoom };
-    }, [isTouched, previewMode]);
+    }, [isTouched, previewMode, readOnly]);
 
     return (
         <WindowContent

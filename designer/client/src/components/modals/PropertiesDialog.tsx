@@ -6,7 +6,7 @@ import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { useTranslation } from "react-i18next";
 import { editProperties } from "../../actions/nk";
 import { useDispatch, useSelector } from "react-redux";
-import { getPropertiesErrors } from "../graph/node-modal/node/selectors";
+import { getPropertiesErrors, getReadOnly } from "../graph/node-modal/node/selectors";
 import { NodeValidationError, PropertiesType } from "../../types";
 import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { debounce, isEqual } from "lodash";
@@ -20,6 +20,7 @@ import { styled } from "@mui/material";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { Properties } from "../properties/properties";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
+import { RootState } from "../../reducers";
 
 export const usePropertiesState = () => {
     const scenario = useSelector(getScenario);
@@ -39,8 +40,9 @@ export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(
     backgroundColor: theme.palette.custom.getWindowStyles(WindowKind.editProperties).backgroundColor,
 }));
 
-const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
-    const isEditMode = true;
+const PropertiesDialog = ({ ...props }: WindowContentProps) => {
+    const isEditMode = !useSelector((s: RootState) => getReadOnly(s, false));
+
     const { t } = useTranslation();
     const dispatch = useDispatch();
 
@@ -105,9 +107,8 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
                 <ContentSize>
                     <Properties
                         editedProperties={editedProperties}
-                        handleSetEditedProperties={handleSetEditedProperties}
+                        handleSetEditedProperties={isEditMode && handleSetEditedProperties}
                         errors={errors}
-                        isEditMode={isEditMode}
                         showSwitch={showSwitch}
                     />
                 </ContentSize>
@@ -116,4 +117,4 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
     );
 };
 
-export default EditPropertiesDialog;
+export default PropertiesDialog;

@@ -15,13 +15,13 @@ import { useSelector } from "react-redux";
 import { getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
 
 interface Props {
-    isEditMode?: boolean;
     errors?: NodeValidationError[];
     handleSetEditedProperties?: ComponentProps<typeof ScenarioProperty>["onChange"];
     editedProperties: PropertiesType;
     showSwitch?: boolean;
 }
-export const Properties = ({ isEditMode = false, errors = [], handleSetEditedProperties, editedProperties, showSwitch = false }: Props) => {
+export const Properties = ({ errors = [], handleSetEditedProperties, editedProperties, showSwitch = false }: Props) => {
+    const readOnly = !handleSetEditedProperties;
     const scenarioProperties = useSelector(getScenarioPropertiesConfig);
     const scenarioPropertiesConfig = useMemo(() => scenarioProperties?.propertiesConfig ?? {}, [scenarioProperties?.propertiesConfig]);
 
@@ -38,7 +38,7 @@ export const Properties = ({ isEditMode = false, errors = [], handleSetEditedPro
                 isMarked={false}
                 showValidation
                 onChange={(newValue) => handleSetEditedProperties("name", newValue.toString())}
-                readOnly={!isEditMode}
+                readOnly={readOnly}
                 className={isEmpty(errors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`}
                 fieldErrors={getValidationErrorsForField(errors, "name")}
                 value={editedProperties.name}
@@ -57,11 +57,11 @@ export const Properties = ({ isEditMode = false, errors = [], handleSetEditedPro
                     onChange={handleSetEditedProperties}
                     renderFieldLabel={() => <FieldLabel title={propConfig.label} label={propConfig.label} hintText={propConfig.hintText} />}
                     editedNode={editedProperties}
-                    readOnly={!isEditMode}
+                    readOnly={readOnly}
                 />
             ))}
             <DescriptionField
-                isEditMode={isEditMode}
+                isEditMode={!readOnly}
                 showValidation
                 node={editedProperties}
                 renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
@@ -69,7 +69,7 @@ export const Properties = ({ isEditMode = false, errors = [], handleSetEditedPro
                 errors={errors}
             />
             <NodeField
-                isEditMode={isEditMode}
+                isEditMode={!readOnly}
                 showValidation
                 node={editedProperties}
                 renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
