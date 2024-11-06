@@ -182,7 +182,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     staticMethodInvocationsChecking = false,
     classDefinitionSet = ClassDefinitionTestUtils.createDefinitionWithDefaultsAndExtensions,
     evaluationContextPreparer = null,
-    methodExecutionForUnknownAllowed = false,
+    anyMethodExecutionForUnknownAllowed = false,
     dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed
   )
 

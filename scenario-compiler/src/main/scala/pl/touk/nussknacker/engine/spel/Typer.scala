@@ -64,7 +64,7 @@ private[spel] class Typer(
     staticMethodInvocationsChecking: Boolean,
     classDefinitionSet: ClassDefinitionSet,
     evaluationContextPreparer: EvaluationContextPreparer,
-    methodExecutionForUnknownAllowed: Boolean,
+    anyMethodExecutionForUnknownAllowed: Boolean,
     dynamicPropertyAccessAllowed: Boolean
 ) extends LazyLogging {
 
@@ -73,7 +73,7 @@ private[spel] class Typer(
   private lazy val evaluationContext: EvaluationContext =
     evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)
 
-  private val methodReferenceTyper = new MethodReferenceTyper(classDefinitionSet, methodExecutionForUnknownAllowed)
+  private val methodReferenceTyper = new MethodReferenceTyper(classDefinitionSet, anyMethodExecutionForUnknownAllowed)
 
   private lazy val typeReferenceTyper = new TypeReferenceTyper(evaluationContext, classDefinitionSet)
 
@@ -229,9 +229,9 @@ private[spel] class Typer(
           invalidNodeResult(IllegalIndexingOperation)
         case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
         case Unknown =>
-          validNodeResult(Unknown)
+          withTypedChildren(_ => valid(Unknown))
         case _: TypedClass =>
-          val w = validNodeResult(Unknown)
+          val w = withTypedChildren(_ => valid(Unknown))
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
       }
     }
@@ -607,10 +607,14 @@ private[spel] class Typer(
   private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): TypingR[TypingResult] = t match {
     case Unknown =>
       val w = Writer.value[List[ExpressionParseError], TypingResult](Unknown)
-      if (methodExecutionForUnknownAllowed)
+      if (anyMethodExecutionForUnknownAllowed) {
         w
-      else
-        w.tell(List(IllegalPropertyAccessError(Unknown)))
+      } else {
+        // we allow some methods to be used on unknown
+        unknownPropertyTypeBasedOnMethod(e)
+          .map(valid)
+          .getOrElse(w.tell(List(IllegalPropertyAccessError(Unknown))))
+      }
     case TypedNull =>
       invalid(IllegalPropertyAccessError(TypedNull), fallbackType = TypedNull)
     case s: SingleTypingResult =>
@@ -680,6 +684,9 @@ private[spel] class Typer(
   ) = {
     classDefinitionSet.get(clazz.klass).flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
   }
+
+  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference): Option[TypingResult] =
+    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(Unknown, e.getName))
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
     case tc: SingleTypingResult
@@ -762,7 +769,7 @@ private[spel] class Typer(
       staticMethodInvocationsChecking,
       classDefinitionSet,
       evaluationContextPreparer,
-      methodExecutionForUnknownAllowed,
+      anyMethodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed
     )
 
