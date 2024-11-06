@@ -8,12 +8,12 @@ class CanBeSubclassDeterminerSpec extends AnyFunSuite with Matchers {
 
   test("Should validate assignability for decimal types") {
     CanBeSubclassDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Integer]) shouldBe false
-    CanBeSubclassDeterminer.isAssignable(classOf[Number], classOf[Int]) shouldBe false
-    CanBeSubclassDeterminer.isAssignable(classOf[Int], classOf[Short]) shouldBe false
+    CanBeSubclassDeterminer.isAssignable(classOf[Number], classOf[Integer]) shouldBe false
+    CanBeSubclassDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Short]) shouldBe false
 
-    CanBeSubclassDeterminer.isAssignable(classOf[Int], classOf[Long]) shouldBe true
-    CanBeSubclassDeterminer.isAssignable(classOf[Int], classOf[Number]) shouldBe true
-    CanBeSubclassDeterminer.isAssignable(classOf[Short], classOf[Int]) shouldBe true
+    CanBeSubclassDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Long]) shouldBe true
+    CanBeSubclassDeterminer.isAssignable(classOf[Integer], classOf[Number]) shouldBe true
+    CanBeSubclassDeterminer.isAssignable(classOf[java.lang.Short], classOf[Integer]) shouldBe true
   }
 
   test("Should validate assignability for numerical types") {
