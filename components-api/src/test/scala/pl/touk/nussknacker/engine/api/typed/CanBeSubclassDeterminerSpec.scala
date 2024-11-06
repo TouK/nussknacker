@@ -17,11 +17,11 @@ class CanBeSubclassDeterminerSpec extends AnyFunSuite with Matchers {
   }
 
   test("Should validate assignability for numerical types") {
-    CanBeSubclassDeterminer.isAssignable(classOf[Long], classOf[Double]) shouldBe true
-    CanBeSubclassDeterminer.isAssignable(classOf[Float], classOf[Double]) shouldBe true
+    CanBeSubclassDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Double]) shouldBe true
+    CanBeSubclassDeterminer.isAssignable(classOf[java.lang.Float], classOf[Double]) shouldBe true
 
-    CanBeSubclassDeterminer.isAssignable(classOf[Int], classOf[Float]) shouldBe true
-    CanBeSubclassDeterminer.isAssignable(classOf[Long], classOf[Double]) shouldBe true
+    CanBeSubclassDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Float]) shouldBe true
+    CanBeSubclassDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Double]) shouldBe true
   }
 
   // to check if autoboxing lang3 is failing - we can remove our fallback from SubclassDeterminer.isAssignable if the lib works properly
