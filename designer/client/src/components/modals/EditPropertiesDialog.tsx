@@ -9,25 +9,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { getPropertiesErrors } from "../graph/node-modal/node/selectors";
 import { NodeValidationError, PropertiesType } from "../../types";
 import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
-import { debounce, isEmpty, isEqual, sortBy } from "lodash";
+import { debounce, isEqual } from "lodash";
 import { getProcessUnsavedNewName, getScenario } from "../../reducers/selectors/graph";
 import NodeUtils from "../graph/NodeUtils";
 import { set } from "lodash/fp";
 import HttpService from "../../http/HttpService";
-import { ContentSize } from "../graph/node-modal/node/ContentSize";
-import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
-import Field, { FieldType } from "../graph/node-modal/editors/field/Field";
-import { nodeInput, nodeInputWithError } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
-import { FieldLabel } from "../graph/node-modal/FieldLabel";
-import ScenarioProperty from "../graph/node-modal/ScenarioProperty";
-import { DescriptionField } from "../graph/node-modal/DescriptionField";
-import { NodeField } from "../graph/node-modal/NodeField";
-import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import { styled } from "@mui/material";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
-import NodeAdditionalInfoBox from "../graph/node-modal/NodeAdditionalInfoBox";
+import { Properties } from "../properties/properties";
+import { ContentSize } from "../graph/node-modal/node/ContentSize";
 
 export const usePropertiesState = () => {
     const scenario = useSelector(getScenario);
@@ -53,19 +45,11 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
     const dispatch = useDispatch();
 
     const globalPropertiesErrors = useSelector(getPropertiesErrors);
-    const [errors, setErrors] = useState<NodeValidationError[]>(isEditMode ? globalPropertiesErrors : []);
     const scenarioProperties = useSelector(getScenarioPropertiesConfig);
-    const scenarioPropertiesConfig = useMemo(() => scenarioProperties?.propertiesConfig ?? {}, [scenarioProperties?.propertiesConfig]);
-
-    //fixme move this configuration to some better place?
-    //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
-    const scenarioPropertiesSorted = useMemo(
-        () => sortBy(Object.entries(scenarioPropertiesConfig), ([name]) => name),
-        [scenarioPropertiesConfig],
-    );
-
     const scenario = useSelector(getScenario);
     const scenarioName = useSelector(getProcessName);
+
+    const [errors, setErrors] = useState<NodeValidationError[]>(isEditMode ? globalPropertiesErrors : []);
     const { editedProperties, handleSetEditedProperties } = usePropertiesState();
     const showSwitch = false;
 
@@ -78,14 +62,6 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
             });
         }, 500);
     }, []);
-
-    useEffect(() => {
-        if (!isEditMode) {
-            return;
-        }
-
-        debouncedValidateProperties(scenarioName, editedProperties.additionalFields, editedProperties.name);
-    }, [debouncedValidateProperties, isEditMode, editedProperties.additionalFields, editedProperties.name, scenarioName]);
 
     const apply = useMemo<WindowButtonProps>(() => {
         return {
@@ -105,6 +81,14 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
         };
     }, [props, t]);
 
+    useEffect(() => {
+        if (!isEditMode) {
+            return;
+        }
+
+        debouncedValidateProperties(scenarioName, editedProperties.additionalFields, editedProperties.name);
+    }, [debouncedValidateProperties, isEditMode, editedProperties.additionalFields, editedProperties.name, scenarioName]);
+
     return (
         <WindowContent
             {...props}
@@ -119,57 +103,13 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
         >
             <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
                 <ContentSize>
-                    <NodeTable>
-                        <Field
-                            type={FieldType.input}
-                            isMarked={false}
-                            showValidation
-                            onChange={(newValue) => handleSetEditedProperties("name", newValue.toString())}
-                            readOnly={!isEditMode}
-                            className={isEmpty(errors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`}
-                            fieldErrors={getValidationErrorsForField(errors, "name")}
-                            value={editedProperties.name}
-                            autoFocus
-                        >
-                            <FieldLabel title={"Name"} label={"Name"} />
-                        </Field>
-                        {scenarioPropertiesSorted.map(([propName, propConfig]) => (
-                            <ScenarioProperty
-                                key={propName}
-                                showSwitch={showSwitch}
-                                showValidation
-                                propertyName={propName}
-                                propertyConfig={propConfig}
-                                errors={errors}
-                                onChange={handleSetEditedProperties}
-                                renderFieldLabel={() => (
-                                    <FieldLabel title={propConfig.label} label={propConfig.label} hintText={propConfig.hintText} />
-                                )}
-                                editedNode={editedProperties}
-                                readOnly={!isEditMode}
-                            />
-                        ))}
-                        <DescriptionField
-                            isEditMode={isEditMode}
-                            showValidation
-                            node={editedProperties}
-                            renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                            setProperty={handleSetEditedProperties}
-                            errors={errors}
-                        />
-                        <NodeField
-                            isEditMode={isEditMode}
-                            showValidation
-                            node={editedProperties}
-                            renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                            setProperty={handleSetEditedProperties}
-                            errors={errors}
-                            fieldType={FieldType.checkbox}
-                            fieldName={"additionalFields.showDescription"}
-                            description={"Show description each time scenario is opened"}
-                        />
-                        <NodeAdditionalInfoBox node={editedProperties} handleGetAdditionalInfo={HttpService.getPropertiesAdditionalInfo} />
-                    </NodeTable>
+                    <Properties
+                        editedProperties={editedProperties}
+                        handleSetEditedProperties={handleSetEditedProperties}
+                        errors={errors}
+                        isEditMode={isEditMode}
+                        showSwitch={showSwitch}
+                    />
                 </ContentSize>
             </div>
         </WindowContent>
