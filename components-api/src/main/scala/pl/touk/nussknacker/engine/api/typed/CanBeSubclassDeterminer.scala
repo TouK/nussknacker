@@ -4,7 +4,6 @@ import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.CanBeSubclassDeterminer.isAssignable
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
@@ -138,7 +137,7 @@ trait CanBeSubclassDeterminer {
         f"${givenClass.display} and ${superclassCandidate.display} are not the same"
       ) orElse
         condNel(
-          isAssignable(givenClass.klass, superclassCandidate.klass),
+          CanBeSubclassDeterminer.isAssignable(givenClass.klass, superclassCandidate.klass),
           (),
           s"${givenClass.klass} is not assignable from ${superclassCandidate.klass}"
         )
