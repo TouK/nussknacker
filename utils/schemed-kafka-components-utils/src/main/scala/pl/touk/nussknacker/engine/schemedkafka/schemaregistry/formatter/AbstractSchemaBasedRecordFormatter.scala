@@ -10,12 +10,12 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecor
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, UnspecializedTopicName, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  IntSchemaId,
-  JsonTypes,
+  ContentTypes,
   SchemaId,
   SchemaIdFromMessageExtractor,
   SchemaRegistryClient,
-  SchemaWithMetadata
+  SchemaWithMetadata,
+  StringSchemaId
 }
 
 import java.nio.charset.StandardCharsets
@@ -117,25 +117,12 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
         (keyBytes, valueBytes)
       } else {
         val valueSchemaOpt =
-          record.valueSchemaId match {
-            case Some(IntSchemaId(JsonTypes.Json.value)) =>
-              Option(
-                SchemaWithMetadata(
-                  OpenAPIJsonSchema("""{"type": "object"}"""),
-                  SchemaId.fromInt(JsonTypes.Json.value)
-                ).schema
-              )
-            case Some(IntSchemaId(JsonTypes.Plain.value)) =>
-              Option(
-                SchemaWithMetadata(
-                  OpenAPIJsonSchema("""{"type": "string"}"""),
-                  SchemaId.fromInt(JsonTypes.Plain.value)
-                ).schema
-              )
-            case None =>
-              Option(SchemaWithMetadata(OpenAPIJsonSchema("{}"), SchemaId.fromInt(JsonTypes.Json.value)).schema)
-            case _ => throw new IllegalStateException()
-          }
+          Option(
+            SchemaWithMetadata(
+              OpenAPIJsonSchema("""{"type": "object"}"""),
+              SchemaId.fromString(ContentTypes.JSON.toString)
+            ).schema
+          )
         val valueBytes = readValueMessage(valueSchemaOpt, topic, value)
         (keyBytes, valueBytes)
       }

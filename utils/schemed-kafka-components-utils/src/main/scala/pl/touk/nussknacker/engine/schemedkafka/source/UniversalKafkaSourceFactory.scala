@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.source
 
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import io.circe.syntax._
@@ -10,7 +10,7 @@ import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
@@ -68,59 +68,54 @@ class UniversalKafkaSourceFactory(
   ): ContextTransformationDefinition = {
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: _,
+          _
+        ) =>
+      val preparedTopic = prepareTopic(topic)
+      val valueValidationResult = if (contentType.equals("JSON")) {
+        Valid(
+          (
+            Some(
+              RuntimeSchemaData[ParsedSchema](
+                new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("{}")),
+                Some(SchemaId.fromString(ContentTypes.JSON.toString))
+              )
+            ),
+            // This is the type after it leaves source
+            Unknown
+          )
+        )
+      } else {
+        Valid(
+          (
+            Some(
+              RuntimeSchemaData[ParsedSchema](
+                new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("")),
+                Some(SchemaId.fromString(ContentTypes.PLAIN.toString))
+              )
+            ),
+            // This is the type after it leaves source
+            // TODO: Should be Array[Byte] when handling is implemented
+            Unknown
+          )
+        )
+      }
+      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
+    case step @ TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: _,
           state
         ) =>
-      val preparedTopic    = prepareTopic(topic)
-      val topicsWithSchema = topicSelectionStrategy.getTopics(schemaRegistryClient)
-      val hasSchema: Boolean =
-        topicsWithSchema.exists(_.contains(UnspecializedTopicName(topic)))
+      val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-
       val valueValidationResult =
-        if (hasSchema) {
-          state match {
-            case Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(results)) => results
-            case _ =>
-              determineSchemaAndType(
-                prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
-                Some(schemaVersionParamName)
-              )
-          }
-        } else {
-          versionOption match {
-            case DynamicSchemaVersion(JsonTypes.Json) =>
-              Valid(
-                (
-                  Some(
-                    RuntimeSchemaData[ParsedSchema](
-                      new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("{}")),
-                      Some(SchemaId.fromInt(JsonTypes.Json.value))
-                    )
-                  ),
-                  // This is the type after it leaves source
-                  Unknown
-                )
-              )
-            case DynamicSchemaVersion(JsonTypes.Plain) =>
-              Valid(
-                (
-                  Some(
-                    RuntimeSchemaData[ParsedSchema](
-                      new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("")),
-                      Some(SchemaId.fromInt(JsonTypes.Plain.value))
-                    )
-                  ),
-                  // This is the type after it leaves source
-                  Unknown
-                )
-              )
-            case _ =>
-              determineSchemaAndType(
-                prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
-                Some(schemaVersionParamName)
-              )
-          }
+        state match {
+          case Some(PrecalculatedValueSchemaUniversalKafkaSourceFactoryState(results)) => results
+          case _ =>
+            determineSchemaAndType(
+              prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
+              Some(schemaVersionParamName)
+            )
         }
 
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
