@@ -8,7 +8,7 @@ import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 import io.circe.syntax._
 import io.circe._
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNote
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{StickyNote, StickyNoteCorrelationId, StickyNoteId}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -21,8 +21,8 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
 
   class StickyNotesEntity(tag: Tag) extends Table[StickyNoteEventEntityData](tag, "sticky_notes") {
 
-    def id                = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def noteId            = column[UUID]("note_id", NotNull)
+    def id                = column[StickyNoteId]("id", O.PrimaryKey, O.AutoInc)
+    def noteCorrelationId = column[StickyNoteCorrelationId]("note_correlation_id", NotNull)
     def content           = column[String]("content", NotNull)
     def layoutData        = column[LayoutData]("layout_data", NotNull)
     def color             = column[String]("color", NotNull)
@@ -35,7 +35,7 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
 
     def * : ProvenShape[StickyNoteEventEntityData] = (
       id,
-      noteId,
+      noteCorrelationId,
       content,
       layoutData,
       color,
@@ -59,6 +59,11 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
   implicit def stickyNoteEventColumnTyped: BaseColumnType[StickyNoteEvent] =
     MappedColumnType.base[StickyNoteEvent, String](_.toString, StickyNoteEvent.withName)
 
+  implicit def stickyNoteIdColumnTyped: BaseColumnType[StickyNoteId] =
+    MappedColumnType.base[StickyNoteId, Long](_.value, StickyNoteId(_))
+  implicit def stickyNoteCorrelationIdColumnTyped: BaseColumnType[StickyNoteCorrelationId] =
+    MappedColumnType.base[StickyNoteCorrelationId, UUID](_.value, StickyNoteCorrelationId(_))
+
   implicit def layoutDataColumnTyped: BaseColumnType[LayoutData] = MappedColumnType.base[LayoutData, String](
     _.asJson.noSpaces,
     jsonStr =>
@@ -73,8 +78,8 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
 }
 
 final case class StickyNoteEventEntityData(
-    id: Long,
-    noteId: UUID,
+    id: StickyNoteId,
+    noteCorrelationId: StickyNoteCorrelationId,
     content: String,
     layoutData: LayoutData,
     color: String,
@@ -86,5 +91,5 @@ final case class StickyNoteEventEntityData(
     scenarioVersionId: VersionId
 ) {
   def toStickyNote: StickyNote =
-    StickyNote(id, noteId, content, layoutData, color, targetEdge, eventCreator, eventDate.toInstant)
+    StickyNote(id, content, layoutData, color, targetEdge, eventCreator, eventDate.toInstant)
 }
