@@ -11,22 +11,17 @@ import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 import java.lang.{Boolean => JBoolean}
 import java.util.{ArrayList => JArrayList, Collection => JCollection, List => JList}
 
-class ToListConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
+class ToListConversionExt extends ExtensionMethodHandler {
 
-  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
-    case "isList"       => isList()
-    case "toList"       => toList()
-    case "toListOrNull" => toListOrNull()
-    case _              => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
-  }
-
-  def isList(): Boolean        = ToListConversionExt.canConvert(target)
-  def toList(): JList[_]       = ToListConversionExt.convert(target)
-  def toListOrNull(): JList[_] = ToListConversionExt.convertOrNull(target)
+  override val methodRegistry: Map[String, ExtensionMethod] = Map(
+    "isList"       -> ((target: Any, _) => ToListConversionExt.canConvert(target)),
+    "toList"       -> ((target: Any, _) => ToListConversionExt.convert(target)),
+    "toListOrNull" -> ((target: Any, _) => ToListConversionExt.convertOrNull(target)),
+  )
 
 }
 
-object ToListConversionExt extends ConversionExt[ToListConversionExt] with ToCollectionConversion {
+object ToListConversionExt extends ConversionExt with ToCollectionConversion {
   private val booleanTyping   = Typed.typedClass[Boolean]
   private val listTyping      = Typed.genericTypeClass[JList[_]](List(Unknown))
   private val collectionClass = classOf[JCollection[_]]
@@ -52,18 +47,13 @@ object ToListConversionExt extends ConversionExt[ToListConversionExt] with ToCol
     description = Option("Convert to a list or null in case of failure")
   )
 
-  override val invocationTargetClass: Class[ToListConversionExt] = classOf[ToListConversionExt]
-
   override def definitions(): List[MethodDefinition] = List(
     isListMethodDefinition,
     toListDefinition,
     toListOrNullDefinition,
   )
 
-  override def createConverter(
-      set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[ToListConversionExt] =
-    (target: Any) => new ToListConversionExt(target)
+  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ToListConversionExt
 
   override type ResultType = JList[_]
   override val resultTypeClass: Class[JList[_]] = classOf[JList[_]]

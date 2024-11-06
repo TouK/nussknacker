@@ -4,33 +4,25 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
 import java.lang.{Boolean => JBoolean}
 
-class ToBooleanConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
+class ToBooleanConversionExt extends ExtensionMethodHandler {
 
-  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
-    case "isBoolean"       => isBoolean()
-    case "toBoolean"       => toBoolean()
-    case "toBooleanOrNull" => toBooleanOrNull()
-    case _                 => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
-  }
+  override val methodRegistry: Map[String, ExtensionMethod] = Map(
+    "isBoolean"       -> ((target: Any, _) => ToBooleanConversionExt.canConvert(target)),
+    "toBoolean"       -> ((target: Any, _) => ToBooleanConversionExt.convert(target)),
+    "toBooleanOrNull" -> ((target: Any, _) => ToBooleanConversionExt.convertOrNull(target)),
+  )
 
-  def isBoolean(): JBoolean       = ToBooleanConversionExt.canConvert(target)
-  def toBoolean(): JBoolean       = ToBooleanConversionExt.convert(target)
-  def toBooleanOrNull(): JBoolean = ToBooleanConversionExt.convertOrNull(target)
 }
 
-object ToBooleanConversionExt extends ConversionExt[ToBooleanConversionExt] {
+object ToBooleanConversionExt extends ConversionExt {
   private val cannotConvertException = (value: Any) =>
     new IllegalArgumentException(s"Cannot convert: $value to Boolean")
   private val allowedClassesForConversion: Set[Class[_]] = Set(classOf[String], classOf[Object])
 
-  override val invocationTargetClass: Class[ToBooleanConversionExt] = classOf[ToBooleanConversionExt]
   override type ResultType = JBoolean
   override val resultTypeClass: Class[JBoolean] = classOf[JBoolean]
 
-  override def createConverter(
-      set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[ToBooleanConversionExt] =
-    (target: Any) => new ToBooleanConversionExt(target)
+  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ToBooleanConversionExt
 
   override def appliesToConversion(clazz: Class[_]): Boolean = allowedClassesForConversion.contains(clazz)
 

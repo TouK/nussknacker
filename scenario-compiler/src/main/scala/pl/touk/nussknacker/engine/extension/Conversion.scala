@@ -69,7 +69,7 @@ object Conversion {
 
 }
 
-trait ConversionExt[T <: ExtensionMethodInvocationTarget] extends ExtensionMethodsHandler[T] with Conversion {
+trait ConversionExt extends ExtensionMethodsDefinition with Conversion {
   private lazy val definitionsByName = definitions().groupBy(_.name)
 
   def definitions(): List[MethodDefinition] = {
