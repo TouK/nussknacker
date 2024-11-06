@@ -26,8 +26,16 @@ class CanBeSubclassDeterminerSpec extends AnyFunSuite with Matchers {
 
   // to check if autoboxing lang3 is failing - we can remove our fallback from SubclassDeterminer.isAssignable if the lib works properly
   test("Should check if lang3 fails for certain isAssignable cases") {
-    ClassUtils.isAssignable(classOf[Integer], classOf[Long], true) shouldBe true
-    ClassUtils.isAssignable(classOf[Short], classOf[Integer], true) shouldBe true
+    ClassUtils.isAssignable(
+      classOf[Integer],
+      classOf[java.lang.Long],
+      true
+    ) shouldBe false // should be true in reality, but currently the lib is bugged
+    ClassUtils.isAssignable(
+      classOf[java.lang.Short],
+      classOf[Integer],
+      true
+    ) shouldBe false // should be true in reality, but currently the lib is bugged
   }
 
 }
