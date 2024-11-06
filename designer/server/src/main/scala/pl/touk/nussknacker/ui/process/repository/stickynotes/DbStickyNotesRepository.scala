@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.LayoutData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNote
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{StickyNote, StickyNoteCorrelationId, StickyNoteId}
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent
 import pl.touk.nussknacker.ui.db.entity.StickyNoteEventEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
@@ -27,15 +27,19 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
   import profile.api._
 
   // TODO, do we need to add it to DTO?
-  private def findCreateEventForNote(noteId: UUID): DB[StickyNoteEventEntityData] = {
+  private def findCreateEventForNote(noteCorrelationId: StickyNoteCorrelationId): DB[StickyNoteEventEntityData] = {
     stickyNotesTable
-      .filter(event => event.noteId === noteId && event.eventType === StickyNoteEvent.StickyNoteCreated)
+      .filter(event =>
+        event.noteCorrelationId === noteCorrelationId && event.eventType === StickyNoteEvent.StickyNoteCreated
+      )
       .result
       .headOption
       .flatMap {
         case None =>
           DBIOAction.failed(
-            new NoSuchElementException(s"Trying to access not existing StickyNoteCreated event (noteId=$noteId)")
+            new NoSuchElementException(
+              s"Trying to access not existing StickyNoteCreated event (noteCorrelationId=$noteCorrelationId)"
+            )
           )
         case Some(value) => DBIOAction.successful(value)
       }
@@ -47,11 +51,11 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
         .filter(event =>
           event.scenarioId === scenarioId && event.scenarioVersionId <= scenarioVersionId && event.eventType =!= StickyNoteEvent.StickyNoteDeleted
         )
-        .groupBy(_.noteId)
-        .map { case (noteId, notes) => (noteId, notes.map(_.eventDate).max) }
+        .groupBy(_.noteCorrelationId)
+        .map { case (noteCorrelationId, notes) => (noteCorrelationId, notes.map(_.eventDate).max) }
         .join(stickyNotesTable)
-        .on { case ((noteId, eventDate), event) =>
-          event.noteId === noteId && event.eventDate === eventDate
+        .on { case ((noteCorrelationId, eventDate), event) =>
+          event.noteCorrelationId === noteCorrelationId && event.eventDate === eventDate
         }
         .map { case ((_, _), event) => event }
         .result
@@ -59,7 +63,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
     )
   }
 
-  override def addStickyNotes(
+  override def addStickyNote(
       content: String,
       layoutData: LayoutData,
       color: String,
@@ -68,11 +72,11 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
       scenarioVersionId: VersionId
   )(
       implicit user: LoggedUser
-  ): DB[Int] = {
+  ): DB[StickyNoteCorrelationId] = {
     val now = Timestamp.from(clock.instant())
     val entity = StickyNoteEventEntityData(
-      id = 0, // ignored since id is AutoInc
-      noteId = UUID.randomUUID(),
+      id = StickyNoteId(0), // ignored since id is AutoInc
+      noteCorrelationId = StickyNoteCorrelationId(UUID.randomUUID()),
       content = content,
       layoutData = layoutData,
       color = color,
@@ -83,17 +87,25 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
       scenarioId = scenarioId,
       scenarioVersionId = scenarioVersionId
     )
-    run(stickyNotesTable += entity)
+    run(stickyNotesTable += entity).flatMap {
+      case 0 => DBIOAction.failed(new IllegalStateException(s"This is odd, no sticky note was added"))
+      case 1 => DBIOAction.successful(entity.noteCorrelationId)
+      case n =>
+        DBIOAction.failed(
+          new IllegalStateException(s"This is odd, more than one sticky note were added (added $n records).")
+        )
+    }
+
   }
 
-  private def updateStickyNote(id: Long, updateAction: StickyNoteEventEntityData => StickyNoteEventEntityData)(
+  private def updateStickyNote(id: StickyNoteId, updateAction: StickyNoteEventEntityData => StickyNoteEventEntityData)(
       implicit user: LoggedUser
   ): DB[Int] = {
     run(for {
       actionResult <- stickyNotesTable.filter(_.id === id).result.headOption.flatMap {
         case None =>
           DBIOAction.failed(
-            new NoSuchElementException(s"Trying to update record (id=$id) which is not present in the database")
+            new NoSuchElementException(s"Trying to update record (id=${id.value}) which is not present in the database")
           )
         case Some(latestEvent) =>
           val newEvent = updateAction(latestEvent)
@@ -103,7 +115,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
   }
 
   override def updateStickyNote(
-      id: Long,
+      noteId: StickyNoteId,
       content: String,
       layoutData: LayoutData,
       color: String,
@@ -123,17 +135,17 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
       layoutData = layoutData,
       scenarioVersionId = scenarioVersionId
     )
-    updateStickyNote(id, updateAction)
+    updateStickyNote(noteId, updateAction)
   }
 
-  override def deleteStickyNote(id: Long)(implicit user: LoggedUser): DB[Int] = {
+  override def deleteStickyNote(noteId: StickyNoteId)(implicit user: LoggedUser): DB[Int] = {
     val now = Timestamp.from(clock.instant())
     def updateAction(latestEvent: StickyNoteEventEntityData): StickyNoteEventEntityData = latestEvent.copy(
       eventDate = now,
       eventCreator = user.id,
       eventType = StickyNoteEvent.StickyNoteDeleted
     )
-    updateStickyNote(id, updateAction)
+    updateStickyNote(noteId, updateAction)
   }
 
 }
