@@ -3,33 +3,24 @@ package pl.touk.nussknacker.engine.extension
 import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
-import java.lang.{Boolean => JBoolean}
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
 import scala.util.Try
 
-class ToBigDecimalConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
+class ToBigDecimalConversionExt extends ExtensionMethodHandler {
 
-  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
-    case "isBigDecimal"       => isBigDecimal()
-    case "toBigDecimal"       => toBigDecimal()
-    case "toBigDecimalOrNull" => toBigDecimalOrNull()
-    case _                    => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
-  }
+  override val methodRegistry: Map[String, ExtensionMethod] = Map(
+    "isBigDecimal"       -> ((target: Any, _) => ToBigDecimalConversionExt.canConvert(target)),
+    "toBigDecimal"       -> ((target: Any, _) => ToBigDecimalConversionExt.convert(target)),
+    "toBigDecimalOrNull" -> ((target: Any, _) => ToBigDecimalConversionExt.convertOrNull(target)),
+  )
 
-  def isBigDecimal(): JBoolean          = ToBigDecimalConversionExt.canConvert(target)
-  def toBigDecimal(): JBigDecimal       = ToBigDecimalConversionExt.convert(target)
-  def toBigDecimalOrNull(): JBigDecimal = ToBigDecimalConversionExt.convertOrNull(target)
 }
 
-object ToBigDecimalConversionExt extends ConversionExt[ToBigDecimalConversionExt] with ToNumericConversion {
-  override val invocationTargetClass: Class[ToBigDecimalConversionExt] = classOf[ToBigDecimalConversionExt]
+object ToBigDecimalConversionExt extends ConversionExt with ToNumericConversion {
   override type ResultType = JBigDecimal
   override val resultTypeClass: Class[JBigDecimal] = classOf[JBigDecimal]
 
-  override def createConverter(
-      set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[ToBigDecimalConversionExt] =
-    (target: Any) => new ToBigDecimalConversionExt(target)
+  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ToBigDecimalConversionExt
 
   override def convertEither(value: Any): Either[Throwable, JBigDecimal] =
     value match {

@@ -4,31 +4,23 @@ import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.extension.Conversion.toNumberEither
 
-import java.lang.{Boolean => JBoolean, Double => JDouble}
+import java.lang.{Double => JDouble}
 
-class ToDoubleConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
+class ToDoubleConversionExt extends ExtensionMethodHandler {
 
-  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
-    case "isDouble"       => isDouble()
-    case "toDouble"       => toDouble()
-    case "toDoubleOrNull" => toDoubleOrNull()
-    case _                => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
-  }
+  override val methodRegistry: Map[String, ExtensionMethod] = Map(
+    "isDouble"       -> ((target: Any, _) => ToDoubleConversionExt.canConvert(target)),
+    "toDouble"       -> ((target: Any, _) => ToDoubleConversionExt.convert(target)),
+    "toDoubleOrNull" -> ((target: Any, _) => ToDoubleConversionExt.convertOrNull(target)),
+  )
 
-  def isDouble(): JBoolean      = ToDoubleConversionExt.canConvert(target)
-  def toDouble(): JDouble       = ToDoubleConversionExt.convert(target)
-  def toDoubleOrNull(): JDouble = ToDoubleConversionExt.convertOrNull(target)
 }
 
-object ToDoubleConversionExt extends ConversionExt[ToDoubleConversionExt] with ToNumericConversion {
-  override val invocationTargetClass: Class[ToDoubleConversionExt] = classOf[ToDoubleConversionExt]
+object ToDoubleConversionExt extends ConversionExt with ToNumericConversion {
   override type ResultType = JDouble
   override val resultTypeClass: Class[JDouble] = classOf[JDouble]
 
-  override def createConverter(
-      set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[ToDoubleConversionExt] =
-    (target: Any) => new ToDoubleConversionExt(target)
+  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ToDoubleConversionExt
 
   override def convertEither(value: Any): Either[Throwable, JDouble] = {
     value match {

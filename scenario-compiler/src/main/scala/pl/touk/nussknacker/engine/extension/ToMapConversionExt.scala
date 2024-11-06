@@ -10,22 +10,17 @@ import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 import java.lang.{Boolean => JBoolean}
 import java.util.{Collection => JCollection, HashMap => JHashMap, Map => JMap, Set => JSet}
 
-class ToMapConversionExt(target: Any) extends ExtensionMethodInvocationTarget {
+class ToMapConversionExt extends ExtensionMethodHandler {
 
-  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
-    case "isMap"       => isMap()
-    case "toMap"       => toMap()
-    case "toMapOrNull" => toMapOrNull()
-    case _             => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
-  }
-
-  def isMap(): Boolean          = ToMapConversionExt.canConvert(target)
-  def toMap(): JMap[_, _]       = ToMapConversionExt.convert(target)
-  def toMapOrNull(): JMap[_, _] = ToMapConversionExt.convertOrNull(target)
+  override val methodRegistry: Map[String, ExtensionMethod] = Map(
+    "isMap"       -> ((target: Any, _) => ToMapConversionExt.canConvert(target)),
+    "toMap"       -> ((target: Any, _) => ToMapConversionExt.convert(target)),
+    "toMapOrNull" -> ((target: Any, _) => ToMapConversionExt.convertOrNull(target)),
+  )
 
 }
 
-object ToMapConversionExt extends ConversionExt[ToMapConversionExt] with ToCollectionConversion {
+object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
   private val booleanTyping    = Typed.typedClass[Boolean]
   private val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
   private val keyName          = "key"
@@ -59,12 +54,7 @@ object ToMapConversionExt extends ConversionExt[ToMapConversionExt] with ToColle
     toMapOrNullDefinition,
   )
 
-  override val invocationTargetClass: Class[ToMapConversionExt] = classOf[ToMapConversionExt]
-
-  override def createConverter(
-      set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[ToMapConversionExt] =
-    (target: Any) => new ToMapConversionExt(target)
+  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ToMapConversionExt
 
   override type ResultType = JMap[_, _]
   override val resultTypeClass: Class[JMap[_, _]] = classOf[ResultType]

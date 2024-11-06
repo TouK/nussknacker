@@ -6,20 +6,8 @@ import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 import java.util
 import java.util.{List => JList}
 
-class ArrayExt(target: Any) extends util.AbstractList[Object] with ExtensionMethodInvocationTarget {
-  private val asList = ConversionHandler.convertArrayToList(target)
-
-  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
-    case "get"               => get(arguments(0).asInstanceOf[Integer])
-    case "size"              => size()
-    case "lastIndexOf"       => lastIndexOf(arguments(0))
-    case "contains"          => contains(arguments(0))
-    case "indexOf"           => indexOf(arguments(0))
-    case "containsAll"       => containsAll(arguments(0).asInstanceOf[util.Collection[_]])
-    case "isEmpty" | "empty" => isEmpty
-    case _                   => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
-  }
-
+class ArrayWrapper(target: Any) extends util.AbstractList[Object] {
+  private val asList                                       = ConversionHandler.convertArrayToList(target)
   override def get(index: Int): AnyRef                     = asList.get(index)
   override def size(): Int                                 = asList.size()
   override def lastIndexOf(o: Any): Int                    = super.lastIndexOf(o)
@@ -28,17 +16,46 @@ class ArrayExt(target: Any) extends util.AbstractList[Object] with ExtensionMeth
   override def containsAll(c: util.Collection[_]): Boolean = super.containsAll(c)
   override def isEmpty: Boolean                            = super.isEmpty
   def empty: Boolean                                       = super.isEmpty
+}
+
+class ArrayExt extends ExtensionMethodHandler {
+
+  override val methodRegistry: Map[String, ExtensionMethod] = Map(
+    "get" -> new ExtensionMethod {
+      override val argsSize: Int = 1
+      override def invoke(target: Any, args: Object*): Any =
+        new ArrayWrapper(target).get(args.head.asInstanceOf[Integer])
+    },
+    "size" -> ((target: Any, _) => new ArrayWrapper(target).size()),
+    "lastIndexOf" -> new ExtensionMethod {
+      override val argsSize: Int = 1
+      override def invoke(target: Any, args: Object*): Any =
+        new ArrayWrapper(target).lastIndexOf(args.head.asInstanceOf[Integer])
+    },
+    "contains" -> new ExtensionMethod {
+      override val argsSize: Int = 1
+      override def invoke(target: Any, args: Object*): Any =
+        new ArrayWrapper(target).contains(args.head)
+    },
+    "indexOf" -> new ExtensionMethod {
+      override val argsSize: Int = 1
+      override def invoke(target: Any, args: Object*): Any =
+        new ArrayWrapper(target).indexOf(args.head)
+    },
+    "containsAll" -> new ExtensionMethod {
+      override val argsSize: Int = 1
+      override def invoke(target: Any, args: Object*): Any =
+        new ArrayWrapper(target).containsAll(args.head.asInstanceOf[util.Collection[_]])
+    },
+    "isEmpty" -> ((target: Any, _) => new ArrayWrapper(target).isEmpty()),
+    "empty"   -> ((target: Any, _) => new ArrayWrapper(target).isEmpty()),
+  )
 
 }
 
-object ArrayExt extends ExtensionMethodsHandler[ArrayExt] {
+object ArrayExt extends ExtensionMethodsDefinition {
 
-  override val invocationTargetClass: Class[ArrayExt] = classOf[ArrayExt]
-
-  override def createConverter(
-      set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[ArrayExt] =
-    (target: Any) => new ArrayExt(target)
+  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ArrayExt
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
     if (clazz.isArray) {

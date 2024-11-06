@@ -14,29 +14,36 @@ import java.lang.{Boolean => JBoolean}
 import scala.util.Try
 
 // todo: lbg - add casting methods to UTIL
-class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]])
-    extends ExtensionMethodInvocationTarget {
+class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) extends ExtensionMethodHandler {
 
-  override def invoke(methodName: String, arguments: Array[Object]): Any = methodName match {
-    case "is"       => is(arguments(0).asInstanceOf[String])
-    case "to"       => to(arguments(0).asInstanceOf[String])
-    case "toOrNull" => toOrNull(arguments(0).asInstanceOf[String])
-    case _          => throw new IllegalAccessException(s"Cannot find method with name: '$methodName'")
-  }
+  override val methodRegistry: Map[String, ExtensionMethod] = Map(
+    "is" -> new ExtensionMethod {
+      override val argsSize: Int                           = 1
+      override def invoke(target: Any, args: Object*): Any = is(target, args.head.asInstanceOf[String])
+    },
+    "to" -> new ExtensionMethod {
+      override val argsSize: Int                           = 1
+      override def invoke(target: Any, args: Object*): Any = to(target, args.head.asInstanceOf[String])
+    },
+    "toOrNull" -> new ExtensionMethod {
+      override val argsSize: Int                           = 1
+      override def invoke(target: Any, args: Object*): Any = toOrNull(target, args.head.asInstanceOf[String])
+    },
+  )
 
-  def is(className: String): Boolean =
+  private def is(target: Any, className: String): Boolean =
     getClass(className).exists(clazz => clazz.isAssignableFrom(target.getClass)) ||
       getConversion(className).exists(_.canConvert(target))
 
-  def to(className: String): Any =
-    orElse(tryCast(className), tryConvert(className))
+  private def to(target: Any, className: String): Any =
+    orElse(tryCast(target, className), tryConvert(target, className))
       .getOrElse(throw new IllegalStateException(s"Cannot cast or convert value: $target to: '$className'"))
 
-  def toOrNull(className: String): Any =
-    orElse(tryCast(className), tryConvert(className))
+  private def toOrNull(target: Any, className: String): Any =
+    orElse(tryCast(target, className), tryConvert(target, className))
       .getOrElse(null)
 
-  private def tryCast(className: String): Either[Throwable, Any] = getClass(className) match {
+  private def tryCast(target: Any, className: String): Either[Throwable, Any] = getClass(className) match {
     case Some(clazz) => Try(clazz.cast(target)).toEither
     case None        => Left(new ClassCastException(s"Cannot cast: [$target] to: [$className]."))
   }
@@ -44,7 +51,7 @@ class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]
   private def getClass(className: String): Option[Class[_]] =
     classesBySimpleName.get(className.toLowerCase())
 
-  private def tryConvert(className: String): Either[Throwable, Any] =
+  private def tryConvert(target: Any, className: String): Either[Throwable, Any] =
     getConversion(className)
       .flatMap(_.convertEither(target))
 
@@ -57,7 +64,7 @@ class CastOrConversionExt(target: Any, classesBySimpleName: Map[String, Class[_]
 
 }
 
-object CastOrConversionExt extends ExtensionMethodsHandler[CastOrConversionExt] {
+object CastOrConversionExt extends ExtensionMethodsDefinition {
   private val isMethodName            = "is"
   private val toMethodName            = "to"
   private val toOrNullMethodName      = "toOrNull"
@@ -83,18 +90,14 @@ object CastOrConversionExt extends ExtensionMethodsHandler[CastOrConversionExt] 
     .flatMap(c => c.resultTypeClass.classByNameAndSimpleNameLowerCase().map(n => n._1 -> c))
     .toMap
 
-  override val invocationTargetClass: Class[CastOrConversionExt] = classOf[CastOrConversionExt]
-
   def isCastOrConversionMethod(methodName: String): Boolean =
     castOrConversionMethods.contains(methodName)
 
   def allowedConversions(clazz: Class[_]): List[Conversion] = conversionsRegistry.filter(_.appliesToConversion(clazz))
 
-  override def createConverter(
-      set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[CastOrConversionExt] = {
+  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = {
     val classesBySimpleName = set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase()
-    (target: Any) => new CastOrConversionExt(target, classesBySimpleName)
+    new CastOrConversionExt(classesBySimpleName)
   }
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
