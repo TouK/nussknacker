@@ -1,15 +1,15 @@
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { css } from "@emotion/css";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { useTranslation } from "react-i18next";
 import { editProperties } from "../../actions/nk";
 import { useDispatch, useSelector } from "react-redux";
 import { getPropertiesErrors } from "../graph/node-modal/node/selectors";
-import { NodeValidationError } from "../../types";
+import { NodeValidationError, PropertiesType } from "../../types";
 import { getProcessName, getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
-import { debounce, isEmpty, sortBy } from "lodash";
+import { debounce, isEmpty, isEqual, sortBy } from "lodash";
 import { getProcessUnsavedNewName, getScenario } from "../../reducers/selectors/graph";
 import NodeUtils from "../graph/NodeUtils";
 import { set } from "lodash/fp";
@@ -28,6 +28,20 @@ import PropertiesSvg from "../../assets/img/properties.svg";
 import { styled } from "@mui/material";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import NodeAdditionalInfoBox from "../graph/node-modal/NodeAdditionalInfoBox";
+
+export const usePropertiesState = () => {
+    const scenario = useSelector(getScenario);
+    const name = useSelector(getProcessUnsavedNewName);
+    const currentProperties = useMemo(() => NodeUtils.getProcessProperties(scenario, name), [name, scenario]);
+    const [editedProperties, setEditedProperties] = useState<PropertiesType>(currentProperties);
+    const isTouched = useMemo(() => !isEqual(currentProperties, editedProperties), [currentProperties, editedProperties]);
+
+    const handleSetEditedProperties = useCallback((label: string | number, value: string) => {
+        setEditedProperties((prevState) => set<typeof editedProperties>(label, value, prevState) as unknown as typeof editedProperties);
+    }, []);
+
+    return { currentProperties, editedProperties, handleSetEditedProperties, isTouched };
+};
 
 export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(PropertiesSvg))(({ theme }) => ({
     backgroundColor: theme.palette.custom.getWindowStyles(WindowKind.editProperties).backgroundColor,
@@ -52,14 +66,7 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
 
     const scenario = useSelector(getScenario);
     const scenarioName = useSelector(getProcessName);
-    const name = useSelector(getProcessUnsavedNewName);
-
-    const [properties, setProperties] = useState(() => NodeUtils.getProcessProperties(scenario, name));
-
-    const setProperty = (label: string | number, value: string) => {
-        setProperties((prevState) => set<typeof properties>(label, value, prevState) as unknown as typeof properties);
-    };
-
+    const { editedProperties, handleSetEditedProperties } = usePropertiesState();
     const showSwitch = false;
 
     const debouncedValidateProperties = useMemo(() => {
@@ -77,22 +84,18 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
             return;
         }
 
-        debouncedValidateProperties(scenarioName, properties.additionalFields, properties.name);
-    }, [debouncedValidateProperties, isEditMode, properties.additionalFields, properties.name, scenarioName]);
+        debouncedValidateProperties(scenarioName, editedProperties.additionalFields, editedProperties.name);
+    }, [debouncedValidateProperties, isEditMode, editedProperties.additionalFields, editedProperties.name, scenarioName]);
 
     const apply = useMemo<WindowButtonProps>(() => {
         return {
             title: t("dialog.button.apply", "apply"),
             action: async () => {
-                try {
-                    await dispatch(editProperties(scenario, properties));
-                    props.close();
-                } catch (e) {
-                    //TODO
-                }
+                await dispatch(editProperties(scenario, editedProperties));
+                props.close();
             },
         };
-    }, [dispatch, properties, props, scenario, t]);
+    }, [dispatch, editedProperties, props, scenario, t]);
 
     const cancel = useMemo<WindowButtonProps | false>(() => {
         return {
@@ -121,11 +124,11 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
                             type={FieldType.input}
                             isMarked={false}
                             showValidation
-                            onChange={(newValue) => setProperty("name", newValue.toString())}
+                            onChange={(newValue) => handleSetEditedProperties("name", newValue.toString())}
                             readOnly={!isEditMode}
                             className={isEmpty(errors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`}
                             fieldErrors={getValidationErrorsForField(errors, "name")}
-                            value={properties.name}
+                            value={editedProperties.name}
                             autoFocus
                         >
                             <FieldLabel title={"Name"} label={"Name"} />
@@ -138,34 +141,34 @@ const EditPropertiesDialog = ({ ...props }: WindowContentProps) => {
                                 propertyName={propName}
                                 propertyConfig={propConfig}
                                 errors={errors}
-                                onChange={setProperty}
+                                onChange={handleSetEditedProperties}
                                 renderFieldLabel={() => (
                                     <FieldLabel title={propConfig.label} label={propConfig.label} hintText={propConfig.hintText} />
                                 )}
-                                editedNode={properties}
+                                editedNode={editedProperties}
                                 readOnly={!isEditMode}
                             />
                         ))}
                         <DescriptionField
                             isEditMode={isEditMode}
                             showValidation
-                            node={properties}
+                            node={editedProperties}
                             renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                            setProperty={setProperty}
+                            setProperty={handleSetEditedProperties}
                             errors={errors}
                         />
                         <NodeField
                             isEditMode={isEditMode}
                             showValidation
-                            node={properties}
+                            node={editedProperties}
                             renderFieldLabel={(paramName) => <FieldLabel title={paramName} label={paramName} />}
-                            setProperty={setProperty}
+                            setProperty={handleSetEditedProperties}
                             errors={errors}
                             fieldType={FieldType.checkbox}
                             fieldName={"additionalFields.showDescription"}
                             description={"Show description each time scenario is opened"}
                         />
-                        <NodeAdditionalInfoBox node={properties} handleGetAdditionalInfo={HttpService.getPropertiesAdditionalInfo} />
+                        <NodeAdditionalInfoBox node={editedProperties} handleGetAdditionalInfo={HttpService.getPropertiesAdditionalInfo} />
                     </NodeTable>
                 </ContentSize>
             </div>

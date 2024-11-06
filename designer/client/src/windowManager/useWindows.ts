@@ -8,26 +8,6 @@ import { Scenario } from "../components/Process/types";
 import { NodeType } from "../types";
 import { WindowKind } from "./WindowKind";
 
-export const NodeViewMode = {
-    edit: false,
-    readonly: true,
-    descriptionView: "description",
-    descriptionEdit: "descriptionEdit",
-} as const;
-export type NodeViewMode = (typeof NodeViewMode)[keyof typeof NodeViewMode];
-
-function mapModeToKind(mode: NodeViewMode): WindowKind {
-    switch (mode) {
-        case NodeViewMode.readonly:
-            return WindowKind.viewNode;
-        case NodeViewMode.descriptionView:
-            return WindowKind.viewDescription;
-        case NodeViewMode.descriptionEdit:
-            return WindowKind.editDescription;
-    }
-    return WindowKind.editNode;
-}
-
 const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
     useEffect(() => {
         if (!isWindowOpen) {
@@ -67,15 +47,14 @@ export function useWindows(parent?: WindowId) {
     );
 
     const openNodeWindow = useCallback(
-        (node: NodeType, scenario: Scenario, viewMode: NodeViewMode = false, layoutData?: WindowType["layoutData"]) => {
+        (node: NodeType, scenario: Scenario, readonly?: boolean) => {
             return open({
                 id: node.id,
                 title: node.id,
                 isResizable: true,
-                kind: mapModeToKind(viewMode),
+                kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
                 meta: { node, scenario },
                 shouldCloseOnEsc: false,
-                layoutData,
             });
         },
         [open],

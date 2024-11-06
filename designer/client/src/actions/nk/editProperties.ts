@@ -1,4 +1,4 @@
-import { ProcessDefinitionData, ScenarioGraph, ScenarioGraphWithName, ValidationResult } from "../../types";
+import { ProcessDefinitionData, PropertiesType, ScenarioGraph, ScenarioGraphWithName, ValidationResult } from "../../types";
 import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
 import { fetchProcessDefinition } from "./processDefinitionData";
 import { Scenario } from "../../components/Process/types";
@@ -44,7 +44,7 @@ const calculateProperties = (scenario, changedProperties): ThunkAction<Promise<S
     };
 };
 
-export function editProperties(scenario: Scenario, changedProperties): ThunkAction {
+export function editProperties(scenario: Scenario, changedProperties: PropertiesType): ThunkAction {
     return async (dispatch) => {
         const { processName, scenarioGraph } = await dispatch(calculateProperties(scenario, changedProperties));
         const response = await HttpService.validateProcess(scenario.name, processName, scenarioGraph);
