@@ -8,7 +8,7 @@ import { useWindows, WindowKind } from "../windowManager";
 import { WindowType } from "@touk/window-manager";
 import { Scenario } from "../components/Process/types";
 import NodeUtils from "../components/graph/NodeUtils";
-import { UINodeType } from "../types";
+import { NodeOrPropertiesType } from "../types";
 
 export const DescriptionViewMode = {
     descriptionView: "description",
@@ -20,7 +20,12 @@ export type DescriptionViewMode = (typeof DescriptionViewMode)[keyof typeof Desc
 export function useOpenDescription() {
     const { open } = useWindows();
     return useCallback(
-        (node: UINodeType, scenario: Scenario, descriptionViewMode?: DescriptionViewMode, layoutData?: WindowType["layoutData"]) =>
+        (
+            node: NodeOrPropertiesType,
+            scenario: Scenario,
+            descriptionViewMode?: DescriptionViewMode,
+            layoutData?: WindowType["layoutData"],
+        ) =>
             open({
                 kind: descriptionViewMode === DescriptionViewMode.descriptionEdit ? WindowKind.editDescription : WindowKind.viewDescription,
                 isResizable: true,

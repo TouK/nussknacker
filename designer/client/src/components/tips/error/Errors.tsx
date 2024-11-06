@@ -1,13 +1,13 @@
 import React, { SyntheticEvent } from "react";
 import { v4 as uuid4 } from "uuid";
 import { HeaderIcon } from "./HeaderIcon";
-import { UINodeType, ValidationErrors } from "../../../types";
+import { NodeOrPropertiesType, ValidationErrors } from "../../../types";
 import { ErrorTips } from "./ErrorTips";
 import { Scenario } from "../../Process/types";
 
 export interface Props {
     errors: ValidationErrors;
-    showDetails: (event: SyntheticEvent, details: UINodeType) => void;
+    showDetails: (event: SyntheticEvent, details: NodeOrPropertiesType) => void;
     scenario: Scenario;
 }
 

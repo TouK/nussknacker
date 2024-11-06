@@ -65,4 +65,4 @@ export type PropertiesType = {
 
 export type NodeId = NodeType["id"];
 
-export type UINodeType = NodeType | PropertiesType;
+export type NodeOrPropertiesType = NodeType | PropertiesType;
