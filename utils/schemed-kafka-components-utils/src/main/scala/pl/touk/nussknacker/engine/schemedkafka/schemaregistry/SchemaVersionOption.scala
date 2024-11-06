@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 
-import enumeratum.values.{IntEnum, IntEnumEntry}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes.ContentType
 import pl.touk.nussknacker.engine.util.convert.IntValue
 
 sealed trait SchemaVersionOption
@@ -15,8 +15,8 @@ object SchemaVersionOption {
     name match {
       case `LatestOptionName` => LatestSchemaVersion
       case IntValue(version)  => ExistingSchemaVersion(version)
-      case `JsonOptionName`   => DynamicSchemaVersion(JsonTypes.Json)
-      case `PlainOptionName`  => DynamicSchemaVersion(JsonTypes.Plain)
+      case `JsonOptionName`   => PassedContentType(ContentTypes.JSON)
+      case `PlainOptionName`  => PassedContentType(ContentTypes.PLAIN)
       case _                  => throw new IllegalArgumentException(s"Unexpected schema version option: $name")
     }
   }
@@ -27,13 +27,10 @@ case class ExistingSchemaVersion(version: Int) extends SchemaVersionOption
 
 case object LatestSchemaVersion extends SchemaVersionOption
 
-case class DynamicSchemaVersion(typ: JsonTypes) extends SchemaVersionOption
+case class PassedContentType(typ: ContentType) extends SchemaVersionOption
 
-sealed abstract class JsonTypes(val value: Int) extends IntEnumEntry
+object ContentTypes extends Enumeration {
+  type ContentType = Value
 
-object JsonTypes extends IntEnum[JsonTypes] {
-  val values = findValues
-
-  case object Json  extends JsonTypes(1)
-  case object Plain extends JsonTypes(2)
+  val JSON, PLAIN = Value
 }

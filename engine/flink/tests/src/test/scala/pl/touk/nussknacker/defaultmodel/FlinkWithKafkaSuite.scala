@@ -39,9 +39,9 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  DynamicSchemaVersion,
   ExistingSchemaVersion,
   LatestSchemaVersion,
+  PassedContentType,
   SchemaRegistryClientFactory,
   SchemaVersionOption
 }
@@ -179,7 +179,7 @@ abstract class FlinkWithKafkaSuite
     versionOption match {
       case LatestSchemaVersion            => s"'${SchemaVersionOption.LatestOptionName}'"
       case ExistingSchemaVersion(version) => s"'$version'"
-      case DynamicSchemaVersion(typ)      => s"'$typ'"
+      case PassedContentType(typ)         => s"'$typ'"
     }
 
   protected def createAndRegisterAvroTopicConfig(name: String, schemas: List[Schema]): TopicConfig =

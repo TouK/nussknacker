@@ -6,6 +6,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes.ContentType
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
@@ -57,8 +58,8 @@ class ParsedSchemaDeterminer(
       case LatestSchemaVersion =>
         val version = None
         getTypedSchema(version)
-      case DynamicSchemaVersion(typ) =>
-        getDynamicSchema(typ)
+      case PassedContentType(typ) =>
+        getEmptyJsonSchema(typ)
     }
 
   }
@@ -76,9 +77,11 @@ class ParsedSchemaDeterminer(
       )
   }
 
-  private def getDynamicSchema(typ: JsonTypes): Validated[SchemaDeterminerError, RuntimeSchemaData[ParsedSchema]] = {
+  private def getEmptyJsonSchema(
+      typ: ContentType
+  ): Validated[SchemaDeterminerError, RuntimeSchemaData[ParsedSchema]] = {
     typ match {
-      case JsonTypes.Json =>
+      case ContentTypes.JSON =>
         Valid(
           RuntimeSchemaData[ParsedSchema](
             new NkSerializableParsedSchema[ParsedSchema](
@@ -87,14 +90,14 @@ class ParsedSchemaDeterminer(
                 "{}"
               )
             ),
-            Some(SchemaId.fromInt(JsonTypes.Json.value))
+            Some(SchemaId.fromString(ContentTypes.JSON.toString))
           )
         )
-      case JsonTypes.Plain =>
+      case ContentTypes.PLAIN =>
         Valid(
           RuntimeSchemaData[ParsedSchema](
             new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("")),
-            Some(SchemaId.fromInt(JsonTypes.Plain.value))
+            Some(SchemaId.fromString(ContentTypes.PLAIN.toString))
           )
         )
       case _ => Invalid(new SchemaDeterminerError("Wrong dynamic type", SchemaError.apply("Wrong dynamic type")))

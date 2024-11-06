@@ -36,6 +36,7 @@ object KafkaUniversalComponentTransformer {
   final val sinkValueParamName          = ParameterName("Value")
   final val sinkValidationModeParamName = ParameterName("Value validation mode")
   final val sinkRawEditorParamName      = ParameterName("Raw editor")
+  final val contentTypeParamName        = ParameterName("Content type")
 
   def extractValidationMode(value: String): ValidationMode =
     ValidationMode.fromString(value, sinkValidationModeParamName)
@@ -74,7 +75,6 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val allTopics = getAllTopics
     val topics = allTopics match {
-      // TODO: previously schemaRegistryClient made validation
       case Some(topicsFromKafka) =>
         // For test purposes mostly
         topicSelectionStrategy
@@ -114,7 +114,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       )
   }
 
-  protected def getVersionParam(
+  protected def getVersionOrContentTypeParam(
       preparedTopic: PreparedKafkaTopic[TN],
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val topicsWithSchema = topicSelectionStrategy.getTopics(schemaRegistryClient)
@@ -129,16 +129,16 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
           )
       }).map(getVersionParam)
     } else {
-      val versionValues = List(
-        FixedExpressionValue("'Json'", "Json"),
-        FixedExpressionValue("'Plain'", "Plain")
+      val contentTypesValues = List(
+        FixedExpressionValue("'JSON'", "JSON"),
+        FixedExpressionValue("'PLAIN'", "PLAIN")
       )
 
-      Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, versionValues).map(versions =>
+      Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, contentTypesValues).map(contentTypes =>
         ParameterDeclaration
-          .mandatory[String](KafkaUniversalComponentTransformer.schemaVersionParamName)
+          .mandatory[String](KafkaUniversalComponentTransformer.contentTypeParamName)
           .withCreator(
-            modify = _.copy(editor = Some(FixedValuesParameterEditor(versions)))
+            modify = _.copy(editor = Some(FixedValuesParameterEditor(contentTypes)))
           )
       )
     }
@@ -224,13 +224,13 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       nextParams: List[Parameter]
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep((topicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
-      val preparedTopic = prepareTopic(topic)
-      val versionParam  = getVersionParam(preparedTopic)
+      val preparedTopic             = prepareTopic(topic)
+      val versionOrContentTypeParam = getVersionOrContentTypeParam(preparedTopic)
       val topicValidationErrors =
         validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
       NextParameters(
-        versionParam.value.createParameter() :: nextParams,
-        errors = versionParam.written ++ topicValidationErrors
+        versionOrContentTypeParam.value.createParameter() :: nextParams,
+        errors = versionOrContentTypeParam.written ++ topicValidationErrors
       )
     case TransformationStep((`topicParamName`, _) :: Nil, _) =>
       NextParameters(parameters = fallbackVersionOptionParam.createParameter() :: nextParams)
@@ -245,12 +245,12 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   // override it if you use other parameter name for topic
   @transient protected lazy val topicParamName: ParameterName = KafkaUniversalComponentTransformer.topicParamName
+  @transient protected lazy val contentTypeParamName: ParameterName =
+    KafkaUniversalComponentTransformer.contentTypeParamName
 
   protected def getAllTopics: Option[List[UnspecializedTopicName]] = {
     Try {
       val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
-
-      // TODO: check here if can check before logging that server is unavailable
       KafkaUtils
         .usingAdminClient(kafkaConfig) {
           _.listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))

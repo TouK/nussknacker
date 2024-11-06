@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.O
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedDeserializerFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ChainedSchemaIdFromMessageExtractor,
-  JsonTypes,
+  ContentTypes,
   SchemaId,
   SchemaRegistryClient,
   SchemaWithMetadata
@@ -44,20 +44,11 @@ class UniversalKafkaDeserializer[T](
       if (schemaRegistryClient.getAllTopics.exists(_.contains(UnspecializedTopicName(topic)))) {
         schemaRegistryClient.getSchemaById(writerSchemaId.value)
       } else {
-        writerSchemaId.value.asInt match {
-          case JsonTypes.Json.value =>
-            SchemaWithMetadata(
-              // I don't know how these schemas affect deserialization later
-              OpenAPIJsonSchema("""{"type": "object"}"""),
-              SchemaId.fromInt(JsonTypes.Json.value)
-            )
-          case JsonTypes.Plain.value =>
-            SchemaWithMetadata(
-              OpenAPIJsonSchema("""{"type": "string"}"""),
-              SchemaId.fromInt(JsonTypes.Plain.value)
-            )
-        }
-
+        SchemaWithMetadata(
+          // I don't know how these schemas affect deserialization later
+          OpenAPIJsonSchema("""{"type": "object"}"""),
+          SchemaId.fromString(ContentTypes.JSON.toString)
+        )
       }
     }
 
