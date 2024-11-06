@@ -4,7 +4,19 @@
 
 #### Highlights
 
-(Not available yet)
+##### End-user
+
+* Versions, Comments and Attachments panels were replaced by Activities panel
+* Added support for scenario labels
+* SpEL: support for navigation through fields inside variables typed as `Unknown` 
+* SpEL: conversion methods allowing to cast or convert given type to another
+* Other SpEL enhancements: `#CONV.toJson`, `#CONV.toJsonString` methods, new `#BASE64` helper, it is possible to operate on arrays as on lists and more
+* UX improvements: new UI for defining aggregations, better validation handling in ad-hoc testing feature and more
+
+##### Administrator
+
+* Flink upgrade to 1.19.1. Note: if you want to use Nussknacker with older versions of Flink it is possible, but it requires some extra steps to be done. See [Migration guide](MigrationGuide.md) for details
+* Performance optimisations of the serialisation of events passing through Flink's `DataStream`s
 
 ### 1.18.0 (Not released yet)
 
