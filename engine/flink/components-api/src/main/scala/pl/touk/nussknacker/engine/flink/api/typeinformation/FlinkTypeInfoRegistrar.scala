@@ -9,20 +9,25 @@ import java.util
 
 object FlinkTypeInfoRegistrar {
 
-  private case class RegistrationEntry[T, K <: TypeInfoFactory[T]](klass: Class[T], factoryClass: Class[K])
+  private val DisableFlinkTypeInfosRegistrationEnvVarName = "NU_DISABLE_FLINK_TYPE_INFOS_REGISTRATION"
 
-  private val typesToRegister = List(
+  private case class RegistrationEntry[T](klass: Class[T], factoryClass: Class[_ <: TypeInfoFactory[T]])
+
+  private val typeInfosToRegister = List(
     RegistrationEntry(classOf[LocalDate], classOf[LocalDateTypeInfoFactory]),
     RegistrationEntry(classOf[LocalTime], classOf[LocalTimeTypeInfoFactory]),
     RegistrationEntry(classOf[LocalDateTime], classOf[LocalDateTimeTypeInfoFactory]),
   )
 
-  def ensureBaseTypesAreRegistered(): Unit =
-    typesToRegister.foreach { base =>
-      register(base)
+  def ensureBaseTypesAreRegistered(): Unit = {
+    if (!Option(System.getenv(DisableFlinkTypeInfosRegistrationEnvVarName)).exists(java.lang.Boolean.parseBoolean)) {
+      typeInfosToRegister.foreach { entry =>
+        register(entry)
+      }
     }
+  }
 
-  private def register(entry: RegistrationEntry[_, _ <: TypeInfoFactory[_]]): Unit = {
+  private def register(entry: RegistrationEntry[_]): Unit = {
     val opt = Option(TypeExtractor.getTypeInfoFactory(entry.klass))
     if (opt.isEmpty) {
       TypeExtractor.registerFactory(entry.klass, entry.factoryClass)
