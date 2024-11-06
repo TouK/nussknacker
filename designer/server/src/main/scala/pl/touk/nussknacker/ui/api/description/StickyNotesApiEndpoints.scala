@@ -9,9 +9,9 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
-import pl.touk.nussknacker.ui.api.description.StickyNotesApiEndpoints.Examples.noScenarioExample
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.NoScenario
+import pl.touk.nussknacker.ui.api.description.StickyNotesApiEndpoints.Examples.{noScenarioExample, noStickyNoteExample}
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNoteId
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.{NoScenario, NoStickyNote}
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -29,9 +29,8 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
 
   private val exampleInstantDate = Instant.ofEpochMilli(1730136602)
 
-  val exampleStickyNote = StickyNote(
-    1,
-    UUID.fromString("3fa77f68-5717-4562-b3fc-2c942f99afa5"),
+  private val exampleStickyNote = StickyNote(
+    StickyNoteId(1),
     "##Title \nNote1",
     LayoutData(20, 30),
     "#99aa20",
@@ -60,7 +59,7 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
                   summary = Some("List of valid sticky notes returned for scenario"),
                   value = List(
                     exampleStickyNote,
-                    exampleStickyNote.copy(id = 2, noteId = UUID.fromString("3fa77f68-5717-4562-b3fc-2c942f99afc7"))
+                    exampleStickyNote.copy(id = StickyNoteId(2))
                   )
                 ) // TODO example of errors
               )
@@ -75,22 +74,61 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
       .withSecurity(auth)
   }
 
-  lazy val stickyNotesAddEndpoint
-      : SecuredEndpoint[(ProcessName, StickyNoteRequestBody), StickyNotesError, Unit, Any] = {
+  lazy val stickyNotesUpdateEndpoint
+      : SecuredEndpoint[(ProcessName, StickyNoteUpdateRequest), StickyNotesError, Unit, Any] = {
     baseNuApiEndpoint
-      .summary("Creates new sticky note with given content")
+      .summary("Updates sticky note with new values")
       .tag("StickyNotes")
       .post
       .in("processes" / path[ProcessName]("scenarioName") / "stickyNotes")
       .in(
-        jsonBody[StickyNoteRequestBody]
-          .example(StickyNoteRequestBody(None, VersionId(1), "", LayoutData(12, 33), "#441022", None))
+        jsonBody[StickyNoteUpdateRequest]
+          .example(StickyNoteUpdateRequest(StickyNoteId(1), VersionId(1), "", LayoutData(12, 33), "#441022", None))
       )
       .out(
         statusCode(Ok)
       )
       .errorOut(
         oneOf[StickyNotesError](
+          noScenarioExample,
+          noStickyNoteExample
+        )
+      )
+      .withSecurity(auth)
+  }
+
+  lazy val stickyNotesAddEndpoint
+      : SecuredEndpoint[(ProcessName, StickyNoteAddRequest), StickyNotesError, StickyNoteCorrelationId, Any] = {
+    baseNuApiEndpoint
+      .summary("Creates new sticky note with given content")
+      .tag("StickyNotes")
+      .put
+      .in("processes" / path[ProcessName]("scenarioName") / "stickyNotes")
+      .in(
+        jsonBody[StickyNoteAddRequest]
+          .example(StickyNoteAddRequest(VersionId(1), "", LayoutData(12, 33), "#441022", None))
+      )
+      .out(jsonBody[StickyNoteCorrelationId])
+      .errorOut(
+        oneOf[StickyNotesError](
+          noScenarioExample
+        )
+      )
+      .withSecurity(auth)
+  }
+
+  lazy val stickyNotesDeleteEndpoint: SecuredEndpoint[(ProcessName, StickyNoteId), StickyNotesError, Unit, Any] = {
+    baseNuApiEndpoint
+      .summary("Deletes stickyNote by given noteId")
+      .tag("StickyNotes")
+      .delete
+      .in("processes" / path[ProcessName]("scenarioName") / "stickyNotes" / path[StickyNoteId]("noteId"))
+      .out(
+        statusCode(Ok)
+      )
+      .errorOut(
+        oneOf[StickyNotesError](
+          noStickyNoteExample,
           noScenarioExample
         )
       )
@@ -111,6 +149,18 @@ object StickyNotesApiEndpoints {
             Example.of(
               summary = Some("No scenario {scenarioName} found"),
               value = NoScenario(ProcessName("s1"))
+            )
+          )
+      )
+
+    val noStickyNoteExample: EndpointOutput.OneOfVariant[NoStickyNote] =
+      oneOfVariantFromMatchType(
+        NotFound,
+        plainBody[NoStickyNote]
+          .example(
+            Example.of(
+              summary = Some("No sticky note with id: 3 was found"),
+              value = NoStickyNote(StickyNoteId(3))
             )
           )
       )
