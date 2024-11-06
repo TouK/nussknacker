@@ -58,7 +58,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     DeploymentId(""),
     User("user1", "User 1"),
     Map.empty,
-    NodesDeploymentData.empty
+    NodesDeploymentData.empty,
+    Map.empty
   )
 
   private val returnedJobId = "jobId"

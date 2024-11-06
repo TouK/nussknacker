@@ -3,7 +3,11 @@ package pl.touk.nussknacker.engine.management.periodic
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -40,7 +44,8 @@ class PeriodicProcessService(
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock,
-    actionService: ProcessingTypeActionService
+    actionService: ProcessingTypeActionService,
+    configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -401,7 +406,10 @@ class PeriodicProcessService(
       DeploymentData.systemUser,
       additionalDeploymentDataProvider.prepareAdditionalData(deployment),
       // TODO: in the future we could allow users to specify nodes data during schedule requesting
-      NodesDeploymentData.empty
+      NodesDeploymentData.empty,
+      AdditionalDictComponentConfigsExtractor.getAdditionalConfigsWithDictParametersEditors(
+        configsFromProvider
+      )
     )
     val deploymentWithJarData = deployment.periodicProcess.deploymentData
     val deploymentAction = for {

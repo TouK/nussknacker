@@ -51,7 +51,8 @@ class DefaultProcessingTypeDeployedScenariosProvider(
           DeploymentId.fromActionId(lastDeployAction.id),
           deployingUser,
           Map.empty,
-          NodesDeploymentData.empty
+          NodesDeploymentData.empty,
+          Map.empty
         )
         val deployedScenarioDataTry =
           scenarioResolver.resolveScenario(details.json).map { resolvedScenario =>
