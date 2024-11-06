@@ -37,7 +37,7 @@ object V1_060__CreateStickyNotesDefinition {
     class StickyNotesEntity(tag: Tag) extends Table[StickyNoteEventEntityData](tag, "sticky_notes") {
 
       def id                = column[Long]("id", O.PrimaryKey, O.AutoInc)
-      def noteId            = column[UUID]("note_id", NotNull)
+      def noteCorrelationId = column[UUID]("note_correlation_id", NotNull)
       def content           = column[String]("content", NotNull)
       def layoutData        = column[String]("layout_data", NotNull)
       def color             = column[String]("color", NotNull)
@@ -49,7 +49,7 @@ object V1_060__CreateStickyNotesDefinition {
       def scenarioVersionId = column[Long]("scenario_version_id", NotNull)
 
       def tupleWithoutAutoIncId = (
-        noteId,
+        noteCorrelationId,
         content,
         layoutData,
         color,
@@ -72,7 +72,7 @@ object V1_060__CreateStickyNotesDefinition {
 
   final case class StickyNoteEventEntityData(
       id: Long,
-      noteId: UUID,
+      noteCorrelationId: UUID,
       content: String,
       layoutData: String,
       color: String,

@@ -6,7 +6,14 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.StickyNotesApiEndpoints
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{StickyNote, StickyNoteRequestBody, StickyNotesError}
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
+  StickyNote,
+  StickyNoteAddRequest,
+  StickyNoteCorrelationId,
+  StickyNoteId,
+  StickyNoteUpdateRequest,
+  StickyNotesError
+}
 import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.{NoPermission, NoScenario}
 import pl.touk.nussknacker.ui.process.repository.stickynotes.StickyNotesRepository
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
@@ -51,10 +58,39 @@ class StickyNotesApiHttpService(
           for {
             scenarioId      <- getScenarioIdByName(scenarioName)
             _               <- isAuthorized(scenarioId, Permission.Read)
-            processActivity <- upsetStickyNote(scenarioId, requestBody)
+            processActivity <- addStickyNote(scenarioId, requestBody)
+          } yield processActivity
+        }
+      }
+  }
+
+  expose {
+    endpoints.stickyNotesUpdateEndpoint
+      .serverSecurityLogic(authorizeKnownUser[StickyNotesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, requestBody) =>
+          for {
+            scenarioId      <- getScenarioIdByName(scenarioName)
+            _               <- isAuthorized(scenarioId, Permission.Read)
+            processActivity <- updateStickyNote(scenarioId, requestBody)
           } yield processActivity.toInt
         }
       }
+  }
+
+  expose {
+    endpoints.stickyNotesDeleteEndpoint
+      .serverSecurityLogic(authorizeKnownUser[StickyNotesError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (scenarioName, noteId) =>
+          for {
+            scenarioId      <- getScenarioIdByName(scenarioName)
+            _               <- isAuthorized(scenarioId, Permission.Read)
+            processActivity <- deleteStickyNote(noteId)
+          } yield processActivity.toInt
+        }
+      }
+
   }
 
   private def getScenarioIdByName(scenarioName: ProcessName) = {
@@ -86,35 +122,48 @@ class StickyNotesApiHttpService(
         )
       )
 
-  private def upsetStickyNote(scenarioId: ProcessId, requestBody: StickyNoteRequestBody)(
+  private def deleteStickyNote(noteId: StickyNoteId)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, StickyNotesError, Int] =
     EitherT
       .right(
-        requestBody.id match {
-          case Some(value) =>
-            dbioActionRunner.run(
-              stickyNotesRepository.updateStickyNote(
-                value,
-                requestBody.content,
-                requestBody.layoutData,
-                requestBody.color,
-                requestBody.targetEdge,
-                requestBody.scenarioVersionId
-              )
-            )
-          case None =>
-            dbioActionRunner.run(
-              stickyNotesRepository.addStickyNotes(
-                requestBody.content,
-                requestBody.layoutData,
-                requestBody.color,
-                requestBody.targetEdge,
-                scenarioId,
-                requestBody.scenarioVersionId
-              )
-            )
-        }
+        dbioActionRunner.run(
+          stickyNotesRepository.deleteStickyNote(noteId)
+        )
+      )
+
+  private def addStickyNote(scenarioId: ProcessId, requestBody: StickyNoteAddRequest)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, StickyNotesError, StickyNoteCorrelationId] =
+    EitherT
+      .right(
+        dbioActionRunner.run(
+          stickyNotesRepository.addStickyNote(
+            requestBody.content,
+            requestBody.layoutData,
+            requestBody.color,
+            requestBody.targetEdge,
+            scenarioId,
+            requestBody.scenarioVersionId
+          )
+        )
+      )
+
+  private def updateStickyNote(scenarioId: ProcessId, requestBody: StickyNoteUpdateRequest)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, StickyNotesError, Int] =
+    EitherT
+      .right(
+        dbioActionRunner.run(
+          stickyNotesRepository.updateStickyNote(
+            requestBody.id,
+            requestBody.content,
+            requestBody.layoutData,
+            requestBody.color,
+            requestBody.targetEdge,
+            requestBody.scenarioVersionId
+          )
+        )
       )
 
 }
