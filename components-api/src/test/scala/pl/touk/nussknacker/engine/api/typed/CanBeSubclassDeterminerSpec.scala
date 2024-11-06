@@ -24,7 +24,7 @@ class CanBeSubclassDeterminerSpec extends AnyFunSuite with Matchers {
     CanBeSubclassDeterminer.isAssignable(classOf[Long], classOf[Double]) shouldBe true
   }
 
-  // to check if autoboxing lang3 is failing - we can remove our fallback if the lib works properly
+  // to check if autoboxing lang3 is failing - we can remove our fallback from SubclassDeterminer.isAssignable if the lib works properly
   test("Should check if lang3 fails for certain isAssignable cases") {
     ClassUtils.isAssignable(classOf[Integer], classOf[Long], true) shouldBe true
     ClassUtils.isAssignable(classOf[Short], classOf[Integer], true) shouldBe true
