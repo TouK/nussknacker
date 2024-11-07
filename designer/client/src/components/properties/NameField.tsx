@@ -5,7 +5,7 @@ import { nodeInput, nodeInputWithError } from "../graph/node-modal/NodeDetailsCo
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import { NodeValidationError } from "../../types";
-import { Properties } from "./Properties";
+import { PropertiesForm } from "./PropertiesForm";
 import { useDiffMark } from "../graph/node-modal/PathsToMark";
 
 const FAKE_NAME_PROP_NAME = "$id";
@@ -15,7 +15,7 @@ interface Props {
     readOnly: boolean;
     errors: NodeValidationError[];
     value: string;
-    onChange: ComponentProps<typeof Properties>["handleSetEditedProperties"];
+    onChange: ComponentProps<typeof PropertiesForm>["handleSetEditedProperties"];
 }
 export const NameField = ({ readOnly, errors, value, onChange }: Props) => {
     const [isMarked] = useDiffMark();

@@ -22,7 +22,7 @@ import { Option, TypeSelect } from "../graph/node-modal/fragment-input-definitio
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import Icon from "../../assets/img/toolbarButtons/compare.svg";
 import i18next from "i18next";
-import { Properties } from "../properties/properties";
+import { PropertiesForm } from "../properties";
 
 const initState: State = {
     otherVersion: null,
@@ -182,7 +182,7 @@ const VersionsForm = ({ predefinedOtherVersion }: Props) => {
     };
 
     const printProperties = (property) => {
-        return property ? <Properties editedProperties={property} /> : <div className="notPresent">Properties not present</div>;
+        return property ? <PropertiesForm editedProperties={property} /> : <div className="notPresent">Properties not present</div>;
     };
 
     const versionOptions: Option[] = useMemo(() => {

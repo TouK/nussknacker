@@ -37,6 +37,7 @@ export type NodeType<F extends Field = Field> = {
         id: string;
         parameters?: Parameter[];
     };
+    nodeType?: string;
     //TODO: Remove me and add correct properties
     [key: string]: any;
 };

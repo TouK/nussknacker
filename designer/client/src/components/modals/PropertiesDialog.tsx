@@ -18,7 +18,7 @@ import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 import PropertiesSvg from "../../assets/img/properties.svg";
 import { styled } from "@mui/material";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
-import { Properties } from "../properties/properties";
+import { PropertiesForm } from "../properties";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { RootState } from "../../reducers";
 
@@ -105,7 +105,7 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
         >
             <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
                 <ContentSize>
-                    <Properties
+                    <PropertiesForm
                         editedProperties={editedProperties}
                         handleSetEditedProperties={isEditMode && handleSetEditedProperties}
                         errors={errors}

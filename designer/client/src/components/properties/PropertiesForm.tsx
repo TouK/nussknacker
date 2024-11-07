@@ -19,7 +19,7 @@ interface Props {
     editedProperties: PropertiesType;
     showSwitch?: boolean;
 }
-export const Properties = ({ errors = [], handleSetEditedProperties, editedProperties, showSwitch = false }: Props) => {
+export const PropertiesForm = ({ errors = [], handleSetEditedProperties, editedProperties, showSwitch = false }: Props) => {
     const readOnly = !handleSetEditedProperties;
     const scenarioProperties = useSelector(getScenarioPropertiesConfig);
     const scenarioPropertiesConfig = useMemo(() => scenarioProperties?.propertiesConfig ?? {}, [scenarioProperties?.propertiesConfig]);
