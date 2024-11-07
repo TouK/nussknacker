@@ -44,16 +44,55 @@ sealed trait ScenarioComment {
 
 object ScenarioComment {
 
-  final case class WithContent(
+  final case class WithContent private (
       comment: String,
       lastModifiedByUserName: UserName,
       lastModifiedAt: Instant,
   ) extends ScenarioComment
 
-  final case class WithoutContent(
+  object WithContent {
+
+    private[ScenarioComment] def apply(
+        comment: String,
+        lastModifiedByUserName: UserName,
+        lastModifiedAt: Instant
+    ): WithContent = new WithContent(comment, lastModifiedByUserName, lastModifiedAt)
+
+  }
+
+  final case class WithoutContent private (
       lastModifiedByUserName: UserName,
       lastModifiedAt: Instant,
   ) extends ScenarioComment
+
+  object WithoutContent {
+
+    private[ScenarioComment] def apply(
+        lastModifiedByUserName: UserName,
+        lastModifiedAt: Instant
+    ): WithoutContent = new WithoutContent(lastModifiedByUserName, lastModifiedAt)
+
+  }
+
+  def from(
+      content: Option[String],
+      lastModifiedByUserName: UserName,
+      lastModifiedAt: Instant,
+  ): ScenarioComment = {
+    content match {
+      case Some(content) if content.trim.nonEmpty =>
+        WithContent(
+          comment = content,
+          lastModifiedByUserName = lastModifiedByUserName,
+          lastModifiedAt = lastModifiedAt,
+        )
+      case Some(_) | None =>
+        WithoutContent(
+          lastModifiedByUserName = lastModifiedByUserName,
+          lastModifiedAt = lastModifiedAt,
+        )
+    }
+  }
 
 }
 

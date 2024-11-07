@@ -75,10 +75,7 @@ class ActivityService(
               user = loggedUser.scenarioUser,
               date = now,
               scenarioVersionId = Some(ScenarioVersionId.from(scenarioGraphVersionId)),
-              comment = commentOpt match {
-                case Some(comment) => ScenarioComment.WithContent(comment.content, UserName(loggedUser.username), now)
-                case None          => ScenarioComment.WithoutContent(UserName(loggedUser.username), now)
-              },
+              comment = ScenarioComment.from(commentOpt.map(_.content), UserName(loggedUser.username), now),
               result = DeploymentResult.Success(clock.instant()),
             )
           )

@@ -293,7 +293,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           id,
           activity,
           ScenarioComment
-            .WithContent(s"Rename: [${activity.oldName}] -> [${activity.newName}]", UserName(""), activity.date),
+            .from(Some(s"Rename: [${activity.oldName}] -> [${activity.newName}]"), UserName(""), activity.date),
           None
         )
       case activity: ScenarioActivity.CommentAdded =>
@@ -306,8 +306,9 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         toComment(
           id,
           activity,
-          ScenarioComment.WithContent(
-            comment = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}",
+          ScenarioComment.from(
+            content =
+              Some(s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}"),
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
           ),
@@ -323,8 +324,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         toComment(
           id,
           activity,
-          ScenarioComment.WithContent(
-            comment = s"Migrations applied: ${activity.changes}",
+          ScenarioComment.from(
+            content = Some(s"Migrations applied: ${activity.changes}"),
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
           ),
@@ -505,8 +506,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   private def comment(scenarioComment: ScenarioComment): Option[String] = {
     scenarioComment match {
-      case ScenarioComment.WithContent(comment, _, _) if comment.nonEmpty => Some(comment.value)
-      case _                                                              => None
+      case ScenarioComment.WithContent(comment, _, _) => Some(comment)
+      case _                                          => None
     }
   }
 
@@ -676,21 +677,11 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     for {
       lastModifiedByUserName <- entity.lastModifiedByUserName.toRight("Missing lastModifiedByUserName field")
       lastModifiedAt         <- entity.lastModifiedAt.toRight("Missing lastModifiedAt field")
-    } yield {
-      entity.comment match {
-        case Some(comment) if comment.nonEmpty =>
-          ScenarioComment.WithContent(
-            comment = comment,
-            lastModifiedByUserName = UserName(lastModifiedByUserName),
-            lastModifiedAt = lastModifiedAt.toInstant
-          )
-        case Some(_) | None =>
-          ScenarioComment.WithoutContent(
-            lastModifiedByUserName = UserName(lastModifiedByUserName),
-            lastModifiedAt = lastModifiedAt.toInstant
-          )
-      }
-    }
+    } yield ScenarioComment.from(
+      content = entity.comment,
+      lastModifiedByUserName = UserName(lastModifiedByUserName),
+      lastModifiedAt = lastModifiedAt.toInstant
+    )
   }
 
   private def attachmentFromEntity(entity: ScenarioActivityEntityData): Either[String, ScenarioAttachment] = {

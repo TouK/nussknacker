@@ -211,19 +211,11 @@ class DBProcessRepository(
           date = Instant.now(),
           previousScenarioVersionId = oldVersionId.map(ScenarioVersionId.from),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
-          comment = updateProcessAction.comment.map(_.content) match {
-            case Some(content) =>
-              ScenarioComment.WithContent(
-                comment = content,
-                lastModifiedByUserName = UserName(loggedUser.username),
-                lastModifiedAt = clock.instant(),
-              )
-            case None =>
-              ScenarioComment.WithoutContent(
-                lastModifiedByUserName = UserName(loggedUser.username),
-                lastModifiedAt = clock.instant(),
-              )
-          },
+          comment = ScenarioComment.from(
+            content = updateProcessAction.comment.map(_.content),
+            lastModifiedByUserName = UserName(loggedUser.username),
+            lastModifiedAt = clock.instant(),
+          )
         )
     )
   }

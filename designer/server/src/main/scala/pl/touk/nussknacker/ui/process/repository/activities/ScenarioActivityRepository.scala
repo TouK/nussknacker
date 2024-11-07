@@ -41,8 +41,8 @@ trait ScenarioActivityRepository {
         user = user.scenarioUser,
         date = now,
         scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
-        comment = ScenarioComment.WithContent(
-          comment = comment,
+        comment = ScenarioComment.from(
+          content = Some(comment),
           lastModifiedByUserName = UserName(user.username),
           lastModifiedAt = now,
         )
