@@ -81,6 +81,8 @@ const CommentActivity = ({
                     commentContent={activityComment.content}
                     data-testid={`edit-comment-icon`}
                     key={activityAction.id}
+                    title={t("panels.actions.editComment.title", "Edit comment")}
+                    confirmButtonText={t("panels.actions.editComment.confirmButton", "Edit")}
                     {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesEditComment })}
                 />
             );

@@ -149,6 +149,8 @@ const HeaderActivity = ({
                     scenarioActivityId={scenarioActivityId}
                     activityType={activityType}
                     activityAction={activityAction}
+                    title={t("panels.actions.addComment.title", "Add comment")}
+                    confirmButtonText={t("panels.actions.addComment.confirmButton", "Add")}
                     {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddCommentToActivity })}
                 />
             );
