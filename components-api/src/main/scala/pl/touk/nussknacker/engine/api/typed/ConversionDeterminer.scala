@@ -42,7 +42,7 @@ trait ConversionDeterminer {
     }
   }
 
-  def canNullBeConvertedTo(result: TypingResult): ValidatedNel[String, Unit] = result match {
+  private def canNullBeConvertedTo(result: TypingResult): ValidatedNel[String, Unit] = result match {
     // TODO: Null should not be subclass of typed map that has all values assigned.
     case TypedObjectWithValue(_, _) => s"${TypedNull.display} cannot be subclass of type with value".invalidNel
     case _                          => ().validNel
@@ -66,15 +66,6 @@ trait ConversionDeterminer {
     )
   }
 
-  // TODO: Conversions should be checked during typing, not during generic usage of TypingResult.canBeSubclassOf(...)
-  def canBeConvertedTo(
-      givenType: SingleTypingResult,
-      superclassCandidate: TypedClass
-  ): ValidatedNel[String, Unit] = {
-    val errMsgPrefix = s"${givenType.runtimeObjType.display} cannot be converted to ${superclassCandidate.display}"
-    condNel(TypeConversionHandler.canBeConvertedTo(givenType, superclassCandidate), (), errMsgPrefix)
-  }
-
   def isStrictSubclass(givenClass: TypedClass, givenSuperclass: TypedClass): Validated[NonEmptyList[String], Unit] = {
     condNel(
       givenClass == givenSuperclass,
@@ -88,15 +79,5 @@ trait ConversionDeterminer {
       )
   }
 
-  // we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
-  def isAssignable(from: Class[_], to: Class[_]): Boolean = {
-    (from, to) match {
-      case (f, t) if ClassUtils.isAssignable(f, t, true) => true
-      // Number double check by hand because lang3 can incorrectly throw false when dealing with java types
-      case (f, t) if AllNumbers.contains(f) && AllNumbers.contains(t) =>
-        AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
-      case _ => false
-    }
-  }
-
+  def isAssignable(from: Class[_], to: Class[_]): Boolean
 }
