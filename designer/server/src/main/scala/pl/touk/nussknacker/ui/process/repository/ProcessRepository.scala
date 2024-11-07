@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import akka.http.scaladsl.model.HttpHeader
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
@@ -98,7 +99,7 @@ object ProcessRepository {
       labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName],
-      migrationsApplies: List[ProcessMigration]
+      migrationsApplied: NonEmptyList[ProcessMigration]
   ) extends ModifyProcessAction
 
   final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
@@ -259,7 +260,7 @@ class DBProcessRepository(
           user = loggedUser.scenarioUser,
           date = Instant.now(),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
-          changes = automaticProcessUpdateAction.migrationsApplies.map(_.description).mkString(", "),
+          changes = automaticProcessUpdateAction.migrationsApplied.map(_.description).toList.mkString(", "),
         )
     )
   }

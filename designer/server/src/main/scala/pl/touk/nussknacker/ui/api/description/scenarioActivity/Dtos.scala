@@ -682,10 +682,8 @@ object Dtos {
         retriesLeft: Option[Int],
     )(implicit zoneId: ZoneId): ScenarioActivity = {
       val humanReadableStatus = scheduledExecutionStatus match {
-        case ScheduledExecutionStatus.Finished                => "Scheduled execution finished"
-        case ScheduledExecutionStatus.Failed                  => "Scheduled execution failed"
-        case ScheduledExecutionStatus.DeploymentWillBeRetried => "Deployment will be retried"
-        case ScheduledExecutionStatus.DeploymentFailed        => "Deployment failed"
+        case ScheduledExecutionStatus.Finished => "Scheduled execution finished"
+        case ScheduledExecutionStatus.Failed   => "Scheduled execution failed"
       }
       ScenarioActivity(
         id = id,
