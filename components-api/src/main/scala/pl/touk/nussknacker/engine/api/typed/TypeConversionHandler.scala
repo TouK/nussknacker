@@ -68,8 +68,29 @@ object TypeConversionHandler {
     handleStringToValueClassConversions(givenType, superclassCandidate)
   }
 
+  def canBeStrictlyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
+    handleStrictNumberConversions(givenType.runtimeObjType, superclassCandidate) ||
+    handleStringToValueClassConversions(givenType, superclassCandidate)
+  }
+
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
   private def handleNumberConversions(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
+    val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
+    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
+    // We can't check precision here so we need to be loose here
+    // TODO: Add feature flag: strictNumberPrecisionChecking (default false?)
+    if (NumberTypesPromotionStrategy
+        .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
+      ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
+    } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
+      ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _, true))
+    } else {
+      false
+    }
+  }
+
+  // See org.springframework.core.convert.support.NumberToNumberConverterFactory
+  private def handleStrictNumberConversions(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
     val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
     val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
     // We can't check precision here so we need to be loose here
@@ -87,8 +108,7 @@ object TypeConversionHandler {
         ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
 
       case candidate if isDecimalNumber(candidate) =>
-        import ImplicitConversionDeterminer.isAssignable
-        isAssignable(boxedGivenClass, candidate)
+        SubclassDeterminer.isAssignable(boxedGivenClass, candidate)
 
       case _ => false
     }
