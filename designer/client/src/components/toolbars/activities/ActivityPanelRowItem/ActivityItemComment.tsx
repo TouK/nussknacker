@@ -108,7 +108,13 @@ export const ActivityItemComment = ({ comment, searchQuery, activityActions, sce
     };
 
     return (
-        <Box ref={multilineDetection} display="grid" gridTemplateColumns={isMultiline ? "1fr 10%" : "1fr 15%"} alignItems="flex-start">
+        <Box
+            ref={multilineDetection}
+            display="grid"
+            gridTemplateColumns={isMultiline ? "1fr 10%" : "1fr 15%"}
+            alignItems="flex-start"
+            pr={0.5}
+        >
             <CommentContent
                 content={comment.content.value}
                 commentSettings={commentSettings}

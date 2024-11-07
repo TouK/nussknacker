@@ -37,7 +37,7 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunni
     ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
         display: "flex",
         alignItems: "center",
-        padding: theme.spacing(0.5, 0, 0.5, 0.75),
+        padding: theme.spacing(0.5, 0.5, 0.5, 0.75),
         borderRadius: theme.spacing(0.5),
         ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
     }),
