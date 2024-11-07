@@ -18,6 +18,7 @@ dbFiles/*
 **/npm-debug.log
 junit.xml
 designer/client/cypress-test-results/*.xml
+designer/server/work
 designer/develConf/*.jar
 _book/
 # Ignore Mac DS_Store files
