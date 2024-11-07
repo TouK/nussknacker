@@ -42,7 +42,9 @@ class ForEachTransformerComponent(elements: LazyParameter[java.util.Collection[A
   override def returnType: typing.TypingResult = {
     elements.returnType match {
       case tc: SingleTypingResult
-          if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) && tc.runtimeObjType.params.nonEmpty =>
+          if tc.runtimeObjType.canBeImplicitlyConvertedTo(
+            Typed[java.util.Collection[_]]
+          ) && tc.runtimeObjType.params.nonEmpty =>
         tc.runtimeObjType.params.head
       case _ => Unknown
     }

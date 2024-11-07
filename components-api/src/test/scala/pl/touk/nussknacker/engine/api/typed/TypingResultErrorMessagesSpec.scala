@@ -13,11 +13,11 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
 
   private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 
-  import CanBeSubclassDeterminer.canBeSubclassOf
+  import ImplicitConversionDeterminer.canBeConvertedTo
 
   test("determine if can be subclass for typed object") {
 
-    canBeSubclassOf(
+    canBeConvertedTo(
       typeMap(
         "field1" -> Typed[String],
         "field2" -> Typed[Int],
@@ -38,7 +38,7 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
       )
       .invalid
 
-    canBeSubclassOf(
+    canBeConvertedTo(
       typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))),
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
     ) shouldBe NonEmptyList
@@ -49,30 +49,30 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
   }
 
   test("determine if can be subclass for class") {
-    canBeSubclassOf(Typed.fromDetailedType[Set[BigDecimal]], Typed.fromDetailedType[Set[String]]) shouldBe
+    canBeConvertedTo(Typed.fromDetailedType[Set[BigDecimal]], Typed.fromDetailedType[Set[String]]) shouldBe
       "Set[BigDecimal] cannot be converted to Set[String]".invalidNel
   }
 
   test("determine if can be subclass for tagged value") {
-    canBeSubclassOf(
+    canBeConvertedTo(
       Typed.tagged(Typed.typedClass[String], "tag1"),
       Typed.tagged(Typed.typedClass[String], "tag2")
     ) shouldBe
       "Tagged values have unequal tags: tag1 and tag2".invalidNel
 
-    canBeSubclassOf(Typed.typedClass[String], Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe
+    canBeConvertedTo(Typed.typedClass[String], Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe
       "The type is not a tagged value".invalidNel
   }
 
   test("determine if can be subclass for object with value") {
-    canBeSubclassOf(Typed.fromInstance(2), Typed.fromInstance(3)) shouldBe
+    canBeConvertedTo(Typed.fromInstance(2), Typed.fromInstance(3)) shouldBe
       "Types with value have different values: 2 and 3".invalidNel
   }
 
   test("determine if can be subclass for null") {
-    canBeSubclassOf(Typed[String], TypedNull) shouldBe
+    canBeConvertedTo(Typed[String], TypedNull) shouldBe
       "No type can be subclass of Null".invalidNel
-    canBeSubclassOf(TypedNull, Typed.fromInstance(1)) shouldBe
+    canBeConvertedTo(TypedNull, Typed.fromInstance(1)) shouldBe
       "Null cannot be subclass of type with value".invalidNel
   }
 
