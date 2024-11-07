@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxValidatedId, _}
-import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -15,42 +13,17 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
-trait CanBeSubclassDeterminer {
+object ImplicitConversionDeterminer extends ConversionDeterminer {
 
   private val javaMapClass       = classOf[java.util.Map[_, _]]
   private val javaListClass      = classOf[java.util.List[_]]
   private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
 
-  /**
-    * This method checks if `givenType` can by subclass of `superclassCandidate`
-    * It will return true if `givenType` is equals to `superclassCandidate` or `givenType` "extends" `superclassCandidate`
-    */
-  def canBeSubclassOf(givenType: TypingResult, superclassCandidate: TypingResult): ValidatedNel[String, Unit] = {
-    (givenType, superclassCandidate) match {
-      case (_, Unknown)       => ().validNel
-      case (Unknown, _)       => ().validNel
-      case (TypedNull, other) => canNullBeSubclassOf(other)
-      case (_, TypedNull)     => s"No type can be subclass of ${TypedNull.display}".invalidNel
-      case (given: SingleTypingResult, superclass: TypedUnion) =>
-        canBeSubclassOf(NonEmptyList.one(given), superclass.possibleTypes)
-      case (given: TypedUnion, superclass: SingleTypingResult) =>
-        canBeSubclassOf(given.possibleTypes, NonEmptyList.one(superclass))
-      case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
-      case (given: TypedUnion, superclass: TypedUnion) => canBeSubclassOf(given.possibleTypes, superclass.possibleTypes)
-    }
-  }
-
-  private def canNullBeSubclassOf(result: TypingResult): ValidatedNel[String, Unit] = result match {
-    // TODO: Null should not be subclass of typed map that has all values assigned.
-    case TypedObjectWithValue(_, _) => s"${TypedNull.display} cannot be subclass of type with value".invalidNel
-    case _                          => ().validNel
-  }
-
-  protected def singleCanBeSubclassOf(
+  protected def singleCanBeConvertedTo(
       givenType: SingleTypingResult,
       superclassCandidate: SingleTypingResult
   ): ValidatedNel[String, Unit] = {
-    val objTypeRestriction = classCanBeSubclassOf(givenType, superclassCandidate.runtimeObjType)
+    val objTypeRestriction = classCanBeConvertedTo(givenType, superclassCandidate)
     val typedObjectRestrictions = (_: Unit) =>
       superclassCandidate match {
         case superclass: TypedObjectTypingResult =>
@@ -66,7 +39,7 @@ trait CanBeSubclassDeterminer {
                   s"Field '$name' is lacking".invalidNel
                 case Some(givenFieldType) =>
                   condNel(
-                    canBeSubclassOf(givenFieldType, typ).isValid,
+                    canBeConvertedTo(givenFieldType, typ).isValid,
                     (),
                     s"Field '$name' is of the wrong type. Expected: ${givenFieldType.display}, actual: ${typ.display}"
                   )
@@ -124,33 +97,23 @@ trait CanBeSubclassDeterminer {
       (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
   }
 
-  protected def classCanBeSubclassOf(
+  private def classCanBeConvertedTo(
       givenType: SingleTypingResult,
-      superclassCandidate: TypedClass
+      superclassCandidate: SingleTypingResult
   ): ValidatedNel[String, Unit] = {
-    val givenClass = givenType.runtimeObjType
+    val givenClass      = givenType.runtimeObjType
+    val givenSuperclass = superclassCandidate.runtimeObjType
 
-    val equalClassesOrCanAssign =
-      condNel(
-        givenClass == superclassCandidate,
-        (),
-        f"${givenClass.display} and ${superclassCandidate.display} are not the same"
-      ) orElse
-        condNel(
-          CanBeSubclassDeterminer.isAssignable(givenClass.klass, superclassCandidate.klass),
-          (),
-          s"${givenClass.klass} is not assignable from ${superclassCandidate.klass}"
-        )
-
-    val canBeSubclass = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, superclassCandidate))
+    val equalClassesOrCanAssign = isStrictSubclass(givenClass, givenSuperclass)
+    val canBeSubclass = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, givenSuperclass))
     canBeSubclass orElse canBeConvertedTo(givenType, superclassCandidate)
   }
 
   private def typeParametersMatches(givenClass: TypedClass, superclassCandidate: TypedClass) = {
     def canBeSubOrSuperclass(givenClassParam: TypingResult, superclassParam: TypingResult) =
       condNel(
-        canBeSubclassOf(givenClassParam, superclassParam).isValid ||
-          canBeSubclassOf(superclassParam, givenClassParam).isValid,
+        canBeConvertedTo(givenClassParam, superclassParam).isValid ||
+          canBeConvertedTo(superclassParam, givenClassParam).isValid,
         (),
         f"None of ${givenClassParam.display} and ${superclassParam.display} is a subclass of another"
       )
@@ -159,18 +122,18 @@ trait CanBeSubclassDeterminer {
       case (TypedClass(_, givenElementParam :: Nil), TypedClass(superclass, superclassParam :: Nil))
           // Array are invariant but we have built-in conversion between array types - this check should be moved outside this class when we move away canBeConvertedTo as well
           if javaListClass.isAssignableFrom(superclass) || arrayOfAnyRefClass.isAssignableFrom(superclass) =>
-        canBeSubclassOf(givenElementParam, superclassParam)
+        canBeConvertedTo(givenElementParam, superclassParam)
       case (
             TypedClass(_, givenKeyParam :: givenValueParam :: Nil),
             TypedClass(superclass, superclassKeyParam :: superclassValueParam :: Nil)
           ) if javaMapClass.isAssignableFrom(superclass) =>
         // Map's key generic param is invariant. We can't just check givenKeyParam == superclassKeyParam because of Unknown type which is a kind of wildcard
         condNel(
-          canBeSubclassOf(givenKeyParam, superclassKeyParam).isValid &&
-            canBeSubclassOf(superclassKeyParam, givenKeyParam).isValid,
+          canBeConvertedTo(givenKeyParam, superclassKeyParam).isValid &&
+            canBeConvertedTo(superclassKeyParam, givenKeyParam).isValid,
           (),
           s"Key types of Maps ${givenKeyParam.display} and ${superclassKeyParam.display} are not equals"
-        ) andThen (_ => canBeSubclassOf(givenValueParam, superclassValueParam))
+        ) andThen (_ => canBeConvertedTo(givenValueParam, superclassValueParam))
       case _ =>
         // for unknown types we are lax - the generic type may be co- contra- or in-variant - and we don't want to
         // return validation errors in this case. It's better to accept to much than too little
@@ -181,48 +144,6 @@ trait CanBeSubclassDeterminer {
           (),
           s"Wrong type parameters"
         )
-    }
-  }
-
-  private def canBeSubclassOf(
-      givenTypes: NonEmptyList[SingleTypingResult],
-      superclassCandidates: NonEmptyList[SingleTypingResult]
-  ): ValidatedNel[String, Unit] = {
-    // Would be more safety to do givenTypes.forAll(... superclassCandidates.exists ...) - we wil protect against
-    // e.g. (String | Int).canBeSubclassOf(String) which can fail in runtime for Int, but on the other hand we can't block user's intended action.
-    // He/she could be sure that in this type, only String will appear. He/she also can't easily downcast (String | Int) to String so leaving here
-    // "double exists" looks like a good tradeoff
-    condNel(
-      givenTypes.exists(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _).isValid)),
-      (),
-      s"""None of the following types:
-         |${givenTypes.map(" - " + _.display).toList.mkString(",\n")}
-         |can be a subclass of any of:
-         |${superclassCandidates.map(" - " + _.display).toList.mkString(",\n")}""".stripMargin
-    )
-  }
-
-  // TODO: Conversions should be checked during typing, not during generic usage of TypingResult.canBeSubclassOf(...)
-  private def canBeConvertedTo(
-      givenType: SingleTypingResult,
-      superclassCandidate: TypedClass
-  ): ValidatedNel[String, Unit] = {
-    val errMsgPrefix = s"${givenType.runtimeObjType.display} cannot be converted to ${superclassCandidate.display}"
-    condNel(TypeConversionHandler.canBeConvertedTo(givenType, superclassCandidate), (), errMsgPrefix)
-  }
-
-}
-
-object CanBeSubclassDeterminer extends CanBeSubclassDeterminer {
-
-  // we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
-  def isAssignable(from: Class[_], to: Class[_]): Boolean = {
-    (from, to) match {
-      case (f, t) if ClassUtils.isAssignable(f, t, true) => true
-      // Number double check by hand because lang3 can incorrectly throw false when dealing with java types
-      case (f, t) if AllNumbers.contains(f) && AllNumbers.contains(t) =>
-        AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
-      case _ => false
     }
   }
 

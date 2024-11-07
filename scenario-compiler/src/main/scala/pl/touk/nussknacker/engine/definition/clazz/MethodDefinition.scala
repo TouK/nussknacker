@@ -35,13 +35,15 @@ sealed trait MethodDefinition {
         // Allow pass array as List argument because of array to list auto conversion:
         // pl.touk.nussknacker.engine.spel.internal.ArrayToListConverter
         case (tc @ TypedClass(klass, _), Parameter(_, y)) if klass.isArray =>
-          tc.canBeSubclassOf(y) || Typed.genericTypeClass[java.util.List[_]](tc.params).canBeSubclassOf(y)
-        case (x, Parameter(_, y)) => x.canBeSubclassOf(y)
+          tc.canBeImplicitlyConvertedTo(y) || Typed
+            .genericTypeClass[java.util.List[_]](tc.params)
+            .canBeImplicitlyConvertedTo(y)
+        case (x, Parameter(_, y)) => x.canBeImplicitlyConvertedTo(y)
       }
 
     val checkVarArgs = methodTypeInfo.varArg match {
       case Some(Parameter(_, t)) =>
-        arguments.drop(methodTypeInfo.noVarArgs.length).forall(_.canBeSubclassOf(t))
+        arguments.drop(methodTypeInfo.noVarArgs.length).forall(_.canBeImplicitlyConvertedTo(t))
       case None =>
         arguments.length == methodTypeInfo.noVarArgs.length
     }
@@ -94,7 +96,7 @@ case class FunctionalMethodDefinition(
 
     val typeCalculated = typeFunction(methodInvocationTarget, arguments).leftMap(_.map(errorConverter.convert))
     typeCalculated.map { calculated =>
-      if (!typesFromStaticMethodInfo.exists(calculated.canBeSubclassOf)) {
+      if (!typesFromStaticMethodInfo.exists(calculated.canBeImplicitlyConvertedTo)) {
         val expectedTypesString = typesFromStaticMethodInfo.map(_.display).mkString("(", ", ", ")")
         val argumentsString     = arguments.map(_.display).mkString("(", ", ", ")")
         throw new AssertionError(
