@@ -16,9 +16,10 @@ object FlinkTypeInfoRegistrar {
 
   private val DisableFlinkTypeInfoRegistrationEnvVarName = "NU_DISABLE_FLINK_TYPE_INFO_REGISTRATION"
 
-  private case class RegistrationEntry[T](klass: Class[T], factoryClass: Class[_ <: TypeInfoFactory[T]])
+  // These members are package protected for purpose of TypingResultAwareTypeInformationDetection.FlinkBelow119AdditionalTypeInfo - see comment there
+  private[engine] case class RegistrationEntry[T](klass: Class[T], factoryClass: Class[_ <: TypeInfoFactory[T]])
 
-  private val typeInfoToRegister = List(
+  private[engine] val typeInfoToRegister = List(
     RegistrationEntry(classOf[LocalDate], classOf[LocalDateTypeInfoFactory]),
     RegistrationEntry(classOf[LocalTime], classOf[LocalTimeTypeInfoFactory]),
     RegistrationEntry(classOf[LocalDateTime], classOf[LocalDateTimeTypeInfoFactory]),
@@ -46,7 +47,9 @@ object FlinkTypeInfoRegistrar {
   }
 
   // These methods are mainly for purpose of tests in nussknacker-flink-compatibility project
-  // It should be used in caution as it changes the global state
+  // It should be used with caution as it changes the global state. They will be removed when we stop supporting Flink < 1.19
+  def isFlinkTypeInfoRegistrationEnabled: Boolean = typeInfoRegistrationEnabled.get()
+
   def enableFlinkTypeInfoRegistration(): Unit = {
     typeInfoRegistrationEnabled.set(true)
   }
