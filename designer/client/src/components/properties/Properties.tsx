@@ -1,9 +1,7 @@
 import React, { ComponentProps, useMemo } from "react";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
-import Field, { FieldType } from "../graph/node-modal/editors/field/Field";
-import { isEmpty, sortBy } from "lodash";
-import { nodeInput, nodeInputWithError } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
-import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
+import { FieldType } from "../graph/node-modal/editors/field/Field";
+import { sortBy } from "lodash";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import ScenarioProperty from "./ScenarioProperty";
 import { DescriptionField } from "../graph/node-modal/DescriptionField";
@@ -13,6 +11,7 @@ import HttpService from "../../http/HttpService";
 import { NodeValidationError, PropertiesType } from "../../types";
 import { useSelector } from "react-redux";
 import { getScenarioPropertiesConfig } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { NameField } from "./NameField";
 
 interface Props {
     errors?: NodeValidationError[];
@@ -33,19 +32,7 @@ export const Properties = ({ errors = [], handleSetEditedProperties, editedPrope
 
     return (
         <NodeTable>
-            <Field
-                type={FieldType.input}
-                isMarked={false}
-                showValidation
-                onChange={(newValue) => handleSetEditedProperties("name", newValue.toString())}
-                readOnly={readOnly}
-                className={isEmpty(errors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`}
-                fieldErrors={getValidationErrorsForField(errors, "name")}
-                value={editedProperties.name}
-                autoFocus
-            >
-                <FieldLabel title={"Name"} label={"Name"} />
-            </Field>
+            <NameField errors={errors} onChange={handleSetEditedProperties} readOnly={readOnly} value={editedProperties.name} />
             {scenarioPropertiesSorted.map(([propName, propConfig]) => (
                 <ScenarioProperty
                     key={propName}
