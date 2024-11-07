@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import cats.data.Validated._
 import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxValidatedId, _}
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -19,7 +20,7 @@ object ImplicitConversionDeterminer extends ConversionDeterminer {
   private val javaListClass      = classOf[java.util.List[_]]
   private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
 
-  protected def singleCanBeConvertedTo(
+  def singleCanBeConvertedTo(
       givenType: SingleTypingResult,
       superclassCandidate: SingleTypingResult
   ): ValidatedNel[String, Unit] = {
@@ -106,7 +107,16 @@ object ImplicitConversionDeterminer extends ConversionDeterminer {
 
     val equalClassesOrCanAssign = isStrictSubclass(givenClass, givenSuperclass)
     val canBeSubclass = equalClassesOrCanAssign andThen (_ => typeParametersMatches(givenClass, givenSuperclass))
-    canBeSubclass orElse canBeConvertedTo(givenType, superclassCandidate)
+    canBeSubclass orElse canBeConvertedTo(givenType, givenSuperclass)
+  }
+
+  // TODO: Conversions should be checked during typing, not during generic usage of TypingResult.canBeSubclassOf(...)
+  def canBeConvertedTo(
+      givenType: SingleTypingResult,
+      superclassCandidate: TypedClass
+  ): ValidatedNel[String, Unit] = {
+    val errMsgPrefix = s"${givenType.runtimeObjType.display} cannot be converted to ${superclassCandidate.display}"
+    condNel(TypeConversionHandler.canBeConvertedTo(givenType, superclassCandidate), (), errMsgPrefix)
   }
 
   private def typeParametersMatches(givenClass: TypedClass, superclassCandidate: TypedClass) = {
@@ -146,5 +156,9 @@ object ImplicitConversionDeterminer extends ConversionDeterminer {
         )
     }
   }
+
+  // we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
+  override def isAssignable(from: Class[_], to: Class[_]): Boolean =
+    ClassUtils.isAssignable(from, to, true)
 
 }
