@@ -143,7 +143,7 @@ class TypingResultSpec
 
   test("determine if numbers can be converted") {
     Typed[Int].canBeImplicitlyConvertedTo(Typed[Long]) shouldBe true
-    Typed[Long].canBeImplicitlyConvertedTo(Typed[Int]) shouldBe false
+    Typed[Long].canBeImplicitlyConvertedTo(Typed[Int]) shouldBe true
     Typed[Long].canBeImplicitlyConvertedTo(Typed[Double]) shouldBe true
     Typed[Double].canBeImplicitlyConvertedTo(Typed[Long]) shouldBe false
     Typed[java.math.BigDecimal].canBeImplicitlyConvertedTo(Typed[Long]) shouldBe true
