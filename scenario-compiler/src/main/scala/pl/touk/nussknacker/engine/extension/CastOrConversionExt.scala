@@ -2,11 +2,13 @@ package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
 import pl.touk.nussknacker.engine.extension.CastOrConversionExt.getConversion
+import pl.touk.nussknacker.engine.extension.ExtensionMethod.SingleArg
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
@@ -14,21 +16,13 @@ import java.lang.{Boolean => JBoolean}
 import scala.util.Try
 
 // todo: lbg - add casting methods to UTIL
-class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) extends ExtensionMethodHandler {
+class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) extends ExtensionMethodHandler with LazyLogging {
+  private val castException = new ClassCastException(s"Cannot cast value to given class")
 
   override val methodRegistry: Map[String, ExtensionMethod] = Map(
-    "is" -> new ExtensionMethod {
-      override val argsSize: Int                           = 1
-      override def invoke(target: Any, args: Object*): Any = is(target, args.head.asInstanceOf[String])
-    },
-    "to" -> new ExtensionMethod {
-      override val argsSize: Int                           = 1
-      override def invoke(target: Any, args: Object*): Any = to(target, args.head.asInstanceOf[String])
-    },
-    "toOrNull" -> new ExtensionMethod {
-      override val argsSize: Int                           = 1
-      override def invoke(target: Any, args: Object*): Any = toOrNull(target, args.head.asInstanceOf[String])
-    },
+    "is"       -> SingleArg(is),
+    "to"       -> SingleArg(to),
+    "toOrNull" -> SingleArg(toOrNull),
   )
 
   private def is(target: Any, className: String): Boolean =
@@ -36,16 +30,18 @@ class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) extends Ex
       getConversion(className).exists(_.canConvert(target))
 
   private def to(target: Any, className: String): Any =
-    orElse(tryCast(target, className), tryConvert(target, className))
-      .getOrElse(throw new IllegalStateException(s"Cannot cast or convert value: $target to: '$className'"))
+    orElse(tryCast(target, className), tryConvert(target, className)) match {
+      case Right(value) => value
+      case Left(ex) => throw new IllegalStateException(s"Cannot cast or convert value: $target to: '$className'", ex)
+    }
 
   private def toOrNull(target: Any, className: String): Any =
     orElse(tryCast(target, className), tryConvert(target, className))
       .getOrElse(null)
 
   private def tryCast(target: Any, className: String): Either[Throwable, Any] = getClass(className) match {
-    case Some(clazz) => Try(clazz.cast(target)).toEither
-    case None        => Left(new ClassCastException(s"Cannot cast: [$target] to: [$className]."))
+    case Some(clazz) if clazz.isInstance(target) => Try(clazz.cast(target)).toEither
+    case _                                       => Left(castException)
   }
 
   private def getClass(className: String): Option[Class[_]] =
@@ -71,11 +67,11 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
   private val castOrConversionMethods = Set(isMethodName, toMethodName, toOrNullMethodName)
   private val stringClass             = classOf[String]
 
-  private val conversionsRegistry: List[Conversion] = List(
-    ToLongConversionExt,
-    ToDoubleConversionExt,
-    ToBigDecimalConversionExt,
-    ToBooleanConversionExt,
+  private val conversionsRegistry: List[Conversion[_ >: Null <: AnyRef]] = List(
+    ToLongConversion,
+    ToDoubleConversion,
+    ToBigDecimalConversion,
+    ToBooleanConversion,
     ToStringConversion,
     ToMapConversionExt,
     ToListConversionExt,
@@ -86,19 +82,18 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
     ToBigIntegerConversion,
   )
 
-  private val conversionsByType: Map[String, Conversion] = conversionsRegistry
+  private val conversionsByType: Map[String, Conversion[_ >: Null <: AnyRef]] = conversionsRegistry
     .flatMap(c => c.resultTypeClass.classByNameAndSimpleNameLowerCase().map(n => n._1 -> c))
     .toMap
 
   def isCastOrConversionMethod(methodName: String): Boolean =
     castOrConversionMethods.contains(methodName)
 
-  def allowedConversions(clazz: Class[_]): List[Conversion] = conversionsRegistry.filter(_.appliesToConversion(clazz))
+  def allowedConversions(clazz: Class[_]): List[Conversion[_]] =
+    conversionsRegistry.filter(_.appliesToConversion(clazz))
 
-  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = {
-    val classesBySimpleName = set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase()
-    new CastOrConversionExt(classesBySimpleName)
-  }
+  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler =
+    new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase())
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
     val castAllowedClasses = clazz.findAllowedClassesForCastParameter(set).mapValuesNow(_.clazzName)
@@ -115,7 +110,7 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
   // every class.
   override def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
 
-  private def getConversion(className: String): Either[Throwable, Conversion] =
+  private def getConversion(className: String): Either[Throwable, Conversion[_]] =
     conversionsByType.get(className.toLowerCase) match {
       case Some(conversion) => Right(conversion)
       case None             => Left(new IllegalArgumentException(s"Conversion for class $className not found"))

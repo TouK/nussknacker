@@ -4,24 +4,14 @@ import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
+import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}
 import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
 import java.lang.{Boolean => JBoolean}
 import java.util.{ArrayList => JArrayList, Collection => JCollection, List => JList}
 
-class ToListConversionExt extends ExtensionMethodHandler {
-
-  override val methodRegistry: Map[String, ExtensionMethod] = Map(
-    "isList"       -> ((target: Any, _) => ToListConversionExt.canConvert(target)),
-    "toList"       -> ((target: Any, _) => ToListConversionExt.convert(target)),
-    "toListOrNull" -> ((target: Any, _) => ToListConversionExt.convertOrNull(target)),
-  )
-
-}
-
-object ToListConversionExt extends ConversionExt with ToCollectionConversion {
+object ToListConversionExt extends ToCollectionConversion[JList[_]] with ConversionExt {
   private val booleanTyping   = Typed.typedClass[Boolean]
   private val listTyping      = Typed.genericTypeClass[JList[_]](List(Unknown))
   private val collectionClass = classOf[JCollection[_]]
@@ -53,21 +43,19 @@ object ToListConversionExt extends ConversionExt with ToCollectionConversion {
     toListOrNullDefinition,
   )
 
-  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ToListConversionExt
+  override val typingResult: TypingResult       = Typed.genericTypeClass(resultTypeClass, List(Unknown))
+  override val conversion: Conversion[JList[_]] = this
 
-  override type ResultType = JList[_]
-  override val resultTypeClass: Class[JList[_]] = classOf[JList[_]]
-  override def typingResult: TypingResult       = Typed.genericTypeClass(resultTypeClass, List(Unknown))
+  override val typingFunction: TypingResult => ValidatedNel[GenericFunctionTypingError, TypingResult] =
+    invocationTarget =>
+      invocationTarget.withoutValue match {
+        case TypedClass(klass, params) if klass.isAOrChildOf(collectionClass) || klass.isArray =>
+          Typed.genericTypeClass[JList[_]](params).validNel
+        case Unknown => Typed.genericTypeClass[JList[_]](List(Unknown)).validNel
+        case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      }
 
   override def canConvert(value: Any): JBoolean = value.getClass.isAOrChildOf(collectionClass) || value.getClass.isArray
-
-  override def typingFunction(invocationTarget: TypingResult): ValidatedNel[GenericFunctionTypingError, TypingResult] =
-    invocationTarget.withoutValue match {
-      case TypedClass(klass, params) if klass.isAOrChildOf(collectionClass) || klass.isArray =>
-        Typed.genericTypeClass[JList[_]](params).validNel
-      case Unknown => Typed.genericTypeClass[JList[_]](List(Unknown)).validNel
-      case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
-    }
 
   override def convertEither(value: Any): Either[Throwable, JList[_]] = {
     value match {
