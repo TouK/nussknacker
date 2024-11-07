@@ -147,7 +147,7 @@ object ExampleFunctions {
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
-      if (arguments.exists(!_.canBeSubclassOf(Typed[Number]))) return ArgumentTypeError.invalidNel
+      if (arguments.exists(!_.canBeImplicitlyConvertedTo(Typed[Number]))) return ArgumentTypeError.invalidNel
       arguments match {
         case t :: Nil           => t.validNel
         case l :: r :: Nil      => Typed.record(Map("left" -> l, "right" -> r)).validNel

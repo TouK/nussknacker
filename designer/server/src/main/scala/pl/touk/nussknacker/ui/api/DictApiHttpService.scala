@@ -62,7 +62,9 @@ class DictApiHttpService(
                 Future {
                   success(
                     dictionaries
-                      .filter { case (id, definition) => definition.valueType(id).canBeSubclassOf(expectedType) }
+                      .filter { case (id, definition) =>
+                        definition.valueType(id).canBeImplicitlyConvertedTo(expectedType)
+                      }
                       .map { case (id, _) => DictDto(id, id) }
                       .toList
                   )

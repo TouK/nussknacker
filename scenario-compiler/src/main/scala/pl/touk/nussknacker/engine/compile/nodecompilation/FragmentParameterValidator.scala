@@ -154,7 +154,7 @@ object FragmentParameterValidator {
 
               val dictValueType = dictDefinition.valueType(dictId)
 
-              if (dictValueType.canBeSubclassOf(fragmentParameterTypingResult)) {
+              if (dictValueType.canBeImplicitlyConvertedTo(fragmentParameterTypingResult)) {
                 Valid(())
               } else {
                 invalidNel(
