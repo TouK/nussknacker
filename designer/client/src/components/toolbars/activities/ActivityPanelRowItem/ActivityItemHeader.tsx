@@ -25,6 +25,10 @@ const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
     height: "16px",
     color: theme.palette.primary.main,
+    svg: {
+        width: "16px",
+        height: "16px",
+    },
 }));
 
 const StyledHeaderActionRoot = styled("div")(({ theme }) => ({
