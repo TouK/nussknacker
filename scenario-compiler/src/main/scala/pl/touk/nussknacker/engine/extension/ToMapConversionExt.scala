@@ -4,23 +4,13 @@ import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
+import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}
 import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 
 import java.lang.{Boolean => JBoolean}
 import java.util.{Collection => JCollection, HashMap => JHashMap, Map => JMap, Set => JSet}
 
-class ToMapConversionExt extends ExtensionMethodHandler {
-
-  override val methodRegistry: Map[String, ExtensionMethod] = Map(
-    "isMap"       -> ((target: Any, _) => ToMapConversionExt.canConvert(target)),
-    "toMap"       -> ((target: Any, _) => ToMapConversionExt.convert(target)),
-    "toMapOrNull" -> ((target: Any, _) => ToMapConversionExt.convertOrNull(target)),
-  )
-
-}
-
-object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
+object ToMapConversionExt extends ToCollectionConversion[JMap[_, _]] with ConversionExt {
   private val booleanTyping    = Typed.typedClass[Boolean]
   private val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
   private val keyName          = "key"
@@ -54,11 +44,21 @@ object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
     toMapOrNullDefinition,
   )
 
-  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ToMapConversionExt
+  override val typingResult: TypingResult = Typed.genericTypeClass(resultTypeClass, List(Unknown, Unknown))
+  override val conversion: Conversion[_]  = this
 
-  override type ResultType = JMap[_, _]
-  override val resultTypeClass: Class[JMap[_, _]] = classOf[ResultType]
-  override def typingResult: TypingResult         = Typed.genericTypeClass(resultTypeClass, List(Unknown, Unknown))
+  override val typingFunction: TypingResult => ValidatedNel[GenericFunctionTypingError, TypingResult] =
+    invocationTarget =>
+      invocationTarget.withoutValue match {
+        case TypedClass(_, List(TypedObjectTypingResult(fields, _, _)))
+            if fields.contains(keyName) && fields.contains(valueName) =>
+          val params = List(fields.get(keyName), fields.get(valueName)).flatten
+          Typed.genericTypeClass[JMap[_, _]](params).validNel
+        case TypedClass(_, List(TypedObjectTypingResult(_, _, _))) =>
+          GenericFunctionTypingError.OtherError("List element must contain 'key' and 'value' fields").invalidNel
+        case Unknown => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      }
 
   override def canConvert(value: Any): JBoolean = value match {
     case _: JMap[_, _]     => true
@@ -66,18 +66,6 @@ object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
     case a: Array[_]       => canConvertToMap(ConversionHandler.convertArrayToList(a))
     case _                 => false
   }
-
-  override def typingFunction(invocationTarget: TypingResult): ValidatedNel[GenericFunctionTypingError, TypingResult] =
-    invocationTarget.withoutValue match {
-      case TypedClass(_, List(TypedObjectTypingResult(fields, _, _)))
-          if fields.contains(keyName) && fields.contains(valueName) =>
-        val params = List(fields.get(keyName), fields.get(valueName)).flatten
-        Typed.genericTypeClass[JMap[_, _]](params).validNel
-      case TypedClass(_, List(TypedObjectTypingResult(_, _, _))) =>
-        GenericFunctionTypingError.OtherError("List element must contain 'key' and 'value' fields").invalidNel
-      case Unknown => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-      case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
-    }
 
   override def convertEither(value: Any): Either[Throwable, JMap[_, _]] =
     value match {

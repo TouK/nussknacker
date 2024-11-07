@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.extension
 
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
+import pl.touk.nussknacker.engine.extension.ExtensionMethod.{NoArg, SingleArg}
 import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 
 import java.util
@@ -21,34 +22,14 @@ class ArrayWrapper(target: Any) extends util.AbstractList[Object] {
 class ArrayExt extends ExtensionMethodHandler {
 
   override val methodRegistry: Map[String, ExtensionMethod] = Map(
-    "get" -> new ExtensionMethod {
-      override val argsSize: Int = 1
-      override def invoke(target: Any, args: Object*): Any =
-        new ArrayWrapper(target).get(args.head.asInstanceOf[Integer])
-    },
-    "size" -> ((target: Any, _) => new ArrayWrapper(target).size()),
-    "lastIndexOf" -> new ExtensionMethod {
-      override val argsSize: Int = 1
-      override def invoke(target: Any, args: Object*): Any =
-        new ArrayWrapper(target).lastIndexOf(args.head.asInstanceOf[Integer])
-    },
-    "contains" -> new ExtensionMethod {
-      override val argsSize: Int = 1
-      override def invoke(target: Any, args: Object*): Any =
-        new ArrayWrapper(target).contains(args.head)
-    },
-    "indexOf" -> new ExtensionMethod {
-      override val argsSize: Int = 1
-      override def invoke(target: Any, args: Object*): Any =
-        new ArrayWrapper(target).indexOf(args.head)
-    },
-    "containsAll" -> new ExtensionMethod {
-      override val argsSize: Int = 1
-      override def invoke(target: Any, args: Object*): Any =
-        new ArrayWrapper(target).containsAll(args.head.asInstanceOf[util.Collection[_]])
-    },
-    "isEmpty" -> ((target: Any, _) => new ArrayWrapper(target).isEmpty()),
-    "empty"   -> ((target: Any, _) => new ArrayWrapper(target).isEmpty()),
+    "get"         -> SingleArg[Integer]((target, arg) => new ArrayWrapper(target).get(arg)),
+    "size"        -> NoArg(target => new ArrayWrapper(target).size()),
+    "lastIndexOf" -> SingleArg[Integer]((target, arg) => new ArrayWrapper(target).lastIndexOf(arg)),
+    "contains"    -> SingleArg[Object]((target, arg) => new ArrayWrapper(target).contains(arg)),
+    "indexOf"     -> SingleArg[Object]((target, arg) => new ArrayWrapper(target).indexOf(arg)),
+    "containsAll" -> SingleArg[util.Collection[_]]((target, arg) => new ArrayWrapper(target).containsAll(arg)),
+    "isEmpty"     -> NoArg(target => new ArrayWrapper(target).isEmpty()),
+    "empty"       -> NoArg(target => new ArrayWrapper(target).isEmpty()),
   )
 
 }

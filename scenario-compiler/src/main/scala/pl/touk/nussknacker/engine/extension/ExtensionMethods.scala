@@ -39,14 +39,13 @@ class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends Me
     )
   }
 
-  private def createExecutor(method: ExtensionMethod): MethodExecutor =
-    new MethodExecutor {
+  private def createExecutor(method: ExtensionMethod): MethodExecutor = new MethodExecutor {
 
-      override def execute(context: EvaluationContext, target: Any, args: Object*): TypedValue = {
-        new TypedValue(method.invoke(target, args: _*), null)
-      }
-
+    override def execute(context: EvaluationContext, target: Any, args: Object*): TypedValue = {
+      new TypedValue(method.invoke(target, args: _*), null)
     }
+
+  }
 
 }
 
@@ -55,10 +54,10 @@ object ExtensionMethods {
   val extensionMethodsDefinitions: List[ExtensionMethodsDefinition] = List(
     CastOrConversionExt,
     ArrayExt,
-    ToLongConversionExt,
-    ToDoubleConversionExt,
-    ToBigDecimalConversionExt,
-    ToBooleanConversionExt,
+    ConversionExt(ToLongConversion),
+    ConversionExt(ToDoubleConversion),
+    ConversionExt(ToBigDecimalConversion),
+    ConversionExt(ToBooleanConversion),
     ToListConversionExt,
     ToMapConversionExt,
   )
@@ -76,17 +75,29 @@ object ExtensionMethods {
 }
 
 trait ExtensionMethod {
-  val argsSize = 0
+  val argsSize: Int
   def invoke(target: Any, args: Object*): Any
+}
+
+object ExtensionMethod {
+
+  def NoArg(method: Any => Any): ExtensionMethod = new ExtensionMethod {
+    override val argsSize: Int                           = 0
+    override def invoke(target: Any, args: Object*): Any = method(target)
+  }
+
+  def SingleArg[T](method: (Any, T) => Any): ExtensionMethod = new ExtensionMethod {
+    override val argsSize: Int                           = 1
+    override def invoke(target: Any, args: Object*): Any = method(target, args.head.asInstanceOf[T])
+  }
+
 }
 
 trait ExtensionMethodHandler {
   val methodRegistry: Map[String, ExtensionMethod]
 
   def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod] =
-//    nonStaticMethods.find(m => m.getName.equals(methodName) && m.getParameterCount == argsSize) // todo: temp commented
     methodRegistry.get(methodName).filter(_.argsSize == argsSize)
-
 }
 
 trait ExtensionMethodsDefinition {
