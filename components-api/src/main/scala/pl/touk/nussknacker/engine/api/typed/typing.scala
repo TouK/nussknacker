@@ -27,15 +27,11 @@ object typing {
   // TODO: Rename to Typed, maybe NuType?
   sealed trait TypingResult {
 
-    // TODO: We should split this method into two or three methods:
-    //       - Simple, strictly checking subclassing similar to isAssignable, where we don't do heuristics like
-    //         Any can be subclass of Int, or for Union of Int and String can be subclass of Int
-    //       - The one with heuristics considering limitations of our tool like poor support for generics, lack
-    //         of casting allowing things described above
-    //       - The one that allow things above + SPeL conversions like any Number to any Number conversion,
-    //         String to LocalDate etc. This one should be accessible only for context where SPeL is used
-    final def canBeSubclassOf(typingResult: TypingResult): Boolean =
-      CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult).isValid
+    final def canBeImplicitlyConvertedTo(typingResult: TypingResult): Boolean =
+      ImplicitConversionDeterminer.canBeConvertedTo(this, typingResult).isValid
+
+    def canBeStrictSubclassOf(typingResult: TypingResult): Boolean =
+      SubclassDeterminer.canBeStrictSubclassOf(this, typingResult).isValid
 
     def valueOpt: Option[Any]
 
@@ -466,7 +462,9 @@ object typing {
   case class CastTypedValue[T: TypeTag]() {
 
     def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
-      Option(typingResult).filter(_.canBeSubclassOf(Typed.fromDetailedType[T])).map(new TypingResultTypedValue(_))
+      Option(typingResult)
+        .filter(_.canBeImplicitlyConvertedTo(Typed.fromDetailedType[T]))
+        .map(new TypingResultTypedValue(_))
     }
 
   }

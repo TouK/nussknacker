@@ -32,33 +32,33 @@ class TypingResultSpec
 
   test("determine if can be subclass for typed object") {
 
-    typeMap("field1" -> Typed[String], "field2" -> Typed[Int]).canBeSubclassOf(
+    typeMap("field1" -> Typed[String], "field2" -> Typed[Int]).canBeImplicitlyConvertedTo(
       typeMap("field1" -> Typed[String])
     ) shouldBe true
 
-    typeMap("field1" -> Typed[String]).canBeSubclassOf(
+    typeMap("field1" -> Typed[String]).canBeImplicitlyConvertedTo(
       typeMap("field1" -> Typed[String], "field2" -> Typed[Int])
     ) shouldBe false
 
-    typeMap("field1" -> Typed[Int]).canBeSubclassOf(
+    typeMap("field1" -> Typed[Int]).canBeImplicitlyConvertedTo(
       typeMap("field1" -> Typed[String])
     ) shouldBe false
 
-    typeMap("field1" -> Typed[Int]).canBeSubclassOf(
+    typeMap("field1" -> Typed[Int]).canBeImplicitlyConvertedTo(
       typeMap("field1" -> Typed[Number])
     ) shouldBe true
 
-    typeMap("field1" -> list(typeMap("field2" -> Typed[String], "field3" -> Typed[Int]))).canBeSubclassOf(
+    typeMap("field1" -> list(typeMap("field2" -> Typed[String], "field3" -> Typed[Int]))).canBeImplicitlyConvertedTo(
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
     ) shouldBe true
 
-    typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))).canBeSubclassOf(
+    typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))).canBeImplicitlyConvertedTo(
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
     ) shouldBe false
 
-    typeMap("field1" -> Typed[String]).canBeSubclassOf(Typed[java.util.Map[_, _]]) shouldBe true
+    typeMap("field1" -> Typed[String]).canBeImplicitlyConvertedTo(Typed[java.util.Map[_, _]]) shouldBe true
 
-    Typed[java.util.Map[_, _]].canBeSubclassOf(typeMap("field1" -> Typed[String])) shouldBe false
+    Typed[java.util.Map[_, _]].canBeImplicitlyConvertedTo(typeMap("field1" -> Typed[String])) shouldBe false
   }
 
   test("extract Unknown value type when no super matching supertype found among all fields of Record") {
@@ -76,72 +76,78 @@ class TypingResultSpec
   }
 
   test("determine if can be subclass for typed unions") {
-    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed[Int]) shouldBe true
-    Typed[Int].canBeSubclassOf(Typed(Typed[String], Typed[Int])) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeImplicitlyConvertedTo(Typed[Int]) shouldBe true
+    Typed[Int].canBeImplicitlyConvertedTo(Typed(Typed[String], Typed[Int])) shouldBe true
 
-    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed(Typed[Long], Typed[Int])) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeImplicitlyConvertedTo(Typed(Typed[Long], Typed[Int])) shouldBe true
   }
 
   test("determine if can be subclass for unknown") {
-    Unknown.canBeSubclassOf(Typed[Int]) shouldBe true
-    Typed[Int].canBeSubclassOf(Unknown) shouldBe true
+    Unknown.canBeImplicitlyConvertedTo(Typed[Int]) shouldBe true
+    Typed[Int].canBeImplicitlyConvertedTo(Unknown) shouldBe true
 
-    Unknown.canBeSubclassOf(Typed(Typed[String], Typed[Int])) shouldBe true
-    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Unknown) shouldBe true
+    Unknown.canBeImplicitlyConvertedTo(Typed(Typed[String], Typed[Int])) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeImplicitlyConvertedTo(Unknown) shouldBe true
 
-    Unknown.canBeSubclassOf(typeMap("field1" -> Typed[String])) shouldBe true
-    typeMap("field1" -> Typed[String]).canBeSubclassOf(Unknown) shouldBe true
+    Unknown.canBeImplicitlyConvertedTo(typeMap("field1" -> Typed[String])) shouldBe true
+    typeMap("field1" -> Typed[String]).canBeImplicitlyConvertedTo(Unknown) shouldBe true
   }
 
   test("determine if can be subclass for class") {
     Typed
       .fromDetailedType[java.util.List[BigDecimal]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe true
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe true
     Typed
       .fromDetailedType[java.util.List[BigDecimal]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.List[Number]]) shouldBe true
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.List[Number]]) shouldBe true
     Typed
       .fromDetailedType[java.util.List[Number]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe false
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.List[BigDecimal]]) shouldBe false
 
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, Number]]) shouldBe true
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, Number]]) shouldBe true
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[Number, Number]]) shouldBe false
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.Map[Number, Number]]) shouldBe false
     Typed
       .fromDetailedType[java.util.Map[Number, Number]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
     Typed
       .fromDetailedType[java.util.Map[Number, BigDecimal]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, Number]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[_, BigDecimal]]) shouldBe true
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.Map[_, BigDecimal]]) shouldBe true
     Typed
       .fromDetailedType[java.util.Map[_, BigDecimal]]
-      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
 
     // For arrays it might be tricky
-    Typed.fromDetailedType[Array[BigDecimal]].canBeSubclassOf(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe true
-    Typed.fromDetailedType[Array[BigDecimal]].canBeSubclassOf(Typed.fromDetailedType[Array[Number]]) shouldBe true
-    Typed.fromDetailedType[Array[Number]].canBeSubclassOf(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe false
+    Typed
+      .fromDetailedType[Array[BigDecimal]]
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe true
+    Typed
+      .fromDetailedType[Array[BigDecimal]]
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[Array[Number]]) shouldBe true
+    Typed
+      .fromDetailedType[Array[Number]]
+      .canBeImplicitlyConvertedTo(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe false
   }
 
   test("determine if numbers can be converted") {
-    Typed[Int].canBeSubclassOf(Typed[Long]) shouldBe true
-    Typed[Long].canBeSubclassOf(Typed[Int]) shouldBe false
-    Typed[Long].canBeSubclassOf(Typed[Double]) shouldBe true
-    Typed[Double].canBeSubclassOf(Typed[Long]) shouldBe false
-    Typed[java.math.BigDecimal].canBeSubclassOf(Typed[Long]) shouldBe true
-    Typed[Long].canBeSubclassOf(Typed[java.math.BigDecimal]) shouldBe true
+    Typed[Int].canBeImplicitlyConvertedTo(Typed[Long]) shouldBe true
+    Typed[Long].canBeImplicitlyConvertedTo(Typed[Int]) shouldBe false
+    Typed[Long].canBeImplicitlyConvertedTo(Typed[Double]) shouldBe true
+    Typed[Double].canBeImplicitlyConvertedTo(Typed[Long]) shouldBe false
+    Typed[java.math.BigDecimal].canBeImplicitlyConvertedTo(Typed[Long]) shouldBe true
+    Typed[Long].canBeImplicitlyConvertedTo(Typed[java.math.BigDecimal]) shouldBe true
   }
 
   test("find common supertype for simple types") {
@@ -297,22 +303,22 @@ class TypingResultSpec
   test("determine if can be subclass for tagged value") {
     Typed
       .tagged(Typed.typedClass[String], "tag1")
-      .canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe true
+      .canBeImplicitlyConvertedTo(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe true
     Typed
       .tagged(Typed.typedClass[String], "tag1")
-      .canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag2")) shouldBe false
+      .canBeImplicitlyConvertedTo(Typed.tagged(Typed.typedClass[String], "tag2")) shouldBe false
     Typed
       .tagged(Typed.typedClass[String], "tag1")
-      .canBeSubclassOf(Typed.tagged(Typed.typedClass[Integer], "tag1")) shouldBe false
-    Typed.tagged(Typed.typedClass[String], "tag1").canBeSubclassOf(Typed.typedClass[String]) shouldBe true
-    Typed.typedClass[String].canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe false
+      .canBeImplicitlyConvertedTo(Typed.tagged(Typed.typedClass[Integer], "tag1")) shouldBe false
+    Typed.tagged(Typed.typedClass[String], "tag1").canBeImplicitlyConvertedTo(Typed.typedClass[String]) shouldBe true
+    Typed.typedClass[String].canBeImplicitlyConvertedTo(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe false
   }
 
   test("determine if can be subclass for null") {
-    TypedNull.canBeSubclassOf(Typed[Int]) shouldBe true
-    TypedNull.canBeSubclassOf(Typed.fromInstance(4)) shouldBe false
-    TypedNull.canBeSubclassOf(TypedNull) shouldBe true
-    Typed[String].canBeSubclassOf(TypedNull) shouldBe false
+    TypedNull.canBeImplicitlyConvertedTo(Typed[Int]) shouldBe true
+    TypedNull.canBeImplicitlyConvertedTo(Typed.fromInstance(4)) shouldBe false
+    TypedNull.canBeImplicitlyConvertedTo(TypedNull) shouldBe true
+    Typed[String].canBeImplicitlyConvertedTo(TypedNull) shouldBe false
   }
 
   test("should deeply extract typ parameters") {
@@ -331,20 +337,20 @@ class TypingResultSpec
   }
 
   test("determine if can be subclass for object with value") {
-    Typed.fromInstance(45).canBeSubclassOf(Typed.typedClass[Long]) shouldBe true
-    Typed.fromInstance(29).canBeSubclassOf(Typed.typedClass[String]) shouldBe false
-    Typed.fromInstance(78).canBeSubclassOf(Typed.fromInstance(78)) shouldBe true
-    Typed.fromInstance(12).canBeSubclassOf(Typed.fromInstance(15)) shouldBe false
-    Typed.fromInstance(41).canBeSubclassOf(Typed.fromInstance("t")) shouldBe false
-    Typed.typedClass[String].canBeSubclassOf(Typed.fromInstance("t")) shouldBe true
+    Typed.fromInstance(45).canBeImplicitlyConvertedTo(Typed.typedClass[Long]) shouldBe true
+    Typed.fromInstance(29).canBeImplicitlyConvertedTo(Typed.typedClass[String]) shouldBe false
+    Typed.fromInstance(78).canBeImplicitlyConvertedTo(Typed.fromInstance(78)) shouldBe true
+    Typed.fromInstance(12).canBeImplicitlyConvertedTo(Typed.fromInstance(15)) shouldBe false
+    Typed.fromInstance(41).canBeImplicitlyConvertedTo(Typed.fromInstance("t")) shouldBe false
+    Typed.typedClass[String].canBeImplicitlyConvertedTo(Typed.fromInstance("t")) shouldBe true
   }
 
   test("determine if can be subclass for object with value - use conversion") {
-    Typed.fromInstance("2007-12-03").canBeSubclassOf(Typed.typedClass[LocalDate]) shouldBe true
-    Typed.fromInstance("2007-12-03T10:15:30").canBeSubclassOf(Typed.typedClass[LocalDateTime]) shouldBe true
+    Typed.fromInstance("2007-12-03").canBeImplicitlyConvertedTo(Typed.typedClass[LocalDate]) shouldBe true
+    Typed.fromInstance("2007-12-03T10:15:30").canBeImplicitlyConvertedTo(Typed.typedClass[LocalDateTime]) shouldBe true
 
-    Typed.fromInstance("2007-12-03-qwerty").canBeSubclassOf(Typed.typedClass[LocalDate]) shouldBe false
-    Typed.fromInstance("2007-12-03").canBeSubclassOf(Typed.typedClass[Currency]) shouldBe false
+    Typed.fromInstance("2007-12-03-qwerty").canBeImplicitlyConvertedTo(Typed.typedClass[LocalDate]) shouldBe false
+    Typed.fromInstance("2007-12-03").canBeImplicitlyConvertedTo(Typed.typedClass[Currency]) shouldBe false
   }
 
   test("determinate if can be superclass for objects with value") {
@@ -443,7 +449,7 @@ class TypingResultSpec
       logger.trace(s"Checking: ${input.display}")
       withClue(s"Input: ${input.display};") {
 
-        input.canBeSubclassOf(input) shouldBe true
+        input.canBeImplicitlyConvertedTo(input) shouldBe true
         val superType = CommonSupertypeFinder.Default.commonSupertype(input, input)
         withClue(s"Supertype: ${superType.display};") {
           superType shouldEqual input
@@ -457,11 +463,11 @@ class TypingResultSpec
       logger.trace(s"Checking: ${input.display}")
       withClue(s"Input: ${input.display};") {
 
-        input.canBeSubclassOf(input) shouldBe true
+        input.canBeImplicitlyConvertedTo(input) shouldBe true
         val superType = CommonSupertypeFinder.Default.commonSupertype(input, input)
         withClue(s"Supertype: ${superType.display};") {
           // We generate combinations of types co we can only check if input type is a subclass of super type
-          input.canBeSubclassOf(superType)
+          input.canBeImplicitlyConvertedTo(superType)
         }
       }
     }
@@ -477,12 +483,12 @@ class TypingResultSpec
       logger.trace(s"Checking supertype of: ${first.display} and ${second.display}")
       withClue(s"Input: ${first.display}; ${second.display};") {
 
-        first.canBeSubclassOf(first) shouldBe true
-        second.canBeSubclassOf(second) shouldBe true
+        first.canBeImplicitlyConvertedTo(first) shouldBe true
+        second.canBeImplicitlyConvertedTo(second) shouldBe true
         val superType = CommonSupertypeFinder.Default.commonSupertype(first, second)
         withClue(s"Supertype: ${superType.display};") {
-          first.canBeSubclassOf(superType)
-          second.canBeSubclassOf(superType)
+          first.canBeImplicitlyConvertedTo(superType)
+          second.canBeImplicitlyConvertedTo(superType)
         }
       }
     }

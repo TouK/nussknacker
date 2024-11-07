@@ -141,7 +141,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
 
         methodsForParams
           .find { case (_, method) =>
-            methodsForParams.forall(mi => method.signature.result.canBeSubclassOf(mi._2.signature.result))
+            methodsForParams.forall(mi => method.signature.result.canBeImplicitlyConvertedTo(mi._2.signature.result))
           }
           .getOrElse(methodsForParams.minBy(_._2.signature.result.display))
       }
@@ -273,7 +273,7 @@ class ClassDefinitionExtractor(settings: ClassExtractionSettings) extends LazyLo
               )
               reflectionBasedDefinition.result
             }
-            if (returnedResultType.canBeSubclassOf(returnedResultType)) {
+            if (returnedResultType.canBeImplicitlyConvertedTo(returnedResultType)) {
               returnedResultType
             } else {
               logger.warn(
