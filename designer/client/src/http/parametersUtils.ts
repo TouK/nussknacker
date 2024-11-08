@@ -14,7 +14,7 @@ export function fixBranchParametersTemplate({ node, branchParametersTemplate, ..
 }
 
 export function fixAggregateParameters(component: Component): Component {
-    if (!["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(component.node.type)) {
+    if (!["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(component.node.nodeType)) {
         return component;
     }
 
