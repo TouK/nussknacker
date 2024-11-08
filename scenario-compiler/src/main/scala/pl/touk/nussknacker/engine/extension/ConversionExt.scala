@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.extension
 import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition, StaticMethodDefinition}
+import pl.touk.nussknacker.engine.extension.CastOrConversionExt.{canBeMethodName, orNullSuffix, toMethodName}
 import pl.touk.nussknacker.engine.extension.ExtensionMethod.NoArg
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
@@ -53,17 +54,17 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
     List(
       definition(
         Typed.typedClass[JBoolean],
-        s"is$targetTypeSimpleName",
+        s"$canBeMethodName$targetTypeSimpleName",
         Some(s"Check whether the value can be convert to a $targetTypeSimpleName")
       ),
       definition(
         conversion.typingResult,
-        s"to$targetTypeSimpleName",
+        s"$toMethodName$targetTypeSimpleName",
         Some(s"Convert the value to $targetTypeSimpleName or throw exception in case of failure")
       ),
       definition(
         conversion.typingResult,
-        s"to${targetTypeSimpleName}OrNull",
+        s"$toMethodName${targetTypeSimpleName}$orNullSuffix",
         Some(s"Convert the value to $targetTypeSimpleName or null in case of failure")
       ),
     )

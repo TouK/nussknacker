@@ -5,6 +5,7 @@ import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}
+import pl.touk.nussknacker.engine.extension.CastOrConversionExt.{canBeMethodName, orNullSuffix, toMethodName}
 import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
@@ -19,21 +20,21 @@ object ToListConversionExt extends ConversionExt(ToListConversion) {
   private val isListMethodDefinition = FunctionalMethodDefinition(
     typeFunction = (targetTyping, _) => ToListConversion.typingFunction(targetTyping).map(_ => booleanTyping),
     signature = MethodTypeInfo.noArgTypeInfo(booleanTyping),
-    name = "isList",
+    name = s"${canBeMethodName}List",
     description = Some("Check whether can be convert to a list")
   )
 
   private val toListDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => ToListConversion.typingFunction(invocationTarget),
     signature = MethodTypeInfo.noArgTypeInfo(listTyping),
-    name = "toList",
+    name = s"${toMethodName}List",
     description = Option("Convert to a list or throw exception in case of failure")
   )
 
   private val toListOrNullDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => ToListConversion.typingFunction(invocationTarget),
     signature = MethodTypeInfo.noArgTypeInfo(listTyping),
-    name = "toListOrNull",
+    name = s"${toMethodName}List${orNullSuffix}",
     description = Option("Convert to a list or null in case of failure")
   )
 

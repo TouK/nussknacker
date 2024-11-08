@@ -12,7 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import org.springframework.util.NumberUtils
+import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
@@ -63,9 +63,9 @@ import java.lang.{
   Short => JShort
 }
 import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
-import java.nio.charset.Charset
-import java.time.chrono.ChronoLocalDate
-import java.time.{LocalDate, LocalDateTime}
+import java.nio.charset.{Charset, StandardCharsets}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 import java.util
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import scala.annotation.varargs
@@ -1491,8 +1491,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     forAll(
       Table(
         ("expression", "expectedResult"),
-        ("#unknownString.value.is('java.lang.String')", true),
-        ("#unknownString.value.is('java.lang.Integer')", false),
+        ("#unknownString.value.canBe('java.lang.String')", true),
+        ("#unknownString.value.canBe('java.lang.Integer')", false),
       )
     ) { (expression, expectedResult) =>
       evaluate[Any](expression) shouldBe expectedResult
@@ -1590,7 +1590,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should allow invoke conversion methods with class simple names") {
     evaluate[Any](
-      "{#unknownLong.value.toOrNull('Long'), #unknownLong.value.to('Long'), #unknownLong.value.is('Long')}",
+      "{#unknownLong.value.toOrNull('Long'), #unknownLong.value.to('Long'), #unknownLong.value.canBe('Long')}",
       ctx.withVariable("unknownLong", ContainerOfUnknown(11L))
     ) shouldBe List(11L, 11L, true).asJava
   }
@@ -1654,6 +1654,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val emptyList                   = List().asJava
     val emptyTuplesList             = List(Map().asJava).asJava
     val convertedDoubleToBigDecimal = NumberUtils.convertNumberToTargetClass(1.1, classOf[JBigDecimal])
+    val zoneOffset                  = ZoneOffset.of("+01:00")
+    val zoneId                      = ZoneId.of("Europe/Warsaw")
+    val locale                      = StringUtils.parseLocale("pl_PL")
+    val charset                     = StandardCharsets.UTF_8
+    val currency                    = Currency.getInstance("USD")
+    val uuid                        = UUID.fromString("7447e433-83dd-47d0-a115-769a03236bca")
+    val localTime                   = LocalTime.parse("10:15:30")
+    val localDate                   = LocalDate.parse("2024-11-04")
+    val localDateTime               = LocalDateTime.parse("2024-11-04T10:15:30")
     val customCtx = ctx
       .withVariable("unknownInteger", ContainerOfUnknown(1))
       .withVariable("unknownBoolean", ContainerOfUnknown(false))
@@ -1669,18 +1678,29 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .withVariable("unknownListOfTuples", ContainerOfUnknown(listOfTuples))
       .withVariable("unknownEmptyList", ContainerOfUnknown(emptyList))
       .withVariable("unknownEmptyTuplesList", ContainerOfUnknown(emptyTuplesList))
-    val byteTyping       = Typed.typedClass[JByte]
-    val shortTyping      = Typed.typedClass[JShort]
-    val integerTyping    = Typed.typedClass[JInteger]
-    val longTyping       = Typed.typedClass[JLong]
-    val floatTyping      = Typed.typedClass[JFloat]
-    val doubleTyping     = Typed.typedClass[JDouble]
-    val bigDecimalTyping = Typed.typedClass[JBigDecimal]
-    val bigIntegerTyping = Typed.typedClass[JBigInteger]
-    val booleanTyping    = Typed.typedClass[JBoolean]
-    val stringTyping     = Typed.typedClass[String]
-    val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
-    val listTyping       = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val byteTyping                = Typed.typedClass[JByte]
+    val shortTyping               = Typed.typedClass[JShort]
+    val integerTyping             = Typed.typedClass[JInteger]
+    val longTyping                = Typed.typedClass[JLong]
+    val floatTyping               = Typed.typedClass[JFloat]
+    val doubleTyping              = Typed.typedClass[JDouble]
+    val bigDecimalTyping          = Typed.typedClass[JBigDecimal]
+    val bigIntegerTyping          = Typed.typedClass[JBigInteger]
+    val booleanTyping             = Typed.typedClass[JBoolean]
+    val stringTyping              = Typed.typedClass[String]
+    val mapTyping                 = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    val listTyping                = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val zoneOffsetTyping          = Typed.typedClass[ZoneOffset]
+    val zoneIdTyping              = Typed.typedClass[ZoneId]
+    val localeTyping              = Typed.typedClass[Locale]
+    val charsetTyping             = Typed.typedClass[Charset]
+    val currencyTyping            = Typed.typedClass[Currency]
+    val uuidTyping                = Typed.typedClass[UUID]
+    val localTimeTyping           = Typed.typedClass[LocalTime]
+    val localDateTyping           = Typed.typedClass[LocalDate]
+    val localDateTimeTyping       = Typed.typedClass[LocalDateTime]
+    val chronoLocalDateTyping     = Typed.typedClass[ChronoLocalDate]
+    val chronoLocalDateTimeTyping = Typed.typedClass[ChronoLocalDateTime[_]]
     forAll(
       Table(
         ("expression", "expectedType", "expectedResult"),
@@ -1747,6 +1767,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("'1'.to('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
         ("1.toOrNull('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
         ("'1'.toOrNull('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("'+01:00'.to('ZoneOffset')", zoneOffsetTyping, zoneOffset),
+        ("'Europe/Warsaw'.to('ZoneId')", zoneIdTyping, zoneId),
+        ("'pl_PL'.to('Locale')", localeTyping, locale),
+        ("'UTF-8'.to('Charset')", charsetTyping, charset),
+        ("'USD'.to('Currency')", currencyTyping, currency),
+        ("'7447e433-83dd-47d0-a115-769a03236bca'.to('UUID')", uuidTyping, uuid),
+        ("'10:15:30'.to('LocalTime')", localTimeTyping, localTime),
+        ("'2024-11-04'.to('LocalDate')", localDateTyping, localDate),
+        ("'2024-11-04T10:15:30'.to('LocalDateTime')", localDateTimeTyping, localDateTime),
+        ("'2024-11-04'.to('ChronoLocalDate')", chronoLocalDateTyping, localDate),
+        ("'2024-11-04T10:15:30'.to('ChronoLocalDateTime')", chronoLocalDateTimeTyping, localDateTime),
         ("#unknownString.value.to('String')", stringTyping, "unknown"),
         ("#unknownMap.value.to('Map')", mapTyping, map),
         ("#unknownMap.value.toOrNull('Map')", mapTyping, map),
@@ -1839,58 +1870,58 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     forAll(
       Table(
         ("expression", "result"),
-        ("#unknownBoolean.value.is('Boolean')", true),
-        ("#unknownBooleanString.value.is('Boolean')", true),
-        ("#unknownString.value.is('Boolean')", false),
-        ("#unknownLong.value.is('Byte')", true),
-        ("#unknownLongString.value.is('Byte')", true),
-        ("#unknownString.value.is('Byte')", false),
-        ("#unknownLong.value.is('Short')", true),
-        ("#unknownLongString.value.is('Short')", true),
-        ("#unknownString.value.is('Short')", false),
-        ("#unknownLong.value.is('Integer')", true),
-        ("#unknownLongString.value.is('Integer')", true),
-        ("#unknownString.value.is('Integer')", false),
-        ("#unknownLong.value.is('Long')", true),
-        ("#unknownLongString.value.is('Long')", true),
-        ("#unknownString.value.is('Long')", false),
-        ("#unknownLong.value.is('BigInteger')", true),
-        ("#unknownLongString.value.is('BigInteger')", true),
-        ("#unknownString.value.is('BigInteger')", false),
-        ("#unknownDouble.value.is('Double')", true),
-        ("#unknownDoubleString.value.is('Double')", true),
-        ("#unknownString.value.is('Double')", false),
-        ("#unknownDouble.value.is('Float')", true),
-        ("#unknownDoubleString.value.is('Float')", true),
-        ("#unknownString.value.is('Float')", false),
-        ("#unknownBigDecimal.value.is('BigDecimal')", true),
-        ("#unknownBigDecimalString.value.is('BigDecimal')", true),
-        ("#unknownString.value.is('BigDecimal')", false),
-        ("#unknownList.value.is('List')", true),
-        ("#unknownList.value.is('Map')", false),
-        ("#unknownMap.value.is('List')", false),
-        ("#unknownMap.value.is('Map')", true),
-        ("#unknownListOfTuples.value.is('List')", true),
-        ("#unknownListOfTuples.value.is('Map')", true),
-        ("#unknownBoolean.value.isBoolean", true),
-        ("#unknownBooleanString.value.isBoolean", true),
-        ("#unknownString.value.isBoolean", false),
-        ("#unknownLong.value.isLong", true),
-        ("#unknownLongString.value.isLong", true),
-        ("#unknownString.value.isLong", false),
-        ("#unknownDouble.value.isDouble", true),
-        ("#unknownDoubleString.value.isDouble", true),
-        ("#unknownString.value.isDouble", false),
-        ("#unknownBigDecimal.value.isBigDecimal", true),
-        ("#unknownBigDecimalString.value.isBigDecimal", true),
-        ("#unknownString.value.isBigDecimal", false),
-        ("#unknownList.value.isList", true),
-        ("#unknownList.value.isMap", false),
-        ("#unknownMap.value.isList", false),
-        ("#unknownMap.value.isMap", true),
-        ("#unknownListOfTuples.value.isList", true),
-        ("#unknownListOfTuples.value.isMap", true),
-        ("#arrayOfUnknown.isList", true),
+        ("#unknownBoolean.value.canBe('Boolean')", true),
+        ("#unknownBooleanString.value.canBe('Boolean')", true),
+        ("#unknownString.value.canBe('Boolean')", false),
+        ("#unknownLong.value.canBe('Byte')", true),
+        ("#unknownLongString.value.canBe('Byte')", true),
+        ("#unknownString.value.canBe('Byte')", false),
+        ("#unknownLong.value.canBe('Short')", true),
+        ("#unknownLongString.value.canBe('Short')", true),
+        ("#unknownString.value.canBe('Short')", false),
+        ("#unknownLong.value.canBe('Integer')", true),
+        ("#unknownLongString.value.canBe('Integer')", true),
+        ("#unknownString.value.canBe('Integer')", false),
+        ("#unknownLong.value.canBe('Long')", true),
+        ("#unknownLongString.value.canBe('Long')", true),
+        ("#unknownString.value.canBe('Long')", false),
+        ("#unknownLong.value.canBe('BigInteger')", true),
+        ("#unknownLongString.value.canBe('BigInteger')", true),
+        ("#unknownString.value.canBe('BigInteger')", false),
+        ("#unknownDouble.value.canBe('Double')", true),
+        ("#unknownDoubleString.value.canBe('Double')", true),
+        ("#unknownString.value.canBe('Double')", false),
+        ("#unknownDouble.value.canBe('Float')", true),
+        ("#unknownDoubleString.value.canBe('Float')", true),
+        ("#unknownString.value.canBe('Float')", false),
+        ("#unknownBigDecimal.value.canBe('BigDecimal')", true),
+        ("#unknownBigDecimalString.value.canBe('BigDecimal')", true),
+        ("#unknownString.value.canBe('BigDecimal')", false),
+        ("#unknownList.value.canBe('List')", true),
+        ("#unknownList.value.canBe('Map')", false),
+        ("#unknownMap.value.canBe('List')", false),
+        ("#unknownMap.value.canBe('Map')", true),
+        ("#unknownListOfTuples.value.canBe('List')", true),
+        ("#unknownListOfTuples.value.canBe('Map')", true),
+        ("#unknownBoolean.value.canBeBoolean", true),
+        ("#unknownBooleanString.value.canBeBoolean", true),
+        ("#unknownString.value.canBeBoolean", false),
+        ("#unknownLong.value.canBeLong", true),
+        ("#unknownLongString.value.canBeLong", true),
+        ("#unknownString.value.canBeLong", false),
+        ("#unknownDouble.value.canBeDouble", true),
+        ("#unknownDoubleString.value.canBeDouble", true),
+        ("#unknownString.value.canBeDouble", false),
+        ("#unknownBigDecimal.value.canBeBigDecimal", true),
+        ("#unknownBigDecimalString.value.canBeBigDecimal", true),
+        ("#unknownString.value.canBeBigDecimal", false),
+        ("#unknownList.value.canBeList", true),
+        ("#unknownList.value.canBeMap", false),
+        ("#unknownMap.value.canBeList", false),
+        ("#unknownMap.value.canBeMap", true),
+        ("#unknownListOfTuples.value.canBeList", true),
+        ("#unknownListOfTuples.value.canBeMap", true),
+        ("#arrayOfUnknown.canBeList", true),
       )
     ) { (expression, result) =>
       evaluate[Any](expression, customCtx) shouldBe result

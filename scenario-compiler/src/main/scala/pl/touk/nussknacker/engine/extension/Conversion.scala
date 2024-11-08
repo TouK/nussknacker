@@ -23,6 +23,10 @@ import scala.reflect.{ClassTag, classTag}
 import scala.util.{Success, Try}
 
 abstract class Conversion[T >: Null <: AnyRef: ClassTag] {
+  private[extension] val numberClass  = classOf[JNumber]
+  private[extension] val stringClass  = classOf[String]
+  private[extension] val unknownClass = classOf[Object]
+
   val resultTypeClass: Class[T]  = classTag[T].runtimeClass.asInstanceOf[Class[T]]
   val typingResult: TypingResult = Typed.typedClass(resultTypeClass)
   val typingFunction: TypingResult => ValidatedNel[GenericFunctionTypingError, TypingResult] =
@@ -34,10 +38,6 @@ abstract class Conversion[T >: Null <: AnyRef: ClassTag] {
 }
 
 abstract class ToNumericConversion[T >: Null <: AnyRef: ClassTag] extends Conversion[T] {
-  private val numberClass  = classOf[JNumber]
-  private val stringClass  = classOf[String]
-  private val unknownClass = classOf[Object]
-
   override def appliesToConversion(clazz: Class[_]): Boolean =
     clazz != resultTypeClass && (clazz.isAOrChildOf(numberClass) || clazz == stringClass || clazz == unknownClass)
 
@@ -80,7 +80,7 @@ object ToBigDecimalConversion extends ToNumericConversion[JBigDecimal] {
 object ToBooleanConversion extends Conversion[JBoolean] {
   private val cannotConvertException = (value: Any) =>
     new IllegalArgumentException(s"Cannot convert: $value to Boolean")
-  private val allowedClassesForConversion: Set[Class[_]] = Set(classOf[String], classOf[Object])
+  private val allowedClassesForConversion: Set[Class[_]] = Set(stringClass, unknownClass)
 
   override def appliesToConversion(clazz: Class[_]): Boolean = allowedClassesForConversion.contains(clazz)
 
@@ -126,12 +126,11 @@ object ToLongConversion extends ToNumericConversion[JLong] {
 }
 
 object ToStringConversion extends Conversion[String] {
-  override def appliesToConversion(clazz: Class[_]): Boolean        = clazz == classOf[Object]
+  override def appliesToConversion(clazz: Class[_]): Boolean        = clazz == unknownClass
   override def convertEither(value: Any): Either[Throwable, String] = Right(value.toString)
 }
 
 abstract class ToCollectionConversion[T >: Null <: AnyRef: ClassTag] extends Conversion[T] {
-  private val unknownClass    = classOf[Object]
   private val collectionClass = classOf[JCollection[_]]
 
   override def appliesToConversion(clazz: Class[_]): Boolean =
@@ -192,4 +191,9 @@ object ToBigIntegerConversion extends ToNumericConversion[JBigInteger] {
     case _              => Left(new IllegalArgumentException(s"Cannot convert: $value to BigInteger"))
   }
 
+}
+
+final class FromStringConversion[T >: Null <: AnyRef: ClassTag](convert: String => T) extends Conversion[T] {
+  override def convertEither(value: Any): Either[Throwable, T] = Try(convert(value.asInstanceOf[String])).toEither
+  override def appliesToConversion(clazz: Class[_]): Boolean   = clazz == stringClass || clazz == unknownClass
 }

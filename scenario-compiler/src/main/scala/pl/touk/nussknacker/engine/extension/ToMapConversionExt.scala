@@ -5,6 +5,7 @@ import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}
+import pl.touk.nussknacker.engine.extension.CastOrConversionExt.{canBeMethodName, orNullSuffix, toMethodName}
 import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 
 import java.lang.{Boolean => JBoolean}
@@ -18,21 +19,21 @@ object ToMapConversionExt extends ConversionExt(ToMapConversion) {
   private val isMapMethodDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => ToMapConversion.typingFunction(invocationTarget).map(_ => booleanTyping),
     signature = MethodTypeInfo.noArgTypeInfo(booleanTyping),
-    name = "isMap",
+    name = s"${canBeMethodName}Map",
     description = Some("Check whether can be convert to a map")
   )
 
   private val toMapDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => ToMapConversion.typingFunction(invocationTarget),
     signature = MethodTypeInfo.noArgTypeInfo(mapTyping),
-    name = "toMap",
+    name = s"${toMethodName}Map",
     description = Option("Convert to a map or throw exception in case of failure")
   )
 
   private val toMapOrNullDefinition = FunctionalMethodDefinition(
     typeFunction = (invocationTarget, _) => ToMapConversion.typingFunction(invocationTarget),
     signature = MethodTypeInfo.noArgTypeInfo(mapTyping),
-    name = "toMapOrNull",
+    name = s"${toMethodName}Map${orNullSuffix}",
     description = Option("Convert to a map or null in case of failure")
   )
 

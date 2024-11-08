@@ -24,7 +24,10 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
-import java.time.{Duration, LocalDateTime}
+import java.nio.charset.Charset
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.util.{Currency, Locale, UUID}
 import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
@@ -801,6 +804,16 @@ class ExpressionSuggesterSpec
       suggestion("String", Typed[java.lang.String]),
       suggestion("List", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
       suggestion("Map", Typed.genericTypeClass[java.util.Map[_, _]](List(Unknown, Unknown))),
+      suggestion("Charset", Typed[Charset]),
+      suggestion("ChronoLocalDate", Typed[ChronoLocalDate]),
+      suggestion("ChronoLocalDateTime", Typed[ChronoLocalDateTime[_]]),
+      suggestion("Currency", Typed[Currency]),
+      suggestion("LocalDate", Typed[LocalDate]),
+      suggestion("LocalTime", Typed[LocalTime]),
+      suggestion("Locale", Typed[Locale]),
+      suggestion("UUID", Typed[UUID]),
+      suggestion("ZoneId", Typed[ZoneId]),
+      suggestion("ZoneOffset", Typed[ZoneOffset]),
     )
   }
 
@@ -815,6 +828,17 @@ class ExpressionSuggesterSpec
       suggestion("Integer", Typed[java.lang.Integer]),
       suggestion("Short", Typed[java.lang.Short]),
       suggestion("Byte", Typed[java.lang.Byte]),
+      suggestion("Charset", Typed[Charset]),
+      suggestion("ChronoLocalDate", Typed[ChronoLocalDate]),
+      suggestion("ChronoLocalDateTime", Typed[ChronoLocalDateTime[_]]),
+      suggestion("Currency", Typed[Currency]),
+      suggestion("LocalDate", Typed[LocalDate]),
+      suggestion("LocalDateTime", Typed[LocalDateTime]),
+      suggestion("LocalTime", Typed[LocalTime]),
+      suggestion("Locale", Typed[Locale]),
+      suggestion("UUID", Typed[UUID]),
+      suggestion("ZoneId", Typed[ZoneId]),
+      suggestion("ZoneOffset", Typed[ZoneOffset]),
     )
   }
 

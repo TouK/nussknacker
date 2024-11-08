@@ -2,16 +2,27 @@ package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
+import org.apache.commons.lang3.LocaleUtils
+import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, FunctionalMethodDefinition, MethodDefinition}
-import pl.touk.nussknacker.engine.extension.CastOrConversionExt.getConversion
+import pl.touk.nussknacker.engine.extension.CastOrConversionExt.{
+  canBeMethodName,
+  getConversion,
+  toMethodName,
+  toOrNullMethodName
+}
 import pl.touk.nussknacker.engine.extension.ExtensionMethod.SingleArg
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
 import java.lang.{Boolean => JBoolean}
+import java.nio.charset.Charset
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.util.{Currency, UUID}
 import scala.util.Try
 
 // todo: lbg - add casting methods to UTIL
@@ -19,12 +30,12 @@ class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
   private val castException = new ClassCastException(s"Cannot cast value to given class")
 
   private val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
-    "is"       -> SingleArg(is),
-    "to"       -> SingleArg(to),
-    "toOrNull" -> SingleArg(toOrNull),
+    canBeMethodName    -> SingleArg(canBe),
+    toMethodName       -> SingleArg(to),
+    toOrNullMethodName -> SingleArg(toOrNull),
   )
 
-  private def is(target: Any, className: String): Boolean =
+  private def canBe(target: Any, className: String): Boolean =
     getClass(className).exists(clazz => clazz.isAssignableFrom(target.getClass)) ||
       getConversion(className).exists(_.canConvert(target))
 
@@ -60,11 +71,12 @@ class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
 }
 
 object CastOrConversionExt extends ExtensionMethodsDefinition {
-  private[extension] val isMethodName       = "is"
-  private[extension] val toMethodName       = "to"
-  private[extension] val toOrNullMethodName = "toOrNull"
-  private val castOrConversionMethods       = Set(isMethodName, toMethodName, toOrNullMethodName)
   private val stringClass                   = classOf[String]
+  private[extension] val canBeMethodName    = "canBe"
+  private[extension] val toMethodName       = "to"
+  private[extension] val orNullSuffix       = "OrNull"
+  private[extension] val toOrNullMethodName = toMethodName + orNullSuffix
+  private val castOrConversionMethods       = Set(canBeMethodName, toMethodName, toOrNullMethodName)
 
   private val conversionsRegistry: List[Conversion[_ >: Null <: AnyRef]] = List(
     ToLongConversion,
@@ -79,6 +91,23 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
     ToIntegerConversion,
     ToFloatConversion,
     ToBigIntegerConversion,
+    new FromStringConversion(ZoneOffset.of),
+    new FromStringConversion(ZoneId.of),
+    new FromStringConversion((source: String) => {
+      val locale = StringUtils.parseLocale(source)
+      assert(LocaleUtils.isAvailableLocale(locale)) // without this check even "qwerty" is considered a Locale
+      locale
+    }),
+    new FromStringConversion(Charset.forName),
+    new FromStringConversion(Currency.getInstance),
+    new FromStringConversion[UUID]((source: String) =>
+      if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null
+    ),
+    new FromStringConversion(LocalTime.parse),
+    new FromStringConversion(LocalDate.parse),
+    new FromStringConversion(LocalDateTime.parse),
+    new FromStringConversion[ChronoLocalDate](LocalDate.parse),
+    new FromStringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
   )
 
   private val conversionsByType: Map[String, Conversion[_ >: Null <: AnyRef]] = conversionsRegistry
@@ -124,19 +153,19 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
       FunctionalMethodDefinition(
         (target, params) => canConvertToTyping(allowedClasses)(target, params),
         methodTypeInfoWithStringParam(Typed.typedClass[JBoolean]),
-        "is",
+        canBeMethodName,
         Some("Checks if a type can be converted to a given class")
       ),
       FunctionalMethodDefinition(
         (target, params) => convertToTyping(allowedClasses)(target, params),
         methodTypeInfoWithStringParam(Unknown),
-        "to",
+        toMethodName,
         Some("Converts a type to a given class or throws exception if type cannot be converted.")
       ),
       FunctionalMethodDefinition(
         (target, params) => convertToTyping(allowedClasses)(target, params),
         methodTypeInfoWithStringParam(Unknown),
-        "toOrNull",
+        toOrNullMethodName,
         Some("Converts a type to a given class or return null if type cannot be converted.")
       ),
     ).groupBy(_.name)
