@@ -8,7 +8,7 @@ import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName, getProcessVersionId, getScenario, isSaveDisabled } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
-import { displayScenarioVersion } from "../../../../actions/nk";
+import { displayScenarioVersion, fetchStickyNotesForScenario } from "../../../../actions/nk";
 import { ItemActivity } from "../ActivitiesPanel";
 import { handleOpenCompareVersionDialog } from "../../../modals/CompareVersionsDialog";
 import { getHeaderColors } from "../helpers/activityItemColors";
