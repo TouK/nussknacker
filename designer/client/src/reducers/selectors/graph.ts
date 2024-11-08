@@ -8,6 +8,7 @@ import { ProcessCounts } from "../graph";
 import { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
 import { TestFormParameters } from "../../common/TestResultUtils";
+import { StickyNote } from "../../common/StickyNote";
 
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
@@ -70,6 +71,7 @@ export const getTestParameters = createSelector(getGraph, (g) => g.testFormParam
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);
 export const getProcessCountsRefresh = createSelector(getGraph, (g) => g.processCountsRefresh || null);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
+export const getStickyNotes = createSelector(getGraph, (g) => g.stickyNotes || ([] as StickyNote[]));
 export const getShowRunProcessDetails = createSelector(
     [getTestResults, getProcessCounts],
     (testResults, processCounts) => testResults || processCounts,
