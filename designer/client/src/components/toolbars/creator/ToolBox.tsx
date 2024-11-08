@@ -12,7 +12,7 @@ import { lighten, styled } from "@mui/material";
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getLuminance } from "@mui/system/colorManipulator";
 
-const StyledToolbox = styled("div")(({ theme }) => ({
+export const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",
     fontWeight: "600",
     padding: 0,

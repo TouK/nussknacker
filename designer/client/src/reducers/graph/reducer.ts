@@ -9,10 +9,12 @@ import { mergeReducers } from "../mergeReducers";
 import { GraphState } from "./types";
 import {
     addNodesWithLayout,
+    addStickyNotesWithLayout,
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
     prepareNewNodesWithLayout,
+    prepareNewStickyNotesWithLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -241,6 +243,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...addNodesWithLayout(state, { nodes, layout }),
                 selectionState: uniqueIds,
+            };
+        }
+        case "STICKY_NOTES_UPDATED": {
+            const { stickyNotes, layout } = prepareNewStickyNotesWithLayout(state, action.stickyNotes);
+            return {
+                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
             };
         }
         case "NODES_WITH_EDGES_ADDED": {
