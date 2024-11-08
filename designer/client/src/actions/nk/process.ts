@@ -6,6 +6,10 @@ import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
+import { layoutChanged, Position } from "./ui/layout";
+import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
+import { flushSync } from "react-dom";
+import { StickyNote } from "../../common/StickyNote";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
@@ -17,6 +21,7 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
             dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
+            dispatch(fetchStickyNotesForScenario(processName, response.data.processVersionId));
             dispatch({
                 type: "DISPLAY_PROCESS",
                 scenario: response.data,
@@ -54,6 +59,42 @@ export function displayTestCapabilities(processName: ProcessName, scenarioGraph:
                 capabilities: data,
             }),
         );
+}
+
+export function fetchStickyNotesForScenario(scenarioName: string, scenarioVersionId: number): ThunkAction {
+    return (dispatch) => {
+        HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
+            dispatch({ type: "STICKY_NOTES_UPDATED", stickyNotes: stickyNotes.data });
+        });
+    };
+}
+
+export function stickyNoteUpdated(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote): ThunkAction {
+    return (dispatch) => {
+        HttpService.updateStickyNote(scenarioName, scenarioVersionId, stickyNote).then((_) => {
+            HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
+                flushSync(() => {
+                    dispatch({ type: "STICKY_NOTES_UPDATED", stickyNotes: stickyNotes.data });
+                    dispatch(layoutChanged());
+                });
+            });
+        });
+        batchGroupBy.end();
+    };
+}
+
+export function stickyNoteAdded(scenarioName: string, scenarioVersionId: number, position: Position): ThunkAction {
+    return (dispatch) => {
+        HttpService.addStickyNote(scenarioName, scenarioVersionId, position).then((_) => {
+            HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
+                flushSync(() => {
+                    dispatch({ type: "STICKY_NOTES_UPDATED", stickyNotes: stickyNotes.data });
+                    dispatch(layoutChanged());
+                });
+            });
+        });
+        batchGroupBy.end();
+    };
 }
 
 export function displayCurrentProcessVersion(processName: ProcessName) {

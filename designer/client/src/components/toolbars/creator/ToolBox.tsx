@@ -11,7 +11,7 @@ import { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
-const StyledToolbox = styled("div")(({ theme }) => ({
+export const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",
     fontWeight: "600",
     padding: 0,

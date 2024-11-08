@@ -59,7 +59,7 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
                   summary = Some("List of valid sticky notes returned for scenario"),
                   value = List(
                     exampleStickyNote,
-                    exampleStickyNote.copy(id = StickyNoteId(2))
+                    exampleStickyNote.copy(noteId = StickyNoteId(2))
                   )
                 ) // TODO example of errors
               )

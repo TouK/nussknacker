@@ -4,7 +4,7 @@ import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
 import { UseTranslationResponse } from "react-i18next";
-import { Layout, NodePosition, Position } from "../../actions/nk";
+import { Layout, NodePosition, Position, stickyNoteUpdated } from "../../actions/nk";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
@@ -12,13 +12,13 @@ import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../.
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { UserSettings } from "../../reducers/userSettings";
-import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { Edge, LayoutData, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
+import { applyCellChanges, calcLayout, createPaper, isModelElement, isStickyNoteElement } from "./GraphPartialsInTS";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
@@ -39,6 +39,7 @@ import { Events, GraphProps } from "./types";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
+import { StickyNote } from "../../common/StickyNote";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -212,6 +213,16 @@ export class Graph extends React.Component<Props> {
                     this.handleInjectBetweenNodes(cell.model, linkBelowCell);
                     batchGroupBy.end(group);
                 }
+                if (isStickyNoteElement(cell.model)) {
+                    const position = cell.model.get("position");
+                    const noteId = cell.model.get("noteId");
+                    const stickyNote = this.props.stickyNotes.find((a) => a.noteId == noteId);
+                    console.log(noteId);
+                    console.log(this.props.stickyNotes);
+                    const updatedStickyNote = cloneDeep(stickyNote);
+                    updatedStickyNote.layoutData = { x: position.x, y: position.y };
+                    this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
+                }
             })
             .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
                 if (this.props.isFragment === true) return;
@@ -236,12 +247,17 @@ export class Graph extends React.Component<Props> {
         return linkBelowCell;
     }
 
-    drawGraph = (scenarioGraph: ScenarioGraph, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
+    drawGraph = (
+        scenarioGraph: ScenarioGraph,
+        stickyNotes: StickyNote[],
+        layout: Layout,
+        processDefinitionData: ProcessDefinitionData,
+    ): void => {
         const { theme } = this.props;
 
         this.redrawing = true;
 
-        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme);
+        applyCellChanges(this.processGraphPaper, scenarioGraph, stickyNotes, processDefinitionData, theme);
 
         if (isEmpty(layout)) {
             this.forceLayout();
@@ -370,7 +386,7 @@ export class Graph extends React.Component<Props> {
 
     componentDidMount(): void {
         this.processGraphPaper = this.createPaper();
-        this.drawGraph(this.props.scenario.scenarioGraph, this.props.layout, this.props.processDefinitionData);
+        this.drawGraph(this.props.scenario.scenarioGraph, this.props.stickyNotes, this.props.layout, this.props.processDefinitionData);
         this.processGraphPaper.unfreeze();
         this._prepareContentForExport();
 
@@ -436,6 +452,22 @@ export class Graph extends React.Component<Props> {
         }
     }
 
+    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position): void {
+        if (this.props.isFragment === true) return;
+        const canAddStickyNote = this.props.capabilities.editFrontend;
+        if (canAddStickyNote) {
+            this.props.stickyNoteAdded(scenarioName, scenarioVersionId, position);
+        }
+    }
+
+    updateStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote): void {
+        if (this.props.isFragment === true) return;
+        const canUpdateStickyNote = this.props.capabilities.editFrontend;
+        if (canUpdateStickyNote) {
+            this.props.stickyNoteUpdated(scenarioName, scenarioVersionId, stickyNote);
+        }
+    }
+
     // eslint-disable-next-line react/no-deprecated
     componentWillUpdate(nextProps: Props): void {
         const processChanged =
@@ -444,7 +476,7 @@ export class Graph extends React.Component<Props> {
             !isEqual(this.props.layout, nextProps.layout) ||
             !isEqual(this.props.processDefinitionData, nextProps.processDefinitionData);
         if (processChanged) {
-            this.drawGraph(nextProps.scenario.scenarioGraph, nextProps.layout, nextProps.processDefinitionData);
+            this.drawGraph(nextProps.scenario.scenarioGraph, nextProps.stickyNotes, nextProps.layout, nextProps.processDefinitionData);
         }
 
         //when e.g. layout changed we have to remember to highlight nodes

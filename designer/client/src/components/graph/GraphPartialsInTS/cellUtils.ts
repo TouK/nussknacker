@@ -7,6 +7,10 @@ export function isModelElement(el: dia.Cell): el is shapes.devs.Model {
     return el instanceof shapes.devs.Model;
 }
 
+export function isStickyNoteElement(el: dia.Cell) {
+    return isModelElement(el) && el.get("type") === `stickyNote.Model`;
+}
+
 export function isConnected(el: dia.Element): boolean {
     return el.graph.getNeighbors(el).length > 0;
 }

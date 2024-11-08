@@ -36,7 +36,7 @@ object Dtos {
 
   @derive(encoder, decoder, schema)
   case class StickyNote(
-      id: StickyNoteId,
+      noteId: StickyNoteId,
       content: String,
       layoutData: LayoutData,
       color: String,
@@ -56,7 +56,7 @@ object Dtos {
 
   @derive(encoder, decoder, schema)
   case class StickyNoteUpdateRequest(
-      id: StickyNoteId,
+      noteId: StickyNoteId,
       scenarioVersionId: VersionId,
       content: String,
       layoutData: LayoutData,

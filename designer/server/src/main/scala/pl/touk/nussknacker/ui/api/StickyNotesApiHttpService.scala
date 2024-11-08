@@ -156,7 +156,7 @@ class StickyNotesApiHttpService(
       .right(
         dbioActionRunner.run(
           stickyNotesRepository.updateStickyNote(
-            requestBody.id,
+            requestBody.noteId,
             requestBody.content,
             requestBody.layoutData,
             requestBody.color,
