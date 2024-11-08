@@ -7,10 +7,13 @@ import {
     nodesConnected,
     nodesDisconnected,
     resetSelection,
+    stickyNoteAdded,
+    stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
 import { Capabilities } from "../../reducers/selectors/other";
 import { Scenario } from "../Process/types";
+import { StickyNote } from "../../common/StickyNote";
 
 type ScenarioGraphProps = {
     nodesConnected: typeof nodesConnected;
@@ -18,9 +21,12 @@ type ScenarioGraphProps = {
     layoutChanged: typeof layoutChanged;
     injectNode: typeof injectNode;
     nodeAdded: typeof nodeAdded;
+    stickyNoteAdded: typeof stickyNoteAdded;
+    stickyNoteUpdated: typeof stickyNoteUpdated;
     resetSelection: typeof resetSelection;
     toggleSelection: typeof toggleSelection;
 
+    stickyNotes: StickyNote[];
     scenario: Scenario;
     divId: string;
     nodeIdPrefixForFragmentTests?: string;
@@ -38,6 +44,7 @@ type ScenarioGraphProps = {
 
 type FragmentGraphProps = {
     scenario: Scenario;
+    stickyNotes: StickyNote[];
     divId: string;
     nodeIdPrefixForFragmentTests: string;
     processCounts: ProcessCounts;

@@ -31,6 +31,7 @@ object ToolbarPanelTypeConfig extends Enumeration {
 
   val SearchPanel: Value         = Value("search-panel")
   val TipsPanel: Value           = Value("tips-panel")
+  val StickyNotesPanel: Value    = Value("sticky-notes-panel")
   val CreatorPanel: Value        = Value("creator-panel")
   val ProcessInfoPanel: Value    = Value("process-info-panel")
   val ProcessActionsPanel: Value = Value("process-actions-panel")
