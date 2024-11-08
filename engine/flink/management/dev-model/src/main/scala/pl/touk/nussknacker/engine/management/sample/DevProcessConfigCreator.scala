@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.sample
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
+import com.github.ghik.silencer.silent
 import io.circe.parser.decode
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
@@ -58,6 +59,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def all[T](value: T): WithCategories[T] =
     WithCategories(value, "Category1", "Category2", "DevelopmentTests", "Periodic")
 
+  @silent("deprecated")
   override def sinkFactories(
       modelDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = {

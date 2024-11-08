@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
@@ -55,6 +56,7 @@ class FlinkKafkaUniversalSink(
     ds.flatMap(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value), typeInfo)
   }
 
+  @silent("deprecated")
   private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] = {
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared, serializationSchema, clientId)
   }

@@ -280,8 +280,8 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                = "1.19.1"
-val flinkConnectorKafkaV  = "3.2.0-1.19"
+val flinkV                = "1.20.0"
+val flinkConnectorKafkaV  = "3.3.0-1.20"
 val flinkCommonsCompressV = "1.26.0"
 val flinkCommonsLang3V    = "3.12.0"
 val flinkCommonsTextV     = "1.10.0"
@@ -297,7 +297,7 @@ val scalaCheckVshort      = scalaCheckV.take(4).replace(".", "-")
 val scalaTestPlusV        =
   "3.2.18.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
-val logbackV                = "1.2.13"
+val logbackV                = "1.5.12"
 // this is used in cloud, official JsonEncoder uses different field layout
 val logbackJsonV            = "0.1.5"
 val betterFilesV            = "3.9.2"
@@ -309,7 +309,7 @@ val jacksonV                = "2.17.2"
 val catsV                   = "2.12.0"
 val catsEffectV             = "3.5.4"
 val everitSchemaV           = "1.14.4"
-val slf4jV                  = "1.7.36"
+val slf4jV                  = "2.0.16"
 val scalaLoggingV           = "3.9.5"
 val scalaCompatV            = "1.0.2"
 val ficusV                  = "1.4.7"
