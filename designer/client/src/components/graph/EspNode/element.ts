@@ -3,7 +3,7 @@ import { attributes, dia, shapes } from "jointjs";
 import { cloneDeepWith, isEmpty, toString } from "lodash";
 import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
 import { NodeType, ProcessDefinitionData } from "../../../types";
-import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
+import { getComponentIconSrc, getStickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 import { setLinksHovered } from "../utils/dragHelpers";
 import { isConnected, isModelElement } from "../GraphPartialsInTS";
 import { Events } from "../types";
@@ -13,7 +13,10 @@ import millify from "millify";
 import { UserSettings } from "../../../reducers/userSettings";
 import { Theme } from "@mui/material";
 import { blend } from "@mui/system";
-import { blendLighten, getNodeBorderColor } from "../../../containers/theme/helpers";
+import { blendLighten, getNodeBorderColor, getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
+import { StickyNote } from "../../../common/StickyNote";
+import { StickyNoteShape } from "./stickyNote";
+import { StickyNoteType } from "../../../types/stickyNote";
 
 const maxLineLength = 24;
 const maxLineCount = 2;
@@ -113,6 +116,62 @@ export const updateNodeCounts =
         };
         node.attr({ testResultsSummary, testResults });
     };
+
+export function makeStickyNoteElement(
+    processDefinitionData: ProcessDefinitionData,
+    theme: Theme,
+): (stickyNote: StickyNote) => shapes.devs.Model {
+    return (stickyNote: StickyNote) => {
+        const iconHref = getStickyNoteIcon();
+
+        const attributes: shapes.devs.ModelAttributes = {
+            id: StickyNoteType + "_" + stickyNote.noteId,
+            noteId: stickyNote.noteId,
+            attrs: {
+                background: {
+                    fill: blendLighten(getStickyNoteBackgroundColor(theme, stickyNote.color), 0.04),
+                    opacity: 1,
+                },
+                iconBackground: {
+                    fill: getStickyNoteBackgroundColor(theme, stickyNote.color), //TODO is it ok? Dont think so.. :/
+                    opacity: 1,
+                },
+                icon: {
+                    xlinkHref: iconHref,
+                    opacity: 1,
+                },
+                content: {
+                    fontSize: theme.typography.body1.fontSize,
+                    text: stickyNote.content + "TODO, dont forget to do it",
+                    opacity: 1,
+                    disabled: false,
+                    fill: theme.palette.text.primary,
+                },
+                border: {
+                    stroke: getNodeBorderColor(theme),
+                    strokeWidth: 1,
+                },
+            },
+            rankDir: "R",
+        };
+
+        const ThemedStickyNoteShape = StickyNoteShape(theme, stickyNote);
+        const element = new ThemedStickyNoteShape(attributes);
+
+        element.once(Events.ADD, (e: dia.Element) => {
+            // add event listeners after element setup
+            setTimeout(() => {
+                e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
+                    if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
+                        setLinksHovered(el.graph, el.getBBox());
+                    }
+                });
+            });
+        });
+
+        return element;
+    };
+}
 
 export function makeElement(processDefinitionData: ProcessDefinitionData, theme: Theme): (node: NodeType) => shapes.devs.Model {
     return (node: NodeType) => {
