@@ -12,7 +12,7 @@ import { getProcessName } from "../../reducers/selectors/graph";
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
 import { ModifyActivityCommentMeta } from "../toolbars/activities/types";
 
-const ModifyExistingCommentDialog = (props: WindowContentProps<number, ModifyActivityCommentMeta>) => {
+const ModifyActivityCommentDialog = (props: WindowContentProps<number, ModifyActivityCommentMeta>) => {
     const meta = props.data.meta;
     const [comment, setState] = useState(meta.existingComment);
     const { t } = useTranslation();
@@ -35,9 +35,9 @@ const ModifyExistingCommentDialog = (props: WindowContentProps<number, ModifyAct
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.modify", "Modify"), action: () => confirmAction() },
+            { title: meta.confirmButtonText, action: () => confirmAction() },
         ],
-        [confirmAction, props, t],
+        [confirmAction, meta.confirmButtonText, props, t],
     );
 
     return (
@@ -65,4 +65,4 @@ const ModifyExistingCommentDialog = (props: WindowContentProps<number, ModifyAct
     );
 };
 
-export default ModifyExistingCommentDialog;
+export default ModifyActivityCommentDialog;
