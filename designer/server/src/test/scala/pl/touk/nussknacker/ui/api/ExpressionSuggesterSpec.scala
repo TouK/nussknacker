@@ -119,7 +119,7 @@ class ExpressionSuggesterSpec
       ),
       ClassDefinition(
         Unknown,
-        Map("is" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "is", None))),
+        Map("canBe" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "canBe", None))),
         Map.empty
       ),
     )
@@ -778,7 +778,7 @@ class ExpressionSuggesterSpec
 
   test("should suggest methods for unknown") {
     spelSuggestionsFor("#unknown.") shouldBe List(
-      suggestion("is", Typed[Boolean]),
+      suggestion("canBe", Typed[Boolean]),
     )
   }
 
