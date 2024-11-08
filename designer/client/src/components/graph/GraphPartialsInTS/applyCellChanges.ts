@@ -7,22 +7,25 @@ import NodeUtils from "../NodeUtils";
 import { isEdgeConnected } from "./EdgeUtils";
 import { updateChangedCells } from "./updateChangedCells";
 import { Theme } from "@mui/material";
+import { StickyNote } from "../../../common/StickyNote";
+import { makeStickyNoteElement } from "../EspNode/element";
 
 export function applyCellChanges(
     paper: dia.Paper,
     scenarioGraph: ScenarioGraph,
+    stickyNotes: StickyNote[],
     processDefinitionData: ProcessDefinitionData,
     theme: Theme,
 ): void {
     const graph = paper.model;
 
     const nodeElements = NodeUtils.nodesFromScenarioGraph(scenarioGraph).map(makeElement(processDefinitionData, theme));
-
+    const stickyNotesElements = stickyNotes.map(makeStickyNoteElement(processDefinitionData, theme));
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
     const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: ++i })));
     const edgeElements = indexed.filter(isEdgeConnected).map((value) => makeLink(value, paper, theme));
 
-    const cells = [...nodeElements, ...edgeElements];
+    const cells = [...nodeElements, ...edgeElements, ...stickyNotesElements];
 
     const currentCells = graph.getCells();
     const currentIds = currentCells.map((c) => c.id);

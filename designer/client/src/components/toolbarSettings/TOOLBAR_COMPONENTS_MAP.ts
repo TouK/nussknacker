@@ -8,6 +8,7 @@ import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
 import { SearchPanel } from "../toolbars/search/SearchPanel";
 import { ActivitiesPanel } from "../toolbars/activities";
+import { StickyNotesPanel } from "../stickyNotes/StickyNotesPanel";
 
 export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelProps>> = {
     DefaultPanel: DefaultToolbarPanel,
@@ -17,6 +18,7 @@ export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelPr
     "process-actions-panel": ProcessActions,
     // no buttons at all
     "tips-panel": TipsPanel,
+    "sticky-notes-panel": StickyNotesPanel,
     "creator-panel": CreatorPanel,
     "search-panel": SearchPanel,
     "user-settings-panel": UserSettingsPanel,
