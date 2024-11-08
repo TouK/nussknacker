@@ -14,3 +14,13 @@ export function getNodeBorderColor(theme: Theme) {
         ? blendDarken(theme.palette.background.paper, 0.4)
         : blendLighten(theme.palette.background.paper, 0.6);
 }
+
+export function getStickyNoteBackgroundColor(theme: Theme, color: string) {
+    const isValidColor = CSS.supports("color", color);
+    const stickyNoteColor = theme.palette.augmentColor({
+        color: {
+            main: isValidColor ? color : "#ffff4a",
+        },
+    });
+    return getLuminance(stickyNoteColor.main) > 0.5 ? stickyNoteColor.dark : stickyNoteColor.light;
+}

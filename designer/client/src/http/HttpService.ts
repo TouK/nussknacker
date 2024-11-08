@@ -3,7 +3,7 @@ import { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
-import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import { Position, ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
 import { GenericValidationRequest, TestAdhocValidationRequest } from "../actions/nk/adhocTesting";
 import api from "../api";
 import { UserData } from "../common/models/User";
@@ -33,9 +33,10 @@ import { EventTrackingSelectorType, EventTrackingType } from "../containers/even
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, LayoutData, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
+import { StickyNote } from "../common/StickyNote";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -672,6 +673,54 @@ class HttpService {
             .catch((error) =>
                 this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error, true),
             );
+        return promise;
+    }
+
+    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position) {
+        const promise = api.put(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
+            scenarioVersionId,
+            content: "",
+            layoutData: position,
+            color: "#ffff00", //TODO
+        });
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToAddStickyNote", "Failed to add sticky note to scenario"), error, true),
+        );
+        return promise;
+    }
+
+    deleteStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote) {
+        const promise = api.delete(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes/${stickyNote.noteId}`);
+        promise.catch((error) =>
+            this.#addError(
+                i18next.t("notification.error.failedToAddStickyNote", `Failed to delete sticky note with id: ${stickyNote.noteId}`),
+                error,
+                true,
+            ),
+        );
+        return promise;
+    }
+
+    updateStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote) {
+        const promise = api.post(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
+            noteId: stickyNote.noteId,
+            scenarioVersionId,
+            content: stickyNote.content,
+            layoutData: stickyNote.layoutData,
+            color: stickyNote.color,
+            dimensions: stickyNote.dimensions,
+        });
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToAddStickyNote", "Failed to update sticky note for scenario"), error, true),
+        );
+        return promise;
+    }
+
+    getStickyNotes(scenarioName: string, scenarioVersionId: number): Promise<AxiosResponse<StickyNote[]>> {
+        const promise = api.get(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes?scenarioVersionId=${scenarioVersionId}`);
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToGetStickyNotes", "Failed to get sticky notes"), error, true),
+        );
         return promise;
     }
 
