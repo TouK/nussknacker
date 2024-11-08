@@ -16,9 +16,11 @@ import { selectionState } from "./selectionState";
 import { GraphState } from "./types";
 import {
     addNodesWithLayout,
+    addStickyNotesWithLayout,
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
+    prepareNewStickyNotesWithLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -237,6 +239,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 nodes: action.nodes,
                 layout: action.layout,
             });
+        }
+        case "STICKY_NOTES_UPDATED": {
+            const { stickyNotes, layout } = prepareNewStickyNotesWithLayout(state, action.stickyNotes);
+            return {
+                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+            };
         }
         case "NODES_WITH_EDGES_ADDED": {
             const { nodes, layout, idMapping, processDefinitionData, edges } = action;

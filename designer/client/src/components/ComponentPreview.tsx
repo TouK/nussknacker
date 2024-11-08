@@ -7,6 +7,8 @@ import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
 import { alpha, styled, useTheme } from "@mui/material";
 import { blend } from "@mui/system";
 import { blendLighten, getBorderColor } from "../containers/theme/helpers";
+import { StickyNotePreview } from "./StickyNotePreview";
+import { StickyNoteType } from "../types/stickyNote";
 
 export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
     const theme = useTheme();
@@ -74,18 +76,20 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     }));
 
     const colors = isOver ? nodeColorsHover : nodeColors;
-    return (
-        <div className={cx(colors, nodeStyles)}>
-            <div className={cx(imageStyles, imageColors)}>
-                <ComponentIcon node={node} />
+    if (node?.type === StickyNoteType) return <StickyNotePreview node={node} isActive={isActive} isOver={isOver} />;
+    else
+        return (
+            <div className={cx(colors, nodeStyles)}>
+                <div className={cx(imageStyles, imageColors)}>
+                    <ComponentIcon node={node} />
+                </div>
+                <ContentStyled>
+                    <span>{node?.id}</span>
+                    {NodeUtils.hasInputs(node) && <Port className={cx(css({ top: 0, transform: "translateY(-50%)" }), colors)} />}
+                    {NodeUtils.hasOutputs(node) && <Port className={cx(css({ bottom: 0, transform: "translateY(50%)" }), colors)} />}
+                </ContentStyled>
             </div>
-            <ContentStyled>
-                <span>{node?.id}</span>
-                {NodeUtils.hasInputs(node) && <Port className={cx(css({ top: 0, transform: "translateY(-50%)" }), colors)} />}
-                {NodeUtils.hasOutputs(node) && <Port className={cx(css({ bottom: 0, transform: "translateY(50%)" }), colors)} />}
-            </ContentStyled>
-        </div>
-    );
+        );
 }
 
 const Port = ({ className }: { className?: string }) => {
