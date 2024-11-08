@@ -4,7 +4,19 @@
 
 #### Highlights
 
-(Not available yet)
+##### End-user
+
+* New Activities panel, replacing Versions, Comments and Attachments panels. Now you can browse all scenario activities on one chronological list.
+* Added scenario labels. You can now organize your scenarios and find different groups of scenarios more easily.
+* SpEL: added navigation through fields inside variables typed as Unknown. You can now access the data inside a variable, even if Nussknacker doesn't know its exact type during scenario authoring.
+* SpEL: added conversion methods to cast or convert between data types (e.g. `String` to `Integer`).
+* SpEL: various enhancements, like `#CONV.toJson` and `#CONV.toJsonString` methods, new `#BASE64` helper, possibility to treat arrays as lists, and more.
+* Various UX improvements, including new UI for aggregation definitions and better validation handling in ad-hoc tests.
+
+##### Administrator
+
+* Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
+* Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
 ### 1.18.0 (Not released yet)
 
