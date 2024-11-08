@@ -105,15 +105,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val ctx = Context("abc").withVariables(
     Map(
-      "obj"            -> testValue,
-      "strVal"         -> "",
-      "mapValue"       -> Map("foo" -> "bar").asJava,
-      "array"          -> Array("a", "b"),
-      "intArray"       -> Array(1, 2, 3),
-      "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
-      "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"  -> ContainerOfUnknown("unknown"),
-      "setVal"         -> Set("a").asJava,
+      "obj"                                         -> testValue,
+      "strVal"                                      -> "",
+      "mapValue"                                    -> Map("foo" -> "bar").asJava,
+      "array"                                       -> Array("a", "b"),
+      "intArray"                                    -> Array(1, 2, 3),
+      "nestedArray"                                 -> Array(Array(1, 2), Array(3, 4)),
+      "arrayOfUnknown"                              -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"                               -> ContainerOfUnknown("unknown"),
+      "setVal"                                      -> Set("a").asJava,
       "containerWithUnknownObject"                  -> ContainerOfUnknown(SampleValue(1)),
       "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticParameterlessMethod()),
       "containerWithUnknownClassWithStaticMethods" -> ContainerOfUnknown(
@@ -1398,17 +1398,33 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should not validate array constructor") {
+  test("should not allow array constructor") {
     List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
       illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
     )
   }
 
-  test("indexing on maps and lists should validate nodes inside indexer") {
+  test("indexing on maps and lists should validate expression inside indexer") {
     List("#processHelper.stringOnStringMap[#invalidRef]", "{1,2,3}[#invalidRef]").map(expr =>
       parse[Any](expr, ctxWithGlobal).invalidValue shouldBe NonEmptyList.one(
         UnresolvedReferenceError("invalidRef")
       )
+    )
+  }
+
+  test("indexing on unknown should validate expression inside indexer") {
+    parse[Any]("#unknownString.value[#invalidRef]", ctx).invalidValue shouldBe NonEmptyList.one(
+      UnresolvedReferenceError("invalidRef")
+    )
+  }
+
+  test("indexing on class should validate expression inside indexer") {
+    parse[Any](
+      "T(java.time.LocalDate)[#invalidRef]",
+      ctx,
+      dynamicPropertyAccessAllowed = true
+    ).invalidValue shouldBe NonEmptyList.one(
+      UnresolvedReferenceError("invalidRef")
     )
   }
 
@@ -1602,17 +1618,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       Table(
         ("expression", "expectedType", "expectedResult"),
         (
-          "#stringMap.![{key: #this.key + '_k', value: #this.value + '_v'}].toMap()",
+          "#stringMap.![{key: #this.key + '_k', value: #this.value + '_v'}].toMap",
           mapStringStringType,
           Map("foo_k" -> "bar_v", "baz_k" -> "qux_v").asJava
         ),
         (
-          "#mapWithDifferentValueTypes.![{key: #this.key, value: #this.value}].toMap()",
+          "#mapWithDifferentValueTypes.![{key: #this.key, value: #this.value}].toMap",
           mapStringUnknownType,
           mapWithDifferentValueTypes
         ),
         (
-          "#nullableMap.![{key: #this.key, value: #this.value}].toMap()",
+          "#nullableMap.![{key: #this.key, value: #this.value}].toMap",
           mapStringStringType,
           nullableMap
         )
@@ -1856,25 +1872,25 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownMap.value.is('Map')", true),
         ("#unknownListOfTuples.value.is('List')", true),
         ("#unknownListOfTuples.value.is('Map')", true),
-        ("#unknownBoolean.value.isBoolean()", true),
-        ("#unknownBooleanString.value.isBoolean()", true),
-        ("#unknownString.value.isBoolean()", false),
-        ("#unknownLong.value.isLong()", true),
-        ("#unknownLongString.value.isLong()", true),
-        ("#unknownString.value.isLong()", false),
-        ("#unknownDouble.value.isDouble()", true),
-        ("#unknownDoubleString.value.isDouble()", true),
-        ("#unknownString.value.isDouble()", false),
-        ("#unknownBigDecimal.value.isBigDecimal()", true),
-        ("#unknownBigDecimalString.value.isBigDecimal()", true),
-        ("#unknownString.value.isBigDecimal()", false),
-        ("#unknownList.value.isList()", true),
-        ("#unknownList.value.isMap()", false),
-        ("#unknownMap.value.isList()", false),
-        ("#unknownMap.value.isMap()", true),
-        ("#unknownListOfTuples.value.isList()", true),
-        ("#unknownListOfTuples.value.isMap()", true),
-        ("#arrayOfUnknown.isList()", true),
+        ("#unknownBoolean.value.isBoolean", true),
+        ("#unknownBooleanString.value.isBoolean", true),
+        ("#unknownString.value.isBoolean", false),
+        ("#unknownLong.value.isLong", true),
+        ("#unknownLongString.value.isLong", true),
+        ("#unknownString.value.isLong", false),
+        ("#unknownDouble.value.isDouble", true),
+        ("#unknownDoubleString.value.isDouble", true),
+        ("#unknownString.value.isDouble", false),
+        ("#unknownBigDecimal.value.isBigDecimal", true),
+        ("#unknownBigDecimalString.value.isBigDecimal", true),
+        ("#unknownString.value.isBigDecimal", false),
+        ("#unknownList.value.isList", true),
+        ("#unknownList.value.isMap", false),
+        ("#unknownMap.value.isList", false),
+        ("#unknownMap.value.isMap", true),
+        ("#unknownListOfTuples.value.isList", true),
+        ("#unknownListOfTuples.value.isMap", true),
+        ("#arrayOfUnknown.isList", true),
       )
     ) { (expression, result) =>
       evaluate[Any](expression, customCtx) shouldBe result
@@ -1915,6 +1931,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val parsed = parse[Any]("#setVal.toList()", ctx).validValue
     parsed.returnType shouldBe Typed.genericTypeClass[JList[_]](List(Typed.typedClass[String]))
     parsed.evaluateSync[Any](ctx) shouldBe List("a").asJava
+  }
+
+  test("should allow use no param method property accessor on unknown") {
+    val customCtx = ctx.withVariable("unknownInt", ContainerOfUnknown("11"))
+    val parsed    = parse[Any]("#unknownInt.value.toLongOrNull", customCtx).validValue
+    parsed.evaluateSync[Any](customCtx) shouldBe 11
+    parsed.evaluateSync[Any](customCtx) shouldBe 11
   }
 
 }
