@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.sink
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.process.SinkFactory
@@ -16,6 +17,7 @@ object SingleValueSinkFactory {
   final val SingleValueParamName = "Value"
 }
 
+@silent("deprecated")
 class SingleValueSinkFactory[T <: AnyRef](sink: => SinkFunction[T]) extends SinkFactory with Serializable {
 
   @MethodToInvoke
