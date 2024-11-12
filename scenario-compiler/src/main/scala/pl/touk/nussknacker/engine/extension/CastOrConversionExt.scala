@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.extension
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectWithValue, TypingResult, Unknown}
@@ -16,10 +15,10 @@ import java.lang.{Boolean => JBoolean}
 import scala.util.Try
 
 // todo: lbg - add casting methods to UTIL
-class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) extends ExtensionMethodHandler with LazyLogging {
+class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) extends ExtensionMethodHandler {
   private val castException = new ClassCastException(s"Cannot cast value to given class")
 
-  override val methodRegistry: Map[String, ExtensionMethod] = Map(
+  override val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
     "is"       -> SingleArg(is),
     "to"       -> SingleArg(to),
     "toOrNull" -> SingleArg(toOrNull),
@@ -92,8 +91,13 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
   def allowedConversions(clazz: Class[_]): List[Conversion[_]] =
     conversionsRegistry.filter(_.appliesToConversion(clazz))
 
-  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler =
-    new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase())
+  override def createHandler(clazz: Class[_], set: ClassDefinitionSet): Option[ExtensionMethodHandler] = {
+    if (appliesToClassInRuntime(clazz)) {
+      Some(new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase()))
+    } else {
+      None
+    }
+  }
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
     val castAllowedClasses = clazz.findAllowedClassesForCastParameter(set).mapValuesNow(_.clazzName)
@@ -108,7 +112,7 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
   // Convert methods should visible in runtime for every class because we allow invoke convert methods on an unknown
   // object in Typer, but in the runtime the same type could be known and that's why should add convert method for an
   // every class.
-  override def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
+  private def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
 
   private def getConversion(className: String): Either[Throwable, Conversion[_]] =
     conversionsByType.get(className.toLowerCase) match {

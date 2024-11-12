@@ -21,13 +21,13 @@ class ArrayWrapper(target: Any) extends util.AbstractList[Object] {
 
 class ArrayExt extends ExtensionMethodHandler {
 
-  override val methodRegistry: Map[String, ExtensionMethod] = Map(
-    "get"         -> SingleArg[Integer]((target, arg) => new ArrayWrapper(target).get(arg)),
+  override val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
+    "get"         -> SingleArg((target, arg: Int) => new ArrayWrapper(target).get(arg)),
     "size"        -> NoArg(target => new ArrayWrapper(target).size()),
-    "lastIndexOf" -> SingleArg[Integer]((target, arg) => new ArrayWrapper(target).lastIndexOf(arg)),
-    "contains"    -> SingleArg[Object]((target, arg) => new ArrayWrapper(target).contains(arg)),
-    "indexOf"     -> SingleArg[Object]((target, arg) => new ArrayWrapper(target).indexOf(arg)),
-    "containsAll" -> SingleArg[util.Collection[_]]((target, arg) => new ArrayWrapper(target).containsAll(arg)),
+    "lastIndexOf" -> SingleArg((target, arg: Any) => new ArrayWrapper(target).lastIndexOf(arg)),
+    "contains"    -> SingleArg((target, arg: Any) => new ArrayWrapper(target).contains(arg)),
+    "indexOf"     -> SingleArg((target, arg: Any) => new ArrayWrapper(target).indexOf(arg)),
+    "containsAll" -> SingleArg((target, arg: util.Collection[_]) => new ArrayWrapper(target).containsAll(arg)),
     "isEmpty"     -> NoArg(target => new ArrayWrapper(target).isEmpty()),
     "empty"       -> NoArg(target => new ArrayWrapper(target).isEmpty()),
   )
@@ -36,10 +36,11 @@ class ArrayExt extends ExtensionMethodHandler {
 
 object ArrayExt extends ExtensionMethodsDefinition {
 
-  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler = new ArrayExt
+  override def createHandler(clazz: Class[_], set: ClassDefinitionSet): Option[ExtensionMethodHandler] =
+    if (appliesToClassInRuntime(clazz)) Some(new ArrayExt) else None
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
-    if (clazz.isArray) {
+    if (appliesToClassInRuntime(clazz)) {
       set
         .get(classOf[JList[_]])
         .map(_.methods)
@@ -48,5 +49,5 @@ object ArrayExt extends ExtensionMethodsDefinition {
       Map.empty
     }
 
-  override def appliesToClassInRuntime(clazz: Class[_]): Boolean = clazz.isArray
+  private def appliesToClassInRuntime(clazz: Class[_]): Boolean = clazz.isArray
 }
