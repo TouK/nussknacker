@@ -3,7 +3,12 @@ package pl.touk.nussknacker.ui.process.repository.stickynotes
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.LayoutData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{StickyNote, StickyNoteCorrelationId, StickyNoteId}
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
+  Dimensions,
+  StickyNote,
+  StickyNoteCorrelationId,
+  StickyNoteId
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Clock
@@ -21,6 +26,7 @@ trait StickyNotesRepository {
       content: String,
       layoutData: LayoutData,
       color: String,
+      dimensions: Dimensions,
       targetEdge: Option[String],
       scenarioId: ProcessId,
       scenarioVersionId: VersionId
@@ -31,6 +37,7 @@ trait StickyNotesRepository {
       content: String,
       layoutData: LayoutData,
       color: String,
+      dimensions: Dimensions,
       targetEdge: Option[String],
       scenarioVersionId: VersionId,
   )(implicit user: LoggedUser): DB[Int]

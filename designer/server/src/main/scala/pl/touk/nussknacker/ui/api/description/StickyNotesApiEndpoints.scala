@@ -34,6 +34,7 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
     "##Title \nNote1",
     LayoutData(20, 30),
     "#99aa20",
+    Dimensions(300, 200),
     None,
     "Marco",
     exampleInstantDate
@@ -83,7 +84,17 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
       .in("processes" / path[ProcessName]("scenarioName") / "stickyNotes")
       .in(
         jsonBody[StickyNoteUpdateRequest]
-          .example(StickyNoteUpdateRequest(StickyNoteId(1), VersionId(1), "", LayoutData(12, 33), "#441022", None))
+          .example(
+            StickyNoteUpdateRequest(
+              StickyNoteId(1),
+              VersionId(1),
+              "",
+              LayoutData(12, 33),
+              "#441022",
+              Dimensions(300, 200),
+              None
+            )
+          )
       )
       .out(
         statusCode(Ok)
@@ -106,7 +117,7 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
       .in("processes" / path[ProcessName]("scenarioName") / "stickyNotes")
       .in(
         jsonBody[StickyNoteAddRequest]
-          .example(StickyNoteAddRequest(VersionId(1), "", LayoutData(12, 33), "#441022", None))
+          .example(StickyNoteAddRequest(VersionId(1), "", LayoutData(12, 33), "#441022", Dimensions(300, 200), None))
       )
       .out(jsonBody[StickyNoteCorrelationId])
       .errorOut(
