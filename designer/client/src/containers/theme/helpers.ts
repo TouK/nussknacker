@@ -1,6 +1,7 @@
 import { rgbToHex, Theme } from "@mui/material";
 import { blend } from "@mui/system";
 import { getLuminance } from "@mui/system/colorManipulator";
+import { STICKY_NOTE_DEFAULT_COLOR } from "../../components/graph/EspNode/stickyNote";
 
 export const blendDarken = (color: string, opacity: number) => rgbToHex(blend(color, "#000000", opacity));
 export const blendLighten = (color: string, opacity: number) => rgbToHex(blend(color, "#ffffff", opacity));
@@ -17,10 +18,9 @@ export function getNodeBorderColor(theme: Theme) {
 
 export function getStickyNoteBackgroundColor(theme: Theme, color: string) {
     const isValidColor = CSS.supports("color", color);
-    const stickyNoteColor = theme.palette.augmentColor({
+    return theme.palette.augmentColor({
         color: {
-            main: isValidColor ? color : "#ffff4a",
+            main: isValidColor ? color : STICKY_NOTE_DEFAULT_COLOR,
         },
     });
-    return getLuminance(stickyNoteColor.main) > 0.5 ? stickyNoteColor.dark : stickyNoteColor.light;
 }
