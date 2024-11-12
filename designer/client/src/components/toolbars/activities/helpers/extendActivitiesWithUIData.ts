@@ -3,6 +3,22 @@ import { v4 as uuid4 } from "uuid";
 import { Activity, ButtonActivity, DateActivity, UIActivity } from "../ActivitiesPanel";
 import { formatDate } from "./date";
 
+const createUiActivity = (activity: Activity) => {
+    const uiActivity: UIActivity = {
+        ...activity,
+        isActiveFound: false,
+        isFound: false,
+        uiGeneratedId: uuid4(),
+        uiType: "item",
+        isHidden: false,
+    };
+
+    if (uiActivity?.attachment?.file?.status === "DELETED") {
+        uiActivity.additionalFields.push({ name: "", value: `File '${uiActivity.attachment.filename}' removed` });
+    }
+
+    return uiActivity;
+};
 const getLatestDateItem = (uiActivities: UIActivity[]) => {
     let previousDateItem: DateActivity | undefined;
 
@@ -123,14 +139,9 @@ export const extendActivitiesWithUIData = (activitiesDataWithMetadata: Activity[
             const dateLabel = recursiveDateLabelDesignation(activity, index);
             const toggleItemsButton = recursiveToggleItemsButtonDesignation(activity, index);
             dateLabel && uiActivities.push(dateLabel);
-            uiActivities.push({
-                ...activity,
-                isActiveFound: false,
-                isFound: false,
-                uiGeneratedId: uuid4(),
-                uiType: "item",
-                isHidden: false,
-            });
+
+            uiActivities.push(createUiActivity(activity));
+
             if (toggleItemsButton) {
                 initiallyHideItems(toggleItemsButton.sameItemOccurrence);
                 uiActivities.push(toggleItemsButton);
