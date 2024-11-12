@@ -41,6 +41,7 @@ object V1_060__CreateStickyNotesDefinition {
       def content           = column[String]("content", NotNull)
       def layoutData        = column[String]("layout_data", NotNull)
       def color             = column[String]("color", NotNull)
+      def dimensions        = column[String]("dimensions", NotNull)
       def targetEdge        = column[Option[String]]("target_edge")
       def eventCreator      = column[String]("event_creator", NotNull)
       def eventDate         = column[Timestamp]("event_date", NotNull)
@@ -53,6 +54,7 @@ object V1_060__CreateStickyNotesDefinition {
         content,
         layoutData,
         color,
+        dimensions,
         targetEdge,
         eventCreator,
         eventDate,
@@ -76,6 +78,7 @@ object V1_060__CreateStickyNotesDefinition {
       content: String,
       layoutData: String,
       color: String,
+      dimensions: String,
       targetEdge: Option[String],
       eventCreator: String,
       eventDate: Timestamp,

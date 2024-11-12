@@ -1,35 +1,19 @@
 import { Theme } from "@mui/material";
-import { NodeType } from "../../../types";
 import { dia, shapes, util } from "jointjs";
-import { blendLighten, getBorderColor, getNodeBorderColor } from "../../../containers/theme/helpers";
-import { getStringWidth } from "./element";
-import { STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from "../../StickyNotePreview";
+import { getBorderColor } from "../../../containers/theme/helpers";
 import { StickyNote } from "../../../common/StickyNote";
-import { getRoundedRectPath } from "./getRoundedRectPath";
-import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, MARGIN_TOP, portSize } from "./esp";
+import { marked } from "marked";
 
-const background: dia.MarkupNodeJSON = {
-    selector: "background",
-    tagName: "rect",
-    className: "background",
-    attributes: {
-        width: STICKY_NOTE_WIDTH,
-        height: STICKY_NOTE_HEIGHT,
-        rx: BORDER_RADIUS,
-    },
-};
-
-const iconBackground: dia.MarkupNodeJSON = {
-    selector: "iconBackground",
-    tagName: "path", //TODO: check if it's fast enough
-    attributes: {
-        d: getRoundedRectPath(iconBackgroundSize, [BORDER_RADIUS, BORDER_RADIUS, BORDER_RADIUS, BORDER_RADIUS], MARGIN_TOP),
-    },
-};
+export const STICKY_NOTE_WIDTH = 300;
+export const STICKY_NOTE_HEIGHT = 250;
+export const BORDER_RADIUS = 3;
+export const CONTENT_PADDING = 5;
+export const ICON_SIZE = 20;
+export const STICKY_NOTE_DEFAULT_COLOR = "#eae672";
 
 const border: dia.MarkupNodeJSON = {
     selector: "border",
-    tagName: "rect",
+    tagName: "path",
     className: "body",
     attributes: {
         width: STICKY_NOTE_WIDTH,
@@ -44,53 +28,32 @@ const icon: dia.MarkupNodeJSON = {
     selector: "icon",
     tagName: "use",
     attributes: {
-        width: iconSize,
-        height: iconSize,
-        x: iconSize / 2,
-        y: iconSize / 2,
+        width: ICON_SIZE,
+        height: ICON_SIZE,
+        x: ICON_SIZE / 2,
+        y: ICON_SIZE / 2,
     },
 };
 
-const content = (theme: Theme): dia.MarkupNodeJSON => ({
-    selector: "content",
-    tagName: "text",
-    attributes: {
-        x: iconBackgroundSize + CONTENT_PADDING,
-        y: STICKY_NOTE_HEIGHT / 2,
-        fill: getBorderColor(theme),
-        "pointer-events": "none",
-        ...theme.typography.caption,
-    },
-});
+const body: dia.MarkupNodeJSON = {
+    selector: "body",
+    tagName: "path",
+};
 
-const help = (theme: Theme): dia.MarkupNodeJSON => ({
-    selector: "help",
-    tagName: "text",
-    attributes: {
-        x: STICKY_NOTE_WIDTH - CONTENT_PADDING,
-        y: STICKY_NOTE_HEIGHT / 2,
-        fill: getBorderColor(theme),
-        ...theme.typography.caption,
-        "font-size": "1.75em",
-        "text-anchor": "end",
-        cursor: "help",
-    },
-});
+//TODO - I left it here since it can be some kind of solution to displaying and editing markdown on the graph.
+//https://resources.jointjs.com/tutorial/foreign-object
+//Maybe we should it different way...
+const foreignObject = (stickyNote: StickyNote) => {
+    const parsed = marked.parse(stickyNote.content + "**TODO** - dont forget to do *it*.. \n\n [x] check");
+    return util.svg/* xml */ `
+        <foreignObject @selector="foreignObject" >
+           ${parsed}
+        </foreignObject>
+    `[0];
+};
 
-const portMarkup = (theme: Theme, stickyNote: StickyNote): dia.MarkupNodeJSON => ({
-    selector: "port",
-    tagName: "circle",
-    attributes: {
-        magnet: true,
-        r: portSize,
-        stroke: getNodeBorderColor(theme),
-        fill: blendLighten(theme.palette.background.paper, 0.04),
-        strokeWidth: 0.5,
-        disabled: false,
-    },
-});
+export const stickyNotePath = "M 0 0 L 10 0 C 10 2.6667 10 5.3333 10 8 C 10 10 9 10 8 10 L 0 10 L 0 0";
 
-const refX = STICKY_NOTE_HEIGHT - getStringWidth("1") / 2;
 const defaults = (theme: Theme) =>
     util.defaultsDeep(
         {
@@ -99,58 +62,40 @@ const defaults = (theme: Theme) =>
                 height: STICKY_NOTE_HEIGHT,
             },
             attrs: {
-                content: {
-                    textVerticalAnchor: "middle",
+                body: {
+                    refD: stickyNotePath,
+                    strokeWidth: 2,
+                    fill: "#eae672",
+                    filter: {
+                        name: "dropShadow",
+                        args: {
+                            dx: 1,
+                            dy: 1,
+                            blur: 5,
+                            opacity: 0.4,
+                        },
+                    },
                 },
-                help: {
-                    textVerticalAnchor: "middle",
+                foreignObject: {
+                    width: STICKY_NOTE_WIDTH - ICON_SIZE - CONTENT_PADDING * 2,
+                    height: STICKY_NOTE_HEIGHT - ICON_SIZE - CONTENT_PADDING * 2,
+                    x: ICON_SIZE + CONTENT_PADDING,
+                    y: ICON_SIZE + CONTENT_PADDING,
+                    fill: getBorderColor(theme),
+                    "pointer-events": "none",
+                    ...theme.typography.caption,
                 },
                 border: {
+                    refD: stickyNotePath,
                     stroke: getBorderColor(theme),
-                },
-                testResults: {
-                    refX,
-                    rx: 5,
-                    z: 2,
-                },
-                testResultsSummary: {
-                    textAnchor: "middle",
-                    textVerticalAnchor: "middle",
-                    refX,
-                    z: 2,
-                },
-            },
-            inPorts: [],
-            outPorts: [],
-            ports: {
-                groups: {
-                    in: {
-                        position: { name: `top`, args: { dx: 90 } },
-                        attrs: {
-                            magnet: "passive",
-                            type: "input",
-                            z: 1,
-                        },
-                    },
-                    out: {
-                        position: { name: `bottom`, args: { dx: 90 } },
-                        attrs: {
-                            type: "output",
-                            z: 1,
-                        },
-                    },
                 },
             },
         },
         shapes.devs.Model.prototype.defaults,
     );
-
 const protoProps = (theme: Theme, stickyNote: StickyNote) => {
     return {
-        portMarkup: [portMarkup(theme, stickyNote)],
-        portLabelMarkup: null,
-
-        markup: [background, iconBackground, border, icon, content(theme), help(theme)],
+        markup: [body, border, foreignObject(stickyNote), icon],
     };
 };
 

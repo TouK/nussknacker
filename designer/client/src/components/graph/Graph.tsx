@@ -4,7 +4,7 @@ import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
 import { UseTranslationResponse } from "react-i18next";
-import { Layout, NodePosition, Position, stickyNoteUpdated } from "../../actions/nk";
+import { Layout, NodePosition, Position } from "../../actions/nk";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import User from "../../common/models/User";
 import ProcessUtils from "../../common/ProcessUtils";
@@ -40,6 +40,7 @@ import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHe
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
 import { StickyNote } from "../../common/StickyNote";
+import { STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from "./EspNode/stickyNote";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -217,13 +218,11 @@ export class Graph extends React.Component<Props> {
                     const position = cell.model.get("position");
                     const noteId = cell.model.get("noteId");
                     const stickyNote = this.props.stickyNotes.find((a) => a.noteId == noteId);
-                    console.log(noteId);
-                    console.log(this.props.stickyNotes);
                     const updatedStickyNote = cloneDeep(stickyNote);
                     updatedStickyNote.layoutData = { x: position.x, y: position.y };
                     this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
                 }
-            })
+            }) //we want to inject node during 'Drag and Drop' from graph paper
             .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
                 if (this.props.isFragment === true) return;
                 const isReversed = targetMagnet?.getAttribute("port") === "Out";
@@ -256,7 +255,6 @@ export class Graph extends React.Component<Props> {
         const { theme } = this.props;
 
         this.redrawing = true;
-
         applyCellChanges(this.processGraphPaper, scenarioGraph, stickyNotes, processDefinitionData, theme);
 
         if (isEmpty(layout)) {
@@ -430,6 +428,20 @@ export class Graph extends React.Component<Props> {
             this.highlightHoveredLink();
         });
 
+        this.graph.on(Events.CELL_RESIZED, (cell: dia.Element) => {
+            if (isStickyNoteElement(cell)) {
+                console.log(cell);
+                const position = cell.get("position");
+                const size = cell.get("size");
+                const noteId = cell.get("noteId");
+                const stickyNote = this.props.stickyNotes.find((a) => a.noteId == noteId);
+                const updatedStickyNote = cloneDeep(stickyNote);
+                updatedStickyNote.layoutData = { x: position.x, y: position.y };
+                updatedStickyNote.dimensions = { width: Math.round(size.width), height: Math.round(size.height) };
+                this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
+            }
+        });
+
         //we want to inject node during 'Drag and Drop' from toolbox
         this.graph.on(Events.ADD, (cell: dia.Element) => {
             if (isModelElement(cell)) {
@@ -456,7 +468,8 @@ export class Graph extends React.Component<Props> {
         if (this.props.isFragment === true) return;
         const canAddStickyNote = this.props.capabilities.editFrontend;
         if (canAddStickyNote) {
-            this.props.stickyNoteAdded(scenarioName, scenarioVersionId, position);
+            const dimensions = { width: STICKY_NOTE_WIDTH, height: STICKY_NOTE_HEIGHT };
+            this.props.stickyNoteAdded(scenarioName, scenarioVersionId, position, dimensions);
         }
     }
 

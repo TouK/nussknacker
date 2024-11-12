@@ -4,7 +4,12 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.LayoutData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{StickyNote, StickyNoteCorrelationId, StickyNoteId}
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
+  Dimensions,
+  StickyNote,
+  StickyNoteCorrelationId,
+  StickyNoteId
+}
 import pl.touk.nussknacker.ui.api.description.stickynotes.StickyNoteEvent
 import pl.touk.nussknacker.ui.db.entity.StickyNoteEventEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
@@ -67,6 +72,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
       content: String,
       layoutData: LayoutData,
       color: String,
+      dimensions: Dimensions,
       targetEdge: Option[String],
       scenarioId: ProcessId,
       scenarioVersionId: VersionId
@@ -80,6 +86,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
       content = content,
       layoutData = layoutData,
       color = color,
+      dimensions = dimensions,
       targetEdge = targetEdge,
       eventDate = now,
       eventCreator = user.id,
@@ -119,6 +126,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
       content: String,
       layoutData: LayoutData,
       color: String,
+      dimensions: Dimensions,
       targetEdge: Option[String],
       scenarioVersionId: VersionId,
   )(
@@ -131,6 +139,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
       eventType = StickyNoteEvent.StickyNoteUpdated,
       content = content,
       color = color,
+      dimensions = dimensions,
       targetEdge = targetEdge,
       layoutData = layoutData,
       scenarioVersionId = scenarioVersionId

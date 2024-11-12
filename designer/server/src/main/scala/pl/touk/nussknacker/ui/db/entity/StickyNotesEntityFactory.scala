@@ -8,7 +8,12 @@ import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 import io.circe.syntax._
 import io.circe._
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{StickyNote, StickyNoteCorrelationId, StickyNoteId}
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
+  Dimensions,
+  StickyNote,
+  StickyNoteCorrelationId,
+  StickyNoteId
+}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -26,6 +31,7 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
     def content           = column[String]("content", NotNull)
     def layoutData        = column[LayoutData]("layout_data", NotNull)
     def color             = column[String]("color", NotNull)
+    def dimensions        = column[Dimensions]("dimensions", NotNull)
     def targetEdge        = column[Option[String]]("target_edge")
     def eventCreator      = column[String]("event_creator", NotNull)
     def eventDate         = column[Timestamp]("event_date", NotNull)
@@ -39,6 +45,7 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
       content,
       layoutData,
       color,
+      dimensions,
       targetEdge,
       eventCreator,
       eventDate,
@@ -73,6 +80,15 @@ trait StickyNotesEntityFactory extends BaseEntityFactory {
       }
   )
 
+  implicit def dimensionsColumnTyped: BaseColumnType[Dimensions] = MappedColumnType.base[Dimensions, String](
+    _.asJson.noSpaces,
+    jsonStr =>
+      parser.parse(jsonStr).flatMap(Decoder[Dimensions].decodeJson) match {
+        case Right(dimensions) => dimensions
+        case Left(error)       => throw error
+      }
+  )
+
   val stickyNotesTable: LTableQuery[StickyNotesEntityFactory#StickyNotesEntity] = LTableQuery(new StickyNotesEntity(_))
 
 }
@@ -83,6 +99,7 @@ final case class StickyNoteEventEntityData(
     content: String,
     layoutData: LayoutData,
     color: String,
+    dimensions: Dimensions,
     targetEdge: Option[String],
     eventCreator: String,
     eventDate: Timestamp,
@@ -91,5 +108,5 @@ final case class StickyNoteEventEntityData(
     scenarioVersionId: VersionId
 ) {
   def toStickyNote: StickyNote =
-    StickyNote(id, content, layoutData, color, targetEdge, eventCreator, eventDate.toInstant)
+    StickyNote(id, content, layoutData, color, dimensions, targetEdge, eventCreator, eventDate.toInstant)
 }

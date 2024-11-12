@@ -9,7 +9,8 @@ import HttpService from "./../../http/HttpService";
 import { layoutChanged, Position } from "./ui/layout";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { flushSync } from "react-dom";
-import { StickyNote } from "../../common/StickyNote";
+import { Dimensions, StickyNote } from "../../common/StickyNote";
+import { cloneDeep } from "lodash";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
@@ -83,9 +84,9 @@ export function stickyNoteUpdated(scenarioName: string, scenarioVersionId: numbe
     };
 }
 
-export function stickyNoteAdded(scenarioName: string, scenarioVersionId: number, position: Position): ThunkAction {
+export function stickyNoteAdded(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions): ThunkAction {
     return (dispatch) => {
-        HttpService.addStickyNote(scenarioName, scenarioVersionId, position).then((_) => {
+        HttpService.addStickyNote(scenarioName, scenarioVersionId, position, dimensions).then((_) => {
             HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
                 flushSync(() => {
                     dispatch({ type: "STICKY_NOTES_UPDATED", stickyNotes: stickyNotes.data });

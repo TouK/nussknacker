@@ -3,17 +3,14 @@ import React from "react";
 import { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize } from "./graph/EspNode/esp";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
-import { alpha, styled, useTheme } from "@mui/material";
+import { alpha, useTheme } from "@mui/material";
 import { blend } from "@mui/system";
-import { blendLighten, getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
-
-export const STICKY_NOTE_WIDTH = 300;
-export const STICKY_NOTE_HEIGHT = 250;
+import { getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
+import { STICKY_NOTE_DEFAULT_COLOR, STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from "./graph/EspNode/stickyNote";
 
 export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
     const theme = useTheme();
 
-    //TODO this is duplicated
     const nodeStyles = css({
         position: "relative",
         width: STICKY_NOTE_WIDTH,
@@ -36,11 +33,11 @@ export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; 
     const nodeColors = css({
         opacity: 0.5,
         borderColor: getBorderColor(theme),
-        backgroundColor: blendLighten(getStickyNoteBackgroundColor(theme, ""), 0.04), //TODO pass note color
+        backgroundColor: getStickyNoteBackgroundColor(theme, STICKY_NOTE_DEFAULT_COLOR).main,
     });
     const nodeColorsHover = css({
         borderColor: blend(getBorderColor(theme), theme.palette.secondary.main, 0.2),
-        backgroundColor: blend(blendLighten(getStickyNoteBackgroundColor(theme, ""), 0.04), theme.palette.secondary.main, 0.2), //TODO pass note color
+        backgroundColor: getStickyNoteBackgroundColor(theme, STICKY_NOTE_DEFAULT_COLOR).main,
     });
 
     const imageStyles = css({
@@ -57,7 +54,7 @@ export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; 
 
     const imageColors = css({
         background: theme.palette.custom.getNodeStyles(node)?.fill,
-        color: theme.palette.common.white,
+        color: theme.palette.common.black,
     });
 
     const colors = isOver ? nodeColorsHover : nodeColors;
