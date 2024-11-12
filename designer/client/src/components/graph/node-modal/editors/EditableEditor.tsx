@@ -10,6 +10,7 @@ import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
 import { FormControl, FormLabel } from "@mui/material";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { DualParameterEditor } from "./expression/DualParameterEditor";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -31,26 +32,57 @@ interface Props {
 export const EditableEditor = forwardRef((props: Props, ref) => {
     const { expressionObj, valueClassName, param, fieldErrors = [], validationLabelInfo } = props;
 
-    const editorType = useMemo(() => (isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type), [param]);
+    if (param?.editor?.type === "DualParameterEditor" && !param?.editors) {
+        param.editors = [];
+        param.editors.push({ type: EditorType.RAW_PARAMETER_EDITOR });
+        param.editors.push({ type: param.editor.simpleEditor.type });
+    }
+    const availableEditors = useMemo(
+        (): ParamType["editors"] => (isEmpty(param) ? [{ type: EditorType.RAW_PARAMETER_EDITOR }] : param.editors || [param.editor]),
+        [param],
+    );
 
-    const Editor: SimpleEditor | ExtendedEditor = useMemo(() => editors[editorType], [editorType]);
+    const Editors: (SimpleEditor | ExtendedEditor)[] = useMemo(() => availableEditors.map((editorType) => editors[editorType.type]), []);
 
     const formatter = useMemo(
         () => (expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
         [expressionObj.language, param?.typ?.refClazzName],
     );
 
-    return (
-        <Editor
-            {...props}
-            ref={ref}
-            editorConfig={param?.editor}
-            className={`${valueClassName ? valueClassName : nodeValue}`}
-            fieldErrors={fieldErrors}
-            formatter={formatter}
-            expressionInfo={validationLabelInfo}
-        />
-    );
+    if (Editors.length === 1) {
+        const Editor = Editors[0];
+        return (
+            <Editor
+                {...props}
+                ref={ref}
+                editorConfig={param?.editor}
+                className={`${valueClassName ? valueClassName : nodeValue}`}
+                fieldErrors={fieldErrors}
+                formatter={formatter}
+                expressionInfo={validationLabelInfo}
+            />
+        );
+    }
+
+    if (Editors.length === 2) {
+        debugger
+        return (
+            <DualParameterEditor
+                {...props}
+                ref={ref}
+                BasicEditor={Editors[0]}
+                ExpressionEditor={Editors[1]}
+                className={`${valueClassName ? valueClassName : nodeValue}`}
+                fieldErrors={fieldErrors}
+                formatter={formatter}
+                expressionInfo={validationLabelInfo}
+            />
+        );
+    }
+
+    if (Editors.length > 2) {
+        throw new Error("We only support maximum two editors for the field. Check your configuration");
+    }
 });
 
 EditableEditor.displayName = "EditableEditor";

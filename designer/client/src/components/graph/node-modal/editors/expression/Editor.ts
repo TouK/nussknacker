@@ -12,7 +12,6 @@ import { PeriodEditor } from "./Duration/PeriodEditor";
 import { CronEditor } from "./Cron/CronEditor";
 import { TextareaEditor } from "./TextareaEditor";
 import JsonEditor from "./JsonEditor";
-import { DualParameterEditor } from "./DualParameterEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { Formatter } from "./Formatter";
 import { VariableTypes } from "../../../../../types";
@@ -66,7 +65,6 @@ export enum EditorType {
     DATE = "DateParameterEditor",
     TIME = "TimeParameterEditor",
     DATE_TIME = "DateTimeParameterEditor",
-    DUAL_PARAMETER_EDITOR = "DualParameterEditor",
     DURATION_EDITOR = "DurationParameterEditor",
     PERIOD_EDITOR = "PeriodParameterEditor",
     CRON_EDITOR = "CronParameterEditor",
@@ -83,7 +81,6 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.CRON_EDITOR]: CronEditor,
     [EditorType.DATE]: DateEditor,
     [EditorType.DATE_TIME]: DateTimeEditor,
-    [EditorType.DUAL_PARAMETER_EDITOR]: DualParameterEditor,
     [EditorType.DURATION_EDITOR]: DurationEditor,
     [EditorType.FIXED_VALUES_PARAMETER_EDITOR]: FixedValuesEditor,
     [EditorType.FIXED_VALUES_WITH_ICON_PARAMETER_EDITOR]: FixedValuesEditor,
