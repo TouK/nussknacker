@@ -36,7 +36,8 @@ import { AuthenticationSettings } from "../reducers/settings";
 import { Expression, LayoutData, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { fixAggregateParameters, fixBranchParametersTemplate } from "./parametersUtils";
-import { StickyNote } from "../common/StickyNote";
+import { Dimensions, StickyNote } from "../common/StickyNote";
+import { STICKY_NOTE_DEFAULT_COLOR } from "../components/graph/EspNode/stickyNote";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -676,12 +677,13 @@ class HttpService {
         return promise;
     }
 
-    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position) {
+    addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions) {
         const promise = api.put(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
             scenarioVersionId,
             content: "",
             layoutData: position,
-            color: "#ffff00", //TODO
+            color: STICKY_NOTE_DEFAULT_COLOR, //TODO add config for default sticky note color? For now this is default.
+            dimensions: dimensions,
         });
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToAddStickyNote", "Failed to add sticky note to scenario"), error, true),
@@ -693,7 +695,7 @@ class HttpService {
         const promise = api.delete(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes/${stickyNote.noteId}`);
         promise.catch((error) =>
             this.#addError(
-                i18next.t("notification.error.failedToAddStickyNote", `Failed to delete sticky note with id: ${stickyNote.noteId}`),
+                i18next.t("notification.error.failedToDeleteStickyNote", `Failed to delete sticky note with id: ${stickyNote.noteId}`),
                 error,
                 true,
             ),
@@ -711,7 +713,11 @@ class HttpService {
             dimensions: stickyNote.dimensions,
         });
         promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToAddStickyNote", "Failed to update sticky note for scenario"), error, true),
+            this.#addError(
+                i18next.t("notification.error.failedToUpdateStickyNote", "Failed to update sticky note for scenario"),
+                error,
+                true,
+            ),
         );
         return promise;
     }
