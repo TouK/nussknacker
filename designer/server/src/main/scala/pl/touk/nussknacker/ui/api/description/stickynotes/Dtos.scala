@@ -35,11 +35,18 @@ object Dtos {
   implicit lazy val stickyNoteIdSchema: Schema[StickyNoteId] = Schema.schemaForLong.as[StickyNoteId]
 
   @derive(encoder, decoder, schema)
+  case class Dimensions(
+      width: Long,
+      height: Long
+  )
+
+  @derive(encoder, decoder, schema)
   case class StickyNote(
       noteId: StickyNoteId,
       content: String,
       layoutData: LayoutData,
       color: String,
+      dimensions: Dimensions,
       targetEdge: Option[String],
       editedBy: String,
       editedAt: Instant
@@ -51,6 +58,7 @@ object Dtos {
       content: String,
       layoutData: LayoutData,
       color: String,
+      dimensions: Dimensions,
       targetEdge: Option[String]
   )
 
@@ -61,6 +69,7 @@ object Dtos {
       content: String,
       layoutData: LayoutData,
       color: String,
+      dimensions: Dimensions,
       targetEdge: Option[String]
   )
 
