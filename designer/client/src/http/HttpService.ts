@@ -541,8 +541,13 @@ class HttpService {
 
     validateAdhocTestParameters(
         scenarioName: string,
-        validationRequest: TestAdhocValidationRequest,
+        sourceParameters: SourceWithParametersTest,
+        scenarioGraph: ScenarioGraph,
     ): Promise<AxiosResponse<ValidationData>> {
+        const validationRequest: TestAdhocValidationRequest = {
+            sourceParameters,
+            scenarioGraph: this.#sanitizeScenarioGraph(scenarioGraph),
+        };
         const promise = api.post(`/scenarioTesting/${encodeURIComponent(scenarioName)}/adhoc/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(
