@@ -142,6 +142,7 @@ class StickyNotesApiHttpService(
             requestBody.content,
             requestBody.layoutData,
             requestBody.color,
+            requestBody.dimensions,
             requestBody.targetEdge,
             scenarioId,
             requestBody.scenarioVersionId
@@ -160,6 +161,7 @@ class StickyNotesApiHttpService(
             requestBody.content,
             requestBody.layoutData,
             requestBody.color,
+            requestBody.dimensions,
             requestBody.targetEdge,
             requestBody.scenarioVersionId
           )
