@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.component.{
     user: User,
     additionalDeploymentData: Map[String, String],
     nodesData: NodesDeploymentData,
-    configsFromProviderWithDictionaryEditor: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 )
 
 object DeploymentData {

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
@@ -98,6 +99,7 @@ class EmbeddedDeploymentManager(
       case DMRunDeploymentCommand(processVersion, deploymentData, canonicalProcess, updateStrategy) =>
         Future {
           ensureReplaceDeploymentUpdateStrategy(updateStrategy)
+          ensureAdditionalConfigsDoNotContainDictionaryEditors(deploymentData)
           deployScenarioClosingOldIfNeeded(
             processVersion,
             deploymentData,
@@ -118,6 +120,24 @@ class EmbeddedDeploymentManager(
       case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
       case DeploymentUpdateStrategy.DontReplaceDeployment =>
         throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+    }
+  }
+
+  // We make sure that we don't let deploy a scenario when any parameter editor was modified to dictionary one by AdditionalUIConfigProvider
+  // as that would result in failure during compilation before execution
+  private def ensureAdditionalConfigsDoNotContainDictionaryEditors(deploymentData: DeploymentData): Unit = {
+    val configsWithDictEditors = deploymentData.additionalConfigsFromProvider.filter(
+      _._2.parameterConfigs.exists { case (_, parameterConfig) =>
+        parameterConfig.valueEditor match {
+          case Some(_: ValueInputWithDictEditor) => true
+          case _                                 => false
+        }
+      }
+    )
+    if (configsWithDictEditors.nonEmpty) {
+      throw new IllegalArgumentException(
+        "Parameter editor modification to ValueInputWithDictEditor by AdditionalUIConfigProvider is not supported for Lite engine"
+      )
     }
   }
 

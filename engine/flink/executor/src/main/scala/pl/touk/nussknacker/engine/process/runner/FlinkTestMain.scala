@@ -37,7 +37,7 @@ object FlinkTestMain extends FlinkRunner {
       process,
       scenarioTestData,
       processVersion,
-      DeploymentData.empty.copy(configsFromProviderWithDictionaryEditor = modelData.additionalConfigsFromProvider),
+      DeploymentData.empty.copy(additionalConfigsFromProvider = modelData.additionalConfigsFromProvider),
       configuration
     ).runTest
   }
