@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import pl.touk.nussknacker.engine.api.{BaseCompiledParameter, BaseExpressionEvaluator, Context, JobData, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   OutputVariableNameValue,
@@ -134,6 +135,7 @@ case class Parameter(
     javaOptionalParameter: Boolean,
     hintText: Option[String],
     labelOpt: Option[String],
+    customEvaluate: Option[(BaseCompiledParameter, BaseExpressionEvaluator, NodeId, JobData, Context) => AnyRef] = None
 ) extends NodeDependency {
 
   def copy(
@@ -180,6 +182,8 @@ case class Parameter(
       javaOptionalParameter: Boolean = this.javaOptionalParameter,
       hintText: Option[String] = this.hintText,
       labelOpt: Option[String] = this.labelOpt,
+      customEvaluate: Option[(BaseCompiledParameter, BaseExpressionEvaluator, NodeId, JobData, Context) => AnyRef] =
+        this.customEvaluate
   ): Parameter = {
     new Parameter(
       name,
@@ -194,7 +198,8 @@ case class Parameter(
       scalaOptionParameter,
       javaOptionalParameter,
       hintText,
-      labelOpt
+      labelOpt,
+      customEvaluate
     )
   }
 
@@ -211,7 +216,9 @@ case class Parameter(
       scalaOptionParameter: Boolean,
       javaOptionalParameter: Boolean,
       hintText: Option[String],
-      labelOpt: Option[String]
+      labelOpt: Option[String],
+      customEvaluate: Option[(BaseCompiledParameter, BaseExpressionEvaluator, NodeId, JobData, Context) => AnyRef] =
+        None
   ): Parameter = {
     new Parameter(
       name,
@@ -226,7 +233,8 @@ case class Parameter(
       scalaOptionParameter,
       javaOptionalParameter,
       hintText,
-      labelOpt
+      labelOpt,
+      customEvaluate
     )
   }
 

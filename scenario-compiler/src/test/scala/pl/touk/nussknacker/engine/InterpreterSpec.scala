@@ -1315,12 +1315,40 @@ object InterpreterSpec {
 
   object SpelTemplateServiceWithAstOperation extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
 
+    val eval: (BaseCompiledParameter, BaseExpressionEvaluator, NodeId, JobData, Context) => String = {
+      (
+          param: BaseCompiledParameter,
+          exprEval: BaseExpressionEvaluator,
+          nodeId: NodeId,
+          jobData: JobData,
+          context: Context
+      ) =>
+        val baseExpr      = param.expression.asInstanceOf[pl.touk.nussknacker.engine.spel.SpelExpression]
+        val parsedExpr    = baseExpr.parsed
+        val compositeExpr = parsedExpr.parsed.asInstanceOf[CompositeStringExpression]
+        val subValues = compositeExpr.getExpressions.toList.map { subExpr =>
+          val evalutorContextPreparer = baseExpr.evaluationContextPreparer
+          val parsedSubexpression =
+            ParsedSpelExpression.apply(subExpr.getExpressionString, parsedExpr.parser, subExpr)
+          val compiledExpr = new pl.touk.nussknacker.engine.spel.SpelExpression(
+            parsedSubexpression,
+            typing.Typed[String],
+            SpelExpressionParser.Standard,
+            evalutorContextPreparer
+          )
+          val evaluator = exprEval
+          evaluator.evaluate[String](compiledExpr, "subexpression", "irrelevant", context)(jobData).value
+        }
+        subValues.zipWithIndex.map { case (v, i) => s"value-$i" -> v }.toMap.toString
+    }
+
     private val spelTemplateParameter = ParameterDeclaration
       .lazyMandatory[String](ParameterName("template"))
       .withCreator(modify =
         _.copy(
           editor = Some(SpelTemplateParameterEditor),
-          defaultValue = Some(Expression.spelTemplate(""))
+          defaultValue = Some(Expression.spelTemplate("")),
+          customEvaluate = Some(eval)
         )
       )
 
@@ -1355,32 +1383,6 @@ object InterpreterSpec {
         val lazyParam = spelTemplateParameter
           .extractValueUnsafe(params)
           .asInstanceOf[EvaluableLazyParameter[String]]
-          .withCustomEvaluationLogic {
-            (
-                param: BaseCompiledParameter,
-                exprEval: BaseExpressionEvaluator,
-                nodeId: NodeId,
-                jobData: JobData,
-                context: Context
-            ) =>
-              val baseExpr      = param.expression.asInstanceOf[pl.touk.nussknacker.engine.spel.SpelExpression]
-              val parsedExpr    = baseExpr.parsed
-              val compositeExpr = parsedExpr.parsed.asInstanceOf[CompositeStringExpression]
-              val subValues = compositeExpr.getExpressions.toList.map { subExpr =>
-                val evalutorContextPreparer = baseExpr.evaluationContextPreparer
-                val parsedSubexpression =
-                  ParsedSpelExpression.apply(subExpr.getExpressionString, parsedExpr.parser, subExpr)
-                val compiledExpr = new pl.touk.nussknacker.engine.spel.SpelExpression(
-                  parsedSubexpression,
-                  typing.Typed[String],
-                  SpelExpressionParser.Standard,
-                  evalutorContextPreparer
-                )
-                val evaluator = exprEval
-                evaluator.evaluate[String](compiledExpr, "subexpression", "irrelevant", context)(jobData).value
-              }
-              subValues.zipWithIndex.map { case (v, i) => s"value-$i" -> v }.toMap.toString
-          }
         Future.successful(lazyParam.evaluate(context))
       }
 

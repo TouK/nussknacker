@@ -49,7 +49,7 @@ class ParameterEvaluator(
       .toMap
   }
 
-  private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
+  private def prepareLazyParameter(param: TypedParameter, definition: ParameterDef)(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
@@ -88,19 +88,21 @@ class ParameterEvaluator(
     }
   }
 
-  private def prepareLazyParameterExpression[T](definition: ParameterDef, exprValue: TypedExpression)(
+  private def prepareLazyParameterExpression(definition: ParameterDef, exprValue: TypedExpression)(
       implicit jobData: JobData,
       nodeId: NodeId,
       lazyParameterCreationStrategy: LazyParameterCreationStrategy
-  ): LazyParameter[Nothing] = {
+  ): LazyParameter[AnyRef] = {
     lazyParameterCreationStrategy match {
       case EvaluableLazyParameterStrategy =>
         new EvaluableLazyParameter(
-          CompiledParameter(exprValue, definition),
-          runtimeExpressionEvaluator,
-          nodeId,
-          jobData
+          compiledParameter = CompiledParameter(exprValue, definition),
+          expressionEvaluator = runtimeExpressionEvaluator,
+          nodeId = nodeId,
+          jobData = jobData,
+          customEvaluate = definition.customEvaluate
         )
+      // TODO: add customEvaluate here
       case PostponedEvaluatorLazyParameterStrategy =>
         new EvaluableLazyParameterCreator(
           nodeId,

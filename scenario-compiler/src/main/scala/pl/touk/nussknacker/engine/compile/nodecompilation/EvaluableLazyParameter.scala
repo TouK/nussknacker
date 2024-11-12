@@ -16,16 +16,24 @@ class EvaluableLazyParameter[T <: AnyRef](
     nodeId: NodeId,
     val jobData: JobData,
     override val returnType: TypingResult,
-    val customEvaluate: Option[(BaseCompiledParameter, ExpressionEvaluator, NodeId, JobData, Context) => T] = None
+    val customEvaluate: Option[(BaseCompiledParameter, ExpressionEvaluator, NodeId, JobData, Context) => T]
 ) extends CustomLazyParamterWithCustomizableEvaluationLogic[T] {
 
   def this(
       compiledParameter: CompiledParameter,
       expressionEvaluator: ExpressionEvaluator,
       nodeId: NodeId,
-      jobData: JobData
+      jobData: JobData,
+      customEvaluate: Option[(BaseCompiledParameter, ExpressionEvaluator, NodeId, JobData, Context) => T] = None
   ) =
-    this(compiledParameter, expressionEvaluator, nodeId, jobData, compiledParameter.typingInfo.typingResult)
+    this(
+      compiledParameter,
+      expressionEvaluator,
+      nodeId,
+      jobData,
+      compiledParameter.typingInfo.typingResult,
+      customEvaluate
+    )
 
   override val evaluate: Evaluate[T] = { ctx: Context =>
     customEvaluate
