@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.extension.ExtensionMethods.extensionMethodsDef
 
 import java.util
 import scala.collection.concurrent.TrieMap
+import scala.reflect.{ClassTag, classTag}
 
 class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends MethodResolver {
   private val executorsCache = new TrieMap[(String, Class[_]), Option[MethodExecutor]]()
@@ -26,24 +27,31 @@ class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends Me
       argumentTypes: util.List[TypeDescriptor]
   ): Option[MethodExecutor] = {
     val targetClass = targetObject.getClass
-    executorsCache.getOrElse(
+    executorsCache.getOrElseUpdate(
       (methodName, targetClass), {
-        val maybeExecutor = extensionMethodsDefinitions
-          .filter(_.appliesToClassInRuntime(targetClass))
-          .flatMap(_.createHandler(classDefinitionSet).findMethod(methodName, argumentTypes.size()))
-          .headOption
-          .map(createExecutor)
-        executorsCache.put((methodName, targetClass), maybeExecutor)
-        maybeExecutor
+        extensionMethodsDefinitions
+          .flatMap(_.createHandler(targetClass, classDefinitionSet))
+          .flatMap(handler => findMethod(handler, methodName, argumentTypes.size())) match {
+          case Nil           => None
+          case method :: Nil => Some(createExecutor(method))
+          case _ => throw new IllegalStateException(s"Found too many methods for method with name: '$methodName'")
+        }
       }
     )
   }
 
-  private def createExecutor(method: ExtensionMethod): MethodExecutor = new MethodExecutor {
+  private def findMethod(
+      extensionMethodHandler: ExtensionMethodHandler,
+      methodName: String,
+      argsSize: Int
+  ): Option[ExtensionMethod[_]] =
+    extensionMethodHandler.methodRegistry.get(methodName).filter(_.argsSize == argsSize)
 
-    override def execute(context: EvaluationContext, target: Any, args: Object*): TypedValue = {
-      new TypedValue(method.invoke(target, args: _*), null)
-    }
+  private def createExecutor(method: ExtensionMethod[_]): MethodExecutor = new MethodExecutor {
+    private val typeDescriptor = TypeDescriptor.valueOf(method.returnType)
+
+    override def execute(context: EvaluationContext, target: Any, args: Object*): TypedValue =
+      new TypedValue(method.invoke(target, args: _*), typeDescriptor)
 
   }
 
@@ -74,37 +82,32 @@ object ExtensionMethods {
 
 }
 
-trait ExtensionMethod {
+abstract class ExtensionMethod[R: ClassTag] {
   val argsSize: Int
-  def invoke(target: Any, args: Object*): Any
+  def invoke(target: Any, args: Object*): R
+  def returnType: Class[R] = classTag[R].runtimeClass.asInstanceOf[Class[R]]
 }
 
 object ExtensionMethod {
 
-  def NoArg(method: Any => Any): ExtensionMethod = new ExtensionMethod {
-    override val argsSize: Int                           = 0
-    override def invoke(target: Any, args: Object*): Any = method(target)
+  def NoArg[R: ClassTag](method: Any => R): ExtensionMethod[R] = new ExtensionMethod {
+    override val argsSize: Int                         = 0
+    override def invoke(target: Any, args: Object*): R = method(target)
   }
 
-  def SingleArg[T](method: (Any, T) => Any): ExtensionMethod = new ExtensionMethod {
-    override val argsSize: Int                           = 1
-    override def invoke(target: Any, args: Object*): Any = method(target, args.head.asInstanceOf[T])
+  def SingleArg[T, R: ClassTag](method: (Any, T) => R): ExtensionMethod[R] = new ExtensionMethod {
+    override val argsSize: Int                         = 1
+    override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
   }
 
 }
 
 trait ExtensionMethodHandler {
-  val methodRegistry: Map[String, ExtensionMethod]
-
-  def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod] =
-    methodRegistry.get(methodName).filter(_.argsSize == argsSize)
+  val methodRegistry: Map[String, ExtensionMethod[_]]
 }
 
 trait ExtensionMethodsDefinition {
-  def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler
+  def createHandler(clazz: Class[_], set: ClassDefinitionSet): Option[ExtensionMethodHandler]
 
   def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
-
-  // For what classes is extension available in the runtime invocation
-  def appliesToClassInRuntime(clazz: Class[_]): Boolean
 }

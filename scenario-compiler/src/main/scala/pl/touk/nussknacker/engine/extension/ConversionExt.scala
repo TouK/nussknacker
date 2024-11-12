@@ -7,32 +7,21 @@ import pl.touk.nussknacker.engine.extension.ExtensionMethod.NoArg
 import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
 
 import java.lang.{Boolean => JBoolean}
-import scala.util.matching.Regex
 
-class ConversionExtensionMethodHandler(classesBySimpleName: Map[String, Class[_]])
-    extends CastOrConversionExt(classesBySimpleName) {
-  private val isRegex       = "^is(\\w+)$".r
-  private val toRegex       = "^to(\\w+?)(?<!OrNull)$".r
-  private val toOrNullRegex = "^to(\\w+)(?:OrNull)$".r
+class ConversionExtensionMethodHandler(targetTypeName: String, castOrConversionExt: CastOrConversionExt)
+    extends ExtensionMethodHandler {
 
-  override def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod] = {
-    extractMethodWithParam(methodName)
-      .flatMap(methodWithParam =>
-        super
-          .findMethod(methodWithParam._1, 1)
-          .map(method => NoArg(target => method.invoke(target, methodWithParam._2)))
-      )
+  override val methodRegistry: Map[String, ExtensionMethod[_]] = castOrConversionExt.methodRegistry.map {
+    case (methodName, extensionMethod) =>
+      mapMethodName(methodName) -> NoArg(target => extensionMethod.invoke(target, targetTypeName))
   }
 
-  private def extractMethodWithParam(methodName: String): Option[(String, String)] =
-    matchAndExtractFirstGroup(methodName, isRegex)
-      .map(typeName => "is" -> typeName)
-      .orElse(matchAndExtractFirstGroup(methodName, toRegex).map(typeName => "to" -> typeName))
-      .orElse(matchAndExtractFirstGroup(methodName, toOrNullRegex).map(typeName => "toOrNull" -> typeName))
-
-  private def matchAndExtractFirstGroup(text: String, regex: Regex): Option[String] = regex
-    .findFirstMatchIn(text)
-    .map(matched => matched.group(1))
+  private def mapMethodName(methodName: String): String = methodName match {
+    case "is"       => s"is$targetTypeName"
+    case "to"       => s"to$targetTypeName"
+    case "toOrNull" => s"to${targetTypeName}OrNull"
+    case _          => throw new IllegalArgumentException(s"Method $methodName not implemented")
+  }
 
 }
 
@@ -41,8 +30,17 @@ trait ConversionExt extends ExtensionMethodsDefinition {
 
   val conversion: Conversion[_]
 
-  override def createHandler(set: ClassDefinitionSet): ExtensionMethodHandler =
-    new ConversionExtensionMethodHandler(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase())
+  override def createHandler(clazz: Class[_], set: ClassDefinitionSet): Option[ExtensionMethodHandler] =
+    if (appliesToClassInRuntime(clazz)) {
+      Some(
+        new ConversionExtensionMethodHandler(
+          conversion.resultTypeClass.simpleName(),
+          new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase())
+        )
+      )
+    } else {
+      None
+    }
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
     if (conversion.appliesToConversion(clazz)) {
@@ -51,8 +49,6 @@ trait ConversionExt extends ExtensionMethodsDefinition {
       Map.empty
     }
   }
-
-  override def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
 
   def definitions(): List[MethodDefinition] = {
     val targetTypeSimpleName = conversion.resultTypeClass.simpleName()
@@ -74,6 +70,8 @@ trait ConversionExt extends ExtensionMethodsDefinition {
       ),
     )
   }
+
+  private def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
 
   private[extension] def definition(result: TypingResult, methodName: String, desc: Option[String]) =
     StaticMethodDefinition(
