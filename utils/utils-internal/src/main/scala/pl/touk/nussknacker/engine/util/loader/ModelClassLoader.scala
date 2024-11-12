@@ -21,8 +21,20 @@ case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) 
 object ModelClassLoader extends LazyLogging {
   // for e.g. testing in process module
   val empty: ModelClassLoader = ModelClassLoader(getClass.getClassLoader, List())
+  val defaultJarExtension     = ".jar"
 
-  val defaultJarExtension = ".jar"
+  // workingDirectoryOpt is for the purpose of easier testing. We can't easily change the working directory otherwise - see https://stackoverflow.com/a/840229
+  def apply(
+      urls: List[String],
+      workingDirectoryOpt: Option[Path],
+      jarExtension: String = defaultJarExtension
+  ): ModelClassLoader = {
+    val postProcessedURLs = expandFiles(urls.map(convertToURL(_, workingDirectoryOpt)), jarExtension)
+    ModelClassLoader(
+      new URLClassLoader(postProcessedURLs.toArray, this.getClass.getClassLoader),
+      postProcessedURLs.toList
+    )
+  }
 
   private def expandFiles(urls: Iterable[URL], jarExtension: String): Iterable[URL] = {
     urls.flatMap {
@@ -58,19 +70,6 @@ object ModelClassLoader extends LazyLogging {
       }
       path.toUri.toURL
     }
-  }
-
-  // workingDirectoryOpt is for the purpose of easier testing. We can't easily change the working directory otherwise - see https://stackoverflow.com/a/840229
-  def apply(
-      urls: List[String],
-      workingDirectoryOpt: Option[Path],
-      jarExtension: String = defaultJarExtension
-  ): ModelClassLoader = {
-    val postProcessedURLs = expandFiles(urls.map(convertToURL(_, workingDirectoryOpt)), jarExtension)
-    ModelClassLoader(
-      new URLClassLoader(postProcessedURLs.toArray, this.getClass.getClassLoader),
-      postProcessedURLs.toList
-    )
   }
 
 }

@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.ui.NussknackerConfig
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
@@ -67,5 +67,17 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
   private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
     ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType)
   }
+//  private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
+//    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](
+//      typeConfig.deploymentManagerType,
+//      ModelClassLoader(
+//        "engine/lite/deploymentManager/target/scala-2.13/classes/" ::
+//          "engine/lite/embeddedDeploymentManager/target/scala-2.13/classes/" ::
+//          "engine/lite/runtime/target/scala-2.13/classes/" ::
+//          Nil,
+//        None)
+//        .classLoader
+//    )
+//  }
 
 }

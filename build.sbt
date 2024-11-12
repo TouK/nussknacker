@@ -346,6 +346,7 @@ val caffeineCacheV            = "3.1.8"
 val sttpV                     = "3.9.8"
 val tapirV                    = "1.11.7"
 val openapiCirceYamlV         = "0.11.3"
+val retryV                    = "0.3.6"
 //we use legacy version because this one supports Scala 2.12
 val monocleV                  = "2.1.0"
 val jmxPrometheusJavaagentV   = "0.20.0"
@@ -437,7 +438,8 @@ def assemblySettings(
     includeScala: Boolean,
     filterProvidedDeps: Boolean = true
 ): List[Def.SettingsDefinition] = {
-  // This work around need to be optional because for designer module it causes excluding of scala lib (because we has there other work around for Idea classpath and provided deps)
+  // This work around need to be optional because for designer module it causes excluding of scala lib
+  // (because we have there other work around for Idea classpath and provided deps)
   val filterProvidedDepsSettingOpt = if (filterProvidedDeps) {
     Some(
       // For some reason problem described in https://github.com/sbt/sbt-assembly/issues/295 appears, workaround also works...
@@ -469,7 +471,7 @@ lazy val modelArtifacts = taskKey[List[(File, String)]]("model artifacts")
 
 lazy val devArtifacts = taskKey[List[(File, String)]]("dev artifacts")
 
-lazy val managerArtifacts = taskKey[List[(File, String)]]("manager artifacts")
+lazy val deploymentManagerArtifacts = taskKey[List[(File, String)]]("deployment manager artifacts")
 
 def filterDevConfigArtifacts(files: Seq[(File, String)]) = {
   val devConfigFiles = Set("dev-tables-definition.sql", "dev-application.conf", "dev-oauth2-users.conf")
@@ -481,7 +483,7 @@ lazy val distribution: Project = sbt
   .settings(commonSettings)
   .enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging)
   .settings(
-    managerArtifacts                         := {
+    deploymentManagerArtifacts               := {
       List(
         (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
         (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
@@ -520,7 +522,7 @@ lazy val distribution: Project = sbt
         else filterDevConfigArtifacts((Universal / mappings).value)
 
       universalMappingsWithDevConfigFilter ++
-        (managerArtifacts).value ++
+        (deploymentManagerArtifacts).value ++
         (componentArtifacts).value ++
         (if (addDevArtifacts)
            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
@@ -617,7 +619,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
         "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
-        "com.softwaremill.retry" %% "retry"                      % "0.3.6",
+        "com.softwaremill.retry" %% "retry"                      % retryV,
         "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
         "org.scalatestplus"      %% "mockito-5-10"               % scalaTestPlusV % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
@@ -1484,6 +1486,7 @@ lazy val developmentTestsDeployManagerArtifacts =
   taskKey[List[(File, String)]]("development tests deployment manager artifacts")
 
 developmentTestsDeployManagerArtifacts := List(
+  (liteEmbeddedDeploymentManager / assembly).value     -> "managers/lite-embedded-manager.jar",
   (developmentTestsDeploymentManager / assembly).value -> "managers/developmentTestsManager.jar"
 )
 
@@ -1944,6 +1947,9 @@ lazy val designer = (project in file("designer/server"))
       .value,
     Test / test                      := (Test / test)
       .dependsOn(
+//        flinkDeploymentManager / Compile / assembly,
+//        liteK8sDeploymentManager / Compile / assembly,
+        liteEmbeddedDeploymentManager / Compile / assembly,
         defaultModel / Compile / assembly,
         flinkTableApiComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
@@ -1951,8 +1957,15 @@ lazy val designer = (project in file("designer/server"))
         flinkExecutor / prepareItLibs
       )
       .value,
+    (Test / managedClasspath) += baseDirectory.value / "engine" / "lite" / "embeddedDeploymentManager" / "target" / "scala-2.13",
+//      unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"engine/lite/embeddedDeploymentManager/target/scala-2.13" ),
+//    Test / testOptions += Tests.Setup(() => {
+//      val classpath = (Test / unmanagedClasspath).value
+//      println(s"Test classpath: $classpath")
+//    }),
+//    Test / unmanagedClasspath += baseDirectory.value / "engine" / "lite" / "embeddedDeploymentManager" / "target" / "scala-2.13" / "classes",
     /*
-      We depend on copyClientDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We depend on copyClientDist in packageBin and assembly to be make sure FE files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
       make compilation v. long. This is not too nice, but so far only alternative is to put designer dists copyClientDist outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
@@ -1990,6 +2003,7 @@ lazy val designer = (project in file("designer/server"))
         "org.apache.xmlgraphics"         % "fop"                             % "2.9" exclude ("commons-logging", "commons-logging"),
         "com.beachape"                  %% "enumeratum-circe"                % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
+        "com.softwaremill.retry"        %% "retry"                           % retryV,
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % openapiCirceYamlV,
         "com.softwaremill.sttp.tapir"   %% "tapir-akka-http-server"          % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-core"                      % tapirV,
@@ -2033,6 +2047,7 @@ lazy val designer = (project in file("designer/server"))
     defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
+    developmentTestsDeploymentManager % Test,
     componentsApi                     % "test->test",
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
     // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
@@ -2040,11 +2055,11 @@ lazy val designer = (project in file("designer/server"))
     // that are also load added their test dependencies on the classpath by the Idea. It causes that
     // UniversalKafkaSourceFactory is loaded from app classloader and GenericRecord which is defined in typesToExtract
     // is missing from this classloader
-    flinkDeploymentManager            % Provided,
-    liteEmbeddedDeploymentManager     % Provided,
-    liteK8sDeploymentManager          % Provided,
-    developmentTestsDeploymentManager % Provided,
-    flinkPeriodicDeploymentManager    % Provided,
+//    flinkDeploymentManager            % Provided, // todo: remove
+//    liteEmbeddedDeploymentManager     % Test,
+//    liteK8sDeploymentManager          % Provided,
+//    developmentTestsDeploymentManager % Provided,
+//    flinkPeriodicDeploymentManager    % Provided,
     schemedKafkaComponentsUtils       % Provided,
   )
 
@@ -2249,9 +2264,13 @@ prepareDev := {
   (flinkExecutor / prepareItLibs).value
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts  =
-    (distribution / componentArtifacts).value ++ (distribution / devArtifacts).value ++ developmentTestsDeployManagerArtifacts.value ++
+    (distribution / componentArtifacts).value ++
+      (distribution / devArtifacts).value ++
+      developmentTestsDeployManagerArtifacts.value ++
       Def
-        .taskDyn(if (addManagerArtifacts) distribution / managerArtifacts else Def.task[List[(File, String)]](Nil))
+        .taskDyn(
+          if (addManagerArtifacts) distribution / deploymentManagerArtifacts else Def.task[List[(File, String)]](Nil)
+        )
         .value ++
       (flinkExecutor / additionalBundledArtifacts).value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })

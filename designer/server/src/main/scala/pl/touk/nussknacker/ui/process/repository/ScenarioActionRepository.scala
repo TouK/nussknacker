@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
-import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{
@@ -291,7 +290,7 @@ class DbScenarioActionRepository private (
         ScenarioActivityType.ScenarioPaused
       case ScenarioActionName.Rename =>
         ScenarioActivityType.ScenarioNameChanged
-      case InstantBatchCustomAction.name =>
+      case ScenarioActionName.RunNow =>
         ScenarioActivityType.PerformedSingleExecution
       case otherCustomName =>
         ScenarioActivityType.CustomAction(otherCustomName.value)
@@ -519,7 +518,7 @@ class DbScenarioActionRepository private (
       case ScenarioActivityType.OutgoingMigration =>
         None
       case ScenarioActivityType.PerformedSingleExecution =>
-        Some(InstantBatchCustomAction.name)
+        Some(ScenarioActionName.RunNow)
       case ScenarioActivityType.PerformedScheduledExecution =>
         None
       case ScenarioActivityType.AutomaticUpdate =>

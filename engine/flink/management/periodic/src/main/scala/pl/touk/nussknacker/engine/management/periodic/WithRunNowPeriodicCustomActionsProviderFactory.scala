@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionResult}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.api.deployment.DMCustomActionCommand
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.RunNow
 
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,8 +25,8 @@ class WithRunNowPeriodicCustomActionsProviderFactory extends PeriodicCustomActio
 
     override def invokeCustomAction(actionRequest: DMCustomActionCommand): Future[CustomActionResult] = {
       actionRequest.actionName match {
-        case InstantBatchCustomAction.name => actionInstantBatch(actionRequest)
-        case _                             => Future.failed(new NotImplementedError())
+        case ScenarioActionName.RunNow => actionInstantBatch(actionRequest)
+        case _                         => Future.failed(new NotImplementedError())
       }
     }
 
@@ -58,12 +59,9 @@ class WithRunNowPeriodicCustomActionsProviderFactory extends PeriodicCustomActio
 //TODO: replace custom action with dedicated command in core services
 case object InstantBatchCustomAction {
 
-  // name is displayed as label under the button
-  val name: ScenarioActionName = ScenarioActionName("run now")
-
   def apply(): CustomActionDefinition = {
     CustomActionDefinition(
-      actionName = name,
+      actionName = RunNow,
       allowedStateStatusNames = List("SCHEDULED"),
       icon = Some(new URI("/assets/custom-actions/batch-instant.svg")),
       parameters = Nil
