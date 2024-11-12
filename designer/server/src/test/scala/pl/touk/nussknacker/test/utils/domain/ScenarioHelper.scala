@@ -239,6 +239,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, clock: Clock, designerConfig: C
           request.content,
           request.layoutData,
           request.color,
+          request.dimensions,
           request.targetEdge,
           scenarioId,
           request.scenarioVersionId

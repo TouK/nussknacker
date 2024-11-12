@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails
 }
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNoteAddRequest
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{Dimensions, StickyNoteAddRequest}
 
 import java.util.UUID
 
@@ -40,7 +40,7 @@ class StickyNotesApiHttpServiceBusinessSpec
     .emptySink("sinkId", "barSink")
 
   private def stickyNoteToAdd(versionId: VersionId): StickyNoteAddRequest =
-    StickyNoteAddRequest(versionId, "", LayoutData(0, 1), "#aabbcc", None)
+    StickyNoteAddRequest(versionId, "", LayoutData(0, 1), "#aabbcc", Dimensions(300, 200), None)
 
   "The GET stickyNotes for scenario" - {
     "return no notes if nothing was created" in {
