@@ -77,7 +77,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
 
   // This extractor is to allow using of predefined type infos in Flink < 1.19. Type info registration was added in 1.19
   // It should be removed when we stop supporting Flink < 1.19
-  private object FlinkBelow119AdditionalTypeInfo {
+  private object FlinkBelow119AdditionalTypeInfo extends Serializable {
 
     def unapply(typingResult: TypingResult): Option[TypeInformation[_]] = {
       if (FlinkTypeInfoRegistrar.isFlinkTypeInfoRegistrationEnabled) {
