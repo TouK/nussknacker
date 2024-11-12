@@ -13,7 +13,7 @@ import org.springframework.expression.spel.{
   SpelParserConfiguration,
   standard
 }
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{CompiledExpression, Context}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
+import pl.touk.nussknacker.engine.expression.parse.{ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError

@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid, invalid, invalidNel, valid}
 import cats.data.{Ior, IorNel, NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{CompiledExpression, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
@@ -17,12 +17,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.{ExpressionEvaluator, NullExpression}
-import pl.touk.nussknacker.engine.expression.parse.{
-  CompiledExpression,
-  ExpressionParser,
-  TypedExpression,
-  TypedExpressionMap
-}
+import pl.touk.nussknacker.engine.expression.parse.{ExpressionParser, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language

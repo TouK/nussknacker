@@ -5,9 +5,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compiledgraph.BaseCompiledParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 // This class looks like a LazyParameter but actually it's not - it's a creator of the LazyParameter.

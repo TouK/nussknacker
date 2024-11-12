@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import pl.touk.nussknacker.engine.api.LazyParameter.{CustomLazyParameter, Evaluate}
+import pl.touk.nussknacker.engine.api.LazyParameter.{
+  CustomLazyParameter,
+  CustomLazyParamterWithCustomizableEvaluationLogic,
+  Evaluate
+}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, JobData, NodeId}
-import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, CompiledParameter}
+import pl.touk.nussknacker.engine.api.{BaseCompiledParameter, BaseExpressionEvaluator, Context, JobData, NodeId}
+import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 
 class EvaluableLazyParameter[T <: AnyRef](
@@ -13,7 +17,7 @@ class EvaluableLazyParameter[T <: AnyRef](
     val jobData: JobData,
     override val returnType: TypingResult,
     val customEvaluate: Option[(BaseCompiledParameter, ExpressionEvaluator, NodeId, JobData, Context) => T] = None
-) extends CustomLazyParameter[T] {
+) extends CustomLazyParamterWithCustomizableEvaluationLogic[T] {
 
   def this(
       compiledParameter: CompiledParameter,
@@ -35,7 +39,7 @@ class EvaluableLazyParameter[T <: AnyRef](
   }
 
   def withCustomEvaluationLogic(
-      customEvaluate: (BaseCompiledParameter, ExpressionEvaluator, NodeId, JobData, Context) => T
+      customEvaluate: (BaseCompiledParameter, BaseExpressionEvaluator, NodeId, JobData, Context) => T
   ): EvaluableLazyParameter[T] = {
     new EvaluableLazyParameter(
       compiledParameter,

@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
+import pl.touk.nussknacker.engine.api.CompiledExpression
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 
 object node {

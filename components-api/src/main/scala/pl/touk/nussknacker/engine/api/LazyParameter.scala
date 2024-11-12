@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.LazyParameter.{Evaluate, MappedLazyParameter, ProductLazyParameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 import scala.reflect.runtime.universe.TypeTag
 
@@ -66,7 +68,15 @@ object LazyParameter {
   ): LazyParameter[Y] =
     new MappedLazyParameter[T, Y](lazyParameter, fun, transformTypingResult)
 
-  trait CustomLazyParameter[+T <: AnyRef] extends LazyParameter[T]
+  trait CustomLazyParameter[T <: AnyRef] extends LazyParameter[T]
+
+  trait CustomLazyParamterWithCustomizableEvaluationLogic[T <: AnyRef] extends CustomLazyParameter[T] {
+
+    def withCustomEvaluationLogic(
+        customEvaluate: (BaseCompiledParameter, BaseExpressionEvaluator, NodeId, JobData, Context) => T
+    ): CustomLazyParamterWithCustomizableEvaluationLogic[T]
+
+  }
 
   final class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
       val arg1: LazyParameter[T],
@@ -119,6 +129,27 @@ object LazyParameter {
 
     override val evaluate: Evaluate[T] = _ => value
   }
+
+}
+
+trait BaseCompiledParameter {
+  def name: ParameterName
+  def expression: CompiledExpression
+  def shouldBeWrappedWithScalaOption: Boolean
+  def shouldBeWrappedWithJavaOptional: Boolean
+}
+
+trait CompiledExpression {
+  def language: Language
+  def original: String
+  def evaluate[T](ctx: Context, globals: Map[String, Any]): T
+}
+
+trait BaseExpressionEvaluator {
+
+  def evaluate[R](expr: CompiledExpression, expressionId: String, nodeId: String, ctx: Context)(
+      implicit jobData: JobData
+  ): ValueWithContext[R]
 
 }
 

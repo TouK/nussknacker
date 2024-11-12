@@ -6,10 +6,9 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.{CompileTimeEvaluableValueValidator, Validator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{Context, CustomMetaData, JobData, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{CompiledExpression, Context, CustomMetaData, JobData, MetaData, NodeId}
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.util.Try

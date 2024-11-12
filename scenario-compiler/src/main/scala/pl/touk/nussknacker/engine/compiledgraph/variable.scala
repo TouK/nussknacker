@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
-import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
+import pl.touk.nussknacker.engine.api.CompiledExpression
 
 object variable {
 

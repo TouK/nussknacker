@@ -39,7 +39,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameter
-import pl.touk.nussknacker.engine.compiledgraph.BaseCompiledParameter
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -1353,36 +1352,35 @@ object InterpreterSpec {
           collector: InvocationCollectors.ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
-        def customEvaluation(
-            param: BaseCompiledParameter,
-            exprEval: ExpressionEvaluator,
-            nodeId: NodeId,
-            jobData: JobData,
-            context: Context
-        ): String = {
-          val baseExpr      = param.expression.asInstanceOf[pl.touk.nussknacker.engine.spel.SpelExpression]
-          val parsedExpr    = baseExpr.parsed
-          val compositeExpr = parsedExpr.parsed.asInstanceOf[CompositeStringExpression]
-          val subValues = compositeExpr.getExpressions.toList.map { subExpr =>
-            val evalutorContextPreparer = baseExpr.evaluationContextPreparer
-            val parsedSubexpression =
-              ParsedSpelExpression.apply(subExpr.getExpressionString, parsedExpr.parser, subExpr)
-            val compiledExpr = new pl.touk.nussknacker.engine.spel.SpelExpression(
-              parsedSubexpression,
-              typing.Typed[String],
-              SpelExpressionParser.Standard,
-              evalutorContextPreparer
-            )
-            val evaluator = exprEval
-            evaluator.evaluate[String](compiledExpr, "subexpression", "irrelevant", context)(jobData).value
-          }
-          subValues.zipWithIndex.map { case (v, i) => s"value-$i" -> v }.toMap.toString
-        }
-
         val lazyParam = spelTemplateParameter
           .extractValueUnsafe(params)
           .asInstanceOf[EvaluableLazyParameter[String]]
-          .withCustomEvaluationLogic(customEvaluation)
+          .withCustomEvaluationLogic {
+            (
+                param: BaseCompiledParameter,
+                exprEval: BaseExpressionEvaluator,
+                nodeId: NodeId,
+                jobData: JobData,
+                context: Context
+            ) =>
+              val baseExpr      = param.expression.asInstanceOf[pl.touk.nussknacker.engine.spel.SpelExpression]
+              val parsedExpr    = baseExpr.parsed
+              val compositeExpr = parsedExpr.parsed.asInstanceOf[CompositeStringExpression]
+              val subValues = compositeExpr.getExpressions.toList.map { subExpr =>
+                val evalutorContextPreparer = baseExpr.evaluationContextPreparer
+                val parsedSubexpression =
+                  ParsedSpelExpression.apply(subExpr.getExpressionString, parsedExpr.parser, subExpr)
+                val compiledExpr = new pl.touk.nussknacker.engine.spel.SpelExpression(
+                  parsedSubexpression,
+                  typing.Typed[String],
+                  SpelExpressionParser.Standard,
+                  evalutorContextPreparer
+                )
+                val evaluator = exprEval
+                evaluator.evaluate[String](compiledExpr, "subexpression", "irrelevant", context)(jobData).value
+              }
+              subValues.zipWithIndex.map { case (v, i) => s"value-$i" -> v }.toMap.toString
+          }
         Future.successful(lazyParam.evaluate(context))
       }
 

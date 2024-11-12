@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.language.tabularDataDefinition
 
 import cats.data.ValidatedNel
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{CompiledExpression, Context}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   TabularDataDefinitionParserErrorDetails
 }
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
+import pl.touk.nussknacker.engine.expression.parse.{ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.CreationError.{

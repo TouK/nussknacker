@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
+import pl.touk.nussknacker.engine.api.{BaseCompiledParameter, CompiledExpression}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 
 object CompiledParameter {
 
@@ -29,10 +30,3 @@ final case class CompiledParameter(
     override val shouldBeWrappedWithJavaOptional: Boolean,
     typingInfo: ExpressionTypingInfo
 ) extends BaseCompiledParameter
-
-trait BaseCompiledParameter {
-  def name: ParameterName
-  def expression: CompiledExpression
-  def shouldBeWrappedWithScalaOption: Boolean
-  def shouldBeWrappedWithJavaOptional: Boolean
-}
