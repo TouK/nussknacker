@@ -1920,7 +1920,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       val caught = intercept[SpelExpressionEvaluationException] {
         evaluate[Any](expression, customCtx)
       }
-      caught.getCause.getMessage should (
+      caught.getCause.getCause.getMessage should (
         include("Cannot convert:") or
           include("is neither a decimal digit number")
       )

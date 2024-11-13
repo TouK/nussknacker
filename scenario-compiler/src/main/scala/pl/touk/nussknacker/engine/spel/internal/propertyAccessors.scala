@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.spel.internal
 
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
-import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
+import org.springframework.expression.{AccessException, EvaluationContext, PropertyAccessor, TypedValue}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.extension.{ExtensionAwareMethodsDiscovery, ExtensionsAwareMethodInvoker}
+import pl.touk.nussknacker.engine.extension.ExtensionMethodResolver
 
 import java.lang.reflect.{Field, Method, Modifier}
-import java.util.Optional
+import java.util.{Collections => JCollections, Optional}
 import scala.collection.concurrent.TrieMap
 
 object propertyAccessors {
@@ -307,30 +307,28 @@ object propertyAccessors {
     override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
-  // It's not optimized to generate byteCode like in ReflectivePropertyAccessor so it's running only in interpreted mode
   private class ExtensionMethodsPropertyAccessor(
       accessChecker: MethodAccessChecker,
       set: ClassDefinitionSet
   ) extends PropertyAccessor
-      with ReadOnly
-      with Caching {
-    private val methodInvoker = new ExtensionsAwareMethodInvoker(set)
-    private val emptyArray    = Array[AnyRef]()
+      with ReadOnly {
+    private val methodResolver = new ExtensionMethodResolver(set)
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
 
-    override protected def invokeMethod(
-        propertyName: String,
-        method: Method,
-        target: Any,
-        context: EvaluationContext
-    ): Any = methodInvoker.invoke(method)(target, emptyArray)
+    override def canRead(context: EvaluationContext, target: Any, methodName: String): Boolean = {
+      methodResolver.maybeResolve(target, methodName, JCollections.emptyList()) match {
+        case Some(_) =>
+          accessChecker.checkAccessForMethodName(target.getClass, methodName, onlyStaticMethods = false)
+          true
+        case None => false
+      }
+    }
 
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] =
-      accessChecker.checkAccessIfMethodFound(target) {
-        ExtensionAwareMethodsDiscovery
-          .discover(target)
-          .find(m => m.getParameterCount == 0 && m.getName == name)
+    override def read(context: EvaluationContext, target: Any, methodName: String): TypedValue =
+      methodResolver.maybeResolve(target, methodName, JCollections.emptyList()) match {
+        case Some(executor) => executor.execute(context, target, methodName)
+        case None           => throw new AccessException(s"Cannot find method with name: $methodName")
       }
 
   }
