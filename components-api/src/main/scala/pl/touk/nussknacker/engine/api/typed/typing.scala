@@ -203,9 +203,8 @@ object typing {
 
   }
 
-  case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
-    override val valueOpt: None.type = None
-
+  case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult], valueOpt: Option[Any] = None)
+      extends SingleTypingResult {
     override def withoutValue: TypedClass = TypedClass(klass, params.map(_.withoutValue))
 
     override def display: String = {

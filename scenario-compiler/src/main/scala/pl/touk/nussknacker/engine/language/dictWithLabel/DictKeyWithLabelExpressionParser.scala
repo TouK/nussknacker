@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypingResult}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -17,8 +17,20 @@ import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, 
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.KeyWithLabelExpressionParsingError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
-case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String], typingResult: TypingResult)
-    extends ExpressionTypingInfo
+case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String], expectedType: TypingResult)
+    extends ExpressionTypingInfo {
+
+  override def typingResult: TypingResult = expectedType match {
+    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[Long]) =>
+      TypedClass(a, b, Some(key.toLong))
+    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[Boolean]) =>
+      TypedClass(a, b, Some(key.toBoolean))
+    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[String]) =>
+      TypedClass(a, b, Some(key))
+    case _ => expectedType
+  }
+
+}
 
 object DictKeyWithLabelExpressionParser extends ExpressionParser {
 
