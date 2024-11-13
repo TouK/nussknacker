@@ -52,6 +52,7 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
   CreatorPanel,
   ProcessActionsPanel,
   SearchPanel,
+  StickyNotesPanel,
   TipsPanel
 }
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
@@ -1225,7 +1226,8 @@ class ProcessesResourcesSpec
         List(
           ToolbarPanel(SearchPanel, None, None, None),
           ToolbarPanel(TipsPanel, None, None, None),
-          ToolbarPanel(CreatorPanel, None, None, None)
+          ToolbarPanel(CreatorPanel, None, None, None),
+          ToolbarPanel(StickyNotesPanel, None, None, None)
         ),
         List(),
         List(
