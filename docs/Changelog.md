@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.19
+
+#### Highlights
+
+##### End-user
+
+##### Administrator
+
+### 1.19.0 (Not released yet)
+
+* [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
+
 ## 1.18
 
 #### Highlights
@@ -20,7 +32,7 @@
 
 ### 1.18.0 (Not released yet)
 
-* [6944](https://github.com/TouK/nussknacker/pull/6944) Changes around adhoc testing feature
+* [#6944](https://github.com/TouK/nussknacker/pull/6944) Changes around adhoc testing feature
   * `test-with-form` button was renamed to `adhoc-testing`
   * Improved form validators inside adhoc tests (validation was moved to backend)
   * Moved `testInfo/*` endpoints to `scenarioTesting/` path and rewrite then using Tapir
