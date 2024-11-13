@@ -15,6 +15,7 @@ import {
     enrichNodeWithProcessDependentData,
     prepareNewNodesWithLayout,
     prepareNewStickyNotesWithLayout,
+    removeStickyNoteFromLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
@@ -247,6 +248,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         }
         case "STICKY_NOTES_UPDATED": {
             const { stickyNotes, layout } = prepareNewStickyNotesWithLayout(state, action.stickyNotes);
+            return {
+                ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
+            };
+        }
+        case "STICKY_NOTE_DELETED": {
+            const { stickyNotes, layout } = removeStickyNoteFromLayout(state, action.stickyNoteId);
             return {
                 ...addStickyNotesWithLayout(state, { stickyNotes, layout }),
             };
