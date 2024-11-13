@@ -35,9 +35,9 @@ object ExampleFunctions {
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
-      case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
-      case TypedClass(`listClass`, _) :: Nil        => throw new AssertionError("Lists must have one parameter")
-      case _                                        => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      case TypedClass(`listClass`, t :: Nil, _) :: Nil => t.validNel
+      case TypedClass(`listClass`, _, _) :: Nil        => throw new AssertionError("Lists must have one parameter")
+      case _                                           => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
   }
@@ -58,18 +58,18 @@ object ExampleFunctions {
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
-      case TypedObjectWithValue(TypedClass(`stringClass`, Nil), typ: String) :: Nil =>
+      case TypedObjectWithValue(TypedClass(`stringClass`, Nil, _), typ: String) :: Nil =>
         typ match {
           case "String" => Typed[String].validNel
           case "Int"    => Typed[Int].validNel
           case "Double" => Typed[Double].validNel
           case _        => GenericFunctionTypingError.ArgumentTypeError.invalidNel
         }
-      case a @ TypedObjectWithValue(TypedClass(`stringClass`, _), _) :: Nil =>
+      case a @ TypedObjectWithValue(TypedClass(`stringClass`, _, _), _) :: Nil =>
         throw new AssertionError(s"Found illegal type $a")
-      case TypedClass(`stringClass`, Nil) :: Nil =>
+      case TypedClass(`stringClass`, Nil, _) :: Nil =>
         GenericFunctionTypingError.OtherError("Expected string with known value").invalidNel
-      case a @ TypedClass(`stringClass`, _) :: Nil =>
+      case a @ TypedClass(`stringClass`, _, _) :: Nil =>
         throw new AssertionError(s"Found illegal type $a")
       case _ =>
         GenericFunctionTypingError.ArgumentTypeError.invalidNel

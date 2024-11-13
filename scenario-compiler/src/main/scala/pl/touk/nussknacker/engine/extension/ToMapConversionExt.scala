@@ -73,11 +73,11 @@ object ToMapConversionExt extends ConversionExt with ToCollectionConversion {
 
   override def typingFunction(invocationTarget: TypingResult): ValidatedNel[GenericFunctionTypingError, TypingResult] =
     invocationTarget.withoutValue match {
-      case TypedClass(_, List(TypedObjectTypingResult(fields, _, _)))
+      case TypedClass(_, List(TypedObjectTypingResult(fields, _, _)), _)
           if fields.contains(keyName) && fields.contains(valueName) =>
         val params = List(fields.get(keyName), fields.get(valueName)).flatten
         Typed.genericTypeClass[JMap[_, _]](params).validNel
-      case TypedClass(_, List(TypedObjectTypingResult(_, _, _))) =>
+      case TypedClass(_, List(TypedObjectTypingResult(_, _, _)), _) =>
         GenericFunctionTypingError.OtherError("List element must contain 'key' and 'value' fields").invalidNel
       case Unknown => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
       case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel

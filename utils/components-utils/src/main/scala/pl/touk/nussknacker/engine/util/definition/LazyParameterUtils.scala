@@ -14,7 +14,7 @@ object LazyParameterUtils {
         params.keys
           .zip(list)
           .map {
-            case (fieldName, TypedClass(_, _ :: valueType :: Nil)) =>
+            case (fieldName, TypedClass(_, _ :: valueType :: Nil, _)) =>
               fieldName -> valueType
             case other =>
               throw new IllegalArgumentException(

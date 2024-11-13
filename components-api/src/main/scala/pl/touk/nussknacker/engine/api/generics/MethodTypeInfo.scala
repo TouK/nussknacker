@@ -6,9 +6,9 @@ object MethodTypeInfo {
   private val arrayClass = classOf[Array[Object]]
 
   def fromList(lst: List[Parameter], varArgs: Boolean, result: TypingResult): MethodTypeInfo = (varArgs, lst) match {
-    case (true, noVarArgParameters :+ Parameter(paramName, TypedClass(`arrayClass`, varArgType :: Nil))) =>
+    case (true, noVarArgParameters :+ Parameter(paramName, TypedClass(`arrayClass`, varArgType :: Nil, _))) =>
       MethodTypeInfo(noVarArgParameters, Some(Parameter(paramName, varArgType)), result)
-    case (true, _ :+ Parameter(_, TypedClass(`arrayClass`, _))) =>
+    case (true, _ :+ Parameter(_, TypedClass(`arrayClass`, _, _))) =>
       throw new AssertionError("Array must have one type parameter")
     case (true, _ :+ Parameter(_, _)) =>
       throw new AssertionError("VarArg must have type of array")

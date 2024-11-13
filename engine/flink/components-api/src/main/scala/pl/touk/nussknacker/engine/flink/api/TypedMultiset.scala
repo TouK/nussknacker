@@ -26,7 +26,7 @@ object TypedMultiset {
   }
 
   def unapply(typingResult: TypingResult): Option[TypingResult] = Option(typingResult).collect {
-    case TypedTaggedValue(TypedClass(klass, keyType :: valueType :: Nil), `multisetTag`)
+    case TypedTaggedValue(TypedClass(klass, keyType :: valueType :: Nil, _), `multisetTag`)
         if klass == javaMapClass && valueType == Typed[Int] =>
       keyType
   }

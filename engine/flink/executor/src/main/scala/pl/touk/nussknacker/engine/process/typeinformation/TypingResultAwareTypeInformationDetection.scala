@@ -44,12 +44,12 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
   def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
       case FlinkBelow119AdditionalTypeInfo(typeInfo) => typeInfo
-      case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
+      case TypedClass(klass, elementType :: Nil, _) if klass == classOf[java.util.List[_]] =>
         new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
-      case TypedClass(klass, elementType :: Nil) if klass == classOf[Array[AnyRef]] =>
+      case TypedClass(klass, elementType :: Nil, _) if klass == classOf[Array[AnyRef]] =>
         // We have to use OBJECT_ARRAY even for numeric types, because ARRAY<INT> is represented as Integer[] which can't be handled by IntPrimitiveArraySerializer
         Types.OBJECT_ARRAY(forType[AnyRef](elementType))
-      case TypedClass(klass, keyType :: valueType :: Nil) if klass == classOf[java.util.Map[_, _]] =>
+      case TypedClass(klass, keyType :: valueType :: Nil, _) if klass == classOf[java.util.Map[_, _]] =>
         new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](keyType), forType[AnyRef](valueType))
       case TypedMultiset(elementType) =>
         new MultisetTypeInfo[AnyRef](forType[AnyRef](elementType))
@@ -84,7 +84,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
         None
       } else {
         for {
-          clazz <- Option(typingResult).collect { case TypedClass(clazz, Nil) =>
+          clazz <- Option(typingResult).collect { case TypedClass(clazz, Nil, _) =>
             clazz
           }
           typeInfo <- FlinkTypeInfoRegistrar.typeInfoToRegister.collectFirst {

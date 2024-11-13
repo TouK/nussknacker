@@ -46,7 +46,7 @@ object ValueDecoder {
     case `durationClass`      => obj.as[String].map(Duration.parse)
     case `periodClass`        => obj.as[String].map(Period.parse)
 
-    case TypedClass(klass, List(elementType: TypingResult)) if klass == classOf[java.util.List[_]] =>
+    case TypedClass(klass, List(elementType: TypingResult), _) if klass == classOf[java.util.List[_]] =>
       obj.values match {
         case Some(values) =>
           values.toList

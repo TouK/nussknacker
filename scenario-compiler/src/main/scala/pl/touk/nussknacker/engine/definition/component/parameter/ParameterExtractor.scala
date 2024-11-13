@@ -74,7 +74,7 @@ object ParameterExtractor {
   }
 
   private def extractBranchParamType(typ: TypingResult, p: java.lang.reflect.Parameter) = typ match {
-    case TypedClass(cl, TypedClass(keyClass, _) :: valueType :: Nil)
+    case TypedClass(cl, TypedClass(keyClass, _, _) :: valueType :: Nil, _)
         if classOf[Map[_, _]].isAssignableFrom(cl) && classOf[String].isAssignableFrom(keyClass) =>
       valueType
     case _ =>
@@ -89,16 +89,16 @@ object ParameterExtractor {
   }
 
   private def determineIfLazyParameter(typ: TypingResult) = typ match {
-    case TypedClass(cl, genericParams) if classOf[LazyParameter[_]].isAssignableFrom(cl) =>
+    case TypedClass(cl, genericParams, _) if classOf[LazyParameter[_]].isAssignableFrom(cl) =>
       (genericParams.head, true)
     case _ =>
       (typ, false)
   }
 
   private def determineOptionalParameter(typ: TypingResult) = typ match {
-    case TypedClass(cl, genericParams) if classOf[Option[_]].isAssignableFrom(cl) =>
+    case TypedClass(cl, genericParams, _) if classOf[Option[_]].isAssignableFrom(cl) =>
       (genericParams.head, true, false)
-    case TypedClass(cl, genericParams) if classOf[Optional[_]].isAssignableFrom(cl) =>
+    case TypedClass(cl, genericParams, _) if classOf[Optional[_]].isAssignableFrom(cl) =>
       (genericParams.head, false, true)
     case _ =>
       (typ, false, false)

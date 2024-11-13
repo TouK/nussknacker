@@ -97,21 +97,24 @@ object ToTableTypeSchemaBasedEncoder {
           field.getName -> alignedFieldType
         }
         Typed.record(fields, Typed.typedClass[Row])
-      case (TypedObjectTypingResult(_, TypedClass(`javaMapClass`, keyType :: valueType :: Nil), _), mapType: MapType) =>
+      case (
+            TypedObjectTypingResult(_, TypedClass(`javaMapClass`, keyType :: valueType :: Nil, _), _),
+            mapType: MapType
+          ) =>
         alignMapType(keyType, valueType, mapType)
-      case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil), mapType: MapType) =>
+      case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil, _), mapType: MapType) =>
         alignMapType(keyType, valueType, mapType)
       case (
-            TypedObjectTypingResult(_, TypedClass(`javaMapClass`, keyType :: valueType :: Nil), _),
+            TypedObjectTypingResult(_, TypedClass(`javaMapClass`, keyType :: valueType :: Nil, _), _),
             multisetType: MultisetType
           ) if valueType.canBeSubclassOf(Typed[Int]) =>
         alignMultisetType(keyType, multisetType)
-      case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil), multisetType: MultisetType)
+      case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil, _), multisetType: MultisetType)
           if valueType.canBeSubclassOf(Typed[Int]) =>
         alignMultisetType(keyType, multisetType)
-      case (TypedClass(`arrayClass`, elementType :: Nil), arrayType: ArrayType) =>
+      case (TypedClass(`arrayClass`, elementType :: Nil, _), arrayType: ArrayType) =>
         Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
-      case (TypedClass(`listClass`, elementType :: Nil), arrayType: ArrayType) =>
+      case (TypedClass(`listClass`, elementType :: Nil, _), arrayType: ArrayType) =>
         Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
       case (other, _) =>
         // We fallback to input typing result - some conversions could be done by Flink

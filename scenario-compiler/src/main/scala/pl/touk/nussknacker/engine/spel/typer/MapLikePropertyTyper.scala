@@ -16,9 +16,9 @@ object MapLikePropertyTyper {
    */
   def mapLikeValueType(typ: TypedClass): Option[TypingResult] = typ match {
     // see MapPropertyAccessor
-    case TypedClass(cl, _ :: valueParam :: Nil) if classOf[util.Map[_, _]].isAssignableFrom(cl) => Some(valueParam)
-    case TypedClass(cl, _) if classOf[util.Map[_, _]].isAssignableFrom(cl)                      => Some(Unknown)
-    case TypedClass(cl, _) => getMethodReturnType(cl)
+    case TypedClass(cl, _ :: valueParam :: Nil, _) if classOf[util.Map[_, _]].isAssignableFrom(cl) => Some(valueParam)
+    case TypedClass(cl, _, _) if classOf[util.Map[_, _]].isAssignableFrom(cl)                      => Some(Unknown)
+    case TypedClass(cl, _, _) => getMethodReturnType(cl)
   }
 
   // see MapLikePropertyAccessor

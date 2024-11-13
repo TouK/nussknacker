@@ -67,7 +67,7 @@ object ToListConversionExt extends ConversionExt with ToCollectionConversion {
 
   override def typingFunction(invocationTarget: TypingResult): ValidatedNel[GenericFunctionTypingError, TypingResult] =
     invocationTarget.withoutValue match {
-      case TypedClass(klass, params) if klass.isAOrChildOf(collectionClass) || klass.isArray =>
+      case TypedClass(klass, params, _) if klass.isAOrChildOf(collectionClass) || klass.isArray =>
         Typed.genericTypeClass[JList[_]](params).validNel
       case Unknown => Typed.genericTypeClass[JList[_]](List(Unknown)).validNel
       case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel

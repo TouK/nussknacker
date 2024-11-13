@@ -213,11 +213,12 @@ private[spel] class Typer(
     @tailrec
     def typeIndexer(e: Indexer, typingResult: TypingResult): NodeTypingResult = {
       typingResult match {
-        case TypedClass(clazz, param :: Nil)
+        case TypedClass(clazz, param :: Nil, _)
             if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
           withTypedChildren(_ => valid(param))
-        case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
+        case TypedClass(clazz, keyParam :: valueParam :: Nil, _)
+            if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
           withTypedChildren(_ => valid(valueParam))
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case union: TypedUnion               => typeUnion(e, union)
@@ -267,7 +268,7 @@ private[spel] class Typer(
           val classToUse   = Try(evaluationContext.getTypeLocator.findType(className)).toOption
           val typingResult = classToUse.flatMap(kl => classDefinitionSet.get(kl).map(_.clazzName))
           typingResult match {
-            case Some(tc @ TypedClass(_, _)) =>
+            case Some(tc @ TypedClass(_, _, _)) =>
               if (isArrayConstructor(e)) {
                 invalid(ArrayConstructorError)
               } else {

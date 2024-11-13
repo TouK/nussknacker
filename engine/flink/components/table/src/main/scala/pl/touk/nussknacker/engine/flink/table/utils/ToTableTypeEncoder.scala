@@ -16,7 +16,7 @@ object ToTableTypeEncoder {
     (value, typingResult.withoutValue) match {
       case (
             javaMap: java.util.Map[String @unchecked, _],
-            TypedObjectTypingResult(fields, TypedClass(`javaMapClass`, _), _)
+            TypedObjectTypingResult(fields, TypedClass(`javaMapClass`, _, _), _)
           ) =>
         val row = Row.withNames()
         javaMap.asScala.foreach { case (fieldName, fieldValue) =>
@@ -24,7 +24,7 @@ object ToTableTypeEncoder {
           row.setField(fieldName, encodedFieldValue)
         }
         row
-      case (javaList: java.util.List[_], TypedClass(`listClass`, elementType :: Nil)) =>
+      case (javaList: java.util.List[_], TypedClass(`listClass`, elementType :: Nil, _)) =>
         javaList.asScala.map(encode(_, elementType)).asJava
       case (other, _) =>
         other
@@ -33,12 +33,12 @@ object ToTableTypeEncoder {
 
   def alignTypingResult(typingResult: TypingResult): TypingResult = {
     typingResult.withoutValue match {
-      case recordType @ TypedObjectTypingResult(fields, TypedClass(`javaMapClass`, _), _) =>
+      case recordType @ TypedObjectTypingResult(fields, TypedClass(`javaMapClass`, _, _), _) =>
         recordType.copy(
           fields = ListMap(fields.toList.map { case (name, value) => name -> alignTypingResult(value) }: _*),
           runtimeObjType = Typed.typedClass[Row]
         )
-      case listType @ TypedClass(`listClass`, elementType :: Nil) =>
+      case listType @ TypedClass(`listClass`, elementType :: Nil, _) =>
         listType.copy(params = alignTypingResult(elementType) :: Nil)
       case other =>
         other

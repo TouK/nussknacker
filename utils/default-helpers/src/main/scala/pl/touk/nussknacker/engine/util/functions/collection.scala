@@ -252,8 +252,8 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case (f @ TypedClass(`fClass`, element :: Nil)) :: _ => f.copy(params = element.withoutValue :: Nil).validNel
-      case TypedObjectWithValue(f @ TypedClass(`fClass`, element :: Nil), _) :: _ =>
+      case (f @ TypedClass(`fClass`, element :: Nil, _)) :: _ => f.copy(params = element.withoutValue :: Nil).validNel
+      case TypedObjectWithValue(f @ TypedClass(`fClass`, element :: Nil, _), _) :: _ =>
         f.copy(params = element.withoutValue :: Nil).validNel
       case firstArgument :: _ => firstArgument.validNel
       case _                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
@@ -267,8 +267,8 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case TypedClass(`fClass`, componentType :: Nil) :: _ => componentType.withoutValue.validNel
-      case TypedObjectWithValue(TypedClass(`fClass`, componentType :: Nil), _) :: _ =>
+      case TypedClass(`fClass`, componentType :: Nil, _) :: _ => componentType.withoutValue.validNel
+      case TypedObjectWithValue(TypedClass(`fClass`, componentType :: Nil, _), _) :: _ =>
         componentType.withoutValue.validNel
       case firstArgument :: _ => firstArgument.withoutValue.validNel
       case _                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
@@ -305,14 +305,20 @@ object CollectionUtils {
 
     private[functions] def computeResultType(first: TypingResult, second: TypingResult): TypingResult =
       (first, second) match {
-        case (l1 @ TypedClass(`fClass`, _ :: Nil), l2 @ TypedClass(`fClass`, _ :: Nil)) => concatType(l1, l2)
-        case (l1 @ TypedClass(`fClass`, _ :: Nil), TypedObjectWithValue(l2 @ TypedClass(`fClass`, _ :: Nil), _)) =>
-          concatType(l1, l2)
-        case (TypedObjectWithValue(l1 @ TypedClass(`fClass`, _ :: Nil), _), l2 @ TypedClass(`fClass`, _ :: Nil)) =>
+        case (l1 @ TypedClass(`fClass`, _ :: Nil, _), l2 @ TypedClass(`fClass`, _ :: Nil, _)) => concatType(l1, l2)
+        case (
+              l1 @ TypedClass(`fClass`, _ :: Nil, _),
+              TypedObjectWithValue(l2 @ TypedClass(`fClass`, _ :: Nil, _), _)
+            ) =>
           concatType(l1, l2)
         case (
-              TypedObjectWithValue(l1 @ TypedClass(`fClass`, _ :: Nil), _),
-              TypedObjectWithValue(l2 @ TypedClass(`fClass`, _ :: Nil), _)
+              TypedObjectWithValue(l1 @ TypedClass(`fClass`, _ :: Nil, _), _),
+              l2 @ TypedClass(`fClass`, _ :: Nil, _)
+            ) =>
+          concatType(l1, l2)
+        case (
+              TypedObjectWithValue(l1 @ TypedClass(`fClass`, _ :: Nil, _), _),
+              TypedObjectWithValue(l2 @ TypedClass(`fClass`, _ :: Nil, _), _)
             ) =>
           concatType(l1, l2)
         case _ => Typed.genericTypeClass(fClass, List(Unknown))
@@ -333,8 +339,8 @@ object CollectionUtils {
 
     private def concatType(list1: TypedClass, list2: TypedClass) = (list1, list2) match {
       case (
-            listType @ TypedClass(`fClass`, firstComponentType :: Nil),
-            TypedClass(`fClass`, secondComponentType :: Nil)
+            listType @ TypedClass(`fClass`, firstComponentType :: Nil, _),
+            TypedClass(`fClass`, secondComponentType :: Nil, _)
           ) =>
         (firstComponentType, secondComponentType) match {
           case (TypedObjectTypingResult(x, _, infoX), TypedObjectTypingResult(y, _, infoY))
@@ -499,11 +505,14 @@ object CollectionUtils {
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
       arguments match {
-        case (f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil))
-            :: TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
+        case (f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil, _))
+            :: TypedObjectWithValue(TypedClass(`fieldClass`, Nil, _), fieldName) :: _ =>
           listResultType(f, e, fields, fieldName)
-        case TypedObjectWithValue(f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil), _) ::
-            TypedObjectWithValue(TypedClass(`fieldClass`, Nil), fieldName) :: _ =>
+        case TypedObjectWithValue(
+              f @ TypedClass(`listClass`, (e @ TypedObjectTypingResult(fields, _, _)) :: Nil, _),
+              _
+            ) ::
+            TypedObjectWithValue(TypedClass(`fieldClass`, Nil, _), fieldName) :: _ =>
           listResultType(f, e, fields, fieldName)
         case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
@@ -516,9 +525,9 @@ object CollectionUtils {
         fieldName: Any
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
       fields.get(fieldName.asInstanceOf[String]) match {
-        case Some(TypedClass(klass, _)) if comparableClass.isAssignableFrom(klass) =>
+        case Some(TypedClass(klass, _, _)) if comparableClass.isAssignableFrom(klass) =>
           baseTypeClass.copy(params = parametersTypes.withoutValue :: Nil).validNel
-        case Some(t @ (TypedClass(_, _) | Unknown)) =>
+        case Some(t @ (TypedClass(_, _, _) | Unknown)) =>
           GenericFunctionTypingError
             .OtherError(
               s"Field: $fieldName of the type: ${t.display} isn't comparable (doesn't implement the " +

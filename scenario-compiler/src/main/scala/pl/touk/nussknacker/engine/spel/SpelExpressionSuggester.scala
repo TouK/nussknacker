@@ -291,7 +291,7 @@ class SpelExpressionSuggester(
                 parentPrevNodeTyping.withoutValue match {
                   case t @ Unknown =>
                     castOrConversionMethodsSuggestions(classOf[Object], t)
-                  case t @ TypedClass(klass, _) =>
+                  case t @ TypedClass(klass, _, _) =>
                     castOrConversionMethodsSuggestions(klass, t)
                   case _ => successfulNil
                 }

@@ -151,13 +151,13 @@ trait CanBeSubclassDeterminer {
       )
 
     (givenClass, superclassCandidate) match {
-      case (TypedClass(_, givenElementParam :: Nil), TypedClass(superclass, superclassParam :: Nil))
+      case (TypedClass(_, givenElementParam :: Nil, _), TypedClass(superclass, superclassParam :: Nil, _))
           // Array are invariant but we have built-in conversion between array types - this check should be moved outside this class when we move away canBeConvertedTo as well
           if javaListClass.isAssignableFrom(superclass) || arrayOfAnyRefClass.isAssignableFrom(superclass) =>
         canBeSubclassOf(givenElementParam, superclassParam)
       case (
-            TypedClass(_, givenKeyParam :: givenValueParam :: Nil),
-            TypedClass(superclass, superclassKeyParam :: superclassValueParam :: Nil)
+            TypedClass(_, givenKeyParam :: givenValueParam :: Nil, _),
+            TypedClass(superclass, superclassKeyParam :: superclassValueParam :: Nil, _)
           ) if javaMapClass.isAssignableFrom(superclass) =>
         // Map's key generic param is invariant. We can't just check givenKeyParam == superclassKeyParam because of Unknown type which is a kind of wildcard
         condNel(

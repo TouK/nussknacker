@@ -60,9 +60,9 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         validateRecordSchema(typingResult, schema, path)
       case (typingResult, Type.MAP) =>
         validateMapSchema(typingResult, schema, path)
-      case (tc @ TypedClass(cl, _), Type.ARRAY) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
+      case (tc @ TypedClass(cl, _, _), Type.ARRAY) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
         validateArraySchema(tc, schema, path)
-      case (TypedObjectWithValue(tc @ TypedClass(cl, _), _), Type.ARRAY)
+      case (TypedObjectWithValue(tc @ TypedClass(cl, _, _), _), Type.ARRAY)
           if classOf[java.util.List[_]].isAssignableFrom(cl) =>
         validateArraySchema(tc, schema, path)
       case (TypedNull, _) if !schema.isNullable =>
@@ -150,14 +150,14 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     def isMap(klass: Class[_]) = classOf[java.util.Map[_, _]].isAssignableFrom(klass)
 
     typingResult match {
-      case _ @TypedClass(klass, key :: value :: Nil) if isMap(klass) =>
+      case _ @TypedClass(klass, key :: value :: Nil, _) if isMap(klass) =>
         // Map keys are assumed to be strings: https://avro.apache.org/docs/current/spec.html#Maps
         condNel(key.canBeSubclassOf(Typed.apply[java.lang.String]), (), typeError(typingResult, schema, path)).andThen(
           _ => validateTypingResult(value, schema.getValueType, buildPath("*", path, useIndexer = true))
         )
-      case map @ TypedClass(klass, _) if isMap(klass) =>
+      case map @ TypedClass(klass, _, _) if isMap(klass) =>
         throw new IllegalArgumentException(s"Illegal typing Map: $map.")
-      case _ @TypedObjectTypingResult(fields, TypedClass(klass, _), _) if isMap(klass) =>
+      case _ @TypedObjectTypingResult(fields, TypedClass(klass, _, _), _) if isMap(klass) =>
         fields
           .map { case (key, value) =>
             val fieldPath = buildPath(key, path)
