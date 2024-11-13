@@ -317,16 +317,16 @@ object propertyAccessors {
     override def getSpecificTargetClasses: Array[Class[_]] = null
 
     override def canRead(context: EvaluationContext, target: Any, methodName: String): Boolean = {
-      methodResolver.maybeResolve(context, target, methodName, JCollections.emptyList()) match {
+      methodResolver.maybeResolve(target, methodName, JCollections.emptyList()) match {
         case Some(_) =>
-          accessChecker.checkAccessForMethodName(target.getClass, methodName, false)
+          accessChecker.checkAccessForMethodName(target.getClass, methodName, onlyStaticMethods = false)
           true
         case None => false
       }
     }
 
     override def read(context: EvaluationContext, target: Any, methodName: String): TypedValue =
-      methodResolver.maybeResolve(context, target, methodName, JCollections.emptyList()) match {
+      methodResolver.maybeResolve(target, methodName, JCollections.emptyList()) match {
         case Some(executor) => executor.execute(context, target, methodName)
         case None           => throw new AccessException(s"Cannot find method with name: $methodName")
       }

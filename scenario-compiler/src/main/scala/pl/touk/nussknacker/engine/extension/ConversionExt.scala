@@ -4,43 +4,42 @@ import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition, StaticMethodDefinition}
 import pl.touk.nussknacker.engine.extension.ExtensionMethod.NoArg
-import pl.touk.nussknacker.engine.util.classes.Extensions.{ClassExtensions, ClassesExtensions}
+import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
 import java.lang.{Boolean => JBoolean}
 
-class ConversionExtensionMethodHandler(targetTypeName: String, castOrConversionExt: CastOrConversionExt)
-    extends ExtensionMethodHandler {
+class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinition {
 
-  override val methodRegistry: Map[String, ExtensionMethod[_]] = castOrConversionExt.methodRegistry.map {
-    case (methodName, extensionMethod) =>
-      mapMethodName(methodName) -> NoArg(target => extensionMethod.invoke(target, targetTypeName))
-  }
-
-  private def mapMethodName(methodName: String): String = methodName match {
-    case "is"       => s"is$targetTypeName"
-    case "to"       => s"to$targetTypeName"
-    case "toOrNull" => s"to${targetTypeName}OrNull"
-    case _          => throw new IllegalArgumentException(s"Method $methodName not implemented")
-  }
-
-}
-
-trait ConversionExt extends ExtensionMethodsDefinition {
   private lazy val definitionsByName = definitions().groupBy(_.name)
 
-  val conversion: Conversion[_]
+  private lazy val targetTypeName = conversion.resultTypeClass.simpleName()
 
-  override def createHandler(clazz: Class[_], set: ClassDefinitionSet): Option[ExtensionMethodHandler] =
-    if (appliesToClassInRuntime(clazz)) {
-      Some(
-        new ConversionExtensionMethodHandler(
-          conversion.resultTypeClass.simpleName(),
-          new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase())
-        )
-      )
+  private val isMethodName       = s"is$targetTypeName"
+  private val toMethodName       = s"to$targetTypeName"
+  private val toOrNullMethodName = s"to${targetTypeName}OrNull"
+
+  override def findMethod(
+      clazz: Class[_],
+      methodName: String,
+      argsSize: Int,
+      set: ClassDefinitionSet
+  ): Option[ExtensionMethod[_]] =
+    if (conversion.appliesToConversion(clazz)) {
+      for {
+        mappedMethodName <- mapMethodName(methodName)
+        underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
+        resultMethod = NoArg(target => underlyingMethod.invoke(target, targetTypeName))
+      } yield resultMethod
     } else {
       None
     }
+
+  private def mapMethodName(methodName: String): Option[String] = methodName match {
+    case `isMethodName`       => Some(CastOrConversionExt.isMethodName)
+    case `toMethodName`       => Some(CastOrConversionExt.toMethodName)
+    case `toOrNullMethodName` => Some(CastOrConversionExt.toOrNullMethodName)
+    case _                    => None
+  }
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
     if (conversion.appliesToConversion(clazz)) {
@@ -50,7 +49,7 @@ trait ConversionExt extends ExtensionMethodsDefinition {
     }
   }
 
-  def definitions(): List[MethodDefinition] = {
+  protected def definitions(): List[MethodDefinition] = {
     val targetTypeSimpleName = conversion.resultTypeClass.simpleName()
     List(
       definition(
@@ -71,8 +70,6 @@ trait ConversionExt extends ExtensionMethodsDefinition {
     )
   }
 
-  private def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
-
   private[extension] def definition(result: TypingResult, methodName: String, desc: Option[String]) =
     StaticMethodDefinition(
       signature = MethodTypeInfo.noArgTypeInfo(result),
@@ -84,8 +81,6 @@ trait ConversionExt extends ExtensionMethodsDefinition {
 
 object ConversionExt {
 
-  def apply(conversionParam: Conversion[_]): ConversionExt = new ConversionExt {
-    override val conversion: Conversion[_] = conversionParam
-  }
+  def apply(conversion: Conversion[_]): ConversionExt = new ConversionExt(conversion)
 
 }
