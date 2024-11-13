@@ -33,7 +33,7 @@ object ArrayExt extends ExtensionMethodsDefinition {
       set: ClassDefinitionSet
   ): Option[ExtensionMethod[_]] =
     if (appliesToClassInRuntime(clazz))
-      methodRegistry.get(methodName).filter(_.argsSize == argsSize)
+      methodRegistry.findMethod(methodName, argsSize)
     else
       None
 

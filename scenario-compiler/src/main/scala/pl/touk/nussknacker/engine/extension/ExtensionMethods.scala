@@ -92,6 +92,14 @@ object ExtensionMethod {
     override def invoke(target: Any, args: Object*): R = method(target, args.head.asInstanceOf[T])
   }
 
+  implicit class FindMethodExtension(private val registry: Map[String, ExtensionMethod[_]]) extends AnyVal {
+
+    def findMethod(methodName: String, argsSize: Int): Option[ExtensionMethod[_]] = registry
+      .get(methodName)
+      .filter(_.argsSize == argsSize)
+
+  }
+
 }
 
 trait ExtensionMethodsDefinition {

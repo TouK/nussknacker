@@ -18,21 +18,20 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
   private val toMethodName       = s"to$targetTypeName"
   private val toOrNullMethodName = s"to${targetTypeName}OrNull"
 
+  // Convert methods should visible in runtime for every class because we allow invoke convert methods on an unknown
+  // object in Typer, but in the runtime the same type could be known and that's why should add convert method to an
+  // every class.
   override def findMethod(
       clazz: Class[_],
       methodName: String,
       argsSize: Int,
       set: ClassDefinitionSet
   ): Option[ExtensionMethod[_]] =
-    if (conversion.appliesToConversion(clazz)) {
-      for {
-        mappedMethodName <- mapMethodName(methodName)
-        underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
-        resultMethod = NoArg(target => underlyingMethod.invoke(target, targetTypeName))
-      } yield resultMethod
-    } else {
-      None
-    }
+    for {
+      mappedMethodName <- mapMethodName(methodName)
+      underlyingMethod <- CastOrConversionExt.findMethod(clazz, mappedMethodName, 1, set)
+      resultMethod = NoArg(target => underlyingMethod.invoke(target, targetTypeName))
+    } yield resultMethod
 
   private def mapMethodName(methodName: String): Option[String] = methodName match {
     case `isMethodName`       => Some(CastOrConversionExt.isMethodName)

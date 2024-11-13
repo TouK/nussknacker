@@ -18,12 +18,6 @@ import scala.util.Try
 class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
   private val castException = new ClassCastException(s"Cannot cast value to given class")
 
-  private def findMethod(methodName: String, argsSize: Int) = {
-    methodRegistry
-      .get(methodName)
-      .filter(_.argsSize == argsSize)
-  }
-
   private val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
     "is"       -> SingleArg(is),
     "to"       -> SingleArg(to),
@@ -97,13 +91,16 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
   def allowedConversions(clazz: Class[_]): List[Conversion[_]] =
     conversionsRegistry.filter(_.appliesToConversion(clazz))
 
+  // Convert methods should visible in runtime for every class because we allow invoke convert methods on an unknown
+  // object in Typer, but in the runtime the same type could be known and that's why should add convert method to an
+  // every class.
   override def findMethod(
       clazz: Class[_],
       methodName: String,
       argsSize: Int,
       set: ClassDefinitionSet
   ): Option[ExtensionMethod[_]] =
-    new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase())
+    new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase()).methodRegistry
       .findMethod(methodName, argsSize)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
