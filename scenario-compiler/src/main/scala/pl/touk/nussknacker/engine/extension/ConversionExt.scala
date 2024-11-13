@@ -11,12 +11,12 @@ import java.lang.{Boolean => JBoolean}
 class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinition {
 
   private lazy val definitionsByName = definitions().groupBy(_.name)
+  private lazy val targetTypeName    = conversion.resultTypeClass.simpleName()
 
-  private lazy val targetTypeName = conversion.resultTypeClass.simpleName()
-
-  private val isMethodName       = s"is$targetTypeName"
-  private val toMethodName       = s"to$targetTypeName"
-  private val toOrNullMethodName = s"to${targetTypeName}OrNull"
+  private val canBeMethodName = s"${CastOrConversionExt.canBeMethodName}$targetTypeName"
+  private val toMethodName    = s"${CastOrConversionExt.toMethodName}$targetTypeName"
+  private val toOrNullMethodName =
+    s"${CastOrConversionExt.toMethodName}${targetTypeName}${CastOrConversionExt.orNullSuffix}"
 
   // Convert methods should visible in runtime for every class because we allow invoke convert methods on an unknown
   // object in Typer, but in the runtime the same type could be known and that's why should add convert method to an
@@ -34,7 +34,7 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
     } yield resultMethod
 
   private def mapMethodName(methodName: String): Option[String] = methodName match {
-    case `isMethodName`       => Some(CastOrConversionExt.isMethodName)
+    case `canBeMethodName`    => Some(CastOrConversionExt.canBeMethodName)
     case `toMethodName`       => Some(CastOrConversionExt.toMethodName)
     case `toOrNullMethodName` => Some(CastOrConversionExt.toOrNullMethodName)
     case _                    => None
@@ -49,22 +49,21 @@ class ConversionExt(conversion: Conversion[_]) extends ExtensionMethodsDefinitio
   }
 
   protected def definitions(): List[MethodDefinition] = {
-    val targetTypeSimpleName = conversion.resultTypeClass.simpleName()
     List(
       definition(
         Typed.typedClass[JBoolean],
-        s"is$targetTypeSimpleName",
-        Some(s"Check whether the value can be convert to a $targetTypeSimpleName")
+        canBeMethodName,
+        Some(s"Check whether the value can be convert to a $targetTypeName")
       ),
       definition(
         conversion.typingResult,
-        s"to$targetTypeSimpleName",
-        Some(s"Convert the value to $targetTypeSimpleName or throw exception in case of failure")
+        toMethodName,
+        Some(s"Convert the value to $targetTypeName or throw exception in case of failure")
       ),
       definition(
         conversion.typingResult,
-        s"to${targetTypeSimpleName}OrNull",
-        Some(s"Convert the value to $targetTypeSimpleName or null in case of failure")
+        toOrNullMethodName,
+        Some(s"Convert the value to $targetTypeName or null in case of failure")
       ),
     )
   }
