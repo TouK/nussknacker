@@ -691,11 +691,11 @@ class HttpService {
         return promise;
     }
 
-    deleteStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote) {
-        const promise = api.delete(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes/${stickyNote.noteId}`);
+    deleteStickyNote(scenarioName: string, stickyNoteId: number) {
+        const promise = api.delete(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes/${stickyNoteId}`);
         promise.catch((error) =>
             this.#addError(
-                i18next.t("notification.error.failedToDeleteStickyNote", `Failed to delete sticky note with id: ${stickyNote.noteId}`),
+                i18next.t("notification.error.failedToDeleteStickyNote", `Failed to delete sticky note with id: ${stickyNoteId}`),
                 error,
                 true,
             ),
