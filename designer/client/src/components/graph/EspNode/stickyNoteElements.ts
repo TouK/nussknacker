@@ -3,14 +3,14 @@ import { Theme } from "@mui/material";
 import { StickyNote } from "../../../common/StickyNote";
 import { dia, elementTools, shapes } from "jointjs";
 import { getStickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
-import { StickyNoteType } from "../../../types/stickyNote";
+import { createStickyNoteId, StickyNoteType } from "../../../types/stickyNote";
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
 import { CONTENT_PADDING, ICON_SIZE, StickyNoteShape } from "./stickyNote";
 import { Events } from "../types";
 
 export type ModelWithTool = {
     model: shapes.devs.Model;
-    tool: dia.ToolsView;
+    tools: dia.ToolsView;
 };
 
 export function makeStickyNoteElement(
@@ -20,7 +20,7 @@ export function makeStickyNoteElement(
     return (stickyNote: StickyNote) => {
         const iconHref = getStickyNoteIcon();
         const attributes: shapes.devs.ModelAttributes = {
-            id: StickyNoteType + "_" + stickyNote.noteId,
+            id: createStickyNoteId(stickyNote.noteId),
             noteId: stickyNote.noteId,
             attrs: {
                 size: {
@@ -53,6 +53,18 @@ export function makeStickyNoteElement(
         const model = new ThemedStickyNoteShape(attributes);
         const MIN_STICKY_NOTE_WIDTH = 100;
         const MIN_STICKY_NOTE_HEIGHT = 100;
+
+        const removeButtonTool = new elementTools.Remove({
+            focusOpacity: 0.5,
+            rotate: true,
+            x: stickyNote.dimensions.width - 10,
+            y: "0%",
+            offset: { x: 10, y: 10 },
+            action: function (evt, view, tool) {
+                console.log("action");
+                model.trigger(Events.CELL_DELETED, model);
+            },
+        });
 
         const ResizeTool = elementTools.Control.extend({
             children: [
@@ -100,13 +112,24 @@ export function makeStickyNoteElement(
             },
         });
 
-        const tool: dia.ToolsView = new dia.ToolsView({
-            tools: [new ResizeTool({ selector: "body" })],
+        const tools: dia.ToolsView = new dia.ToolsView({
+            tools: [
+                new ResizeTool({
+                    selector: "body",
+                    scale: 2,
+                    handleAttributes: {
+                        style: {
+                            x: 20,
+                        },
+                    },
+                }),
+                removeButtonTool,
+            ],
         });
         model.resize(
             Math.max(stickyNote.dimensions.width + 10, MIN_STICKY_NOTE_WIDTH),
             Math.max(stickyNote.dimensions.height - 10, MIN_STICKY_NOTE_HEIGHT),
         );
-        return { model, tool };
+        return { model, tools };
     };
 }

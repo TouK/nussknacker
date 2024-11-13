@@ -84,6 +84,17 @@ export function stickyNoteUpdated(scenarioName: string, scenarioVersionId: numbe
     };
 }
 
+export function stickyNoteDeleted(scenarioName: string, stickyNoteId: number): ThunkAction {
+    return (dispatch) => {
+        HttpService.deleteStickyNote(scenarioName, stickyNoteId).then(() => {
+            flushSync(() => {
+                dispatch({ type: "STICKY_NOTE_DELETED", stickyNoteId });
+            });
+        });
+        batchGroupBy.end();
+    };
+}
+
 export function stickyNoteAdded(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions): ThunkAction {
     return (dispatch) => {
         HttpService.addStickyNote(scenarioName, scenarioVersionId, position, dimensions).then((_) => {

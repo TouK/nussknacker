@@ -8,6 +8,7 @@ import {
     nodesDisconnected,
     resetSelection,
     stickyNoteAdded,
+    stickyNoteDeleted,
     stickyNoteUpdated,
     toggleSelection,
 } from "../../actions/nk";
@@ -23,6 +24,7 @@ type ScenarioGraphProps = {
     nodeAdded: typeof nodeAdded;
     stickyNoteAdded: typeof stickyNoteAdded;
     stickyNoteUpdated: typeof stickyNoteUpdated;
+    stickyNoteDeleted: typeof stickyNoteDeleted;
     resetSelection: typeof resetSelection;
     toggleSelection: typeof toggleSelection;
 
@@ -73,6 +75,7 @@ export enum Events {
     CELL_MOUSELEAVE = "cell:mouseleave",
     CELL_MOVED = "cellCustom:moved",
     CELL_RESIZED = "cellCustom:resized",
+    CELL_DELETED = "cellCustom:deleted",
     BLANK_POINTERCLICK = "blank:pointerclick",
     BLANK_POINTERDOWN = "blank:pointerdown",
     BLANK_POINTERUP = "blank:pointerup",

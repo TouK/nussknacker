@@ -351,7 +351,21 @@ export class Graph extends React.Component<Props> {
             }
         };
 
+        const showStickyNoteTools = (cellView: dia.CellView) => {
+            cellView.showTools();
+        };
+
+        const hideToolsForStickyNote = (cellView: dia.CellView, evt: dia.Event) => {
+            if (isStickyNoteElement(cellView.model)) {
+                cellView.hideTools();
+                return;
+            }
+        };
         const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
+            if (isStickyNoteElement(cellView.model)) {
+                showStickyNoteTools(cellView);
+                return;
+            }
             if (this.props.isFragment === true) return;
             if (this.props.nodeSelectionEnabled) {
                 const nodeDataId = cellView.model.attributes.nodeData?.id;
@@ -377,6 +391,7 @@ export class Graph extends React.Component<Props> {
         );
 
         this.processGraphPaper.on(Events.CELL_POINTERCLICK, handleGraphEvent(null, selectNode));
+        // this.processGraphPaper.on(Events.CELL_MOUSEOUT, handleGraphEvent(null, hideToolsForStickyNote));
         this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, handleGraphEvent(null, showNodeDetails));
 
         this.hooverHandling();
@@ -386,6 +401,7 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper = this.createPaper();
         this.drawGraph(this.props.scenario.scenarioGraph, this.props.stickyNotes, this.props.layout, this.props.processDefinitionData);
         this.processGraphPaper.unfreeze();
+        this.processGraphPaper.hideTools();
         this._prepareContentForExport();
 
         // event handlers binding below. order sometimes matters
@@ -430,7 +446,6 @@ export class Graph extends React.Component<Props> {
 
         this.graph.on(Events.CELL_RESIZED, (cell: dia.Element) => {
             if (isStickyNoteElement(cell)) {
-                console.log(cell);
                 const position = cell.get("position");
                 const size = cell.get("size");
                 const noteId = cell.get("noteId");
@@ -439,6 +454,14 @@ export class Graph extends React.Component<Props> {
                 updatedStickyNote.layoutData = { x: position.x, y: position.y };
                 updatedStickyNote.dimensions = { width: Math.round(size.width), height: Math.round(size.height) };
                 this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
+            }
+        });
+
+        this.graph.on(Events.CELL_DELETED, (cell: dia.Element) => {
+            if (isStickyNoteElement(cell)) {
+                console.log(cell);
+                const noteId = Number(cell.get("noteId"));
+                this.deleteStickyNote(this.props.scenario.name, noteId);
             }
         });
 
@@ -478,6 +501,14 @@ export class Graph extends React.Component<Props> {
         const canUpdateStickyNote = this.props.capabilities.editFrontend;
         if (canUpdateStickyNote) {
             this.props.stickyNoteUpdated(scenarioName, scenarioVersionId, stickyNote);
+        }
+    }
+
+    deleteStickyNote(scenarioName: string, stickyNoteId: number): void {
+        if (this.props.isFragment === true) return;
+        const canUpdateStickyNote = this.props.capabilities.editFrontend;
+        if (canUpdateStickyNote) {
+            this.props.stickyNoteDeleted(scenarioName, stickyNoteId);
         }
     }
 
