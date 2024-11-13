@@ -53,9 +53,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
   override def findStickyNotes(scenarioId: ProcessId, scenarioVersionId: VersionId): DB[Seq[StickyNote]] = {
     run(
       stickyNotesTable
-        .filter(event =>
-          event.scenarioId === scenarioId && event.scenarioVersionId <= scenarioVersionId && event.eventType =!= StickyNoteEvent.StickyNoteDeleted
-        )
+        .filter(event => event.scenarioId === scenarioId && event.scenarioVersionId <= scenarioVersionId)
         .groupBy(_.noteCorrelationId)
         .map { case (noteCorrelationId, notes) => (noteCorrelationId, notes.map(_.eventDate).max) }
         .join(stickyNotesTable)
@@ -64,7 +62,7 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
         }
         .map { case ((_, _), event) => event }
         .result
-        .map(events => events.map(_.toStickyNote))
+        .map(events => events.filter(_.eventType != StickyNoteEvent.StickyNoteDeleted).map(_.toStickyNote))
     )
   }
 
