@@ -100,15 +100,12 @@ describe("Activities", () => {
         makeScreenshot();
 
         // modify comment
-        cy.intercept("/api/processes/*/activity/comment/*").as("modifyComment");
-        cy.get("[data-testid=activity-row-3]").as("modifyCommentRow").trigger("mouseover");
-        cy.get("@modifyCommentRow").find("[data-testid=edit-comment-icon]").click();
+        cy.intercept("/api/processes/*/activity/comment/*").as("editComment");
+        cy.get("[data-testid=activity-row-3]").as("editCommentRow").trigger("mouseover");
+        cy.get("@editCommentRow").find("[data-testid=edit-comment-icon]").click();
         cy.get("[data-testid=window]").find("textarea").eq(0).type(" new comment");
-        cy.get("[data-testid=window]")
-            .find("button")
-            .contains(/^Modify/i)
-            .click();
-        cy.wait("@modifyComment");
-        cy.get("@modifyCommentRow").contains("test comment new comment").should("be.visible");
+        cy.get("[data-testid=window]").find("button").contains(/^Edit/i).click();
+        cy.wait("@editComment");
+        cy.get("@editCommentRow").contains("test comment new comment").should("be.visible");
     });
 });

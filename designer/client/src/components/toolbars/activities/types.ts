@@ -80,4 +80,9 @@ export interface ActivityMetadataResponse {
     actions: ActionMetadata[];
 }
 
-export type ModifyActivityCommentMeta = { existingComment?: string; scenarioActivityId: string; placeholder?: string };
+export type ModifyActivityCommentMeta = {
+    existingComment?: string;
+    scenarioActivityId: string;
+    placeholder?: string;
+    confirmButtonText: string;
+};

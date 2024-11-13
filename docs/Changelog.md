@@ -4,7 +4,19 @@
 
 #### Highlights
 
-(Not available yet)
+##### End-user
+
+* New Activities panel, replacing Versions, Comments and Attachments panels. Now you can browse all scenario activities on one chronological list.
+* Added scenario labels. You can now organize your scenarios and find different groups of scenarios more easily.
+* SpEL: added navigation through fields inside variables typed as Unknown. You can now access the data inside a variable, even if Nussknacker doesn't know its exact type during scenario authoring.
+* SpEL: added conversion methods to cast or convert between data types (e.g. `String` to `Integer`).
+* SpEL: various enhancements, like `#CONV.toJson` and `#CONV.toJsonString` methods, new `#BASE64` helper, possibility to treat arrays as lists, and more.
+* Various UX improvements, including new UI for aggregation definitions and better validation handling in ad-hoc tests.
+
+##### Administrator
+
+* Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
+* Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
 ### 1.18.0 (Not released yet)
 
@@ -73,13 +85,13 @@
 * [#7021](https://github.com/TouK/nussknacker/pull/7021) Definitions service can return definition without UI config
 * [#7010](https://github.com/TouK/nussknacker/pull/7010) Dynamic access allowed via indexer operator (`[]`) on expressions typed as `Unknown`
 * [#7063](https://github.com/TouK/nussknacker/pull/7063) Introduce conversion extension methods in SpeL:
-  * is(className)/to(className)/toOrNull(className)
-  * isBoolean/toBoolean/toBooleanOrNull
-  * isLong/toLong/toLongOrNull
-  * isDouble/toDouble/toDoubleOrNull
-  * isBigDecimal/toBigDecimal/toBigDecimalOrNull
-  * isList/toList/toListOrNull
-  * isMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
+  * canBe(className)/to(className)/toOrNull(className)
+  * canBeBoolean/toBoolean/toBooleanOrNull
+  * canBeLong/toLong/toLongOrNull
+  * canBeDouble/toDouble/toDoubleOrNull
+  * canBeBigDecimal/toBigDecimal/toBigDecimalOrNull
+  * canBeList/toList/toListOrNull
+  * canBeMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
 * [#7106](https://github.com/TouK/nussknacker/pull/7106) Fix an issue where pressing the “Esc” key did not remove focus from input fields in dialogs, which prevented the dialog window from closing
 * [#7002](https://github.com/TouK/nussknacker/pull/7002) Resolve an issue with union nodes output expression when nodes were copied and pasted
 * [#6994](https://github.com/TouK/nussknacker/pull/6994) Fix styling issues for form checkboxes in Firefox

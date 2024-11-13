@@ -94,17 +94,35 @@ const sampleActivitiesResponse: ActivitiesResponse["activities"] = [
         ],
         type: "SCENARIO_NAME_CHANGED",
     },
+    {
+        id: "524adff3-fb7d-42d1-bf92-f0903d548d00",
+        user: "writer",
+        date: "2022-11-07T11:55:53.127796Z",
+        scenarioVersionId: 7,
+        attachment: {
+            file: {
+                status: "DELETED",
+            },
+            filename: "Screenshot 2022-10-21 at 08.07.38.png",
+            lastModifiedBy: "writer",
+            lastModifiedAt: "2022-11-07T11:55:53.127796Z",
+        },
+        additionalFields: [],
+        overrideDisplayableName: "File removed",
+        type: "ATTACHMENT_ADDED",
+    },
 ];
 
 const mockedActivities = extendActivitiesWithUIData(mergeActivityDataWithMetadata(sampleActivitiesResponse, sampleMetadataResponse));
 
 describe(useActivitiesSearch.name, () => {
     it.each<[string, string[]]>([
-        ["atta", [mockedActivities[4].uiGeneratedId]],
+        ["atta", [mockedActivities[4].uiGeneratedId, mockedActivities[9].uiGeneratedId]],
         ["3 saved", [mockedActivities[3].uiGeneratedId]],
         ["2024-09-27", [mockedActivities[1].uiGeneratedId]],
         ["tests save", [mockedActivities[3].uiGeneratedId]],
         ["newName: old marketing campaign", [mockedActivities[7].uiGeneratedId]],
+        [".png", [mockedActivities[9].uiGeneratedId]],
     ])("should find elements when query is '%s'", (searchQuery, expected) => {
         const handleScrollToItemMock = jest.fn();
         const handleUpdateScenarioActivitiesMock = jest.fn();
