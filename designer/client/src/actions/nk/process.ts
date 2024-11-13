@@ -10,7 +10,6 @@ import { layoutChanged, Position } from "./ui/layout";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { flushSync } from "react-dom";
 import { Dimensions, StickyNote } from "../../common/StickyNote";
-import { cloneDeep } from "lodash";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
