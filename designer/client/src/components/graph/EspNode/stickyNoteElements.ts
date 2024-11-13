@@ -3,7 +3,7 @@ import { Theme } from "@mui/material";
 import { StickyNote } from "../../../common/StickyNote";
 import { dia, elementTools, shapes } from "jointjs";
 import { getStickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
-import { createStickyNoteId, StickyNoteType } from "../../../types/stickyNote";
+import { createStickyNoteId } from "../../../types/stickyNote";
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
 import { CONTENT_PADDING, ICON_SIZE, StickyNoteShape } from "./stickyNote";
 import { Events } from "../types";
@@ -60,8 +60,7 @@ export function makeStickyNoteElement(
             x: stickyNote.dimensions.width - 10,
             y: "0%",
             offset: { x: 10, y: 10 },
-            action: function (evt, view, tool) {
-                console.log("action");
+            action: function () {
                 model.trigger(Events.CELL_DELETED, model);
             },
         });
