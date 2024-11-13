@@ -6,7 +6,7 @@ import NodeUtils from "../../components/graph/NodeUtils";
 import { BranchParams, Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
 import { GraphState } from "./types";
 import { StickyNote } from "../../common/StickyNote";
-import { createStickyNoteId, StickyNoteType } from "../../types/stickyNote";
+import { createStickyNoteId } from "../../types/stickyNote";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
     return map(layout, (n) => (oldId === n.id ? { ...n, id: newId } : n));

@@ -31,25 +31,6 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
 
   import profile.api._
 
-  // TODO, do we need to add it to DTO?
-  private def findCreateEventForNote(noteCorrelationId: StickyNoteCorrelationId): DB[StickyNoteEventEntityData] = {
-    stickyNotesTable
-      .filter(event =>
-        event.noteCorrelationId === noteCorrelationId && event.eventType === StickyNoteEvent.StickyNoteCreated
-      )
-      .result
-      .headOption
-      .flatMap {
-        case None =>
-          DBIOAction.failed(
-            new NoSuchElementException(
-              s"Trying to access not existing StickyNoteCreated event (noteCorrelationId=$noteCorrelationId)"
-            )
-          )
-        case Some(value) => DBIOAction.successful(value)
-      }
-  }
-
   override def findStickyNotes(scenarioId: ProcessId, scenarioVersionId: VersionId): DB[Seq[StickyNote]] = {
     run(
       stickyNotesTable

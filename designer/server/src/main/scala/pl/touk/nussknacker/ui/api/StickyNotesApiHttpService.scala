@@ -72,7 +72,7 @@ class StickyNotesApiHttpService(
           for {
             scenarioId      <- getScenarioIdByName(scenarioName)
             _               <- isAuthorized(scenarioId, Permission.Read)
-            processActivity <- updateStickyNote(scenarioId, requestBody)
+            processActivity <- updateStickyNote(requestBody)
           } yield processActivity.toInt
         }
       }
@@ -150,7 +150,7 @@ class StickyNotesApiHttpService(
         )
       )
 
-  private def updateStickyNote(scenarioId: ProcessId, requestBody: StickyNoteUpdateRequest)(
+  private def updateStickyNote(requestBody: StickyNoteUpdateRequest)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, StickyNotesError, Int] =
     EitherT

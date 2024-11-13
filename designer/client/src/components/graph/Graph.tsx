@@ -222,7 +222,7 @@ export class Graph extends React.Component<Props> {
                     updatedStickyNote.layoutData = { x: position.x, y: position.y };
                     this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
                 }
-            }) //we want to inject node during 'Drag and Drop' from graph paper
+            })
             .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
                 if (this.props.isFragment === true) return;
                 const isReversed = targetMagnet?.getAttribute("port") === "Out";
@@ -351,16 +351,11 @@ export class Graph extends React.Component<Props> {
             }
         };
 
+        // TODO hide it on some other action
         const showStickyNoteTools = (cellView: dia.CellView) => {
             cellView.showTools();
         };
 
-        const hideToolsForStickyNote = (cellView: dia.CellView, evt: dia.Event) => {
-            if (isStickyNoteElement(cellView.model)) {
-                cellView.hideTools();
-                return;
-            }
-        };
         const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
             if (isStickyNoteElement(cellView.model)) {
                 showStickyNoteTools(cellView);
@@ -391,7 +386,6 @@ export class Graph extends React.Component<Props> {
         );
 
         this.processGraphPaper.on(Events.CELL_POINTERCLICK, handleGraphEvent(null, selectNode));
-        // this.processGraphPaper.on(Events.CELL_MOUSEOUT, handleGraphEvent(null, hideToolsForStickyNote));
         this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, handleGraphEvent(null, showNodeDetails));
 
         this.hooverHandling();
@@ -459,7 +453,6 @@ export class Graph extends React.Component<Props> {
 
         this.graph.on(Events.CELL_DELETED, (cell: dia.Element) => {
             if (isStickyNoteElement(cell)) {
-                console.log(cell);
                 const noteId = Number(cell.get("noteId"));
                 this.deleteStickyNote(this.props.scenario.name, noteId);
             }
