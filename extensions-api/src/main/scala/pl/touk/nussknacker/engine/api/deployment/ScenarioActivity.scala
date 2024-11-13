@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{Enum, EnumEntry}
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.VersionId
 
@@ -44,49 +45,37 @@ sealed trait ScenarioComment {
 
 object ScenarioComment {
 
-  final case class WithContent private (
-      comment: String,
+  final case class WithContent(
+      comment: Comment,
       lastModifiedByUserName: UserName,
       lastModifiedAt: Instant,
   ) extends ScenarioComment
 
-  object WithContent {
-
-    private[ScenarioComment] def apply(
-        comment: String,
-        lastModifiedByUserName: UserName,
-        lastModifiedAt: Instant
-    ): WithContent = new WithContent(comment, lastModifiedByUserName, lastModifiedAt)
-
-  }
-
-  final case class WithoutContent private (
+  final case class WithoutContent(
       lastModifiedByUserName: UserName,
       lastModifiedAt: Instant,
   ) extends ScenarioComment
-
-  object WithoutContent {
-
-    private[ScenarioComment] def apply(
-        lastModifiedByUserName: UserName,
-        lastModifiedAt: Instant
-    ): WithoutContent = new WithoutContent(lastModifiedByUserName, lastModifiedAt)
-
-  }
 
   def from(
-      content: Option[String],
+      content: String,
+      lastModifiedByUserName: UserName,
+      lastModifiedAt: Instant,
+  ): ScenarioComment =
+    from(Comment.from(content), lastModifiedByUserName, lastModifiedAt)
+
+  def from(
+      content: Option[Comment],
       lastModifiedByUserName: UserName,
       lastModifiedAt: Instant,
   ): ScenarioComment = {
     content match {
-      case Some(content) if content.trim.nonEmpty =>
+      case Some(content) =>
         WithContent(
           comment = content,
           lastModifiedByUserName = lastModifiedByUserName,
           lastModifiedAt = lastModifiedAt,
         )
-      case Some(_) | None =>
+      case None =>
         WithoutContent(
           lastModifiedByUserName = lastModifiedByUserName,
           lastModifiedAt = lastModifiedAt,

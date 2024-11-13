@@ -103,7 +103,7 @@ class MockDeploymentManager(
           scenarioVersionId = Some(ScenarioVersionId.from(processVersion.versionId)),
           actionName = "Custom action of MockDeploymentManager just before deployment",
           comment = ScenarioComment.from(
-            content = Some("With comment from DeploymentManager"),
+            content = "With comment from DeploymentManager",
             lastModifiedByUserName = ScenarioUser.internalNuUser.name,
             lastModifiedAt = Instant.now()
           ),

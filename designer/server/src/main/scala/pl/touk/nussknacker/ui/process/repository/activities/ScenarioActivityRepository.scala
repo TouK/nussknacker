@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository.activities
 
 import db.util.DBIOActionInstances.DB
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
@@ -42,7 +43,7 @@ trait ScenarioActivityRepository {
         date = now,
         scenarioVersionId = Some(ScenarioVersionId.from(processVersionId)),
         comment = ScenarioComment.from(
-          content = Some(comment),
+          content = comment,
           lastModifiedByUserName = UserName(user.username),
           lastModifiedAt = now,
         )

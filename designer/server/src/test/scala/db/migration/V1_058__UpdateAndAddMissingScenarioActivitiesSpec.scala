@@ -70,7 +70,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
             date = Instant.now,
             scenarioVersionId = None,
             comment = ScenarioComment.from(
-              content = Some("Scenario migrated from TEST_ENV by test env user"),
+              content = "Scenario migrated from TEST_ENV by test env user",
               lastModifiedByUserName = UserName(loggedUser.username),
               lastModifiedAt = Instant.now
             )
@@ -87,7 +87,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
           date = activities(0).date,
           previousScenarioVersionId = None,
           scenarioVersionId = Some(ScenarioVersionId(2)),
-          comment = ScenarioComment.from(None, UserName("Test User"), activities(0).date)
+          comment = ScenarioComment.WithoutContent(UserName("Test User"), activities(0).date)
         ),
         ScenarioActivity.ScenarioCreated(
           scenarioId = ScenarioId(process.id.value),
@@ -129,7 +129,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
             previousScenarioVersionId = None,
             scenarioVersionId = None,
             comment = ScenarioComment.from(
-              content = Some("Scenario migrated from TEST_ENV by test env user"),
+              content = "Scenario migrated from TEST_ENV by test env user",
               lastModifiedByUserName = UserName(loggedUser.username),
               lastModifiedAt = Instant.now
             )
@@ -178,7 +178,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
             date = Instant.now,
             scenarioVersionId = None,
             comment = ScenarioComment.from(
-              content = Some("Migrations applied: feature A\\nfeature B\\nfeature C"),
+              content = "Migrations applied: feature A\\nfeature B\\nfeature C",
               lastModifiedByUserName = UserName(loggedUser.username),
               lastModifiedAt = Instant.now
             )
@@ -227,7 +227,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
             previousScenarioVersionId = None,
             scenarioVersionId = None,
             comment = ScenarioComment.from(
-              content = Some("Migrations applied: feature A\\nfeature B\\nfeature C"),
+              content = "Migrations applied: feature A\\nfeature B\\nfeature C",
               lastModifiedByUserName = UserName(loggedUser.username),
               lastModifiedAt = Instant.now
             )
@@ -275,7 +275,7 @@ class V1_058__UpdateAndAddMissingScenarioActivitiesSpec
             date = Instant.now,
             scenarioVersionId = None,
             comment = ScenarioComment.from(
-              content = Some("Rename: [oldUglyName] -> [newPrettyName]"),
+              content = "Rename: [oldUglyName] -> [newPrettyName]",
               lastModifiedByUserName = UserName(loggedUser.username),
               lastModifiedAt = Instant.now
             )

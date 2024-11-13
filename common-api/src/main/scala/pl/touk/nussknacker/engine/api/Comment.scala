@@ -7,7 +7,8 @@ class Comment private (val content: String) extends AnyVal {
 object Comment {
 
   def from(content: String): Option[Comment] = {
-    if (content.trim.nonEmpty) Some(new Comment(content)) else None
+    val trimmedContent = content.trim
+    if (trimmedContent.nonEmpty) Some(new Comment(trimmedContent)) else None
   }
 
   def unsafeFrom(content: String): Comment = {

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.repository.activities
 import cats.implicits.catsSyntaxEitherId
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.ScenarioAttachment.{AttachmentFilename, AttachmentId}
 import pl.touk.nussknacker.engine.api.deployment._
@@ -292,8 +293,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
         toComment(
           id,
           activity,
-          ScenarioComment
-            .from(Some(s"Rename: [${activity.oldName}] -> [${activity.newName}]"), UserName(""), activity.date),
+          ScenarioComment.from(s"Rename: [${activity.oldName}] -> [${activity.newName}]", UserName(""), activity.date),
           None
         )
       case activity: ScenarioActivity.CommentAdded =>
@@ -307,8 +307,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           id,
           activity,
           ScenarioComment.from(
-            content =
-              Some(s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}"),
+            content = s"Scenario migrated from ${activity.sourceEnvironment.name} by ${activity.sourceUser.value}",
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
           ),
@@ -325,7 +324,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
           id,
           activity,
           ScenarioComment.from(
-            content = Some(s"Migrations applied: ${activity.changes}"),
+            content = s"Migrations applied: ${activity.changes}",
             lastModifiedByUserName = activity.user.name,
             lastModifiedAt = activity.date
           ),
@@ -506,8 +505,8 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   private def comment(scenarioComment: ScenarioComment): Option[String] = {
     scenarioComment match {
-      case ScenarioComment.WithContent(comment, _, _) => Some(comment)
-      case _                                          => None
+      case ScenarioComment.WithContent(comment, _, _) => Some(comment.content)
+      case ScenarioComment.WithoutContent(_, _)       => None
     }
   }
 
@@ -678,7 +677,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
       lastModifiedByUserName <- entity.lastModifiedByUserName.toRight("Missing lastModifiedByUserName field")
       lastModifiedAt         <- entity.lastModifiedAt.toRight("Missing lastModifiedAt field")
     } yield ScenarioComment.from(
-      content = entity.comment,
+      content = entity.comment.flatMap(Comment.from),
       lastModifiedByUserName = UserName(lastModifiedByUserName),
       lastModifiedAt = lastModifiedAt.toInstant
     )

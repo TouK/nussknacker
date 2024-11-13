@@ -212,7 +212,7 @@ class DBProcessRepository(
           previousScenarioVersionId = oldVersionId.map(ScenarioVersionId.from),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
           comment = ScenarioComment.from(
-            content = updateProcessAction.comment.map(_.content),
+            content = updateProcessAction.comment,
             lastModifiedByUserName = UserName(loggedUser.username),
             lastModifiedAt = clock.instant(),
           )
