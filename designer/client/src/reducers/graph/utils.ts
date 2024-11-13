@@ -6,7 +6,7 @@ import NodeUtils from "../../components/graph/NodeUtils";
 import { BranchParams, Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData } from "../../types";
 import { GraphState } from "./types";
 import { StickyNote } from "../../common/StickyNote";
-import { StickyNoteType } from "../../types/stickyNote";
+import { createStickyNoteId, StickyNoteType } from "../../types/stickyNote";
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
     return map(layout, (n) => (oldId === n.id ? { ...n, id: newId } : n));
@@ -82,13 +82,25 @@ export function prepareNewNodesWithLayout(
     };
 }
 
+export function removeStickyNoteFromLayout(state: GraphState, stickyNoteId: number): { layout: NodePosition[]; stickyNotes: StickyNote[] } {
+    const { layout } = state;
+    const updatedStickyNotes = state.stickyNotes.filter((n) => n.noteId != stickyNoteId);
+    const updatedLayout = updatedStickyNotes.map((stickyNote) => {
+        return { id: createStickyNoteId(stickyNote.noteId), position: stickyNote.layoutData };
+    });
+    return {
+        stickyNotes: [...updatedStickyNotes],
+        layout: [...layout, ...updatedLayout],
+    };
+}
+
 export function prepareNewStickyNotesWithLayout(
     state: GraphState,
     stickyNotes: StickyNote[],
 ): { layout: NodePosition[]; stickyNotes: StickyNote[] } {
     const { layout } = state;
     const updatedLayout = stickyNotes.map((stickyNote) => {
-        return { id: StickyNoteType + "_" + stickyNote.noteId, position: stickyNote.layoutData };
+        return { id: createStickyNoteId(stickyNote.noteId), position: stickyNote.layoutData };
     });
     return {
         stickyNotes: [...stickyNotes],

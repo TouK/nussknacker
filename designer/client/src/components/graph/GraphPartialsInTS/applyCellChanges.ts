@@ -42,5 +42,5 @@ export function applyCellChanges(
     graph.removeCells(deletedCells);
     updateChangedCells(graph, changedCells);
     graph.addCells(newCells);
-    newStickyNotesModelsWithTools.map((m) => m.model.findView(paper).addTools(m.tool));
+    newStickyNotesModelsWithTools.map((m) => m.model.findView(paper).addTools(m.tools));
 }
