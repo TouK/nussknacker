@@ -402,11 +402,11 @@ class DeploymentServiceSpec
             _,
             _,
             actionName,
-            ScenarioComment.WithContent(content, _, _),
+            ScenarioComment.WithContent(comment, _, _),
             result,
           ) =>
         actionName shouldBe "Custom action of MockDeploymentManager just before deployment"
-        content shouldBe "With comment from DeploymentManager"
+        comment.content shouldBe "With comment from DeploymentManager"
         result shouldBe DeploymentResult.Success(result.dateFinished)
       case _ => fail("Third activity should be CustomAction with comment")
     }
