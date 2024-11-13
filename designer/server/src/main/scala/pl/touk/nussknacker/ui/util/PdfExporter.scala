@@ -87,7 +87,7 @@ object PdfExporter extends LazyLogging {
     out.toByteArray
   }
 
-  private def prepareFopXml(
+  private[util] def prepareFopXml(
       svg: String,
       processDetails: ScenarioWithDetailsEntity[ScenarioGraph],
       processActivity: ProcessActivity,
@@ -204,21 +204,23 @@ object PdfExporter extends LazyLogging {
   </block>
 
   private def nodeDetails(node: NodeData) = {
-    val nodeData = node match {
-      case Source(_, SourceRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case Filter(_, expression, _, _)          => List(("Expression", expression.expression))
+    val nodeData: List[(String, String)] = node match {
+      case Source(_, SourceRef(typ, params), _) =>
+        ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
+      case Filter(_, expression, _, _) => List(("Expression", expression.expression))
       case Enricher(_, ServiceRef(typ, params), output, _) =>
-        ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
+        ("Type", typ) :: ("Output", output) :: params.map(p => (p.name.value, p.expression.expression))
       // TODO: what about Swtich??
       case Switch(_, expression, exprVal, _) => expression.map(e => ("Expression", e.expression)).toList
       case Processor(_, ServiceRef(typ, params), _, _) =>
-        ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case Sink(_, SinkRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
+        ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
+      case Sink(_, SinkRef(typ, params), _, _, _) =>
+        ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
       case CustomNode(_, output, typ, params, _) =>
-        ("Type", typ) :: ("Output", output.getOrElse("")) :: params.map(p => (p.name, p.expression.expression))
+        ("Type", typ) :: ("Output", output.getOrElse("")) :: params.map(p => (p.name.value, p.expression.expression))
       case FragmentInput(_, FragmentRef(typ, params, _), _, _, _) =>
-        ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case FragmentInputDefinition(_, parameters, _) => parameters.map(p => p.name -> p.typ.refClazzName)
+        ("Type", typ) :: params.map(p => (p.name.value, p.expression.expression))
+      case FragmentInputDefinition(_, parameters, _) => parameters.map(p => p.name.value -> p.typ.refClazzName)
       case FragmentOutputDefinition(_, outputName, fields, _) =>
         ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
       case Variable(_, name, expr, _) => (name -> expr.expression) :: Nil
@@ -226,7 +228,7 @@ object PdfExporter extends LazyLogging {
         ("Variable name", name) :: fields.map(p => p.name -> p.expression.expression)
       case Join(_, output, typ, parameters, branch, _) =>
         ("Type", typ) :: ("Output", output.getOrElse("")) ::
-          parameters.map(p => p.name -> p.expression.expression) ++ branch.flatMap(bp =>
+          parameters.map(p => p.name.value -> p.expression.expression) ++ branch.flatMap(bp =>
             bp.parameters.map(p => s"${bp.branchId} - ${p.name}" -> p.expression.expression)
           )
       case Split(_, _) => ("No parameters", "") :: Nil
@@ -234,7 +236,7 @@ object PdfExporter extends LazyLogging {
       case _: BranchEndData       => throw new IllegalArgumentException("Should not happen during PDF export")
       case _: FragmentUsageOutput => throw new IllegalArgumentException("Should not happen during PDF export")
     }
-    val data = node.additionalFields
+    val data: List[(String, String)] = node.additionalFields
       .flatMap(_.description)
       .map(naf => ("Description", naf))
       .toList ++ nodeData
@@ -250,7 +252,7 @@ object PdfExporter extends LazyLogging {
           <table-column column-width="proportional-column-width(3)"/>
           <table-body>
             {
-        data.map { case (key, value) =>
+        data.map { case (key: String, value: String) =>
           <table-row>
               <table-cell border="1pt solid black" padding-left="1pt" font-weight="bold">
                 <block>
