@@ -297,7 +297,7 @@ val scalaCheckVshort      = scalaCheckV.take(4).replace(".", "-")
 val scalaTestPlusV        =
   "3.2.18.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
-val logbackV                = "1.5.12"
+val logbackV                = "1.2.13"
 // this is used in cloud, official JsonEncoder uses different field layout
 val logbackJsonV            = "0.1.5"
 val betterFilesV            = "3.9.2"
@@ -309,7 +309,7 @@ val jacksonV                = "2.17.2"
 val catsV                   = "2.12.0"
 val catsEffectV             = "3.5.4"
 val everitSchemaV           = "1.14.4"
-val slf4jV                  = "2.0.16"
+val slf4jV                  = "1.7.36"
 val scalaLoggingV           = "3.9.5"
 val scalaCompatV            = "1.0.2"
 val ficusV                  = "1.4.7"
