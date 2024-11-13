@@ -21,11 +21,11 @@ case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[Strin
     extends ExpressionTypingInfo {
 
   override def typingResult: TypingResult = expectedType match {
-    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[Long]) =>
+    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[Long]) && key != "" =>
       TypedClass(a, b, Some(key.toLong))
-    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[Boolean]) =>
+    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[Boolean]) && key != "" =>
       TypedClass(a, b, Some(key.toBoolean))
-    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[String]) =>
+    case clazz @ TypedClass(a, b, None) if clazz.canBeSubclassOf(Typed[String]) && key != "" =>
       TypedClass(a, b, Some(key))
     case _ => expectedType
   }
