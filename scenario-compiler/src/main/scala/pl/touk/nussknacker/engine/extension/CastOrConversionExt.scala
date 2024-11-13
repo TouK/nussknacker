@@ -15,10 +15,16 @@ import java.lang.{Boolean => JBoolean}
 import scala.util.Try
 
 // todo: lbg - add casting methods to UTIL
-class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) extends ExtensionMethodHandler {
+class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
   private val castException = new ClassCastException(s"Cannot cast value to given class")
 
-  override val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
+  private def findMethod(methodName: String, argsSize: Int) = {
+    methodRegistry
+      .get(methodName)
+      .filter(_.argsSize == argsSize)
+  }
+
+  private val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
     "is"       -> SingleArg(is),
     "to"       -> SingleArg(to),
     "toOrNull" -> SingleArg(toOrNull),
@@ -60,11 +66,11 @@ class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) extends Ex
 }
 
 object CastOrConversionExt extends ExtensionMethodsDefinition {
-  private val isMethodName            = "is"
-  private val toMethodName            = "to"
-  private val toOrNullMethodName      = "toOrNull"
-  private val castOrConversionMethods = Set(isMethodName, toMethodName, toOrNullMethodName)
-  private val stringClass             = classOf[String]
+  private[extension] val isMethodName       = "is"
+  private[extension] val toMethodName       = "to"
+  private[extension] val toOrNullMethodName = "toOrNull"
+  private val castOrConversionMethods       = Set(isMethodName, toMethodName, toOrNullMethodName)
+  private val stringClass                   = classOf[String]
 
   private val conversionsRegistry: List[Conversion[_ >: Null <: AnyRef]] = List(
     ToLongConversion,
@@ -72,8 +78,8 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
     ToBigDecimalConversion,
     ToBooleanConversion,
     ToStringConversion,
-    ToMapConversionExt,
-    ToListConversionExt,
+    ToMapConversion,
+    ToListConversion,
     ToByteConversion,
     ToShortConversion,
     ToIntegerConversion,
@@ -91,13 +97,14 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
   def allowedConversions(clazz: Class[_]): List[Conversion[_]] =
     conversionsRegistry.filter(_.appliesToConversion(clazz))
 
-  override def createHandler(clazz: Class[_], set: ClassDefinitionSet): Option[ExtensionMethodHandler] = {
-    if (appliesToClassInRuntime(clazz)) {
-      Some(new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase()))
-    } else {
-      None
-    }
-  }
+  override def findMethod(
+      clazz: Class[_],
+      methodName: String,
+      argsSize: Int,
+      set: ClassDefinitionSet
+  ): Option[ExtensionMethod[_]] =
+    new CastOrConversionExt(set.classDefinitionsMap.keySet.classesByNamesAndSimpleNamesLowerCase())
+      .findMethod(methodName, argsSize)
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] = {
     val castAllowedClasses = clazz.findAllowedClassesForCastParameter(set).mapValuesNow(_.clazzName)
@@ -108,11 +115,6 @@ object CastOrConversionExt extends ExtensionMethodsDefinition {
       Map.empty
     }
   }
-
-  // Convert methods should visible in runtime for every class because we allow invoke convert methods on an unknown
-  // object in Typer, but in the runtime the same type could be known and that's why should add convert method for an
-  // every class.
-  private def appliesToClassInRuntime(clazz: Class[_]): Boolean = true
 
   private def getConversion(className: String): Either[Throwable, Conversion[_]] =
     conversionsByType.get(className.toLowerCase) match {

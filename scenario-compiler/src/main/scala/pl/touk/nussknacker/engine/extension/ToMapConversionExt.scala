@@ -3,49 +3,54 @@ package pl.touk.nussknacker.engine.extension
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, MethodTypeInfo}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}
 import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 
 import java.lang.{Boolean => JBoolean}
 import java.util.{Collection => JCollection, HashMap => JHashMap, Map => JMap, Set => JSet}
+import scala.annotation.tailrec
 
-object ToMapConversionExt extends ToCollectionConversion[JMap[_, _]] with ConversionExt {
-  private val booleanTyping    = Typed.typedClass[Boolean]
-  private val mapTyping        = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
-  private val keyName          = "key"
-  private val valueName        = "value"
-  private val keyAndValueNames = JSet.of(keyName, valueName)
+object ToMapConversionExt extends ConversionExt(ToMapConversion) {
+  private val booleanTyping = Typed.typedClass[Boolean]
+  private val mapTyping     = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
 
   private val isMapMethodDefinition = FunctionalMethodDefinition(
-    typeFunction = (invocationTarget, _) => ToMapConversionExt.typingFunction(invocationTarget).map(_ => booleanTyping),
+    typeFunction = (invocationTarget, _) => ToMapConversion.typingFunction(invocationTarget).map(_ => booleanTyping),
     signature = MethodTypeInfo.noArgTypeInfo(booleanTyping),
     name = "isMap",
     description = Some("Check whether can be convert to a map")
   )
 
   private val toMapDefinition = FunctionalMethodDefinition(
-    typeFunction = (invocationTarget, _) => ToMapConversionExt.typingFunction(invocationTarget),
+    typeFunction = (invocationTarget, _) => ToMapConversion.typingFunction(invocationTarget),
     signature = MethodTypeInfo.noArgTypeInfo(mapTyping),
     name = "toMap",
     description = Option("Convert to a map or throw exception in case of failure")
   )
 
   private val toMapOrNullDefinition = FunctionalMethodDefinition(
-    typeFunction = (invocationTarget, _) => ToMapConversionExt.typingFunction(invocationTarget),
+    typeFunction = (invocationTarget, _) => ToMapConversion.typingFunction(invocationTarget),
     signature = MethodTypeInfo.noArgTypeInfo(mapTyping),
     name = "toMapOrNull",
     description = Option("Convert to a map or null in case of failure")
   )
 
-  override def definitions(): List[MethodDefinition] = List(
+  override protected def definitions(): List[MethodDefinition] = List(
     isMapMethodDefinition,
     toMapDefinition,
     toMapOrNullDefinition,
   )
 
+}
+
+object ToMapConversion extends ToCollectionConversion[JMap[_, _]] {
+
+  private val keyName          = "key"
+  private val valueName        = "value"
+  private val keyAndValueNames = JSet.of(keyName, valueName)
+
   override val typingResult: TypingResult = Typed.genericTypeClass(resultTypeClass, List(Unknown, Unknown))
-  override val conversion: Conversion[_]  = this
 
   override val typingFunction: TypingResult => ValidatedNel[GenericFunctionTypingError, TypingResult] =
     invocationTarget =>
@@ -60,13 +65,7 @@ object ToMapConversionExt extends ToCollectionConversion[JMap[_, _]] with Conver
         case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
 
-  override def canConvert(value: Any): JBoolean = value match {
-    case _: JMap[_, _]     => true
-    case c: JCollection[_] => canConvertToMap(c)
-    case a: Array[_]       => canConvertToMap(ConversionHandler.convertArrayToList(a))
-    case _                 => false
-  }
-
+  @tailrec
   override def convertEither(value: Any): Either[Throwable, JMap[_, _]] =
     value match {
       case m: JMap[_, _] => Right(m)
@@ -77,6 +76,14 @@ object ToMapConversionExt extends ToCollectionConversion[JMap[_, _]] with Conver
         Right(map)
       case x => Left(new IllegalArgumentException(s"Cannot convert: $x to a Map"))
     }
+
+  // We could leave underlying method using convertEither as well but this implementation is faster
+  override def canConvert(value: Any): JBoolean = value match {
+    case _: JMap[_, _]     => true
+    case c: JCollection[_] => canConvertToMap(c)
+    case a: Array[_]       => canConvertToMap(ConversionHandler.convertArrayToList(a))
+    case _                 => false
+  }
 
   private def canConvertToMap(c: JCollection[_]): Boolean = c.isEmpty || c
     .stream()

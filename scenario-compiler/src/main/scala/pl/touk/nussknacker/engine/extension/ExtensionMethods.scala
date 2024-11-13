@@ -18,10 +18,9 @@ class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends Me
       methodName: String,
       argumentTypes: util.List[TypeDescriptor]
   ): MethodExecutor =
-    maybeResolve(context, targetObject, methodName, argumentTypes).orNull
+    maybeResolve(targetObject, methodName, argumentTypes).orNull
 
   def maybeResolve(
-      context: EvaluationContext,
       targetObject: Any,
       methodName: String,
       argumentTypes: util.List[TypeDescriptor]
@@ -29,9 +28,9 @@ class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends Me
     val targetClass = targetObject.getClass
     executorsCache.getOrElseUpdate(
       (methodName, targetClass), {
-        extensionMethodsDefinitions
-          .flatMap(_.createHandler(targetClass, classDefinitionSet))
-          .flatMap(handler => findMethod(handler, methodName, argumentTypes.size())) match {
+        extensionMethodsDefinitions.flatMap(
+          _.findMethod(targetClass, methodName, argumentTypes.size(), classDefinitionSet)
+        ) match {
           case Nil           => None
           case method :: Nil => Some(createExecutor(method))
           case _ => throw new IllegalStateException(s"Found too many methods for method with name: '$methodName'")
@@ -39,13 +38,6 @@ class ExtensionMethodResolver(classDefinitionSet: ClassDefinitionSet) extends Me
       }
     )
   }
-
-  private def findMethod(
-      extensionMethodHandler: ExtensionMethodHandler,
-      methodName: String,
-      argsSize: Int
-  ): Option[ExtensionMethod[_]] =
-    extensionMethodHandler.methodRegistry.get(methodName).filter(_.argsSize == argsSize)
 
   private def createExecutor(method: ExtensionMethod[_]): MethodExecutor = new MethodExecutor {
     private val typeDescriptor = TypeDescriptor.valueOf(method.returnType)
@@ -102,12 +94,15 @@ object ExtensionMethod {
 
 }
 
-trait ExtensionMethodHandler {
-  val methodRegistry: Map[String, ExtensionMethod[_]]
-}
-
 trait ExtensionMethodsDefinition {
-  def createHandler(clazz: Class[_], set: ClassDefinitionSet): Option[ExtensionMethodHandler]
+
+  def findMethod(
+      clazz: Class[_],
+      methodName: String,
+      argsSize: Int,
+      set: ClassDefinitionSet
+  ): Option[ExtensionMethod[_]]
 
   def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]]
+
 }

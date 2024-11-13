@@ -11,40 +11,54 @@ import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 import java.lang.{Boolean => JBoolean}
 import java.util.{ArrayList => JArrayList, Collection => JCollection, List => JList}
 
-object ToListConversionExt extends ToCollectionConversion[JList[_]] with ConversionExt {
-  private val booleanTyping   = Typed.typedClass[Boolean]
-  private val listTyping      = Typed.genericTypeClass[JList[_]](List(Unknown))
-  private val collectionClass = classOf[JCollection[_]]
+object ToListConversionExt extends ConversionExt(ToListConversion) {
+
+  private val booleanTyping = Typed.typedClass[Boolean]
+  private val listTyping    = Typed.genericTypeClass[JList[_]](List(Unknown))
 
   private val isListMethodDefinition = FunctionalMethodDefinition(
-    typeFunction = (targetTyping, _) => ToListConversionExt.typingFunction(targetTyping).map(_ => booleanTyping),
+    typeFunction = (targetTyping, _) => ToListConversion.typingFunction(targetTyping).map(_ => booleanTyping),
     signature = MethodTypeInfo.noArgTypeInfo(booleanTyping),
     name = "isList",
     description = Some("Check whether can be convert to a list")
   )
 
   private val toListDefinition = FunctionalMethodDefinition(
-    typeFunction = (invocationTarget, _) => ToListConversionExt.typingFunction(invocationTarget),
+    typeFunction = (invocationTarget, _) => ToListConversion.typingFunction(invocationTarget),
     signature = MethodTypeInfo.noArgTypeInfo(listTyping),
     name = "toList",
     description = Option("Convert to a list or throw exception in case of failure")
   )
 
   private val toListOrNullDefinition = FunctionalMethodDefinition(
-    typeFunction = (invocationTarget, _) => ToListConversionExt.typingFunction(invocationTarget),
+    typeFunction = (invocationTarget, _) => ToListConversion.typingFunction(invocationTarget),
     signature = MethodTypeInfo.noArgTypeInfo(listTyping),
     name = "toListOrNull",
     description = Option("Convert to a list or null in case of failure")
   )
 
-  override def definitions(): List[MethodDefinition] = List(
+  override protected def definitions(): List[MethodDefinition] = List(
     isListMethodDefinition,
     toListDefinition,
     toListOrNullDefinition,
   )
 
-  override val typingResult: TypingResult       = Typed.genericTypeClass(resultTypeClass, List(Unknown))
-  override val conversion: Conversion[JList[_]] = this
+}
+
+object ToListConversion extends ToCollectionConversion[JList[_]] {
+
+  private val collectionClass = classOf[JCollection[_]]
+
+  override def convertEither(value: Any): Either[Throwable, JList[_]] = {
+    value match {
+      case l: JList[_]       => Right(l)
+      case c: JCollection[_] => Right(new JArrayList[Any](c))
+      case a: Array[_]       => Right(ConversionHandler.convertArrayToList(a))
+      case x                 => Left(new IllegalArgumentException(s"Cannot convert: $x to a List"))
+    }
+  }
+
+  override val typingResult: TypingResult = Typed.genericTypeClass(resultTypeClass, List(Unknown))
 
   override val typingFunction: TypingResult => ValidatedNel[GenericFunctionTypingError, TypingResult] =
     invocationTarget =>
@@ -55,15 +69,7 @@ object ToListConversionExt extends ToCollectionConversion[JList[_]] with Convers
         case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
 
+  // We could leave underlying method using convertEither as well but this implementation is faster
   override def canConvert(value: Any): JBoolean = value.getClass.isAOrChildOf(collectionClass) || value.getClass.isArray
-
-  override def convertEither(value: Any): Either[Throwable, JList[_]] = {
-    value match {
-      case l: JList[_]       => Right(l)
-      case c: JCollection[_] => Right(new JArrayList[Any](c))
-      case a: Array[_]       => Right(ConversionHandler.convertArrayToList(a))
-      case x                 => Left(new IllegalArgumentException(s"Cannot convert: $x to a List"))
-    }
-  }
 
 }
