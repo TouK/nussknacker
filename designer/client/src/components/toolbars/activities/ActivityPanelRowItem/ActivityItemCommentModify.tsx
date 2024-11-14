@@ -10,8 +10,18 @@ interface Props {
     scenarioActivityId: string;
     activityType: ActivityType;
     activityAction: ActionMetadata;
+    title: string;
+    confirmButtonText: string;
 }
-export const ActivityItemCommentModify = ({ commentContent, scenarioActivityId, activityType, activityAction, ...props }: Props) => {
+export const ActivityItemCommentModify = ({
+    commentContent,
+    scenarioActivityId,
+    activityType,
+    activityAction,
+    title,
+    confirmButtonText,
+    ...props
+}: Props) => {
     const featuresSettings = useSelector(getFeatureSettings);
     const { open } = useWindows();
 
@@ -19,19 +29,28 @@ export const ActivityItemCommentModify = ({ commentContent, scenarioActivityId, 
         const permittedModifyCommentTypes: ActivityType[] = ["SCENARIO_DEPLOYED", "SCENARIO_CANCELED", "SCENARIO_PAUSED"];
 
         open<ModifyActivityCommentMeta>({
-            title: "Modify comment",
+            title,
             isModal: true,
             shouldCloseOnEsc: true,
-            kind: WindowKind.modifyComment,
+            kind: WindowKind.modifyActivityComment,
             meta: {
                 existingComment: commentContent.value,
                 scenarioActivityId,
                 placeholder: permittedModifyCommentTypes.includes(activityType)
                     ? featuresSettings?.deploymentCommentSettings?.exampleComment
                     : undefined,
+                confirmButtonText,
             },
         });
-    }, [activityType, commentContent.value, featuresSettings?.deploymentCommentSettings?.exampleComment, open, scenarioActivityId]);
+    }, [
+        activityType,
+        commentContent.value,
+        confirmButtonText,
+        featuresSettings?.deploymentCommentSettings?.exampleComment,
+        open,
+        scenarioActivityId,
+        title,
+    ]);
 
     return (
         <StyledActionIcon

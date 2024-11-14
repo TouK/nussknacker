@@ -25,6 +25,10 @@ const StyledHeaderIcon = styled(UrlIcon)(({ theme }) => ({
     width: "16px",
     height: "16px",
     color: theme.palette.primary.main,
+    svg: {
+        width: "16px",
+        height: "16px",
+    },
 }));
 
 const StyledHeaderActionRoot = styled("div")(({ theme }) => ({
@@ -37,7 +41,7 @@ const StyledActivityItemHeader = styled("div")<{ isHighlighted: boolean; isRunni
     ({ theme, isHighlighted, isRunning, isActiveFound }) => ({
         display: "flex",
         alignItems: "center",
-        padding: theme.spacing(0.5, 0, 0.5, 0.75),
+        padding: theme.spacing(0.5, 0.5, 0.5, 0.75),
         borderRadius: theme.spacing(0.5),
         ...getHeaderColors(theme, isHighlighted, isRunning, isActiveFound),
     }),
@@ -149,6 +153,8 @@ const HeaderActivity = ({
                     scenarioActivityId={scenarioActivityId}
                     activityType={activityType}
                     activityAction={activityAction}
+                    title={t("panels.actions.addComment.title", "Add comment")}
+                    confirmButtonText={t("panels.actions.addComment.confirmButton", "Add")}
                     {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesAddCommentToActivity })}
                 />
             );

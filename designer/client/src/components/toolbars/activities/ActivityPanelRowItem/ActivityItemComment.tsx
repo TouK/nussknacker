@@ -81,6 +81,8 @@ const CommentActivity = ({
                     commentContent={activityComment.content}
                     data-testid={`edit-comment-icon`}
                     key={activityAction.id}
+                    title={t("panels.actions.editComment.title", "Edit comment")}
+                    confirmButtonText={t("panels.actions.editComment.confirmButton", "Edit")}
                     {...getEventTrackingProps({ selector: EventTrackingSelector.ScenarioActivitiesEditComment })}
                 />
             );
@@ -108,7 +110,13 @@ export const ActivityItemComment = ({ comment, searchQuery, activityActions, sce
     };
 
     return (
-        <Box ref={multilineDetection} display="grid" gridTemplateColumns={isMultiline ? "1fr 10%" : "1fr 15%"} alignItems="flex-start">
+        <Box
+            ref={multilineDetection}
+            display="grid"
+            gridTemplateColumns={isMultiline ? "1fr 10%" : "1fr 15%"}
+            alignItems="flex-start"
+            pr={0.5}
+        >
             <CommentContent
                 content={comment.content.value}
                 commentSettings={commentSettings}
