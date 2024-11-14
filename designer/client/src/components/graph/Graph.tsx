@@ -215,6 +215,8 @@ export class Graph extends React.Component<Props> {
                     batchGroupBy.end(group);
                 }
                 if (isStickyNoteElement(cell.model)) {
+                    this.processGraphPaper.hideTools();
+                    cell.showTools();
                     const position = cell.model.get("position");
                     const noteId = cell.model.get("noteId");
                     const stickyNote = this.props.stickyNotes.find((a) => a.noteId == noteId);
@@ -351,17 +353,22 @@ export class Graph extends React.Component<Props> {
             }
         };
 
-        // TODO hide it on some other action
         const showStickyNoteTools = (cellView: dia.CellView) => {
             cellView.showTools();
         };
 
+        const hideToolsOnBlankClick = (evt: dia.Event) => {
+            evt.preventDefault();
+            this.processGraphPaper.hideTools();
+        };
+
         const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
-            if (isStickyNoteElement(cellView.model)) {
-                showStickyNoteTools(cellView);
-                return;
-            }
             if (this.props.isFragment === true) return;
+            this.processGraphPaper.hideTools();
+            if (isStickyNoteElement(cellView.model)) {
+                this.props.resetSelection();
+                showStickyNoteTools(cellView);
+            }
             if (this.props.nodeSelectionEnabled) {
                 const nodeDataId = cellView.model.attributes.nodeData?.id;
                 if (!nodeDataId) {
@@ -387,6 +394,7 @@ export class Graph extends React.Component<Props> {
 
         this.processGraphPaper.on(Events.CELL_POINTERCLICK, handleGraphEvent(null, selectNode));
         this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, handleGraphEvent(null, showNodeDetails));
+        this.processGraphPaper.on(Events.BLANK_POINTERCLICK, hideToolsOnBlankClick);
 
         this.hooverHandling();
     }
