@@ -1986,6 +1986,65 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parsed.evaluateSync[Any](ctx) shouldBe List("a").asJava
   }
 
+  test("should convert a map to a list analogical as list can be converted to map") {
+    val listClass = classOf[JList[_]]
+
+    val containerWithMapWithIntValues            = Map("foo" -> 123, "bar" -> 234).asJava
+    val containerWithMapWithDifferentTypesValues = Map("foo" -> 123, "bar" -> "baz").asJava
+    val customCtx = Context("someContextId")
+      .withVariable("containerWithMapWithIntValues", ContainerOfGenericMap(containerWithMapWithIntValues))
+      .withVariable(
+        "containerWithMapWithDifferentTypesValues",
+        ContainerOfGenericMap(containerWithMapWithDifferentTypesValues)
+      )
+
+    forAll(
+      Table(
+        ("mapExpression", "expectedKeyType", "expectedValueType", "expectedToListResult"),
+        ("{:}", Typed[String], Unknown, List.empty.asJava),
+        ("{foo: 123}", Typed[String], Typed[Int], List(Map("key" -> "foo", "value" -> 123).asJava).asJava),
+        (
+          "#containerWithMapWithIntValues.value",
+          Unknown,
+          Unknown,
+          List(
+            Map("key" -> "foo", "value" -> 123).asJava,
+            Map("key" -> "bar", "value" -> 234).asJava,
+          ).asJava
+        ),
+        (
+          "#containerWithMapWithDifferentTypesValues.value",
+          Unknown,
+          Unknown,
+          List(
+            Map("key" -> "foo", "value" -> 123).asJava,
+            Map("key" -> "bar", "value" -> "baz").asJava,
+          ).asJava
+        ),
+      )
+    ) { (mapExpression, expectedKeyType, expectedValueType, expectedToListResult) =>
+      val givenMapExpression = parse[Any](mapExpression, customCtx).validValue
+      val givenMap           = givenMapExpression.evaluateSync[Any](customCtx)
+
+      val parsedToListExpression = parse[Any](mapExpression + ".toList", customCtx).validValue
+      inside(parsedToListExpression.returnType) {
+        case TypedClass(`listClass`, (entryType: TypedObjectTypingResult) :: Nil) =>
+          entryType.runtimeObjType.klass shouldBe classOf[JMap[_, _]]
+          entryType.fields.keySet shouldBe Set("key", "value")
+          entryType.fields("key") shouldBe expectedKeyType
+          entryType.fields("value") shouldBe expectedValueType
+      }
+      parsedToListExpression.evaluateSync[Any](customCtx) shouldBe expectedToListResult
+
+      val parsedRoundTripExpression = parse[Any](mapExpression + ".toList.toMap", customCtx).validValue
+      parsedRoundTripExpression.evaluateSync[Any](customCtx) shouldBe givenMap
+      val roundTripTypeIsAGeneralizationOfGivenType =
+        givenMapExpression.returnType canBeSubclassOf parsedRoundTripExpression.returnType
+      roundTripTypeIsAGeneralizationOfGivenType shouldBe true
+    }
+
+  }
+
   test("should allow use no param method property accessor on unknown") {
     val customCtx = ctx.withVariable("unknownInt", ContainerOfUnknown("11"))
     val parsed    = parse[Any]("#unknownInt.value.toLongOrNull", customCtx).validValue

@@ -46,13 +46,15 @@ object ToMapConversionExt extends ConversionExt(ToMapConversion) {
 
 }
 
-object ToMapConversion extends ToCollectionConversion[JMap[_, _]] {
+object ToMapConversion extends Conversion[JMap[_, _]] {
 
   private val mapClass = classOf[JMap[_, _]]
 
-  private val keyName          = "key"
-  private val valueName        = "value"
-  private val keyAndValueNames = JSet.of(keyName, valueName)
+  private val collectionClass = classOf[JCollection[_]]
+
+  private[extension] val keyName   = "key"
+  private[extension] val valueName = "value"
+  private val keyAndValueNames     = JSet.of(keyName, valueName)
 
   override val typingResult: TypingResult = Typed.genericTypeClass(resultTypeClass, List(Unknown, Unknown))
 
@@ -98,5 +100,8 @@ object ToMapConversion extends ToCollectionConversion[JMap[_, _]] {
       case m: JMap[_, _] => m.keySet().containsAll(keyAndValueNames)
       case _             => false
     }
+
+  override def appliesToConversion(clazz: Class[_]): Boolean =
+    clazz != resultTypeClass && (clazz.isAOrChildOf(collectionClass) || clazz == unknownClass || clazz.isArray)
 
 }
