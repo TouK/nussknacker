@@ -33,7 +33,7 @@ export function makeStickyNoteElement(
                 },
                 foreignObject: {
                     width: stickyNote.dimensions.width - ICON_SIZE - CONTENT_PADDING * 2,
-                    height: stickyNote.dimensions.height - ICON_SIZE - CONTENT_PADDING * 2,
+                    height: stickyNote.dimensions.height - ICON_SIZE - CONTENT_PADDING * 4,
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
                 icon: {
