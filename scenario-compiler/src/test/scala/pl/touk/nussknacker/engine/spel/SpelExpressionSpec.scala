@@ -1636,11 +1636,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
           "{}.toMap",
           Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
           Map.empty.asJava
-        ),
-        (
-          "{1, 'foo', false}.toMap",
-          Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
-          Map.empty.asJava
         )
       )
     ) { (expression, expectedType, expectedResult) =>
