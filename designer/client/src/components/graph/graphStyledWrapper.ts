@@ -176,10 +176,24 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                     },
                 },
             },
-            ".joint-type-esp-model": {
-                ".body .joint-port-body .background": {
-                    transition: "all 0.25s ease-in-out",
-                },
+            ".sticky-note-markdown": {
+                width: "100%",
+                height: "100%",
+            },
+            ".sticky-note-markdown > *:first-child": {
+                paddingTop: "0px",
+            },
+            ".sticky-note-markdown-editor": {
+                backgroundColor: "rgba(0,0,0,0.1)",
+                resize: "none",
+                width: "100%",
+                height: "100%",
+                borderStyle: "none",
+                borderColor: "Transparent",
+                overflow: "auto",
+            },
+            ".sticky-note-markdown-editor:disabled": {
+                display: "none",
             },
         },
     ]),
