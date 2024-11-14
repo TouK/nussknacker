@@ -229,7 +229,7 @@ object PdfExporter extends LazyLogging {
       case Join(_, output, typ, parameters, branch, _) =>
         ("Type", typ) :: ("Output", output.getOrElse("")) ::
           parameters.map(p => p.name.value -> p.expression.expression) ++ branch.flatMap(bp =>
-            bp.parameters.map(p => s"${bp.branchId} - ${p.name}" -> p.expression.expression)
+            bp.parameters.map(p => s"${bp.branchId} - ${p.name.value}" -> p.expression.expression)
           )
       case Split(_, _) => ("No parameters", "") :: Nil
       // This should not happen in properly resolved scenario...
