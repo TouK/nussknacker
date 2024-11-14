@@ -57,7 +57,7 @@ export function makeStickyNoteElement(
         const removeButtonTool = new elementTools.Remove({
             focusOpacity: 0.5,
             rotate: true,
-            x: stickyNote.dimensions.width - 10,
+            x: stickyNote.dimensions.width - 20,
             y: "0%",
             offset: { x: 10, y: 10 },
             action: function () {
@@ -116,18 +116,13 @@ export function makeStickyNoteElement(
                 new ResizeTool({
                     selector: "body",
                     scale: 2,
-                    handleAttributes: {
-                        style: {
-                            x: 20,
-                        },
-                    },
                 }),
                 removeButtonTool,
             ],
         });
         model.resize(
-            Math.max(stickyNote.dimensions.width + 10, MIN_STICKY_NOTE_WIDTH),
-            Math.max(stickyNote.dimensions.height - 10, MIN_STICKY_NOTE_HEIGHT),
+            Math.max(stickyNote.dimensions.width, MIN_STICKY_NOTE_WIDTH),
+            Math.max(stickyNote.dimensions.height, MIN_STICKY_NOTE_HEIGHT),
         );
         return { model, tools };
     };
