@@ -1,17 +1,14 @@
 package pl.touk.nussknacker.engine.definition.test
 
-import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{
-  ComponentUseCase,
-  SourceTestSupport,
-  TestDataGenerator,
-  TestWithParametersSupport
-}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, NodeId, ProcessVersion, process}
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
@@ -82,13 +79,23 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     }
   }
 
+  // Currently we rely on the assumption that client always call scenarioTesting / {scenarioName} / parameters endpoint
+  // only when scenarioTesting / {scenarioName} / capabilities endpoint returns canTestWithForm = true. Because of that
+  // for non happy-path cases we throw UnsupportedOperationException
+  // TODO: This assumption is wrong. Every endpoint should be treated separately. Currently from time to time
+  //       users got error notification because this endpoint is called without checking canTestWithForm = true.
+  //       We can go even further and merge both endpoints
   private def getTestParameters(source: SourceNodeData, jobData: JobData): List[Parameter] =
     modelData.withThisAsContextClassLoader {
       prepareSourceObj(source)(jobData, NodeId(source.id)) match {
-        case Some(s: TestWithParametersSupport[_]) => s.testParametersDefinition
-        case _ =>
+        case Valid(s: TestWithParametersSupport[_]) => s.testParametersDefinition
+        case Valid(sourceWithoutTestWithParametersSupport) =>
           throw new UnsupportedOperationException(
-            s"Requested test parameters from source (${source.id}) that does not implement TestWithParametersSupport."
+            s"Requested test parameters from source [${source.id}] of [${sourceWithoutTestWithParametersSupport.getClass.getName}] class that does not implement TestWithParametersSupport."
+          )
+        case Invalid(errors) =>
+          throw new UnsupportedOperationException(
+            s"Requested test parameters from source [${source.id}] that is not valid. Errors: ${errors.toList.mkString(", ")}"
           )
       }
     }
@@ -118,19 +125,19 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     val jobData = JobData(scenario.metaData, processVersion)
     val generatorsForSourcesSupportingTestDataGeneration = for {
       source            <- collectAllSources(scenario)
-      sourceObj         <- prepareSourceObj(source)(jobData, NodeId(source.id))
+      sourceObj         <- prepareSourceObj(source)(jobData, NodeId(source.id)).toList
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
     NonEmptyList
       .fromList(generatorsForSourcesSupportingTestDataGeneration)
       .map(Right(_))
-      .getOrElse(Left("Scenario doesn't have any source supporting test data generation"))
+      .getOrElse(Left("Scenario doesn't have any valid source supporting test data generation"))
   }
 
   private def prepareSourceObj(
       source: SourceNodeData
-  )(implicit jobData: JobData, nodeId: NodeId): Option[process.Source] = {
-    nodeCompiler.compileSource(source).compiledObject.toOption
+  )(implicit jobData: JobData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, Source] = {
+    nodeCompiler.compileSource(source).compiledObject
   }
 
   private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
