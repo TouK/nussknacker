@@ -62,8 +62,9 @@ object ToMapConversion extends ToCollectionConversion[JMap[_, _]] {
           Typed.genericTypeClass[JMap[_, _]](params).validNel
         case TypedClass(_, List(TypedObjectTypingResult(_, _, _))) =>
           GenericFunctionTypingError.OtherError("List element must contain 'key' and 'value' fields").invalidNel
-        case Unknown => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-        case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+        case TypedClass(_, List(Unknown)) => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case Unknown                      => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case _                            => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
 
   @tailrec
