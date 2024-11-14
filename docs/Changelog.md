@@ -85,13 +85,13 @@
 * [#7021](https://github.com/TouK/nussknacker/pull/7021) Definitions service can return definition without UI config
 * [#7010](https://github.com/TouK/nussknacker/pull/7010) Dynamic access allowed via indexer operator (`[]`) on expressions typed as `Unknown`
 * [#7063](https://github.com/TouK/nussknacker/pull/7063) Introduce conversion extension methods in SpeL:
-  * is(className)/to(className)/toOrNull(className)
-  * isBoolean/toBoolean/toBooleanOrNull
-  * isLong/toLong/toLongOrNull
-  * isDouble/toDouble/toDoubleOrNull
-  * isBigDecimal/toBigDecimal/toBigDecimalOrNull
-  * isList/toList/toListOrNull
-  * isMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
+  * canBe(className)/to(className)/toOrNull(className)
+  * canBeBoolean/toBoolean/toBooleanOrNull
+  * canBeLong/toLong/toLongOrNull
+  * canBeDouble/toDouble/toDoubleOrNull
+  * canBeBigDecimal/toBigDecimal/toBigDecimalOrNull
+  * canBeList/toList/toListOrNull
+  * canBeMap/toMap/toMapOrNull - the list of key-value pairs or unknown map can be converted to a map.
 * [#7106](https://github.com/TouK/nussknacker/pull/7106) Fix an issue where pressing the “Esc” key did not remove focus from input fields in dialogs, which prevented the dialog window from closing
 * [#7002](https://github.com/TouK/nussknacker/pull/7002) Resolve an issue with union nodes output expression when nodes were copied and pasted
 * [#6994](https://github.com/TouK/nussknacker/pull/6994) Fix styling issues for form checkboxes in Firefox

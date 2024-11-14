@@ -12,6 +12,44 @@
       "refClazzName": "[Ljava.lang.Object;"
     },
     "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "canBeList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "canBeMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "contains": [
         {
           "name": "contains",
@@ -80,20 +118,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -101,30 +125,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
-        }
-      ],
-      "isList": [
-        {
-          "description": "Check whether can be convert to a list",
-          "name": "isList",
-          "signatures": [
-            {
-              "noVarArgs": [],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isMap": [
-        {
-          "description": "Check whether can be convert to a map",
-          "name": "isMap",
-          "signatures": [
-            {
-              "noVarArgs": [],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
         }
       ],
       "lastIndexOf": [
@@ -463,6 +463,50 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -507,50 +551,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
@@ -831,6 +831,20 @@
   {
     "clazzName": {"refClazzName": "java.lang.CharSequence"},
     "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "charAt": [
         {
           "name": "charAt",
@@ -840,20 +854,6 @@
             ],
             "result": {"refClazzName": "java.lang.Character"}
           }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
         }
       ],
       "length": [
@@ -954,10 +954,10 @@
       "refClazzName": "java.lang.Comparable"
     },
     "methods": {
-      "is": [
+      "canBe": [
         {
           "description": "Checks if a type can be converted to a given class",
-          "name": "is",
+          "name": "canBe",
           "signatures": [
             {
               "noVarArgs": [
@@ -1020,6 +1020,40 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -1076,43 +1110,9 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
       "isInfinite": [
         {
           "name": "isInfinite",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -1505,6 +1505,50 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -1561,53 +1605,9 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
       "isInfinite": [
         {
           "name": "isInfinite",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -2020,6 +2020,50 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -2064,50 +2108,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
@@ -2688,6 +2688,40 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -2732,40 +2766,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
@@ -3315,6 +3315,50 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "doubleValue": [
         {
           "name": "doubleValue",
@@ -3339,50 +3383,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
@@ -3507,10 +3507,10 @@
   {
     "clazzName": {"type": "Unknown"},
     "methods": {
-      "is": [
+      "canBe": [
         {
           "description": "Checks if a type can be converted to a given class",
-          "name": "is",
+          "name": "canBe",
           "signatures": [
             {
               "noVarArgs": [
@@ -3521,40 +3521,40 @@
           ]
         }
       ],
-      "isBigDecimal": [
+      "canBeBigDecimal": [
         {
           "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
+          "name": "canBeBigDecimal",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "isBoolean": [
+      "canBeBoolean": [
         {
           "description": "Check whether the value can be convert to a Boolean",
-          "name": "isBoolean",
+          "name": "canBeBoolean",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "isDouble": [
+      "canBeDouble": [
         {
           "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
+          "name": "canBeDouble",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "isList": [
+      "canBeList": [
         {
           "description": "Check whether can be convert to a list",
-          "name": "isList",
+          "name": "canBeList",
           "signatures": [
             {
               "noVarArgs": [],
@@ -3563,20 +3563,20 @@
           ]
         }
       ],
-      "isLong": [
+      "canBeLong": [
         {
           "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
+          "name": "canBeLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
-      "isMap": [
+      "canBeMap": [
         {
           "description": "Check whether can be convert to a map",
-          "name": "isMap",
+          "name": "canBeMap",
           "signatures": [
             {
               "noVarArgs": [],
@@ -3817,6 +3817,50 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -3861,50 +3905,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
@@ -4205,6 +4205,60 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeBoolean": [
+        {
+          "description": "Check whether the value can be convert to a Boolean",
+          "name": "canBeBoolean",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "charAt": [
         {
           "name": "charAt",
@@ -4340,30 +4394,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
       "isBlank": [
         {
           "name": "isBlank",
@@ -4373,39 +4403,9 @@
           }
         }
       ],
-      "isBoolean": [
-        {
-          "description": "Check whether the value can be convert to a Boolean",
-          "name": "isBoolean",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
       "isEmpty": [
         {
           "name": "isEmpty",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
@@ -4912,6 +4912,40 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "compareTo": [
         {
           "name": "compareTo",
@@ -5090,40 +5124,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
@@ -5772,6 +5772,50 @@
           }
         }
       ],
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeBigDecimal": [
+        {
+          "description": "Check whether the value can be convert to a BigDecimal",
+          "name": "canBeBigDecimal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeDouble": [
+        {
+          "description": "Check whether the value can be convert to a Double",
+          "name": "canBeDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "canBeLong": [
+        {
+          "description": "Check whether the value can be convert to a Long",
+          "name": "canBeLong",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
       "clearBit": [
         {
           "name": "clearBit",
@@ -5899,50 +5943,6 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isBigDecimal": [
-        {
-          "description": "Check whether the value can be convert to a BigDecimal",
-          "name": "isBigDecimal",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isDouble": [
-        {
-          "description": "Check whether the value can be convert to a Double",
-          "name": "isDouble",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "isLong": [
-        {
-          "description": "Check whether the value can be convert to a Long",
-          "name": "isLong",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
@@ -11267,6 +11267,20 @@
   {
     "clazzName": {"refClazzName": "java.time.ZoneId"},
     "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "getDisplayName": [
         {
           "name": "getDisplayName",
@@ -11295,20 +11309,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
           }
-        }
-      ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
         }
       ],
       "normalized": [
@@ -13350,10 +13350,10 @@
   {
     "clazzName": {"refClazzName": "java.time.temporal.Temporal"},
     "methods": {
-      "is": [
+      "canBe": [
         {
           "description": "Checks if a type can be converted to a given class",
-          "name": "is",
+          "name": "canBe",
           "signatures": [
             {
               "noVarArgs": [
@@ -13407,10 +13407,10 @@
   {
     "clazzName": {"refClazzName": "java.time.temporal.TemporalAccessor"},
     "methods": {
-      "is": [
+      "canBe": [
         {
           "description": "Checks if a type can be converted to a given class",
-          "name": "is",
+          "name": "canBe",
           "signatures": [
             {
               "noVarArgs": [
@@ -13474,6 +13474,44 @@
       "refClazzName": "java.util.Collection"
     },
     "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "canBeList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "canBeMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "contains": [
         {
           "name": "contains",
@@ -13518,20 +13556,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -13539,30 +13563,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
-        }
-      ],
-      "isList": [
-        {
-          "description": "Check whether can be convert to a list",
-          "name": "isList",
-          "signatures": [
-            {
-              "noVarArgs": [],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isMap": [
-        {
-          "description": "Check whether can be convert to a map",
-          "name": "isMap",
-          "signatures": [
-            {
-              "noVarArgs": [],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
         }
       ],
       "size": [
@@ -13752,6 +13752,32 @@
       "refClazzName": "java.util.List"
     },
     "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "canBeMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "contains": [
         {
           "name": "contains",
@@ -13820,20 +13846,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -13841,18 +13853,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
-        }
-      ],
-      "isMap": [
-        {
-          "description": "Check whether can be convert to a map",
-          "name": "isMap",
-          "signatures": [
-            {
-              "noVarArgs": [],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
         }
       ],
       "lastIndexOf": [
@@ -14215,6 +14215,44 @@
       "refClazzName": "java.util.Set"
     },
     "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "canBeList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeMap": [
+        {
+          "description": "Check whether can be convert to a map",
+          "name": "canBeMap",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "contains": [
         {
           "name": "contains",
@@ -14259,20 +14297,6 @@
           }
         }
       ],
-      "is": [
-        {
-          "description": "Checks if a type can be converted to a given class",
-          "name": "is",
-          "signatures": [
-            {
-              "noVarArgs": [
-                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
-              ],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
       "isEmpty": [
         {
           "name": "isEmpty",
@@ -14280,30 +14304,6 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
           }
-        }
-      ],
-      "isList": [
-        {
-          "description": "Check whether can be convert to a list",
-          "name": "isList",
-          "signatures": [
-            {
-              "noVarArgs": [],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
-        }
-      ],
-      "isMap": [
-        {
-          "description": "Check whether can be convert to a map",
-          "name": "isMap",
-          "signatures": [
-            {
-              "noVarArgs": [],
-              "result": {"refClazzName": "java.lang.Boolean"}
-            }
-          ]
         }
       ],
       "size": [

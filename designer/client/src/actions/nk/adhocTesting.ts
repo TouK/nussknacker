@@ -25,8 +25,13 @@ export interface TestAdhocValidationRequest {
 }
 
 export const validateAdhocTestParameters = debounce(
-    async (scenarioName: string, validationRequestData: TestAdhocValidationRequest, callback: (data: GenericValidationData) => void) => {
-        const { data } = await HttpService.validateAdhocTestParameters(scenarioName, validationRequestData);
+    async (
+        scenarioName: string,
+        sourceParameters: SourceWithParametersTest,
+        scenarioGraph: ScenarioGraph,
+        callback: (data: GenericValidationData) => void,
+    ) => {
+        const { data } = await HttpService.validateAdhocTestParameters(scenarioName, sourceParameters, scenarioGraph);
         callback(data);
     },
     500,
