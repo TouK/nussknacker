@@ -3,6 +3,7 @@ import { dia, shapes, util } from "jointjs";
 import { getBorderColor } from "../../../containers/theme/helpers";
 import { StickyNote } from "../../../common/StickyNote";
 import { marked } from "marked";
+import { StickyNoteElement } from "../StickyNoteElement";
 
 export const STICKY_NOTE_WIDTH = 300;
 export const STICKY_NOTE_HEIGHT = 250;
@@ -40,15 +41,17 @@ const body: dia.MarkupNodeJSON = {
     tagName: "path",
 };
 
-//TODO - I left it here since it can be some kind of solution to displaying and editing markdown on the graph.
-//https://resources.jointjs.com/tutorial/foreign-object
-//Maybe we should it different way...
 const foreignObject = (stickyNote: StickyNote) => {
-    const parsed = marked.parse(stickyNote.content + "**TODO** - dont forget to do *it*.. \n\n [x] check");
+    const renderer = new marked.Renderer();
+    renderer.link = function (href, title, text) {
+        return `<a target="_blank" href="${href}">${text}` + "</a>";
+    };
+    const parsed = marked.parse(stickyNote.content, { renderer });
     return util.svg/* xml */ `
-        <foreignObject @selector="foreignObject" >
-           ${parsed}
-        </foreignObject>
+            <foreignObject @selector="foreignObject">
+                        <textarea @selector="name" class="sticky-note-markdown-editor" name="name" autocomplete="off" disabled="disabled">${stickyNote.content}</textarea>
+                        <div @selector="markdown" class="sticky-note-markdown">${parsed}</div>
+            </foreignObject>
     `[0];
 };
 
@@ -77,13 +80,11 @@ const defaults = (theme: Theme) =>
                     },
                 },
                 foreignObject: {
-                    width: STICKY_NOTE_WIDTH - ICON_SIZE - CONTENT_PADDING * 2,
-                    height: STICKY_NOTE_HEIGHT - ICON_SIZE - CONTENT_PADDING * 2,
-                    x: ICON_SIZE + CONTENT_PADDING,
-                    y: ICON_SIZE + CONTENT_PADDING,
+                    width: STICKY_NOTE_WIDTH - CONTENT_PADDING * 2,
+                    height: STICKY_NOTE_HEIGHT - ICON_SIZE - CONTENT_PADDING * 4,
+                    x: CONTENT_PADDING * 2,
+                    y: CONTENT_PADDING * 4 + ICON_SIZE,
                     fill: getBorderColor(theme),
-                    "pointer-events": "none",
-                    ...theme.typography.caption,
                 },
                 border: {
                     refD: stickyNotePath,
@@ -100,4 +101,4 @@ const protoProps = (theme: Theme, stickyNote: StickyNote) => {
 };
 
 export const StickyNoteShape = (theme: Theme, stickyNote: StickyNote) =>
-    shapes.devs.Model.define(`stickyNote.Model`, defaults(theme), protoProps(theme, stickyNote)) as typeof shapes.devs.Model;
+    StickyNoteElement(defaults(theme), protoProps(theme, stickyNote)) as typeof shapes.devs.Model;

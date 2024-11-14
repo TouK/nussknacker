@@ -1,5 +1,5 @@
 import { Theme } from "@mui/material";
-import { dia, g, shapes } from "jointjs";
+import { dia, g, shapes, util } from "jointjs";
 import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
@@ -41,6 +41,7 @@ import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
 import { StickyNote } from "../../common/StickyNote";
 import { STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from "./EspNode/stickyNote";
+import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -57,6 +58,14 @@ type Props = GraphProps & {
     theme: Theme;
     translation: UseTranslationResponse<any, any>;
     handleStatisticsEvent: (event: TrackEventParams) => void;
+};
+
+export const nuGraphNamespace = {
+    ...shapes,
+    stickyNote: {
+        StickyNoteElement,
+        StickyNoteElementView,
+    },
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -113,6 +122,7 @@ export class Graph extends React.Component<Props> {
             model: this.graph,
             el: this.getEspGraphRef(),
             validateConnection: this.twoWayValidateConnection,
+            cellViewNamespace: nuGraphNamespace,
             validateMagnet: this.validateMagnet,
             interactive: (cellView: dia.CellView) => {
                 const { model } = cellView;
@@ -320,7 +330,7 @@ export class Graph extends React.Component<Props> {
 
     constructor(props: Props) {
         super(props);
-        this.graph = new dia.Graph();
+        this.graph = new dia.Graph({}, { cellNamespace: nuGraphNamespace });
         this.bindNodeRemove();
         this.bindNodesMoving();
     }
@@ -455,6 +465,16 @@ export class Graph extends React.Component<Props> {
                 const updatedStickyNote = cloneDeep(stickyNote);
                 updatedStickyNote.layoutData = { x: position.x, y: position.y };
                 updatedStickyNote.dimensions = { width: Math.round(size.width), height: Math.round(size.height) };
+                this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
+            }
+        });
+
+        this.graph.on(Events.CELL_CONTENT_UPDATED, (cell: dia.Element, content: string) => {
+            if (isStickyNoteElement(cell)) {
+                const noteId = cell.get("noteId");
+                const stickyNote = this.props.stickyNotes.find((a) => a.noteId == noteId);
+                const updatedStickyNote = cloneDeep(stickyNote);
+                updatedStickyNote.content = content;
                 this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
             }
         });

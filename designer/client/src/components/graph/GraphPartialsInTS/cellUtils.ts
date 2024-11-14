@@ -8,7 +8,7 @@ export function isModelElement(el: dia.Cell): el is shapes.devs.Model {
 }
 
 export function isStickyNoteElement(el: dia.Cell) {
-    return isModelElement(el) && el.get("type") === `stickyNote.Model`;
+    return isElement(el) && el.get("type") === `stickyNote.StickyNoteElement`;
 }
 
 export function isConnected(el: dia.Element): boolean {
