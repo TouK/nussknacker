@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.19
+
+#### Highlights
+
+##### End-user
+
+##### Administrator
+
+### 1.19.0 (Not released yet)
+
+* [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
+
 ## 1.18
 
 #### Highlights
@@ -17,6 +29,9 @@
 
 * Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
+
+### 1.18-esp
+* [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
 
 ### 1.18.1 (Not released yet)
 
