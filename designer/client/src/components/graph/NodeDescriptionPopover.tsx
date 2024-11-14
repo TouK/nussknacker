@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { Graph } from "./Graph";
 import { MarkdownStyled } from "./node-modal/MarkdownStyled";
 import { Events } from "./types";
-import { isStickyNoteElement } from "./GraphPartialsInTS";
 
 const useTimeout = <A extends Array<unknown>>(
     callback: (...args: A) => void,
@@ -120,7 +119,6 @@ export function NodeDescriptionPopover(props: NodeDescriptionPopoverProps) {
     const lastTarget = useRef<Element | null>(null);
 
     const enterTimer = useTimeout((view: dia.CellView, el: Element) => {
-        if (isStickyNoteElement(view.model)) return;
         setData(
             el
                 ? [t("graph.node.counts.title", "number of messages that passed downstream"), el]
