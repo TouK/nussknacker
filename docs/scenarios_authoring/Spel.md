@@ -272,65 +272,61 @@ It is possible to convert or cast from a type to another type and this can be do
 
 #### Explicit conversions
 
-Explicit conversions/casts are available in built-in functions and in utility classes.
+Explicit conversions/casts are available as built-in functions.
 List of built-in functions:
-- `is(className)`/`to(className)`/`toOrNull(className)`
-- `isBoolean`/`toBoolean`/`toBooleanOrNull`
-- `isLong`/`toLong`/`toLongOrNull`
-- `isDouble`/`toDouble`/`toDoubleOrNull`
-- `isBigDecimal`/`toBigDecimal`/`toBigDecimalOrNull`
-- `isList`/`toList`/`toListOrNull`
-- `isMap`/`toMap`/`toMapOrNull`
+- `canBe(className)`/`to(className)`/`toOrNull(className)`
+- `canBeBoolean`/`toBoolean`/`toBooleanOrNull`
+- `canBeLong`/`toLong`/`toLongOrNull`
+- `canBeDouble`/`toDouble`/`toDoubleOrNull`
+- `canBeBigDecimal`/`toBigDecimal`/`toBigDecimalOrNull`
+- `canBeList`/`toList`/`toListOrNull`
+- `canBeMap`/`toMap`/`toMapOrNull`
 
-Functions with the prefix `is` check whether a type can be converted or cast to the appropriate type. Functions with
-the `to` prefix convert or cast a value to the desired type, and if the conversion fails, an exception is propagated
-further. Functions with the `toOrNull` prefix convert or cast a value to the desired type, and if conversion fails, a
-null value is returned.
-The `is`, `to` and `toOrNull` functions are slightly different in that they take a class name as a parameter. They first
-attempt to cast a value to the specified class. If the cast fails and there is a defined conversion to that class, the
-conversion is applied. Below is the list of available conversion to classes:
-- BigDecimal 
-- BigInteger 
-- Boolean 
-- Byte 
-- Charset 
-- ChronoLocalDate 
-- ChronoLocalDateTime
-- Currency 
-- Double 
-- Float 
-- Integer 
-- List 
-- Locale 
-- LocalDate 
-- LocalDateTime 
-- LocalTime 
-- Long 
-- Map 
-- UUID 
-- Short 
-- String 
-- ZoneId 
-- ZoneOffset
+The aforementioned functions first attempt to cast a value to the specified class. If the cast fails and there is a 
+defined conversion to that class, the conversion is applied.
+The `canBe`, `to` and `toOrNull` functions take the name of target class as a parameter, in contrast to, for
+example, `canBeLong` which has the name of target class in the function name. 
 
-Conversions only make sens between specific types. Below is a matrix which shows which types can be converted with each
-other:
+Functions with the prefix `canBe` check whether a type can be cast or converted to the appropriate type. Functions with
+the `to` prefix cast or convert a value to the desired type, and if the operation fails, an exception is propagated
+further. Functions with the `to` prefix and `OrNull` suffix cast or convert a value to the desired type,
+and if the operation fails, a null value is returned.
 
-| FROM TYPE (column) \ TO TYPE (row) | BigDecimal | BigInteger | Boolean | Byte | Charset | ChronoLocalDate | ChronoLocalDateTime | Currency | Double | Float | Integer | List | Locale | LocalDate | LocalDateTime | LocalTime | Long | Map | Unknown | UUID | Short | String | ZoneId | ZoneOffset | All existing types |
-|------------------------------------|------------|------------|---------|------|---------|-----------------|---------------------|----------|--------|-------|---------|------|--------|-----------|---------------|-----------|------|-----|---------|------|-------|--------|--------|------------|--------------------|
-| BigDecimal                         |            | X          |         | X    |         |                 |                     |          | X      | X     | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
-| BigInteger                         | X          |            |         | X    |         |                 |                     |          | X      | X     | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
-| Byte                               | X          | X          |         |      |         |                 |                     |          | X      | X     | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
-| Double                             | X          | X          |         | X    |         |                 |                     |          |        | X     | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
-| Float                              | X          | X          |         | X    |         |                 |                     |          | X      |       | X       |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
-| Integer                            | X          | X          |         | X    |         |                 |                     |          | X      | X     |         |      |        |           |               |           | X    |     |         |      | X     | X      |        |            |                    |
-| LocalDate                          |            |            |         |      |         | X               |                     |          |        |       |         |      |        |           |               |           |      |     |         |      |       | X      |        |            |                    |
-| LocalDateTime                      |            |            |         |      |         |                 | X                   |          |        |       |         |      |        |           |               |           |      |     |         |      |       | X      |        |            |                    |
-| Long                               | X          | X          |         | X    |         |                 |                     |          | X      | X     | X       |      |        |           |               |           |      |     |         |      | X     | X      |        |            |                    |
-| Unknown                            | X          | X          | X       | X    | X       | X               | X                   | X        | X      | X     | X       | X    | X      | X         | X             | X         | X    | X   | X       | X    | X     | X      | X      | X          | X                  |
-| UUID                               |            |            |         |      |         |                 |                     |          |        |       |         |      |        |           |               |           |      |     |         |      |       | X      |        |            |                    |
-| Short                              | X          | X          |         | X    |         |                 |                     |          | X      | X     | X       |      |        |           |               |           | X    |     |         |      |       | X      |        |            |                    |
-| String                             | X          | X          | X       | X    | X       | X               | X                   | X        | X      | X     | X       | X    | X      | X         | X             | X         | X    | X   | X       | X    | X     | X      | X      | X          | X                  |
+Conversions only make sense between specific types. We limit SpeL's suggestions to show only possible conversions.
+Below is a matrix which shows which types can be converted with each other:
+
+| TO TYPE :arrow_down: \ FROM TYPE :arrow_right: | BigDecimal               | BigInteger               | Byte               | Double                   | Float                    | Integer                  | LocalDate          | LocalDateTime      | Long                     | Unknown                  | UUID               | Short              | String                   |
+|------------------------------------------------|--------------------------|--------------------------|--------------------|--------------------------|--------------------------|--------------------------|--------------------|--------------------|--------------------------|--------------------------|--------------------|--------------------|--------------------------|
+| BigDecimal                                     | :x:                      | :heavy_check_mark:       | :heavy_check_mark: | :heavy_check_mark:       | :heavy_check_mark:       | :heavy_check_mark:       | :x:                | :x:                | :heavy_check_mark:       | :heavy_exclamation_mark: | :x:                | :heavy_check_mark: | :heavy_exclamation_mark: |
+| BigInteger                                     | :heavy_check_mark:       | :x:                      | :heavy_check_mark: | :heavy_check_mark:       | :heavy_check_mark:       | :heavy_check_mark:       | :x:                | :x:                | :heavy_check_mark:       | :heavy_exclamation_mark: | :x:                | :heavy_check_mark: | :heavy_exclamation_mark: |
+| Boolean                                        | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| Byte                                           | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :x:                | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :x:                | :heavy_check_mark: | :heavy_exclamation_mark: |
+| Charset                                        | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| ChronoLocalDate                                | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :heavy_check_mark: | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| ChronoLocalDateTime                            | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :heavy_check_mark: | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| Currency                                       | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| Double                                         | :heavy_check_mark:       | :heavy_check_mark:       | :heavy_check_mark: | :x:                      | :heavy_check_mark:       | :heavy_check_mark:       | :x:                | :x:                | :heavy_check_mark:       | :heavy_exclamation_mark: | :x:                | :heavy_check_mark: | :heavy_exclamation_mark: |
+| Float                                          | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :heavy_check_mark: | :heavy_exclamation_mark: | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :x:                | :heavy_check_mark: | :heavy_exclamation_mark: |
+| Integer                                        | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :heavy_check_mark: | :heavy_check_mark:       | :heavy_check_mark:       | :x:                      | :x:                | :x:                | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :x:                | :heavy_check_mark: | :heavy_exclamation_mark: |
+| List                                           | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| Locale                                         | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| LocalDate                                      | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| LocalDateTime                                  | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| LocalTime                                      | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| Long                                           | :heavy_check_mark:       | :heavy_check_mark:       | :heavy_check_mark: | :heavy_check_mark:       | :heavy_check_mark:       | :heavy_check_mark:       | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :heavy_check_mark: | :heavy_exclamation_mark: |
+| Map                                            | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| Unknown                                        | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| UUID                                           | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| Short                                          | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :heavy_check_mark: | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| String                                         | :heavy_check_mark:       | :heavy_check_mark:       | :heavy_check_mark: | :heavy_check_mark:       | :heavy_check_mark:       | :heavy_check_mark:       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:       | :heavy_exclamation_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_exclamation_mark: |
+| ZoneId                                         | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| ZoneOffset                                     | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+| All existing types                             | :x:                      | :x:                      | :x:                | :x:                      | :x:                      | :x:                      | :x:                | :x:                | :x:                      | :heavy_exclamation_mark: | :x:                | :x:                | :heavy_exclamation_mark: |
+
+Where:
+:heavy_check_mark: - conversion is possible
+:x: - conversion is  not possible
+:heavy_exclamation_mark: - conversion is potentially failing
 
 Examples of utility classes usage:
 
