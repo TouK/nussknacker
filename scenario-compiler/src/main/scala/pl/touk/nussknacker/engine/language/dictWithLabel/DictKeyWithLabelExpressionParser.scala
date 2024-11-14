@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypingResult}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -17,8 +17,23 @@ import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, 
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.KeyWithLabelExpressionParsingError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
-case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String], typingResult: TypingResult)
-    extends ExpressionTypingInfo
+import scala.util.Try
+
+case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String], expectedType: TypingResult)
+    extends ExpressionTypingInfo {
+
+  // We should support at least types defined in FragmentParameterValidator#permittedTypesForEditors
+  override def typingResult: TypingResult = expectedType match {
+    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[Long]) && Try(key.toLong).toOption.isDefined =>
+      TypedObjectWithValue(clazz.objType, key.toLong)
+    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[Boolean]) && Try(key.toBoolean).toOption.isDefined =>
+      TypedObjectWithValue(clazz.objType, key.toBoolean)
+    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[String]) =>
+      TypedObjectWithValue(clazz.objType, key)
+    case _ => expectedType
+  }
+
+}
 
 object DictKeyWithLabelExpressionParser extends ExpressionParser {
 
