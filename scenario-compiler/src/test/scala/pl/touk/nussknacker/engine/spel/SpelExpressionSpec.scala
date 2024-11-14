@@ -1636,6 +1636,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
           "{}.toMap",
           Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
           Map.empty.asJava
+        ),
+        (
+          "{1, 'foo', false}.toMap",
+          Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
+          Map.empty.asJava
         )
       )
     ) { (expression, expectedType, expectedResult) =>
@@ -1648,6 +1653,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should return error msg if record in map project does not contain required fields") {
     parse[Any]("#mapValue.![{invalid_key: #this.key}].toMap()", ctx).invalidValue.toList should matchPattern {
       case GenericFunctionError("List element must contain 'key' and 'value' fields") :: Nil =>
+    }
+  }
+
+  test("should type conversion of list of unknown to map correctly and return error in runtime") {
+    val parsed = parse[Any]("{1, 'foo', false}.toMap", ctx).validValue
+    parsed.returnType.withoutValue shouldBe Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    an[SpelExpressionEvaluationException] shouldBe thrownBy {
+      parsed.expression.evaluateSync[Any](ctx)
     }
   }
 
