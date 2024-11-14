@@ -148,6 +148,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   case class ContainerOfUnknown(value: Any)
 
+  case class ContainerOfGenericMap(value: JMap[_, _])
+
   import pl.touk.nussknacker.engine.util.Implicits._
 
   private def parse[T: TypeTag](
@@ -1609,10 +1611,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       result
     }
     val mapWithDifferentValueTypes = Map("foo" -> "bar", "baz" -> 1).asJava
+    val mapWithKeyAndValueFields   = Map("key" -> "foo", "value" -> 123).asJava
     val customCtx = ctx
       .withVariable("stringMap", stringMap)
       .withVariable("mapWithDifferentValueTypes", mapWithDifferentValueTypes)
       .withVariable("nullableMap", nullableMap)
+      .withVariable("containerWithMapWithKeyAndValueFields", ContainerOfGenericMap(mapWithKeyAndValueFields))
 
     forAll(
       Table(
@@ -1635,7 +1639,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         (
           "{}.toMap",
           Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
-          Map.empty.asJava
+          Map.empty.asJava,
+        ),
+        (
+          "{#containerWithMapWithKeyAndValueFields.value}.toMap",
+          Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
+          Map("foo" -> 123).asJava,
         )
       )
     ) { (expression, expectedType, expectedResult) =>
