@@ -139,6 +139,29 @@ export const PanWithCellBehavior = React.forwardRef<ContextType, PanWithCellBeha
     );
 });
 
+export const ClickToZoomBehavior = function ClickToZoomBehavior() {
+    const { paper } = usePaper();
+    const panZoom = usePanZoomBehavior();
+
+    const onDragStart = useCallback(
+        (cellView: dia.CellView) => {
+            if (!panZoom) return;
+            panZoom.fitContent(paper.clientToLocalRect(cellView.getBBox()));
+            console.log(cellView);
+        },
+        [panZoom, paper],
+    );
+
+    useEffect(() => {
+        paper?.on("cell:pointerclick", onDragStart);
+        return () => {
+            paper?.off("cell:pointerclick", onDragStart);
+        };
+    }, [onDragStart, paper]);
+
+    return null;
+};
+
 export const usePanWithCellBehavior = createContextHook(Context, PanWithCellBehavior);
 
 function Polygon({ geom, intensity = 0, position }: { geom: g.Polygon; position: g.Point; intensity?: number }) {

@@ -3,6 +3,8 @@ import React, { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { layoutChanged } from "../../actions/nk";
 import { useUserSettings } from "../../common/userSettings";
+import { NodeGroupContent } from "../../components/graph/node-modal/node/NodeGroupContent";
+import { DebugNodeInspector } from "../../components/graph/node-modal/NodeDetailsContent/DebugNodeInspector";
 import { ScenarioGraph } from "../../types";
 import { Edge } from "./elements/Edge";
 import { Node } from "./elements/Node";
@@ -29,9 +31,11 @@ export const NewGraph = ({ scenarioGraph, children }: Props) => {
 
     return (
         <GraphProvider onLayoutChange={onLayoutChange}>
-            {nodes.map(({ additionalFields, id }) => (
-                <Node key={id} id={id} {...additionalFields.layoutData}>
-                    {id}
+            {nodes.map((node) => (
+                <Node key={node.id} id={node.id} label={node.id} {...node.additionalFields.layoutData}>
+                    <Box>
+                        <NodeGroupContent node={node} edges={edges} />
+                    </Box>
                 </Node>
             ))}
             {edges

@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { DropBehavior } from "./paper/DropBehavior";
-import { PanWithCellBehavior } from "./paper/PanWithCellBehavior";
+import { ClickToZoomBehavior, PanWithCellBehavior } from "./paper/PanWithCellBehavior";
 import { PanZoomBehavior } from "./paper/PanZoomBehavior";
 import { Paper } from "./paper/Paper";
 
@@ -14,6 +14,7 @@ export function InteractivePaper() {
         <Paper sx={{ background: "#CCFFCC" }} interactive>
             <PanZoomBehavior interactive>
                 <PanWithCellBehavior domOverlays={domOverlays} />
+                <ClickToZoomBehavior />
             </PanZoomBehavior>
             <DropBehavior />
         </Paper>

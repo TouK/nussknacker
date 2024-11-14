@@ -1,3 +1,4 @@
+import { shapes } from "jointjs";
 import { debounce } from "lodash";
 import React, { useEffect, useImperativeHandle, useState } from "react";
 import { Graph } from "./Graph";
@@ -14,7 +15,9 @@ export const GraphProvider = React.forwardRef<GraphContextType, GraphProviderPro
     { children, onLayoutChange },
     forwardedRef,
 ) {
-    const [graph] = useState<GraphContextType>(() => new Graph());
+    const [graph] = useState<GraphContextType>(() => {
+        return new Graph({}, { cellNamespace: shapes });
+    });
 
     useEffect(() => {
         if (onLayoutChange) {

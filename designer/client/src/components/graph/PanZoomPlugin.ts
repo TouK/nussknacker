@@ -153,5 +153,6 @@ export class PanZoomPlugin {
     private applyTransform<E extends ZoomedElementBaseType, D>(e: D3ZoomEvent<E, D>) {
         this._zoom = e.transform.k;
         this.layers.attr("transform", transformToCSSMatrix(e.transform)).style("transform", transformToCSSMatrix(e.transform));
+        this.paper.trigger("transform");
     }
 }

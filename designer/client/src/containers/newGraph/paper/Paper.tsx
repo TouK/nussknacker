@@ -1,11 +1,18 @@
 import { Box } from "@mui/material";
 import { BoxProps } from "@mui/material/Box/Box";
-import { dia } from "jointjs";
+import { dia, shapes } from "jointjs";
 import React, { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useGraph } from "../GraphProvider";
 import { createContextHook } from "../utils/context";
 import { Canvas } from "./Canvas";
+
+class ExtendedPaper extends dia.Paper {
+    protected _removeElement() {
+        // avoid removing Canvas element
+        this.removeLayers();
+    }
+}
 
 export type PaperContextType = { paper: dia.Paper };
 const PaperContext = React.createContext<PaperContextType>(null);
@@ -26,28 +33,29 @@ export const Paper = React.forwardRef<PaperContextType, PaperProps>(function Pap
     const model = useGraph();
 
     useLayoutEffect(() => {
-        const paper = new dia.Paper({
+        const paper = new ExtendedPaper({
             width: "auto",
             height: "auto",
             el: canvasRef.current,
             interactive: false,
             model,
+            cellViewNamespace: shapes,
         });
 
         setContext((context) => ({ ...context, paper }));
 
         return () => {
-            paper.undelegateDocumentEvents();
-            paper.undelegateEvents();
+            paper.remove();
         };
     }, [model, setContext]);
 
+    const { paper } = context;
+
     useEffect(() => {
-        const { paper } = context;
         if (paper) {
             paper.setInteractivity(interactive);
         }
-    }, [context, interactive]);
+    }, [paper, interactive]);
 
     return (
         <Box position="relative" {...props}>
