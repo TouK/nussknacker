@@ -148,6 +148,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   case class ContainerOfUnknown(value: Any)
 
+  case class ContainerOfGenericMap(value: JMap[_, _])
+
   import pl.touk.nussknacker.engine.util.Implicits._
 
   private def parse[T: TypeTag](
@@ -1609,10 +1611,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       result
     }
     val mapWithDifferentValueTypes = Map("foo" -> "bar", "baz" -> 1).asJava
+    val mapWithKeyAndValueFields   = Map("key" -> "foo", "value" -> 123).asJava
     val customCtx = ctx
       .withVariable("stringMap", stringMap)
       .withVariable("mapWithDifferentValueTypes", mapWithDifferentValueTypes)
       .withVariable("nullableMap", nullableMap)
+      .withVariable("containerWithMapWithKeyAndValueFields", ContainerOfGenericMap(mapWithKeyAndValueFields))
 
     forAll(
       Table(
@@ -1631,6 +1635,16 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
           "#nullableMap.![{key: #this.key, value: #this.value}].toMap",
           mapStringStringType,
           nullableMap
+        ),
+        (
+          "{}.toMap",
+          Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
+          Map.empty.asJava,
+        ),
+        (
+          "{#containerWithMapWithKeyAndValueFields.value}.toMap",
+          Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
+          Map("foo" -> 123).asJava,
         )
       )
     ) { (expression, expectedType, expectedResult) =>
@@ -1643,6 +1657,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("should return error msg if record in map project does not contain required fields") {
     parse[Any]("#mapValue.![{invalid_key: #this.key}].toMap()", ctx).invalidValue.toList should matchPattern {
       case GenericFunctionError("List element must contain 'key' and 'value' fields") :: Nil =>
+    }
+  }
+
+  test("should type conversion of list of unknown to map correctly and return error in runtime") {
+    val parsed = parse[Any]("{1, 'foo', false}.toMap", ctx).validValue
+    parsed.returnType.withoutValue shouldBe Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    an[SpelExpressionEvaluationException] shouldBe thrownBy {
+      parsed.expression.evaluateSync[Any](ctx)
     }
   }
 

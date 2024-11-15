@@ -272,7 +272,7 @@ class ScenarioActivityApiHttpService(
   private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = scenarioComment match {
     case ScenarioComment.WithContent(comment, _, _) =>
       Dtos.ScenarioActivityComment(
-        content = Dtos.ScenarioActivityCommentContent.Available(comment),
+        content = Dtos.ScenarioActivityCommentContent.Available(comment.content),
         lastModifiedBy = scenarioComment.lastModifiedByUserName.value,
         lastModifiedAt = scenarioComment.lastModifiedAt,
       )
