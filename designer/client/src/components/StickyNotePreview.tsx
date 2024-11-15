@@ -11,6 +11,13 @@ import { STICKY_NOTE_DEFAULT_COLOR, STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from
 export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
     const theme = useTheme();
 
+    const PREVIEW_SCALE = 0.9;
+    const ACTIVE_ROTATION = 2;
+    const INACTIVE_SCALE = 1.5;
+    const scale = isOver ? 1 : PREVIEW_SCALE;
+    const rotation = isActive ? (isOver ? -ACTIVE_ROTATION : ACTIVE_ROTATION) : 0;
+    const finalScale = isActive ? 1 : INACTIVE_SCALE;
+
     const nodeStyles = css({
         position: "relative",
         width: STICKY_NOTE_WIDTH,
@@ -22,9 +29,7 @@ export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; 
         borderWidth: 0.5,
         borderStyle: "solid",
         transformOrigin: "80% 50%",
-        transform: `translate(-80%, -50%) scale(${isOver ? 1 : 0.9}) rotate(${isActive ? (isOver ? -2 : 2) : 0}deg) scale(${
-            isActive ? 1 : 1.5
-        })`,
+        transform: `translate(-80%, -50%) scale(${scale}) rotate(${rotation}deg) scale(${finalScale})`,
         opacity: isActive ? undefined : 0,
         transition: "all .5s, opacity .3s",
         willChange: "transform, opacity, border-color, background-color",
