@@ -179,18 +179,21 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
             ".sticky-note-markdown": {
                 width: "100%",
                 height: "100%",
-            },
-            ".sticky-note-markdown > *:first-of-type": {
-                paddingTop: "0px",
+                paddingLeft: "10px",
+                paddingRight: "10px",
             },
             ".sticky-note-markdown-editor": {
+                paddingLeft: "10px",
+                paddingRight: "10px",
                 backgroundColor: "rgba(0,0,0,0.1)",
                 resize: "none",
                 width: "100%",
                 height: "100%",
                 borderStyle: "none",
                 borderColor: "Transparent",
-                overflow: "auto",
+                borderTop: "thick double #32a1ce",
+                whiteSpace: "pre-line",
+                overflow: "hidden",
             },
             ".sticky-note-markdown-editor:disabled": {
                 display: "none",
