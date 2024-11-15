@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.db.{PeriodicProcessDeploymentEntity, PeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 
 // This class represents desired structure. We want to have deployments organized around schedules.
 // Schedules should be separate concepts and should be possible to operate on them (e.g. deactivate)
@@ -44,11 +44,11 @@ case class ScheduleId(processId: PeriodicProcessId, scheduleName: ScheduleName)
 
 case class ScheduleDeploymentData(
     id: PeriodicProcessDeploymentId,
-    createdAt: LocalDateTime,
-    runAt: LocalDateTime,
-    deployedAt: Option[LocalDateTime],
+    createdAt: ZonedDateTime,
+    runAt: ZonedDateTime,
+    deployedAt: Option[ZonedDateTime],
     retriesLeft: Int,
-    nextRetryAt: Option[LocalDateTime],
+    nextRetryAt: Option[ZonedDateTime],
     state: PeriodicProcessDeploymentState
 ) {
 
@@ -67,14 +67,17 @@ object ScheduleDeploymentData {
   def apply(deployment: PeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
-      deployment.createdAt,
-      deployment.runAt,
-      deployment.deployedAt,
+      atSystemDefaultZone(deployment.createdAt),
+      atSystemDefaultZone(deployment.runAt),
+      deployment.deployedAt.map(atSystemDefaultZone),
       deployment.retriesLeft,
-      deployment.nextRetryAt,
+      deployment.nextRetryAt.map(atSystemDefaultZone),
       PeriodicProcessesRepository.createPeriodicDeploymentState(deployment)
     )
   }
+
+  private def atSystemDefaultZone(localDateTime: LocalDateTime) =
+    localDateTime.atZone(ZoneId.systemDefault())
 
 }
 

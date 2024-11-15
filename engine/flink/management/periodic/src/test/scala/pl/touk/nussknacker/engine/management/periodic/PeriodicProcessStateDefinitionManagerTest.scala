@@ -13,14 +13,14 @@ import pl.touk.nussknacker.engine.management.periodic.model.{
   ScheduleName
 }
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 import java.util.concurrent.atomic.AtomicLong
 
 class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
 
   private val fooProcessId = PeriodicProcessId(123L)
 
-  private val fooRunAt = LocalDateTime.of(2023, 1, 1, 10, 0)
+  private val fooRunAt = ZonedDateTime.of(LocalDateTime.of(2023, 1, 1, 10, 0), ZoneId.systemDefault())
 
   private val fooCreatedAt = fooRunAt.minusMinutes(5)
 

@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeplo
 import pl.touk.nussknacker.engine.management.periodic.model._
 
 import java.time.chrono.ChronoLocalDateTime
-import java.time.{LocalDateTime, ZoneId}
+import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -241,14 +241,14 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       id: PeriodicProcessDeploymentId,
       status: PeriodicProcessDeploymentStatus,
       deployRetries: Int,
-      retryAt: Option[LocalDateTime]
+      retryAt: Option[ZonedDateTime]
   ): Action[Unit] = {
     update(id)(
       _.copy(
         status = status,
         completedAt = Some(LocalDateTime.now()),
         retriesLeft = deployRetries,
-        nextRetryAt = retryAt
+        nextRetryAt = retryAt.map(_.toLocalDateTime)
       )
     )
   }
@@ -265,14 +265,14 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   override def schedule(
       id: PeriodicProcessId,
       scheduleName: ScheduleName,
-      runAt: LocalDateTime,
+      runAt: ZonedDateTime,
       deployMaxRetries: Int
   ): PeriodicProcessDeployment[CanonicalProcess] = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(Random.nextLong()),
       periodicProcessId = id,
       createdAt = LocalDateTime.now(),
-      runAt = runAt,
+      runAt = runAt.toLocalDateTime,
       scheduleName = scheduleName.value,
       deployedAt = None,
       completedAt = None,
@@ -310,7 +310,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   private def readyToRun(
       deployments: Seq[PeriodicProcessDeployment[CanonicalProcess]]
   ): Seq[PeriodicProcessDeployment[CanonicalProcess]] = {
-    val now = LocalDateTime.now()
+    val now = ZonedDateTime.now()
     deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now))
   }
 

@@ -15,7 +15,7 @@ import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -29,11 +29,11 @@ object PeriodicProcessesRepository {
     PeriodicProcessDeployment(
       processDeploymentEntity.id,
       process,
-      processDeploymentEntity.createdAt,
-      processDeploymentEntity.runAt,
+      atSystemDefaultZone(processDeploymentEntity.createdAt),
+      atSystemDefaultZone(processDeploymentEntity.runAt),
       ScheduleName(processDeploymentEntity.scheduleName),
       processDeploymentEntity.retriesLeft,
-      processDeploymentEntity.nextRetryAt,
+      processDeploymentEntity.nextRetryAt.map(atSystemDefaultZone),
       createPeriodicDeploymentState(processDeploymentEntity)
     )
   }
@@ -42,8 +42,8 @@ object PeriodicProcessesRepository {
       processDeploymentEntity: PeriodicProcessDeploymentEntity
   ): PeriodicProcessDeploymentState = {
     PeriodicProcessDeploymentState(
-      processDeploymentEntity.deployedAt,
-      processDeploymentEntity.completedAt,
+      processDeploymentEntity.deployedAt.map(atSystemDefaultZone),
+      processDeploymentEntity.completedAt.map(atSystemDefaultZone),
       processDeploymentEntity.status
     )
   }
@@ -95,6 +95,9 @@ object PeriodicProcessesRepository {
   private def createProcessVersion(processEntity: PeriodicProcessEntity): ProcessVersion = {
     ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = processEntity.processName)
   }
+
+  private def atSystemDefaultZone(localDateTime: LocalDateTime) =
+    localDateTime.atZone(ZoneId.systemDefault())
 
 }
 
@@ -153,7 +156,7 @@ trait PeriodicProcessesRepository {
       id: PeriodicProcessDeploymentId,
       status: PeriodicProcessDeploymentStatus,
       deployRetries: Int,
-      retryAt: Option[LocalDateTime]
+      retryAt: Option[ZonedDateTime]
   ): Action[Unit]
 
   def markFailed(id: PeriodicProcessDeploymentId): Action[Unit]
@@ -161,7 +164,7 @@ trait PeriodicProcessesRepository {
   def schedule(
       id: PeriodicProcessId,
       scheduleName: ScheduleName,
-      runAt: LocalDateTime,
+      runAt: ZonedDateTime,
       deployMaxRetries: Int
   ): Action[PeriodicProcessDeployment[CanonicalProcess]]
 
@@ -275,12 +278,12 @@ class SlickPeriodicProcessesRepository(
       id: PeriodicProcessDeploymentId,
       status: PeriodicProcessDeploymentStatus,
       retriesLeft: Int,
-      retryAt: Option[LocalDateTime]
+      retryAt: Option[ZonedDateTime]
   ): Action[Unit] = {
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.completedAt, d.retriesLeft, d.nextRetryAt)
-    val update = q.update((status, Some(now()), retriesLeft, retryAt))
+    val update = q.update((status, Some(now()), retriesLeft, retryAt.map(_.toLocalDateTime)))
     update.map(_ => ())
   }
 
@@ -419,14 +422,14 @@ class SlickPeriodicProcessesRepository(
   override def schedule(
       id: PeriodicProcessId,
       scheduleName: ScheduleName,
-      runAt: LocalDateTime,
+      runAt: ZonedDateTime,
       deployMaxRetries: Int
   ): Action[PeriodicProcessDeployment[CanonicalProcess]] = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(-1),
       periodicProcessId = id,
       createdAt = now(),
-      runAt = runAt,
+      runAt = runAt.toLocalDateTime,
       scheduleName = scheduleName.value,
       deployedAt = None,
       completedAt = None,

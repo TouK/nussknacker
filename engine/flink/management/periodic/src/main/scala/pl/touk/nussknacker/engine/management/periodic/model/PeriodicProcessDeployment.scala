@@ -1,24 +1,24 @@
 package pl.touk.nussknacker.engine.management.periodic.model
 
-import pl.touk.nussknacker.engine.management.periodic.{MultipleScheduleProperty, SingleScheduleProperty}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.management.periodic.{MultipleScheduleProperty, SingleScheduleProperty}
 import slick.lifted.MappedTo
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, ZonedDateTime}
 
 // TODO: We should separate schedules concept from deployments - fully switch to ScheduleData and ScheduleDeploymentData
 case class PeriodicProcessDeployment[ProcessRep](
     id: PeriodicProcessDeploymentId,
     periodicProcess: PeriodicProcess[ProcessRep],
-    createdAt: LocalDateTime,
-    runAt: LocalDateTime,
+    createdAt: ZonedDateTime,
+    runAt: ZonedDateTime,
     scheduleName: ScheduleName,
     retriesLeft: Int,
-    nextRetryAt: Option[LocalDateTime],
+    nextRetryAt: Option[ZonedDateTime],
     state: PeriodicProcessDeploymentState
 ) {
 
-  def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] =
+  def nextRunAt(clock: Clock): Either[String, Option[ZonedDateTime]] =
     (periodicProcess.scheduleProperty, scheduleName.value) match {
       case (MultipleScheduleProperty(schedules), Some(name)) =>
         schedules.get(name).toRight(s"Failed to find schedule: $scheduleName").flatMap(_.nextRunAt(clock))
@@ -32,8 +32,8 @@ case class PeriodicProcessDeployment[ProcessRep](
 }
 
 case class PeriodicProcessDeploymentState(
-    deployedAt: Option[LocalDateTime],
-    completedAt: Option[LocalDateTime],
+    deployedAt: Option[ZonedDateTime],
+    completedAt: Option[ZonedDateTime],
     status: PeriodicProcessDeploymentStatus
 )
 

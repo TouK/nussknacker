@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time.{Clock, Instant, LocalDateTime, ZoneId, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -77,7 +77,7 @@ class PeriodicProcessService(
         dateFinished = metadata.dateFinished,
         scheduleName = deployment.scheduleName.display,
         createdAt = metadata.dateCreated,
-        nextRetryAt = deployment.nextRetryAt.map(instantAtSystemDefaultZone),
+        nextRetryAt = deployment.nextRetryAt.map(_.toInstant),
         retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
       )
     }
@@ -102,7 +102,7 @@ class PeriodicProcessService(
 
   def prepareInitialScheduleDates(
       schedule: ScheduleProperty
-  ): Either[PeriodicProcessException, List[(ScheduleName, Option[LocalDateTime])]] = {
+  ): Either[PeriodicProcessException, List[(ScheduleName, Option[ZonedDateTime])]] = {
     val schedules = schedule match {
       case MultipleScheduleProperty(schedules) =>
         schedules
@@ -124,7 +124,7 @@ class PeriodicProcessService(
       scheduleProperty: ScheduleProperty,
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
-      scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
+      scheduleDates: List[(ScheduleName, Option[ZonedDateTime])],
       processActionId: ProcessActionId
   ): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
@@ -145,7 +145,7 @@ class PeriodicProcessService(
 
   private def initialSchedule(
       scheduleMap: ScheduleProperty,
-      scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
+      scheduleDates: List[(ScheduleName, Option[ZonedDateTime])],
       deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
       processActionId: ProcessActionId
   ): Future[Unit] = {
@@ -270,7 +270,7 @@ class PeriodicProcessService(
         markFinished(deployment, processState).needsReschedule(value = true)
       case None
           if deployment.state.status == PeriodicProcessDeploymentStatus.Deployed
-            && deployment.deployedAt.exists(_.isBefore(LocalDateTime.now().minusMinutes(5))) =>
+            && deployment.deployedAt.exists(_.isBefore(ZonedDateTime.now(clock).minusMinutes(5))) =>
         // status is None if DeploymentManager isn't aware of a job that was just deployed
         // this can be caused by a race in e.g. FlinkRestManager
         // (because /jobs/overview used in getProcessStates isn't instantly aware of submitted jobs)
@@ -448,7 +448,7 @@ class PeriodicProcessService(
     }
   }
 
-  private def now(): LocalDateTime = LocalDateTime.now(clock)
+  private def now(): ZonedDateTime = ZonedDateTime.now(clock)
 
   def getStatusDetails(
       name: ProcessName
@@ -539,20 +539,15 @@ class PeriodicProcessService(
         case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
           None
       }
-      dateCreated = instantAtSystemDefaultZone(entity.createdAt)
-      dateDeployed <- entity.state.deployedAt.map(instantAtSystemDefaultZone)
-      dateFinished <- entity.state.completedAt.map(instantAtSystemDefaultZone)
+      dateCreated = entity.createdAt.toInstant
+      dateDeployed <- entity.state.deployedAt.map(_.toInstant)
+      dateFinished <- entity.state.completedAt.map(_.toInstant)
     } yield FinishedScheduledExecutionMetadata(
       status = status,
       dateCreated = dateCreated,
       dateDeployed = dateDeployed,
       dateFinished = dateFinished
     )
-  }
-
-  // LocalDateTime's in the context of PeriodicProcess are created using clock with system default timezone
-  private def instantAtSystemDefaultZone(localDateTime: LocalDateTime): Instant = {
-    localDateTime.atZone(ZoneId.systemDefault).toInstant
   }
 
 }
@@ -602,7 +597,7 @@ object PeriodicProcessService {
               .map(_.copy(status = WaitingForScheduleStatus))
               .getOrElse(createStatusDetails(WaitingForScheduleStatus))
           } else if (deploymentStatus.status == PeriodicProcessDeploymentStatus.Scheduled) {
-            createStatusDetails(ScheduledStatus(deploymentStatus.runAt))
+            createStatusDetails(ScheduledStatus(deploymentStatus.runAt.toLocalDateTime))
           } else if (Set(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.FailedOnDeploy)
               .contains(deploymentStatus.status)) {
             createStatusDetails(ProblemStateStatus.Failed)
@@ -680,8 +675,8 @@ object PeriodicProcessService {
       // to present to users is scheduleName+runAt
       deploymentId: PeriodicProcessDeploymentId,
       scheduleId: ScheduleId,
-      createdAt: LocalDateTime,
-      runAt: LocalDateTime,
+      createdAt: ZonedDateTime,
+      runAt: ZonedDateTime,
       // This status is almost fine but:
       // - we don't have cancel status - we have to check processActive as well (isCanceled)
       // - sometimes we have to check runtimeStatusOpt (isWaitingForReschedule)

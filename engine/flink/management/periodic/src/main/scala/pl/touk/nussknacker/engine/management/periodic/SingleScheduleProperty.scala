@@ -7,7 +7,7 @@ import com.cronutils.parser.CronParser
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
-import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.{Clock, ZonedDateTime}
 import scala.util.Try
 
 object ScheduleProperty {
@@ -27,7 +27,7 @@ object SingleScheduleProperty {
     * If Right(None) is returned it means process should not be run in future anymore e.g. was specified to run once.
     * Right(Some(date)) specifies date when process should start.
     */
-  def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]]
+  def nextRunAt(clock: Clock): Either[String, Option[ZonedDateTime]]
 }
 
 @JsonCodec case class MultipleScheduleProperty(schedules: Map[String, SingleScheduleProperty]) extends ScheduleProperty
@@ -50,24 +50,24 @@ object SingleScheduleProperty {
     }
   }
 
-  override def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] = {
+  override def nextRunAt(clock: Clock): Either[String, Option[ZonedDateTime]] = {
     val now = ZonedDateTime.now(clock)
     cronsOrError
       .map { crons =>
         crons
           .map(expr => determineNextDate(expr, now))
           .minBy {
-            case Some(x) => x.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli
+            case Some(x) => x.toInstant.toEpochMilli
             case None    => Long.MaxValue
           }
       }
   }
 
-  private def determineNextDate(cron: Cron, zonedDateTime: ZonedDateTime): Option[LocalDateTime] = {
+  private def determineNextDate(cron: Cron, zonedDateTime: ZonedDateTime): Option[ZonedDateTime] = {
     import scala.compat.java8.OptionConverters._
     val compiledCron = ExecutionTime.forCron(cron)
     val nextTime     = compiledCron.nextExecution(zonedDateTime)
-    nextTime.asScala.map(_.toLocalDateTime)
+    nextTime.asScala
   }
 
 }
