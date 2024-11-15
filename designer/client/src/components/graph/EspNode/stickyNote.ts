@@ -1,10 +1,10 @@
 import { Theme } from "@mui/material";
-import { dia, shapes, util } from "jointjs";
+import { dia, shapes, util, V } from "jointjs";
 import { getBorderColor } from "../../../containers/theme/helpers";
 import { StickyNote } from "../../../common/StickyNote";
 import { marked } from "marked";
 import { StickyNoteElement } from "../StickyNoteElement";
-import { getStickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
+import MarkupNodeJSON = dia.MarkupNodeJSON;
 
 export const STICKY_NOTE_WIDTH = 300;
 export const STICKY_NOTE_HEIGHT = 250;
@@ -12,6 +12,7 @@ export const BORDER_RADIUS = 3;
 export const CONTENT_PADDING = 5;
 export const ICON_SIZE = 20;
 export const STICKY_NOTE_DEFAULT_COLOR = "#eae672";
+export const MARKDOWN_EDITOR_NAME = "markdown-editor";
 
 const border: dia.MarkupNodeJSON = {
     selector: "border",
@@ -26,14 +27,11 @@ const border: dia.MarkupNodeJSON = {
     },
 };
 
-const iconHref = getStickyNoteIcon();
-
 const icon: dia.MarkupNodeJSON = {
     selector: "icon",
     tagName: "use",
     attributes: {
         opacity: 1,
-        xlinkHref: iconHref,
         width: ICON_SIZE,
         height: ICON_SIZE,
         x: ICON_SIZE / 2,
@@ -46,18 +44,20 @@ const body: dia.MarkupNodeJSON = {
     tagName: "path",
 };
 
-const foreignObject = (stickyNote: StickyNote) => {
-    const renderer = new marked.Renderer();
-    renderer.link = function (href, title, text) {
-        return `<a target="_blank" href="${href}">${text}` + "</a>";
-    };
+const renderer = new marked.Renderer();
+renderer.link = function (href, title, text) {
+    return `<a target="_blank" href="${href}">${text}` + "</a>";
+};
+
+const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
     const parsed = marked.parse(stickyNote.content, { renderer });
-    return util.svg/* xml */ `
+    const singleMarkupNode = util.svg/* xml */ `
             <foreignObject @selector="foreignObject">
-                        <textarea @selector="name" class="sticky-note-markdown-editor" name="name" autocomplete="off" disabled="disabled">${stickyNote.content}</textarea>
-                        <div @selector="markdown" class="sticky-note-markdown">${parsed}</div>
+                <textarea @selector="${MARKDOWN_EDITOR_NAME}" class="sticky-note-markdown-editor" name="${MARKDOWN_EDITOR_NAME}" autocomplete="off" disabled="disabled"></textarea>
+                <div @selector="markdown" class="sticky-note-markdown">${parsed}</div>
             </foreignObject>
     `[0];
+    return singleMarkupNode as MarkupNodeJSON;
 };
 
 export const stickyNotePath = "M 0 0 L 10 0 C 10 2.6667 10 5.3333 10 8 C 10 10 9 10 8 10 L 0 10 L 0 0";
@@ -85,9 +85,8 @@ const defaults = (theme: Theme) =>
                     },
                 },
                 foreignObject: {
-                    width: STICKY_NOTE_WIDTH - CONTENT_PADDING * 2,
+                    width: STICKY_NOTE_WIDTH,
                     height: STICKY_NOTE_HEIGHT - ICON_SIZE - CONTENT_PADDING * 4,
-                    x: CONTENT_PADDING * 2,
                     y: CONTENT_PADDING * 4 + ICON_SIZE,
                     fill: getBorderColor(theme),
                 },
@@ -99,9 +98,21 @@ const defaults = (theme: Theme) =>
         },
         shapes.devs.Model.prototype.defaults,
     );
+
+//This is the only way I was able to add spaces/newlines to textArea inside svg/xml'isch entity...
+const addTextAreaContentWithWhiteCharacters = (stickyNote: StickyNote): MarkupNodeJSON => {
+    const markupNode: MarkupNodeJSON = foreignObject(stickyNote);
+    const markdownEditor = markupNode.children.find((c: MarkupNodeJSON) => c.selector == MARKDOWN_EDITOR_NAME);
+    if (typeof markdownEditor !== "string") {
+        markdownEditor.children = [stickyNote.content];
+    }
+    return markupNode;
+};
+
 const protoProps = (theme: Theme, stickyNote: StickyNote) => {
+    const fo = addTextAreaContentWithWhiteCharacters(stickyNote);
     return {
-        markup: [body, border, foreignObject(stickyNote), icon],
+        markup: [body, border, fo, icon],
     };
 };
 
