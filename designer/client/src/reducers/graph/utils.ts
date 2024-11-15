@@ -84,13 +84,14 @@ export function prepareNewNodesWithLayout(
 
 export function removeStickyNoteFromLayout(state: GraphState, stickyNoteId: number): { layout: NodePosition[]; stickyNotes: StickyNote[] } {
     const { layout } = state;
-    const updatedStickyNotes = state.stickyNotes.filter((n) => n.noteId != stickyNoteId);
+    const stickyNoteLayoutId = createStickyNoteId(stickyNoteId);
+    const updatedStickyNotes = state.stickyNotes.filter((n) => n.noteId !== stickyNoteId);
     const updatedLayout = updatedStickyNotes.map((stickyNote) => {
         return { id: createStickyNoteId(stickyNote.noteId), position: stickyNote.layoutData };
     });
     return {
         stickyNotes: [...updatedStickyNotes],
-        layout: [...layout, ...updatedLayout],
+        layout: [...layout.filter((l) => l.id !== stickyNoteLayoutId), ...updatedLayout],
     };
 }
 
