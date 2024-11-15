@@ -1,4 +1,6 @@
 import { dia, shapes } from "jointjs";
+import { StickyNote } from "../../../common/StickyNote";
+import { cloneDeep } from "lodash";
 
 export const isLink = (c: dia.Cell): c is dia.Link => c.isLink();
 export const isElement = (c: dia.Cell): c is dia.Element => c?.isElement();
@@ -7,8 +9,14 @@ export function isModelElement(el: dia.Cell): el is shapes.devs.Model {
     return el instanceof shapes.devs.Model;
 }
 
-export function isStickyNoteElement(el: dia.Cell) {
+export function isStickyNoteElement(el: dia.Cell): el is shapes.devs.Model {
     return isElement(el) && el.get("type") === `stickyNote.StickyNoteElement`;
+}
+
+export function getStickyNoteCopyFromCell(stickyNotes: StickyNote[], el: dia.Cell): StickyNote | undefined {
+    const noteId = el.get("noteId");
+    const stickyNote = stickyNotes.find((a) => a.noteId == noteId);
+    return cloneDeep(stickyNote) || undefined;
 }
 
 export function isConnected(el: dia.Element): boolean {

@@ -590,7 +590,7 @@ processToolbarConfig {
     topLeft: [
       { type: "search-panel" }
       { type: "tips-panel" }
-      { type: "sticky-notes-panel" }
+      { type: "sticky-notes-panel", hidden: { archived: true } }
       { type: "creator-panel", hidden: { archived: true } }
       { type: "versions-panel" }
       { type: "comments-panel" }

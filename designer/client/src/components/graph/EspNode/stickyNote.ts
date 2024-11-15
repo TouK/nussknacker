@@ -4,6 +4,7 @@ import { getBorderColor } from "../../../containers/theme/helpers";
 import { StickyNote } from "../../../common/StickyNote";
 import { marked } from "marked";
 import { StickyNoteElement } from "../StickyNoteElement";
+import { getStickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 
 export const STICKY_NOTE_WIDTH = 300;
 export const STICKY_NOTE_HEIGHT = 250;
@@ -25,10 +26,14 @@ const border: dia.MarkupNodeJSON = {
     },
 };
 
+const iconHref = getStickyNoteIcon();
+
 const icon: dia.MarkupNodeJSON = {
     selector: "icon",
     tagName: "use",
     attributes: {
+        opacity: 1,
+        xlinkHref: iconHref,
         width: ICON_SIZE,
         height: ICON_SIZE,
         x: ICON_SIZE / 2,
