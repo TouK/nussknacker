@@ -18,7 +18,14 @@ import { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { updateNodeCounts } from "./EspNode/element";
 import { getDefaultLinkCreator } from "./EspNode/link";
-import { applyCellChanges, calcLayout, createPaper, isModelElement, isStickyNoteElement } from "./GraphPartialsInTS";
+import {
+    applyCellChanges,
+    calcLayout,
+    createPaper,
+    getStickyNoteCopyFromCell,
+    isModelElement,
+    isStickyNoteElement,
+} from "./GraphPartialsInTS";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
@@ -227,10 +234,9 @@ export class Graph extends React.Component<Props> {
                 if (isStickyNoteElement(cell.model)) {
                     this.processGraphPaper.hideTools();
                     cell.showTools();
+                    const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell.model);
+                    if (!updatedStickyNote) return;
                     const position = cell.model.get("position");
-                    const noteId = cell.model.get("noteId");
-                    const stickyNote = this.props.stickyNotes.find((a) => a.noteId == noteId);
-                    const updatedStickyNote = cloneDeep(stickyNote);
                     updatedStickyNote.layoutData = { x: position.x, y: position.y };
                     this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
                 }
@@ -458,11 +464,10 @@ export class Graph extends React.Component<Props> {
 
         this.graph.on(Events.CELL_RESIZED, (cell: dia.Element) => {
             if (isStickyNoteElement(cell)) {
+                const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell);
+                if (!updatedStickyNote) return;
                 const position = cell.get("position");
                 const size = cell.get("size");
-                const noteId = cell.get("noteId");
-                const stickyNote = this.props.stickyNotes.find((a) => a.noteId == noteId);
-                const updatedStickyNote = cloneDeep(stickyNote);
                 updatedStickyNote.layoutData = { x: position.x, y: position.y };
                 updatedStickyNote.dimensions = { width: Math.round(size.width), height: Math.round(size.height) };
                 this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
@@ -471,9 +476,8 @@ export class Graph extends React.Component<Props> {
 
         this.graph.on(Events.CELL_CONTENT_UPDATED, (cell: dia.Element, content: string) => {
             if (isStickyNoteElement(cell)) {
-                const noteId = cell.get("noteId");
-                const stickyNote = this.props.stickyNotes.find((a) => a.noteId == noteId);
-                const updatedStickyNote = cloneDeep(stickyNote);
+                const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell);
+                if (!updatedStickyNote) return;
                 updatedStickyNote.content = content;
                 this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
             }

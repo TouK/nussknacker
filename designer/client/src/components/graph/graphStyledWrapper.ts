@@ -180,7 +180,7 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 width: "100%",
                 height: "100%",
             },
-            ".sticky-note-markdown > *:first-child": {
+            ".sticky-note-markdown > *:first-of-type": {
                 paddingTop: "0px",
             },
             ".sticky-note-markdown-editor": {
