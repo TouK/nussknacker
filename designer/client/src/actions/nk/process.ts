@@ -7,7 +7,6 @@ import { ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import HttpService from "./../../http/HttpService";
 import { layoutChanged, Position } from "./ui/layout";
-import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { flushSync } from "react-dom";
 import { Dimensions, StickyNote } from "../../common/StickyNote";
 
@@ -79,7 +78,6 @@ export function stickyNoteUpdated(scenarioName: string, scenarioVersionId: numbe
                 });
             });
         });
-        batchGroupBy.end();
     };
 }
 
@@ -90,7 +88,6 @@ export function stickyNoteDeleted(scenarioName: string, stickyNoteId: number): T
                 dispatch({ type: "STICKY_NOTE_DELETED", stickyNoteId });
             });
         });
-        batchGroupBy.end();
     };
 }
 
@@ -104,7 +101,6 @@ export function stickyNoteAdded(scenarioName: string, scenarioVersionId: number,
                 });
             });
         });
-        batchGroupBy.end();
     };
 }
 
