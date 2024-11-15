@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{FunctionalMethodDefinition, MethodDefinition}
 import pl.touk.nussknacker.engine.extension.CastOrConversionExt.{canBeMethodName, orNullSuffix, toMethodName}
 import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
+import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
 
 import java.lang.{Boolean => JBoolean}
 import java.util.{Collection => JCollection, HashMap => JHashMap, Map => JMap, Set => JSet}
@@ -47,6 +48,8 @@ object ToMapConversionExt extends ConversionExt(ToMapConversion) {
 
 object ToMapConversion extends ToCollectionConversion[JMap[_, _]] {
 
+  private val mapClass = classOf[JMap[_, _]]
+
   private val keyName          = "key"
   private val valueName        = "value"
   private val keyAndValueNames = JSet.of(keyName, valueName)
@@ -62,8 +65,11 @@ object ToMapConversion extends ToCollectionConversion[JMap[_, _]] {
           Typed.genericTypeClass[JMap[_, _]](params).validNel
         case TypedClass(_, List(TypedObjectTypingResult(_, _, _))) =>
           GenericFunctionTypingError.OtherError("List element must contain 'key' and 'value' fields").invalidNel
-        case Unknown => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
-        case _       => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+        case TypedClass(_, List(TypedClass(klass, _))) if klass.isAOrChildOf(mapClass) =>
+          Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case TypedClass(_, List(Unknown)) => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case Unknown                      => Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)).validNel
+        case _                            => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
 
   @tailrec
@@ -89,8 +95,8 @@ object ToMapConversion extends ToCollectionConversion[JMap[_, _]] {
   private def canConvertToMap(c: JCollection[_]): Boolean = c.isEmpty || c
     .stream()
     .allMatch {
-      case m: JMap[_, _] if !m.isEmpty => m.keySet().containsAll(keyAndValueNames)
-      case _                           => false
+      case m: JMap[_, _] => m.keySet().containsAll(keyAndValueNames)
+      case _             => false
     }
 
 }
