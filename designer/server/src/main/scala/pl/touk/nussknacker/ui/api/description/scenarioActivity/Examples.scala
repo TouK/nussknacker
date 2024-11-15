@@ -214,6 +214,18 @@ object Examples {
           retriesLeft = None,
           nextRetryAt = None,
         ),
+        ScenarioActivity.forPerformedScheduledExecution(
+          id = UUID.fromString("9b27797e-aa03-42ba-8406-d0ae8005a883"),
+          user = "some user",
+          date = Instant.parse("2024-01-17T14:21:17Z"),
+          scenarioVersionId = Some(1),
+          dateFinished = Instant.parse("2024-01-17T14:21:17Z"),
+          scheduleName = "main-schedule",
+          scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentWillBeRetried,
+          createdAt = Instant.parse("2024-01-17T13:21:17Z"),
+          retriesLeft = Some(1),
+          nextRetryAt = Some(Instant.parse("2024-01-17T15:21:17Z")),
+        ),
         ScenarioActivity.forAutomaticUpdate(
           id = UUID.fromString("33509d37-7657-4229-940f-b5736c82fb13"),
           user = "some user",

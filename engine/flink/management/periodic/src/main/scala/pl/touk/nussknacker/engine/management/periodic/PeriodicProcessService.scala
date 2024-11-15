@@ -71,7 +71,7 @@ class PeriodicProcessService(
         scenarioId = ScenarioId(processIdWithName.id.value),
         scenarioActivityId = ScenarioActivityId.random,
         user = ScenarioUser.internalNuUser,
-        date = metadata.dateDeployed,
+        date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
         scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
         scheduledExecutionStatus = metadata.status,
         dateFinished = metadata.dateFinished,
@@ -535,12 +535,12 @@ class PeriodicProcessService(
         case PeriodicProcessDeploymentStatus.Failed =>
           Some(ScheduledExecutionStatus.Failed)
         case PeriodicProcessDeploymentStatus.RetryingDeploy =>
-          None
+          Some(ScheduledExecutionStatus.DeploymentWillBeRetried)
         case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
-          None
+          Some(ScheduledExecutionStatus.DeploymentFailed)
       }
-      dateCreated = entity.createdAt.toInstant
-      dateDeployed <- entity.state.deployedAt.map(_.toInstant)
+      dateCreated  = entity.createdAt.toInstant
+      dateDeployed = entity.state.deployedAt.map(_.toInstant)
       dateFinished <- entity.state.completedAt.map(_.toInstant)
     } yield FinishedScheduledExecutionMetadata(
       status = status,
@@ -716,7 +716,7 @@ object PeriodicProcessService {
   private final case class FinishedScheduledExecutionMetadata(
       status: ScheduledExecutionStatus,
       dateCreated: Instant,
-      dateDeployed: Instant,
+      dateDeployed: Option[Instant],
       dateFinished: Instant,
   )
 

@@ -115,6 +115,10 @@ object ScheduledExecutionStatus extends Enum[ScheduledExecutionStatus] {
 
   case object Failed extends ScheduledExecutionStatus
 
+  case object DeploymentWillBeRetried extends ScheduledExecutionStatus
+
+  case object DeploymentFailed extends ScheduledExecutionStatus
+
   override def values: immutable.IndexedSeq[ScheduledExecutionStatus] = findValues
 }
 
@@ -307,8 +311,10 @@ object ScenarioActivity {
   ) extends BatchDeploymentRelatedActivity {
 
     override def result: DeploymentResult = scheduledExecutionStatus match {
-      case ScheduledExecutionStatus.Finished => DeploymentResult.Success(dateFinished)
-      case ScheduledExecutionStatus.Failed   => DeploymentResult.Failure(dateFinished, None)
+      case ScheduledExecutionStatus.Finished                => DeploymentResult.Success(dateFinished)
+      case ScheduledExecutionStatus.Failed                  => DeploymentResult.Failure(dateFinished, None)
+      case ScheduledExecutionStatus.DeploymentWillBeRetried => DeploymentResult.Failure(dateFinished, None)
+      case ScheduledExecutionStatus.DeploymentFailed        => DeploymentResult.Failure(dateFinished, None)
     }
 
   }
