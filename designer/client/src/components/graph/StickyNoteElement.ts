@@ -1,5 +1,6 @@
 import { dia } from "jointjs";
 import { Events } from "./types";
+import { MARKDOWN_EDITOR_NAME } from "./EspNode/stickyNote";
 
 export const StickyNoteElement = (defaults?: any, protoProps?: any) =>
     dia.Element.define("stickyNote.StickyNoteElement", defaults, protoProps);
@@ -7,13 +8,16 @@ export const StickyNoteElement = (defaults?: any, protoProps?: any) =>
 export const StickyNoteElementView = dia.ElementView.extend({
     events: {
         "change textarea": "onChange",
+        "focusout textarea": "onChange",
     },
 
     pointerdblclick: function (evt, x, y) {
-        this.model.attr("name/props/disabled", false);
+        this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, false);
     },
+
     onChange: function (evt) {
         this.model.trigger(Events.CELL_CONTENT_UPDATED, this.model, evt.target.value);
-        this.model.attr("name/props/value", evt.target.value);
+        this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, evt.target.value);
+        this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, true);
     },
 });
