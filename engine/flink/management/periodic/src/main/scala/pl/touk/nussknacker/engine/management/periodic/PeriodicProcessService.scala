@@ -24,9 +24,9 @@ import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeplo
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
 
-import java.time.chrono.{ChronoLocalDateTime, ChronoZonedDateTime}
+import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.{Clock, Instant, LocalDateTime, ZoneId}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -57,7 +57,7 @@ class PeriodicProcessService(
 
   private val emptyCallback: Callback = () => Future.successful(())
 
-  private implicit val zonedDateTimeOrdering: Ordering[ZonedDateTime] = Ordering.by(identity[ChronoZonedDateTime[_]])
+  private implicit val localDateTimeOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   def getScenarioActivitiesSpecificToPeriodicProcess(
       processIdWithName: ProcessIdWithName
