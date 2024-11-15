@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProv
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.newdeployment
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -126,14 +127,10 @@ class EmbeddedDeploymentManager(
   // We make sure that we don't let deploy a scenario when any parameter editor was modified to dictionary one by AdditionalUIConfigProvider
   // as that would result in failure during compilation before execution
   private def ensureAdditionalConfigsDoNotContainDictionaryEditors(deploymentData: DeploymentData): Unit = {
-    val configsWithDictEditors = deploymentData.additionalConfigsFromProvider.filter(
-      _._2.parameterConfigs.exists { case (_, parameterConfig) =>
-        parameterConfig.valueEditor match {
-          case Some(_: ValueInputWithDictEditor) => true
-          case _                                 => false
-        }
-      }
-    )
+    val configsWithDictEditors =
+      AdditionalComponentConfigsForRuntimeExtractor.getAdditionalConfigsWithDictParametersEditors(
+        deploymentData.additionalModelConfigs.additionalConfigsFromProvider
+      )
     if (configsWithDictEditors.nonEmpty) {
       throw new IllegalArgumentException(
         "Parameter editor modification to ValueInputWithDictEditor by AdditionalUIConfigProvider is not supported for Lite engine"

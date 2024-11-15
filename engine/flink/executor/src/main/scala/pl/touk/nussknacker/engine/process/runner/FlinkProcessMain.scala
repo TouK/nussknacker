@@ -4,7 +4,7 @@ import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -27,7 +27,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
           s"Model version ${processVersion.modelVersion}. Deploying user [id=${deploymentData.user.id}, name=${deploymentData.user.name}]"
       )
       val config: Config = readConfigFromArgs(args)
-      val modelData      = ModelData.duringFlinkExecution(config, deploymentData.additionalConfigsFromProvider)
+      val modelData      = ModelData.duringFlinkExecution(ModelConfigs(config, deploymentData.additionalModelConfigs))
       val env            = getExecutionEnvironment
       runProcess(
         env,

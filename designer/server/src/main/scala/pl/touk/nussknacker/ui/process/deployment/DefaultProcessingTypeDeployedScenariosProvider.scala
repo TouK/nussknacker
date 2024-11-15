@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId, User}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
@@ -52,7 +52,7 @@ class DefaultProcessingTypeDeployedScenariosProvider(
           deployingUser,
           Map.empty,
           NodesDeploymentData.empty,
-          Map.empty
+          AdditionalModelConfigs.empty
         )
         val deployedScenarioDataTry =
           scenarioResolver.resolveScenario(details.json).map { resolvedScenario =>

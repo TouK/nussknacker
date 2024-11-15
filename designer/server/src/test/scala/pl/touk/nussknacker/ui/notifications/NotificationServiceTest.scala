@@ -14,7 +14,12 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{
+  AdditionalModelConfigs,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId
+}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
@@ -218,7 +223,7 @@ class NotificationServiceTest
               user.toManagerUser,
               additionalDeploymentData,
               nodesDeploymentData,
-              Map.empty
+              AdditionalModelConfigs.empty
             ),
             processDetails.json
           )

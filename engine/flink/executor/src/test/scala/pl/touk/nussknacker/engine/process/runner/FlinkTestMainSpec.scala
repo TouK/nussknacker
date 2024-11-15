@@ -20,13 +20,14 @@ import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
 import pl.touk.nussknacker.engine.api.component.{
   ComponentAdditionalConfig,
   DesignerWideComponentId,
   ParameterAdditionalUIConfig
 }
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithDictEditor}
+import pl.touk.nussknacker.engine.deployment.AdditionalModelConfigs
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import java.util.{Date, UUID}
@@ -737,7 +738,9 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
 
     // We need to set context loader to avoid forking in sbt
-    val modelData = ModelData.duringFlinkExecution(config, additionalConfigsFromProvider)
+    val modelData = ModelData.duringFlinkExecution(
+      ModelConfigs(config, AdditionalModelConfigs(additionalConfigsFromProvider))
+    )
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration())
     }

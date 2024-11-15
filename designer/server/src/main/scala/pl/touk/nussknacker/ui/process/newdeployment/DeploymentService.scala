@@ -10,11 +10,15 @@ import pl.touk.nussknacker.engine.api.component.{
   NodesDeploymentData
 }
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId => LegacyDeploymentId}
-import pl.touk.nussknacker.engine.management.periodic.AdditionalDictComponentConfigsExtractor
+import pl.touk.nussknacker.engine.deployment.{
+  AdditionalModelConfigs,
+  DeploymentData,
+  DeploymentId => LegacyDeploymentId
+}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
@@ -162,14 +166,11 @@ class DeploymentService(
   ): EitherT[Future, RunDeploymentError, Unit] = {
     val runtimeVersionData = processVersionFor(scenarioMetadata, scenarioGraphVersion)
     // TODO: It shouldn't be needed
-    val dumbDeploymentData = DeploymentData(
+    val dumbDeploymentData = createDeploymentData(
       LegacyDeploymentId(""),
-      user.toManagerUser,
-      Map.empty,
+      user,
       NodesDeploymentData.empty,
-      AdditionalDictComponentConfigsExtractor.getAdditionalConfigsWithDictParametersEditors(
-        additionalComponentConfigs.forProcessingType(scenarioMetadata.processingType)(user).getOrElse(Map.empty)
-      )
+      scenarioMetadata.processingType
     )
     for {
       result <- EitherT[Future, RunDeploymentError, Unit](
@@ -198,14 +199,11 @@ class DeploymentService(
       command: RunDeploymentCommand
   ): EitherT[Future, RunDeploymentError, Unit] = {
     val runtimeVersionData = processVersionFor(scenarioMetadata, scenarioGraphVersion)
-    val deploymentData = DeploymentData(
+    val deploymentData = createDeploymentData(
       toLegacyDeploymentId(command.id),
-      command.user.toManagerUser,
-      additionalDeploymentData = Map.empty,
+      command.user,
       command.nodesDeploymentData,
-      AdditionalDictComponentConfigsExtractor.getAdditionalConfigsWithDictParametersEditors(
-        additionalComponentConfigs.forProcessingType(scenarioMetadata.processingType)(command.user).getOrElse(Map.empty)
-      )
+      scenarioMetadata.processingType
     )
     dmDispatcher
       .deploymentManagerUnsafe(scenarioMetadata.processingType)(command.user)
@@ -226,6 +224,23 @@ class DeploymentService(
       .foreach(handleFailureDuringDeploymentRequesting(command.id, _))
     EitherT.pure(())
   }
+
+  private def createDeploymentData(
+      deploymentId: LegacyDeploymentId,
+      loggedUser: LoggedUser,
+      nodesData: NodesDeploymentData,
+      processingType: ProcessingType
+  ) = DeploymentData(
+    deploymentId = deploymentId,
+    user = loggedUser.toManagerUser,
+    additionalDeploymentData = Map.empty,
+    nodesData = nodesData,
+    additionalModelConfigs = AdditionalModelConfigs(
+      AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(
+        additionalComponentConfigs.forProcessingType(processingType)(loggedUser).getOrElse(Map.empty)
+      )
+    )
+  )
 
   private def handleFailureDuringDeploymentRequesting(
       deploymentId: DeploymentId,

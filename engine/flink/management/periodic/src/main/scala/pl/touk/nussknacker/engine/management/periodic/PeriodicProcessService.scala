@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId}
+import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
   DeploymentStatus,
   EngineStatusesToReschedule,
@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesReposi
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
@@ -407,8 +408,8 @@ class PeriodicProcessService(
       additionalDeploymentDataProvider.prepareAdditionalData(deployment),
       // TODO: in the future we could allow users to specify nodes data during schedule requesting
       NodesDeploymentData.empty,
-      AdditionalDictComponentConfigsExtractor.getAdditionalConfigsWithDictParametersEditors(
-        configsFromProvider
+      AdditionalModelConfigs(
+        AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(configsFromProvider)
       )
     )
     val deploymentWithJarData = deployment.periodicProcess.deploymentData

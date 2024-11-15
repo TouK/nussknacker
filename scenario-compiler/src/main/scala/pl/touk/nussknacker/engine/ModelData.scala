@@ -14,12 +14,12 @@ import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegis
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode.FinalDefinition
 import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinition,
   ModelDefinitionExtractor,
   ModelDefinitionWithClasses
 }
+import pl.touk.nussknacker.engine.deployment.AdditionalModelConfigs
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig._
@@ -58,11 +58,12 @@ object ModelData extends LazyLogging {
   // Also a classloader is correct so we don't need to build the new one
   // This tiny method is Flink specific so probably the interpreter module is not the best one
   // but it is very convenient to keep in near normal, duringExecution method
-  def duringFlinkExecution(
-      inputConfig: Config,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
-  ): ModelData = {
-    duringExecution(inputConfig, ModelClassLoader.empty, resolveConfigs = false, additionalConfigsFromProvider)
+  def duringFlinkExecution(modelConfigs: ModelConfigs): ModelData = {
+    duringExecution(
+      modelConfigs,
+      ModelClassLoader.empty,
+      resolveConfigs = false,
+    )
   }
 
   // On the runtime side, we get only model config, not the whole processing type config,
@@ -71,19 +72,18 @@ object ModelData extends LazyLogging {
   // we don't use not allowed components for a given category
   // and that the scenario doesn't violate validators introduced by additionalConfigsFromProvider
   def duringExecution(
-      inputConfig: Config,
+      modelConfigs: ModelConfigs,
       modelClassLoader: ModelClassLoader,
       resolveConfigs: Boolean,
-      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty
   ): ModelData = {
     def resolveInputConfigDuringExecution(modelConfigLoader: ModelConfigLoader): InputConfigDuringExecution = {
       if (resolveConfigs) {
         modelConfigLoader.resolveInputConfigDuringExecution(
-          ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig),
+          ConfigWithUnresolvedVersion(modelClassLoader.classLoader, modelConfigs.modelInputConfig),
           modelClassLoader.classLoader
         )
       } else {
-        InputConfigDuringExecution(inputConfig)
+        InputConfigDuringExecution(modelConfigs.modelInputConfig)
       }
     }
     ClassLoaderModelData(
@@ -91,7 +91,7 @@ object ModelData extends LazyLogging {
       modelClassLoader = modelClassLoader,
       category = None,
       determineDesignerWideId = id => DesignerWideComponentId(id.toString),
-      additionalConfigsFromProvider = additionalConfigsFromProvider,
+      additionalConfigsFromProvider = modelConfigs.additionalModelConfigs.additionalConfigsFromProvider,
       shouldIncludeConfigCreator = _ => true,
       shouldIncludeComponentProvider = _ => true,
       componentDefinitionExtractionMode = ComponentDefinitionExtractionMode.FinalDefinition
@@ -103,6 +103,11 @@ object ModelData extends LazyLogging {
   }
 
 }
+
+final case class ModelConfigs(
+    modelInputConfig: Config,
+    additionalModelConfigs: AdditionalModelConfigs = AdditionalModelConfigs.empty
+)
 
 final case class ModelDependencies(
     additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],

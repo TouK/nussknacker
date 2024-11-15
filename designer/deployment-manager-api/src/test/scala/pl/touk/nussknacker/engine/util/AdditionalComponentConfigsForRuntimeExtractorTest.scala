@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.util
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,13 +10,13 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithDictEditor}
-import pl.touk.nussknacker.engine.management.periodic.AdditionalDictComponentConfigsExtractorTest.{
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractorTest.{
   componentConfigWithDictionaryEditorInParameter,
   componentConfigWithOnlyDictEditorParameters,
   componentConfigWithoutDictionaryEditorInParameter
 }
 
-class AdditionalDictComponentConfigsExtractorTest extends AnyFunSuite with Matchers {
+class AdditionalComponentConfigsForRuntimeExtractorTest extends AnyFunSuite with Matchers {
 
   test("should filter only components and parameters with dictionary editors") {
     val additionalConfig = Map(
@@ -24,7 +24,7 @@ class AdditionalDictComponentConfigsExtractorTest extends AnyFunSuite with Match
       DesignerWideComponentId("componentB") -> componentConfigWithoutDictionaryEditorInParameter,
     )
     val filteredResult =
-      AdditionalDictComponentConfigsExtractor.getAdditionalConfigsWithDictParametersEditors(additionalConfig)
+      AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(additionalConfig)
 
     filteredResult shouldBe Map(
       DesignerWideComponentId("componentA") -> componentConfigWithOnlyDictEditorParameters
@@ -33,7 +33,7 @@ class AdditionalDictComponentConfigsExtractorTest extends AnyFunSuite with Match
 
 }
 
-object AdditionalDictComponentConfigsExtractorTest {
+object AdditionalComponentConfigsForRuntimeExtractorTest {
 
   private val parameterAWithDictEditor = (
     ParameterName("parameterA"),

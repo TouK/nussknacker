@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.management.periodic.AdditionalDictComponentConfigsExtractor
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
@@ -334,8 +334,10 @@ class DeploymentService(
         user.toManagerUser,
         additionalDeploymentData,
         nodesDeploymentData,
-        AdditionalDictComponentConfigsExtractor.getAdditionalConfigsWithDictParametersEditors(
-          additionalComponentConfigs.forProcessingType(processDetails.processingType).getOrElse(Map.empty)
+        AdditionalModelConfigs(
+          AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(
+            additionalComponentConfigs.forProcessingType(processDetails.processingType).getOrElse(Map.empty)
+          )
         )
       )
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
