@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
   StickyNoteCorrelationId,
   StickyNoteId
 }
+import pl.touk.nussknacker.ui.db.entity.StickyNoteEventEntityData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Clock
@@ -41,6 +42,8 @@ trait StickyNotesRepository {
       targetEdge: Option[String],
       scenarioVersionId: VersionId,
   )(implicit user: LoggedUser): DB[Int]
+
+  def findStickyNoteById(noteId: StickyNoteId)(implicit user: LoggedUser): DB[Option[StickyNoteEventEntityData]]
 
   def deleteStickyNote(noteId: StickyNoteId)(implicit user: LoggedUser): DB[Int]
 
