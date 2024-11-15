@@ -11,14 +11,19 @@ import { isPristine } from "../../reducers/selectors/graph";
 export function StickyNotesPanel(props: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
     const pristine = useSelector(isPristine);
-    const noteModel = { id: "StickyNote", type: StickyNoteType, isDisabled: false };
+    const noteModel = { id: "StickyNoteToAdd", type: StickyNoteType, isDisabled: false };
 
     //One of stickyNotes simplifications is that we cannot add note to not saved scenario version
     const stickyNoteTool = useMemo(() => {
         return (
             <ToolbarWrapper {...props} title={t("panels.sticky-notes.title", "Sticky Notes Panel")}>
                 <StyledToolbox id="toolbox">
-                    <Tool nodeModel={noteModel} label="sticky note" key={StickyNoteType} disabled={!pristine} />
+                    <Tool
+                        nodeModel={noteModel}
+                        label={t("stickyNotes.tool.label", "sticky note")}
+                        key={StickyNoteType}
+                        disabled={!pristine}
+                    />
                 </StyledToolbox>
             </ToolbarWrapper>
         );

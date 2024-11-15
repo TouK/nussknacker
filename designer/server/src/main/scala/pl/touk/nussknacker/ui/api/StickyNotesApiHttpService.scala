@@ -57,7 +57,7 @@ class StickyNotesApiHttpService(
         { case (scenarioName, requestBody) =>
           for {
             scenarioId      <- getScenarioIdByName(scenarioName)
-            _               <- isAuthorized(scenarioId, Permission.Read)
+            _               <- isAuthorized(scenarioId, Permission.Write)
             processActivity <- addStickyNote(scenarioId, requestBody)
           } yield processActivity
         }
@@ -71,7 +71,7 @@ class StickyNotesApiHttpService(
         { case (scenarioName, requestBody) =>
           for {
             scenarioId      <- getScenarioIdByName(scenarioName)
-            _               <- isAuthorized(scenarioId, Permission.Read)
+            _               <- isAuthorized(scenarioId, Permission.Write)
             processActivity <- updateStickyNote(requestBody)
           } yield processActivity.toInt
         }
@@ -85,7 +85,7 @@ class StickyNotesApiHttpService(
         { case (scenarioName, noteId) =>
           for {
             scenarioId      <- getScenarioIdByName(scenarioName)
-            _               <- isAuthorized(scenarioId, Permission.Read)
+            _               <- isAuthorized(scenarioId, Permission.Write)
             processActivity <- deleteStickyNote(noteId)
           } yield processActivity.toInt
         }
@@ -125,12 +125,20 @@ class StickyNotesApiHttpService(
   private def deleteStickyNote(noteId: StickyNoteId)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, StickyNotesError, Int] =
-    EitherT
-      .right(
+    for {
+      note <- EitherT.fromOptionF(
+        dbioActionRunner.run(
+          stickyNotesRepository.findStickyNoteById(noteId)
+        ),
+        StickyNotesError.NoStickyNote(noteId)
+      )
+      _ <- isAuthorized(note.scenarioId, Permission.Write)
+      result <- EitherT.right(
         dbioActionRunner.run(
           stickyNotesRepository.deleteStickyNote(noteId)
         )
       )
+    } yield result
 
   private def addStickyNote(scenarioId: ProcessId, requestBody: StickyNoteAddRequest)(
       implicit loggedUser: LoggedUser
@@ -152,20 +160,27 @@ class StickyNotesApiHttpService(
 
   private def updateStickyNote(requestBody: StickyNoteUpdateRequest)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, StickyNotesError, Int] =
-    EitherT
-      .right(
-        dbioActionRunner.run(
-          stickyNotesRepository.updateStickyNote(
-            requestBody.noteId,
-            requestBody.content,
-            requestBody.layoutData,
-            requestBody.color,
-            requestBody.dimensions,
-            requestBody.targetEdge,
-            requestBody.scenarioVersionId
-          )
+  ): EitherT[Future, StickyNotesError, Int] = for {
+    note <- EitherT.fromOptionF(
+      dbioActionRunner.run(
+        stickyNotesRepository.findStickyNoteById(requestBody.noteId)
+      ),
+      StickyNotesError.NoStickyNote(requestBody.noteId)
+    )
+    _ <- isAuthorized(note.scenarioId, Permission.Write)
+    result <- EitherT.right(
+      dbioActionRunner.run(
+        stickyNotesRepository.updateStickyNote(
+          requestBody.noteId,
+          requestBody.content,
+          requestBody.layoutData,
+          requestBody.color,
+          requestBody.dimensions,
+          requestBody.targetEdge,
+          requestBody.scenarioVersionId
         )
       )
+    )
+  } yield result
 
 }

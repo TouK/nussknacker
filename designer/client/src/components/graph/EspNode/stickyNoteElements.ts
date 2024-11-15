@@ -2,7 +2,6 @@ import { ProcessDefinitionData } from "../../../types";
 import { Theme } from "@mui/material";
 import { StickyNote } from "../../../common/StickyNote";
 import { dia, elementTools, shapes } from "jointjs";
-import { getStickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 import { createStickyNoteId } from "../../../types/stickyNote";
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
 import { CONTENT_PADDING, ICON_SIZE, StickyNoteShape } from "./stickyNote";
@@ -18,7 +17,6 @@ export function makeStickyNoteElement(
     theme: Theme,
 ): (stickyNote: StickyNote) => ModelWithTool {
     return (stickyNote: StickyNote) => {
-        const iconHref = getStickyNoteIcon();
         const attributes: shapes.devs.ModelAttributes = {
             id: createStickyNoteId(stickyNote.noteId),
             noteId: stickyNote.noteId,
@@ -37,8 +35,6 @@ export function makeStickyNoteElement(
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
                 icon: {
-                    xlinkHref: iconHref,
-                    opacity: 1,
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
                 border: {
@@ -50,7 +46,7 @@ export function makeStickyNoteElement(
         };
 
         const ThemedStickyNoteShape = StickyNoteShape(theme, stickyNote);
-        const model = new ThemedStickyNoteShape(attributes);
+        const stickyNoteModel = new ThemedStickyNoteShape(attributes);
         const MIN_STICKY_NOTE_WIDTH = 100;
         const MIN_STICKY_NOTE_HEIGHT = 100;
 
@@ -61,7 +57,7 @@ export function makeStickyNoteElement(
             y: "0%",
             offset: { x: 10, y: 10 },
             action: function () {
-                model.trigger(Events.CELL_DELETED, model);
+                stickyNoteModel.trigger(Events.CELL_DELETED, stickyNoteModel);
             },
         });
 
@@ -107,7 +103,7 @@ export function makeStickyNoteElement(
             },
             onPointerUpCustom: function (evt: dia.Event) {
                 this.onPointerUp(evt);
-                model.trigger(Events.CELL_RESIZED, model);
+                stickyNoteModel.trigger(Events.CELL_RESIZED, stickyNoteModel);
             },
         });
 
@@ -120,10 +116,10 @@ export function makeStickyNoteElement(
                 removeButtonTool,
             ],
         });
-        model.resize(
+        stickyNoteModel.resize(
             Math.max(stickyNote.dimensions.width, MIN_STICKY_NOTE_WIDTH),
             Math.max(stickyNote.dimensions.height, MIN_STICKY_NOTE_HEIGHT),
         );
-        return { model, tools };
+        return { model: stickyNoteModel, tools };
     };
 }

@@ -47,6 +47,17 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
     )
   }
 
+  override def findStickyNoteById(
+      noteId: StickyNoteId
+  )(implicit user: LoggedUser): DB[Option[StickyNoteEventEntityData]] = {
+    run(
+      stickyNotesTable
+        .filter(_.id === noteId)
+        .result
+        .headOption
+    )
+  }
+
   override def addStickyNote(
       content: String,
       layoutData: LayoutData,

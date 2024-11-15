@@ -42,5 +42,17 @@ export function applyCellChanges(
     graph.removeCells(deletedCells);
     updateChangedCells(graph, changedCells);
     graph.addCells(newCells);
-    newStickyNotesModelsWithTools.map((m) => m.model.findView(paper).addTools(m.tools));
+
+    newStickyNotesModelsWithTools.forEach((m) => {
+        try {
+            const view = m.model.findView(paper);
+            if (!view) {
+                console.warn(`View not found for stickyNote model: ${m.model.id}`);
+                return;
+            }
+            view.addTools(m.tools);
+        } catch (error) {
+            console.error(`Failed to add tools to stickyNote view:`, error);
+        }
+    });
 }
