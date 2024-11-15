@@ -6,11 +6,15 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 import pl.touk.nussknacker.engine.util.ResourceLoader
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy.{Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import java.io.FileOutputStream
 import java.time.Instant
@@ -50,6 +54,30 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
     val exported    = PdfExporter.exportToPdf(svg, details, activities)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/out.pdf"))
+  }
+
+  it should "render parameter names correctly in generated xml" in {
+    val givenSourceParamName = "someParamName"
+    val sampleScenarioGraph =
+      CanonicalProcessConverter.toScenarioGraph(
+        ScenarioBuilder
+          .streaming("foo")
+          .source("sourceId", "sourceType", givenSourceParamName -> "123".spel)
+          .emptySink("sinkId", "sinkType")
+      )
+    val xml = PdfExporter.prepareFopXml(
+      "<empty/>",
+      createDetails(sampleScenarioGraph),
+      ProcessActivity(List.empty, List.empty),
+      sampleScenarioGraph
+    )
+    val blocks                  = xml \ "page-sequence" \ "flow" \ "block"
+    val blockWithSourceDetails  = blocks(4)
+    val sourceParameterRow      = (blockWithSourceDetails \ "table" \ "table-body" \ "table-row")(1)
+    val sourceParameterNameNode = (sourceParameterRow \ "table-cell")(0)
+    val sourceParameterNameText = (sourceParameterNameNode \ "block").text.trim
+
+    sourceParameterNameText shouldBe givenSourceParamName
   }
 
   it should "export empty process to " in {
