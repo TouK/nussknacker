@@ -300,8 +300,23 @@ class PeriodicProcessServiceIntegrationTest
     service.deploy(toBeRetried).futureValue
     service.findToBeDeployed.futureValue.toList shouldBe Nil
 
-    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
-    activities shouldBe empty
+    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    activities shouldBe List(
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(1),
+        scenarioActivityId = firstActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = firstActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = firstActivity.dateFinished,
+        scheduleName = "[default]",
+        scheduledExecutionStatus = ScheduledExecutionStatus.DeploymentFailed,
+        createdAt = firstActivity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+    )
   }
 
   it should "handle multiple schedules" in withFixture() { f =>
@@ -629,8 +644,23 @@ class PeriodicProcessServiceIntegrationTest
     val stateAfterHandleFinished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterHandleFinished.latestDeploymentForSingleSchedule.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
-    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
-    activities shouldBe empty
+    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    activities shouldBe List(
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(1),
+        scenarioActivityId = firstActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = firstActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = firstActivity.dateFinished,
+        scheduleName = "[default]",
+        scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
+        createdAt = firstActivity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+    )
   }
 
   private def randomProcessActionId = ProcessActionId(UUID.randomUUID())
