@@ -80,7 +80,7 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
     baseNuApiEndpoint
       .summary("Updates sticky note with new values")
       .tag("StickyNotes")
-      .post
+      .put
       .in("processes" / path[ProcessName]("scenarioName") / "stickyNotes")
       .in(
         jsonBody[StickyNoteUpdateRequest]
@@ -113,7 +113,7 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
     baseNuApiEndpoint
       .summary("Creates new sticky note with given content")
       .tag("StickyNotes")
-      .put
+      .post
       .in("processes" / path[ProcessName]("scenarioName") / "stickyNotes")
       .in(
         jsonBody[StickyNoteAddRequest]
