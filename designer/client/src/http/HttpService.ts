@@ -678,7 +678,7 @@ class HttpService {
     }
 
     addStickyNote(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions) {
-        const promise = api.put(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
+        const promise = api.post(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
             scenarioVersionId,
             content: "",
             layoutData: position,
@@ -704,7 +704,7 @@ class HttpService {
     }
 
     updateStickyNote(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote) {
-        const promise = api.post(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
+        const promise = api.put(`/processes/${encodeURIComponent(scenarioName)}/stickyNotes`, {
             noteId: stickyNote.noteId,
             scenarioVersionId,
             content: stickyNote.content,
