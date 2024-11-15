@@ -9,11 +9,11 @@ import pl.touk.nussknacker.engine.management.periodic.model.{
   ScheduleName
 }
 
-import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.LocalDateTime
 
 object PeriodicProcessDeploymentGen {
 
-  val now: ZonedDateTime = ZonedDateTime.now()
+  val now: LocalDateTime = LocalDateTime.now()
 
   def apply(): PeriodicProcessDeployment[CanonicalProcess] = {
     PeriodicProcessDeployment(

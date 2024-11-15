@@ -226,7 +226,7 @@ class PeriodicProcessServiceIntegrationTest
 
     afterDeployDeployment.id shouldBe afterSchedule.latestDeployments.head.id
     afterDeployDeployment.state shouldBe PeriodicProcessDeploymentState(
-      Some(ZonedDateTime.now(fixedClock(timeToTriggerCheck))),
+      Some(LocalDateTime.now(fixedClock(timeToTriggerCheck))),
       None,
       PeriodicProcessDeploymentStatus.Deployed
     )
