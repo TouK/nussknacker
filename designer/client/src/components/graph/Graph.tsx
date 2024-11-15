@@ -478,6 +478,7 @@ export class Graph extends React.Component<Props> {
             if (isStickyNoteElement(cell)) {
                 const updatedStickyNote = getStickyNoteCopyFromCell(this.props.stickyNotes, cell);
                 if (!updatedStickyNote) return;
+                if (updatedStickyNote.content == content) return;
                 updatedStickyNote.content = content;
                 this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
             }

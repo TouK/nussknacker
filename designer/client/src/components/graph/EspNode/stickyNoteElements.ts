@@ -2,6 +2,7 @@ import { ProcessDefinitionData } from "../../../types";
 import { Theme } from "@mui/material";
 import { StickyNote } from "../../../common/StickyNote";
 import { dia, elementTools, shapes } from "jointjs";
+import { getStickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 import { createStickyNoteId } from "../../../types/stickyNote";
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
 import { CONTENT_PADDING, ICON_SIZE, StickyNoteShape } from "./stickyNote";
@@ -17,6 +18,7 @@ export function makeStickyNoteElement(
     theme: Theme,
 ): (stickyNote: StickyNote) => ModelWithTool {
     return (stickyNote: StickyNote) => {
+        const iconHref = getStickyNoteIcon();
         const attributes: shapes.devs.ModelAttributes = {
             id: createStickyNoteId(stickyNote.noteId),
             noteId: stickyNote.noteId,
@@ -30,11 +32,13 @@ export function makeStickyNoteElement(
                     opacity: 1,
                 },
                 foreignObject: {
-                    width: stickyNote.dimensions.width - ICON_SIZE - CONTENT_PADDING * 2,
+                    width: stickyNote.dimensions.width,
                     height: stickyNote.dimensions.height - ICON_SIZE - CONTENT_PADDING * 4,
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
                 icon: {
+                    xlinkHref: iconHref,
+                    opacity: 1,
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
                 border: {
