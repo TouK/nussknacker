@@ -264,7 +264,7 @@ can be accessed in e.g. in following ways:
 * `#exampleObjects['someNestedObject']['someFieldInNestedObject']`
 * `#exampleObjects['someArrayWithObjects'][0]['someFieldInObjectInArray']`
 
-Every unknown accessed field/element will produce `Unknown` data type which can be further navigated or [converted](#type-conversions) to a desired type.
+Every unknown accessed field/element will produce `Unknown` data type, which can be further navigated or [converted](#type-conversions) to a desired type.
 
 ### Type conversions
 
@@ -291,6 +291,17 @@ Functions with the prefix `canBe` check whether a type can be cast or converted 
 the `to` prefix cast or convert a value to the desired type, and if the operation fails, an exception is propagated
 further. Functions with the `to` prefix and `OrNull` suffix cast or convert a value to the desired type,
 and if the operation fails, a null value is returned.
+
+Examples of conversions:
+
+| Expression                 | Result | Type    |
+|----------------------------|--------|---------|
+| `"123".canBeDouble`        | true   | Boolean |
+| `"123".toDouble`           | 123.0  | Double  |
+| `"abc".toDoubleOrNull`     | null   | Double  |
+| `"123".canBe('Double')`    | true   | Boolean |
+| `"123".to('Double')`       | 123.0  | Double  |
+| `"abc".toOrNull('Double')` | null   | Double  |
 
 Conversions only make sense between specific types. We limit SpeL's suggestions to show only possible conversions.
 Below is a matrix which shows which types can be converted with each other:
