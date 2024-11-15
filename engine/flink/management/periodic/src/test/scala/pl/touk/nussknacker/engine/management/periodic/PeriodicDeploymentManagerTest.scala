@@ -378,29 +378,6 @@ class PeriodicDeploymentManagerTest
       PeriodicProcessDeploymentStatus.Finished,
       PeriodicProcessDeploymentStatus.Scheduled
     )
-
-    val activities = f.periodicDeploymentManager match {
-      case manager: ManagerSpecificScenarioActivitiesStoredByManager =>
-        manager.managerSpecificScenarioActivities(idWithName).futureValue
-      case _ =>
-        List.empty
-    }
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
-        scenarioActivityId = firstActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = firstActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
-        scheduleName = "[default]",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      ),
-    )
   }
 
   test("should cancel failed job after RescheduleActor handles finished") {
@@ -421,30 +398,6 @@ class PeriodicDeploymentManagerTest
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
 
     f.getMergedStatusDetails.status shouldEqual SimpleStateStatus.Canceled
-
-    val activities = f.periodicDeploymentManager match {
-      case manager: ManagerSpecificScenarioActivitiesStoredByManager =>
-        manager.managerSpecificScenarioActivities(idWithName).futureValue
-      case _ =>
-        List.empty
-    }
-    val headActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
-        scenarioActivityId = headActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = headActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = headActivity.dateFinished,
-        scheduleName = "[default]",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Failed,
-        createdAt = headActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      )
-    )
-
   }
 
   test("should reschedule failed job after RescheduleActor handles finished when configured") {

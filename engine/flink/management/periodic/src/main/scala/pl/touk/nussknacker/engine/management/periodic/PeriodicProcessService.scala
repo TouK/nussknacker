@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
   DeploymentStatus,
   EngineStatusesToReschedule,
+  FinishedScheduledExecutionMetadata,
   MaxDeploymentsStatus,
   PeriodicProcessStatus
 }
@@ -56,7 +57,7 @@ class PeriodicProcessService(
 
   private val emptyCallback: Callback = () => Future.successful(())
 
-  private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+  private implicit val localDateTimeOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   def getScenarioActivitiesSpecificToPeriodicProcess(
       processIdWithName: ProcessIdWithName
@@ -65,17 +66,17 @@ class PeriodicProcessService(
     groupedByProcess        = schedulesState.groupedByPeriodicProcess
     deployments             = groupedByProcess.flatMap(_.deployments)
     deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
-    activities = deploymentsWithStatuses.map { case (deployment, (status, dateFinished)) =>
+    activities = deploymentsWithStatuses.map { case (deployment, metadata) =>
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
         scenarioActivityId = ScenarioActivityId.random,
         user = ScenarioUser.internalNuUser,
-        date = instantAtSystemDefaultZone(deployment.runAt),
+        date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
         scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
-        scheduledExecutionStatus = status,
-        dateFinished = dateFinished,
+        scheduledExecutionStatus = metadata.status,
+        dateFinished = metadata.dateFinished,
         scheduleName = deployment.scheduleName.display,
-        createdAt = instantAtSystemDefaultZone(deployment.createdAt),
+        createdAt = metadata.dateCreated,
         nextRetryAt = deployment.nextRetryAt.map(instantAtSystemDefaultZone),
         retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
       )
@@ -522,9 +523,8 @@ class PeriodicProcessService(
 
   private def scheduledExecutionStatusAndDateFinished(
       entity: PeriodicProcessDeployment[Unit],
-  ): Option[(ScheduledExecutionStatus, Instant)] = {
+  ): Option[FinishedScheduledExecutionMetadata] = {
     for {
-      dateFinished <- entity.state.completedAt.map(instantAtSystemDefaultZone)
       status <- entity.state.status match {
         case PeriodicProcessDeploymentStatus.Scheduled =>
           None
@@ -539,7 +539,15 @@ class PeriodicProcessService(
         case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
           Some(ScheduledExecutionStatus.DeploymentFailed)
       }
-    } yield (status, dateFinished)
+      dateCreated  = instantAtSystemDefaultZone(entity.createdAt)
+      dateDeployed = entity.state.deployedAt.map(instantAtSystemDefaultZone)
+      dateFinished <- entity.state.completedAt.map(instantAtSystemDefaultZone)
+    } yield FinishedScheduledExecutionMetadata(
+      status = status,
+      dateCreated = dateCreated,
+      dateDeployed = dateDeployed,
+      dateFinished = dateFinished
+    )
   }
 
   // LocalDateTime's in the context of PeriodicProcess are created using clock with system default timezone
@@ -709,5 +717,12 @@ object PeriodicProcessService {
     }
 
   }
+
+  private final case class FinishedScheduledExecutionMetadata(
+      status: ScheduledExecutionStatus,
+      dateCreated: Instant,
+      dateDeployed: Option[Instant],
+      dateFinished: Instant,
+  )
 
 }
