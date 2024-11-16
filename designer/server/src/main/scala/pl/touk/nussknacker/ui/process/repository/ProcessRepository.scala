@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import akka.http.scaladsl.model.HttpHeader
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
@@ -98,7 +99,7 @@ object ProcessRepository {
       labels: List[ScenarioLabel],
       increaseVersionWhenJsonNotChanged: Boolean,
       forwardedUserName: Option[RemoteUserName],
-      migrationsApplies: List[ProcessMigration]
+      migrationsApplied: NonEmptyList[ProcessMigration]
   ) extends ModifyProcessAction
 
   final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
@@ -210,19 +211,11 @@ class DBProcessRepository(
           date = Instant.now(),
           previousScenarioVersionId = oldVersionId.map(ScenarioVersionId.from),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
-          comment = updateProcessAction.comment.map(_.content) match {
-            case Some(content) =>
-              ScenarioComment.WithContent(
-                comment = content,
-                lastModifiedByUserName = UserName(loggedUser.username),
-                lastModifiedAt = clock.instant(),
-              )
-            case None =>
-              ScenarioComment.WithoutContent(
-                lastModifiedByUserName = UserName(loggedUser.username),
-                lastModifiedAt = clock.instant(),
-              )
-          },
+          comment = ScenarioComment.from(
+            content = updateProcessAction.comment,
+            lastModifiedByUserName = UserName(loggedUser.username),
+            lastModifiedAt = clock.instant(),
+          )
         )
     )
   }
@@ -259,7 +252,7 @@ class DBProcessRepository(
           user = loggedUser.scenarioUser,
           date = Instant.now(),
           scenarioVersionId = versionId.map(ScenarioVersionId.from),
-          changes = automaticProcessUpdateAction.migrationsApplies.map(_.description).mkString(", "),
+          changes = automaticProcessUpdateAction.migrationsApplied.map(_.description).toList.mkString(", "),
         )
     )
   }

@@ -402,11 +402,11 @@ class DeploymentServiceSpec
             _,
             _,
             actionName,
-            ScenarioComment.WithContent(content, _, _),
+            ScenarioComment.WithContent(comment, _, _),
             result,
           ) =>
         actionName shouldBe "Custom action of MockDeploymentManager just before deployment"
-        content shouldBe "With comment from DeploymentManager"
+        comment.content shouldBe "With comment from DeploymentManager"
         result shouldBe DeploymentResult.Success(result.dateFinished)
       case _ => fail("Third activity should be CustomAction with comment")
     }
@@ -943,23 +943,37 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
     val actionName               = ScenarioActionName("hello")
-    val comment                  = Comment.from("not empty comment")
+    val nonEmptyCommentContent   = "not empty comment"
+    val comments = List(
+      Comment.from(nonEmptyCommentContent),
+      Comment.from(""),
+      Comment.from(" "),
+    )
 
-    val result =
+    val results = comments.map { comment =>
       deploymentService
         .processCommand(
           CustomActionCommand(CommonCommandData(processIdWithName, comment, user), actionName, Map.empty)
         )
         .futureValue
+    }
 
     eventually {
-      result shouldBe CustomActionResult("Hi")
-      val action =
-        actionRepository.getFinishedProcessActions(processIdWithName.id, Some(Set(actionName))).dbioActionValues
+      all(results) shouldBe CustomActionResult("Hi")
+      val actions =
+        actionRepository
+          .getFinishedProcessActions(processIdWithName.id, Some(Set(actionName)))
+          .dbioActionValues
+          .sortBy(_.createdAt)
 
-      action.loneElement.state shouldBe ProcessActionState.Finished
-      action.loneElement.comment shouldBe comment.map(_.content)
-      listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
+      actions.size shouldBe 3
+      all(actions.map(_.state)) shouldBe ProcessActionState.Finished
+      actions.map(_.comment) shouldBe List(
+        Some(nonEmptyCommentContent),
+        None,
+        None,
+      )
+      listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 3
     }
   }
 
