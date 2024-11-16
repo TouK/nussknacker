@@ -16,8 +16,8 @@ object RandomImplicits {
       randomString(MinStringLength + rand.nextInt(MaxStringLength - MinStringLength))
 
     def randomString(length: Int): String = {
-      require(length >= 0, "Length must be non-negative") ∑
-        (0 until length).map(_ => AllowedStringLetters(rand.nextInt(AllowedStringLetters.length))).mkString
+      require(length >= 0, "Length must be non-negative")
+      (0 until length).map(_ => AllowedStringLetters(rand.nextInt(AllowedStringLetters.length))).mkString
     }
 
   }
