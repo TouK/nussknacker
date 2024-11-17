@@ -1,11 +1,9 @@
-package pl.touk.nussknacker.engine.schemdkafka.flink.typeinfo;
+package pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo;
 
 import org.apache.flink.api.common.typeutils.CompositeTypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo.ConsumerRecordSerializer;
-import pl.touk.nussknacker.engine.schemedkafka.flink.typeinfo.ConsumerRecordTypeInfo;
 
 /**
  * A {@link TypeSerializerSnapshot} for the Scala {@link ConsumerRecordTypeInfo}.

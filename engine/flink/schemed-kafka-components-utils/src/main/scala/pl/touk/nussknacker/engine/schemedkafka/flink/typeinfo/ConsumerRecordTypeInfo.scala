@@ -7,7 +7,6 @@ import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.schemdkafka.flink.typeinfo.ConsumerRecordTypeSerializerSnapshot
 
 import java.util.{Objects, Optional}
 
