@@ -2,11 +2,9 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter.{TemplateExpression, TemplateExpressionPart}
 import pl.touk.nussknacker.engine.api.LazyParameter.{CustomLazyParameter, Evaluate, TemplateLazyParameter}
-import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.compiledgraph.BaseCompiledParameter
-import pl.touk.nussknacker.engine.definition.component.parameter.defaults.EditorBasedLanguageDeterminer
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExpression
@@ -82,10 +80,9 @@ object EvaluableLazyParameterFactory {
       expressionEvaluator: ExpressionEvaluator,
       nodeId: NodeId,
       jobData: JobData,
-      parameterDefinition: ParameterDef,
       typingResult: TypingResult
   ): LazyParameter[T] = {
-    EditorBasedLanguageDeterminer.determineLanguageOf(parameterDefinition.editor) match {
+    compiledParameter.expression.language match {
       case Language.SpelTemplate =>
         new SpelTemplateEvaluableLazyParameter[T](
           compiledParameter,

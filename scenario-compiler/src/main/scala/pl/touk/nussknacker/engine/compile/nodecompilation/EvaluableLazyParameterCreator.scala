@@ -48,7 +48,6 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
         expressionEvaluator = deps.expressionEvaluator,
         nodeId = nodeId,
         jobData = deps.jobData,
-        parameterDefinition = parameterDef,
         typingResult = returnType
       )
   }

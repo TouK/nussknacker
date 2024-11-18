@@ -101,7 +101,6 @@ class ParameterEvaluator(
           expressionEvaluator = runtimeExpressionEvaluator,
           nodeId = nodeId,
           jobData = jobData,
-          parameterDefinition = definition,
           typingResult = compiledParameter.typingInfo.typingResult
         )
       case PostponedEvaluatorLazyParameterStrategy =>
