@@ -11,6 +11,7 @@
 ### 1.19.0 (Not released yet)
 
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
 
 ## 1.18
 

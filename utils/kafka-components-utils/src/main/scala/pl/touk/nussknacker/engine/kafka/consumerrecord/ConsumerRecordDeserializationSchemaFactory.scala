@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
 import cats.data.NonEmptyList
-import com.github.ghik.silencer.silent
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
 
 /**
@@ -28,36 +27,48 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V]
       topics: NonEmptyList[TopicName.ForSource],
       kafkaConfig: KafkaConfig
   ): serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
-
-    new serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] {
+    new ConsumerRecordKafkaDeserializationSchema[K, V] {
 
       @transient
-      private lazy val keyDeserializer = createKeyDeserializer(kafkaConfig)
+      override protected lazy val keyDeserializer: Deserializer[K] =
+        createKeyDeserializer(kafkaConfig)
+
       @transient
-      private lazy val valueDeserializer = createValueDeserializer(kafkaConfig)
+      override protected lazy val valueDeserializer: Deserializer[V] =
+        createValueDeserializer(kafkaConfig)
 
-      @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
-      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
-        val key   = keyDeserializer.deserialize(record.topic(), record.key())
-        val value = valueDeserializer.deserialize(record.topic(), record.value())
-        new ConsumerRecord[K, V](
-          record.topic(),
-          record.partition(),
-          record.offset(),
-          record.timestamp(),
-          record.timestampType(),
-          ConsumerRecord.NULL_CHECKSUM.longValue(),
-          record.serializedKeySize(),
-          record.serializedValueSize(),
-          key,
-          value,
-          record.headers(),
-          record.leaderEpoch()
-        )
-      }
-
-      override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = false
     }
   }
+
+}
+
+trait ConsumerRecordKafkaDeserializationSchema[K, V] extends KafkaDeserializationSchema[ConsumerRecord[K, V]] {
+
+  @transient
+  protected val keyDeserializer: Deserializer[K]
+
+  @transient
+  protected val valueDeserializer: Deserializer[V]
+
+  override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
+    val key   = keyDeserializer.deserialize(record.topic(), record.headers(), record.key())
+    val value = valueDeserializer.deserialize(record.topic(), record.headers(), record.value())
+
+    new ConsumerRecord[K, V](
+      record.topic(),
+      record.partition(),
+      record.offset(),
+      record.timestamp(),
+      record.timestampType(),
+      record.serializedKeySize(),
+      record.serializedValueSize(),
+      key,
+      value,
+      record.headers(),
+      record.leaderEpoch()
+    )
+  }
+
+  override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = false
 
 }
