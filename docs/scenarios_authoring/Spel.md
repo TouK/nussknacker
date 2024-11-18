@@ -268,7 +268,7 @@ Every unknown accessed field/element will produce `Unknown` data type, which can
 
 ### Type conversions
 
-It is possible to convert or cast from a type to another type and this can be done by implicit and explicit conversion.
+It is possible to cast or convert from a type to another type and this can be done by implicit and explicit conversion.
 
 #### Explicit conversions
 
@@ -285,7 +285,9 @@ List of built-in functions:
 The aforementioned functions first attempt to cast a value to the specified class. If the cast fails and there is a 
 defined conversion to that class, the conversion is applied.
 The `canBe`, `to` and `toOrNull` functions take the name of target class as a parameter, in contrast to, for
-example, `canBeLong` which has the name of target class in the function name. 
+example, `canBeLong` which has the name of target class in the function name and is the shortcut for: `canBe('Long')`.
+We have added some functions with types in their names, for example: `canBeLong` to have shortcuts to the most common
+types.
 
 Functions with the prefix `canBe` check whether a type can be cast or converted to the appropriate type. Functions with
 the `to` prefix cast or convert a value to the desired type, and if the operation fails, an exception is propagated
@@ -294,14 +296,16 @@ and if the operation fails, a null value is returned.
 
 Examples of conversions:
 
-| Expression                 | Result | Type    |
-|----------------------------|--------|---------|
-| `"123".canBeDouble`        | true   | Boolean |
-| `"123".toDouble`           | 123.0  | Double  |
-| `"abc".toDoubleOrNull`     | null   | Double  |
-| `"123".canBe('Double')`    | true   | Boolean |
-| `"123".to('Double')`       | 123.0  | Double  |
-| `"abc".toOrNull('Double')` | null   | Double  |
+| Expression                                                               | Result                      | Type              |
+|--------------------------------------------------------------------------|-----------------------------|-------------------|
+| `'123'.canBeDouble`                                                      | true                        | Boolean           |
+| `'123'.toDouble`                                                         | 123.0                       | Double            |
+| `'abc'.toDoubleOrNull`                                                   | null                        | Double            |
+| `'123'.canBe('Double')`                                                  | true                        | Boolean           |
+| `'123'.to('Double')`                                                     | 123.0                       | Double            |
+| `'abc'.toOrNull('Double')`                                               | null                        | Double            |
+| `'abc'.toLong`                                                           | exception thrown in runtime | Long              |
+| `{{name: 'John', age: 22}}.![{key: #this.name, value: #this.age}].toMap` | {John: 22}                  | Map[String, Long] |
 
 Conversions only make sense between specific types. We limit SpeL's suggestions to show only possible conversions.
 Below is a matrix which shows which types can be converted with each other:
