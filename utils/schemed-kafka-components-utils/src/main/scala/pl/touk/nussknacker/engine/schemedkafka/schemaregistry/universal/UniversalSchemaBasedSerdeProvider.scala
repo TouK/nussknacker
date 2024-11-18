@@ -35,7 +35,7 @@ object UniversalSchemaBasedSerdeProvider {
     )
   }
 
-  private def createSchemaIdFromMessageExtractor(
+  def createSchemaIdFromMessageExtractor(
       schemaRegistryClient: SchemaRegistryClient
   ): ChainedSchemaIdFromMessageExtractor = {
     val isConfluent = schemaRegistryClient.isInstanceOf[ConfluentSchemaRegistryClient]
