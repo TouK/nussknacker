@@ -54,14 +54,14 @@ class NotificationApiHttpServiceBusinessSpec
                |  "scenarioName": "$scenarioName",
                |  "message": "Deployment finished",
                |  "type": null,
-               |  "toRefresh": [ "versions", "activity", "state" ]
+               |  "toRefresh": [ "activity", "state" ]
                |},
                |{
                |   "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
                |   "scenarioName": "$scenarioName",
                |   "message": "Cancel finished",
                |   "type": null,
-               |   "toRefresh": [ "versions", "activity", "state" ]
+               |   "toRefresh": [ "activity", "state" ]
                |}]""".stripMargin
           )
         )

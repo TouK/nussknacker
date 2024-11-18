@@ -13,12 +13,12 @@ import scala.language.higherKinds
 
 class StubProcessStateProvider(states: Map[ProcessName, ProcessState]) extends ProcessStateProvider {
 
-  override def getScenarioState(
+  override def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     Future.successful(states(processDetails.name))
 
-  override def getScenarioState(
+  override def getProcessState(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     Future.successful(states(processIdWithName.name))

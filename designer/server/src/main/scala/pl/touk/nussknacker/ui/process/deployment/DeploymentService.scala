@@ -411,7 +411,7 @@ class DeploymentService(
   }
 
   // TODO: check deployment id to be sure that returned status is for given deployment
-  override def getScenarioState(
+  override def getProcessState(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
@@ -423,7 +423,7 @@ class DeploymentService(
     } yield result)
   }
 
-  override def getScenarioState(
+  override def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
@@ -474,6 +474,8 @@ class DeploymentService(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName]
   )(implicit freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
+    val processVersionId  = processDetails.processVersionId
+    val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
     dispatcher
       .deploymentManager(processDetails.processingType)
       .map { manager =>
@@ -486,8 +488,8 @@ class DeploymentService(
           DBIOAction.successful(
             manager.processStateDefinitionManager.processState(
               StatusDetails(SimpleStateStatus.DuringDeploy, None),
-              processDetails.processVersionId,
-              processDetails.lastDeployedAction.map(_.processVersionId)
+              processVersionId,
+              deployedVersionId,
             )
           )
         } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
@@ -495,8 +497,8 @@ class DeploymentService(
           DBIOAction.successful(
             manager.processStateDefinitionManager.processState(
               StatusDetails(SimpleStateStatus.DuringCancel, None),
-              processDetails.processVersionId,
-              processDetails.lastDeployedAction.map(_.processVersionId)
+              processVersionId,
+              deployedVersionId,
             )
           )
         } else {
@@ -508,8 +510,8 @@ class DeploymentService(
                     manager,
                     processDetails.idWithName,
                     processDetails.lastStateAction,
-                    processDetails.processVersionId,
-                    processDetails.lastDeployedAction.map(_.processVersionId)
+                    processVersionId,
+                    deployedVersionId,
                   )
                 )
                 .map { statusWithFreshness =>
@@ -524,15 +526,15 @@ class DeploymentService(
               DBIOAction.successful(
                 manager.processStateDefinitionManager.processState(
                   StatusDetails(SimpleStateStatus.NotDeployed, None),
-                  processDetails.processVersionId,
-                  processDetails.lastDeployedAction.map(_.processVersionId)
+                  processVersionId,
+                  deployedVersionId,
                 )
               )
           }
         }
       }
       .getOrElse(
-        DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet(processDetails.processVersionId))
+        DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet(processVersionId))
       )
   }
 
@@ -540,14 +542,16 @@ class DeploymentService(
   private def getArchivedProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit manager: DeploymentManager) = {
+    val processVersionId  = processDetails.processVersionId
+    val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
     processDetails.lastStateAction.map(a => (a.actionName, a.state)) match {
       case Some((Cancel, _)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(
           manager.processStateDefinitionManager.processState(
             StatusDetails(SimpleStateStatus.Canceled, None),
-            processDetails.processVersionId,
-            processDetails.lastDeployedAction.map(_.processVersionId)
+            processVersionId,
+            deployedVersionId,
           )
         )
       case Some((Deploy, ProcessActionState.ExecutionFinished)) =>
@@ -555,8 +559,8 @@ class DeploymentService(
         DBIOAction.successful(
           manager.processStateDefinitionManager.processState(
             StatusDetails(SimpleStateStatus.Finished, None),
-            processDetails.processVersionId,
-            processDetails.lastDeployedAction.map(_.processVersionId)
+            processVersionId,
+            deployedVersionId,
           )
         )
       case Some(_) =>
@@ -564,8 +568,8 @@ class DeploymentService(
         DBIOAction.successful(
           manager.processStateDefinitionManager.processState(
             StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None),
-            processDetails.processVersionId,
-            processDetails.lastDeployedAction.map(_.processVersionId),
+            processVersionId,
+            deployedVersionId,
           )
         )
       case _ =>
@@ -573,8 +577,8 @@ class DeploymentService(
         DBIOAction.successful(
           manager.processStateDefinitionManager.processState(
             StatusDetails(SimpleStateStatus.NotDeployed, None),
-            processDetails.processVersionId,
-            processDetails.lastDeployedAction.map(_.processVersionId)
+            processVersionId,
+            deployedVersionId,
           )
         )
     }

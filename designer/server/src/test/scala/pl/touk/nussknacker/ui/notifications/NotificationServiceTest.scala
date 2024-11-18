@@ -16,6 +16,9 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.mock.MockDeploymentManager
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
@@ -30,6 +33,7 @@ import pl.touk.nussknacker.ui.process.repository.{
   DbScenarioActionRepository,
   ScenarioWithDetailsEntity
 }
+import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
@@ -55,9 +59,23 @@ class NotificationServiceTest
 
   private var currentInstant: Instant    = Instant.ofEpochMilli(0)
   private val clock: Clock               = clockForInstant(() => currentInstant)
-  private val processRepository          = TestFactory.newFetchingProcessRepository(testDbRef)
+  private val processRepository          = TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+  private val dbProcessRepository        = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository     = TestFactory.newWriteProcessRepository(testDbRef, clock)
   private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
+  private val dm: MockDeploymentManager  = new MockDeploymentManager
+
+  private val dmDispatcher = new DeploymentManagerDispatcher(
+    mapProcessingTypeDataProvider(Streaming.stringify -> dm),
+    processRepository,
+  )
+
+  private val scenarioActivityService = new ScenarioActivityService(
+    deploymentManagerDispatcher = dmDispatcher,
+    scenarioActivityRepository = scenarioActivityRepository,
+    fetchingProcessRepository = processRepository,
+    dbioActionRunner = dbioRunner
+  )
 
   private val actionRepository =
     DbScenarioActionRepository.create(
@@ -190,8 +208,7 @@ class NotificationServiceTest
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
     val config = NotificationConfig(20 minutes)
     val notificationService = new NotificationServiceImpl(
-      processRepository,
-      scenarioActivityRepository,
+      scenarioActivityService,
       actionRepository,
       dbioRunner,
       config,
@@ -199,7 +216,7 @@ class NotificationServiceTest
     )
     val deploymentService = new DeploymentService(
       managerDispatcher,
-      processRepository,
+      dbProcessRepository,
       actionRepository,
       dbioRunner,
       mock[ProcessingTypeDataProvider[UIProcessValidator, _]],

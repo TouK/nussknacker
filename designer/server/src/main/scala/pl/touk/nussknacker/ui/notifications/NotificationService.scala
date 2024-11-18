@@ -1,19 +1,15 @@
 package pl.touk.nussknacker.ui.notifications
 
-import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, FetchingProcessRepository, ScenarioActionRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioActionRepository}
+import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
-import slick.dbio.{DBIOAction, Effect, NoStream}
 
 import java.time.{Clock, Instant}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.math.Ordered.orderingToOrdered
 
 final case class NotificationConfig(duration: FiniteDuration)
 
@@ -28,8 +24,7 @@ trait NotificationService {
 }
 
 class NotificationServiceImpl(
-    fetchingProcessRepository: FetchingProcessRepository[DB],
-    scenarioActivityRepository: ScenarioActivityRepository,
+    scenarioActivityService: ScenarioActivityService,
     scenarioActionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     config: NotificationConfig,
@@ -39,7 +34,7 @@ class NotificationServiceImpl(
   override def notifications(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]] = {
     val now   = clock.instant()
     val limit = now.minusMillis(config.duration.toMillis)
-    dbioRunner.run(notificationForUserActions(limit))
+    notificationsForUserActions(limit)
   }
 
   override def notifications(
@@ -47,18 +42,16 @@ class NotificationServiceImpl(
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]] = {
     val now   = clock.instant()
     val limit = now.minusMillis(config.duration.toMillis)
-    dbioRunner.run(
-      for {
-        notificationsForUserActions        <- notificationForUserActions(limit)
-        notificationsForScenarioActivities <- notificationForScenarioActivities(processName, limit)
-      } yield notificationsForUserActions ++ notificationsForScenarioActivities
-    )
+    for {
+      notificationsForUserActions        <- notificationsForUserActions(limit)
+      notificationsForScenarioActivities <- notificationsForScenarioActivities(processName, limit)
+    } yield notificationsForUserActions ++ notificationsForScenarioActivities
   }
 
-  private def notificationForUserActions(limit: Instant)(
+  private def notificationsForUserActions(limit: Instant)(
       implicit user: LoggedUser,
       ec: ExecutionContext
-  ): DBIOAction[List[Notification], NoStream, Effect.All] = {
+  ): Future[List[Notification]] = dbioRunner.run {
     scenarioActionRepository
       .getUserActionsAfter(
         user,
@@ -84,24 +77,23 @@ class NotificationServiceImpl(
       })
   }
 
-  private def notificationForScenarioActivities(processName: ProcessName, limit: Instant)(
-      implicit ec: ExecutionContext
-  ): DBIOAction[List[Notification], NoStream, Effect.All] = {
+  private def notificationsForScenarioActivities(processName: ProcessName, limit: Instant)(
+      implicit user: LoggedUser,
+      ec: ExecutionContext
+  ): Future[List[Notification]] = {
     for {
-      processId <- fetchingProcessRepository
-        .fetchProcessId(processName)
-        .map(_.getOrElse(throw ProcessNotFoundError(processName)))
-      activities <- scenarioActivityRepository
-        .findActivities(processId)
-      notificationsForScenarioActivities = activities.filter(_.date >= limit).map { activity =>
+      allActivities <- scenarioActivityService.fetchActivities(processName).value.map {
+        case Right(activities) => activities
+        case Left(_)           => List.empty
+      }
+      notificationsForScenarioActivities = allActivities.map { activity =>
         Notification.scenarioStateUpdateNotification(
           s"${activity.scenarioActivityId.value.toString}_${activity.hashCode()}",
           activity.activityType.entryName,
           processName
         )
       }
-    } yield notificationsForScenarioActivities.toList
-
+    } yield notificationsForScenarioActivities
   }
 
 }
