@@ -3,28 +3,31 @@ package pl.touk.nussknacker.engine.management.periodic.util
 import java.util.UUID
 
 // This util generates UUID for given Long value.
-// The Long -> UUID mapping is deterministic and does not change, as long as the seedBytes are the same
 object DeterministicUUIDFromLong {
 
-  private val seedBytes: Array[Byte] = Array(119, -29, 31, -68, 44, -126, -89, 11, 97, 87, 54, -47, 39, -73, 28, 101)
+  // Seed bytes are the base of Long -> UUID transformation.
+  // The mapping is deterministic and does not change, as long as the seedBytes are the same
+  private val seedBytes: Array[Byte] = {
+    val bytes = Array[Byte](119, -29, 31, -68, 44, -126, -89, 11, 97, 87, 54, -47, 39, -73, 28, 101)
+    require(bytes.length == 16, "Seed bytes must be exactly 16 bytes long")
+    bytes
+  }
 
   def longUUID(long: Long): UUID = {
+    require(long >= 0, "Input value must be non-negative")
     val idBytes = padToEightBytes(BigInt(long).toByteArray)
     if (seedBytes != null) {
-      for (i <- 0 until 8) {
-        idBytes(i) = (idBytes(i) ^ seedBytes(i)).toByte
-      }
-      for (i <- 8 until 16) {
-        idBytes(i - 8) = (idBytes(i - 8) ^ seedBytes(i)).toByte
+      for (i <- seedBytes.indices) {
+        val targetIndex = i % 8
+        idBytes(targetIndex) = (idBytes(targetIndex) ^ seedBytes(i)).toByte
       }
     }
     UUID.nameUUIDFromBytes(idBytes)
   }
 
-  private def padToEightBytes(arr: Array[Byte]): Array[Byte] = {
-    val result = Array.fill[Byte](8)(0)
-    Array.copy(arr, 0, result, 0, arr.length) // Copy original array into the new array
-    result
+  private def padToEightBytes(array: Array[Byte]): Array[Byte] = {
+    require(array.length <= 8, s"Input array length ${array.length} exceeds maximum of 8 bytes")
+    array.padTo(8, 0.toByte)
   }
 
 }

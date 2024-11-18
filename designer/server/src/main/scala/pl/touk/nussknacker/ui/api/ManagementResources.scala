@@ -10,6 +10,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
@@ -21,31 +22,19 @@ import pl.touk.nussknacker.restmodel.{
   PerformSingleExecutionRequest,
   PerformSingleExecutionResponse
 }
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
-import pl.touk.nussknacker.ui.api.utils.ScenarioDetailsOps._
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
-import pl.touk.nussknacker.ui.process.deployment.{
-  CancelScenarioCommand,
-  CommonCommandData,
-  CustomActionCommand,
-  DeploymentManagerDispatcher,
-  DeploymentService,
-  PerformSingleExecutionCommand,
-  RunDeploymentCommand
-}
+import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ManagementResources {
-
-  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   import io.circe.syntax._
 
@@ -286,16 +275,20 @@ class ManagementResources(
           }
         } ~ path("performSingleExecution" / ProcessNameSegment) { processName =>
           (post & processId(processName) & entity(as[PerformSingleExecutionRequest])) { (processIdWithName, req) =>
-            complete {
-              deploymentService
-                .processCommand(
-                  PerformSingleExecutionCommand(
-                    commonData = CommonCommandData(processIdWithName, req.comment.flatMap(Comment.from), user),
-                  )
-                )
-                .flatMap(actionResult =>
-                  toHttpResponse(PerformSingleExecutionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
-                )
+            canDeploy(processIdWithName) {
+              complete {
+                measureTime("singleExecution", metricRegistry) {
+                  deploymentService
+                    .processCommand(
+                      PerformSingleExecutionCommand(
+                        commonData = CommonCommandData(processIdWithName, req.comment.flatMap(Comment.from), user),
+                      )
+                    )
+                    .flatMap(actionResult =>
+                      toHttpResponse(PerformSingleExecutionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
+                    )
+                }
+              }
             }
           }
         }

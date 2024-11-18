@@ -17,7 +17,5 @@ export function ActionButton({ name, type }: ActionButtonProps): JSX.Element {
     const customActions = useSelector(getCustomActions);
     const action = useMemo(() => customActions.find((a) => a.name === name), [customActions, name]);
 
-    return action ? (
-        <CustomActionButton action={action} processName={processName} processStatus={status} disabled={false} type={type} />
-    ) : null;
+    return action ? <CustomActionButton action={action} processName={processName} processStatus={status} type={type} /> : null;
 }
