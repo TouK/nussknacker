@@ -153,7 +153,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case _ @TypedClass(klass, key :: value :: Nil) if isMap(klass) =>
         // Map keys are assumed to be strings: https://avro.apache.org/docs/current/spec.html#Maps
         condNel(
-          key.canBeImplicitlyConvertedTo(Typed.apply[java.lang.String]),
+          key.canBeConvertedTo(Typed.apply[java.lang.String]),
           (),
           typeError(typingResult, schema, path)
         ).andThen(_ => validateTypingResult(value, schema.getValueType, buildPath("*", path, useIndexer = true)))

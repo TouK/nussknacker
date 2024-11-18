@@ -27,11 +27,18 @@ object typing {
   // TODO: Rename to Typed, maybe NuType?
   sealed trait TypingResult {
 
-    final def canBeImplicitlyConvertedTo(typingResult: TypingResult): Boolean =
+    /**
+     * Checks if there exists a conversion to a given typingResult, with possible loss of precision, e.g. long to int.
+     * If you need to retain conversion precision, use canBeStrictlyConvertedTo
+     */
+    final def canBeConvertedTo(typingResult: TypingResult): Boolean =
       ImplicitConversionDeterminer.canBeConvertedTo(this, typingResult).isValid
 
-    def canBeStrictSubclassOf(typingResult: TypingResult): Boolean =
-      SubclassDeterminer.canBeStrictSubclassOf(this, typingResult).isValid
+    /**
+     * Checks if the conversion to a given typingResult can be made without loss of precision
+     */
+    final def canBeStrictlyConvertedTo(typingResult: TypingResult): Boolean =
+      StrictConversionDeterminer.canBeConvertedTo(this, typingResult).isValid
 
     def valueOpt: Option[Any]
 
@@ -463,7 +470,7 @@ object typing {
 
     def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
       Option(typingResult)
-        .filter(_.canBeImplicitlyConvertedTo(Typed.fromDetailedType[T]))
+        .filter(_.canBeConvertedTo(Typed.fromDetailedType[T]))
         .map(new TypingResultTypedValue(_))
     }
 

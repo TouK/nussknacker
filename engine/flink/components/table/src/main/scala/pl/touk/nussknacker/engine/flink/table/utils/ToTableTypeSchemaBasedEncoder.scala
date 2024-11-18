@@ -26,8 +26,7 @@ object ToTableTypeSchemaBasedEncoder {
       case (null, _) =>
         null
       // We don't know what is the precise of decimal so we have to assume that it will fit the target type to not block the user
-      case (number: Number, _)
-          if Typed.typedClass(number.getClass).canBeImplicitlyConvertedTo(targetType.toTypingResult) =>
+      case (number: Number, _) if Typed.typedClass(number.getClass).canBeConvertedTo(targetType.toTypingResult) =>
         NumberUtils
           .convertNumberToTargetClass[Number](number, targetType.getDefaultConversion.asInstanceOf[Class[Number]])
       case (_, rowType: RowType) =>
@@ -84,7 +83,7 @@ object ToTableTypeSchemaBasedEncoder {
       // We don't know what is the precision of decimal so we have to assume that it will fit the target type to not block the user
       case (typ: SingleTypingResult, _)
           if typ
-            .canBeImplicitlyConvertedTo(Typed[Number]) && typ.canBeImplicitlyConvertedTo(targetType.toTypingResult) =>
+            .canBeConvertedTo(Typed[Number]) && typ.canBeConvertedTo(targetType.toTypingResult) =>
         targetType.toTypingResult
       case (recordType: TypedObjectTypingResult, rowType: RowType)
           if Set[Class[_]](javaMapClass, rowClass).contains(recordType.runtimeObjType.klass) =>
@@ -106,10 +105,10 @@ object ToTableTypeSchemaBasedEncoder {
       case (
             TypedObjectTypingResult(_, TypedClass(`javaMapClass`, keyType :: valueType :: Nil), _),
             multisetType: MultisetType
-          ) if valueType.canBeImplicitlyConvertedTo(Typed[Int]) =>
+          ) if valueType.canBeConvertedTo(Typed[Int]) =>
         alignMultisetType(keyType, multisetType)
       case (TypedClass(`javaMapClass`, keyType :: valueType :: Nil), multisetType: MultisetType)
-          if valueType.canBeImplicitlyConvertedTo(Typed[Int]) =>
+          if valueType.canBeConvertedTo(Typed[Int]) =>
         alignMultisetType(keyType, multisetType)
       case (TypedClass(`arrayClass`, elementType :: Nil), arrayType: ArrayType) =>
         Typed.genericTypeClass(arrayClass, List(alignTypingResult(elementType, arrayType.getElementType)))
