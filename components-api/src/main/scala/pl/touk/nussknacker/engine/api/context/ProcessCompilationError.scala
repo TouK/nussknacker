@@ -316,7 +316,7 @@ object ProcessCompilationError {
       extends PartSubGraphCompilationError
       with InASingleNode
 
-  final case class RequireValueFromEmptyFixedList(paramName: ParameterName, nodeIds: Set[String])
+  final case class EmptyFixedListForRequiredField(paramName: ParameterName, nodeIds: Set[String])
       extends PartSubGraphCompilationError
 
   final case class InitialValueNotPresentInPossibleValues(paramName: ParameterName, nodeIds: Set[String])
