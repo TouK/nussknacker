@@ -82,7 +82,7 @@ class NotificationServiceImpl(
       ec: ExecutionContext
   ): Future[List[Notification]] = {
     for {
-      allActivities <- scenarioActivityService.fetchActivities(processName).value.map {
+      allActivities <- scenarioActivityService.fetchActivities(processName, Some(limit)).value.map {
         case Right(activities) => activities
         case Left(_)           => List.empty
       }

@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService.S
 import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService.ScenarioActivityFetchError.NoScenario
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityService(
@@ -20,19 +21,21 @@ class ScenarioActivityService(
 )(implicit executionContext: ExecutionContext) {
 
   def fetchActivities(
-      processName: ProcessName
+      processName: ProcessName,
+      after: Option[Instant],
   )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityFetchError, List[ScenarioActivity]] = {
     for {
       scenarioId <- getScenarioIdByName(processName)
-      activities <- EitherT.right(fetchActivities(ProcessIdWithName(scenarioId, processName)))
+      activities <- EitherT.right(fetchActivities(ProcessIdWithName(scenarioId, processName), after))
     } yield activities
   }
 
   def fetchActivities(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      after: Option[Instant],
   )(implicit loggedUser: LoggedUser): Future[List[ScenarioActivity]] = {
     for {
-      generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
+      generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id, after))
       deploymentManager <- deploymentManagerDispatcher.deploymentManager(processIdWithName)
       deploymentManagerSpecificActivities <- deploymentManager match {
         case Some(manager: ManagerSpecificScenarioActivitiesStoredByManager) =>

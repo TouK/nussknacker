@@ -36,6 +36,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ManagementResources {
 
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
   import io.circe.syntax._
 
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
