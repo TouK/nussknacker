@@ -1816,7 +1816,8 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   )
   .dependsOn(
     flinkComponentsTestkit  % Test,
-    flinkTableApiComponents % Test
+    flinkTableApiComponents % Test,
+    scenarioCompiler        % "test->test"
   )
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka"))

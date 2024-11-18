@@ -28,7 +28,8 @@ import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, Expressi
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
+import pl.touk.nussknacker.engine.spel.SpelTemplateSubexpression.{NonTemplatedValue, TemplatedExpression}
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 
 import scala.util.control.NonFatal
@@ -80,6 +81,17 @@ class SpelExpressionEvaluationException(val expression: String, val ctxId: Strin
       cause = cause
     )
 
+sealed trait SpelTemplateSubexpression
+
+object SpelTemplateSubexpression {
+  final case class NonTemplatedValue(val value: String) extends SpelTemplateSubexpression
+
+  final case class TemplatedExpression(expression: SpelExpression) extends SpelTemplateSubexpression {
+    def evaluate: (Context, Map[String, Any]) => String = expression.evaluate[String]
+  }
+
+}
+
 class SpelExpression(
     parsed: ParsedSpelExpression,
     expectedReturnType: TypingResult,
@@ -91,6 +103,34 @@ class SpelExpression(
   override val original: String = parsed.original
 
   override val language: Language = flavour.languageId
+
+  def subexpressions: Option[List[SpelTemplateSubexpression]] = {
+    def createTemplatedExpression(expression: org.springframework.expression.spel.standard.SpelExpression) = {
+      val parsedTemplateExpr = ParsedSpelExpression(expression.getExpressionString, parsed.parser, expression)
+      val compiledExpr = new SpelExpression(
+        parsedTemplateExpr,
+        typing.Typed[String],
+        Standard,
+        evaluationContextPreparer
+      )
+      TemplatedExpression(compiledExpr)
+    }
+    flavour.languageId match {
+      case Language.SpelTemplate =>
+        Some(parsed.parsed match {
+          case compositeExpr: CompositeStringExpression =>
+            compositeExpr.getExpressions.toList.map {
+              case lit: LiteralExpression => NonTemplatedValue(lit.getExpressionString)
+              case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
+                createTemplatedExpression(spelExpr)
+            }
+          case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
+            List(createTemplatedExpression(spelExpr))
+          case litExpr: LiteralExpression => List(NonTemplatedValue(litExpr.getExpressionString))
+        })
+      case _ => None
+    }
+  }
 
   private val expectedClass =
     expectedReturnType match {

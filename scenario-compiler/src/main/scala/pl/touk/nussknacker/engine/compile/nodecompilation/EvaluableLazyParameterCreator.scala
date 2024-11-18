@@ -20,7 +20,7 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
     override val returnType: TypingResult
 ) extends CustomLazyParameter[T] {
 
-  def create(deps: EvaluableLazyParameterCreatorDeps): EvaluableLazyParameter[T] = {
+  def create(deps: EvaluableLazyParameterCreatorDeps): LazyParameter[T] = {
     createEvaluableLazyParameter(deps)
   }
 
@@ -42,13 +42,15 @@ final class EvaluableLazyParameterCreator[T <: AnyRef](
       override val shouldBeWrappedWithScalaOption: Boolean  = parameterDef.scalaOptionParameter
       override val shouldBeWrappedWithJavaOptional: Boolean = parameterDef.javaOptionalParameter
     }
-    new EvaluableLazyParameter[T](
-      compiledParameter,
-      deps.expressionEvaluator,
-      nodeId,
-      deps.jobData,
-      returnType
-    )
+    EvaluableLazyParameterFactory
+      .build[T](
+        compiledParameter = compiledParameter,
+        expressionEvaluator = deps.expressionEvaluator,
+        nodeId = nodeId,
+        jobData = deps.jobData,
+        parameterDefinition = parameterDef,
+        typingResult = returnType
+      )
   }
 
 }
@@ -92,7 +94,8 @@ class DefaultToEvaluateFunctionConverter(deps: EvaluableLazyParameterCreatorDeps
           p.fun,
           p.transformTypingResult
         )
-      case p: CustomLazyParameter[T] => p
+      case p: CustomLazyParameter[T]   => p
+      case p: TemplateLazyParameter[T] => p
     }
   }
 
