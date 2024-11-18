@@ -78,9 +78,9 @@ object LazyParameter {
     sealed trait TemplateExpressionPart
 
     object TemplateExpressionPart {
-      case class NonTemplatedPart(value: String) extends TemplateExpressionPart
+      case class Literal(value: String) extends TemplateExpressionPart
 
-      trait TemplatedPart extends TemplateExpressionPart {
+      trait Placeholder extends TemplateExpressionPart {
         val evaluate: Evaluate[String]
       }
 

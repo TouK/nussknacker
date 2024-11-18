@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.spel.SpelTemplateSubexpression.{NonTemplatedValue, TemplatedExpression}
+import pl.touk.nussknacker.engine.spel.SpelTemplateExpressionPart.{Literal, Placeholder}
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 
 import scala.util.control.NonFatal
@@ -81,15 +81,11 @@ class SpelExpressionEvaluationException(val expression: String, val ctxId: Strin
       cause = cause
     )
 
-sealed trait SpelTemplateSubexpression
+sealed trait SpelTemplateExpressionPart
 
-object SpelTemplateSubexpression {
-  final case class NonTemplatedValue(val value: String) extends SpelTemplateSubexpression
-
-  final case class TemplatedExpression(expression: SpelExpression) extends SpelTemplateSubexpression {
-    def evaluate: (Context, Map[String, Any]) => String = expression.evaluate[String]
-  }
-
+object SpelTemplateExpressionPart {
+  final case class Literal(value: String)                  extends SpelTemplateExpressionPart
+  final case class Placeholder(expression: SpelExpression) extends SpelTemplateExpressionPart
 }
 
 class SpelExpression(
@@ -104,8 +100,8 @@ class SpelExpression(
 
   override val language: Language = flavour.languageId
 
-  def templateSubexpressions: Option[List[SpelTemplateSubexpression]] = {
-    def createTemplatedExpression(expression: org.springframework.expression.spel.standard.SpelExpression) = {
+  def templateSubexpressions: Option[List[SpelTemplateExpressionPart]] = {
+    def createEvaluablePlaceholder(expression: org.springframework.expression.spel.standard.SpelExpression) = {
       val parsedTemplateExpr = ParsedSpelExpression(expression.getExpressionString, parsed.parser, expression)
       val compiledExpr = new SpelExpression(
         parsedTemplateExpr,
@@ -113,20 +109,20 @@ class SpelExpression(
         Standard,
         evaluationContextPreparer
       )
-      TemplatedExpression(compiledExpr)
+      Placeholder(compiledExpr)
     }
     flavour.languageId match {
       case Language.SpelTemplate =>
         Some(parsed.parsed match {
           case compositeExpr: CompositeStringExpression =>
             compositeExpr.getExpressions.toList.map {
-              case lit: LiteralExpression => NonTemplatedValue(lit.getExpressionString)
+              case lit: LiteralExpression => Literal(lit.getExpressionString)
               case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
-                createTemplatedExpression(spelExpr)
+                createEvaluablePlaceholder(spelExpr)
             }
-          case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
-            List(createTemplatedExpression(spelExpr))
-          case litExpr: LiteralExpression => List(NonTemplatedValue(litExpr.getExpressionString))
+          case singleEvaluableSpelExpr: org.springframework.expression.spel.standard.SpelExpression =>
+            List(createEvaluablePlaceholder(singleEvaluableSpelExpr))
+          case singleLiteralExpr: LiteralExpression => List(Literal(singleLiteralExpr.getExpressionString))
           case other =>
             throw new IllegalArgumentException(s"Unsupported expression type: [${other.getClass.getName}]")
 

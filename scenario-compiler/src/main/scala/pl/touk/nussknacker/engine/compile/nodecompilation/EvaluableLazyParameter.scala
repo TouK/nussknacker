@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.defaults.Editor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.SpelExpression
-import pl.touk.nussknacker.engine.spel.SpelTemplateSubexpression.{NonTemplatedValue, TemplatedExpression}
+import pl.touk.nussknacker.engine.spel.SpelTemplateExpressionPart.{Literal, Placeholder}
 
 class EvaluableLazyParameter[T <: AnyRef](
     compiledParameter: BaseCompiledParameter,
@@ -40,14 +40,14 @@ class SpelTemplateEvaluableLazyParameter[T <: AnyRef](
       expression.templateSubexpressions match {
         case Some(subexpressions) =>
           val templateParts = subexpressions.map {
-            case TemplatedExpression(expression) => {
-              new TemplateExpressionPart.TemplatedPart {
+            case Placeholder(expression) => {
+              new TemplateExpressionPart.Placeholder {
                 override val evaluate: Evaluate[String] = context => {
                   expressionEvaluator.evaluate[String](expression, "expressionId", nodeId.id, context)(jobData).value
                 }
               }
             }
-            case NonTemplatedValue(value) => TemplateExpressionPart.NonTemplatedPart(value)
+            case Literal(value) => TemplateExpressionPart.Literal(value)
           }
           TemplateExpression(templateParts)
         case None =>
