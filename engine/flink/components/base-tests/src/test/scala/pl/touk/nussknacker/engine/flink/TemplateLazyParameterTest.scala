@@ -4,7 +4,6 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.connector.source.Boundedness
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside, LoneElement}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -16,13 +15,7 @@ import pl.touk.nussknacker.engine.testcomponents.SpelTemplateAstOperationService
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class TemplateLazyParameterTest
-    extends AnyFunSuite
-    with FlinkSpec
-    with Matchers
-    with Inside
-    with ValidatedValuesDetailedMessage
-    with LoneElement {
+class TemplateLazyParameterTest extends AnyFunSuite with FlinkSpec with Matchers with ValidatedValuesDetailedMessage {
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
