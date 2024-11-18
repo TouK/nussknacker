@@ -190,7 +190,7 @@ object aggregates {
     override def result(finalAggregate: Aggregate): AnyRef = finalAggregate
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
-      if (input.canBeImplicitlyConvertedTo(Typed[Boolean])) {
+      if (input.canBeConvertedTo(Typed[Boolean])) {
         Valid(Typed[Long])
       } else {
         Invalid(s"Invalid aggregate type: ${input.display}, should be: ${Typed[Boolean].display}")
@@ -239,7 +239,7 @@ object aggregates {
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
 
-      if (!input.canBeImplicitlyConvertedTo(Typed[Number])) {
+      if (!input.canBeConvertedTo(Typed[Number])) {
         Invalid(s"Invalid aggregate type: ${input.display}, should be: ${Typed[Number].display}")
       } else {
         Valid(ForLargeFloatingNumbersOperation.promoteSingle(input))
@@ -353,7 +353,7 @@ object aggregates {
     ): Validated[String, TypedObjectTypingResult] = {
       input match {
         case TypedObjectTypingResult(inputFields, klass, _)
-            if inputFields.keySet == scalaFields.keySet && klass.canBeImplicitlyConvertedTo(
+            if inputFields.keySet == scalaFields.keySet && klass.canBeConvertedTo(
               Typed[java.util.Map[String, _]]
             ) =>
           val validationRes = scalaFields
@@ -439,7 +439,7 @@ object aggregates {
   trait MathAggregator { self: ReducingAggregator =>
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
-      if (input.canBeImplicitlyConvertedTo(Typed[Number])) {
+      if (input.canBeConvertedTo(Typed[Number])) {
         // In some cases type can be promoted to other class e.g. Byte is promoted to Int for sum
         Valid(promotionStrategy.promoteSingle(input))
       } else {
