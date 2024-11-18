@@ -1,4 +1,4 @@
-import { PredefinedActionName, ProcessStateType, Scenario } from "./types";
+import { ActionName, PredefinedActionName, ProcessStateType, Scenario } from "./types";
 import {
     descriptionProcessArchived,
     descriptionFragment,
@@ -17,6 +17,12 @@ class ProcessStateUtils {
     public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Cancel);
 
     public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Archive);
+
+    public canSeePerformSingleExecution = (state: ProcessStateType): boolean =>
+        state?.applicableActions.includes(PredefinedActionName.PerformSingleExecution);
+
+    public canPerformSingleExecution = (state: ProcessStateType): boolean =>
+        state?.allowedActions.includes(PredefinedActionName.PerformSingleExecution);
 
     getStateDescription({ isArchived, isFragment }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
@@ -59,6 +65,10 @@ class ProcessStateUtils {
             return `${name}`;
         }
         return `${name}-${processState?.icon || state?.icon || unknownIcon}`;
+    }
+
+    getActionCustomTooltip(processState: ProcessStateType, actionName: ActionName): string | undefined {
+        return processState?.actionTooltips[actionName] || undefined;
     }
 }
 

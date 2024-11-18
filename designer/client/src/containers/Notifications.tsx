@@ -90,7 +90,7 @@ export function Notifications(): JSX.Element {
     const currentScenarioName = useSelector(getProcessName);
 
     const refresh = useCallback(() => {
-        HttpService.loadBackendNotifications()
+        HttpService.loadBackendNotifications(currentScenarioName)
             .then((notifications) => {
                 handleChangeConnectionError(null);
                 dispatch(updateBackendNotifications(notifications.map(({ id }) => id)));

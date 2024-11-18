@@ -17,11 +17,11 @@ trait ProcessStateProvider {
       freshnessPolicy: DataFreshnessPolicy
   ): Future[F[ScenarioWithDetails]]
 
-  def getProcessState(
+  def getScenarioState(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
-  def getProcessState(
+  def getScenarioState(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 

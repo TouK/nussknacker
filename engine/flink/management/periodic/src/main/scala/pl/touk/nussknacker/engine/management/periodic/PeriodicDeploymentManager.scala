@@ -1,15 +1,20 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import cats.data.OptionT
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId, SingleExecutionResult}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.Utils.{createActorWithRetry, runSafely}
-import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
+import pl.touk.nussknacker.engine.management.periodic.db.{
+  DbInitializer,
+  PeriodicProcessesRepository,
+  SlickPeriodicProcessesRepository
+}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.service.{
   AdditionalDeploymentDataProvider,
@@ -35,7 +40,6 @@ object PeriodicDeploymentManager {
       modelData: BaseModelData,
       listenerFactory: PeriodicProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
-      customActionsProviderFactory: PeriodicCustomActionsProviderFactory,
       dependencies: DeploymentManagerDependencies
   ): PeriodicDeploymentManager = {
     import dependencies._
@@ -74,8 +78,6 @@ object PeriodicDeploymentManager {
       dependencies.actorSystem
     )
 
-    val customActionsProvider = customActionsProviderFactory.create(scheduledProcessesRepository, service)
-
     val toClose = () => {
       runSafely(listener.close())
       // deploymentActor and rescheduleFinishedActor just call methods from PeriodicProcessService on interval,
@@ -87,8 +89,8 @@ object PeriodicDeploymentManager {
     new PeriodicDeploymentManager(
       delegate,
       service,
+      scheduledProcessesRepository,
       schedulePropertyExtractorFactory(originalConfig),
-      customActionsProvider,
       toClose
     )
   }
@@ -98,21 +100,23 @@ object PeriodicDeploymentManager {
 class PeriodicDeploymentManager private[periodic] (
     val delegate: DeploymentManager,
     service: PeriodicProcessService,
+    repository: PeriodicProcessesRepository,
     schedulePropertyExtractor: SchedulePropertyExtractor,
-    customActionsProvider: PeriodicCustomActionsProvider,
     toClose: () => Unit
 )(implicit val ec: ExecutionContext)
     extends DeploymentManager
     with ManagerSpecificScenarioActivitiesStoredByManager
     with LazyLogging {
 
+  import repository._
+
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
-      case command: DMValidateScenarioCommand => validate(command)
-      case command: DMRunDeploymentCommand    => runDeployment(command)
-      case command: DMCancelScenarioCommand   => cancelScenario(command)
-      case command: DMStopScenarioCommand     => stopScenario(command)
-      case command: DMCustomActionCommand     => customActionsProvider.invokeCustomAction(command)
+      case command: DMValidateScenarioCommand       => validate(command)
+      case command: DMRunDeploymentCommand          => runDeployment(command)
+      case command: DMCancelScenarioCommand         => cancelScenario(command)
+      case command: DMStopScenarioCommand           => stopScenario(command)
+      case command: DMPerformSingleExecutionCommand => actionInstantBatch(command)
       case _: DMTestScenarioCommand | _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand |
           _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand =>
         delegate.processCommand(command)
@@ -196,13 +200,19 @@ class PeriodicDeploymentManager private[periodic] (
   override def resolve(
       idWithName: ProcessIdWithName,
       statusDetailsList: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     val statusDetails = statusDetailsList.head
     // TODO: add "real" presentation of deployments in GUI
     val mergedStatus = processStateDefinitionManager
       .processState(
-        statusDetails.copy(status = statusDetails.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status)
+        statusDetails.copy(status =
+          statusDetails.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status
+        ),
+        latestVersionId,
+        deployedVersionId
       )
     Future.successful(mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(statusDetails.status)))
   }
@@ -216,7 +226,7 @@ class PeriodicDeploymentManager private[periodic] (
     delegate.close()
   }
 
-  override def customActionsDefinitions: List[CustomActionDefinition] = customActionsProvider.customActions
+  override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
 
   // TODO We don't handle deployment synchronization on periodic DM because it currently uses it's own deployments and
   //      its statuses synchronization mechanism (see PeriodicProcessService.synchronizeDeploymentsStates)
@@ -242,5 +252,27 @@ class PeriodicDeploymentManager private[periodic] (
       processIdWithName: ProcessIdWithName
   ): Future[List[ScenarioActivity]] =
     service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName)
+
+  private def actionInstantBatch(command: DMPerformSingleExecutionCommand): Future[SingleExecutionResult] = {
+    val processName           = command.processVersion.processName
+    val instantScheduleResult = instantSchedule(processName)
+    instantScheduleResult
+      .map(_ => SingleExecutionResult(s"Scenario ${processName.value} scheduled for immediate start"))
+      .getOrElse(SingleExecutionResult(s"Failed to schedule $processName to run as instant batch"))
+  }
+
+  // TODO: Why we don't allow running not scheduled scenario? Maybe we can try to schedule it?
+  private def instantSchedule(processName: ProcessName): OptionT[Future, Unit] = for {
+    // schedule for immediate run
+    processDeployment <- OptionT(
+      service
+        .getLatestDeploymentsForActiveSchedules(processName)
+        .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
+    )
+    processDeploymentWithProcessJson <- OptionT.liftF(
+      repository.findProcessData(processDeployment.id).run
+    )
+    _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
+  } yield ()
 
 }

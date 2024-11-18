@@ -308,8 +308,14 @@ class AkkaHttpBasedRouteProvider(
         processService,
         fragmentRepository
       )
-      val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
-      val processAuthorizer   = new AuthorizeProcess(futureProcessRepository)
+      val notificationService = new NotificationServiceImpl(
+        processRepository,
+        scenarioActivityRepository,
+        actionRepository,
+        dbioRunner,
+        notificationsConfig
+      )
+      val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
       val appApiHttpService = new AppApiHttpService(
         config = resolvedConfig,
         authManager = authManager,

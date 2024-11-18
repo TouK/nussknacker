@@ -1,18 +1,21 @@
 package pl.touk.nussknacker.engine.management
 
+import org.scalatest.Inside
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.Inside
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ScenarioActionName, StateStatus, StatusDetails}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ScenarioActionName, StateStatus, StatusDetails}
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 class FlinkProcessStateSpec extends AnyFunSpec with Matchers with Inside {
 
   def createProcessState(stateStatus: StateStatus): ProcessState =
     FlinkProcessStateDefinitionManager.processState(
-      StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+      StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty)),
+      VersionId(1),
+      None,
     )
 
   it("scenario state should be during deploy") {

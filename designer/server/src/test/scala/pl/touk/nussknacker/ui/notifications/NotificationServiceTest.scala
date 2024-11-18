@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
@@ -21,15 +21,10 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
-import pl.touk.nussknacker.ui.process.deployment.{
-  CommonCommandData,
-  DeploymentManagerDispatcher,
-  DeploymentService,
-  RunDeploymentCommand,
-  ScenarioResolver
-}
+import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
   DbScenarioActionRepository,
@@ -58,10 +53,11 @@ class NotificationServiceTest
   private implicit val system: ActorSystem            = ActorSystem(getClass.getSimpleName)
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 
-  private var currentInstant: Instant = Instant.ofEpochMilli(0)
-  private val clock: Clock            = clockForInstant(() => currentInstant)
-  private val processRepository       = TestFactory.newFetchingProcessRepository(testDbRef)
-  private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef, clock)
+  private var currentInstant: Instant    = Instant.ofEpochMilli(0)
+  private val clock: Clock               = clockForInstant(() => currentInstant)
+  private val processRepository          = TestFactory.newFetchingProcessRepository(testDbRef)
+  private val writeProcessRepository     = TestFactory.newWriteProcessRepository(testDbRef, clock)
+  private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
 
   private val actionRepository =
     DbScenarioActionRepository.create(
@@ -69,7 +65,7 @@ class NotificationServiceTest
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )
 
-  private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
+  private val expectedRefreshAfterSuccess = List(DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail    = List(DataToRefresh.state)
 
   test("Should return only events for user in given time") {
@@ -173,18 +169,34 @@ class NotificationServiceTest
   }
 
   private val notDeployed =
-    SimpleProcessStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
+    SimpleProcessStateDefinitionManager.processState(
+      StatusDetails(SimpleStateStatus.NotDeployed, None),
+      VersionId(1),
+      None
+    )
 
   private def createServices(deploymentManager: DeploymentManager) = {
     when(
-      deploymentManager.getProcessState(any[ProcessIdWithName], any[Option[ProcessAction]])(any[DataFreshnessPolicy])
+      deploymentManager.getProcessState(
+        any[ProcessIdWithName],
+        any[Option[ProcessAction]],
+        any[VersionId],
+        any[Option[VersionId]]
+      )(any[DataFreshnessPolicy])
     )
       .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(notDeployed)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
-    val config              = NotificationConfig(20 minutes)
-    val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
+    val config = NotificationConfig(20 minutes)
+    val notificationService = new NotificationServiceImpl(
+      processRepository,
+      scenarioActivityRepository,
+      actionRepository,
+      dbioRunner,
+      config,
+      clock
+    )
     val deploymentService = new DeploymentService(
       managerDispatcher,
       processRepository,

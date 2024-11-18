@@ -210,7 +210,7 @@ class ProcessesResources(
         (get & processId(processName)) { processId =>
           complete {
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-            processStateService.getProcessState(processId).map(ToResponseMarshallable(_))
+            processStateService.getScenarioState(processId).map(ToResponseMarshallable(_))
           }
         }
       } ~ path("processes" / ProcessNameSegment / "toolbars") { processName =>

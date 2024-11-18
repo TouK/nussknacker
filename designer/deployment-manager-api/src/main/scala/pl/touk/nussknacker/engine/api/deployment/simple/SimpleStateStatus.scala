@@ -1,16 +1,9 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
-import pl.touk.nussknacker.engine.api.deployment.{
-  DeploymentStatus,
-  NoAttributesDeploymentStatus,
-  NoAttributesStateStatus,
-  ProblemDeploymentStatus,
-  ScenarioActionName,
-  StateDefinitionDetails,
-  StateStatus
-}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
@@ -97,21 +90,25 @@ object SimpleStateStatus {
       status
     )
 
-  val statusActionsPF: PartialFunction[StateStatus, List[ScenarioActionName]] = {
-    case SimpleStateStatus.NotDeployed =>
+  val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = {
+    case ProcessStatus(SimpleStateStatus.NotDeployed, _, _) =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case SimpleStateStatus.DuringDeploy => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-    case SimpleStateStatus.Running =>
+    case ProcessStatus(SimpleStateStatus.DuringDeploy, _, _) =>
+      List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    case ProcessStatus(SimpleStateStatus.Running, _, _) =>
       List(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
-    case SimpleStateStatus.Canceled =>
+    case ProcessStatus(SimpleStateStatus.Canceled, _, _) =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case SimpleStateStatus.Restarting => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-    case SimpleStateStatus.Finished =>
+    case ProcessStatus(SimpleStateStatus.Restarting, _, _) =>
+      List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    case ProcessStatus(SimpleStateStatus.Finished, _, _) =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case SimpleStateStatus.DuringCancel => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    case ProcessStatus(SimpleStateStatus.DuringCancel, _, _) =>
+      List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
-    case SimpleStateStatus.ProblemStateStatus(_, allowedActions) => allowedActions
+    case ProcessStatus(SimpleStateStatus.ProblemStateStatus(_, allowedActions), _, _) =>
+      allowedActions
   }
 
   val definitions: Map[StatusName, StateDefinitionDetails] = Map(

@@ -71,6 +71,8 @@ object ScenarioActionName {
   val Pause: ScenarioActionName     = ScenarioActionName("PAUSE") // TODO: To implement in future..
   val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
 
+  val PerformSingleExecution: ScenarioActionName = ScenarioActionName("run now")
+
   val DefaultActions: List[ScenarioActionName] = Nil
 
   val StateActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Pause)

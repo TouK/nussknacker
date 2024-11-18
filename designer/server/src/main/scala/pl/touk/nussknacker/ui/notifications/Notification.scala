@@ -48,7 +48,7 @@ object Notification {
       Some(name),
       s"${displayableActionName(actionName)} finished",
       None,
-      List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
+      List(DataToRefresh.activity, DataToRefresh.state)
     )
   }
 
@@ -64,7 +64,22 @@ object Notification {
       Some(name),
       s"${displayableActionName(actionName)} execution finished",
       None,
-      List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
+      List(DataToRefresh.activity, DataToRefresh.state)
+    )
+  }
+
+  def scenarioStateUpdateNotification(
+      id: String,
+      activityName: String,
+      name: ProcessName
+  ): Notification = {
+    // We don't want to display this notification, because it already causes scenario activities and state refresh,
+    Notification(
+      id,
+      Some(name),
+      activityName,
+      None,
+      List(DataToRefresh.activity, DataToRefresh.state)
     )
   }
 
@@ -92,5 +107,5 @@ object DataToRefresh extends Enumeration {
   implicit val typeDecoder: Decoder[DataToRefresh.Value] = Decoder.decodeEnumeration(DataToRefresh)
 
   type DataToRefresh = Value
-  val versions, activity, state = Value
+  val activity, state = Value
 }

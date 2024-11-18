@@ -518,7 +518,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     processStateProvider
-      .getProcessState(process.toEntity)
+      .getScenarioState(process.toEntity)
       .flatMap(state => {
         if (state.allowedActions.contains(actionToCheck)) {
           callback
