@@ -101,33 +101,23 @@ class SpelExpression(
   override val language: Language = flavour.languageId
 
   def templateSubexpressions: Option[List[SpelTemplateExpressionPart]] = {
-    def createEvaluablePlaceholder(expression: org.springframework.expression.spel.standard.SpelExpression) = {
-      val parsedTemplateExpr = ParsedSpelExpression(expression.getExpressionString, parsed.parser, expression)
-      val compiledExpr = new SpelExpression(
-        parsedTemplateExpr,
-        typing.Typed[String],
-        Standard,
-        evaluationContextPreparer
-      )
-      Placeholder(compiledExpr)
+    def parseTemplate(expression: Expression): List[SpelTemplateExpressionPart] = expression match {
+      case lit: LiteralExpression => List(Literal(lit.getExpressionString))
+      case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
+        val parsedTemplateExpr = ParsedSpelExpression(spelExpr.getExpressionString, parsed.parser, spelExpr)
+        val compiledExpr = new SpelExpression(
+          parsedTemplateExpr,
+          typing.Typed[String],
+          Standard,
+          evaluationContextPreparer
+        )
+        List(Placeholder(compiledExpr))
+      case compositeExpr: CompositeStringExpression => compositeExpr.getExpressions.toList.flatMap(parseTemplate)
+      case other => throw new IllegalArgumentException(s"Unsupported expression type: [${other.getClass.getName}]")
     }
     flavour.languageId match {
-      case Language.SpelTemplate =>
-        Some(parsed.parsed match {
-          case compositeExpr: CompositeStringExpression =>
-            compositeExpr.getExpressions.toList.map {
-              case lit: LiteralExpression => Literal(lit.getExpressionString)
-              case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
-                createEvaluablePlaceholder(spelExpr)
-            }
-          case singleEvaluableSpelExpr: org.springframework.expression.spel.standard.SpelExpression =>
-            List(createEvaluablePlaceholder(singleEvaluableSpelExpr))
-          case singleLiteralExpr: LiteralExpression => List(Literal(singleLiteralExpr.getExpressionString))
-          case other =>
-            throw new IllegalArgumentException(s"Unsupported expression type: [${other.getClass.getName}]")
-
-        })
-      case _ => None
+      case Language.SpelTemplate => Some(parseTemplate(parsed.parsed))
+      case _                     => None
     }
   }
 
