@@ -26,12 +26,11 @@ import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{PreparedKafkaTopic, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory._
@@ -72,12 +71,12 @@ class UniversalKafkaSourceFactory(
           _
         ) =>
       val preparedTopic = prepareTopic(topic)
-      val valueValidationResult = if (contentType.equals("JSON")) {
+      val valueValidationResult = if (contentType.equals(ContentTypes.JSON.toString)) {
         Valid(
           (
             Some(
               RuntimeSchemaData[ParsedSchema](
-                new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("{}")),
+                new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson),
                 Some(SchemaId.fromString(ContentTypes.JSON.toString))
               )
             ),
@@ -90,13 +89,13 @@ class UniversalKafkaSourceFactory(
           (
             Some(
               RuntimeSchemaData[ParsedSchema](
-                new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("")),
+                new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain),
                 Some(SchemaId.fromString(ContentTypes.PLAIN.toString))
               )
             ),
             // This is the type after it leaves source
             // TODO: Should be Array[Byte] when handling is implemented
-            Unknown
+            Typed[Array[java.lang.Byte]]
           )
         )
       }

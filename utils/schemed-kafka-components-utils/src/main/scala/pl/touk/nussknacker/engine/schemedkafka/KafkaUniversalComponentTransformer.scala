@@ -117,8 +117,10 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getVersionOrContentTypeParam(
       preparedTopic: PreparedKafkaTopic[TN],
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val topicsWithSchema = topicSelectionStrategy.getTopics(schemaRegistryClient)
-    if (topicsWithSchema.exists(_.contains(preparedTopic.prepared.topicName.toUnspecialized))) {
+    if (schemaRegistryClient.isTopicWithSchema(
+        preparedTopic.prepared.topicName.toUnspecialized.name,
+        topicSelectionStrategy
+      )) {
       val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
       (versions match {
         case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
@@ -130,8 +132,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       }).map(getVersionParam)
     } else {
       val contentTypesValues = List(
-        FixedExpressionValue("'JSON'", "JSON"),
-        FixedExpressionValue("'PLAIN'", "PLAIN")
+        FixedExpressionValue(s"'${ContentTypes.JSON}'", s"${ContentTypes.JSON}"),
+        FixedExpressionValue(s"'${ContentTypes.PLAIN}'", s"${ContentTypes.PLAIN}")
       )
 
       Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, contentTypesValues).map(contentTypes =>

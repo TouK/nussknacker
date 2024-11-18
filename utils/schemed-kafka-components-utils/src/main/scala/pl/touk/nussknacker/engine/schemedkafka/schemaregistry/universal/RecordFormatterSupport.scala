@@ -5,7 +5,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ContentTypesSchemas, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.{AvroMessageFormatter, AvroMessageReader}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
@@ -50,8 +50,13 @@ object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
   private def readMessage(topic: TopicName.ForSource, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] =
     jsonObj match {
       // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
-      case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
-      case other           => other.noSpaces.getBytes(StandardCharsets.UTF_8)
+      case j if j.isString =>
+        schemaOpt match {
+          case None                                    => j.asString.get.getBytes()
+          case Some(ContentTypesSchemas.schemaForJson) => j.asString.get.getBytes(StandardCharsets.UTF_8)
+          case _                                       => j.asString.get.getBytes(StandardCharsets.UTF_8)
+        }
+      case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
     }
 
 }

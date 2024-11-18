@@ -19,8 +19,12 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  ContentTypes,
+  ContentTypesSchemas,
+  SchemaBasedSerdeProvider,
+  SchemaRegistryClientFactory
+}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.schemedkafka.{
   KafkaUniversalComponentTransformer,
@@ -74,7 +78,7 @@ class UniversalKafkaSinkFactory(
       )
 
   private val jsonSchema = RuntimeSchemaData[ParsedSchema](
-    new NkSerializableParsedSchema[ParsedSchema](OpenAPIJsonSchema("{}")),
+    new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson),
     None
   )
 
@@ -164,7 +168,11 @@ class UniversalKafkaSinkFactory(
           (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
           _
         ) =>
-      val runtimeSchemaData = jsonSchema
+      val runtimeSchemaData = if (contentType.equals(ContentTypes.JSON.toString)) {
+        jsonSchema
+      } else {
+        jsonSchema.copy(new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain))
+      }
       schemaSupportDispatcher
         .forSchemaType(runtimeSchemaData.schema.schemaType())
         .extractParameter(

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
+import pl.touk.nussknacker.engine.schemedkafka.TopicSelectionStrategy
 
 trait SchemaRegistryClient extends Serializable {
 
@@ -38,6 +39,11 @@ trait SchemaRegistryClient extends Serializable {
   def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 
   def getAllVersions(topic: UnspecializedTopicName, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
+
+  def isTopicWithSchema(topic: String, strategy: TopicSelectionStrategy): Boolean = {
+    val topicsWithSchema = strategy.getTopics(this)
+    topicsWithSchema.exists(_.map(_.name).contains(topic))
+  }
 
 }
 

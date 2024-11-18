@@ -161,9 +161,11 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     (value: Any) => {
       // In ad-hoc test without schema we create object `{ "Value" = userInputInAdHoc }`, so if present we should just take the input
       Try {
-        val (key, values) = value.asInstanceOf[Map[String, Map[String, Any]]].head
+        val temp = value.asInstanceOf[Map[String, Map[String, Any]]].head
+        val key  = temp._1
+        // Any try to create a variable with value temp._2 fails
         if (key.equals("Value")) {
-          values
+          temp._2
         } else Failure
       } match {
         // For normal usage

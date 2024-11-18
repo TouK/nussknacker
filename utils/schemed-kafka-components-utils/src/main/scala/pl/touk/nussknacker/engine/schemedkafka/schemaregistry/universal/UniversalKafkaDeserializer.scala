@@ -4,16 +4,17 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
-import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.schemedkafka.{AllTopicsSelectionStrategy, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedDeserializerFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ChainedSchemaIdFromMessageExtractor,
   ContentTypes,
+  ContentTypesSchemas,
   SchemaId,
   SchemaRegistryClient,
-  SchemaWithMetadata
+  SchemaWithMetadata,
+  StringSchemaId
 }
 
 import scala.reflect.ClassTag
@@ -41,14 +42,19 @@ class UniversalKafkaDeserializer[T](
       .getOrElse(throw MessageWithoutSchemaIdException)
 
     val schemaWithMetadata = {
-      if (schemaRegistryClient.getAllTopics.exists(_.contains(UnspecializedTopicName(topic)))) {
+      if (schemaRegistryClient.isTopicWithSchema(topic, new AllTopicsSelectionStrategy)) {
         schemaRegistryClient.getSchemaById(writerSchemaId.value)
       } else {
-        SchemaWithMetadata(
-          // I don't know how these schemas affect deserialization later
-          OpenAPIJsonSchema("""{"type": "object"}"""),
-          SchemaId.fromString(ContentTypes.JSON.toString)
-        )
+        writerSchemaId.value match {
+          case StringSchemaId(value) =>
+            if (value.equals(ContentTypes.PLAIN.toString)) {
+              SchemaWithMetadata(ContentTypesSchemas.schemaForPlain, SchemaId.fromString(ContentTypes.PLAIN.toString))
+            } else {
+              SchemaWithMetadata(ContentTypesSchemas.schemaForJson, SchemaId.fromString(ContentTypes.JSON.toString))
+            }
+          case _ =>
+            throw new IllegalStateException("Topic without schema should have ContentType Json or Plain, was neither")
+        }
       }
     }
 

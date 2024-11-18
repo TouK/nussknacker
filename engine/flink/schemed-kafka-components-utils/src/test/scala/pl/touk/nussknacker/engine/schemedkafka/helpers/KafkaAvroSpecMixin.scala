@@ -39,7 +39,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
   LatestSchemaVersion,
-  PassedContentType,
   SchemaRegistryClientFactory,
   SchemaVersionOption
 }
@@ -175,7 +174,6 @@ trait KafkaAvroSpecMixin
     versionOption match {
       case LatestSchemaVersion            => s"'${SchemaVersionOption.LatestOptionName}'"
       case ExistingSchemaVersion(version) => s"'$version'"
-      case PassedContentType(typ)         => s"'$typ'"
     }
 
   protected def runAndVerifyResultSingleEvent(
@@ -314,7 +312,6 @@ trait KafkaAvroSpecMixin
     versionOption match {
       case LatestSchemaVersion      => SchemaVersionOption.LatestOptionName
       case ExistingSchemaVersion(v) => v.toString
-      case PassedContentType(typ)   => typ.toString
     }
   }
 
