@@ -4,6 +4,7 @@ import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.CanBeSubclassDeterminer
@@ -132,7 +133,7 @@ class ScenarioTestService(
   private def assignUserFriendlyEditor(uiSourceParameter: UISourceParameters): UISourceParameters = {
     val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
       uiParameter.editor match {
-        case DualParameterEditor(_ @StringParameterEditor, _)
+        case DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)
             if CanBeSubclassDeterminer.canBeSubclassOf(uiParameter.typ, Typed.apply(classOf[String])).isValid =>
           uiParameter.copy(editor = StringParameterEditor)
         case _ => uiParameter
