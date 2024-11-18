@@ -11,6 +11,10 @@ import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
+import java.net.URL
+import java.nio.file.Paths
+import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
+
 class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConfig)
     extends ProcessingTypeDataLoader
     with LazyLogging {
@@ -65,7 +69,9 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
   }
 
   private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
-    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType)
+    val managersClassLoader =
+      new URLClassLoader(Seq(Paths.get("designer/server/work/managers/").toUri.toURL), this.getClass.getClassLoader)
+    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType, managersClassLoader)
   }
 //  private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
 //    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](

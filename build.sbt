@@ -1949,7 +1949,7 @@ lazy val designer = (project in file("designer/server"))
       .dependsOn(
 //        flinkDeploymentManager / Compile / assembly,
 //        liteK8sDeploymentManager / Compile / assembly,
-        liteEmbeddedDeploymentManager / Compile / assembly,
+//        liteEmbeddedDeploymentManager / Compile / assembly,
         defaultModel / Compile / assembly,
         flinkTableApiComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
