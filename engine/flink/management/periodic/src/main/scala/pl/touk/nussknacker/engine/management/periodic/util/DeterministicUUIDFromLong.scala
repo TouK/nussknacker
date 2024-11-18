@@ -6,7 +6,7 @@ import java.util.UUID
 // The Long -> UUID mapping is deterministic and does not change, as long as the seedBytes are the same
 object DeterministicUUIDFromLong {
 
-  private val seedBytes: Array[Byte] = Array(119, -29, 31, -68, 44, -126, -89, 11)
+  private val seedBytes: Array[Byte] = Array(119, -29, 31, -68, 44, -126, -89, 11, 97, 87, 54, -47, 39, -73, 28, 101)
 
   def longUUID(long: Long): UUID = {
     val idBytes = padToEightBytes(BigInt(long).toByteArray)
