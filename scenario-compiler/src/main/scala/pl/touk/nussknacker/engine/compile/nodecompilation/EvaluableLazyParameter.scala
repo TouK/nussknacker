@@ -21,7 +21,7 @@ class EvaluableLazyParameter[T <: AnyRef](
 ) extends CustomLazyParameter[T] {
 
   override val evaluate: Evaluate[T] =
-    LazyParmeterEvaluator.evaluate(compiledParameter, expressionEvaluator, nodeId, jobData)
+    LazyParameterEvaluator.evaluate(compiledParameter, expressionEvaluator, nodeId, jobData)
 
 }
 
@@ -33,11 +33,11 @@ class SpelTemplateEvaluableLazyParameter[T <: AnyRef](
 ) extends TemplateLazyParameter[T] {
 
   override val evaluate: Evaluate[T] =
-    LazyParmeterEvaluator.evaluate(compiledParameter, expressionEvaluator, nodeId, jobData)
+    LazyParameterEvaluator.evaluate(compiledParameter, expressionEvaluator, nodeId, jobData)
 
   override def templateExpression: TemplateExpression = compiledParameter.expression match {
     case expression: SpelExpression =>
-      expression.subexpressions match {
+      expression.templateSubexpressions match {
         case Some(subexpressions) =>
           val templateParts = subexpressions.map {
             case TemplatedExpression(expression) => {
@@ -59,7 +59,7 @@ class SpelTemplateEvaluableLazyParameter[T <: AnyRef](
   override def returnType: TypingResult = Typed[String]
 }
 
-private[this] object LazyParmeterEvaluator {
+private[this] object LazyParameterEvaluator {
 
   def evaluate[T <: AnyRef](
       compiledParameter: BaseCompiledParameter,

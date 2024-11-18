@@ -104,7 +104,7 @@ class SpelExpression(
 
   override val language: Language = flavour.languageId
 
-  def subexpressions: Option[List[SpelTemplateSubexpression]] = {
+  def templateSubexpressions: Option[List[SpelTemplateSubexpression]] = {
     def createTemplatedExpression(expression: org.springframework.expression.spel.standard.SpelExpression) = {
       val parsedTemplateExpr = ParsedSpelExpression(expression.getExpressionString, parsed.parser, expression)
       val compiledExpr = new SpelExpression(
@@ -127,6 +127,9 @@ class SpelExpression(
           case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
             List(createTemplatedExpression(spelExpr))
           case litExpr: LiteralExpression => List(NonTemplatedValue(litExpr.getExpressionString))
+          case other =>
+            throw new IllegalArgumentException(s"Unsupported expression type: [${other.getClass.getName}]")
+
         })
       case _ => None
     }
