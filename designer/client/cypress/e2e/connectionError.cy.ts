@@ -65,7 +65,7 @@ describe("Connection error", () => {
                 screenshotConfig,
             });
 
-            cy.intercept("/api/notifications", (req) => {
+            cy.intercept("/api/notifications/*", (req) => {
                 req.continue();
             });
 
