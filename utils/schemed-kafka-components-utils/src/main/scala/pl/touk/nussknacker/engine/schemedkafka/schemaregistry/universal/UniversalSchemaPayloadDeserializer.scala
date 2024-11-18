@@ -7,6 +7,7 @@ import org.apache.avro.io.DecoderFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroRecordDeserializer, DatumReaderWriterMixin}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypesSchemas
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
@@ -75,10 +76,17 @@ object JsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer 
       buffer: ByteBuffer
   ): Any = {
     val jsonSchema =
-      expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[OpenAPIJsonSchema]].schema
+      expectedSchemaData
+        .getOrElse(writerSchemaData)
+        .asInstanceOf[RuntimeSchemaData[OpenAPIJsonSchema]]
+        .schema
     val bytes = new Array[Byte](buffer.remaining())
     buffer.get(bytes)
-    jsonSchema.deserializer.deserialize(bytes)
+    if (jsonSchema.equals(ContentTypesSchemas.schemaForPlain)) {
+      bytes
+    } else {
+      jsonSchema.deserializer.deserialize(bytes)
+    }
   }
 
 }

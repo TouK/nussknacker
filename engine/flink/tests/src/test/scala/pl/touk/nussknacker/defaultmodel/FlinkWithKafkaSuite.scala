@@ -41,7 +41,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ExistingSchemaVersion,
   LatestSchemaVersion,
-  PassedContentType,
   SchemaRegistryClientFactory,
   SchemaVersionOption
 }
@@ -179,7 +178,6 @@ abstract class FlinkWithKafkaSuite
     versionOption match {
       case LatestSchemaVersion            => s"'${SchemaVersionOption.LatestOptionName}'"
       case ExistingSchemaVersion(version) => s"'$version'"
-      case PassedContentType(typ)         => s"'$typ'"
     }
 
   protected def createAndRegisterAvroTopicConfig(name: String, schemas: List[Schema]): TopicConfig =
