@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.Validated._
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -14,11 +14,55 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
-object ImplicitConversionDeterminer extends ConversionDeterminer {
+object ImplicitConversionDeterminer {
 
   private val javaMapClass       = classOf[java.util.Map[_, _]]
   private val javaListClass      = classOf[java.util.List[_]]
   private val arrayOfAnyRefClass = classOf[Array[AnyRef]]
+
+  /**
+   * This method checks if `givenType` can by subclass of `superclassCandidate`
+   * It will return true if `givenType` is equals to `superclassCandidate` or `givenType` "extends" `superclassCandidate`
+   */
+  def canBeConvertedTo(givenType: TypingResult, superclassCandidate: TypingResult): ValidatedNel[String, Unit] = {
+    (givenType, superclassCandidate) match {
+      case (_, Unknown)       => ().validNel
+      case (Unknown, _)       => ().validNel
+      case (TypedNull, other) => canNullBeConvertedTo(other)
+      case (_, TypedNull)     => s"No type can be subclass of ${TypedNull.display}".invalidNel
+      case (given: SingleTypingResult, superclass: TypedUnion) =>
+        canBeConvertedTo(NonEmptyList.one(given), superclass.possibleTypes)
+      case (given: TypedUnion, superclass: SingleTypingResult) =>
+        canBeConvertedTo(given.possibleTypes, NonEmptyList.one(superclass))
+      case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeConvertedTo(given, superclass)
+      case (given: TypedUnion, superclass: TypedUnion) =>
+        canBeConvertedTo(given.possibleTypes, superclass.possibleTypes)
+    }
+  }
+
+  def canBeConvertedTo(
+      givenTypes: NonEmptyList[SingleTypingResult],
+      superclassCandidates: NonEmptyList[SingleTypingResult]
+  ): ValidatedNel[String, Unit] = {
+    // Would be more safety to do givenTypes.forAll(... superclassCandidates.exists ...) - we wil protect against
+    // e.g. (String | Int).canBeSubclassOf(String) which can fail in runtime for Int, but on the other hand we can't block user's intended action.
+    // He/she could be sure that in this type, only String will appear. He/she also can't easily downcast (String | Int) to String so leaving here
+    // "double exists" looks like a good tradeoff
+    condNel(
+      givenTypes.exists(given => superclassCandidates.exists(singleCanBeConvertedTo(given, _).isValid)),
+      (),
+      s"""None of the following types:
+         |${givenTypes.map(" - " + _.display).toList.mkString(",\n")}
+         |can be a subclass of any of:
+         |${superclassCandidates.map(" - " + _.display).toList.mkString(",\n")}""".stripMargin
+    )
+  }
+
+  private def canNullBeConvertedTo(result: TypingResult): ValidatedNel[String, Unit] = result match {
+    // TODO: Null should not be subclass of typed map that has all values assigned.
+    case TypedObjectWithValue(_, _) => s"${TypedNull.display} cannot be subclass of type with value".invalidNel
+    case _                          => ().validNel
+  }
 
   def singleCanBeConvertedTo(
       givenType: SingleTypingResult,
@@ -98,6 +142,19 @@ object ImplicitConversionDeterminer extends ConversionDeterminer {
       (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
   }
 
+  def isStrictSubclass(givenClass: TypedClass, givenSuperclass: TypedClass): Validated[NonEmptyList[String], Unit] = {
+    condNel(
+      givenClass == givenSuperclass,
+      (),
+      f"${givenClass.display} and ${givenSuperclass.display} are not the same"
+    ) orElse
+      condNel(
+        isAssignable(givenClass.klass, givenSuperclass.klass),
+        (),
+        s"${givenClass.klass} is not assignable from ${givenSuperclass.klass}"
+      )
+  }
+
   private def classCanBeConvertedTo(
       givenType: SingleTypingResult,
       superclassCandidate: SingleTypingResult
@@ -158,7 +215,7 @@ object ImplicitConversionDeterminer extends ConversionDeterminer {
   }
 
   // we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
-  override def isAssignable(from: Class[_], to: Class[_]): Boolean =
+  def isAssignable(from: Class[_], to: Class[_]): Boolean =
     ClassUtils.isAssignable(from, to, true)
 
 }
