@@ -1024,22 +1024,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction()) shouldBe "someKey"
   }
 
-  test("spel template ast operation parameter should work for template and literal value") {
-    val process = ScenarioBuilder
-      .streaming("test")
-      .source("start", "transaction-source")
-      .enricher(
-        "ex",
-        "out",
-        "templateAstOperationService",
-        "template" -> Expression.spelTemplate(s"Hello#{#input.msisdn}")
-      )
-      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
-      .emptySink("end-end", "dummySink")
-
-    interpretProcess(process, Transaction(msisdn = "foo")) should equal("[Hello]-literal[foo]-templated")
-  }
-
   test("spel template AST operation parameter should handle multiple cases") {
     val testCases = Seq(
       (
@@ -1084,38 +1068,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         interpretProcess(process, inputTransaction) should equal(expectedOutput)
       }
     }
-  }
-
-  test("spel template ast operation parameter should work for single literal value") {
-    val process = ScenarioBuilder
-      .streaming("test")
-      .source("start", "transaction-source")
-      .enricher(
-        "ex",
-        "out",
-        "templateAstOperationService",
-        "template" -> Expression.spelTemplate("Hello")
-      )
-      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
-      .emptySink("end-end", "dummySink")
-
-    interpretProcess(process, Transaction(msisdn = "foo")) should equal("[Hello]-literal")
-  }
-
-  test("spel template ast operation parameter should work for single templated function call expression") {
-    val process = ScenarioBuilder
-      .streaming("test")
-      .source("start", "transaction-source")
-      .enricher(
-        "ex",
-        "out",
-        "templateAstOperationService",
-        "template" -> Expression.spelTemplate("#{#input.msisdn.toString()}")
-      )
-      .buildSimpleVariable("result-end", resultVariable, "#out".spel)
-      .emptySink("end-end", "dummySink")
-
-    interpretProcess(process, Transaction(msisdn = "foo")) should equal("[foo]-templated")
   }
 
 }
