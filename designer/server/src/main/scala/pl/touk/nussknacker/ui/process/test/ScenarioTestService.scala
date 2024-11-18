@@ -134,7 +134,7 @@ class ScenarioTestService(
     val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
       uiParameter.editor match {
         case DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)
-            if CanBeSubclassDeterminer.canBeSubclassOf(uiParameter.typ, Typed.apply(classOf[String])).isValid =>
+            if uiParameter.typ.canBeSubclassOf(Typed[String]) =>
           uiParameter.copy(editor = StringParameterEditor)
         case _ => uiParameter
       }
