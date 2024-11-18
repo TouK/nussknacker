@@ -7,21 +7,21 @@ import org.scalatest.matchers.should.Matchers
 class SubclassDeterminerSpec extends AnyFunSuite with Matchers {
 
   test("Should validate assignability for decimal types") {
-    SubclassDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Integer]) shouldBe false
-    SubclassDeterminer.isAssignable(classOf[Number], classOf[Integer]) shouldBe false
-    SubclassDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Short]) shouldBe false
+    StrictConversionDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Integer]) shouldBe false
+    StrictConversionDeterminer.isAssignable(classOf[Number], classOf[Integer]) shouldBe false
+    StrictConversionDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Short]) shouldBe false
 
-    SubclassDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Long]) shouldBe true
-    SubclassDeterminer.isAssignable(classOf[Integer], classOf[Number]) shouldBe true
-    SubclassDeterminer.isAssignable(classOf[java.lang.Short], classOf[Integer]) shouldBe true
+    StrictConversionDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Long]) shouldBe true
+    StrictConversionDeterminer.isAssignable(classOf[Integer], classOf[Number]) shouldBe true
+    StrictConversionDeterminer.isAssignable(classOf[java.lang.Short], classOf[Integer]) shouldBe true
   }
 
   test("Should validate assignability for numerical types") {
-    SubclassDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Double]) shouldBe true
-    SubclassDeterminer.isAssignable(classOf[java.lang.Float], classOf[Double]) shouldBe true
+    StrictConversionDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Double]) shouldBe true
+    StrictConversionDeterminer.isAssignable(classOf[java.lang.Float], classOf[Double]) shouldBe true
 
-    SubclassDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Float]) shouldBe true
-    SubclassDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Double]) shouldBe true
+    StrictConversionDeterminer.isAssignable(classOf[Integer], classOf[java.lang.Float]) shouldBe true
+    StrictConversionDeterminer.isAssignable(classOf[java.lang.Long], classOf[java.lang.Double]) shouldBe true
   }
 
   // to check if autoboxing lang3 is failing - we can remove our fallback from SubclassDeterminer.isAssignable if the lib works properly

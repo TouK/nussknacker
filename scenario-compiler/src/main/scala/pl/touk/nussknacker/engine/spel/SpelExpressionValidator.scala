@@ -18,8 +18,7 @@ class SpelExpressionValidator(typer: Typer) {
     val typedExpression = typer.typeExpression(expr, ctx)
     typedExpression.andThen { collected =>
       collected.finalResult.typingResult match {
-        case a: TypingResult
-            if a.canBeImplicitlyConvertedTo(expectedType) || expectedType == Typed[SpelExpressionRepr] =>
+        case a: TypingResult if a.canBeConvertedTo(expectedType) || expectedType == Typed[SpelExpressionRepr] =>
           Valid(collected)
         case a: TypingResult =>
           Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, a)))

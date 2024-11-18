@@ -70,11 +70,11 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
     override def language: Language = languageId
 
     override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
-      if (expectedType.canBeImplicitlyConvertedTo(Typed[Long])) {
+      if (expectedType.canBeConvertedTo(Typed[Long])) {
         key.toLong.asInstanceOf[T]
-      } else if (expectedType.canBeImplicitlyConvertedTo(Typed[Boolean])) {
+      } else if (expectedType.canBeConvertedTo(Typed[Boolean])) {
         key.toBoolean.asInstanceOf[T]
-      } else if (expectedType.canBeImplicitlyConvertedTo(Typed[String])) {
+      } else if (expectedType.canBeConvertedTo(Typed[String])) {
         key.asInstanceOf[T]
       } else {
         throw new IllegalStateException(
