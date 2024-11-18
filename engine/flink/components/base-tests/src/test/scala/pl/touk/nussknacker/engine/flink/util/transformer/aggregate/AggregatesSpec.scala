@@ -74,8 +74,8 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   private def shouldBeInstanceOf(obj: Any, typ: TypingResult): Unit = {
     val typeFromInstance  = Typed.fromInstance(obj)
-    val canBeSubclassCase = typeFromInstance.canBeImplicitlyConvertedTo(typ)
-    val typedObjectCase = typ.isInstanceOf[TypedObjectTypingResult] && typeFromInstance.canBeImplicitlyConvertedTo(
+    val canBeSubclassCase = typeFromInstance.canBeConvertedTo(typ)
+    val typedObjectCase = typ.isInstanceOf[TypedObjectTypingResult] && typeFromInstance.canBeConvertedTo(
       typ.asInstanceOf[TypedObjectTypingResult].runtimeObjType
     )
     (canBeSubclassCase || typedObjectCase) shouldBe true

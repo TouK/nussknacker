@@ -62,7 +62,7 @@ class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecuti
   )(implicit reference: MethodReference): Either[Option[ExpressionParseError], NonEmptyList[MethodDefinition]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).toList.mkString(", ")
 
-    def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeImplicitlyConvertedTo(Typed[Class[_]]))
+    def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeConvertedTo(Typed[Class[_]]))
 
     val clazzMethods =
       if (reference.isStatic) clazzDefinitions.toList.flatMap(_.staticMethods.get(reference.methodName).toList.flatten)

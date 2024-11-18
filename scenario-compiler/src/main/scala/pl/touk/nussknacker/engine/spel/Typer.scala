@@ -146,8 +146,8 @@ private[spel] class Typer(
     def withChildrenOfType[Parts: universe.TypeTag](result: TypingResult) = {
       val w = valid(result)
       withTypedChildren {
-        case list if list.forall(_.canBeImplicitlyConvertedTo(Typed.fromDetailedType[Parts])) => w
-        case _ => w.tell(List(PartTypeError))
+        case list if list.forall(_.canBeConvertedTo(Typed.fromDetailedType[Parts])) => w
+        case _                                                                      => w.tell(List(PartTypeError))
       }
     }
 
@@ -198,7 +198,7 @@ private[spel] class Typer(
             case (ref: PropertyOrFieldReference) :: Nil => typeFieldNameReferenceOnRecord(ref.getName, record)
             case _                                      => typeFieldNameReferenceOnRecord(indexString, record)
           }
-        case indexKey :: Nil if indexKey.canBeImplicitlyConvertedTo(Typed[String]) =>
+        case indexKey :: Nil if indexKey.canBeConvertedTo(Typed[String]) =>
           if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
         case _ :: Nil =>
           indexer.children match {
@@ -356,8 +356,7 @@ private[spel] class Typer(
 
       case e: OpMinus =>
         withTypedChildren {
-          case left :: right :: Nil
-              if left.canBeImplicitlyConvertedTo(Typed[Number]) && right.canBeImplicitlyConvertedTo(Typed[Number]) =>
+          case left :: right :: Nil if left.canBeConvertedTo(Typed[Number]) && right.canBeConvertedTo(Typed[Number]) =>
             val fallback = NumberTypesPromotionStrategy.ForMathOperation.promote(left, right)
             operationOnTypesValue[Number, Number, Number](left, right, fallback)((n1, n2) =>
               Valid(MathUtils.minus(n1, n2))
@@ -366,7 +365,7 @@ private[spel] class Typer(
             invalid(OperatorNonNumericError(e.getOperatorName, left))
           case left :: right :: Nil =>
             invalid(OperatorMismatchTypeError(e.getOperatorName, left, right))
-          case left :: Nil if left.canBeImplicitlyConvertedTo(Typed[Number]) =>
+          case left :: Nil if left.canBeConvertedTo(Typed[Number]) =>
             val resultType = left.withoutValue
             val result     = operationOnTypesValue[Number, Number](left)(MathUtils.negate).getOrElse(resultType)
             valid(result)
@@ -396,20 +395,18 @@ private[spel] class Typer(
         withTypedChildren {
           case left :: right :: Nil if left == Unknown || right == Unknown =>
             valid(Unknown)
-          case left :: right :: Nil
-              if left.canBeImplicitlyConvertedTo(Typed[String]) || right.canBeImplicitlyConvertedTo(Typed[String]) =>
+          case left :: right :: Nil if left.canBeConvertedTo(Typed[String]) || right.canBeConvertedTo(Typed[String]) =>
             operationOnTypesValue[Any, Any, String](left, right, Typed[String])((l, r) =>
               Valid(l.toString + r.toString)
             )
-          case left :: right :: Nil
-              if left.canBeImplicitlyConvertedTo(Typed[Number]) && right.canBeImplicitlyConvertedTo(Typed[Number]) =>
+          case left :: right :: Nil if left.canBeConvertedTo(Typed[Number]) && right.canBeConvertedTo(Typed[Number]) =>
             val fallback = NumberTypesPromotionStrategy.ForMathOperation.promote(left, right)
             operationOnTypesValue[Number, Number, Number](left, right, fallback)((n1, n2) =>
               Valid(MathUtils.plus(n1, n2))
             )
           case left :: right :: Nil =>
             invalid(OperatorMismatchTypeError(e.getOperatorName, left, right))
-          case left :: Nil if left.canBeImplicitlyConvertedTo(Typed[Number]) =>
+          case left :: Nil if left.canBeConvertedTo(Typed[Number]) =>
             valid(left)
           case left :: Nil =>
             invalid(OperatorNonNumericError(e.getOperatorName, left))
@@ -451,7 +448,7 @@ private[spel] class Typer(
           elementType <- extractIterativeType(iterateType)
           selectionType = resolveSelectionTypingResult(e, iterateType, elementType)
           result <- typeChildren(validationContext, node, current.pushOnStack(elementType)) {
-            case result :: Nil if result.canBeImplicitlyConvertedTo(Typed[Boolean]) =>
+            case result :: Nil if result.canBeConvertedTo(Typed[Boolean]) =>
               valid(selectionType)
             case other =>
               invalid(IllegalSelectionTypeError(other), selectionType)
@@ -462,7 +459,7 @@ private[spel] class Typer(
           case condition :: onTrue :: onFalse :: Nil =>
             for {
               _ <- Option(condition)
-                .filter(_.canBeImplicitlyConvertedTo(Typed[Boolean]))
+                .filter(_.canBeConvertedTo(Typed[Boolean]))
                 .map(valid)
                 .getOrElse(invalid(TernaryOperatorNotBooleanError(condition)))
             } yield CommonSupertypeFinder.Default.commonSupertype(onTrue, onFalse)
@@ -523,10 +520,10 @@ private[spel] class Typer(
       // as properly determining it would require evaluating the selection expression for each element (likely working on the AST)
       parentType match {
         case tc: SingleTypingResult
-            if tc.runtimeObjType.canBeImplicitlyConvertedTo(Typed[java.util.Collection[_]]) ||
+            if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
               tc.runtimeObjType.klass.isArray =>
           tc.withoutValue
-        case tc: SingleTypingResult if tc.runtimeObjType.canBeImplicitlyConvertedTo(Typed[java.util.Map[_, _]]) =>
+        case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
           Typed.record(Map.empty)
         case _ =>
           parentType
@@ -578,8 +575,7 @@ private[spel] class Typer(
       op: Option[(Number, Number) => Validated[ExpressionParseError, Any]]
   )(implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingR[CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
-      case left :: right :: Nil
-          if left.canBeImplicitlyConvertedTo(Typed[Number]) && right.canBeImplicitlyConvertedTo(Typed[Number]) =>
+      case left :: right :: Nil if left.canBeConvertedTo(Typed[Number]) && right.canBeConvertedTo(Typed[Number]) =>
         val fallback = numberPromotionStrategy.promote(left, right)
         op
           .map(operationOnTypesValue[Number, Number, Any](left, right, fallback)(_))
@@ -598,7 +594,7 @@ private[spel] class Typer(
       current: TypingContext
   )(op: Number => Any): TypingR[CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
-      case left :: Nil if left.canBeImplicitlyConvertedTo(Typed[Number]) =>
+      case left :: Nil if left.canBeConvertedTo(Typed[Number]) =>
         val result = operationOnTypesValue[Number, Any](left)(op).getOrElse(left.withoutValue)
         valid(result)
       case left :: Nil =>
@@ -694,10 +690,10 @@ private[spel] class Typer(
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
     case tc: SingleTypingResult
-        if tc.runtimeObjType.canBeImplicitlyConvertedTo(Typed[java.util.Collection[_]]) ||
+        if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) ||
           tc.runtimeObjType.klass.isArray =>
       valid(tc.runtimeObjType.params.headOption.getOrElse(Unknown))
-    case tc: SingleTypingResult if tc.runtimeObjType.canBeImplicitlyConvertedTo(Typed[java.util.Map[_, _]]) =>
+    case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
       valid(
         Typed.record(
           Map(

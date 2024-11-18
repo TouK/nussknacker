@@ -357,8 +357,8 @@ object CollectionUtils {
           case _ if firstComponentType.withoutValue == secondComponentType.withoutValue =>
             listType.copy(params = firstComponentType.withoutValue :: Nil)
           case _
-              if firstComponentType.canBeImplicitlyConvertedTo(numberType) && secondComponentType
-                .canBeImplicitlyConvertedTo(numberType) =>
+              if firstComponentType.canBeConvertedTo(numberType) && secondComponentType
+                .canBeConvertedTo(numberType) =>
             Typed.genericTypeClass(fClass, List(numberType))
           case _ => listType.copy(params = Unknown :: Nil)
         }

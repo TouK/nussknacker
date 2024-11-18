@@ -108,7 +108,7 @@ object TypeConversionHandler {
         ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
 
       case candidate if isDecimalNumber(candidate) =>
-        SubclassDeterminer.isAssignable(boxedGivenClass, candidate)
+        StrictConversionDeterminer.isAssignable(boxedGivenClass, candidate)
 
       case _ => false
     }
