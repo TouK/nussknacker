@@ -20,8 +20,8 @@
 
 ### 1.18-esp
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
 
-### 1.18.1 (Not released yet)
 ### 1.18.1 (9 December 2024)
 
 * [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
