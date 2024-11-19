@@ -382,7 +382,6 @@ export class Graph extends React.Component<Props> {
             if (this.props.isFragment === true) return;
             this.processGraphPaper.hideTools();
             if (isStickyNoteElement(cellView.model)) {
-                this.props.resetSelection();
                 showStickyNoteTools(cellView);
             }
             if (this.props.nodeSelectionEnabled) {
@@ -399,7 +398,10 @@ export class Graph extends React.Component<Props> {
             }
         };
 
-        this.processGraphPaper.on(Events.CELL_POINTERDOWN, handleGraphEvent(handleActionOnLongPress(showNodeDetails, selectNode), null));
+        this.processGraphPaper.on(
+            Events.CELL_POINTERDOWN,
+            handleGraphEvent(handleActionOnLongPress(showNodeDetails, selectNode), null, (view) => !isStickyNoteElement(view.model)),
+        );
         this.processGraphPaper.on(
             Events.LINK_POINTERDOWN,
             handleGraphEvent(
@@ -408,7 +410,10 @@ export class Graph extends React.Component<Props> {
             ),
         );
 
-        this.processGraphPaper.on(Events.CELL_POINTERCLICK, handleGraphEvent(null, selectNode));
+        this.processGraphPaper.on(
+            Events.CELL_POINTERCLICK,
+            handleGraphEvent(null, selectNode, (view) => !isStickyNoteElement(view.model)),
+        );
         this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, handleGraphEvent(null, showNodeDetails));
         this.processGraphPaper.on(Events.BLANK_POINTERCLICK, hideToolsOnBlankClick);
 
