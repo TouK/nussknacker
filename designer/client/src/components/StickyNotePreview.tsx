@@ -58,7 +58,6 @@ export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; 
     });
 
     const imageColors = css({
-        background: theme.palette.custom.getNodeStyles(node)?.fill,
         color: theme.palette.common.black,
     });
 
