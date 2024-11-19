@@ -40,7 +40,7 @@ object ProcessCompilerData {
 
     val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
     val expressionEvaluator =
-      ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
+      ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
 
     val expressionCompiler = ExpressionCompiler.withOptimization(
       userCodeClassLoader,

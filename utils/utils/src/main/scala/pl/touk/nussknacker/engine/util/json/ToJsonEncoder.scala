@@ -22,7 +22,7 @@ object ToJsonEncoder {
 
 case class ToJsonEncoder(
     failOnUnknown: Boolean,
-    @transient classLoader: ClassLoader,
+    classLoader: ClassLoader,
     highPriority: PartialFunction[Any, Json] = Map()
 ) {
 
