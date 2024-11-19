@@ -429,8 +429,7 @@ export class Graph extends React.Component<Props> {
     addNode(node: NodeType, position: Position): void {
         if (this.props.isFragment === true) return;
 
-        const canAddNode =
-            this.props.capabilities.editFrontend && NodeUtils.isNode(node) && NodeUtils.isAvailable(node, this.props.processDefinitionData);
+        const canAddNode = this.props.capabilities.editFrontend && NodeUtils.isAvailable(node, this.props.processDefinitionData);
 
         if (canAddNode) {
             this.props.nodeAdded(node, position);

@@ -5,18 +5,18 @@ import { DescriptionView } from "../../../containers/DescriptionView";
 import { FieldType } from "./editors/field/Field";
 import { rowAceEditor } from "./NodeDetailsContent/NodeTableStyled";
 import { NodeField } from "./NodeField";
-import { NodeTypeDetailsContentProps, useNodeTypeDetailsContentLogic } from "./NodeTypeDetailsContent";
+import { NodeType, PropertiesType } from "../../../types";
 
-type DescriptionOnlyContentProps = Pick<NodeTypeDetailsContentProps, "node" | "onChange"> & {
+type DescriptionOnlyContentProps = {
+    onChange: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    properties: PropertiesType;
     fieldPath: string;
     preview?: boolean;
 };
 
-export function DescriptionOnlyContent({ fieldPath, preview, node, onChange }: DescriptionOnlyContentProps) {
-    const { setProperty } = useNodeTypeDetailsContentLogic({ node, onChange });
-
+export function DescriptionOnlyContent({ fieldPath, preview, properties, onChange }: DescriptionOnlyContentProps) {
     if (preview) {
-        return <DescriptionView>{get(node, fieldPath)}</DescriptionView>;
+        return <DescriptionView>{get(properties, fieldPath)}</DescriptionView>;
     }
 
     return (
@@ -31,8 +31,8 @@ export function DescriptionOnlyContent({ fieldPath, preview, node, onChange }: D
             <NodeField
                 autoFocus
                 renderFieldLabel={() => null}
-                setProperty={setProperty}
-                node={node}
+                setProperty={onChange}
+                node={properties}
                 isEditMode={true}
                 showValidation={false}
                 readonly={false}

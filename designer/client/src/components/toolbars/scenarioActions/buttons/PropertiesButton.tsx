@@ -1,23 +1,22 @@
-import { WindowType } from "@touk/window-manager";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
-import { getProcessUnsavedNewName, getScenario, hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph";
-import { useWindows } from "../../../../windowManager";
-import { NodeViewMode } from "../../../../windowManager/useWindows";
-import NodeUtils from "../../../graph/NodeUtils";
+import { hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 
 export function useOpenProperties() {
-    const { openNodeWindow } = useWindows();
-    const scenario = useSelector(getScenario);
-    const name = useSelector(getProcessUnsavedNewName);
-    const processProperties = useMemo(() => NodeUtils.getProcessPropertiesNode(scenario, name), [name, scenario]);
+    const { open } = useWindows();
     return useCallback(
-        (mode?: NodeViewMode, layout?: WindowType["layoutData"]) => openNodeWindow(processProperties, scenario, mode, layout),
-        [openNodeWindow, processProperties, scenario],
+        () =>
+            open({
+                kind: WindowKind.editProperties,
+                isResizable: true,
+                shouldCloseOnEsc: false,
+            }),
+        [open],
     );
 }
 

@@ -236,7 +236,7 @@ export const globalStyles = (theme: Theme) => ({
             backgroundColor: theme.palette.action.hover,
         },
     },
-    [`.${nodeInput}[readonly], .${nodeInput}[type='checkbox'][readonly]:after, .${nodeInput}[type='radio'][readonly]:after, .${rowAceEditor}.read-only, .${rowAceEditor} .read-only .ace_scroller`]:
+    [`.${nodeInput}[readonly], .${nodeInput}[type='checkbox'][readonly]:after, .${nodeInput}[type='radio'][readonly]:after, .${rowAceEditor}.read-only, .${rowAceEditor} .read-only .ace_scroller, .${rowAceEditor}.read-only .ace_content`]:
         {
             backgroundColor: `${theme.palette.action.disabledBackground} !important`,
             color: `${theme.palette.action.disabled} !important`,

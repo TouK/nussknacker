@@ -1,55 +1,25 @@
 /* eslint-disable i18next/no-literal-string */
-import { has, isEmpty, isEqual, uniqBy } from "lodash";
+import { isEqual, uniqBy } from "lodash";
 import ProcessUtils from "../../common/ProcessUtils";
-import {
-    Edge,
-    EdgeKind,
-    EdgeType,
-    FragmentNodeType,
-    NodeId,
-    NodeType,
-    ProcessDefinitionData,
-    PropertiesType,
-    ScenarioGraph,
-    UINodeType,
-} from "../../types";
-import { UnknownRecord } from "../../types/common";
+import { Edge, EdgeKind, EdgeType, FragmentNodeType, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { createEdge } from "../../reducers/graph/utils";
 import { Scenario } from "../Process/types";
 
 class NodeUtils {
-    isNode = (obj: UnknownRecord): obj is NodeType => {
-        return !isEmpty(obj) && has(obj, "id") && has(obj, "type");
-    };
-
-    nodeType = (node: UINodeType) => {
-        return node?.type ? node.type : "Properties";
-    };
-
-    nodeIsProperties = (node: UINodeType): node is PropertiesType => {
-        const type = node && this.nodeType(node);
-        return type === "Properties";
-    };
-
-    nodeIsFragment = (node: UINodeType): node is FragmentNodeType => {
-        return this.nodeType(node) === "FragmentInput";
-    };
-
-    isPlainNode = (node: UINodeType) => {
-        return !isEmpty(node) && !this.nodeIsProperties(node);
+    nodeIsFragment = (node: NodeType): node is FragmentNodeType => {
+        return node.type === "FragmentInput";
     };
 
     nodeIsJoin = (node: NodeType): boolean => {
-        return node && this.nodeType(node) === "Join";
+        return node && node.type === "Join";
     };
 
     nodesFromScenarioGraph = (scenarioGraph: ScenarioGraph): NodeType[] => scenarioGraph.nodes || [];
 
     edgesFromScenarioGraph = (scenarioGraph: ScenarioGraph) => scenarioGraph.edges || [];
 
-    // For sake of consistency with other nodes, name must be renamed to id
-    getProcessPropertiesNode = ({ name, scenarioGraph: { properties } }: Scenario, unsavedName?: string) => ({
-        id: name || unsavedName,
+    getProcessProperties = ({ name, scenarioGraph: { properties } }: Scenario, unsavedName?: string) => ({
+        name: name || unsavedName,
         ...properties,
     });
 

@@ -27,11 +27,7 @@ export function useModalDetailsIfNeeded() {
     const openNodes = useCallback(
         (scenario: Scenario) => {
             return getNodeIds()
-                .map(
-                    (id) =>
-                        NodeUtils.getNodeById(id, scenario.scenarioGraph) ??
-                        (scenario.name === id && NodeUtils.getProcessPropertiesNode(scenario)),
-                )
+                .map((id) => NodeUtils.getNodeById(id, scenario.scenarioGraph))
                 .filter(Boolean)
                 .map((node) => openNodeWindow(node, scenario));
         },
