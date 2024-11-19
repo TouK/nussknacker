@@ -21,7 +21,7 @@ export function StickyNotesPanel(props: ToolbarPanelProps): JSX.Element {
                     <Tool
                         nodeModel={noteModel}
                         label={t("stickyNotes.tool.label", "sticky note")}
-                        key={StickyNoteType}
+                        key={StickyNoteType + "_" + pristine}
                         disabled={!pristine}
                     />
                 </StyledToolbox>

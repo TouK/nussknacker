@@ -404,7 +404,8 @@ class AkkaHttpBasedRouteProvider(
         stickyNotesRepository = stickyNotesRepository,
         scenarioService = processService,
         scenarioAuthorizer = processAuthorizer,
-        dbioRunner
+        dbioRunner,
+        stickyNotesSettings = featureTogglesConfig.stickyNotesSettings
       )
 
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
