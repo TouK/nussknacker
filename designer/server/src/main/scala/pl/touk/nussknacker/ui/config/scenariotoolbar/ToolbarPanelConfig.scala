@@ -52,7 +52,8 @@ final case class ToolbarPanelConfig(
     title: Option[String],
     buttonsVariant: Option[ToolbarButtonVariant],
     buttons: Option[List[ToolbarButtonConfig]],
-    hidden: Option[ToolbarCondition]
+    hidden: Option[ToolbarCondition],
+    additionalParams: Option[Map[String, String]]
 ) {
 
   if (ToolbarPanelTypeConfig.requiresIdParam(`type`)) {
