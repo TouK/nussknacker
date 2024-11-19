@@ -385,6 +385,7 @@ describe("Fragment", () => {
                 force: true,
             });
         cy.layoutScenario();
+
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
@@ -396,17 +397,25 @@ describe("Fragment", () => {
         // and it can be a situation that dead-end node is dropped before the scenario is visible.
         // To be sure that element is visible, let's click on it first
         cy.get("@output").click();
-        cy.contains("dead-end")
-            .first()
-            .should("be.visible")
-            .drag("@output", {
-                target: {
-                    x: 30,
-                    y: 30,
-                },
-                force: true,
+        cy.get("@output").then((node) => {
+            const { left, top } = node.position();
+            cy.contains("dead-end")
+                .first()
+                .should("be.visible")
+                .drag("@output", {
+                    target: {
+                        x: 0,
+                        y: node.height() / 2,
+                    },
+                    force: true,
+                });
+            // make sure dropped on edge
+            cy.dragNode("dead-end", {
+                x: left,
+                y: top + node.height() / 2,
             });
-        cy.get("@output").click().type("{backspace}");
+        });
+        cy.get("@output").click({ force: true }).type("{backspace}");
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
         cy.contains(/^save$/i).should("be.disabled");

@@ -24,7 +24,10 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
-import java.time.{Duration, LocalDateTime}
+import java.nio.charset.Charset
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.util.{Currency, Locale, UUID}
 import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
@@ -116,7 +119,7 @@ class ExpressionSuggesterSpec
       ),
       ClassDefinition(
         Unknown,
-        Map("canCastTo" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "canCastTo", None))),
+        Map("canBe" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "canBe", None))),
         Map.empty
       ),
     )
@@ -775,22 +778,76 @@ class ExpressionSuggesterSpec
 
   test("should suggest methods for unknown") {
     spelSuggestionsFor("#unknown.") shouldBe List(
-      suggestion("canCastTo", Typed[Boolean]),
+      suggestion("canBe", Typed[Boolean]),
     )
   }
 
-  test("should suggest parameters for casts methods") {
-    spelSuggestionsFor("#unknown.canCastTo('')", column = 20) should contain theSameElementsAs List(
-      suggestion("String", Typed[String]),
+  test("should suggest parameters for casts/conversions methods on unknown") {
+    spelSuggestionsFor("#unknown.to('')", column = 13) should contain theSameElementsAs List(
       suggestion("Duration", Typed[Duration]),
       suggestion("LocalDateTime", Typed[LocalDateTime]),
-      suggestion("Map", Typed[java.util.Map[_, _]]),
       suggestion("A", Typed[A]),
       suggestion("AA", Typed[AA]),
       suggestion("B", Typed[B]),
       suggestion("C", Typed[C]),
       suggestion("Util", Typed[Util]),
       suggestion("WithList", Typed[WithList]),
+      suggestion("BigDecimal", Typed[java.math.BigDecimal]),
+      suggestion("BigInteger", Typed[java.math.BigInteger]),
+      suggestion("Boolean", Typed[java.lang.Boolean]),
+      suggestion("Double", Typed[java.lang.Double]),
+      suggestion("Float", Typed[java.lang.Float]),
+      suggestion("Long", Typed[java.lang.Long]),
+      suggestion("Integer", Typed[java.lang.Integer]),
+      suggestion("Short", Typed[java.lang.Short]),
+      suggestion("Byte", Typed[java.lang.Byte]),
+      suggestion("String", Typed[java.lang.String]),
+      suggestion("List", Typed.genericTypeClass[java.util.List[_]](List(Unknown))),
+      suggestion("Map", Typed.genericTypeClass[java.util.Map[_, _]](List(Unknown, Unknown))),
+      suggestion("Charset", Typed[Charset]),
+      suggestion("ChronoLocalDate", Typed[ChronoLocalDate]),
+      suggestion("ChronoLocalDateTime", Typed[ChronoLocalDateTime[_]]),
+      suggestion("Currency", Typed[Currency]),
+      suggestion("LocalDate", Typed[LocalDate]),
+      suggestion("LocalTime", Typed[LocalTime]),
+      suggestion("Locale", Typed[Locale]),
+      suggestion("UUID", Typed[UUID]),
+      suggestion("ZoneId", Typed[ZoneId]),
+      suggestion("ZoneOffset", Typed[ZoneOffset]),
+    )
+  }
+
+  test("should suggest parameters for casts/conversions methods on string") {
+    spelSuggestionsFor("'11'.to('')", column = 9) should contain theSameElementsAs List(
+      suggestion("BigDecimal", Typed[java.math.BigDecimal]),
+      suggestion("BigInteger", Typed[java.math.BigInteger]),
+      suggestion("Boolean", Typed[java.lang.Boolean]),
+      suggestion("Double", Typed[java.lang.Double]),
+      suggestion("Float", Typed[java.lang.Float]),
+      suggestion("Long", Typed[java.lang.Long]),
+      suggestion("Integer", Typed[java.lang.Integer]),
+      suggestion("Short", Typed[java.lang.Short]),
+      suggestion("Byte", Typed[java.lang.Byte]),
+      suggestion("Charset", Typed[Charset]),
+      suggestion("ChronoLocalDate", Typed[ChronoLocalDate]),
+      suggestion("ChronoLocalDateTime", Typed[ChronoLocalDateTime[_]]),
+      suggestion("Currency", Typed[Currency]),
+      suggestion("LocalDate", Typed[LocalDate]),
+      suggestion("LocalDateTime", Typed[LocalDateTime]),
+      suggestion("LocalTime", Typed[LocalTime]),
+      suggestion("Locale", Typed[Locale]),
+      suggestion("UUID", Typed[UUID]),
+      suggestion("ZoneId", Typed[ZoneId]),
+      suggestion("ZoneOffset", Typed[ZoneOffset]),
+    )
+  }
+
+  test("should suggest parameters for casts/conversions methods on list to map") {
+    spelSuggestionsFor("{{key: 'a', value: 1}}.to('')", column = 27) should contain theSameElementsAs List(
+      suggestion(
+        "Map",
+        Typed.genericTypeClass[java.util.Map[_, _]](List(Typed.typedClass[String], Typed.typedClass[Integer]))
+      ),
     )
   }
 
@@ -820,7 +877,7 @@ class ExpressionSuggesterSpec
 
     val listMethodsSuggestion  = suggestion(listSpelExpression)
     val arrayMethodsSuggestion = suggestion(arraySpelExpression)
-    listMethodsSuggestion should contain theSameElementsAs arrayMethodsSuggestion
+    arrayMethodsSuggestion should contain allElementsOf listMethodsSuggestion
   }
 
 }

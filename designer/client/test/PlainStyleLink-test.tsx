@@ -2,7 +2,6 @@ import React from "react";
 import { MemoryRouter } from "react-router";
 import { isExternalUrl, PlainStyleLink } from "../src/containers/plainStyleLink";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "@jest/globals";
 
 const Link = (props) => (
     <MemoryRouter>
@@ -46,8 +45,6 @@ describe("PlainStyleLink", () => {
     ])("should support %s", (_, to, expected) => {
         render(<Link to={to} />);
 
-        //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
-        // @ts-ignore
         expect(screen.getByRole("link")).toHaveAttribute("href", expected);
     });
 });

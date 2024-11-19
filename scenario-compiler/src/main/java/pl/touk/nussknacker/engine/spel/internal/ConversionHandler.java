@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public class RuntimeConversionHandler {
+public class ConversionHandler {
     public static final class ArrayToListConverter implements ConditionalGenericConverter {
 
         private final ConversionService conversionService;
@@ -51,12 +51,12 @@ public class RuntimeConversionHandler {
             if (source == null) {
                 return null;
             }
-            return RuntimeConversionHandler.convert(source);
+            return ConversionHandler.convertArrayToList(source);
         }
 
     }
 
-    public static List<Object> convert(Object target) {
+    public static List<Object> convertArrayToList(Object target) {
         if (target.getClass().getComponentType().isPrimitive()) {
             int length = Array.getLength(target);
             List<Object> result = new ArrayList<>(length);

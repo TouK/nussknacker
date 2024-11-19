@@ -2,6 +2,14 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.19.0 (Not released yet)
+
+### Other changes
+
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+  * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15 
+  * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
+
 ## In version 1.18.0 (Not released yet)
 
 ### Configuration changes
@@ -90,6 +98,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `FlinkCustomNodeContext.forCustomContext` has been removed, please use `TypeInformationDetection.instance.forValueWithContext` instead
   * [#7097](https://github.com/TouK/nussknacker/pull/7097) Flink base types registration mechanism
     * In case of using types: java.time.LocalDate, java.time.LocalTime, java.time.LocalDateTime with CaseClassTypeInfo mechanism, state probably will be lost
+
+* [#7113](https://github.com/TouK/nussknacker/pull/7113) Scala 2.13 was updated to 2.13.15, you should update your `flink-scala-2.13` to 1.1.2
 
 ### Configuration changes
 * [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`

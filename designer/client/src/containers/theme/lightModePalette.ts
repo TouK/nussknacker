@@ -86,9 +86,6 @@ export const lightModePalette: PaletteOptions = {
             Aggregate: {
                 fill: "#e892bd",
             },
-            Properties: {
-                fill: "#46ca94",
-            },
             CustomNode: {
                 fill: "#19A49D",
             },
@@ -102,6 +99,10 @@ export const lightModePalette: PaletteOptions = {
         windows: {
             compareVersions: { backgroundColor: "#1ba1af", color: "white" },
             customAction: { backgroundColor: "white", color: "black" },
+            editProperties: {
+                backgroundColor: "#46ca94",
+                color: "white",
+            },
             default: { backgroundColor: "#2D8E54", color: "white" },
         },
     },

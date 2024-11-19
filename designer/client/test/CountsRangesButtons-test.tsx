@@ -2,7 +2,7 @@ import moment from "moment";
 import React from "react";
 import { CountsRangesButtons } from "../src/components/modals/CalculateCounts/CountsRangesButtons";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, jest } from "@jest/globals";
+import { jest } from "@jest/globals";
 import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 jest.mock("react-i18next", () => ({

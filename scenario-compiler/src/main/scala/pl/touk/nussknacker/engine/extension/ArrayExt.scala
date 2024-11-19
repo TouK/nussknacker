@@ -1,38 +1,44 @@
 package pl.touk.nussknacker.engine.extension
 
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, MethodDefinition}
-import pl.touk.nussknacker.engine.spel.internal.RuntimeConversionHandler
+import pl.touk.nussknacker.engine.extension.ExtensionMethod.{NoArg, SingleArg}
+import pl.touk.nussknacker.engine.spel.internal.ConversionHandler
 
 import java.util
 import java.util.{List => JList}
 
-class ArrayExt(target: Any) extends util.AbstractList[Object] {
-  private val asList = RuntimeConversionHandler.convert(target)
-
-  override def get(index: Int): AnyRef                     = asList.get(index)
-  override def size(): Int                                 = asList.size()
-  override def lastIndexOf(o: Any): Int                    = super.lastIndexOf(o)
-  override def contains(o: Any): Boolean                   = super.contains(o)
-  override def indexOf(o: Any): Int                        = super.indexOf(o)
-  override def containsAll(c: util.Collection[_]): Boolean = super.containsAll(c)
-  override def isEmpty: Boolean                            = super.isEmpty
-  def empty: Boolean                                       = super.isEmpty
-
+class ArrayWrapper(target: Any) extends util.AbstractList[Object] {
+  private val asList                   = ConversionHandler.convertArrayToList(target)
+  override def get(index: Int): AnyRef = asList.get(index)
+  override def size(): Int             = asList.size()
 }
 
-object ArrayExt extends ExtensionMethodsHandler {
+object ArrayExt extends ExtensionMethodsDefinition {
 
-  override type ExtensionMethodInvocationTarget = ArrayExt
-  override val invocationTargetClass: Class[ArrayExt] = classOf[ArrayExt]
+  private val methodRegistry: Map[String, ExtensionMethod[_]] = Map(
+    "get"         -> SingleArg((target, arg: Int) => new ArrayWrapper(target).get(arg)),
+    "size"        -> NoArg(target => new ArrayWrapper(target).size()),
+    "lastIndexOf" -> SingleArg((target, arg: Any) => new ArrayWrapper(target).lastIndexOf(arg)),
+    "contains"    -> SingleArg((target, arg: Any) => new ArrayWrapper(target).contains(arg)),
+    "indexOf"     -> SingleArg((target, arg: Any) => new ArrayWrapper(target).indexOf(arg)),
+    "containsAll" -> SingleArg((target, arg: util.Collection[_]) => new ArrayWrapper(target).containsAll(arg)),
+    "isEmpty"     -> NoArg(target => new ArrayWrapper(target).isEmpty),
+    "empty"       -> NoArg(target => new ArrayWrapper(target).isEmpty),
+  )
 
-  override def createConverter(
-      classLoader: ClassLoader,
+  override def findMethod(
+      clazz: Class[_],
+      methodName: String,
+      argsSize: Int,
       set: ClassDefinitionSet
-  ): ToExtensionMethodInvocationTargetConverter[ArrayExt] =
-    (target: Any) => new ArrayExt(target)
+  ): Option[ExtensionMethod[_]] =
+    if (appliesToClassInRuntime(clazz))
+      methodRegistry.findMethod(methodName, argsSize)
+    else
+      None
 
   override def extractDefinitions(clazz: Class[_], set: ClassDefinitionSet): Map[String, List[MethodDefinition]] =
-    if (clazz.isArray) {
+    if (appliesToClassInRuntime(clazz)) {
       set
         .get(classOf[JList[_]])
         .map(_.methods)
@@ -41,5 +47,6 @@ object ArrayExt extends ExtensionMethodsHandler {
       Map.empty
     }
 
-  override def applies(clazz: Class[_]): Boolean = clazz.isArray
+  private def appliesToClassInRuntime(clazz: Class[_]): Boolean = clazz.isArray
+
 }

@@ -271,6 +271,10 @@ object ClassExtractionSettings {
         Set("containsKey", "containsValue", "get", "getOrDefault", "isEmpty", "size", "values", "keySet")
       ),
       MemberNamePredicate(
+        SuperClassPredicate(ExactClassPredicate[util.Map.Entry[_, _]]),
+        Set("getKey", "getValue")
+      ),
+      MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[Optional[_]]),
         Set("get", "isEmpty", "isPresent", "orElse")
       ),

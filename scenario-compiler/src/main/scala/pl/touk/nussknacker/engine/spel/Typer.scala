@@ -64,7 +64,7 @@ private[spel] class Typer(
     staticMethodInvocationsChecking: Boolean,
     classDefinitionSet: ClassDefinitionSet,
     evaluationContextPreparer: EvaluationContextPreparer,
-    methodExecutionForUnknownAllowed: Boolean,
+    anyMethodExecutionForUnknownAllowed: Boolean,
     dynamicPropertyAccessAllowed: Boolean
 ) extends LazyLogging {
 
@@ -73,7 +73,7 @@ private[spel] class Typer(
   private lazy val evaluationContext: EvaluationContext =
     evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)
 
-  private val methodReferenceTyper = new MethodReferenceTyper(classDefinitionSet, methodExecutionForUnknownAllowed)
+  private val methodReferenceTyper = new MethodReferenceTyper(classDefinitionSet, anyMethodExecutionForUnknownAllowed)
 
   private lazy val typeReferenceTyper = new TypeReferenceTyper(evaluationContext, classDefinitionSet)
 
@@ -228,8 +228,10 @@ private[spel] class Typer(
         case TypedNull =>
           invalidNodeResult(IllegalIndexingOperation)
         case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
-        case _ =>
-          val w = validNodeResult(Unknown)
+        case Unknown =>
+          withTypedChildren(_ => valid(Unknown))
+        case _: TypedClass =>
+          val w = withTypedChildren(_ => valid(Unknown))
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
       }
     }
@@ -434,7 +436,7 @@ private[spel] class Typer(
       case e: PropertyOrFieldReference =>
         current.stackHead
           .map(extractProperty(e, _))
-          .map(fallbackToCheckMethodsIfPropertyNotExists)
+          .map(mapErrorAndCheckMethodsIfPropertyNotExists)
           .getOrElse(invalid(NonReferenceError(e.toStringAST)))
           .map(toNodeResult)
       // TODO: what should be here?
@@ -605,10 +607,14 @@ private[spel] class Typer(
   private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): TypingR[TypingResult] = t match {
     case Unknown =>
       val w = Writer.value[List[ExpressionParseError], TypingResult](Unknown)
-      if (methodExecutionForUnknownAllowed)
+      if (anyMethodExecutionForUnknownAllowed) {
         w
-      else
-        w.tell(List(IllegalPropertyAccessError(Unknown)))
+      } else {
+        // we allow some methods to be used on unknown
+        unknownPropertyTypeBasedOnMethod(e)
+          .map(valid)
+          .getOrElse(w.tell(List(IllegalPropertyAccessError(Unknown))))
+      }
     case TypedNull =>
       invalid(IllegalPropertyAccessError(TypedNull), fallbackType = TypedNull)
     case s: SingleTypingResult =>
@@ -679,6 +685,9 @@ private[spel] class Typer(
     classDefinitionSet.get(clazz.klass).flatMap(_.getPropertyOrFieldType(invocationTarget, e.getName))
   }
 
+  private def unknownPropertyTypeBasedOnMethod(e: PropertyOrFieldReference): Option[TypingResult] =
+    classDefinitionSet.unknown.flatMap(_.getPropertyOrFieldType(Unknown, e.getName))
+
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
     case tc: SingleTypingResult
         if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) ||
@@ -735,10 +744,13 @@ private[spel] class Typer(
     }
   }
 
-  private def fallbackToCheckMethodsIfPropertyNotExists(typing: TypingR[TypingResult]): TypingR[TypingResult] =
+  private def mapErrorAndCheckMethodsIfPropertyNotExists(typing: TypingR[TypingResult]): TypingR[TypingResult] =
     typing.mapWritten(_.map {
       case e: NoPropertyError =>
         methodReferenceTyper.typeMethodReference(typer.MethodReference(e.typ, false, e.property, Nil)) match {
+          // Right is not mapped because of: pl.touk.nussknacker.engine.spel.Typer.propertyTypeBasedOnMethod and
+          // pl.touk.nussknacker.engine.spel.internal.propertyAccessors.NoParamMethodPropertyAccessor
+          // Methods without parameters can be treated as properties.
           case Left(me: ArgumentTypeError) => me
           case _                           => e
         }
@@ -757,7 +769,7 @@ private[spel] class Typer(
       staticMethodInvocationsChecking,
       classDefinitionSet,
       evaluationContextPreparer,
-      methodExecutionForUnknownAllowed,
+      anyMethodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed
     )
 

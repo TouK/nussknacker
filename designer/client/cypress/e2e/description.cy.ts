@@ -22,9 +22,7 @@ describe("Description", () => {
     it("should display markdown", () => {
         cy.get(`[title="toggle description view"]`).should("not.exist");
 
-        cy.contains(/^properties$/i)
-            .should("be.enabled")
-            .dblclick();
+        cy.contains(/^properties$/i).click();
         cy.get("[data-testid=window]").should("be.visible").as("window");
 
         cy.get("[data-testid=window]").contains("Description").next().find(".ace_editor").should("be.visible").click("center")

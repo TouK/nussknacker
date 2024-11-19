@@ -17,7 +17,7 @@ jobs:
       - name: Run benchmarks
         run: sbt "benchmarks/jmh:run -i 8 -wi 3 -f1 -t1 -rf csv"
       - name: Store benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: jmh-result.csv
           path: benchmarks/jmh-result.csv

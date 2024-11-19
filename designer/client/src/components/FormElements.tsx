@@ -32,5 +32,3 @@ export function Button({ className, onClick, ...props }: ButtonProps): JSX.Eleme
         />
     );
 }
-
-export const SelectNode = styled("select")(nodeInputCss);

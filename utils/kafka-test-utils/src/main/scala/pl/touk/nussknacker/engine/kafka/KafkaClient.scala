@@ -2,17 +2,21 @@ package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
+import odelay.Timer
 import org.apache.kafka.clients.admin.{NewTopic, TopicDescription}
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
+import retry.When
 
 import java.time.Duration
 import java.util
 import java.util.{Collections, UUID}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
-import scala.reflect.ClassTag
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
 
 class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
 
@@ -26,8 +30,16 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
   private lazy val adminClient =
     KafkaUtils.createKafkaAdminClient(KafkaConfig(Some(Map("bootstrap.servers" -> kafkaAddress)), None))
 
-  def createTopic(name: String, partitions: Int = 5): Unit =
+  def createTopic(name: String, partitions: Int = 5): Unit = {
     adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()
+    // When kraft enabled, topics doesn't appear instantly after createTopic
+    retry.Pause(10, 1.second)(Timer.default)(
+      Future {
+        topic(name)
+      }
+    )
+
+  }
 
   def deleteTopic(name: String): Unit =
     adminClient.deleteTopics(util.Arrays.asList(name)).all().get()

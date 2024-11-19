@@ -54,7 +54,11 @@ const AddCommentDialog = loadable(() => import("../components/modals/AddCommentD
     fallback: <LoaderSpinner show />,
 });
 
-const ModifyExistingCommentDialog = loadable(() => import("../components/modals/ModifyExistingCommentDialog"), {
+const ModifyActivityCommentDialog = loadable(() => import("../components/modals/ModifyActivityCommentDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
+const PropertiesDialog = loadable(() => import("../components/modals/PropertiesDialog"), {
     fallback: <LoaderSpinner show />,
 });
 
@@ -100,10 +104,12 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <ScenarioDetailsDialog {...props} />;
         case WindowKind.addComment:
             return <AddCommentDialog {...props} />;
-        case WindowKind.modifyComment:
-            return <ModifyExistingCommentDialog {...props} />;
+        case WindowKind.modifyActivityComment:
+            return <ModifyActivityCommentDialog {...props} />;
         case WindowKind.addAttachment:
             return <AddAttachmentDialog {...props} />;
+        case WindowKind.editProperties:
+            return <PropertiesDialog {...props} />;
         default:
             return (
                 <WindowContent {...props}>

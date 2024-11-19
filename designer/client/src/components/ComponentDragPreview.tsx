@@ -49,6 +49,10 @@ export const ComponentDragPreview = forwardRef<HTMLDivElement, { scale: () => nu
         willChange: "transform",
     });
 
+    if (!node) {
+        return null;
+    }
+
     return createPortal(
         <div ref={forwardedRef} className={wrapperStyles} style={{ transform: `translate(${x}px, ${y}px)` }}>
             <div

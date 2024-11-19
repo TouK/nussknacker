@@ -33,8 +33,48 @@ class ExtensionMethodsSpec extends AnyFunSuite with Matchers {
       )
       .classDefinitionsMap
       .map(e => e._1.getName -> e._2.methods.keys) shouldBe Map(
-      "java.lang.String" -> Set("toUpperCase"),
-      "java.lang.Object" -> Set("toString", "canCastTo", "castTo", "castToOrNull"),
+      "java.lang.String" -> Set(
+        "canBeBigDecimal",
+        "toBigDecimal",
+        "toBigDecimalOrNull",
+        "canBeBoolean",
+        "toBoolean",
+        "toBooleanOrNull",
+        "canBeDouble",
+        "toDouble",
+        "toDoubleOrNull",
+        "canBeLong",
+        "toLong",
+        "toLongOrNull",
+        "toUpperCase",
+        "canBe",
+        "to",
+        "toOrNull",
+      ),
+      "java.lang.Object" -> Set(
+        "canBeBigDecimal",
+        "toBigDecimal",
+        "toBigDecimalOrNull",
+        "canBeBoolean",
+        "toBoolean",
+        "toBooleanOrNull",
+        "canBeDouble",
+        "toDouble",
+        "toDoubleOrNull",
+        "canBeLong",
+        "toLong",
+        "toLongOrNull",
+        "toString",
+        "canBe",
+        "to",
+        "toOrNull",
+        "canBeMap",
+        "toMap",
+        "toMapOrNull",
+        "canBeList",
+        "toList",
+        "toListOrNull"
+      ),
     )
   }
 

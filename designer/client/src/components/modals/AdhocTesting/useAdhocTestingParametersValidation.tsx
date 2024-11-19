@@ -19,18 +19,16 @@ export function useAdhocTestingParametersValidation(
             validateAdhocTestParameters(
                 scenarioName,
                 {
-                    sourceParameters: {
-                        sourceId,
-                        parameterExpressions: parameters.reduce(
-                            (obj, param) => ({
-                                ...obj,
-                                [param.name]: value[param.name],
-                            }),
-                            {},
-                        ),
-                    },
-                    scenarioGraph: scenarioGraph,
+                    sourceId,
+                    parameterExpressions: parameters.reduce(
+                        (obj, param) => ({
+                            ...obj,
+                            [param.name]: value[param.name],
+                        }),
+                        {},
+                    ),
                 },
+                scenarioGraph,
                 ({ validationErrors }) => setErrors(validationErrors),
             );
         },
