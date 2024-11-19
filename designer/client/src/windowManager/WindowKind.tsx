@@ -21,4 +21,5 @@ export enum WindowKind {
     addComment,
     modifyComment,
     addAttachment,
+    remote,
 }

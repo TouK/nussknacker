@@ -8,6 +8,7 @@ import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import { WindowContent } from "./WindowContent";
 import { WindowKind } from "./WindowKind";
 import AddAttachmentDialog from "../components/modals/AddAttachmentDialog";
+import RemoteModuleDialog from "../components/RemoteModuleDialog";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
@@ -93,6 +94,8 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return <DescriptionDialog {...props} />;
         case WindowKind.survey:
             return <FrameDialog {...props} />;
+        case WindowKind.remote:
+            return <RemoteModuleDialog {...props} />;
         case WindowKind.scenarioDetails:
             return <ScenarioDetailsDialog {...props} />;
         case WindowKind.addComment:
