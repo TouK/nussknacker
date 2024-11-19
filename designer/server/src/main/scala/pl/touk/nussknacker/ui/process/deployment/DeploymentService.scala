@@ -415,8 +415,7 @@ class DeploymentService(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
-      processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
-      _ = processDetailsOpt.map(_.processVersionId)
+      processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails        <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
       result                <- getProcessState(processDetails, inProgressActionNames)
@@ -695,46 +694,46 @@ class DeploymentService(
     Await.result(dbioRunner.run(actionRepository.deleteInProgressActions()), 10 seconds)
   }
 
-  // TODO: further changes
-  //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
-  //       - better comment validation
   private def processSingleExecution(command: PerformSingleExecutionCommand): Future[SingleExecutionResult] = {
-    import command.commonData._
-    val actionName: ScenarioActionName    = ScenarioActionName.PerformSingleExecution
-    val actionParams: Map[String, String] = Map.empty
-    for {
-      validatedComment <- validateDeploymentComment(comment)
-      ctx <- prepareCommandContextWithAction[CanonicalProcess](
-        processIdWithName,
-        actionName,
-        actionParams,
-        p => Some(p.processVersionId),
-        _ => None
-      )
-      dmCommand = DMPerformSingleExecutionCommand(
-        ctx.latestScenarioDetails.toEngineProcessVersion,
-        ctx.latestScenarioDetails.json,
-        user.toManagerUser,
-      )
-      actionResult <- runActionAndHandleResults(
-        actionName,
-        validatedComment,
-        ctx
-      ) {
-        dispatcher
-          .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-          .processCommand(dmCommand)
-      }
-    } yield actionResult
+    processAction(
+      command = command,
+      actionName = ScenarioActionName.PerformSingleExecution,
+      actionParams = Map.empty,
+      dmCommandCreator = ctx =>
+        DMPerformSingleExecutionCommand(
+          ctx.latestScenarioDetails.toEngineProcessVersion,
+          ctx.latestScenarioDetails.json,
+          command.commonData.user.toManagerUser,
+        )
+    )
+  }
+
+  private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
+    processAction(
+      command = command,
+      actionName = command.actionName,
+      actionParams = command.params,
+      dmCommandCreator = ctx =>
+        DMCustomActionCommand(
+          command.actionName,
+          ctx.latestScenarioDetails.toEngineProcessVersion,
+          ctx.latestScenarioDetails.json,
+          command.commonData.user.toManagerUser,
+          command.params
+        )
+    )
   }
 
   // TODO: further changes
   //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
   //       - better comment validation
-  private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
+  private def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](
+      command: COMMAND,
+      actionName: ScenarioActionName,
+      actionParams: Map[String, String],
+      dmCommandCreator: CommandContext[CanonicalProcess] => DMScenarioCommand[RESULT],
+  ): Future[RESULT] = {
     import command.commonData._
-    val actionName: ScenarioActionName    = command.actionName
-    val actionParams: Map[String, String] = command.params
     for {
       validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
@@ -744,13 +743,7 @@ class DeploymentService(
         p => Some(p.processVersionId),
         _ => None
       )
-      dmCommand = DMCustomActionCommand(
-        actionName,
-        ctx.latestScenarioDetails.toEngineProcessVersion,
-        ctx.latestScenarioDetails.json,
-        user.toManagerUser,
-        actionParams
-      )
+      dmCommand = dmCommandCreator(ctx)
       actionResult <- runActionAndHandleResults(
         actionName,
         validatedComment,

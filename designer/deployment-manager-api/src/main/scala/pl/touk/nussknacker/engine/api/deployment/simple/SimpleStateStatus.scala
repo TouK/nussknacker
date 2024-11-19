@@ -90,24 +90,24 @@ object SimpleStateStatus {
       status
     )
 
-  val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = {
-    case ProcessStatus(SimpleStateStatus.NotDeployed, _, _) =>
+  val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = _.stateStatus match {
+    case SimpleStateStatus.NotDeployed =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case ProcessStatus(SimpleStateStatus.DuringDeploy, _, _) =>
+    case SimpleStateStatus.DuringDeploy =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-    case ProcessStatus(SimpleStateStatus.Running, _, _) =>
+    case SimpleStateStatus.Running =>
       List(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
-    case ProcessStatus(SimpleStateStatus.Canceled, _, _) =>
+    case SimpleStateStatus.Canceled =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case ProcessStatus(SimpleStateStatus.Restarting, _, _) =>
+    case SimpleStateStatus.Restarting =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
-    case ProcessStatus(SimpleStateStatus.Finished, _, _) =>
+    case SimpleStateStatus.Finished =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case ProcessStatus(SimpleStateStatus.DuringCancel, _, _) =>
+    case SimpleStateStatus.DuringCancel =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
-    case ProcessStatus(SimpleStateStatus.ProblemStateStatus(_, allowedActions), _, _) =>
+    case SimpleStateStatus.ProblemStateStatus(_, allowedActions) =>
       allowedActions
   }
 

@@ -22,10 +22,10 @@ object DevelopmentStateStatus {
   val PreparingResourcesActionName: ScenarioActionName = ScenarioActionName("PREPARING")
   val TestActionName: ScenarioActionName               = ScenarioActionName("TEST")
 
-  val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = {
-    case ProcessStatus(DevelopmentStateStatus.AfterRunningStatus, _, _)       => List(ScenarioActionName.Cancel)
-    case ProcessStatus(DevelopmentStateStatus.PreparingResourcesStatus, _, _) => List(ScenarioActionName.Deploy)
-    case ProcessStatus(DevelopmentStateStatus.TestStatus, _, _)               => List(ScenarioActionName.Deploy)
+  val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = _.stateStatus match {
+    case DevelopmentStateStatus.AfterRunningStatus       => List(ScenarioActionName.Cancel)
+    case DevelopmentStateStatus.PreparingResourcesStatus => List(ScenarioActionName.Deploy)
+    case DevelopmentStateStatus.TestStatus               => List(ScenarioActionName.Deploy)
   }
 
   val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(

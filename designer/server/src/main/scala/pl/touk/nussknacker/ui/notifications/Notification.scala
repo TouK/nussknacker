@@ -73,13 +73,12 @@ object Notification {
       activityName: String,
       name: ProcessName
   ): Notification = {
-    // We don't want to display this notification, because it already causes scenario activities and state refresh,
     Notification(
-      id,
-      Some(name),
-      activityName,
-      None,
-      List(DataToRefresh.activity, DataToRefresh.state)
+      id = id,
+      scenarioName = Some(name),
+      message = activityName,
+      `type` = None,
+      toRefresh = List(DataToRefresh.activity, DataToRefresh.state)
     )
   }
 

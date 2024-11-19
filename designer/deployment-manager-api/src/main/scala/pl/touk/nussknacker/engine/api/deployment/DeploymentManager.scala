@@ -51,7 +51,6 @@ trait DeploymentManager extends AutoCloseable {
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
       statusDetailsWithFreshness <- getProcessStates(idWithName.name)
-      _ = statusDetailsWithFreshness.value.map(_.deploymentId)
       stateWithFreshness <- resolve(
         idWithName,
         statusDetailsWithFreshness.value,
