@@ -62,7 +62,8 @@ object PeriodicDeploymentManager {
       periodicBatchConfig.executionConfig,
       processConfigEnricher,
       clock,
-      dependencies.actionService
+      dependencies.actionService,
+      dependencies.configsFromProvider
     )
 
     // These actors have to be created with retries because they can initially fail to create due to taken names,

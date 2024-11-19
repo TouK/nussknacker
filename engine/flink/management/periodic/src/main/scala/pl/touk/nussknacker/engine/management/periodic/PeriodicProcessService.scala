@@ -3,14 +3,18 @@ package pl.touk.nussknacker.engine.management.periodic
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId}
+import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
   DeploymentStatus,
   EngineStatusesToReschedule,
@@ -24,6 +28,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeplo
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong.longUUID
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
@@ -41,7 +46,8 @@ class PeriodicProcessService(
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock,
-    actionService: ProcessingTypeActionService
+    actionService: ProcessingTypeActionService,
+    configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -402,7 +408,10 @@ class PeriodicProcessService(
       DeploymentData.systemUser,
       additionalDeploymentDataProvider.prepareAdditionalData(deployment),
       // TODO: in the future we could allow users to specify nodes data during schedule requesting
-      NodesDeploymentData.empty
+      NodesDeploymentData.empty,
+      AdditionalModelConfigs(
+        AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(configsFromProvider)
+      )
     )
     val deploymentWithJarData = deployment.periodicProcess.deploymentData
     val deploymentAction = for {

@@ -145,7 +145,8 @@ class PeriodicProcessServiceIntegrationTest
         executionConfig = executionConfig,
         processConfigEnricher = ProcessConfigEnricher.identity,
         clock = fixedClock(currentTime),
-        new ProcessingTypeActionServiceStub
+        new ProcessingTypeActionServiceStub,
+        Map.empty
       )
 
   }

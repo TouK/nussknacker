@@ -14,7 +14,12 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{
+  AdditionalModelConfigs,
+  DeploymentData,
+  DeploymentId,
+  ExternalDeploymentId
+}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.mock.MockDeploymentManager
@@ -224,6 +229,7 @@ class NotificationServiceTest
       mock[ProcessChangeListener],
       None,
       None,
+      TestFactory.additionalComponentConfigsByProcessingType,
       clock
     ) {
       override protected def validateBeforeDeploy(
@@ -245,7 +251,8 @@ class NotificationServiceTest
               DeploymentId.fromActionId(actionId),
               user.toManagerUser,
               additionalDeploymentData,
-              nodesDeploymentData
+              nodesDeploymentData,
+              AdditionalModelConfigs.empty
             ),
             processDetails.json
           )
