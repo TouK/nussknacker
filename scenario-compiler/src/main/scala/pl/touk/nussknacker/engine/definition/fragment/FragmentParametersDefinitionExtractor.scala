@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{Writer, WriterT}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
@@ -60,7 +61,7 @@ class FragmentParametersDefinitionExtractor(
   ): WriterT[Id, List[PartSubGraphCompilationError], List[Id[Parameter]]] = {
     parameters
       .map(p =>
-        getParamTypingResultV2(p)
+        getParamTypingResult(p)
           .mapBoth { (written, typ) =>
             val param = toParameter(typ, p)
             (written ++ param.written, param.value)
@@ -138,13 +139,16 @@ class FragmentParametersDefinitionExtractor(
   }
 
   private def parseClassNameToTypingResult(className: String): Try[TypingResult] = {
+    /*
+      TODO: Write this parser in a way that handles arbitrary depth expressions
+            One should not use regexes for doing so and rather build AST
+     */
     def resolveInnerClass(simpleClassName: String): TypingResult =
       classDefinitions
         .find(classDefinition => classDefinition.clazzName.display == simpleClassName)
         .fold(
-          throw new ClassNotFoundException(
-            s"Class $simpleClassName was not found in the class definitions set: ${classDefinitions.map(_.clazzName.display)}"
-          )
+          // This is fallback - it may be removed and `ClassNotFound` exception may be thrown here after cleaning up the mess with `FragmentClazzRef` class
+          Typed(ClassUtils.getClass(classLoader, simpleClassName))
         ) { classDefinition =>
           classDefinition.clazzName
         }
@@ -168,27 +172,12 @@ class FragmentParametersDefinitionExtractor(
     })
   }
 
-  private def getParamTypingResultV2(
+  private def getParamTypingResult(
       fragmentParameter: FragmentParameter
   )(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], TypingResult] =
     parseClassNameToTypingResult(
       fragmentParameter.typ.refClazzName
     )
-      .map(Writer.value[List[PartSubGraphCompilationError], TypingResult])
-      .getOrElse(
-        Writer
-          .value[List[PartSubGraphCompilationError], TypingResult](Unknown)
-          .tell(
-            List(FragmentParamClassLoadError(fragmentParameter.name, fragmentParameter.typ.refClazzName, nodeId.id))
-          )
-      )
-
-  private def getParamTypingResult(
-      fragmentParameter: FragmentParameter
-  )(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], TypingResult] =
-    fragmentParameter.typ
-      .toRuntimeClass(classLoader)
-      .map(Typed(_))
       .map(Writer.value[List[PartSubGraphCompilationError], TypingResult])
       .getOrElse(
         Writer

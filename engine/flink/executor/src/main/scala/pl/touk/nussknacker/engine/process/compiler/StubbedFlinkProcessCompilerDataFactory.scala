@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
@@ -42,7 +43,8 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
 
   override protected def adjustDefinitions(
       originalModelDefinition: ModelDefinition,
-      definitionContext: ComponentDefinitionContext
+      definitionContext: ComponentDefinitionContext,
+      classDefinitions: Set[ClassDefinition]
   ): ModelDefinition = {
     val usedSourceIds = process.allStartNodes
       .map(_.head.data)
@@ -61,7 +63,8 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     }
 
     val fragmentParametersDefinitionExtractor = new FragmentParametersDefinitionExtractor(
-      definitionContext.userCodeClassLoader
+      definitionContext.userCodeClassLoader,
+      classDefinitions
     )
     val fragmentSourceDefinitionPreparer = new StubbedFragmentSourceDefinitionPreparer(
       fragmentParametersDefinitionExtractor
