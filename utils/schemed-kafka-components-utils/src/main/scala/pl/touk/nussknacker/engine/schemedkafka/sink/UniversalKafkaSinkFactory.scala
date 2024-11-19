@@ -77,11 +77,6 @@ class UniversalKafkaSinkFactory(
         )
       )
 
-  private val jsonSchema = RuntimeSchemaData[ParsedSchema](
-    new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson),
-    None
-  )
-
   private val restrictedParamNames: Set[ParameterName] = Set(
     topicParamName,
     schemaVersionParamName,
@@ -90,6 +85,11 @@ class UniversalKafkaSinkFactory(
     sinkValidationModeParamName,
     contentTypeParamName
   )
+
+  private lazy val jsonSchema =
+    RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson), None)
+  private lazy val plainSchema =
+    RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain), None)
 
   override protected def topicFrom(value: String): TopicName.ForSink = TopicName.ForSink(value)
 
@@ -168,11 +168,7 @@ class UniversalKafkaSinkFactory(
           (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
           _
         ) =>
-      val runtimeSchemaData = if (contentType.equals(ContentTypes.JSON.toString)) {
-        jsonSchema
-      } else {
-        jsonSchema.copy(new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain))
-      }
+      val runtimeSchemaData = runtimeSchemaDataForContentType(contentType)
       schemaSupportDispatcher
         .forSchemaType(runtimeSchemaData.schema.schemaType())
         .extractParameter(
@@ -257,7 +253,7 @@ class UniversalKafkaSinkFactory(
           (`sinkRawEditorParamName`, DefinedEagerParameter(false, _)) :: Nil,
           _
         ) =>
-      val schemaData = jsonSchema
+      val schemaData = runtimeSchemaDataForContentType(contentType)
 
       schemaSupportDispatcher
         .forSchemaType(schemaData.schema.schemaType())
@@ -365,5 +361,11 @@ class UniversalKafkaSinkFactory(
 
   override def allowedProcessingModes: AllowedProcessingModes =
     AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
+
+  private def runtimeSchemaDataForContentType(contentType: String): RuntimeSchemaData[ParsedSchema] = {
+    if (contentType.equals(ContentTypes.JSON.toString)) { jsonSchema }
+    else if (contentType.equals(ContentTypes.PLAIN.toString)) { plainSchema }
+    else { throw new IllegalStateException("Content Type should be JSON or PLAIN, is neither") }
+  }
 
 }

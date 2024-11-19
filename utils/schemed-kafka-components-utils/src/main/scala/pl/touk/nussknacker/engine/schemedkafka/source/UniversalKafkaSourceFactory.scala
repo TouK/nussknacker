@@ -44,7 +44,7 @@ class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
-    protected val implProvider: KafkaSourceImplFactory[Any, Any]
+    protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
     with SourceFactory
     with WithExplicitTypesToExtract
@@ -94,8 +94,7 @@ class UniversalKafkaSourceFactory(
               )
             ),
             // This is the type after it leaves source
-            // TODO: Should be Array[Byte] when handling is implemented
-            Typed[Array[java.lang.Byte]]
+            Unknown
           )
         )
       }
