@@ -17,11 +17,17 @@ type CreatorPanelProps = ToolbarPanelProps & {
     };
 };
 
-const RemoteElement = <P extends NonNullable<{ url: ModuleUrl; componentGroup: string }>>(props: P) => (
-    <ErrorBoundary fallback={null}>
-        <RemoteComponent {...props} />
-    </ErrorBoundary>
-);
+const AddGroupElement = <P extends NonNullable<{ url: ModuleUrl; componentGroup: string }>>(props: P) => {
+    const { t } = useTranslation();
+    return props.url ? (
+        <ErrorBoundary fallback={null}>
+            <RemoteComponent
+                {...props}
+                label={t("panels.creator.addMore", "Add more {{componentGroup}}...", { componentGroup: props.componentGroup })}
+            />
+        </ErrorBoundary>
+    ) : null;
+};
 
 export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps): JSX.Element {
     const { t } = useTranslation();
@@ -42,8 +48,8 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
             <ToolBox
                 filter={filter}
                 addGroupLabelElement={({ name }) => (
-                    <RemoteElement
-                        url={additionalParams.addGroupElement}
+                    <AddGroupElement
+                        url={additionalParams?.addGroupElement}
                         variant="small"
                         componentGroup={name}
                         {...additionalParams}
@@ -51,8 +57,8 @@ export function CreatorPanel({ additionalParams, ...props }: CreatorPanelProps):
                     />
                 )}
                 addTreeElement={({ name }) => (
-                    <RemoteElement
-                        url={additionalParams.addGroupElement}
+                    <AddGroupElement
+                        url={additionalParams?.addGroupElement}
                         variant="big"
                         className="tool"
                         componentGroup={name}
