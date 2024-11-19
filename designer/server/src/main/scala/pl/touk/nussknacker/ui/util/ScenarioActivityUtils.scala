@@ -38,6 +38,28 @@ object ScenarioActivityUtils {
       }
     }
 
+    def lastModifiedAt: Instant = {
+      scenarioActivity match {
+        case activity: ScenarioActivity.ScenarioCreated             => activity.date
+        case activity: ScenarioActivity.ScenarioArchived            => activity.date
+        case activity: ScenarioActivity.ScenarioUnarchived          => activity.date
+        case activity: ScenarioActivity.ScenarioDeployed            => activity.comment.lastModifiedAt
+        case activity: ScenarioActivity.ScenarioPaused              => activity.comment.lastModifiedAt
+        case activity: ScenarioActivity.ScenarioCanceled            => activity.comment.lastModifiedAt
+        case activity: ScenarioActivity.ScenarioModified            => activity.comment.lastModifiedAt
+        case activity: ScenarioActivity.ScenarioNameChanged         => activity.date
+        case activity: ScenarioActivity.CommentAdded                => activity.comment.lastModifiedAt
+        case activity: ScenarioActivity.AttachmentAdded             => activity.date
+        case activity: ScenarioActivity.ChangedProcessingMode       => activity.date
+        case activity: ScenarioActivity.IncomingMigration           => activity.date
+        case activity: ScenarioActivity.OutgoingMigration           => activity.date
+        case activity: ScenarioActivity.PerformedSingleExecution    => activity.comment.lastModifiedAt
+        case activity: ScenarioActivity.PerformedScheduledExecution => activity.date
+        case activity: ScenarioActivity.AutomaticUpdate             => activity.date
+        case activity: ScenarioActivity.CustomAction                => activity.comment.lastModifiedAt
+      }
+    }
+
   }
 
 }

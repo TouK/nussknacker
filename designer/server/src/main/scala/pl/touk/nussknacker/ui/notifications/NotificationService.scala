@@ -88,7 +88,7 @@ class NotificationServiceImpl(
       }
       notificationsForScenarioActivities = allActivities.map { activity =>
         Notification.scenarioStateUpdateNotification(
-          s"${activity.scenarioActivityId.value.toString}_${activity.hashCode()}",
+          s"${activity.scenarioActivityId.value.toString}_${activity.lastModifiedAt.toEpochMilli}",
           activity.activityType.entryName,
           processName
         )
