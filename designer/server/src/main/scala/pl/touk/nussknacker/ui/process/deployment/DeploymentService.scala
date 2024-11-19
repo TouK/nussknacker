@@ -334,11 +334,7 @@ class DeploymentService(
         user.toManagerUser,
         additionalDeploymentData,
         nodesDeploymentData,
-        AdditionalModelConfigs(
-          AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(
-            additionalComponentConfigs.forProcessingType(processDetails.processingType).getOrElse(Map.empty)
-          )
-        )
+        getAdditionalModelConfigsRequiredForRuntime(processDetails.processingType)
       )
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
   }
@@ -418,6 +414,14 @@ class DeploymentService(
         context.actionId,
         context.latestScenarioDetails.processId,
         context.versionOnWhichActionIsDone
+      )
+    )
+  }
+
+  private def getAdditionalModelConfigsRequiredForRuntime(processingType: ProcessingType)(implicit user: LoggedUser) = {
+    AdditionalModelConfigs(
+      AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(
+        additionalComponentConfigs.forProcessingType(processingType).getOrElse(Map.empty)
       )
     )
   }

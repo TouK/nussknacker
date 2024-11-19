@@ -235,11 +235,7 @@ class DeploymentService(
     user = loggedUser.toManagerUser,
     additionalDeploymentData = Map.empty,
     nodesData = nodesData,
-    additionalModelConfigs = AdditionalModelConfigs(
-      AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(
-        additionalComponentConfigs.forProcessingType(processingType)(loggedUser).getOrElse(Map.empty)
-      )
-    )
+    additionalModelConfigs = getAdditionalModelConfigsRequiredForRuntime(processingType, loggedUser)
   )
 
   private def handleFailureDuringDeploymentRequesting(
@@ -284,6 +280,14 @@ class DeploymentService(
       labels = scenarioMetadata.labels.map(_.value),
       user = scenarioGraphVersion.user,
       modelVersion = scenarioGraphVersion.modelVersion
+    )
+  }
+
+  private def getAdditionalModelConfigsRequiredForRuntime(processingType: ProcessingType, loggedUser: LoggedUser) = {
+    AdditionalModelConfigs(
+      AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(
+        additionalComponentConfigs.forProcessingType(processingType)(loggedUser).getOrElse(Map.empty)
+      )
     )
   }
 

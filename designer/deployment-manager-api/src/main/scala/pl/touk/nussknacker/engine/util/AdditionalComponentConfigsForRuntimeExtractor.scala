@@ -14,7 +14,7 @@ object AdditionalComponentConfigsForRuntimeExtractor {
 
   // This function filters additional configs provided by AdditionalUIConfigProvider
   // to include only component and parameter configs with Dictionary editors.
-  def getAdditionalConfigsWithDictParametersEditors(
+  private def getAdditionalConfigsWithDictParametersEditors(
       additionalComponentConfigs: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): Map[DesignerWideComponentId, ComponentAdditionalConfig] = additionalComponentConfigs
     .map { case (componentId, componentAdditionalConfig) =>

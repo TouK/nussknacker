@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
 
 @JsonCodec
-case class AdditionalModelConfigs(
+final case class AdditionalModelConfigs(
     additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 )
 

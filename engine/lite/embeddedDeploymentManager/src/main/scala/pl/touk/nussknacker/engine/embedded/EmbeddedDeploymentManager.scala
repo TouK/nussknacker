@@ -100,7 +100,7 @@ class EmbeddedDeploymentManager(
       case DMRunDeploymentCommand(processVersion, deploymentData, canonicalProcess, updateStrategy) =>
         Future {
           ensureReplaceDeploymentUpdateStrategy(updateStrategy)
-          ensureAdditionalConfigsDoNotContainDictionaryEditors(deploymentData)
+          ensureAdditionalComponentsConfigsAreEmpty(deploymentData)
           deployScenarioClosingOldIfNeeded(
             processVersion,
             deploymentData,
@@ -124,16 +124,12 @@ class EmbeddedDeploymentManager(
     }
   }
 
-  // We make sure that we don't let deploy a scenario when any parameter editor was modified to dictionary one by AdditionalUIConfigProvider
-  // as that would result in failure during compilation before execution
-  private def ensureAdditionalConfigsDoNotContainDictionaryEditors(deploymentData: DeploymentData): Unit = {
-    val configsWithDictEditors =
-      AdditionalComponentConfigsForRuntimeExtractor.getAdditionalConfigsWithDictParametersEditors(
-        deploymentData.additionalModelConfigs.additionalConfigsFromProvider
-      )
-    if (configsWithDictEditors.nonEmpty) {
+  // We make sure that we don't let deploy a scenario when any component was modified by AdditionalUIConfigProvider
+  // as it could potentially result in failure during compilation before execution
+  private def ensureAdditionalComponentsConfigsAreEmpty(deploymentData: DeploymentData): Unit = {
+    if (deploymentData.additionalModelConfigs.additionalConfigsFromProvider.nonEmpty) {
       throw new IllegalArgumentException(
-        "Parameter editor modification to ValueInputWithDictEditor by AdditionalUIConfigProvider is not supported for Lite engine"
+        "Component config modification by AdditionalUIConfigProvider is not supported for Lite engine"
       )
     }
   }
