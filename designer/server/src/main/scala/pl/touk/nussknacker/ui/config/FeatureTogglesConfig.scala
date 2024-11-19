@@ -28,7 +28,8 @@ final case class FeatureTogglesConfig(
     testDataSettings: TestDataSettings,
     enableConfigEndpoint: Boolean,
     redirectAfterArchive: Boolean,
-    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
+    fetchKafkaTopicsWithoutSchema: Boolean
 )
 
 object FeatureTogglesConfig extends LazyLogging {
@@ -59,6 +60,9 @@ object FeatureTogglesConfig extends LazyLogging {
     val redirectAfterArchive                     = config.getAs[Boolean]("redirectAfterArchive").getOrElse(true)
     val componentDefinitionExtractionMode        = parseComponentDefinitionExtractionMode(config)
 
+    val fetchKafkaTopicsWithoutSchema =
+      config.hasPath("fetchKafkaTopicsWithoutSchema") && config.getBoolean("fetchKafkaTopicsWithoutSchema")
+
     FeatureTogglesConfig(
       development = isDevelopmentMode,
       metrics = metrics,
@@ -76,6 +80,7 @@ object FeatureTogglesConfig extends LazyLogging {
       enableConfigEndpoint = enableConfigEndpoint,
       redirectAfterArchive = redirectAfterArchive,
       componentDefinitionExtractionMode = componentDefinitionExtractionMode,
+      fetchKafkaTopicsWithoutSchema = fetchKafkaTopicsWithoutSchema,
     )
   }
 
