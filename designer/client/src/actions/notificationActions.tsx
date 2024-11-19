@@ -12,10 +12,11 @@ export function success(message: string): Action {
     });
 }
 
-export function error(message: string): Action {
+//TODO please take a look at this method and my changes, am I wrong or was it incomplete (without `error` and `showErrorText`) and had incomplete logic
+export function error(message: string, error?: string, showErrorText?: boolean): Action {
     return Notifications.error({
         autoDismiss: 10,
-        children: <Notification type={"error"} icon={<InfoOutlinedIcon />} message={message} />,
+        children: <Notification type={"error"} icon={<InfoOutlinedIcon />} message={showErrorText ? error : message} />,
     });
 }
 

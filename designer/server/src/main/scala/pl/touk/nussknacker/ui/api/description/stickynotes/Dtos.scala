@@ -73,6 +73,12 @@ object Dtos {
       targetEdge: Option[String]
   )
 
+  // TODO add this to configuration file in next iteration
+  case class StickyNotesSettings(
+      maxContentLength: Int,
+      maxNotesCount: Int
+  )
+
   sealed trait StickyNotesError
 
   implicit lazy val cellErrorSchema: Schema[LayoutData] = Schema.derived
@@ -82,6 +88,7 @@ object Dtos {
     final case class NoScenario(scenarioName: ProcessName) extends StickyNotesError
     final case object NoPermission                         extends StickyNotesError with CustomAuthorizationError
     final case class StickyNoteContentTooLong(count: Int, max: Int) extends StickyNotesError
+    final case class StickyNoteCountLimitReached(max: Int)          extends StickyNotesError
     final case class NoStickyNote(noteId: StickyNoteId)             extends StickyNotesError
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] =
@@ -92,9 +99,14 @@ object Dtos {
         s"No sticky note with id: ${e.noteId} was found"
       )
 
-    implicit val noCommentCodec: Codec[String, StickyNoteContentTooLong, CodecFormat.TextPlain] =
+    implicit val stickyNoteContentTooLongCodec: Codec[String, StickyNoteContentTooLong, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[StickyNoteContentTooLong](e =>
-        s"Provided note content is too long (${e.count} characters). Max content length is ${e.max} "
+        s"Provided note content is too long (${e.count} characters). Max content length is ${e.max}."
+      )
+
+    implicit val stickyNoteCountLimitReachedCodec: Codec[String, StickyNoteCountLimitReached, CodecFormat.TextPlain] =
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[StickyNoteCountLimitReached](e =>
+        s"Cannot add another sticky note, since max number of sticky notes was reached: ${e.max} (see configuration)."
       )
 
   }
