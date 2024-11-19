@@ -9,6 +9,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
   * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15 
   * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
+* [#7165](https://github.com/TouK/nussknacker/pull/7165)
+  * `pl.touk.nussknacker.engine.api.deployment.DeploymentManager`: 
+    * new command `DMPerformSingleExecutionCommand`, which must be handled in `DeploymentManager.processCommand` method
+      (handle it the same as `DMCustomActionCommand` with actionName=`run now`)
+    * added new arguments to `def resolve` and `getProcessState` methods (`latestVersionId: VersionId`, `deployedVersionId: Option[VersionId]`), which will be provided by Nu when invoking this method
+  * `pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager`:
+    * added new arguments to `def processState` method (`latestVersionId: VersionId`, `deployedVersionId: Option[VersionId]`)
+    * added new methods with default implementations: 
+      * `def applicableActions: List[ScenarioActionName]` - allows to specify, which actions are applicable to scenario (and consequently should be visible in Designer), by default all previously available actions
+      * `def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String]` - allows to define custom tooltips for actions, if not defined the default is still used
+    * modified method:
+      * `def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]` - changed argument, to include information about latest and deployed versions 
 
 ## In version 1.18.0 (Not released yet)
 

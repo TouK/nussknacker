@@ -12,6 +12,10 @@
 
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+* [#7165](https://github.com/TouK/nussknacker/pull/7165) Added PerformSingleExecution scenario action
+  * Added support for PerformSingleExecution action in DeploymentManager and in GUI
+  * Improved scenario state management to include information about current and deployed versions and allow more customization
+  * Improved notifications, to include scenario-specific events
 
 ## 1.18
 
