@@ -17,7 +17,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       |processToolbarConfig {
       |  defaultConfig {
       |    topLeft: [
-      |      { type: "tips-panel", hidden: { fragment: true } }
+      |      { type: "tips-panel", hidden: { fragment: true }, additionalParams: { customParam1: "value1" } }
       |    ]
       |    topRight: [
       |      {
@@ -56,7 +56,17 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
   it should "properly create scenario toolbar configuration" in {
     val defaultToolbarConfig = ScenarioToolbarsConfig(
       None,
-      List(ToolbarPanelConfig(TipsPanel, None, None, None, None, Some(ToolbarCondition(Some(true), None, None)), None)),
+      List(
+        ToolbarPanelConfig(
+          TipsPanel,
+          None,
+          None,
+          None,
+          None,
+          Some(ToolbarCondition(Some(true), None, None)),
+          Some(Map("customParam1" -> "value1"))
+        )
+      ),
       Nil,
       List(
         ToolbarPanelConfig(
