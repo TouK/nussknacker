@@ -191,9 +191,11 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 height: "100%",
                 borderStyle: "none",
                 borderColor: "Transparent",
-                borderTop: "thick double #32a1ce",
                 whiteSpace: "pre-line",
                 overflow: "hidden",
+            },
+            ".sticky-note-markdown-editor:focus": {
+                outline: "none",
             },
             ".sticky-note-markdown-editor:disabled": {
                 display: "none",
