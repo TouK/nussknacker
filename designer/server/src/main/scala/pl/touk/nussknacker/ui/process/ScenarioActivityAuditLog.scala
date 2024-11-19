@@ -182,7 +182,7 @@ object ScenarioActivityAuditLog {
   }
 
   private def stringify(comment: ScenarioComment): String = comment match {
-    case ScenarioComment.WithContent(comment, _, _) => comment
+    case ScenarioComment.WithContent(comment, _, _) => comment.content
     case ScenarioComment.WithoutContent(_, _)       => "none"
   }
 

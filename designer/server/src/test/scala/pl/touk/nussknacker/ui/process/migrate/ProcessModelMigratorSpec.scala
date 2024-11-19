@@ -40,8 +40,8 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
 
     extractParallelism(migrationResult) shouldBe 11
 
-    migrationResult.toAutomaticProcessUpdateAction(ProcessId(1L), List.empty).migrationsApplies shouldBe
-      migrationResult.migrationsApplied
+    migrationResult.toAutomaticProcessUpdateAction(ProcessId(1L), List.empty).map(_.migrationsApplied.toList) shouldBe
+      Some(migrationResult.migrationsApplied)
 
     val processor = extractProcessor(migrationResult)
     processor shouldBe ServiceRef(ProcessTestData.otherExistingServiceId, List())
@@ -63,8 +63,8 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
 
     val processor = extractProcessor(migrationResult)
 
-    migrationResult.toAutomaticProcessUpdateAction(ProcessId(1L), List.empty).migrationsApplies shouldBe
-      migrationResult.migrationsApplied
+    migrationResult.toAutomaticProcessUpdateAction(ProcessId(1L), List.empty).map(_.migrationsApplied.toList) shouldBe
+      Some(migrationResult.migrationsApplied)
     processor shouldBe ServiceRef(ProcessTestData.existingServiceId, List())
   }
 

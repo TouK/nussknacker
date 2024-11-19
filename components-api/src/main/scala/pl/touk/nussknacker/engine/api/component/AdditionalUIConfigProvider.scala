@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.component
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
@@ -24,6 +25,7 @@ object AdditionalUIConfigProvider {
   val empty = new DefaultAdditionalUIConfigProvider(Map.empty, Map.empty)
 }
 
+@JsonCodec
 case class ComponentAdditionalConfig(
     parameterConfigs: Map[ParameterName, ParameterAdditionalUIConfig],
     icon: Option[String] = None,
@@ -32,6 +34,7 @@ case class ComponentAdditionalConfig(
     disabled: Boolean = false
 )
 
+@JsonCodec
 case class ParameterAdditionalUIConfig(
     required: Boolean,
     initialValue: Option[FixedExpressionValue],

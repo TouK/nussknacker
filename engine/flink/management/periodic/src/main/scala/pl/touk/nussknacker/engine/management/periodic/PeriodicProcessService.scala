@@ -3,17 +3,22 @@ package pl.touk.nussknacker.engine.management.periodic
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId}
+import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
   DeploymentStatus,
   EngineStatusesToReschedule,
+  FinishedScheduledExecutionMetadata,
   MaxDeploymentsStatus,
   PeriodicProcessStatus
 }
@@ -22,6 +27,7 @@ import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesReposi
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
@@ -39,7 +45,8 @@ class PeriodicProcessService(
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock,
-    actionService: ProcessingTypeActionService
+    actionService: ProcessingTypeActionService,
+    configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -56,7 +63,7 @@ class PeriodicProcessService(
 
   private val emptyCallback: Callback = () => Future.successful(())
 
-  private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+  private implicit val localDateTimeOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   def getScenarioActivitiesSpecificToPeriodicProcess(
       processIdWithName: ProcessIdWithName
@@ -65,17 +72,17 @@ class PeriodicProcessService(
     groupedByProcess        = schedulesState.groupedByPeriodicProcess
     deployments             = groupedByProcess.flatMap(_.deployments)
     deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
-    activities = deploymentsWithStatuses.map { case (deployment, (status, dateFinished)) =>
+    activities = deploymentsWithStatuses.map { case (deployment, metadata) =>
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
         scenarioActivityId = ScenarioActivityId.random,
         user = ScenarioUser.internalNuUser,
-        date = instantAtSystemDefaultZone(deployment.runAt),
+        date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
         scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
-        scheduledExecutionStatus = status,
-        dateFinished = dateFinished,
+        scheduledExecutionStatus = metadata.status,
+        dateFinished = metadata.dateFinished,
         scheduleName = deployment.scheduleName.display,
-        createdAt = instantAtSystemDefaultZone(deployment.createdAt),
+        createdAt = metadata.dateCreated,
         nextRetryAt = deployment.nextRetryAt.map(instantAtSystemDefaultZone),
         retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
       )
@@ -400,7 +407,10 @@ class PeriodicProcessService(
       DeploymentData.systemUser,
       additionalDeploymentDataProvider.prepareAdditionalData(deployment),
       // TODO: in the future we could allow users to specify nodes data during schedule requesting
-      NodesDeploymentData.empty
+      NodesDeploymentData.empty,
+      AdditionalModelConfigs(
+        AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(configsFromProvider)
+      )
     )
     val deploymentWithJarData = deployment.periodicProcess.deploymentData
     val deploymentAction = for {
@@ -522,9 +532,8 @@ class PeriodicProcessService(
 
   private def scheduledExecutionStatusAndDateFinished(
       entity: PeriodicProcessDeployment[Unit],
-  ): Option[(ScheduledExecutionStatus, Instant)] = {
+  ): Option[FinishedScheduledExecutionMetadata] = {
     for {
-      dateFinished <- entity.state.completedAt.map(instantAtSystemDefaultZone)
       status <- entity.state.status match {
         case PeriodicProcessDeploymentStatus.Scheduled =>
           None
@@ -539,7 +548,15 @@ class PeriodicProcessService(
         case PeriodicProcessDeploymentStatus.FailedOnDeploy =>
           Some(ScheduledExecutionStatus.DeploymentFailed)
       }
-    } yield (status, dateFinished)
+      dateCreated  = instantAtSystemDefaultZone(entity.createdAt)
+      dateDeployed = entity.state.deployedAt.map(instantAtSystemDefaultZone)
+      dateFinished <- entity.state.completedAt.map(instantAtSystemDefaultZone)
+    } yield FinishedScheduledExecutionMetadata(
+      status = status,
+      dateCreated = dateCreated,
+      dateDeployed = dateDeployed,
+      dateFinished = dateFinished
+    )
   }
 
   // LocalDateTime's in the context of PeriodicProcess are created using clock with system default timezone
@@ -709,5 +726,12 @@ object PeriodicProcessService {
     }
 
   }
+
+  private final case class FinishedScheduledExecutionMetadata(
+      status: ScheduledExecutionStatus,
+      dateCreated: Instant,
+      dateDeployed: Option[Instant],
+      dateFinished: Instant,
+  )
 
 }
