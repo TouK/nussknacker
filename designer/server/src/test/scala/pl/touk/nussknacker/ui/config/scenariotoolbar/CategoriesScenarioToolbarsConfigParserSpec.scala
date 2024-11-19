@@ -114,7 +114,17 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
 
     val categoryToolbarConfig = ScenarioToolbarsConfig(
       Some(UUID.fromString("58f1acff-d864-4d66-9f86-0fa7319f7043")),
-      List(ToolbarPanelConfig(TipsPanel, None, None, None, None, Some(ToolbarCondition(Some(true), None, None)), None)),
+      List(
+        ToolbarPanelConfig(
+          TipsPanel,
+          None,
+          None,
+          None,
+          None,
+          Some(ToolbarCondition(Some(true), None, None)),
+          Some(Map("customParam1" -> "value1"))
+        )
+      ),
       Nil,
       List(
         ToolbarPanelConfig(
