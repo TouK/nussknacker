@@ -46,7 +46,11 @@ const body: dia.MarkupNodeJSON = {
 
 const renderer = new marked.Renderer();
 renderer.link = function (href, title, text) {
-    return `<a target="_blank" href="${href}">${text}` + "</a>";
+    return `<a target="_blank" href="${href}">${text}</a>`;
+};
+renderer.image = function (href, title, text) {
+    // SVG don't support HTML img inside foreignObject
+    return `<a target="_blank" href="${href}">${text} (attached img)</a>`;
 };
 
 const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {

@@ -7,6 +7,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesSettings
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
@@ -28,7 +29,8 @@ final case class FeatureTogglesConfig(
     testDataSettings: TestDataSettings,
     enableConfigEndpoint: Boolean,
     redirectAfterArchive: Boolean,
-    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
+    componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
+    stickyNotesSettings: StickyNotesSettings
 )
 
 object FeatureTogglesConfig extends LazyLogging {
@@ -56,6 +58,7 @@ object FeatureTogglesConfig extends LazyLogging {
     val tabs                                     = parseOptionalConfig[List[TopTab]](config, "tabs")
     val intervalTimeSettings                     = config.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings                         = config.as[TestDataSettings]("testDataSettings")
+    val stickyNotesSettings                      = config.as[StickyNotesSettings]("stickyNotesSettings")
     val redirectAfterArchive                     = config.getAs[Boolean]("redirectAfterArchive").getOrElse(true)
     val componentDefinitionExtractionMode        = parseComponentDefinitionExtractionMode(config)
 
@@ -76,6 +79,7 @@ object FeatureTogglesConfig extends LazyLogging {
       enableConfigEndpoint = enableConfigEndpoint,
       redirectAfterArchive = redirectAfterArchive,
       componentDefinitionExtractionMode = componentDefinitionExtractionMode,
+      stickyNotesSettings = stickyNotesSettings
     )
   }
 
