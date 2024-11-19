@@ -16,11 +16,9 @@ object DeterministicUUIDFromLong {
   def longUUID(long: Long): UUID = {
     require(long >= 0, "Input value must be non-negative")
     val idBytes = padToEightBytes(BigInt(long).toByteArray)
-    if (seedBytes != null) {
-      for (i <- seedBytes.indices) {
-        val targetIndex = i % 8
-        idBytes(targetIndex) = (idBytes(targetIndex) ^ seedBytes(i)).toByte
-      }
+    for (i <- seedBytes.indices) {
+      val targetIndex = i % 8
+      idBytes(targetIndex) = (idBytes(targetIndex) ^ seedBytes(i)).toByte
     }
     UUID.nameUUIDFromBytes(idBytes)
   }

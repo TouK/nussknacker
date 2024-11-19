@@ -93,22 +93,18 @@ object SimpleStateStatus {
   val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = _.stateStatus match {
     case SimpleStateStatus.NotDeployed =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case SimpleStateStatus.DuringDeploy =>
-      List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    case SimpleStateStatus.DuringDeploy => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     case SimpleStateStatus.Running =>
       List(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
     case SimpleStateStatus.Canceled =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case SimpleStateStatus.Restarting =>
-      List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    case SimpleStateStatus.Restarting => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     case SimpleStateStatus.Finished =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
-    case SimpleStateStatus.DuringCancel =>
-      List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    case SimpleStateStatus.DuringCancel => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
-    case SimpleStateStatus.ProblemStateStatus(_, allowedActions) =>
-      allowedActions
+    case SimpleStateStatus.ProblemStateStatus(_, allowedActions) => allowedActions
   }
 
   val definitions: Map[StatusName, StateDefinitionDetails] = Map(
