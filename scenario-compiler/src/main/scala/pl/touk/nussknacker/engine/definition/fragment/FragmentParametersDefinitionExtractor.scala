@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -28,11 +29,16 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 
+import scala.util.Try
+
 /*
  * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type), as it would require ExpressionCompiler, ValidationContext and declared dictionaries.
  * They are validated separately when creating fragment in NodeCompiler.compileSource, but if they are not validated it is not a breaking issue anyway as a process using these incorrect values will fail validation.
  */
-class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
+class FragmentParametersDefinitionExtractor(
+    classLoader: ClassLoader,
+    classDefinitions: Set[ClassDefinition] = Set.empty
+) {
 
   def extractParametersDefinition(
       fragmentInput: FragmentInput
@@ -54,7 +60,7 @@ class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
   ): WriterT[Id, List[PartSubGraphCompilationError], List[Id[Parameter]]] = {
     parameters
       .map(p =>
-        getParamTypingResult(p)
+        getParamTypingResultV2(p)
           .mapBoth { (written, typ) =>
             val param = toParameter(typ, p)
             (written ++ param.written, param.value)
@@ -130,6 +136,52 @@ class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
       .value[List[PartSubGraphCompilationError], Parameter](param)
       .tell(validationErrors)
   }
+
+  private def parseClassNameToTypingResult(className: String): Try[TypingResult] = {
+    def resolveInnerClass(simpleClassName: String): TypingResult =
+      classDefinitions
+        .find(classDefinition => classDefinition.clazzName.display == simpleClassName)
+        .fold(
+          throw new ClassNotFoundException(
+            s"Class $simpleClassName was not found in the class definitions set: ${classDefinitions.map(_.clazzName.display)}"
+          )
+        ) { classDefinition =>
+          classDefinition.clazzName
+        }
+
+    val mapPattern  = "Map\\[(.+),(.+)\\]".r
+    val listPattern = "List\\[(.+)\\]".r
+    val setPattern  = "Set\\[(.+)\\]".r
+
+    Try(className match {
+      case mapPattern(x, y) =>
+        val resolvedFirstTypeParam  = resolveInnerClass(x)
+        val resolvedSecondTypeParam = resolveInnerClass(y)
+        Typed.genericTypeClass[java.util.Map[_, _]](List(resolvedFirstTypeParam, resolvedSecondTypeParam))
+      case listPattern(x) =>
+        val resolvedTypeParam = resolveInnerClass(x)
+        Typed.genericTypeClass[java.util.List[_]](List(resolvedTypeParam))
+      case setPattern(x) =>
+        val resolvedTypeParam = resolveInnerClass(x)
+        Typed.genericTypeClass[java.util.Set[_]](List(resolvedTypeParam))
+      case simpleClassName => resolveInnerClass(simpleClassName)
+    })
+  }
+
+  private def getParamTypingResultV2(
+      fragmentParameter: FragmentParameter
+  )(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], TypingResult] =
+    parseClassNameToTypingResult(
+      fragmentParameter.typ.refClazzName
+    )
+      .map(Writer.value[List[PartSubGraphCompilationError], TypingResult])
+      .getOrElse(
+        Writer
+          .value[List[PartSubGraphCompilationError], TypingResult](Unknown)
+          .tell(
+            List(FragmentParamClassLoadError(fragmentParameter.name, fragmentParameter.typ.refClazzName, nodeId.id))
+          )
+      )
 
   private def getParamTypingResult(
       fragmentParameter: FragmentParameter
