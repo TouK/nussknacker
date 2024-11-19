@@ -5,7 +5,7 @@ import { dia, elementTools, shapes } from "jointjs";
 import { getStickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 import { createStickyNoteId } from "../../../types/stickyNote";
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
-import { CONTENT_PADDING, ICON_SIZE, StickyNoteShape } from "./stickyNote";
+import { CONTENT_PADDING, ICON_SIZE, MARKDOWN_EDITOR_NAME, StickyNoteShape } from "./stickyNote";
 import { Events } from "../types";
 
 export type ModelWithTool = {
@@ -124,6 +124,7 @@ export function makeStickyNoteElement(
             Math.max(stickyNote.dimensions.width, MIN_STICKY_NOTE_WIDTH),
             Math.max(stickyNote.dimensions.height, MIN_STICKY_NOTE_HEIGHT),
         );
+        stickyNoteModel.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, stickyNote.content);
         return { model: stickyNoteModel, tools };
     };
 }
