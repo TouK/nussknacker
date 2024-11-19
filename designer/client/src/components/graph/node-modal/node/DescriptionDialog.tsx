@@ -116,7 +116,7 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
             <DescriptionOnlyContent
                 fieldPath={fieldPath}
                 properties={editedProperties}
-                onChange={!readOnly && handleSetEditedProperties}
+                onChange={readOnly ? undefined : handleSetEditedProperties}
                 preview={previewMode}
             />
         </WindowContent>

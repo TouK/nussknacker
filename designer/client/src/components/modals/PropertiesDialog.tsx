@@ -107,7 +107,7 @@ const PropertiesDialog = ({ ...props }: WindowContentProps) => {
                 <ContentSize>
                     <PropertiesForm
                         editedProperties={editedProperties}
-                        handleSetEditedProperties={isEditMode && handleSetEditedProperties}
+                        handleSetEditedProperties={isEditMode ? handleSetEditedProperties : undefined}
                         errors={errors}
                         showSwitch={showSwitch}
                     />

@@ -28,7 +28,7 @@ function alignFragmentsNodeWithSchema(scenarioGraph: ScenarioGraph, processDefin
     };
 }
 
-const calculateProperties = (scenario, changedProperties): ThunkAction<Promise<ScenarioGraphWithName>> => {
+const calculateProperties = (scenario: Scenario, changedProperties: PropertiesType): ThunkAction<Promise<ScenarioGraphWithName>> => {
     return async (dispatch) => {
         const processDefinitionData = await dispatch(fetchProcessDefinition(scenario.processingType, scenario.isFragment));
         const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(scenario.scenarioGraph, processDefinitionData);

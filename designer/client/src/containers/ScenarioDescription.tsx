@@ -48,6 +48,7 @@ export const ScenarioDescription = () => {
     const ref = useRef<HTMLButtonElement>();
 
     const handleOpenDescription = useCallback(() => {
+        if (!ref.current) return;
         const { top, left } = ref.current.getBoundingClientRect();
         openDescription(
             processProperties,
