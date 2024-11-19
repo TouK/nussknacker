@@ -9,16 +9,28 @@ export const StickyNoteElementView = dia.ElementView.extend({
     events: {
         "change textarea": "onChange",
         "click textarea": "stopPropagation",
-        "focus textarea": "stopPropagation",
+        "keydown textarea": "selectAll",
         "focusout textarea": "onChange",
-    },
-
-    pointerdblclick: function (evt, x, y) {
-        this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, false);
+        "dblclick .sticky-note-content": "showEditor",
     },
 
     stopPropagation: function (evt, x, y) {
         evt.stopPropagation();
+    },
+
+    showEditor: function (evt, x, y) {
+        evt.stopPropagation();
+        this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, false);
+        evt.currentTarget.childNodes.item("textarea").focus({ preventScroll: true });
+    },
+
+    selectAll: function (evt, x, y) {
+        if (evt.code === "KeyA") {
+            if (evt.ctrlKey) {
+                evt.preventDefault();
+                evt.target.select();
+            }
+        }
     },
 
     onChange: function (evt) {
