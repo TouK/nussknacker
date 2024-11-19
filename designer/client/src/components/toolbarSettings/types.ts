@@ -11,6 +11,7 @@ export interface ToolbarConfig {
     color?: string;
     buttonsVariant?: ButtonsVariant;
     disableCollapse?: boolean;
+    additionalParams?: Record<string, string>;
 }
 
 export type ToolbarsConfig = Partial<Record<ToolbarsSide, ToolbarConfig[]>>;
