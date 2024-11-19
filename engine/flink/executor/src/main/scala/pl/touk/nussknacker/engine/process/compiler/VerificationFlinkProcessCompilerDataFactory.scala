@@ -17,7 +17,8 @@ object VerificationFlinkProcessCompilerDataFactory {
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
       modelData.namingStrategy,
-      componentUseCase = ComponentUseCase.Validation
+      componentUseCase = ComponentUseCase.Validation,
+      modelData.additionalConfigsFromProvider
     ) {
 
       override protected def adjustListeners(

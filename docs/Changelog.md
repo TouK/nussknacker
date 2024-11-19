@@ -12,6 +12,7 @@
 
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+* [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 
 ## 1.18
 

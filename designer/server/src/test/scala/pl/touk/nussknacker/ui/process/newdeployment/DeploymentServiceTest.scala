@@ -53,7 +53,8 @@ class DeploymentServiceTest
         TestFactory.newFutureFetchingScenarioRepository(testDbRef)
       ),
       dbioRunner,
-      clock
+      clock,
+      TestFactory.additionalComponentConfigsByProcessingType
     )
   }
 
