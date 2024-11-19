@@ -53,8 +53,10 @@ const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
     const parsed = marked.parse(stickyNote.content, { renderer });
     const singleMarkupNode = util.svg/* xml */ `
             <foreignObject @selector="foreignObject">
-                <textarea @selector="${MARKDOWN_EDITOR_NAME}" class="sticky-note-markdown-editor" name="${MARKDOWN_EDITOR_NAME}" autocomplete="off" disabled="disabled"></textarea>
-                <div @selector="markdown" class="sticky-note-markdown">${parsed}</div>
+                <div @selector="sticky-note-content" class="sticky-note-content">
+                    <textarea @selector="${MARKDOWN_EDITOR_NAME}" class="sticky-note-markdown-editor" name="${MARKDOWN_EDITOR_NAME}" autocomplete="off" disabled="disabled"></textarea>
+                    <div @selector="markdown" class="sticky-note-markdown">${parsed}</div>
+                </div>
             </foreignObject>
     `[0];
     return singleMarkupNode as MarkupNodeJSON;
@@ -99,20 +101,9 @@ const defaults = (theme: Theme) =>
         shapes.devs.Model.prototype.defaults,
     );
 
-//This is the only way I was able to add spaces/newlines to textArea inside svg/xml'isch entity...
-const addTextAreaContentWithWhiteCharacters = (stickyNote: StickyNote): MarkupNodeJSON => {
-    const markupNode: MarkupNodeJSON = foreignObject(stickyNote);
-    const markdownEditor = markupNode.children.find((c: MarkupNodeJSON) => c.selector == MARKDOWN_EDITOR_NAME);
-    if (typeof markdownEditor !== "string") {
-        markdownEditor.children = [stickyNote.content];
-    }
-    return markupNode;
-};
-
 const protoProps = (theme: Theme, stickyNote: StickyNote) => {
-    const fo = addTextAreaContentWithWhiteCharacters(stickyNote);
     return {
-        markup: [body, border, fo, icon],
+        markup: [body, border, foreignObject(stickyNote), icon],
     };
 };
 
