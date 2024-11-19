@@ -114,7 +114,8 @@ class DeploymentServiceSpec
       TestFactory.scenarioResolverByProcessingType,
       listener,
       scenarioStateTimeout,
-      deploymentCommentSettings
+      deploymentCommentSettings,
+      additionalComponentConfigsByProcessingType
     )
   }
 
