@@ -9,10 +9,20 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
-import pl.touk.nussknacker.ui.api.description.StickyNotesApiEndpoints.Examples.{noScenarioExample, noStickyNoteExample}
+import pl.touk.nussknacker.ui.api.description.StickyNotesApiEndpoints.Examples.{
+  noScenarioExample,
+  noStickyNoteExample,
+  stickyNoteContentTooLongExample,
+  stickyNoteCountLimitReachedExample
+}
 import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNoteId
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.{NoScenario, NoStickyNote}
-import sttp.model.StatusCode.{NotFound, Ok}
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.{
+  NoScenario,
+  NoStickyNote,
+  StickyNoteContentTooLong,
+  StickyNoteCountLimitReached
+}
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
@@ -102,7 +112,8 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
       .errorOut(
         oneOf[StickyNotesError](
           noScenarioExample,
-          noStickyNoteExample
+          noStickyNoteExample,
+          stickyNoteContentTooLongExample
         )
       )
       .withSecurity(auth)
@@ -122,7 +133,9 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
       .out(jsonBody[StickyNoteCorrelationId])
       .errorOut(
         oneOf[StickyNotesError](
-          noScenarioExample
+          noScenarioExample,
+          stickyNoteContentTooLongExample,
+          stickyNoteCountLimitReachedExample
         )
       )
       .withSecurity(auth)
@@ -172,6 +185,32 @@ object StickyNotesApiEndpoints {
             Example.of(
               summary = Some("No sticky note with id: 3 was found"),
               value = NoStickyNote(StickyNoteId(3))
+            )
+          )
+      )
+
+    val stickyNoteContentTooLongExample: EndpointOutput.OneOfVariant[StickyNoteContentTooLong] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[StickyNoteContentTooLong]
+          .example(
+            Example.of(
+              summary = Some("Provided note content is too long (5004 characters). Max content length is 5000."),
+              value = StickyNoteContentTooLong(count = 5004, max = 5000)
+            )
+          )
+      )
+
+    val stickyNoteCountLimitReachedExample: EndpointOutput.OneOfVariant[StickyNoteCountLimitReached] =
+      oneOfVariantFromMatchType(
+        BadRequest,
+        plainBody[StickyNoteCountLimitReached]
+          .example(
+            Example.of(
+              summary = Some(
+                "Cannot add another sticky note, since max number of sticky notes was reached: 5 (see configuration)."
+              ),
+              value = StickyNoteCountLimitReached(max = 5)
             )
           )
       )
