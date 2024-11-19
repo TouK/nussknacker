@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.engine.testcomponents
 
-import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter
-import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter.EvaluableExpressionPart._
-import pl.touk.nussknacker.engine.api.{Context, EagerService, NodeId, Params, ServiceInvoker}
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
+import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, RenderedSubExpression}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   OutputVariableNameDependency,
-  ParameterDeclaration,
+  Parameter,
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -22,23 +21,24 @@ import pl.touk.nussknacker.engine.api.typed.typing
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object SpelTemplateAstOperationService extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
+object SpelTemplatePartsService extends EagerService with SingleInputDynamicComponent[ServiceInvoker] {
 
-  private val spelTemplateParameter = ParameterDeclaration
-    .lazyOptional[String](ParameterName("template"))
-    .withCreator(modify =
-      _.copy(
-        editor = Some(SpelTemplateParameterEditor)
-      )
+  private val spelTemplateParameterName = ParameterName("template")
+
+  private val spelTemplateParameter = Parameter
+    .optional[String](spelTemplateParameterName)
+    .copy(
+      isLazyParameter = true,
+      editor = Some(SpelTemplateParameterEditor)
     )
 
   override type State = Any
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): SpelTemplateAstOperationService.ContextTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(List(spelTemplateParameter.createParameter()))
-    case TransformationStep((ParameterName("template"), DefinedLazyParameter(_)) :: Nil, _) =>
+  ): SpelTemplatePartsService.ContextTransformationDefinition = {
+    case TransformationStep(Nil, _) => NextParameters(List(spelTemplateParameter))
+    case TransformationStep((`spelTemplateParameterName`, DefinedLazyParameter(_)) :: Nil, _) =>
       FinalResults.forValidation(context, List.empty)(validation =
         ctx =>
           ctx.withVariable(
@@ -60,12 +60,11 @@ object SpelTemplateAstOperationService extends EagerService with SingleInputDyna
         collector: InvocationCollectors.ServiceInvocationCollector,
         componentUseCase: ComponentUseCase
     ): Future[Any] = {
-      val lazyParam = spelTemplateParameter
-        .extractValueUnsafe(params)
-        .asInstanceOf[TemplateLazyParameter[String]]
-      val result = lazyParam.parts.map {
-        case Literal(value)        => s"[$value]-literal"
-        case template: Placeholder => s"[${template.evaluate(context)}]-templated"
+      val templateResult =
+        params.extractOrEvaluateLazyParamUnsafe[TemplateEvaluationResult](spelTemplateParameterName, context)
+      val result = templateResult.renderedParts.map {
+        case RenderedLiteral(value)       => s"[$value]-literal"
+        case RenderedSubExpression(value) => s"[$value]-subexpression"
       }.mkString
       Future.successful(result)
     }

@@ -49,7 +49,7 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
-import pl.touk.nussknacker.engine.testcomponents.SpelTemplateAstOperationService
+import pl.touk.nussknacker.engine.testcomponents.SpelTemplatePartsService
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.service.{
   EagerServiceWithStaticParametersAndReturnType,
@@ -75,7 +75,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("spelNodeService", SpelNodeService),
     ComponentDefinition("withExplicitMethod", WithExplicitDefinitionService),
     ComponentDefinition("spelTemplateService", ServiceUsingSpelTemplate),
-    ComponentDefinition("templateAstOperationService", SpelTemplateAstOperationService),
+    ComponentDefinition("spelTemplatePartsService", SpelTemplatePartsService),
     ComponentDefinition("optionTypesService", OptionTypesService),
     ComponentDefinition("optionalTypesService", OptionalTypesService),
     ComponentDefinition("nullableTypesService", NullableTypesService),
@@ -1024,13 +1024,13 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction()) shouldBe "someKey"
   }
 
-  test("spel template AST operation parameter should handle multiple cases") {
+  test("service using spel template rendered parts") {
     val testCases = Seq(
       (
-        "templated value and literal value",
+        "subexpression and literal value",
         s"Hello#{#input.msisdn}",
         Transaction(msisdn = "foo"),
-        "[Hello]-literal[foo]-templated"
+        "[Hello]-literal[foo]-subexpression"
       ),
       (
         "single literal value",
@@ -1039,10 +1039,10 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         "[Hello]-literal"
       ),
       (
-        "single templated function call expression",
+        "single function call expression",
         "#{#input.msisdn.toString()}",
         Transaction(msisdn = "foo"),
-        "[foo]-templated"
+        "[foo]-subexpression"
       ),
       (
         "empty value",
@@ -1059,7 +1059,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           .enricher(
             "ex",
             "out",
-            "templateAstOperationService",
+            "spelTemplatePartsService",
             "template" -> Expression.spelTemplate(templateExpression)
           )
           .buildSimpleVariable("result-end", resultVariable, "#out".spel)
@@ -1184,8 +1184,10 @@ object InterpreterSpec {
 
   object ServiceUsingSpelTemplate extends EagerServiceWithStaticParametersAndReturnType {
 
+    private val spelTemplateParameterName = ParameterName("template")
+
     private val spelTemplateParameter = Parameter
-      .optional[String](ParameterName("template"))
+      .optional[String](spelTemplateParameterName)
       .copy(isLazyParameter = true, editor = Some(SpelTemplateParameterEditor))
 
     override def parameters: List[Parameter] = List(spelTemplateParameter)
@@ -1199,7 +1201,7 @@ object InterpreterSpec {
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.head._2.toString)
+      Future.successful(params(spelTemplateParameterName).asInstanceOf[TemplateEvaluationResult].renderedTemplate)
     }
 
   }

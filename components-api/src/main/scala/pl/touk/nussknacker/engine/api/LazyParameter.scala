@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter.EvaluableExpressionPart
 import pl.touk.nussknacker.engine.api.LazyParameter.{Evaluate, MappedLazyParameter, ProductLazyParameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
@@ -68,24 +67,6 @@ object LazyParameter {
     new MappedLazyParameter[T, Y](lazyParameter, fun, transformTypingResult)
 
   trait CustomLazyParameter[+T <: AnyRef] extends LazyParameter[T]
-
-  trait TemplateLazyParameter[T <: AnyRef] extends LazyParameter[T] {
-    def parts: List[EvaluableExpressionPart]
-  }
-
-  object TemplateLazyParameter {
-    sealed trait EvaluableExpressionPart
-
-    object EvaluableExpressionPart {
-      case class Literal(value: String) extends EvaluableExpressionPart
-
-      trait Placeholder extends EvaluableExpressionPart {
-        val evaluate: Evaluate[String]
-      }
-
-    }
-
-  }
 
   final class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
       val arg1: LazyParameter[T],
