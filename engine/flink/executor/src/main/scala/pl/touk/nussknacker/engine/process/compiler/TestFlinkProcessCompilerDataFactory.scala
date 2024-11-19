@@ -35,7 +35,8 @@ object TestFlinkProcessCompilerDataFactory {
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
       modelData.namingStrategy,
-      ComponentUseCase.TestRuntime
+      ComponentUseCase.TestRuntime,
+      modelData.additionalConfigsFromProvider
     ) {
 
       override protected def adjustListeners(

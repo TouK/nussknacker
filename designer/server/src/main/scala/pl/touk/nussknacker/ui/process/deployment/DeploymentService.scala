@@ -8,7 +8,11 @@ import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.Comment
-import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -16,6 +20,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
+import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
@@ -55,6 +60,10 @@ class DeploymentService(
     processChangeListener: ProcessChangeListener,
     scenarioStateTimeout: Option[FiniteDuration],
     deploymentCommentSettings: Option[DeploymentCommentSettings],
+    additionalComponentConfigs: ProcessingTypeDataProvider[
+      Map[DesignerWideComponentId, ComponentAdditionalConfig],
+      _
+    ],
     clock: Clock = Clock.systemUTC()
 )(implicit system: ActorSystem)
     extends ActionService
@@ -324,7 +333,8 @@ class DeploymentService(
         DeploymentId.fromActionId(actionId),
         user.toManagerUser,
         additionalDeploymentData,
-        nodesDeploymentData
+        nodesDeploymentData,
+        getAdditionalModelConfigsRequiredForRuntime(processDetails.processingType)
       )
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
   }
@@ -404,6 +414,14 @@ class DeploymentService(
         context.actionId,
         context.latestScenarioDetails.processId,
         context.versionOnWhichActionIsDone
+      )
+    )
+  }
+
+  private def getAdditionalModelConfigsRequiredForRuntime(processingType: ProcessingType)(implicit user: LoggedUser) = {
+    AdditionalModelConfigs(
+      AdditionalComponentConfigsForRuntimeExtractor.getRequiredAdditionalConfigsForRuntime(
+        additionalComponentConfigs.forProcessingType(processingType).getOrElse(Map.empty)
       )
     )
   }
