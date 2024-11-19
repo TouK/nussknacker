@@ -12,6 +12,8 @@ trait TopicSelectionStrategy extends Serializable {
       schemaRegistryClient: SchemaRegistryClient
   ): Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 
+  def filterTopics(topics: List[UnspecializedTopicName]): List[UnspecializedTopicName]
+
 }
 
 class AllTopicsSelectionStrategy extends TopicSelectionStrategy {
@@ -21,6 +23,8 @@ class AllTopicsSelectionStrategy extends TopicSelectionStrategy {
   ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
     schemaRegistryClient.getAllTopics
 
+  override def filterTopics(topics: List[UnspecializedTopicName]): List[UnspecializedTopicName] = topics
+
 }
 
 class TopicPatternSelectionStrategy(val topicPattern: Pattern) extends TopicSelectionStrategy {
@@ -29,5 +33,8 @@ class TopicPatternSelectionStrategy(val topicPattern: Pattern) extends TopicSele
       schemaRegistryClient: SchemaRegistryClient
   ): Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
     schemaRegistryClient.getAllTopics.map(_.filter(topic => topicPattern.matcher(topic.name).matches()))
+
+  override def filterTopics(topics: List[UnspecializedTopicName]): List[UnspecializedTopicName] =
+    topics.filter(topic => topicPattern.matcher(topic.name).matches())
 
 }

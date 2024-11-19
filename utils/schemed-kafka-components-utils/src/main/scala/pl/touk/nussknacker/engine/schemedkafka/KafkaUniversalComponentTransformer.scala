@@ -73,13 +73,12 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getTopicParam(
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val allTopics = getAllTopics
-    val topics = allTopics match {
-      case Some(topicsFromKafka) =>
+    val topics = getAllTopics() match {
+      case Some(topics) =>
         // For test purposes mostly
         topicSelectionStrategy
           .getTopics(schemaRegistryClient)
-          .map(fromRegistry => (fromRegistry ++ topicsFromKafka).distinct)
+          .map(fromRegistry => topicSelectionStrategy.filterTopics(fromRegistry ++ topics).distinct)
       case None => topicSelectionStrategy.getTopics(schemaRegistryClient)
     }
 
@@ -133,7 +132,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
     } else {
       val contentTypesValues = List(
         FixedExpressionValue(s"'${ContentTypes.JSON}'", s"${ContentTypes.JSON}"),
-        FixedExpressionValue(s"'${ContentTypes.PLAIN}'", s"${ContentTypes.PLAIN}")
+        // TODO: Remove comment once plain is working correctly
+        // FixedExpressionValue(s"'${ContentTypes.PLAIN}'", s"${ContentTypes.PLAIN}")
       )
 
       Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, contentTypesValues).map(contentTypes =>
@@ -250,21 +250,23 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val contentTypeParamName: ParameterName =
     KafkaUniversalComponentTransformer.contentTypeParamName
 
-  protected def getAllTopics: Option[List[UnspecializedTopicName]] = {
-    Try {
-      val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
-      KafkaUtils
-        .usingAdminClient(kafkaConfig) {
-          _.listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
-            .names()
-            .get()
-            .asScala
-            .toSet
-            .map(UnspecializedTopicName.apply)
-            .filterNot(topic => topic.name.startsWith("_"))
-        }
-        .toList
-    }.toOption
+  protected def getAllTopics(fetchAllTopicsFromKafka: Boolean = true): Option[List[UnspecializedTopicName]] = {
+    if (fetchAllTopicsFromKafka)
+      Try {
+        val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
+        KafkaUtils
+          .usingAdminClient(kafkaConfig) {
+            _.listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
+              .names()
+              .get()
+              .asScala
+              .toSet
+              .map(UnspecializedTopicName.apply)
+              .filterNot(topic => topic.name.startsWith("_"))
+          }
+          .toList
+      }.toOption
+    else None
 
   }
 

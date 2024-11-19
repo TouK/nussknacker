@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.defaultmodel
 
 import io.circe.{Json, parser}
-import org.apache.kafka.shaded.com.google.protobuf.ByteString
 import pl.touk.nussknacker.engine.api.process.TopicName.ForSource
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -11,7 +10,6 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ContentTypes
 import pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion
 
-import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
@@ -69,18 +67,14 @@ class KafkaJsonItSpec extends FlinkWithKafkaSuite {
 
     kafkaClient.createTopic(inputTopic, 1)
     kafkaClient.createTopic(outputTopic, 1)
-    val shortJsonInHex = "7b2261223a20357d"
-    val longJsonInHex =
-      "227b226669727374223a2022546f6d656b222c20226d6964646c65223a20224a616e222c20226c617374223a20224b6f77616c736b69227d22"
-    val byteString = ByteString.fromHex(shortJsonInHex).toByteArray
-    val big        = new BigInteger(shortJsonInHex, 16).toByteArray
 
-    val str = new String(byteString)
-    println(str)
-    println(byteString.mkString("Array(", ", ", ")"))
-    println(big.mkString("Array(", ", ", ")"))
-
-    kafkaClient.sendRawMessage(inputTopic, Array.empty, byteString, timestamp = Instant.now.toEpochMilli)
+    sendAsJson(jsonRecord.toString(), ForSource(inputTopic), timestamp = Instant.now.toEpochMilli)
+    kafkaClient.sendRawMessage(
+      inputTopic,
+      Array.empty,
+      jsonRecord.toString().getBytes,
+      timestamp = Instant.now.toEpochMilli
+    )
     val process =
       ScenarioBuilder
         .streaming("without-schema")
@@ -103,13 +97,13 @@ class KafkaJsonItSpec extends FlinkWithKafkaSuite {
         )
 
     run(process) {
-      val outputRecord = kafkaClient
-        .createConsumer()
-        .consumeWithConsumerRecord(outputTopic)
-        .take(1)
-        .head
+      val outputRecord = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head
 
-      outputRecord.value() shouldBe byteString
+      val parsedOutput = parser
+        .parse(new String(outputRecord.value(), StandardCharsets.UTF_8))
+        .fold(throw _, identity)
+
+      parsedOutput shouldBe jsonRecord
     }
   }
 
