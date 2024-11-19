@@ -73,7 +73,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getTopicParam(
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val topics = getAllTopics() match {
+    val topics = getAllTopics(modelDependencies.config.getBoolean("fetchKafkaTopicsWithoutSchema")) match {
       case Some(topics) =>
         // For test purposes mostly
         topicSelectionStrategy
