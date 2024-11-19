@@ -11,6 +11,8 @@
 ### 1.19.0 (Not released yet)
 
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
+* [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
+  expression parts used in SpEL template 
 
 ## 1.18
 
