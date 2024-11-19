@@ -198,8 +198,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
         ScenarioToolbarSettings(
           id,
           List(
-            ToolbarPanel(CreatorPanel, None, None, None),
-            ToolbarPanel(ActivitiesPanel, None, None, None),
+            ToolbarPanel(CreatorPanel, None, None, None, None),
+            ToolbarPanel(ActivitiesPanel, None, None, None, None),
           ),
           Nil,
           List(
@@ -234,7 +234,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     disabled = false
                   )
                 )
-              )
+              ),
+              None
             ),
             ToolbarPanel(
               "buttons2",
@@ -244,7 +245,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                 List(
                   ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
                 )
-              )
+              ),
+              None
             )
           ),
           List.empty,
@@ -253,8 +255,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
         ScenarioToolbarSettings(
           id,
           List(
-            ToolbarPanel(CreatorPanel, None, None, None),
-            ToolbarPanel(ActivitiesPanel, None, None, None)
+            ToolbarPanel(CreatorPanel, None, None, None, None),
+            ToolbarPanel(ActivitiesPanel, None, None, None, None)
           ),
           Nil,
           List(
@@ -289,7 +291,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     disabled = false
                   )
                 )
-              )
+              ),
+              None
             )
           ),
           List.empty,
@@ -298,7 +301,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
         ScenarioToolbarSettings(
           id,
           List(
-            ToolbarPanel(ActivitiesPanel, None, None, None),
+            ToolbarPanel(ActivitiesPanel, None, None, None, None),
           ),
           Nil,
           List(
@@ -333,7 +336,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     disabled = false
                   )
                 )
-              )
+              ),
+              None
             ),
             ToolbarPanel(
               "buttons1",
@@ -344,7 +348,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                   ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
                   ToolbarButton(ProcessPDF, None, None, None, None, disabled = false)
                 )
-              )
+              ),
+              None
             ),
             ToolbarPanel(
               "buttons2",
@@ -354,7 +359,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                 List(
                   ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
                 )
-              )
+              ),
+              None
             )
           ),
           List.empty,
@@ -363,8 +369,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
         ScenarioToolbarSettings(
           id,
           List(
-            ToolbarPanel(CreatorPanel, None, None, None),
-            ToolbarPanel(ActivitiesPanel, None, None, None)
+            ToolbarPanel(CreatorPanel, None, None, None, None),
+            ToolbarPanel(ActivitiesPanel, None, None, None, None)
           ),
           Nil,
           List(
@@ -399,7 +405,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     disabled = true
                   )
                 )
-              )
+              ),
+              None
             ),
             ToolbarPanel(
               "buttons1",
@@ -409,7 +416,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                 List(
                   ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false)
                 )
-              )
+              ),
+              None
             )
           ),
           List.empty,
@@ -418,7 +426,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
         ScenarioToolbarSettings(
           id,
           List(
-            ToolbarPanel(TipsPanel, None, None, None)
+            ToolbarPanel(TipsPanel, None, None, None, None)
           ),
           Nil,
           List(
@@ -453,7 +461,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     disabled = false
                   )
                 )
-              )
+              ),
+              None
             ),
             ToolbarPanel(
               "buttons2",
@@ -463,7 +472,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                 List(
                   ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
                 )
-              )
+              ),
+              None
             )
           ),
           Nil
@@ -472,7 +482,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
         ScenarioToolbarSettings(
           id,
           List(
-            ToolbarPanel(ActivitiesPanel, None, None, None)
+            ToolbarPanel(ActivitiesPanel, None, None, None, None)
           ),
           Nil,
           List(
@@ -507,7 +517,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     disabled = false
                   )
                 )
-              )
+              ),
+              None
             ),
             ToolbarPanel(
               "buttons2",
@@ -517,7 +528,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                 List(
                   ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
                 )
-              )
+              ),
+              None
             )
           ),
           List.empty,
