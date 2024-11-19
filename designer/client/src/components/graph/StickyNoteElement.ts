@@ -8,11 +8,17 @@ export const StickyNoteElement = (defaults?: any, protoProps?: any) =>
 export const StickyNoteElementView = dia.ElementView.extend({
     events: {
         "change textarea": "onChange",
+        "click textarea": "stopPropagation",
+        "focus textarea": "stopPropagation",
         "focusout textarea": "onChange",
     },
 
     pointerdblclick: function (evt, x, y) {
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, false);
+    },
+
+    stopPropagation: function (evt, x, y) {
+        evt.stopPropagation();
     },
 
     onChange: function (evt) {
