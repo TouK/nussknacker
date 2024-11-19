@@ -12,9 +12,15 @@ import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.{
   StickyNoteCorrelationId,
   StickyNoteId,
   StickyNoteUpdateRequest,
-  StickyNotesError
+  StickyNotesError,
+  StickyNotesSettings
 }
-import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.{NoPermission, NoScenario}
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesError.{
+  NoPermission,
+  NoScenario,
+  StickyNoteContentTooLong,
+  StickyNoteCountLimitReached
+}
 import pl.touk.nussknacker.ui.process.repository.stickynotes.StickyNotesRepository
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -28,6 +34,7 @@ class StickyNotesApiHttpService(
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
     dbioActionRunner: DBIOActionRunner,
+    stickyNotesSettings: StickyNotesSettings
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authManager)
     with LazyLogging {
@@ -58,6 +65,9 @@ class StickyNotesApiHttpService(
           for {
             scenarioId      <- getScenarioIdByName(scenarioName)
             _               <- isAuthorized(scenarioId, Permission.Write)
+            count           <- getStickyNotesCount(scenarioId, requestBody.scenarioVersionId)
+            _               <- validateStickyNotesCount(count, stickyNotesSettings)
+            _               <- validateStickyNoteContent(requestBody.content, stickyNotesSettings)
             processActivity <- addStickyNote(scenarioId, requestBody)
           } yield processActivity
         }
@@ -72,6 +82,7 @@ class StickyNotesApiHttpService(
           for {
             scenarioId      <- getScenarioIdByName(scenarioName)
             _               <- isAuthorized(scenarioId, Permission.Write)
+            _               <- validateStickyNoteContent(requestBody.content, stickyNotesSettings)
             processActivity <- updateStickyNote(requestBody)
           } yield processActivity.toInt
         }
@@ -122,6 +133,16 @@ class StickyNotesApiHttpService(
         )
       )
 
+  private def getStickyNotesCount(scenarioId: ProcessId, versionId: VersionId): EitherT[Future, StickyNotesError, Int] =
+    EitherT
+      .right(
+        dbioActionRunner
+          .run(
+            stickyNotesRepository.findStickyNotes(scenarioId, versionId)
+          )
+          .map(_.length)
+      )
+
   private def deleteStickyNote(noteId: StickyNoteId)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, StickyNotesError, Int] =
@@ -140,6 +161,18 @@ class StickyNotesApiHttpService(
       )
     } yield result
 
+  private def validateStickyNotesCount(
+      stickyNotesCount: Int,
+      stickyNotesConfig: StickyNotesSettings
+  ): EitherT[Future, StickyNotesError, Unit] =
+    EitherT.fromEither(
+      Either.cond(
+        stickyNotesCount < stickyNotesConfig.maxNotesCount,
+        (),
+        StickyNoteCountLimitReached(stickyNotesConfig.maxNotesCount)
+      )
+    )
+
   private def addStickyNote(scenarioId: ProcessId, requestBody: StickyNoteAddRequest)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, StickyNotesError, StickyNoteCorrelationId] =
@@ -157,6 +190,18 @@ class StickyNotesApiHttpService(
           )
         )
       )
+
+  private def validateStickyNoteContent(
+      content: String,
+      stickyNotesConfig: StickyNotesSettings
+  ): EitherT[Future, StickyNotesError, Unit] =
+    EitherT.fromEither(
+      Either.cond(
+        content.length <= stickyNotesConfig.maxContentLength,
+        (),
+        StickyNoteContentTooLong(content.length, stickyNotesConfig.maxContentLength)
+      )
+    )
 
   private def updateStickyNote(requestBody: StickyNoteUpdateRequest)(
       implicit loggedUser: LoggedUser
