@@ -182,14 +182,13 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                         variant: "standard",
                     },
                     styleOverrides: {
-                        root: ({ theme, ownerState }) => {
+                        root: ({ ownerState }) => {
                             if (ownerState.variant === "standard") {
                                 return {
                                     display: "flex",
                                     flexDirection: "row",
                                     margin: "16px 0",
                                     ".MuiFormLabel-root": {
-                                        ...theme.typography.body2,
                                         display: "flex",
                                         flexBasis: formLabelWidth,
                                         maxWidth: "20em",
@@ -204,6 +203,11 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                 MuiFormLabel: {
                     defaultProps: {
                         focused: false,
+                    },
+                    styleOverrides: {
+                        root: ({ theme }) => ({
+                            ...theme.typography.body2,
+                        }),
                     },
                 },
                 MuiFormHelperText: {
