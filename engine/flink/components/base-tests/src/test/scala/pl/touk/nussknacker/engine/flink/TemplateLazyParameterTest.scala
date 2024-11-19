@@ -2,18 +2,11 @@ package pl.touk.nussknacker.engine.flink
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.connector.source.Boundedness
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.functions.sink
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter
-import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter.TemplateExpressionPart.{Literal, Placeholder}
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, MethodToInvoke, NodeId, Params, ValueWithContext}
-import pl.touk.nussknacker.engine.api.component.{BoundedStreamComponent, Component, ComponentDefinition}
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
+import pl.touk.nussknacker.engine.api.component.{BoundedStreamComponent, ComponentDefinition}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedLazyParameter,
   NodeDependencyValue,
@@ -26,10 +19,10 @@ import pl.touk.nussknacker.engine.api.definition.{
   SpelTemplateParameterEditor
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink, StandardFlinkSource}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -44,7 +37,7 @@ class TemplateLazyParameterTest extends AnyFunSuite with FlinkSpec with Matchers
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
     .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(
-      List(ComponentDefinition("templateAstOperationSink", SpelTemplateAstOperationSink))
+      List(ComponentDefinition("templateAstOperationCustomTransformer", SpelTemplateAstOperationCustomTransformer))
     )
     .build()
 
@@ -52,14 +45,16 @@ class TemplateLazyParameterTest extends AnyFunSuite with FlinkSpec with Matchers
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("source", TestScenarioRunner.testDataSource)
-      .emptySink(
-        "end",
-        "templateAstOperationSink",
+      .customNode(
+        "custom",
+        "output",
+        "templateAstOperationCustomTransformer",
         "templateOutput" -> Expression.spelTemplate(s"Hello#{#input}")
       )
+      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
     val result = runner.runWithData(scenario, List(1, 2, 3), Boundedness.BOUNDED)
-    println(result)
+    result.validValue.errors shouldBe empty
     result.validValue.successes shouldBe List(
       "[Hello]-literal[1]-templated",
       "[Hello]-literal[2]-templated",
@@ -69,9 +64,9 @@ class TemplateLazyParameterTest extends AnyFunSuite with FlinkSpec with Matchers
 
 }
 
-object SpelTemplateAstOperationSink
-    extends SingleInputDynamicComponent[Sink]
-    with SinkFactory
+object SpelTemplateAstOperationCustomTransformer
+    extends CustomStreamTransformer
+    with SingleInputDynamicComponent[FlinkCustomStreamTransformation]
     with BoundedStreamComponent {
 
   private val spelTemplateParameter = ParameterDeclaration
@@ -86,44 +81,28 @@ object SpelTemplateAstOperationSink
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): SpelTemplateAstOperationSink.ContextTransformationDefinition = {
+  ): SpelTemplateAstOperationCustomTransformer.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(List(spelTemplateParameter.createParameter()))
     case TransformationStep((ParameterName("templateOutput"), DefinedLazyParameter(_)) :: Nil, _) =>
-      FinalResults(context, List.empty)
+      val outName = OutputVariableNameDependency.extract(dependencies)
+      FinalResults(context.withVariableUnsafe(outName, Typed[String]), List.empty)
   }
 
-  override def nodeDependencies: List[NodeDependency] = List.empty
+  override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def implementation(params: Params, dependencies: List[NodeDependencyValue], finalState: Option[Unit]): Sink =
-    new FlinkSink {
-      override type Value = String
-
-      val valueFromParam: LazyParameter[String] = spelTemplateParameter.extractValueUnsafe(params)
-
-      override def prepareValue(
-          dataStream: DataStream[Context],
-          flinkCustomNodeContext: FlinkCustomNodeContext
-      ): DataStream[ValueWithContext[Value]] = {
+  override def implementation(
+      params: Params,
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[Unit]
+  ): FlinkCustomStreamTransformation = {
+    val valueFromParam: LazyParameter[String] = spelTemplateParameter.extractValueUnsafe(params)
+    FlinkCustomStreamTransformation {
+      (dataStream: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) =>
         dataStream.flatMap(
           flinkCustomNodeContext.lazyParameterHelper.lazyMapFunction(valueFromParam),
           flinkCustomNodeContext.valueWithContextInfo.forType(valueFromParam.returnType)
         )
-      }
-
-      override def registerSink(
-          dataStream: DataStream[ValueWithContext[String]],
-          flinkNodeContext: FlinkCustomNodeContext
-      ): DataStreamSink[_] = {
-        println(dataStream)
-        dataStream.addSink(new SinkFunction[ValueWithContext[String]] {
-          override def invoke(value: ValueWithContext[String], context: SinkFunction.Context): Unit = {
-            println(value)
-            println("debug")
-
-          }
-        })
-      }
-
     }
+  }
 
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testcomponents
 
 import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter
-import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter.TemplateExpressionPart._
+import pl.touk.nussknacker.engine.api.LazyParameter.TemplateLazyParameter.EvaluableExpressionPart._
 import pl.touk.nussknacker.engine.api.{Context, EagerService, NodeId, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -63,7 +63,7 @@ object SpelTemplateAstOperationService extends EagerService with SingleInputDyna
       val lazyParam = spelTemplateParameter
         .extractValueUnsafe(params)
         .asInstanceOf[TemplateLazyParameter[String]]
-      val result = lazyParam.templateExpression.parts.map {
+      val result = lazyParam.parts.map {
         case Literal(value)        => s"[$value]-literal"
         case template: Placeholder => s"[${template.evaluate(context)}]-templated"
       }.mkString
