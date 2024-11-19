@@ -100,23 +100,23 @@ class SpelExpression(
 
   override val language: Language = flavour.languageId
 
-  def templateSubexpressions: Option[List[SpelTemplateExpressionPart]] = {
-    def parseTemplate(expression: Expression): List[SpelTemplateExpressionPart] = expression match {
+  lazy val templateSubexpressions: Option[List[SpelTemplateExpressionPart]] = {
+    def parseParts(expression: Expression): List[SpelTemplateExpressionPart] = expression match {
       case lit: LiteralExpression => List(Literal(lit.getExpressionString))
       case spelExpr: org.springframework.expression.spel.standard.SpelExpression =>
-        val parsedTemplateExpr = ParsedSpelExpression(spelExpr.getExpressionString, parsed.parser, spelExpr)
+        val parsedPlaceholderExpr = ParsedSpelExpression(spelExpr.getExpressionString, parsed.parser, spelExpr)
         val compiledExpr = new SpelExpression(
-          parsedTemplateExpr,
+          parsedPlaceholderExpr,
           typing.Typed[String],
           Standard,
           evaluationContextPreparer
         )
         List(Placeholder(compiledExpr))
-      case compositeExpr: CompositeStringExpression => compositeExpr.getExpressions.toList.flatMap(parseTemplate)
+      case compositeExpr: CompositeStringExpression => compositeExpr.getExpressions.toList.flatMap(parseParts)
       case other => throw new IllegalArgumentException(s"Unsupported expression type: [${other.getClass.getName}]")
     }
     flavour.languageId match {
-      case Language.SpelTemplate => Some(parseTemplate(parsed.parsed))
+      case Language.SpelTemplate => Some(parseParts(parsed.parsed))
       case _                     => None
     }
   }

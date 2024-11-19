@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.{Context, JobData, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.compiledgraph.BaseCompiledParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.spel.SpelExpression
 import pl.touk.nussknacker.engine.spel.SpelTemplateExpressionPart.{Literal, Placeholder}
+import pl.touk.nussknacker.engine.spel.{SpelExpression, SpelTemplateExpressionPart}
 
 class EvaluableLazyParameter[T <: AnyRef](
     compiledParameter: BaseCompiledParameter,
@@ -23,8 +23,9 @@ class EvaluableLazyParameter[T <: AnyRef](
 
 }
 
-class SpelTemplateEvaluableLazyParameter[T <: AnyRef](
+class SpelTemplateEvaluableLazyParameter[T <: AnyRef] private (
     compiledParameter: BaseCompiledParameter,
+    templateSubexpressions: List[SpelTemplateExpressionPart],
     expressionEvaluator: ExpressionEvaluator,
     nodeId: NodeId,
     jobData: JobData
@@ -33,28 +34,48 @@ class SpelTemplateEvaluableLazyParameter[T <: AnyRef](
   override val evaluate: Evaluate[T] =
     LazyParameterEvaluator.evaluate(compiledParameter, expressionEvaluator, nodeId, jobData)
 
-  override def templateExpression: TemplateExpression = compiledParameter.expression match {
-    case expression: SpelExpression =>
-      expression.templateSubexpressions match {
-        case Some(subexpressions) =>
-          val templateParts = subexpressions.map {
-            case Placeholder(expression) => {
-              new TemplateExpressionPart.Placeholder {
-                override val evaluate: Evaluate[String] = context => {
-                  expressionEvaluator.evaluate[String](expression, "expressionId", nodeId.id, context)(jobData).value
-                }
-              }
-            }
-            case Literal(value) => TemplateExpressionPart.Literal(value)
+  override lazy val templateExpression: TemplateExpression = {
+    val templateParts = templateSubexpressions.map {
+      case Placeholder(expression) => {
+        new TemplateExpressionPart.Placeholder {
+          override val evaluate: Evaluate[String] = context => {
+            expressionEvaluator.evaluate[String](expression, "placeholderExpression", nodeId.id, context)(jobData).value
           }
-          TemplateExpression(templateParts)
-        case None =>
-          throw new IllegalStateException("Non SpEL-template expression received in SpelTemplateLazyParameter")
+        }
       }
-    case _ => throw new IllegalStateException("Non SpEL expression received in SpelTemplateLazyParameter")
+      case Literal(value) => TemplateExpressionPart.Literal(value)
+    }
+    TemplateExpression(templateParts)
   }
 
   override def returnType: TypingResult = Typed[String]
+}
+
+object SpelTemplateEvaluableLazyParameter {
+
+  def build[T <: AnyRef](
+      compiledParameter: BaseCompiledParameter,
+      expressionEvaluator: ExpressionEvaluator,
+      nodeId: NodeId,
+      jobData: JobData
+  ): SpelTemplateEvaluableLazyParameter[T] = {
+    compiledParameter.expression match {
+      case expression: SpelExpression => {
+        val subexpressions = expression.templateSubexpressions.getOrElse(
+          throw new IllegalStateException("Non SpEL-template expression received in SpelTemplateLazyParameter")
+        )
+        new SpelTemplateEvaluableLazyParameter[T](
+          compiledParameter,
+          subexpressions,
+          expressionEvaluator,
+          nodeId,
+          jobData
+        )
+      }
+      case _ => throw new IllegalStateException("Non SpEL expression received in SpelTemplateLazyParameter")
+    }
+  }
+
 }
 
 private[this] object LazyParameterEvaluator {
@@ -84,14 +105,14 @@ object EvaluableLazyParameterFactory {
   ): LazyParameter[T] = {
     compiledParameter.expression.language match {
       case Language.SpelTemplate =>
-        new SpelTemplateEvaluableLazyParameter[T](
+        SpelTemplateEvaluableLazyParameter.build(
           compiledParameter,
           expressionEvaluator,
           nodeId,
           jobData
         )
       case _ =>
-        new EvaluableLazyParameter[T](
+        new EvaluableLazyParameter(
           compiledParameter,
           expressionEvaluator,
           nodeId,
