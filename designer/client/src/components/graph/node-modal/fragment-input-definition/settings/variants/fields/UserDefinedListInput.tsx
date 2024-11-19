@@ -27,7 +27,7 @@ interface Props {
     typ: ReturnedType;
     name: string;
     initialValue: FixedValuesOption;
-    inputLabel?: string;
+    inputLabel: string;
 }
 
 export const UserDefinedListInput = ({
@@ -168,7 +168,7 @@ export const UserDefinedListInput = ({
 
     return (
         <FormControl>
-            <SettingLabelStyled>{inputLabel || t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
+            <SettingLabelStyled>{inputLabel}</SettingLabelStyled>
             <Box width={"80%"} flex={1}>
                 <Stack direction="row" paddingY={1} spacing={1} justifyContent={"space-between"} alignItems={"start"}>
                     <EditableEditor
