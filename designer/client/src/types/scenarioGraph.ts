@@ -3,7 +3,7 @@ import { TypingResult, UIParameter } from "./definition";
 import { Edge, EdgeType } from "./edge";
 import { NodeType, PropertiesType } from "./node";
 import { ComponentGroup } from "./component";
-import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
+import { ScenarioPropertyConfig } from "../components/properties/ScenarioProperty";
 
 export type ScenarioGraphWithName = {
     processName: string;

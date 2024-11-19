@@ -1,7 +1,6 @@
 import CommentContent from "../src/components/comment/CommentContent";
 import React from "react";
 import { render } from "@testing-library/react";
-import { describe, expect } from "@jest/globals";
 import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 describe("CommentContent#newContent", () => {

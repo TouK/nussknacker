@@ -12,10 +12,6 @@ export type EditNodeAction = {
     validationResult: ValidationResult;
     scenarioGraphAfterChange: ScenarioGraph;
 };
-export type RenameProcessAction = {
-    type: "PROCESS_RENAME";
-    name: string;
-};
 
 export type EditScenarioLabels = {
     type: "EDIT_LABELS";

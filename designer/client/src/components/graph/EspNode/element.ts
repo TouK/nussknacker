@@ -146,7 +146,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                     opacity: node.isDisabled ? 0.5 : 1,
                 },
                 iconBackground: {
-                    fill: theme.palette.custom.getNodeStyles(node).fill,
+                    fill: theme.palette.custom.getNodeStyles(node.type).fill,
                     opacity: node.isDisabled ? 0.5 : 1,
                 },
                 icon: {

@@ -1,9 +1,9 @@
 import { get } from "lodash";
-import EditableEditor from "./editors/EditableEditor";
+import EditableEditor from "../graph/node-modal/editors/EditableEditor";
 import React, { useCallback } from "react";
-import { ExpressionLang } from "./editors/expression/types";
-import { getValidationErrorsForField } from "./editors/Validators";
-import { NodeValidationError, PropertiesType } from "../../../types";
+import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
+import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
+import { NodeValidationError, PropertiesType } from "../../types";
 
 export interface ScenarioPropertyConfig {
     editor: any;

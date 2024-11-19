@@ -1,0 +1,1 @@
+export { PropertiesForm } from "./PropertiesForm";
