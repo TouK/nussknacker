@@ -39,15 +39,15 @@ object ProcessCompilerData {
       .filter(_.componentType == ComponentType.Service)
 
     val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
-    val expressionEvaluator =
-      ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
 
+    // Here we pass unOptimizedEvaluator for ValidationExpressionParameterValidator
+    // as the optimized once could cause problems with serialization with its listeners during scenario testing
     val expressionCompiler = ExpressionCompiler.withOptimization(
       userCodeClassLoader,
       dictRegistry,
       definitionWithTypes.modelDefinition.expressionConfig,
       definitionWithTypes.classDefinitions,
-      expressionEvaluator
+      ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
     )
 
     // for testing environment it's important to take classloader from user jar
@@ -69,8 +69,8 @@ object ProcessCompilerData {
       nodeCompiler,
       customProcessValidator
     )
-
-    val interpreter = Interpreter(listeners, expressionEvaluator, componentUseCase)
+    val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
+    val interpreter         = Interpreter(listeners, expressionEvaluator, componentUseCase)
 
     new ProcessCompilerData(
       processCompiler,
