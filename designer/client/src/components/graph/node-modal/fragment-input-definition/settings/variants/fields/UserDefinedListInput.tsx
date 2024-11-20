@@ -27,6 +27,7 @@ interface Props {
     typ: ReturnedType;
     name: string;
     initialValue: FixedValuesOption;
+    inputLabel: string;
 }
 
 export const UserDefinedListInput = ({
@@ -39,6 +40,7 @@ export const UserDefinedListInput = ({
     typ,
     name,
     initialValue,
+    inputLabel,
 }: Props) => {
     const { t } = useTranslation();
     const [temporaryListItem, setTemporaryListItem] = useState("");
@@ -166,7 +168,7 @@ export const UserDefinedListInput = ({
 
     return (
         <FormControl>
-            <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
+            <SettingLabelStyled>{inputLabel}</SettingLabelStyled>
             <Box width={"80%"} flex={1}>
                 <Stack direction="row" paddingY={1} spacing={1} justifyContent={"space-between"} alignItems={"start"}>
                     <EditableEditor

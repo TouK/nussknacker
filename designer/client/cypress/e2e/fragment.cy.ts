@@ -66,7 +66,7 @@ describe("Fragment", () => {
         cy.get("[data-testid='settings:4']").contains("Typing...").should("not.exist");
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{enter}");
         cy.get("[data-testid='settings:4']")
-            .contains(/Add list item/i)
+            .contains(/Suggested values/i)
             .siblings()
             .eq(0)
             .find("[data-testid='form-helper-text']")
