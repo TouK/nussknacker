@@ -84,7 +84,7 @@ object Dtos {
 
   sealed trait StickyNotesError
 
-  implicit lazy val cellErrorSchema: Schema[LayoutData] = Schema.derived
+  implicit lazy val layoutDataSchema: Schema[LayoutData] = Schema.derived
 
   object StickyNotesError {
 
