@@ -100,6 +100,7 @@
 * [#7099](https://github.com/TouK/nussknacker/pull/7099) Provide an option to embedded video to the markdown
 * [#7102](https://github.com/TouK/nussknacker/pull/7102) Introduce a new UI to defining aggregations within nodes
 * [#7147](https://github.com/TouK/nussknacker/pull/7147) Fix redundant "ParameterName(...)" wrapper string in exported PDFs in nodes details 
+* [#7183](https://github.com/TouK/nussknacker/pull/7183) Hide categories from a scenarios list and more scenario details when only one category is available
 
 ## 1.17
 
