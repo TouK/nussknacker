@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.19
+
+#### Highlights
+
+##### End-user
+
+##### Administrator
+
+### 1.19.0 (Not released yet)
+
+* [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+* [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 
 ## 1.18
 
@@ -23,6 +36,8 @@
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
+* [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
+  expression parts used in SpEL template
 
 ### 1.18.1 (Not released yet)
 
