@@ -6,12 +6,12 @@ import { alpha, useTheme } from "@mui/material";
 import { getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
 import { STICKY_NOTE_CONSTRAINTS, STICKY_NOTE_DEFAULT_COLOR } from "./graph/EspNode/stickyNote";
 
+const PREVIEW_SCALE = 0.9;
+const ACTIVE_ROTATION = 2;
+const INACTIVE_SCALE = 1.5;
+
 export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; isOver?: boolean }): JSX.Element {
     const theme = useTheme();
-
-    const PREVIEW_SCALE = 0.9;
-    const ACTIVE_ROTATION = 2;
-    const INACTIVE_SCALE = 1.5;
     const scale = isOver ? 1 : PREVIEW_SCALE;
     const rotation = isActive ? (isOver ? -ACTIVE_ROTATION : ACTIVE_ROTATION) : 0;
     const finalScale = isActive ? 1 : INACTIVE_SCALE;

@@ -138,9 +138,8 @@ class StickyNotesApiHttpService(
       .right(
         dbioActionRunner
           .run(
-            stickyNotesRepository.findStickyNotes(scenarioId, versionId)
+            stickyNotesRepository.countStickyNotes(scenarioId, versionId)
           )
-          .map(_.length)
       )
 
   private def deleteStickyNote(noteId: StickyNoteId)(

@@ -24,7 +24,9 @@ const preloadBeImage = memoize((src: string): string | null => {
 });
 
 export const stickyNoteIconSrc = `/assets/components/${StickyNoteType}.svg`;
-export const stickyNoteIcon: string | null = preloadBeImage(stickyNoteIconSrc);
+export function stickyNoteIcon(): string | null {
+    return preloadBeImage(stickyNoteIconSrc);
+}
 
 export function getComponentIconSrc(node: NodeType, { components }: ProcessDefinitionData): string | null {
     // missing type means that node is the fake properties component

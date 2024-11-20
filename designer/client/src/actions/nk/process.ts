@@ -60,23 +60,23 @@ export function displayTestCapabilities(processName: ProcessName, scenarioGraph:
         );
 }
 
-export function fetchStickyNotesForScenario(scenarioName: string, scenarioVersionId: number): ThunkAction {
-    return (dispatch) => {
-        HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
+const refreshStickyNotes = (dispatch, scenarioName: string, scenarioVersionId: number) => {
+    return HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
+        flushSync(() => {
             dispatch({ type: "STICKY_NOTES_UPDATED", stickyNotes: stickyNotes.data });
+            dispatch(layoutChanged());
         });
-    };
+    });
+};
+
+export function fetchStickyNotesForScenario(scenarioName: string, scenarioVersionId: number): ThunkAction {
+    return (dispatch) => refreshStickyNotes(dispatch, scenarioName, scenarioVersionId);
 }
 
 export function stickyNoteUpdated(scenarioName: string, scenarioVersionId: number, stickyNote: StickyNote): ThunkAction {
     return (dispatch) => {
         HttpService.updateStickyNote(scenarioName, scenarioVersionId, stickyNote).then((_) => {
-            HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
-                flushSync(() => {
-                    dispatch({ type: "STICKY_NOTES_UPDATED", stickyNotes: stickyNotes.data });
-                    dispatch(layoutChanged());
-                });
-            });
+            refreshStickyNotes(dispatch, scenarioName, scenarioVersionId);
         });
     };
 }
@@ -94,12 +94,7 @@ export function stickyNoteDeleted(scenarioName: string, stickyNoteId: number): T
 export function stickyNoteAdded(scenarioName: string, scenarioVersionId: number, position: Position, dimensions: Dimensions): ThunkAction {
     return (dispatch) => {
         HttpService.addStickyNote(scenarioName, scenarioVersionId, position, dimensions).then((_) => {
-            HttpService.getStickyNotes(scenarioName, scenarioVersionId).then((stickyNotes) => {
-                flushSync(() => {
-                    dispatch({ type: "STICKY_NOTES_UPDATED", stickyNotes: stickyNotes.data });
-                    dispatch(layoutChanged());
-                });
-            });
+            refreshStickyNotes(dispatch, scenarioName, scenarioVersionId);
         });
     };
 }

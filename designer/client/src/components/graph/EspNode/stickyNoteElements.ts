@@ -36,7 +36,7 @@ export function makeStickyNoteElement(
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
                 icon: {
-                    xlinkHref: stickyNoteIcon,
+                    xlinkHref: stickyNoteIcon(),
                     opacity: 1,
                     color: theme.palette.getContrastText(getStickyNoteBackgroundColor(theme, stickyNote.color).main),
                 },
