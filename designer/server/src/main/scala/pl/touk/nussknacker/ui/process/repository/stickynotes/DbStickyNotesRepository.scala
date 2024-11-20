@@ -47,6 +47,22 @@ class DbStickyNotesRepository private (override protected val dbRef: DbRef, over
     )
   }
 
+  override def countStickyNotes(scenarioId: ProcessId, scenarioVersionId: VersionId): DB[Int] = {
+    run(
+      stickyNotesTable
+        .filter(event => event.scenarioId === scenarioId && event.scenarioVersionId <= scenarioVersionId)
+        .groupBy(_.noteCorrelationId)
+        .map { case (noteCorrelationId, notes) => (noteCorrelationId, notes.map(_.eventDate).max) }
+        .join(stickyNotesTable)
+        .on { case ((noteCorrelationId, eventDate), event) =>
+          event.noteCorrelationId === noteCorrelationId && event.eventDate === eventDate
+        }
+        .map { case ((_, _), event) => event }
+        .result
+        .map(events => events.count(_.eventType != StickyNoteEvent.StickyNoteDeleted))
+    )
+  }
+
   override def findStickyNoteById(
       noteId: StickyNoteId
   )(implicit user: LoggedUser): DB[Option[StickyNoteEventEntityData]] = {

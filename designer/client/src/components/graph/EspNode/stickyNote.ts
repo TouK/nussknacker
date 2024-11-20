@@ -19,7 +19,7 @@ export const STICKY_NOTE_CONSTRAINTS = {
 export const BORDER_RADIUS = 3;
 export const CONTENT_PADDING = 5;
 export const ICON_SIZE = 20;
-export const STICKY_NOTE_DEFAULT_COLOR = "#13130d";
+export const STICKY_NOTE_DEFAULT_COLOR = "#eae672";
 export const MARKDOWN_EDITOR_NAME = "markdown-editor";
 
 const border: dia.MarkupNodeJSON = {
