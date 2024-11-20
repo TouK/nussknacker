@@ -61,16 +61,8 @@ object ValueDecoder {
         fieldsJson <- obj.as[Map[String, Json]]
         decodedFields <-
           fieldsJson.toList.traverse { case (fieldName, fieldJson) =>
-            record.fields.get(fieldName) match {
-              case Some(fieldType) => decodeValue(fieldType, fieldJson.hcursor).map(fieldName -> _)
-              case None =>
-                Left(
-                  DecodingFailure(
-                    s"Encoded record field with name [$fieldName] and json value [$fieldsJson] isn't present in record type [${record.display}]",
-                    List()
-                  )
-                )
-            }
+            val fieldType = record.fields.getOrElse(fieldName, Unknown)
+            decodeValue(fieldType, fieldJson.hcursor).map(fieldName -> _)
           }
       } yield decodedFields.toMap.asJava
     case Unknown =>

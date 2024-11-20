@@ -62,7 +62,7 @@ class FromJsonSchemaBasedDecoderTest extends AnyFunSuite with Matchers {
     fields.get("nullField").asInstanceOf[AnyRef] shouldBe null
     val mapField = fields.get("mapField").asInstanceOf[TypedMap]
     mapField.get("a") shouldBe "1"
-    mapField.get("b") shouldBe java.math.BigDecimal.valueOf(2)
+    mapField.get("b") shouldBe 2
     mapField.get("c") shouldBe a[java.util.List[_]]
     fields.get("mapOfStringsField") shouldBe a[TypedMap]
   }
@@ -95,7 +95,7 @@ class FromJsonSchemaBasedDecoderTest extends AnyFunSuite with Matchers {
     decode.FromJsonSchemaBasedDecoder.decode(json, definition) shouldBe TypedMap(
       Map(
         "field1" -> "value",
-        "field2" -> java.math.BigDecimal.valueOf(1)
+        "field2" -> 1
       )
     )
 
