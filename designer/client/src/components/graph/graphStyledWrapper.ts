@@ -1,7 +1,8 @@
 import { CSSProperties } from "react";
-import { css, styled, Theme } from "@mui/material";
+import { alpha, css, styled, Theme } from "@mui/material";
 import { blend } from "@mui/system";
 import { blendLighten } from "../../containers/theme/helpers";
+import { stickyNotePath } from "./EspNode/stickyNote";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
     css({
@@ -183,9 +184,12 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 paddingRight: "10px",
             },
             ".sticky-note-markdown-editor": {
-                paddingLeft: "10px",
-                paddingRight: "10px",
-                backgroundColor: "rgba(0,0,0,0.1)",
+                paddingLeft: theme.spacing(1),
+                paddingRight: theme.spacing(1),
+                backgroundColor: alpha(theme.palette.common.white, 0.3),
+                color: theme.palette.common.black,
+                fontFamily: theme.typography.fontFamily,
+                fontSize: theme.typography.body1.fontSize,
                 resize: "none",
                 width: "100%",
                 height: "100%",
@@ -193,6 +197,7 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                 borderColor: "Transparent",
                 whiteSpace: "pre-line",
                 overflow: "hidden",
+                clipPath: "xywh(0 0px 100% 100% round 0 0 16% 0)",
             },
             ".sticky-note-markdown-editor:focus": {
                 outline: "none",
