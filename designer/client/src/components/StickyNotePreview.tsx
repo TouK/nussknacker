@@ -1,7 +1,7 @@
 import { css, cx } from "@emotion/css";
 import React from "react";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize } from "./graph/EspNode/esp";
-import { getStickyNoteIconSrc, PreloadedIcon } from "./toolbars/creator/ComponentIcon";
+import { PreloadedIcon, stickyNoteIconSrc } from "./toolbars/creator/ComponentIcon";
 import { alpha, useTheme } from "@mui/material";
 import { getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
 import { STICKY_NOTE_DEFAULT_COLOR, STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from "./graph/EspNode/stickyNote";
@@ -54,7 +54,7 @@ export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; is
     return (
         <div className={cx(colors, nodeStyles)}>
             <div className={cx(imageStyles, colors)}>
-                <PreloadedIcon src={getStickyNoteIconSrc} />
+                <PreloadedIcon src={stickyNoteIconSrc} />
             </div>
         </div>
     );
