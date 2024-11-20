@@ -65,7 +65,7 @@ class OrderedDependencies(dependencies: List[NodeDependency]) extends Serializab
   ): List[Any] = {
     dependencies.map {
       case param: Parameter =>
-        values.getOrElse(param.name, throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
+        values.getOrElse(param.name, throw new IllegalArgumentException(s"Missing parameter: ${param.name.value}"))
       case OutputVariableNameDependency =>
         outputVariableNameOpt.getOrElse(throw MissingOutputVariableException)
       case TypedNodeDependency(clazz) =>
