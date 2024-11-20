@@ -100,6 +100,7 @@
 * [#7099](https://github.com/TouK/nussknacker/pull/7099) Provide an option to embedded video to the markdown
 * [#7102](https://github.com/TouK/nussknacker/pull/7102) Introduce a new UI to defining aggregations within nodes
 * [#7147](https://github.com/TouK/nussknacker/pull/7147) Fix redundant "ParameterName(...)" wrapper string in exported PDFs in nodes details 
+* [#7187](https://github.com/TouK/nussknacker/pull/7187) Fix "Failed to get node validation" when using literal lists mixing different types of elements   
 
 ## 1.17
 

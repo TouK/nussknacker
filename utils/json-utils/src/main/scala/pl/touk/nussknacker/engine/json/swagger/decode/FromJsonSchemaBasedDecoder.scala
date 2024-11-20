@@ -1,16 +1,16 @@
-package pl.touk.nussknacker.engine.json.swagger.extractor
+package pl.touk.nussknacker.engine.json.swagger.decode
 
 import io.circe.{Json, JsonNumber, JsonObject}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
+import pl.touk.nussknacker.engine.api.json.FromJsonDecoder.jsonToAny
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 import scala.util.Try
 
 // TODO: Validated
-object FromJsonDecoder {
+object FromJsonSchemaBasedDecoder {
 
   import scala.jdk.CollectionConverters._
 
@@ -41,14 +41,14 @@ object FromJsonDecoder {
           TypedMap(
             jo.toMap.collect {
               case (key, value) if obj.elementType.contains(key) =>
-                key -> FromJsonDecoder.decode(value, obj.elementType(key), addPath(key))
+                key -> FromJsonSchemaBasedDecoder.decode(value, obj.elementType(key), addPath(key))
               case keyValue @ KeyMatchingPatternSchema(patternPropertySchema) =>
                 val (key, value) = keyValue
-                key -> FromJsonDecoder.decode(value, patternPropertySchema, addPath(key))
+                key -> FromJsonSchemaBasedDecoder.decode(value, patternPropertySchema, addPath(key))
               case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled =>
                 obj.additionalProperties match {
                   case add: AdditionalPropertiesEnabled =>
-                    key -> FromJsonDecoder.decode(value, add.value, addPath(key))
+                    key -> FromJsonSchemaBasedDecoder.decode(value, add.value, addPath(key))
                   case _ =>
                     key -> jsonToAny(value)
                 }
@@ -88,7 +88,7 @@ object FromJsonDecoder {
         case SwaggerArray(elementType) =>
           extract[Vector[Json]](
             _.asArray,
-            _.zipWithIndex.map { case (el, idx) => FromJsonDecoder.decode(el, elementType, s"$path[$idx]") }.asJava
+            _.zipWithIndex.map { case (el, idx) => FromJsonSchemaBasedDecoder.decode(el, elementType, s"$path[$idx]") }.asJava
           )
         case obj: SwaggerObject => extractObject(obj)
         case u @ SwaggerUnion(types) =>
