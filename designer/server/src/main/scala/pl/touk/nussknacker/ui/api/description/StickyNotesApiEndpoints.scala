@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.description
 
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.api.LayoutData
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -28,7 +28,6 @@ import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
 import java.time.Instant
-import java.util.UUID
 
 class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
