@@ -52,6 +52,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Removed unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`.
   `MultiMap` was incorrectly handled by Flink's default Kryo serializer, so if you want to copy it to your code
   you should write and register a proper serializer.
+* [#7162](https://github.com/TouK/nussknacker/pull/7162) When component declares that requires parameter with either `SpelTemplateParameterEditor` 
+  or `SqlParameterEditor` editor, in the runtime, for the expression evaluation result, will be used the new `TemplateEvaluationResult` 
+  class instead of `String` class. To access the previous `String` use `TemplateEvaluationResult.renderedTemplate` method.
 
 ### REST API changes
 
