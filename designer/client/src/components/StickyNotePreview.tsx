@@ -4,7 +4,7 @@ import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize } from "./
 import { PreloadedIcon, stickyNoteIconSrc } from "./toolbars/creator/ComponentIcon";
 import { alpha, useTheme } from "@mui/material";
 import { getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
-import { STICKY_NOTE_DEFAULT_COLOR, STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from "./graph/EspNode/stickyNote";
+import { STICKY_NOTE_CONSTRAINTS, STICKY_NOTE_DEFAULT_COLOR } from "./graph/EspNode/stickyNote";
 
 export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; isOver?: boolean }): JSX.Element {
     const theme = useTheme();
@@ -18,8 +18,8 @@ export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; is
 
     const nodeStyles = css({
         position: "relative",
-        width: STICKY_NOTE_WIDTH,
-        height: STICKY_NOTE_HEIGHT,
+        width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
+        height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT,
         borderRadius: BORDER_RADIUS,
         boxSizing: "content-box",
         display: "inline-flex",
@@ -45,6 +45,7 @@ export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; is
         borderRadius: BORDER_RADIUS,
         width: iconBackgroundSize / 2,
         height: iconBackgroundSize / 2,
+        color: theme.palette.common.black,
         "> svg": {
             height: iconSize,
             width: iconSize,
