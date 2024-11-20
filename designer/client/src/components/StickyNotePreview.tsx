@@ -1,14 +1,12 @@
 import { css, cx } from "@emotion/css";
 import React from "react";
-import { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize } from "./graph/EspNode/esp";
-import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
+import { getStickyNoteIconSrc, PreloadedIcon } from "./toolbars/creator/ComponentIcon";
 import { alpha, useTheme } from "@mui/material";
-import { blend } from "@mui/system";
 import { getBorderColor, getStickyNoteBackgroundColor } from "../containers/theme/helpers";
 import { STICKY_NOTE_DEFAULT_COLOR, STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from "./graph/EspNode/stickyNote";
 
-export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
+export function StickyNotePreview({ isActive, isOver }: { isActive?: boolean; isOver?: boolean }): JSX.Element {
     const theme = useTheme();
 
     const PREVIEW_SCALE = 0.9;
@@ -35,13 +33,9 @@ export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; 
         willChange: "transform, opacity, border-color, background-color",
     });
 
-    const nodeColors = css({
+    const colors = css({
         opacity: 0.5,
         borderColor: getBorderColor(theme),
-        backgroundColor: getStickyNoteBackgroundColor(theme, STICKY_NOTE_DEFAULT_COLOR).main,
-    });
-    const nodeColorsHover = css({
-        borderColor: blend(getBorderColor(theme), theme.palette.secondary.main, 0.2),
         backgroundColor: getStickyNoteBackgroundColor(theme, STICKY_NOTE_DEFAULT_COLOR).main,
     });
 
@@ -57,15 +51,10 @@ export function StickyNotePreview({ node, isActive, isOver }: { node: NodeType; 
         },
     });
 
-    const imageColors = css({
-        color: theme.palette.common.black,
-    });
-
-    const colors = isOver ? nodeColorsHover : nodeColors;
     return (
         <div className={cx(colors, nodeStyles)}>
-            <div className={cx(imageStyles, imageColors)}>
-                <ComponentIcon node={node} />
+            <div className={cx(imageStyles, colors)}>
+                <PreloadedIcon src={getStickyNoteIconSrc} />
             </div>
         </div>
     );

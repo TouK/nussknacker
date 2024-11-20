@@ -78,7 +78,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     const colors = isOver ? nodeColorsHover : nodeColors;
 
     return node?.type === StickyNoteType ? (
-        <StickyNotePreview node={node} isActive={isActive} isOver={isOver} />
+        <StickyNotePreview isActive={isActive} isOver={isOver} />
     ) : (
         <div className={cx(colors, nodeStyles)}>
             <div className={cx(imageStyles, imageColors)}>

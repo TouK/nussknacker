@@ -73,7 +73,6 @@ object Dtos {
       targetEdge: Option[String]
   )
 
-  // TODO add this to configuration file in next iteration
   case class StickyNotesSettings(
       maxContentLength: Int,
       maxNotesCount: Int

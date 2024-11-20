@@ -72,7 +72,7 @@ class StickyNotesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Base
                     exampleStickyNote,
                     exampleStickyNote.copy(noteId = StickyNoteId(2))
                   )
-                ) // TODO example of errors
+                )
               )
             )
         )
