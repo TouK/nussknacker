@@ -196,6 +196,7 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
             },
             ".sticky-note-markdown-editor:focus": {
                 outline: "none",
+                boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
             },
             ".sticky-note-content": {
                 width: "100%",
