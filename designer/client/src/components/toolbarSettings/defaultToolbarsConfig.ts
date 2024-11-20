@@ -72,13 +72,7 @@ export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean):
                 ],
             },
         ],
-        [ToolbarsSide.TopLeft]: [
-            { id: "survey-panel" },
-            { id: "tips-panel" },
-            { id: "sticky-notes-panel" },
-            { id: "creator-panel" },
-            { id: "activities-panel" },
-        ],
+        [ToolbarsSide.TopLeft]: [{ id: "survey-panel" }, { id: "tips-panel" }, { id: "creator-panel" }, { id: "activities-panel" }],
         [ToolbarsSide.BottomRight]: DEV_TOOLBARS,
     };
 }
