@@ -2680,12 +2680,17 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Provided note content is too long (5004 characters). Max
+                    content length is 5000.
+                  value: Provided note content is too long (5004 characters). Max
+                    content length is 5000.
         '401':
           description: ''
           content:
@@ -2778,12 +2783,19 @@ paths:
                 type: string
                 format: uuid
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
-            value for: body'
+          description: ''
           content:
             text/plain:
               schema:
-                type: string
+                anyOf:
+                - type: string
+                - type: string
+              examples:
+                Example:
+                  summary: 'Cannot add another sticky note, since max number of sticky
+                    notes was reached: 5 (see configuration).'
+                  value: 'Cannot add another sticky note, since max number of sticky
+                    notes was reached: 5 (see configuration).'
         '401':
           description: ''
           content:

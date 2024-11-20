@@ -23,9 +23,9 @@ const preloadBeImage = memoize((src: string): string | null => {
     return `#${id}`;
 });
 
+export const getStickyNoteIconSrc = `/assets/components/${StickyNoteType}.svg`;
 export function getStickyNoteIcon(): string | null {
-    const typeIcon = `/assets/components/${StickyNoteType}.svg`;
-    return preloadBeImage(typeIcon);
+    return preloadBeImage(getStickyNoteIconSrc);
 }
 
 export function getComponentIconSrc(node: NodeType, { components }: ProcessDefinitionData): string | null {
