@@ -4,6 +4,7 @@ import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 
 import java.net.URI
@@ -26,7 +27,9 @@ import java.net.URI
     externalDeploymentId: Option[ExternalDeploymentId],
     status: StateStatus,
     version: Option[ProcessVersion],
+    applicableActions: List[ScenarioActionName],
     allowedActions: List[ScenarioActionName],
+    actionTooltips: Map[ScenarioActionName, String],
     icon: URI,
     tooltip: String,
     description: String,
@@ -36,8 +39,31 @@ import java.net.URI
 )
 
 object ProcessState {
-  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
-  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
+  implicit val uriEncoder: Encoder[URI]                             = Encoder.encodeString.contramap(_.toString)
+  implicit val uriDecoder: Decoder[URI]                             = Decoder.decodeString.map(URI.create)
+  implicit val scenarioVersionIdEncoder: Encoder[ScenarioVersionId] = Encoder.encodeLong.contramap(_.value)
+  implicit val scenarioVersionIdDecoder: Decoder[ScenarioVersionId] = Decoder.decodeLong.map(ScenarioVersionId.apply)
+
+  implicit val scenarioActionNameEncoder: Encoder[ScenarioActionName] =
+    Encoder.encodeString.contramap(serializeScenarioActionName)
+  implicit val scenarioActionNameDecoder: Decoder[ScenarioActionName] =
+    Decoder.decodeString.map(deserializeScenarioActionName)
+
+  implicit val scenarioActionNameKeyDecoder: KeyDecoder[ScenarioActionName] =
+    (key: String) => Some(deserializeScenarioActionName(key))
+  implicit val scenarioActionNameKeyEncoder: KeyEncoder[ScenarioActionName] = (name: ScenarioActionName) =>
+    serializeScenarioActionName(name)
+
+  private def serializeScenarioActionName(name: ScenarioActionName) = name match {
+    case ScenarioActionName.PerformSingleExecution => "PERFORM_SINGLE_EXECUTION"
+    case other                                     => other.value
+  }
+
+  private def deserializeScenarioActionName(str: String) = str match {
+    case "PERFORM_SINGLE_EXECUTION" => ScenarioActionName.PerformSingleExecution
+    case other                      => ScenarioActionName(other)
+  }
+
 }
 
 object StateStatus {

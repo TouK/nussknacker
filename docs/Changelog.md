@@ -15,6 +15,9 @@
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 * [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
   expression parts used in SpEL template 
+* [#7165](https://github.com/TouK/nussknacker/pull/7165) Added PerformSingleExecution scenario action
+  * Added support for PerformSingleExecution action in DeploymentManager and in GUI
+  * Improved scenario state management to include information about current and deployed versions and allow more customization
 
 ## 1.18
 

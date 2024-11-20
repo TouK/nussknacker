@@ -5,13 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionResult,
-  DeploymentData,
-  DeploymentId,
-  ExternalDeploymentId,
-  User
-}
+import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 // DM Prefix is from Deployment Manager, to distinguish from commands passed into the domain service layer (DeploymentService)
@@ -86,3 +80,9 @@ case class DMCancelScenarioCommand(scenarioName: ProcessName, user: User) extend
 
 case class DMStopScenarioCommand(scenarioName: ProcessName, savepointDir: Option[String], user: User)
     extends DMScenarioCommand[SavepointResult]
+
+case class DMPerformSingleExecutionCommand(
+    processVersion: ProcessVersion,
+    canonicalProcess: CanonicalProcess,
+    user: User,
+) extends DMScenarioCommand[SingleExecutionResult]

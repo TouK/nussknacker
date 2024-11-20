@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{ProcessStatus, defaultApplicableActions}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
 
@@ -37,19 +39,36 @@ trait ProcessStateDefinitionManager {
     stateDefinitions(stateStatus.name).icon
 
   /**
+   * Actions that are applicable to scenario in general. They may be available only in particular states, as defined by `def statusActions`
+   */
+  def applicableActions: List[ScenarioActionName] = defaultApplicableActions
+
+  /**
+   * Custom tooltips for actions
+   */
+  def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String] = Map.empty
+
+  /**
     * Allowed transitions between states.
     */
-  def statusActions(stateStatus: StateStatus): List[ScenarioActionName]
+  def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]
 
   /**
     * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
     */
-  def processState(statusDetails: StatusDetails): ProcessState = {
+  def processState(
+      statusDetails: StatusDetails,
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId]
+  ): ProcessState = {
+    val status = ProcessStatus(statusDetails.status, latestVersionId, deployedVersionId)
     ProcessState(
       statusDetails.externalDeploymentId,
       statusDetails.status,
       statusDetails.version,
-      statusActions(statusDetails.status),
+      applicableActions,
+      statusActions(status),
+      actionTooltips(status),
       statusIcon(statusDetails.status),
       statusTooltip(statusDetails.status),
       statusDescription(statusDetails.status),
@@ -58,5 +77,24 @@ trait ProcessStateDefinitionManager {
       statusDetails.errors
     )
   }
+
+}
+
+object ProcessStateDefinitionManager {
+
+  final case class ProcessStatus(
+      stateStatus: StateStatus,
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId]
+  )
+
+  val defaultApplicableActions: List[ScenarioActionName] = List(
+    ScenarioActionName.Cancel,
+    ScenarioActionName.Deploy,
+    ScenarioActionName.Pause,
+    ScenarioActionName.Archive,
+    ScenarioActionName.UnArchive,
+    ScenarioActionName.Rename,
+  )
 
 }
