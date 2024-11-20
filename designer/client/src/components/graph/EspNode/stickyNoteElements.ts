@@ -5,7 +5,7 @@ import { dia, elementTools, shapes } from "jointjs";
 import { stickyNoteIcon } from "../../toolbars/creator/ComponentIcon";
 import { createStickyNoteId } from "../../../types/stickyNote";
 import { getStickyNoteBackgroundColor } from "../../../containers/theme/helpers";
-import { CONTENT_PADDING, ICON_SIZE, MARKDOWN_EDITOR_NAME, StickyNoteShape } from "./stickyNote";
+import { CONTENT_PADDING, ICON_SIZE, MARKDOWN_EDITOR_NAME, STICKY_NOTE_CONSTRAINTS, StickyNoteShape } from "./stickyNote";
 import { Events } from "../types";
 
 export type ModelWithTool = {
@@ -50,8 +50,6 @@ export function makeStickyNoteElement(
 
         const ThemedStickyNoteShape = StickyNoteShape(theme, stickyNote);
         const stickyNoteModel = new ThemedStickyNoteShape(attributes);
-        const MIN_STICKY_NOTE_WIDTH = 100;
-        const MIN_STICKY_NOTE_HEIGHT = 100;
 
         const removeButtonTool = new elementTools.Remove({
             focusOpacity: 0.5,
@@ -102,7 +100,16 @@ export function makeStickyNoteElement(
             },
             setPosition: function (view, coordinates) {
                 const model = view.model;
-                model.resize(Math.max(coordinates.x - 10, 100), Math.max(coordinates.y - 10, 100));
+                model.resize(
+                    Math.max(
+                        Math.min(STICKY_NOTE_CONSTRAINTS.MAX_WIDTH, Math.round(coordinates.x - 10)),
+                        STICKY_NOTE_CONSTRAINTS.MIN_WIDTH,
+                    ),
+                    Math.max(
+                        Math.min(STICKY_NOTE_CONSTRAINTS.MAX_HEIGHT, Math.round(coordinates.y - 10)),
+                        STICKY_NOTE_CONSTRAINTS.MIN_HEIGHT,
+                    ),
+                );
             },
             onPointerUpCustom: function (evt: dia.Event) {
                 this.onPointerUp(evt);
@@ -120,8 +127,8 @@ export function makeStickyNoteElement(
             ],
         });
         stickyNoteModel.resize(
-            Math.max(stickyNote.dimensions.width, MIN_STICKY_NOTE_WIDTH),
-            Math.max(stickyNote.dimensions.height, MIN_STICKY_NOTE_HEIGHT),
+            Math.max(stickyNote.dimensions.width, STICKY_NOTE_CONSTRAINTS.MIN_WIDTH),
+            Math.max(stickyNote.dimensions.height, STICKY_NOTE_CONSTRAINTS.MIN_HEIGHT),
         );
         stickyNoteModel.attr(`${MARKDOWN_EDITOR_NAME}/props/value`, stickyNote.content);
         return { model: stickyNoteModel, tools };
