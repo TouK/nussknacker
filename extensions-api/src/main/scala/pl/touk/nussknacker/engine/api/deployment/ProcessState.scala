@@ -4,7 +4,6 @@ import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 
 import java.net.URI
@@ -45,24 +44,14 @@ object ProcessState {
   implicit val scenarioVersionIdDecoder: Decoder[ScenarioVersionId] = Decoder.decodeLong.map(ScenarioVersionId.apply)
 
   implicit val scenarioActionNameEncoder: Encoder[ScenarioActionName] =
-    Encoder.encodeString.contramap(serializeScenarioActionName)
+    Encoder.encodeString.contramap(ScenarioActionName.serialize)
   implicit val scenarioActionNameDecoder: Decoder[ScenarioActionName] =
-    Decoder.decodeString.map(deserializeScenarioActionName)
+    Decoder.decodeString.map(ScenarioActionName.deserialize)
 
   implicit val scenarioActionNameKeyDecoder: KeyDecoder[ScenarioActionName] =
-    (key: String) => Some(deserializeScenarioActionName(key))
+    (key: String) => Some(ScenarioActionName.deserialize(key))
   implicit val scenarioActionNameKeyEncoder: KeyEncoder[ScenarioActionName] = (name: ScenarioActionName) =>
-    serializeScenarioActionName(name)
-
-  private def serializeScenarioActionName(name: ScenarioActionName) = name match {
-    case ScenarioActionName.PerformSingleExecution => "PERFORM_SINGLE_EXECUTION"
-    case other                                     => other.value
-  }
-
-  private def deserializeScenarioActionName(str: String) = str match {
-    case "PERFORM_SINGLE_EXECUTION" => ScenarioActionName.PerformSingleExecution
-    case other                      => ScenarioActionName(other)
-  }
+    ScenarioActionName.serialize(name)
 
 }
 

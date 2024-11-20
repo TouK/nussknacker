@@ -82,12 +82,22 @@ trait ProcessStateDefinitionManager {
 
 object ProcessStateDefinitionManager {
 
+  /**
+   * ProcessStatus contains status of the scenario, it is used as argument of ProcessStateDefinitionManager methods
+   *
+   * @param stateStatus       current scenario state
+   * @param latestVersionId   latest saved versionId for the scenario
+   * @param deployedVersionId currently deployed versionId of the scenario
+   */
   final case class ProcessStatus(
       stateStatus: StateStatus,
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId]
   )
 
+  /**
+   * Actions, that are applicable in standard use-cases for most deployment managers.
+   */
   val defaultApplicableActions: List[ScenarioActionName] = List(
     ScenarioActionName.Cancel,
     ScenarioActionName.Deploy,
