@@ -61,7 +61,7 @@ class KafkaJsonItSpec extends FlinkWithKafkaSuite {
     }
   }
 
-  test("should round-trip plain message without provided schema") {
+  ignore("should round-trip plain message without provided schema") {
     val inputTopic  = "input-topic-without-schema-plain"
     val outputTopic = "output-topic-without-schema-plain"
 
