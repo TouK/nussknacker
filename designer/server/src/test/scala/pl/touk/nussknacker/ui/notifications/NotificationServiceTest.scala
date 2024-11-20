@@ -143,6 +143,77 @@ class NotificationServiceTest
     notificationsFor(userForFail).map(_.toRefresh) shouldBe Symbol("empty")
   }
 
+  test("Should return events for user and for scenario in given time") {
+    val processName       = ProcessName("fooProcess")
+    val id                = saveSampleProcess(processName)
+    val processIdWithName = ProcessIdWithName(id, processName)
+
+    val deploymentManager                        = mock[DeploymentManager]
+    val (deploymentService, notificationService) = createServices(deploymentManager)
+
+    def notificationsFor(user: LoggedUser): List[Notification] =
+      notificationService.notifications(Some(processName))(user, global).futureValue
+
+    def deployProcess(
+        givenDeployResult: Try[Option[ExternalDeploymentId]],
+        user: LoggedUser
+    ): Option[ExternalDeploymentId] = {
+      when(
+        deploymentManager.processCommand(any[DMRunDeploymentCommand])
+      ).thenReturn(Future.fromTry(givenDeployResult))
+      when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
+      when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
+      deploymentService
+        .processCommand(
+          RunDeploymentCommand(
+            commonData = CommonCommandData(processIdWithName, None, user),
+            nodesDeploymentData = NodesDeploymentData.empty,
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+        .flatten
+        .futureValue
+    }
+
+    val firstUser  = TestFactory.adminUser("firstUser", "firstUser")
+    val secondUser = TestFactory.adminUser("secondUser", "secondUser")
+
+    deployProcess(Success(None), firstUser)
+    deployProcess(Success(None), secondUser)
+
+    val notifications = notificationsFor(secondUser)
+    notifications shouldBe List(
+      Notification(
+        notifications(0).id,
+        Some(processName),
+        "Deployment finished",
+        None,
+        List(DataToRefresh.activity, DataToRefresh.state)
+      ),
+      Notification(
+        notifications(1).id,
+        Some(processName),
+        "SCENARIO_CREATED",
+        None,
+        List(DataToRefresh.activity, DataToRefresh.state)
+      ),
+      Notification(
+        notifications(2).id,
+        Some(processName),
+        "SCENARIO_DEPLOYED",
+        None,
+        List(DataToRefresh.activity, DataToRefresh.state)
+      ),
+      Notification(
+        notifications(3).id,
+        Some(processName),
+        "SCENARIO_DEPLOYED",
+        None,
+        List(DataToRefresh.activity, DataToRefresh.state)
+      )
+    )
+  }
+
   test("should refresh after action execution finished") {
     val processName       = ProcessName("process-execution-finished")
     val id                = saveSampleProcess(processName)
