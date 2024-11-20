@@ -2,7 +2,6 @@ import { CSSProperties } from "react";
 import { alpha, css, styled, Theme } from "@mui/material";
 import { blend } from "@mui/system";
 import { blendLighten } from "../../containers/theme/helpers";
-import { stickyNotePath } from "./EspNode/stickyNote";
 
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) =>
     css({
@@ -175,6 +174,11 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                             transform: "translate(-16px, -16px)",
                         },
                     },
+                },
+            },
+            ".joint-type-esp-model": {
+                ".body .joint-port-body .background": {
+                    transition: "all 0.25s ease-in-out",
                 },
             },
             ".sticky-note-markdown": {

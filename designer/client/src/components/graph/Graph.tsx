@@ -1,5 +1,5 @@
 import { Theme } from "@mui/material";
-import { dia, g, shapes, util } from "jointjs";
+import { dia, g, shapes } from "jointjs";
 import "jointjs/dist/joint.min.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
