@@ -7,12 +7,19 @@ import { StickyNoteElement } from "../StickyNoteElement";
 import MarkupNodeJSON = dia.MarkupNodeJSON;
 import DOMPurify from "dompurify";
 
-export const STICKY_NOTE_WIDTH = 300;
-export const STICKY_NOTE_HEIGHT = 250;
+export const STICKY_NOTE_CONSTRAINTS = {
+    MIN_WIDTH: 100,
+    MAX_WIDTH: 3000,
+    DEFAULT_WIDTH: 300,
+    MIN_HEIGHT: 100,
+    MAX_HEIGHT: 3000,
+    DEFAULT_HEIGHT: 250,
+} as const;
+
 export const BORDER_RADIUS = 3;
 export const CONTENT_PADDING = 5;
 export const ICON_SIZE = 20;
-export const STICKY_NOTE_DEFAULT_COLOR = "#eae672";
+export const STICKY_NOTE_DEFAULT_COLOR = "#13130d";
 export const MARKDOWN_EDITOR_NAME = "markdown-editor";
 
 const border: dia.MarkupNodeJSON = {
@@ -20,8 +27,8 @@ const border: dia.MarkupNodeJSON = {
     tagName: "path",
     className: "body",
     attributes: {
-        width: STICKY_NOTE_WIDTH,
-        height: STICKY_NOTE_HEIGHT,
+        width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
+        height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT,
         strokeWidth: 1,
         fill: "none",
         rx: BORDER_RADIUS,
@@ -79,8 +86,8 @@ const defaults = (theme: Theme) =>
     util.defaultsDeep(
         {
             size: {
-                width: STICKY_NOTE_WIDTH,
-                height: STICKY_NOTE_HEIGHT,
+                width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
+                height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT,
             },
             attrs: {
                 body: {
@@ -98,8 +105,8 @@ const defaults = (theme: Theme) =>
                     },
                 },
                 foreignObject: {
-                    width: STICKY_NOTE_WIDTH,
-                    height: STICKY_NOTE_HEIGHT - ICON_SIZE - CONTENT_PADDING * 4,
+                    width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH,
+                    height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT - ICON_SIZE - CONTENT_PADDING * 4,
                     y: CONTENT_PADDING * 4 + ICON_SIZE,
                     fill: getBorderColor(theme),
                 },

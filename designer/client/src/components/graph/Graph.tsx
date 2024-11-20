@@ -47,8 +47,8 @@ import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHe
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
 import { StickyNote } from "../../common/StickyNote";
-import { STICKY_NOTE_HEIGHT, STICKY_NOTE_WIDTH } from "./EspNode/stickyNote";
 import { StickyNoteElement, StickyNoteElementView } from "./StickyNoteElement";
+import { STICKY_NOTE_CONSTRAINTS } from "./EspNode/stickyNote";
 
 function clamp(number: number, max: number) {
     return Math.round(Math.min(max, Math.max(-max, number)));
@@ -474,8 +474,14 @@ export class Graph extends React.Component<Props> {
                 const position = cell.get("position");
                 const size = cell.get("size");
                 // TODO move max width and height to some config?
-                const width = Math.max(100, Math.min(3000, Math.round(size.width)));
-                const height = Math.max(100, Math.min(3000, Math.round(size.height)));
+                const width = Math.max(
+                    STICKY_NOTE_CONSTRAINTS.MIN_WIDTH,
+                    Math.min(STICKY_NOTE_CONSTRAINTS.MAX_WIDTH, Math.round(size.width)),
+                );
+                const height = Math.max(
+                    STICKY_NOTE_CONSTRAINTS.MIN_HEIGHT,
+                    Math.min(STICKY_NOTE_CONSTRAINTS.MAX_HEIGHT, Math.round(size.height)),
+                );
                 updatedStickyNote.layoutData = { x: position.x, y: position.y };
                 updatedStickyNote.dimensions = { width, height };
                 this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
@@ -525,7 +531,7 @@ export class Graph extends React.Component<Props> {
         if (this.props.isFragment === true) return;
         const canAddStickyNote = this.props.capabilities.editFrontend;
         if (canAddStickyNote) {
-            const dimensions = { width: STICKY_NOTE_WIDTH, height: STICKY_NOTE_HEIGHT };
+            const dimensions = { width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH, height: STICKY_NOTE_CONSTRAINTS.MIN_HEIGHT };
             this.props.stickyNoteAdded(scenarioName, scenarioVersionId, position, dimensions);
         }
     }
