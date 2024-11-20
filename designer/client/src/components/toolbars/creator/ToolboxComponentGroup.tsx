@@ -69,7 +69,13 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
     const elements = useMemo(
         () =>
             componentGroup.components.map((component) => (
-                <Tool nodeModel={component.node} label={component.label} key={component.componentId} highlights={highlights} />
+                <Tool
+                    nodeModel={component.node}
+                    label={component.label}
+                    key={component.componentId}
+                    highlights={highlights}
+                    disabled={component.disabled ? component.disabled() : false}
+                />
             )),
         [highlights, componentGroup.components],
     );

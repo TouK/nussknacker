@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 import "react-treeview/react-treeview.css";
 import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
+import { getProcessDefinitionData, getStickyNotesSettings } from "../../../reducers/selectors/settings";
 import { ComponentGroup } from "../../../types";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 import Tool from "./Tool";
@@ -11,6 +11,9 @@ import { lighten, styled } from "@mui/material";
 
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getLuminance } from "@mui/system/colorManipulator";
+import { isPristine } from "../../../reducers/selectors/graph";
+import { concat } from "lodash";
+import { stickyNoteComponentGroup } from "./StickyNoteComponent";
 
 export const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",
@@ -106,16 +109,17 @@ export const StyledToolbox = styled("div")(({ theme }) => ({
 
 export default function ToolBox(props: { filter: string }): JSX.Element {
     const processDefinitionData = useSelector(getProcessDefinitionData);
+    const stickyNotesSettings = useSelector(getStickyNotesSettings);
+    const pristine = useSelector(isPristine);
     const { t } = useTranslation();
 
     const componentGroups: ComponentGroup[] = useMemo(() => processDefinitionData.componentGroups, [processDefinitionData]);
-
     const filters = useMemo(() => props.filter?.toLowerCase().split(/\s/).filter(Boolean), [props.filter]);
-
-    const groups = useMemo(
-        () => componentGroups.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0),
-        [componentGroups, filters],
-    );
+    const stickyNoteToolGroup = useMemo(() => stickyNoteComponentGroup(pristine), [pristine, props, t]);
+    const groups = useMemo(() => {
+        const allComponentGroups = stickyNotesSettings.enabled ? concat(componentGroups, stickyNoteToolGroup) : componentGroups;
+        return allComponentGroups.map(filterComponentsByLabel(filters)).filter((g) => g.components.length > 0);
+    }, [componentGroups, filters, stickyNoteToolGroup, stickyNotesSettings]);
 
     return (
         <StyledToolbox id="toolbox">

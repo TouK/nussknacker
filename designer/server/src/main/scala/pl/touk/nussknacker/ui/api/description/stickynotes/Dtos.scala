@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.description.stickynotes
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.LayoutData
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -73,13 +74,14 @@ object Dtos {
       targetEdge: Option[String]
   )
 
-  case class StickyNotesSettings(
+  @JsonCodec case class StickyNotesSettings(
       maxContentLength: Int,
-      maxNotesCount: Int
+      maxNotesCount: Int,
+      enabled: Boolean
   )
 
   object StickyNotesSettings {
-    val default: StickyNotesSettings = StickyNotesSettings(maxContentLength = 5000, maxNotesCount = 5)
+    val default: StickyNotesSettings = StickyNotesSettings(maxContentLength = 5000, maxNotesCount = 5, enabled = true)
   }
 
   sealed trait StickyNotesError
