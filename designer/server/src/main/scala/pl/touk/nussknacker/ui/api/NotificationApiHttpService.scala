@@ -21,9 +21,8 @@ class NotificationApiHttpService(
   expose {
     notificationApiEndpoints.notificationEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
-      .serverLogic { implicit loggedUser => processNameOpt =>
-        notificationService
-          .notifications(processNameOpt)
+      .serverLogic { implicit loggedUser => _ =>
+        notificationService.notifications
           .map { notificationList => success(notificationList) }
       }
   }
