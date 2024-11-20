@@ -1,8 +1,20 @@
 import { dia } from "jointjs";
 import { Events } from "./types";
 import { MARKDOWN_EDITOR_NAME } from "./EspNode/stickyNote";
+import MarkupNodeJSON = dia.MarkupNodeJSON;
 
-export const StickyNoteElement = (defaults?: any, protoProps?: any) =>
+interface StickyNoteDefaults {
+    position?: { x: number; y: number };
+    size?: { width: number; height: number };
+    attrs?: Record<string, unknown>;
+}
+
+interface StickyNoteProtoProps {
+    markup: (dia.MarkupNodeJSON | MarkupNodeJSON)[];
+    [key: string]: unknown;
+}
+
+export const StickyNoteElement = (defaults?: StickyNoteDefaults, protoProps?: StickyNoteProtoProps) =>
     dia.Element.define("stickyNote.StickyNoteElement", defaults, protoProps);
 
 export const StickyNoteElementView = dia.ElementView.extend({
@@ -14,19 +26,19 @@ export const StickyNoteElementView = dia.ElementView.extend({
         "dblclick .sticky-note-content": "showEditor",
     },
 
-    stopPropagation: function (evt, x, y) {
+    stopPropagation: function (evt) {
         evt.stopPropagation();
     },
 
-    showEditor: function (evt, x, y) {
+    showEditor: function (evt) {
         evt.stopPropagation();
         this.model.attr(`${MARKDOWN_EDITOR_NAME}/props/disabled`, false);
-        evt.currentTarget.childNodes.item("textarea").focus({ preventScroll: true });
+        evt.currentTarget.querySelector("textarea").focus({ preventScroll: true });
     },
 
-    selectAll: function (evt, x, y) {
+    selectAll: function (evt) {
         if (evt.code === "KeyA") {
-            if (evt.ctrlKey) {
+            if (evt.ctrlKey || evt.metaKey) {
                 evt.preventDefault();
                 evt.target.select();
             }

@@ -58,9 +58,10 @@ object FeatureTogglesConfig extends LazyLogging {
     val tabs                                     = parseOptionalConfig[List[TopTab]](config, "tabs")
     val intervalTimeSettings                     = config.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings                         = config.as[TestDataSettings]("testDataSettings")
-    val stickyNotesSettings                      = config.as[StickyNotesSettings]("stickyNotesSettings")
-    val redirectAfterArchive                     = config.getAs[Boolean]("redirectAfterArchive").getOrElse(true)
-    val componentDefinitionExtractionMode        = parseComponentDefinitionExtractionMode(config)
+    val stickyNotesSettings =
+      config.getAs[StickyNotesSettings]("stickyNotesSettings").getOrElse(StickyNotesSettings.default)
+    val redirectAfterArchive              = config.getAs[Boolean]("redirectAfterArchive").getOrElse(true)
+    val componentDefinitionExtractionMode = parseComponentDefinitionExtractionMode(config)
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
