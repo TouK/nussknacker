@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "react-query";
 import { AvailableScenarioLabels } from "nussknackerUi/components/Labels/types";
 import { UseQueryResult } from "react-query/types/react/types";
 import { DateTime } from "luxon";
+import { groupBy } from "lodash";
 
 const scenarioStatusesQueryKey = "scenariosStatuses";
 
@@ -102,8 +103,20 @@ export function useScenariosWithStatus(): UseQueryResult<Scenario[]> {
             data: data.map((scenario) => ({
                 ...scenario,
                 state: statuses?.data?.[scenario.name] || scenario.state,
-                id: scenario.name, // required by DataGrid when table=true
+                id: scenario.name, // required by DataGrid when table=true,
             })),
         } as UseQueryResult<Scenario[]>;
     }, [scenarios, statuses]);
+}
+
+export function useScenariosWithCategoryVisible(): { withCategoriesVisible: boolean } {
+    const scenarios = useScenariosQuery();
+    return useMemo(() => {
+        const { data = [] } = scenarios;
+        const withCategoriesVisible = Object.keys(groupBy(data, (scenario) => scenario.processCategory)).length > 1;
+
+        return {
+            withCategoriesVisible,
+        };
+    }, [scenarios]);
 }

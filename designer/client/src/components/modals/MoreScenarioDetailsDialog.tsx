@@ -10,6 +10,7 @@ import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
 import { getProcessingModeVariantName } from "../toolbars/scenarioDetails/getProcessingModeVariantName";
 import NuLogoIcon from "../../assets/img/nussknacker-logo-icon.svg";
+import { useGetAllCombinations } from "../useGetAllCombinations";
 
 const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
 
@@ -38,6 +39,11 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
         ],
         [props, t],
     );
+    const { isAllCombinationsLoading, isCategoryFieldVisible } = useGetAllCombinations({
+        processCategory: scenario.processCategory,
+        processingMode: scenario.processingMode,
+        processEngine: scenario.engineSetupName,
+    });
 
     const displayStatus = !scenario.isArchived && !scenario.isFragment;
     const displayLabels = scenario.labels.length !== 0;
@@ -73,10 +79,12 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.processingMode", "Processing mode")}</ItemLabelStyled>
                                 <Typography variant={"caption"}>{getProcessingModeVariantName(scenario.processingMode)}</Typography>
                             </ItemWrapperStyled>
-                            <ItemWrapperStyled>
-                                <ItemLabelStyled>{i18next.t("scenarioDetails.label.category", "Category")}</ItemLabelStyled>
-                                <Typography variant={"caption"}>{scenario.processCategory}</Typography>
-                            </ItemWrapperStyled>
+                            {isAllCombinationsLoading && isCategoryFieldVisible && (
+                                <ItemWrapperStyled>
+                                    <ItemLabelStyled>{i18next.t("scenarioDetails.label.category", "Category")}</ItemLabelStyled>
+                                    <Typography variant={"caption"}>{scenario.processCategory}</Typography>
+                                </ItemWrapperStyled>
+                            )}
                             <ItemWrapperStyled>
                                 <ItemLabelStyled>{i18next.t("scenarioDetails.label.engine", "Engine")}</ItemLabelStyled>
                                 <Typography variant={"caption"}>{scenario.engineSetupName}</Typography>
