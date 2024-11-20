@@ -473,8 +473,11 @@ export class Graph extends React.Component<Props> {
                 if (!updatedStickyNote) return;
                 const position = cell.get("position");
                 const size = cell.get("size");
+                // TODO move max width and height to some config?
+                const width = Math.max(100, Math.min(3000, Math.round(size.width)));
+                const height = Math.max(100, Math.min(3000, Math.round(size.height)));
                 updatedStickyNote.layoutData = { x: position.x, y: position.y };
-                updatedStickyNote.dimensions = { width: Math.round(size.width), height: Math.round(size.height) };
+                updatedStickyNote.dimensions = { width, height };
                 this.updateStickyNote(this.props.scenario.name, this.props.scenario.processVersionId, updatedStickyNote);
             }
         });

@@ -16,7 +16,7 @@ export function success(message: string): Action {
 export function error(message: string, error?: string, showErrorText?: boolean): Action {
     return Notifications.error({
         autoDismiss: 10,
-        children: <Notification type={"error"} icon={<InfoOutlinedIcon />} message={showErrorText ? error : message} />,
+        children: <Notification type={"error"} icon={<InfoOutlinedIcon />} message={showErrorText && error ? error : message} />,
     });
 }
 

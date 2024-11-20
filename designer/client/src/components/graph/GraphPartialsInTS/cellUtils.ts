@@ -15,8 +15,9 @@ export function isStickyNoteElement(el: dia.Cell): el is shapes.devs.Model {
 
 export function getStickyNoteCopyFromCell(stickyNotes: StickyNote[], el: dia.Cell): StickyNote | undefined {
     const noteId = el.get("noteId");
-    const stickyNote = stickyNotes.find((a) => a.noteId == noteId);
-    return cloneDeep(stickyNote) || undefined;
+    if (!isStickyNoteElement(el) || !noteId) return undefined;
+    const stickyNote = stickyNotes.find((note) => note.noteId == noteId);
+    return stickyNote ? cloneDeep(stickyNote) : undefined;
 }
 
 export function isConnected(el: dia.Element): boolean {

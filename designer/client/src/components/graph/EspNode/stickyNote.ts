@@ -5,6 +5,7 @@ import { StickyNote } from "../../../common/StickyNote";
 import { marked } from "marked";
 import { StickyNoteElement } from "../StickyNoteElement";
 import MarkupNodeJSON = dia.MarkupNodeJSON;
+import DOMPurify from "dompurify";
 
 export const STICKY_NOTE_WIDTH = 300;
 export const STICKY_NOTE_HEIGHT = 250;
@@ -46,15 +47,21 @@ const body: dia.MarkupNodeJSON = {
 
 const renderer = new marked.Renderer();
 renderer.link = function (href, title, text) {
-    return `<a target="_blank" href="${href}">${text}</a>`;
+    return `<a target="_blank" rel="noopener noreferrer" href="${href}">${text}</a>`;
 };
 renderer.image = function (href, title, text) {
     // SVG don't support HTML img inside foreignObject
-    return `<a target="_blank" href="${href}">${text} (attached img)</a>`;
+    return `<a target="_blank" rel="noopener noreferrer" href="${href}">${text} (attached img)</a>`;
 };
 
 const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
-    const parsed = marked.parse(stickyNote.content, { renderer });
+    let parsed;
+    try {
+        parsed = DOMPurify.sanitize(marked.parse(stickyNote.content, { renderer }));
+    } catch (error) {
+        console.error("Failed to parse markdown:", error);
+        parsed = "Error: Could not parse content. See error logs in console";
+    }
     const singleMarkupNode = util.svg/* xml */ `
             <foreignObject @selector="foreignObject">
                 <div @selector="sticky-note-content" class="sticky-note-content">

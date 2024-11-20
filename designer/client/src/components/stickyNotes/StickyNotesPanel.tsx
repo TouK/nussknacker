@@ -27,6 +27,6 @@ export function StickyNotesPanel(props: ToolbarPanelProps): JSX.Element {
                 </StyledToolbox>
             </ToolbarWrapper>
         );
-    }, [pristine]);
+    }, [pristine, props, t]);
     return <>{stickyNoteTool}</>;
 }
