@@ -21,25 +21,24 @@ import pl.touk.nussknacker.engine.deployment.{
   ExternalDeploymentId
 }
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.mock.MockDeploymentManager
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
-import pl.touk.nussknacker.ui.process.deployment.{
-  CommonCommandData,
-  DeploymentManagerDispatcher,
-  DeploymentService,
-  RunDeploymentCommand,
-  ScenarioResolver
-}
+import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
   DbScenarioActionRepository,
   ScenarioWithDetailsEntity
 }
+import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
@@ -63,10 +62,25 @@ class NotificationServiceTest
   private implicit val system: ActorSystem            = ActorSystem(getClass.getSimpleName)
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 
-  private var currentInstant: Instant = Instant.ofEpochMilli(0)
-  private val clock: Clock            = clockForInstant(() => currentInstant)
-  private val processRepository       = TestFactory.newFetchingProcessRepository(testDbRef)
-  private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef, clock)
+  private var currentInstant: Instant    = Instant.ofEpochMilli(0)
+  private val clock: Clock               = clockForInstant(() => currentInstant)
+  private val processRepository          = TestFactory.newFutureFetchingScenarioRepository(testDbRef)
+  private val dbProcessRepository        = TestFactory.newFetchingProcessRepository(testDbRef)
+  private val writeProcessRepository     = TestFactory.newWriteProcessRepository(testDbRef, clock)
+  private val scenarioActivityRepository = DbScenarioActivityRepository.create(testDbRef, clock)
+  private val dm: MockDeploymentManager  = new MockDeploymentManager
+
+  private val dmDispatcher = new DeploymentManagerDispatcher(
+    mapProcessingTypeDataProvider(Streaming.stringify -> dm),
+    processRepository,
+  )
+
+  private val scenarioActivityService = new ScenarioActivityService(
+    deploymentManagerDispatcher = dmDispatcher,
+    scenarioActivityRepository = scenarioActivityRepository,
+    fetchingProcessRepository = processRepository,
+    dbioActionRunner = dbioRunner
+  )
 
   private val actionRepository =
     DbScenarioActionRepository.create(
@@ -74,7 +88,7 @@ class NotificationServiceTest
       ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
     )
 
-  private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
+  private val expectedRefreshAfterSuccess = List(DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail    = List(DataToRefresh.state)
 
   test("Should return only events for user in given time") {
@@ -86,7 +100,7 @@ class NotificationServiceTest
     val (deploymentService, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
-      notificationService.notifications(user, global).futureValue
+      notificationService.notifications(None)(user, global).futureValue
 
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
@@ -164,14 +178,14 @@ class NotificationServiceTest
 
     val user = TestFactory.adminUser("fooUser", "fooUser")
     deployProcess(Success(None), user)
-    val notificationsAfterDeploy = notificationService.notifications(user, global).futureValue
+    val notificationsAfterDeploy = notificationService.notifications(None)(user, global).futureValue
     notificationsAfterDeploy should have length 1
     val deployNotificationId = notificationsAfterDeploy.head.id
 
     deploymentService
       .markActionExecutionFinished("Streaming", passedDeploymentId.value.toActionIdOpt.value)
       .futureValue
-    val notificationAfterExecutionFinished = notificationService.notifications(user, global).futureValue
+    val notificationAfterExecutionFinished = notificationService.notifications(None)(user, global).futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
     notificationAfterExecutionFinished.head.id should not equal deployNotificationId
@@ -188,11 +202,17 @@ class NotificationServiceTest
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
-    val config              = NotificationConfig(20 minutes)
-    val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
+    val config = NotificationConfig(20 minutes)
+    val notificationService = new NotificationServiceImpl(
+      scenarioActivityService,
+      actionRepository,
+      dbioRunner,
+      config,
+      clock
+    )
     val deploymentService = new DeploymentService(
       managerDispatcher,
-      processRepository,
+      dbProcessRepository,
       actionRepository,
       dbioRunner,
       mock[ProcessingTypeDataProvider[UIProcessValidator, _]],

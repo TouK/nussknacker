@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.FunctorUtils._
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext
 
 class ScenarioActivityRepositoryAuditLogDecorator(
@@ -80,7 +80,8 @@ class ScenarioActivityRepositoryAuditLogDecorator(
 
   def findActivities(
       scenarioId: ProcessId,
-  ): DB[Seq[ScenarioActivity]] = underlying.findActivities(scenarioId)
+      after: Option[Instant],
+  ): DB[Seq[ScenarioActivity]] = underlying.findActivities(scenarioId, after)
 
   def findAttachments(
       scenarioId: ProcessId,
