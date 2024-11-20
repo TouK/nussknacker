@@ -12,7 +12,7 @@ import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../.
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { UserSettings } from "../../reducers/userSettings";
-import { Edge, LayoutData, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { Scenario } from "../Process/types";
 import { createUniqueArrowMarker } from "./arrowMarker";
@@ -531,7 +531,7 @@ export class Graph extends React.Component<Props> {
         if (this.props.isFragment === true) return;
         const canAddStickyNote = this.props.capabilities.editFrontend;
         if (canAddStickyNote) {
-            const dimensions = { width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH, height: STICKY_NOTE_CONSTRAINTS.MIN_HEIGHT };
+            const dimensions = { width: STICKY_NOTE_CONSTRAINTS.DEFAULT_WIDTH, height: STICKY_NOTE_CONSTRAINTS.DEFAULT_HEIGHT };
             this.props.stickyNoteAdded(scenarioName, scenarioVersionId, position, dimensions);
         }
     }
