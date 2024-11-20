@@ -3,13 +3,13 @@ import { Events } from "./types";
 import { MARKDOWN_EDITOR_NAME } from "./EspNode/stickyNote";
 import MarkupNodeJSON = dia.MarkupNodeJSON;
 
-interface StickyNoteDefaults {
+export interface StickyNoteDefaults {
     position?: { x: number; y: number };
     size?: { width: number; height: number };
     attrs?: Record<string, unknown>;
 }
 
-interface StickyNoteProtoProps {
+export interface StickyNoteProtoProps {
     markup: (dia.MarkupNodeJSON | MarkupNodeJSON)[];
     [key: string]: unknown;
 }
@@ -19,7 +19,6 @@ export const StickyNoteElement = (defaults?: StickyNoteDefaults, protoProps?: St
 
 export const StickyNoteElementView = dia.ElementView.extend({
     events: {
-        "change textarea": "onChange",
         "click textarea": "stopPropagation",
         "keydown textarea": "selectAll",
         "focusout textarea": "onChange",

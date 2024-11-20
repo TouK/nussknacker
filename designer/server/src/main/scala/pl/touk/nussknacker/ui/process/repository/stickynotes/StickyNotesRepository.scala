@@ -23,6 +23,11 @@ trait StickyNotesRepository {
       scenarioVersionId: VersionId
   ): DB[Seq[StickyNote]]
 
+  def countStickyNotes(
+      scenarioId: ProcessId,
+      scenarioVersionId: VersionId
+  ): DB[Int]
+
   def addStickyNote(
       content: String,
       layoutData: LayoutData,
