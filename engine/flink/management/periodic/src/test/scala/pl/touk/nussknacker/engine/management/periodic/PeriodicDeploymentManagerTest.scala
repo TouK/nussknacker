@@ -74,7 +74,8 @@ class PeriodicDeploymentManagerTest
       executionConfig = executionConfig,
       processConfigEnricher = ProcessConfigEnricher.identity,
       clock = Clock.systemDefaultZone(),
-      new ProcessingTypeActionServiceStub
+      new ProcessingTypeActionServiceStub,
+      Map.empty
     )
 
     val periodicDeploymentManager = new PeriodicDeploymentManager(

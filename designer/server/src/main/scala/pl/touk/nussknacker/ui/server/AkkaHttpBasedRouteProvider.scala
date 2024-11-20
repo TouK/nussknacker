@@ -232,6 +232,10 @@ class AkkaHttpBasedRouteProvider(
           futureProcessRepository
         )
 
+      val additionalComponentConfigs = processingTypeDataProvider.mapValues { processingTypeData =>
+        processingTypeData.designerModelData.modelData.additionalConfigsFromProvider
+      }
+
       val legacyDeploymentService = new LegacyDeploymentService(
         dmDispatcher,
         processRepository,
@@ -241,7 +245,8 @@ class AkkaHttpBasedRouteProvider(
         scenarioResolver,
         processChangeListener,
         featureTogglesConfig.scenarioStateTimeout,
-        featureTogglesConfig.deploymentCommentSettings
+        featureTogglesConfig.deploymentCommentSettings,
+        additionalComponentConfigs
       )
       legacyDeploymentService.invalidateInProgressActions()
 
@@ -438,7 +443,8 @@ class AkkaHttpBasedRouteProvider(
             deploymentRepository,
             dmDispatcher,
             dbioRunner,
-            Clock.systemDefaultZone()
+            Clock.systemDefaultZone(),
+            additionalComponentConfigs
           )
         val activityService =
           new ActivityService(
@@ -707,6 +713,7 @@ class AkkaHttpBasedRouteProvider(
                 featureTogglesConfig.componentDefinitionExtractionMode
               ),
               getDeploymentManagerDependencies(
+                additionalUIConfigProvider,
                 actionServiceProvider,
                 scenarioActivityRepository,
                 dbioActionRunner,
@@ -722,12 +729,14 @@ class AkkaHttpBasedRouteProvider(
   }
 
   private def getDeploymentManagerDependencies(
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
   )(implicit executionContext: ExecutionContext) = {
+    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     DeploymentManagerDependencies(
       DefaultProcessingTypeDeployedScenariosProvider(dbRef, processingType),
       new DefaultProcessingTypeActionService(
@@ -740,7 +749,8 @@ class AkkaHttpBasedRouteProvider(
       ),
       system.dispatcher,
       system,
-      sttpBackend
+      sttpBackend,
+      additionalConfigsFromProvider
     )
   }
 

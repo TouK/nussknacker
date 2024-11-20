@@ -1,7 +1,7 @@
 import { ProcessAdditionalFields, ReturnedType } from "./scenarioGraph";
 import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
 
-type Type = "Properties" | "FragmentInput" | string;
+type Type = "FragmentInput" | string;
 
 export type LayoutData = { x: number; y: number };
 
@@ -12,7 +12,6 @@ export interface BranchParams {
 
 export type BranchParametersTemplate = $TodoType;
 
-//FIXME: something wrong here, process and node mixed?
 export type NodeType<F extends Field = Field> = {
     id: string;
     type: Type;
@@ -39,6 +38,7 @@ export type NodeType<F extends Field = Field> = {
         parameters?: Parameter[];
     };
     nodeType?: string;
+    //TODO: Remove me and add correct properties
     [key: string]: any;
 };
 
@@ -60,12 +60,10 @@ export interface Expression {
 }
 
 export type PropertiesType = {
-    // FE applies fake id as name, but it's not send by/to BE
-    id?: string;
-    type: "Properties";
+    name: string;
     additionalFields: ProcessAdditionalFields;
 };
 
 export type NodeId = NodeType["id"];
 
-export type UINodeType = NodeType | PropertiesType;
+export type NodeOrPropertiesType = NodeType | PropertiesType;

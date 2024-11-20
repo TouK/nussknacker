@@ -95,13 +95,11 @@ class ParameterEvaluator(
   ): LazyParameter[Nothing] = {
     lazyParameterCreationStrategy match {
       case EvaluableLazyParameterStrategy =>
-        val compiledParameter = CompiledParameter(exprValue, definition)
-        EvaluableLazyParameterFactory.build(
-          compiledParameter = compiledParameter,
-          expressionEvaluator = runtimeExpressionEvaluator,
-          nodeId = nodeId,
-          jobData = jobData,
-          typingResult = compiledParameter.typingInfo.typingResult
+        new EvaluableLazyParameter(
+          CompiledParameter(exprValue, definition),
+          runtimeExpressionEvaluator,
+          nodeId,
+          jobData
         )
       case PostponedEvaluatorLazyParameterStrategy =>
         new EvaluableLazyParameterCreator(

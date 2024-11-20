@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
-import { concat, isEmpty } from "lodash";
+import { isEmpty } from "lodash";
 import { Props } from "./Errors";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import i18next from "i18next";
+import { ScenarioPropertiesSection } from "./ScenarioPropertiesSection";
 
 export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
     const { globalErrors, processPropertiesErrors, invalidNodes } = errors;
@@ -33,11 +34,12 @@ export const ErrorTips = ({ errors, showDetails, scenario }: Props) => {
         <div>
             {globalErrorsLinkSections}
             <NodeErrorsLinkSection
-                nodeIds={concat(invalidNodeIds, isEmpty(processPropertiesErrors) ? [] : "properties")}
+                nodeIds={invalidNodeIds}
                 message={i18next.t("errors.errorsIn", "Errors in: ")}
                 showDetails={showDetails}
                 scenario={scenario}
             />
+            {!isEmpty(processPropertiesErrors) && <ScenarioPropertiesSection />}
         </div>
     );
 };

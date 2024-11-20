@@ -52,6 +52,7 @@ export const JsonEditor: SimpleEditor<Props> = ({
                 sx={{ position: "relative" }}
             >
                 <AceEditor
+                    readOnly={readOnly}
                     mode={"json"}
                     width={"100%"}
                     minLines={5}

@@ -1,4 +1,3 @@
-import NodeUtils from "../NodeUtils";
 import { NodeType, Parameter, UIParameter } from "../../../types";
 import { cloneDeep, get, set } from "lodash";
 
@@ -13,7 +12,7 @@ const findUnusedParameters = (parameters: Array<Parameter>, definitions: UIParam
 };
 
 const parametersPath = (node) => {
-    switch (NodeUtils.nodeType(node)) {
+    switch (node.type) {
         case "CustomNode":
             return `parameters`;
         case "Join":
