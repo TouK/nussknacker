@@ -78,6 +78,10 @@ object Dtos {
       maxNotesCount: Int
   )
 
+  object StickyNotesSettings {
+    val default: StickyNotesSettings = StickyNotesSettings(maxContentLength = 5000, maxNotesCount = 5)
+  }
+
   sealed trait StickyNotesError
 
   implicit lazy val cellErrorSchema: Schema[LayoutData] = Schema.derived
