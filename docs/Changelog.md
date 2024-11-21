@@ -100,6 +100,7 @@
 * [#7099](https://github.com/TouK/nussknacker/pull/7099) Provide an option to embedded video to the markdown
 * [#7102](https://github.com/TouK/nussknacker/pull/7102) Introduce a new UI to defining aggregations within nodes
 * [#7147](https://github.com/TouK/nussknacker/pull/7147) Fix redundant "ParameterName(...)" wrapper string in exported PDFs in nodes details 
+* [#7182](https://github.com/TouK/nussknacker/pull/7182) Provide an unique validation message to the scenario labels
 * [#7178](https://github.com/TouK/nussknacker/pull/7178) Remove autocompletion from markdown editors
 * [#7159](https://github.com/TouK/nussknacker/pull/7159) Fix running scenario tests with provided fragment input validation 
 

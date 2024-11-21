@@ -33,6 +33,14 @@ describe("Scenario labels", () => {
 
             cy.get("[data-testid=scenario-label-0]").should("be.visible").contains("tagX");
 
+            cy.get("@labelInput").should("be.visible").click().type("tagX");
+
+            cy.wait("@labelvalidation");
+
+            cy.get("@labelInput").should("be.visible").contains("This label already exists. Please enter a unique value.");
+
+            cy.get("@labelInput").find("input").clear();
+
             cy.get("@labelInput").should("be.visible").click().type("tag2");
 
             cy.wait("@labelvalidation");
