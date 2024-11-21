@@ -5,7 +5,7 @@ import org.json.JSONTokener
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
-import pl.touk.nussknacker.engine.json.swagger.extractor.FromJsonDecoder
+import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
 import pl.touk.nussknacker.engine.util.json.JsonSchemaUtils
 
 import java.nio.charset.StandardCharsets
@@ -36,7 +36,7 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
       .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))
 
     val circeJson = JsonSchemaUtils.jsonToCirce(validatedJson)
-    val struct    = FromJsonDecoder.decode(circeJson, swaggerTyped)
+    val struct    = FromJsonSchemaBasedDecoder.decode(circeJson, swaggerTyped)
     struct
   }
 
