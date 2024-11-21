@@ -17,6 +17,7 @@ import { PopoverPosition } from "@mui/material/Popover/Popover";
 import i18next from "i18next";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
+import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
 import { EditorProps, ExtendedEditor } from "../Editor";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
@@ -30,10 +31,6 @@ import { TypesMenu } from "./TypesMenu";
 import { customRenderers } from "./customRenderers";
 import { isDatePickerCell } from "./customCells";
 import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
-import { useSelector } from "react-redux";
-import { getProcessDefinitionData } from "../../../../../../reducers/selectors/settings";
-import ProcessUtils from "../../../../../../common/ProcessUtils";
-import { find, head, orderBy } from "lodash";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -90,27 +87,6 @@ const emptySelection = {
     rows: CompactSelection.empty(),
 };
 
-export function useTableEditorTypeOptions() {
-    const definitionData = useSelector(getProcessDefinitionData);
-
-    const typeOptions = useMemo(
-        () =>
-            definitionData?.classes?.map((type) => ({
-                value: type.refClazzName as SupportedType,
-                label: ProcessUtils.humanReadableType(type),
-            })),
-        [definitionData?.classes],
-    );
-
-    const orderedTypeOptions = useMemo(() => orderBy(typeOptions, (item) => [item.label, item.value], ["asc"]), [typeOptions]);
-
-    const defaultTypeOption = useMemo(() => find(typeOptions, { label: "String" }) || head(typeOptions), [typeOptions]);
-    return {
-        orderedTypeOptions,
-        defaultTypeOption,
-    };
-}
-
 export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: EditorProps) => {
     const tableDateContext = useTableState(expressionObj);
     const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
@@ -121,7 +97,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
         }
     }, [expressionObj.expression, onValueChange, rawExpression]);
 
-    const { defaultTypeOption, orderedTypeOptions } = useTableEditorTypeOptions();
+    const { defaultTypeOption, orderedTypeOptions } = useTypeOptions<SupportedType>();
     const supportedTypes = useMemo(() => orderedTypeOptions.filter(({ value }) => SUPPORTED_TYPES.includes(value)), [orderedTypeOptions]);
 
     useEffect(() => {

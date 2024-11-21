@@ -23,7 +23,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     forAll(permittedTypesForEditors) { fragmentParameterType: FragmentClazzRef =>
       {
         val dictId = "someDictId"
-        val result = FragmentParameterValidator().validateAgainstClazzRefAndGetEditor(
+        val result = FragmentParameterValidator.validateAgainstClazzRefAndGetEditor(
           valueEditor = ValueInputWithDictEditor(dictId, allowOtherValue = false),
           initialValue = None,
           refClazz = fragmentParameterType,
@@ -39,7 +39,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     forAll(permittedTypesForEditors) { fragmentParameterType: FragmentClazzRef =>
       {
         val fixedValuesList = List(FixedExpressionValue("someExpression", "someLabel"))
-        val result = FragmentParameterValidator().validateAgainstClazzRefAndGetEditor(
+        val result = FragmentParameterValidator.validateAgainstClazzRefAndGetEditor(
           valueEditor = ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue = false),
           initialValue = None,
           refClazz = fragmentParameterType,
@@ -55,7 +55,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     val paramName            = ParameterName("someParamName")
     val invalidParameterType = FragmentClazzRef[java.lang.Double]
     val nodeIds              = Set("someNodeId")
-    val result = FragmentParameterValidator().validateAgainstClazzRefAndGetEditor(
+    val result = FragmentParameterValidator.validateAgainstClazzRefAndGetEditor(
       valueEditor = ValueInputWithDictEditor("someDictId", allowOtherValue = false),
       initialValue = None,
       refClazz = invalidParameterType,
@@ -71,7 +71,7 @@ class FragmentParameterValidatorTest extends AnyFunSuite with Matchers {
     val paramName            = ParameterName("someParamName")
     val invalidParameterType = FragmentClazzRef[java.lang.Double]
     val nodeIds              = Set("someNodeId")
-    val result = FragmentParameterValidator().validateAgainstClazzRefAndGetEditor(
+    val result = FragmentParameterValidator.validateAgainstClazzRefAndGetEditor(
       valueEditor = ValueInputWithFixedValuesProvided(
         List(FixedExpressionValue("someExpression", "someLabel")),
         allowOtherValue = false
