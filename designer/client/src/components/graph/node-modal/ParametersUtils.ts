@@ -35,7 +35,7 @@ const parametersPath = (node) => {
 export function adjustParameters(node: NodeType, parameterDefinitions: UIParameter[]): AdjustReturn {
     const path = parametersPath(node);
 
-    if (!path) {
+    if (!path || !parameterDefinitions) {
         return { adjustedNode: node, unusedParameters: [] };
     }
 
