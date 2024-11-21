@@ -64,7 +64,7 @@ renderer.image = function (href, title, text) {
 const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
     let parsed;
     try {
-        parsed = DOMPurify.sanitize(marked.parse(stickyNote.content, { renderer }));
+        parsed = DOMPurify.sanitize(marked.parse(stickyNote.content, { renderer }), { ADD_ATTR: ["target"] });
     } catch (error) {
         console.error("Failed to parse markdown:", error);
         parsed = "Error: Could not parse content. See error logs in console";
