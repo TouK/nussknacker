@@ -1,12 +1,13 @@
+import { flushSync } from "react-dom";
+import NodeUtils from "../../components/graph/NodeUtils";
+import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
+import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
-import { layoutChanged, Position } from "./ui/layout";
 import { EditNodeAction, EditScenarioLabels, RenameProcessAction } from "./editNode";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
-import NodeUtils from "../../components/graph/NodeUtils";
-import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { flushSync } from "react-dom";
+import { toggleSelection } from "./selection";
+import { layoutChanged, Position } from "./ui/layout";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -53,6 +54,7 @@ export function deleteNodes(ids: NodeId[]): ThunkAction {
             type: "DELETE_NODES",
             ids,
         });
+        dispatch(toggleSelection(...ids));
     };
 }
 
