@@ -35,7 +35,7 @@ const parametersPath = (node) => {
 export function adjustParameters(node: NodeType, parameterDefinitions: UIParameter[]): AdjustReturn {
     const path = parametersPath(node);
 
-    if (!path) {
+    if (!path || !parameterDefinitions) {
         return { adjustedNode: node, unusedParameters: [] };
     }
 
@@ -43,7 +43,7 @@ export function adjustParameters(node: NodeType, parameterDefinitions: UIParamet
     const currentParameters = get(currentNode, path);
     //TODO: currently dynamic branch parameters are *not* supported...
     const adjustedParameters = parameterDefinitions
-        ?.filter((def) => !def.branchParam)
+        .filter((def) => !def.branchParam)
         .map((def) => {
             const currentParam = currentParameters.find((p) => p.name == def.name);
             const parameterFromDefinition = {
