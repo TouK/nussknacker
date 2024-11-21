@@ -53,7 +53,7 @@ object ProcessCompilerData {
     // for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(
       definitionWithTypes.modelDefinition,
-      new FragmentParametersDefinitionExtractor(userCodeClassLoader, definitionWithTypes.classDefinitions.all),
+      new FragmentParametersDefinitionExtractor(userCodeClassLoader),
       expressionCompiler,
       userCodeClassLoader,
       listeners,

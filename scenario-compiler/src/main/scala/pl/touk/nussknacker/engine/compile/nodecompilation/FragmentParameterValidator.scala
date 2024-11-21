@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import cats.data.Validated.{Valid, invalid, invalidNel, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
-import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
@@ -15,12 +14,9 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.permittedTypesForEditors
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
-import pl.touk.nussknacker.engine.definition.fragment.FragmentParameterTypingParser
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -33,8 +29,6 @@ import pl.touk.nussknacker.engine.graph.node.{
 }
 import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
 
-import scala.util.Try
-
 object FragmentParameterValidator {
 
   val permittedTypesForEditors: List[FragmentClazzRef] = List(
@@ -42,10 +36,6 @@ object FragmentParameterValidator {
     FragmentClazzRef[String],
     FragmentClazzRef[java.lang.Long]
   )
-
-}
-
-case class FragmentParameterValidator(classDefinitions: Set[ClassDefinition] = Set.empty) {
 
   // This method doesn't fully validate valueEditor (see ValueEditorValidator.validateAndGetEditor comments)
   def validateAgainstClazzRefAndGetEditor(
@@ -157,11 +147,9 @@ case class FragmentParameterValidator(classDefinitions: Set[ClassDefinition] = S
         validateNonEmptyDictId(dictId, fragmentParameter.name).andThen(_ =>
           dictionaries.get(dictId) match {
             case Some(dictDefinition) =>
-              val fragmentParameterTypingParser = new FragmentParameterTypingParser(classLoader, classDefinitions)
-              val fragmentParameterTypingResult = fragmentParameterTypingParser
-                .parseClassNameToTypingResult(
-                  fragmentParameter.typ.refClazzName
-                )
+              val fragmentParameterTypingResult = fragmentParameter.typ
+                .toRuntimeClass(classLoader)
+                .map(Typed(_))
                 .getOrElse(Unknown)
 
               val dictValueType = dictDefinition.valueType(dictId)

@@ -22,7 +22,6 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
   test("return edge types for fragment, filters, switches and components with multiple inputs") {
     val sampleFragmentDef = new FragmentComponentDefinitionExtractor(
       getClass.getClassLoader,
-      Set.empty,
       Some(_),
       DesignerWideComponentId.default(Streaming.stringify, _)
     )

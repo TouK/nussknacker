@@ -59,7 +59,6 @@ object AlignedComponentsDefinitionProvider {
       new BuiltInComponentsDefinitionsPreparer(designerModelData.modelData.componentsUiConfig),
       new FragmentComponentDefinitionExtractor(
         designerModelData.modelData.modelClassLoader.classLoader,
-        designerModelData.modelData.modelDefinitionWithClasses.classDefinitions.all,
         designerModelData.modelData.componentsUiConfig.groupName,
         designerModelData.modelData.determineDesignerWideId
       ),
