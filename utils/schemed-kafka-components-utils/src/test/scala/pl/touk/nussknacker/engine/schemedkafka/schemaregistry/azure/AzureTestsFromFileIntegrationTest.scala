@@ -41,7 +41,8 @@ class AzureTestsFromFileIntegrationTest
 
   private val kafkaConfig = KafkaConfig(Some(schemaRegistryConfigMap), None, showTopicsWithoutSchema = false)
 
-  test("test from file round-trip") {
+  // todo: enable after mocking kafka server or making kafka server not needed during deserialization
+  ignore("test from file round-trip") {
     val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(kafkaConfig.schemaRegistryClientKafkaConfig)
     val serdeProvider        = UniversalSchemaBasedSerdeProvider.create(UniversalSchemaRegistryClientFactory)
     val factory   = serdeProvider.deserializationSchemaFactory.create[String, GenericRecord](kafkaConfig, None, None)
