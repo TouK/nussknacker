@@ -97,7 +97,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#7187](https://github.com/TouK/nussknacker/pull/7187) JSON decoding in `request` source (request-response processing mode) 
   and in `kafka` source (streaming processing mode): For small decimal numbers is used either `Integer` or `Long` (depending on number size)
-  instead of `BigDecimal`. This change should be transparent in most cases as this value wes mostly used after `#CONV.toNumber()` invocation
+  instead of `BigDecimal`. This change should be transparent in most cases as this value was mostly used after `#CONV.toNumber()` invocation
   which still will return a `Number`.
 
 ## In version 1.17.0
