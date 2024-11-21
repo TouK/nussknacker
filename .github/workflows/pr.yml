@@ -108,7 +108,7 @@ jobs:
         run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
       - name: Store target
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-target
           path: target.tgz
@@ -158,7 +158,7 @@ jobs:
         shell: bash
         run:  tar -czf 'fe-dist.tgz' designer/client/dist designer/submodules/dist
       - name: Store dist
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-fe-dist
           path: fe-dist.tgz
@@ -185,7 +185,7 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.11.0.17
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: build-target
       - name: Untar artifacts
@@ -205,7 +205,7 @@ jobs:
         run: ./ciRunSbt.sh test
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
@@ -239,7 +239,7 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: build-target
       - name: Untar artifacts
@@ -252,7 +252,7 @@ jobs:
         run: ./ciRunSbt.sh It/test
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: IntegrationTests-results-${{ matrix.scalaVersion }}
           path: '**/it-reports/*.xml'
@@ -286,7 +286,7 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: build-target
       - name: Untar artifacts
@@ -319,7 +319,7 @@ jobs:
           docker logs k3d-k3s-default-serverlb
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: SlowTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
@@ -367,7 +367,7 @@ jobs:
         run: (cd designer/client; npm run test:unit)
       - name: Test Report
         if: ${{ env.shouldPerformFrontendTests == 'true' && (success() || failure()) }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: FrontendTests-results
           path: designer/client/junit.xml
@@ -415,7 +415,7 @@ jobs:
           npm ci --no-audit --prefix designer/client
           npm ci --no-audit --prefix designer/submodules
           rm -rf $npm_config_cache
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           name: build-target
@@ -423,7 +423,7 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
@@ -470,13 +470,13 @@ jobs:
           npx start-server-and-test backend:docker ${{ env.BE_PORT }} start-prod 3000 test:e2e
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: CypressTests-results
           path: designer/client/cypress-test-results/*.xml
       - name: Store test results
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-test-results
           path: |
@@ -550,13 +550,13 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: build-target
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: build-fe-dist
       - name: Untar fe artifacts

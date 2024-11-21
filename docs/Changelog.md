@@ -20,7 +20,7 @@
 
 ### 1.18.0 (Not released yet)
 
-* [6944](https://github.com/TouK/nussknacker/pull/6944) [7166](https://github.com/TouK/nussknacker/pull/7166) Changes around adhoc testing feature
+* [#6944](https://github.com/TouK/nussknacker/pull/6944) [#7166](https://github.com/TouK/nussknacker/pull/7166) Changes around adhoc testing feature
   * `test-with-form` button was renamed to `adhoc-testing`
   * Improved form validators inside adhoc tests (validation was moved to backend)
   * Moved `testInfo/*` endpoints to `scenarioTesting/` path and rewrite then using Tapir
@@ -40,7 +40,7 @@
     in table source and sink components in `Table` parameter
   * [#6950](https://github.com/TouK/nussknacker/pull/6950) Fix for testing mechanism for table sources: using full, model classpath instead of only flinkTable.jar
 * [#6716](https://github.com/TouK/nussknacker/pull/6716) Fix type hints for #COLLECTION.merge function.
-* [#6695](https://github.com/TouK/nussknacker/pull/6695) [7032](https://github.com/TouK/nussknacker/pull/7032) From now on, arrays on UI are visible as lists but on a background they are stored as it is.
+* [#6695](https://github.com/TouK/nussknacker/pull/6695) [#7032](https://github.com/TouK/nussknacker/pull/7032) From now on, arrays on UI are visible as lists but on a background they are stored as it is.
 * [#6750](https://github.com/TouK/nussknacker/pull/6750) Add varargs to `#COLLECTION.concat` and `#COLLECTION.merge`.
 * [#6778](https://github.com/TouK/nussknacker/pull/6778) SpeL: check for methods if a property for a given name does not exist.
 * [#6769](https://github.com/TouK/nussknacker/pull/6769) Added possibility to choose presets and define lists for Long typed parameter inputs in fragments.
@@ -103,6 +103,9 @@
 * [#7182](https://github.com/TouK/nussknacker/pull/7182) Provide an unique validation message to the scenario labels
 * [#7178](https://github.com/TouK/nussknacker/pull/7178) Remove autocompletion from markdown editors
 * [#7159](https://github.com/TouK/nussknacker/pull/7159) Fix running scenario tests with provided fragment input validation 
+* [#7193](https://github.com/TouK/nussknacker/pull/7193) Provide tooltips to the scenarios list and scenario details elements
+* [#7187](https://github.com/TouK/nussknacker/pull/7187) Fix "Failed to get node validation" when using literal lists that mixes different types of elements
+* [#7192](https://github.com/TouK/nussknacker/pull/7192) Fix "Failed to get node validation" when opening node details referencing non-existing component
 * [#7190](https://github.com/TouK/nussknacker/pull/7190) Fix "Failed to get node validation" when opening fragment node details for referencing non-existing fragment 
 
 ## 1.17
@@ -646,7 +649,7 @@
 * [#4254](https://github.com/TouK/nussknacker/pull/4254) Add simple spel expression suggestions endpoint to BE
 * [#4323](https://github.com/TouK/nussknacker/pull/4323) Improved code suggestions with Typer
 * [#4406](https://github.com/TouK/nussknacker/pull/4406) `backendCodeSuggestions` set to `true`, so by default Nussknacker will use new suggestion mechanism
-* [#4299](https://github.com/TouK/nussknacker/pull/4299)[4322](https://github.com/TouK/nussknacker/pull/4322) `StateStatus` is identified by its name.
+* [#4299](https://github.com/TouK/nussknacker/pull/4299)[#4322](https://github.com/TouK/nussknacker/pull/4322) `StateStatus` is identified by its name.
   `ProcessState` serialization uses this name as serialized state value. For compatibility reasons, it is still represented as a nested object with one `name` field.
 * [#4312](https://github.com/TouK/nussknacker/pull/4312) Fix for losing unsaved changes in designer after cancel/deploy
 * [#4332](https://github.com/TouK/nussknacker/pull/4332) Improvements: Don't fetch state for fragments at /api/processes/status
@@ -902,7 +905,7 @@
 * [#3264](https://github.com/TouK/nussknacker/pull/3264) Added support for generic functions
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
 * [#3328](https://github.com/TouK/nussknacker/pull/3328) Schema type aware serialization of `NkSerializableParsedSchema`
-* [#3071](https://github.com/TouK/nussknacker/pull/3071) [3379](https://github.com/TouK/nussknacker/pull/3379) More strict Avro schema validation: include optional fields validation,
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) [#3379](https://github.com/TouK/nussknacker/pull/3379) More strict Avro schema validation: include optional fields validation,
   handling some invalid cases like putting long to int field, strict union types validation, reduced number of validation modes to lax | strict.
 * [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
 * [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id
