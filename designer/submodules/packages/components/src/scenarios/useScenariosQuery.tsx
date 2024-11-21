@@ -2,7 +2,7 @@ import { UserData } from "nussknackerUi/common/models/User";
 import { useContext, useEffect, useMemo } from "react";
 import { NkApiContext } from "../settings/nkApiProvider";
 import { Scenario, StatusDefinitionType } from "nussknackerUi/components/Process/types";
-import { StatusesType } from "nussknackerUi/HttpService";
+import { ScenarioParametersCombinations, StatusesType } from "nussknackerUi/HttpService";
 import { useQuery, useQueryClient } from "react-query";
 import { AvailableScenarioLabels } from "nussknackerUi/components/Labels/types";
 import { UseQueryResult } from "react-query/types/react/types";
@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 import { groupBy } from "lodash";
 
 const scenarioStatusesQueryKey = "scenariosStatuses";
+const scenarioParametersCombinationsQueryKey = "scenarioParametersCombinations";
 
 function useScenariosQuery(): UseQueryResult<Scenario[]> {
     const api = useContext(NkApiContext);
@@ -44,6 +45,22 @@ export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
         queryKey: [scenarioStatusesQueryKey],
         queryFn: async () => {
             const { data } = await api.fetchProcessesStates();
+            return data;
+        },
+        enabled: !!api,
+        refetchInterval: 15000,
+        // We have to define staleTime because we set cache manually via queryClient.setQueryData during fetching scenario
+        // details (because we want to avoid unnecessary refetch)
+        staleTime: 10000,
+    });
+}
+
+export function useScenarioParametersCombinationsQuery(): UseQueryResult<ScenarioParametersCombinations> {
+    const api = useContext(NkApiContext);
+    return useQuery({
+        queryKey: [scenarioParametersCombinationsQueryKey],
+        queryFn: async () => {
+            const { data } = await api.fetchScenarioParametersCombinations();
             return data;
         },
         enabled: !!api,
@@ -110,13 +127,15 @@ export function useScenariosWithStatus(): UseQueryResult<Scenario[]> {
 }
 
 export function useScenariosWithCategoryVisible(): { withCategoriesVisible: boolean } {
-    const scenarios = useScenariosQuery();
+    const parametersCombinations = useScenarioParametersCombinationsQuery();
     return useMemo(() => {
-        const { data = [] } = scenarios;
-        const withCategoriesVisible = Object.keys(groupBy(data, (scenario) => scenario.processCategory)).length > 1;
+        const { data } = parametersCombinations;
+        const combinations = data?.combinations || [];
+
+        const withCategoriesVisible = Object.keys(groupBy(combinations, (combination) => combination.category)).length > 1;
 
         return {
             withCategoriesVisible,
         };
-    }, [scenarios]);
+    }, [parametersCombinations]);
 }
