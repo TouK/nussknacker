@@ -72,7 +72,13 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
             <ThemedInput ref={ref} {...props} />
             <div className={addonWrapperStyles}>
                 {!!props.value && onClear && (
-                    <div className={addonStyles} onClick={onClear}>
+                    <div
+                        className={addonStyles}
+                        onClick={() => {
+                            onClear();
+                            focus({ preventScroll: true });
+                        }}
+                    >
                         <ClearIcon />
                     </div>
                 )}
