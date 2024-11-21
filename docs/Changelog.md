@@ -107,6 +107,7 @@
 * [#7187](https://github.com/TouK/nussknacker/pull/7187) Fix "Failed to get node validation" when using literal lists that mixes different types of elements
 * [#7183](https://github.com/TouK/nussknacker/pull/7183) Hide categories from a scenarios list and more scenario details when only one category is available
 * [#7192](https://github.com/TouK/nussknacker/pull/7192) Fix "Failed to get node validation" when opening node details referencing non-existing component
+* [#7190](https://github.com/TouK/nussknacker/pull/7190) Fix "Failed to get node validation" when opening fragment node details for referencing non-existing fragment 
 
 ## 1.17
 
