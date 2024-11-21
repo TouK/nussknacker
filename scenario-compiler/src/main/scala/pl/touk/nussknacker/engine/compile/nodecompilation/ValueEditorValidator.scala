@@ -59,7 +59,7 @@ object ValueEditorValidator {
     if (!allowOtherValue) {
       List(
         if (fixedValuesList.isEmpty)
-          invalidNel(RequireValueFromEmptyFixedList(paramName, nodeIds))
+          invalidNel(EmptyFixedListForRequiredField(paramName, nodeIds))
         else Valid(()),
         if (initialValueNotPresentInPossibleValues(fixedValuesList, initialValue))
           invalidNel(InitialValueNotPresentInPossibleValues(paramName, nodeIds))

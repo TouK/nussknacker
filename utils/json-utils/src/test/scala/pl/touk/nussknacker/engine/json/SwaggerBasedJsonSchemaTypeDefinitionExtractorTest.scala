@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.extractor.FromJsonDecoder
+import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
 import pl.touk.nussknacker.engine.json.swagger._
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with TableDrivenPropertyChecks {
@@ -304,7 +304,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val jsonObject    = Json.obj("time" -> fromString("2022-07-11T18:12:27+02:00"))
     val swaggerObject = new SwaggerObject(elementType = Map("time" -> SwaggerDateTime), AdditionalPropertiesDisabled)
-    val jsonToObjectExtracted = FromJsonDecoder.decode(jsonObject, swaggerObject)
+    val jsonToObjectExtracted = FromJsonSchemaBasedDecoder.decode(jsonObject, swaggerObject)
 
     swaggerTypeExtracted.asInstanceOf[TypedObjectTypingResult].fields("time") shouldBe
       Typed.fromInstance(jsonToObjectExtracted.asInstanceOf[TypedMap].get("time"))

@@ -5,6 +5,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData.sampleFragmentName
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
@@ -34,6 +35,10 @@ class FragmentRepositorySpec
     fragmentRepository.fetchLatestFragments(Streaming.stringify)(adminUser).futureValue shouldBe List(
       ProcessTestData.sampleFragment2
     )
+  }
+
+  it should "return None for missing fragment" in {
+    fragmentRepository.fetchLatestFragment(ProcessName("non-existing-fragment"))(adminUser).futureValue shouldBe None
   }
 
 }

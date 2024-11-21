@@ -44,6 +44,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 typ={item.typ}
                 name={item.name}
                 initialValue={item.initialValue}
+                userDefinedListInputLabel={t("fragment.userDefinedList.label.suggestedValues", "Suggested values:")}
             />
             <InitialValue
                 path={path}
