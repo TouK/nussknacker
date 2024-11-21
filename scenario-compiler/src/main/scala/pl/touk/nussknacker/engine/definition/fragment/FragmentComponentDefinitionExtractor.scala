@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker
@@ -19,12 +18,11 @@ import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 class FragmentComponentDefinitionExtractor(
     classLoader: ClassLoader,
-    classDefinitions: Set[ClassDefinition],
     translateGroupName: ComponentGroupName => Option[ComponentGroupName],
     determineDesignerWideId: ComponentId => DesignerWideComponentId
 ) {
 
-  val parametersExtractor = new FragmentParametersDefinitionExtractor(classLoader, classDefinitions)
+  val parametersExtractor = new FragmentParametersDefinitionExtractor(classLoader)
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess,

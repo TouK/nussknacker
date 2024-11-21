@@ -296,7 +296,6 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
-        model.modelDefinitionWithClasses.classDefinitions.all,
         Some(_),
         DesignerWideComponentId.default(processingType.stringify, _)
       ),

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
@@ -137,18 +137,13 @@ class FlinkProcessCompilerDataFactory(
       modelDefinitionWithTypes.modelDefinition.expressionConfig,
       modelDefinitionWithTypes.classDefinitions
     )
-    val adjustedDefinitions = adjustDefinitions(
-      modelDefinitionWithTypes.modelDefinition,
-      definitionContext,
-      modelDefinitionWithTypes.classDefinitions.all
-    )
+    val adjustedDefinitions = adjustDefinitions(modelDefinitionWithTypes.modelDefinition, definitionContext)
     (ModelDefinitionWithClasses(adjustedDefinitions), dictRegistry)
   }
 
   protected def adjustDefinitions(
       originalModelDefinition: ModelDefinition,
-      definitionContext: ComponentDefinitionContext,
-      classDefinitions: Set[ClassDefinition]
+      definitionContext: ComponentDefinitionContext
   ): ModelDefinition = originalModelDefinition
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
