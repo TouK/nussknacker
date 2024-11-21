@@ -354,7 +354,9 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 const labelError = labelOptionsErrors.find((error) => error.label === toLabelValue(option));
                                 return (
                                     <StyledLabelChip
-                                        title={t("panels.scenarioDetails.tooltip.label", "Label")}
+                                        title={t("panels.scenarioDetails.tooltip.label", "Scenario label: {{label}}", {
+                                            label: option.title,
+                                        })}
                                         key={key}
                                         data-testid={`scenario-label-${index}`}
                                         color={labelError ? "error" : "default"}
