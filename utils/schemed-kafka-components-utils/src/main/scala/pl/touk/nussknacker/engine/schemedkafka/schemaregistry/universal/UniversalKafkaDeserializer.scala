@@ -5,11 +5,16 @@ import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
+import pl.touk.nussknacker.engine.schemedkafka.{RuntimeSchemaData, TopicsWithExistingSubjectSelectionStrategy}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedDeserializerFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ChainedSchemaIdFromMessageExtractor,
-  SchemaRegistryClient
+  ContentTypes,
+  ContentTypesSchemas,
+  SchemaId,
+  SchemaRegistryClient,
+  SchemaWithMetadata,
+  StringSchemaId
 }
 
 import scala.reflect.ClassTag
@@ -35,8 +40,25 @@ class UniversalKafkaDeserializer[T](
       .withFallbackSchemaId(readerSchemaDataOpt.flatMap(_.schemaIdOpt))
       .getSchemaId(headers, data, isKey)
       .getOrElse(throw MessageWithoutSchemaIdException)
-    val writerSchema = schemaRegistryClient.getSchemaById(writerSchemaId.value).schema
 
+    val schemaWithMetadata = {
+      if (schemaRegistryClient.isTopicWithSchema(topic, new TopicsWithExistingSubjectSelectionStrategy, kafkaConfig)) {
+        schemaRegistryClient.getSchemaById(writerSchemaId.value)
+      } else {
+        writerSchemaId.value match {
+          case StringSchemaId(value) =>
+            if (value.equals(ContentTypes.PLAIN.toString)) {
+              SchemaWithMetadata(ContentTypesSchemas.schemaForPlain, SchemaId.fromString(ContentTypes.PLAIN.toString))
+            } else {
+              SchemaWithMetadata(ContentTypesSchemas.schemaForJson, SchemaId.fromString(ContentTypes.JSON.toString))
+            }
+          case _ =>
+            throw new IllegalStateException("Topic without schema should have ContentType Json or Plain, was neither")
+        }
+      }
+    }
+
+    val writerSchema = schemaWithMetadata.schema
     readerSchemaDataOpt
       .map(_.schema.schemaType())
       .foreach(readerSchemaType => {
