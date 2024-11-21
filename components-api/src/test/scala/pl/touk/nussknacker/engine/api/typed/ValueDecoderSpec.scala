@@ -33,7 +33,7 @@ class ValueDecoderSpec extends AnyFunSuite with EitherValuesDetailedMessage with
     )
   }
 
-  test("decodeValue should fail when a required Record field is missing") {
+  test("decodeValue should ignore missing Record field") {
     val typedRecord = Typed.record(
       Map(
         "name" -> Typed.fromInstance("Alice"),
@@ -45,12 +45,10 @@ class ValueDecoderSpec extends AnyFunSuite with EitherValuesDetailedMessage with
       "name" -> "Alice".asJson
     )
 
-    ValueDecoder.decodeValue(typedRecord, json.hcursor).leftValue.message should include(
-      "Record field 'age' isn't present in encoded Record fields"
-    )
+    ValueDecoder.decodeValue(typedRecord, json.hcursor).rightValue shouldBe Map("name" -> "Alice").asJava
   }
 
-  test("decodeValue should not include extra fields that aren't typed") {
+  test("decodeValue should decode extra fields using generic json decoding strategy") {
     val typedRecord = Typed.record(
       Map(
         "name" -> Typed.fromInstance("Alice"),
@@ -66,8 +64,9 @@ class ValueDecoderSpec extends AnyFunSuite with EitherValuesDetailedMessage with
 
     ValueDecoder.decodeValue(typedRecord, json.hcursor) shouldEqual Right(
       Map(
-        "name" -> "Alice",
-        "age"  -> 30
+        "name"       -> "Alice",
+        "age"        -> 30,
+        "occupation" -> "nurse"
       ).asJava
     )
   }

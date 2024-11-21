@@ -1,7 +1,7 @@
 import { Avatar } from "@mui/material";
 import React, { PropsWithChildren } from "react";
 
-export function TableCellAvatar({ children }: PropsWithChildren<unknown>) {
+export function TableCellAvatar({ children, title }: PropsWithChildren<{ title?: string }>) {
     return (
         <Avatar
             variant="rounded"
@@ -24,6 +24,7 @@ export function TableCellAvatar({ children }: PropsWithChildren<unknown>) {
                     fontSize: "1em",
                 },
             }}
+            title={title}
         >
             {children}
         </Avatar>
