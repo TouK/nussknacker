@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, serialization}
-import pl.touk.nussknacker.engine.schemedkafka.AllTopicsSelectionStrategy
+import pl.touk.nussknacker.engine.schemedkafka.TopicsWithExistingSubjectSelectionStrategy
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ContentTypes,
   ContentTypesSchemas,
@@ -112,7 +112,11 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
           .getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid avro key"))
       }
 
-      if (schemaRegistryClient.isTopicWithSchema(topic.name, new AllTopicsSelectionStrategy)) {
+      if (schemaRegistryClient.isTopicWithSchema(
+          topic.name,
+          new TopicsWithExistingSubjectSelectionStrategy,
+          kafkaConfig
+        )) {
         val valueSchemaOpt = record.valueSchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
         val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)
         (keyBytes, valueBytes)

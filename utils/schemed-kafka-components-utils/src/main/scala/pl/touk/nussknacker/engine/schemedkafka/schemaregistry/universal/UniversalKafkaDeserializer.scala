@@ -5,7 +5,7 @@ import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.{AllTopicsSelectionStrategy, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.schemedkafka.{RuntimeSchemaData, TopicsWithExistingSubjectSelectionStrategy}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedDeserializerFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ChainedSchemaIdFromMessageExtractor,
@@ -42,7 +42,7 @@ class UniversalKafkaDeserializer[T](
       .getOrElse(throw MessageWithoutSchemaIdException)
 
     val schemaWithMetadata = {
-      if (schemaRegistryClient.isTopicWithSchema(topic, new AllTopicsSelectionStrategy)) {
+      if (schemaRegistryClient.isTopicWithSchema(topic, new TopicsWithExistingSubjectSelectionStrategy, kafkaConfig)) {
         schemaRegistryClient.getSchemaById(writerSchemaId.value)
       } else {
         writerSchemaId.value match {

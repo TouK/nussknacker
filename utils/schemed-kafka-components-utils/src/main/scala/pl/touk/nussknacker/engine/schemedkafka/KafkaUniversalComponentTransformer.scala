@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
-import org.apache.kafka.clients.admin.ListTopicsOptions
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -14,20 +13,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicN
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
-import pl.touk.nussknacker.engine.kafka.{
-  KafkaComponentsUtils,
-  KafkaConfig,
-  KafkaUtils,
-  PreparedKafkaTopic,
-  UnspecializedTopicName
-}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
-
-import scala.jdk.CollectionConverters._
-import scala.util.Try
 
 object KafkaUniversalComponentTransformer {
   final val schemaVersionParamName      = ParameterName("Schema version")
@@ -57,7 +47,11 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  protected def topicSelectionStrategy: TopicSelectionStrategy = new AllTopicsSelectionStrategy
+  protected def topicSelectionStrategy: TopicSelectionStrategy = {
+    if (kafkaConfig.showTopicsWithoutSchema) {
+      new AllNonHiddenTopicsSelectionStrategy
+    } else new TopicsWithExistingSubjectSelectionStrategy
+  }
 
   @transient protected lazy val kafkaConfig: KafkaConfig = prepareKafkaConfig
 
@@ -73,20 +67,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getTopicParam(
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val fetchAllTopics: Option[Boolean] =
-      if (modelDependencies.config.hasPath("fetchKafkaTopicsWithoutSchema")) {
-        Some(modelDependencies.config.getBoolean("fetchKafkaTopicsWithoutSchema"))
-      } else
-        None
-
-    val topics = getAllTopics(fetchAllTopics) match {
-      case Some(topics) =>
-        // For test purposes mostly
-        topicSelectionStrategy
-          .getTopics(schemaRegistryClient)
-          .map(fromRegistry => topicSelectionStrategy.filterTopics(fromRegistry ++ topics).distinct)
-      case None => topicSelectionStrategy.getTopics(schemaRegistryClient)
-    }
+    val topics = topicSelectionStrategy.getTopics(schemaRegistryClient, kafkaConfig)
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)
@@ -124,7 +105,8 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     if (schemaRegistryClient.isTopicWithSchema(
         preparedTopic.prepared.topicName.toUnspecialized.name,
-        topicSelectionStrategy
+        topicSelectionStrategy,
+        kafkaConfig
       )) {
       val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
       (versions match {
@@ -255,29 +237,5 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val topicParamName: ParameterName = KafkaUniversalComponentTransformer.topicParamName
   @transient protected lazy val contentTypeParamName: ParameterName =
     KafkaUniversalComponentTransformer.contentTypeParamName
-
-  protected def getAllTopics(
-      fetchAllTopicsFromKafka: Option[Boolean] = Some(true)
-  ): Option[List[UnspecializedTopicName]] = {
-    fetchAllTopicsFromKafka match {
-      case Some(false) => None
-      case _ =>
-        Try {
-          val validatorConfig = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
-          KafkaUtils
-            .usingAdminClient(kafkaConfig) {
-              _.listTopics(new ListTopicsOptions().timeoutMs(validatorConfig.adminClientTimeout.toMillis.toInt))
-                .names()
-                .get()
-                .asScala
-                .toSet
-                .map(UnspecializedTopicName.apply)
-                .filterNot(topic => topic.name.startsWith("_"))
-            }
-            .toList
-        }.toOption
-    }
-
-  }
 
 }

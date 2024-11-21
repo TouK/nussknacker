@@ -67,8 +67,6 @@ class KafkaJsonItSpec extends FlinkWithKafkaSuite {
 
     kafkaClient.createTopic(inputTopic, 1)
     kafkaClient.createTopic(outputTopic, 1)
-
-    sendAsJson(jsonRecord.toString(), ForSource(inputTopic), timestamp = Instant.now.toEpochMilli)
     kafkaClient.sendRawMessage(
       inputTopic,
       Array.empty,

@@ -31,8 +31,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMess
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
-import scala.util.{Failure, Success, Try}
-
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
 
   protected implicit class RichParsedSchema(p: ParsedSchema) {
@@ -160,18 +158,20 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     val rawSchema = schema.cast().rawSchema()
     (value: Any) => {
       // In ad-hoc test without schema we create object `{ "Value" = userInputInAdHoc }`, so if present we should just take the input
-      Try {
+      try {
         val temp = value.asInstanceOf[Map[String, Map[String, Any]]].head
         val key  = temp._1
         // Any try to create a variable with value temp._2 fails
         if (key.equals("Value")) {
-          temp._2
-        } else Failure
-      } match {
-        // For normal usage
-        case Failure(_) => encoder.encodeOrError(value, rawSchema)
-        // If source with topic without schema
-        case Success(objectInside) => encoder.encodeOrError(objectInside, rawSchema)
+          encoder.encodeOrError(temp._2, rawSchema)
+        } else {
+          // For normal usage
+          encoder.encodeOrError(value, rawSchema)
+        }
+      } catch {
+        // Possible errors when casting
+        case _: ClassCastException   => encoder.encodeOrError(value, rawSchema)
+        case _: NullPointerException => encoder.encodeOrError(value, rawSchema)
       }
     }
   }
