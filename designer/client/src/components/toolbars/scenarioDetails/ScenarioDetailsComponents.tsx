@@ -28,7 +28,7 @@ export const ScenarioDetailsItemWrapper = styled("div")(
 export const ProcessName = styled(Typography)``;
 
 ProcessName.defaultProps = {
-    title: i18next.t("scenarioDetails.name.title", "Name"),
+    title: i18next.t("panels.scenarioDetails.tooltip.name", "Name"),
 };
 
 export const ProcessRename = styled(ProcessName)(({ theme }) => ({

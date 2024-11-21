@@ -38,7 +38,7 @@ export function CategoryButton({ category, filterValues, setFilter }: Props): JS
 
     return (
         <Typography
-            title={t("scenarioDetails.label.category", "Category")}
+            title={t("scenariosList.tooltip.category", "Category")}
             component={Button}
             color={isSelected ? "primary" : "inherit"}
             sx={{

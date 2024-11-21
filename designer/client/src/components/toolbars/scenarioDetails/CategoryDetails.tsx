@@ -36,7 +36,7 @@ export const CategoryDetails = ({ scenario }: { scenario: Scenario }) => {
                 <Skeleton variant="text" sx={{ fontSize: "1.25rem" }} width={"50%"} />
             ) : (
                 isCategoryFieldVisible && (
-                    <Typography title={t("scenarioDetails.label.category", "Category")} variant={"body2"}>
+                    <Typography title={t("panels.scenarioDetails.tooltip.category", "Category")} variant={"body2"}>
                         {scenario.processCategory} /
                     </Typography>
                 )

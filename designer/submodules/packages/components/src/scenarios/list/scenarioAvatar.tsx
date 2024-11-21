@@ -11,7 +11,7 @@ export function ScenarioAvatar({ scenario }: { scenario: Pick<Scenario, "isFragm
 
     return (
         <TableCellAvatar
-            title={isFragment ? t("scenarioAvatar.title.fragment", "Fragment") : t("scenarioAvatar.title.scenario", "Scenario")}
+            title={isFragment ? t("scenariosList.tooltip.fragment", "Fragment") : t("scenariosList.tooltip.scenario", "Scenario")}
         >
             {isFragment ? <FragmentIcon width={"1em"} height={"1em"} /> : <ScanarioIcon width={"1em"} height={"1em"} />}
         </TableCellAvatar>

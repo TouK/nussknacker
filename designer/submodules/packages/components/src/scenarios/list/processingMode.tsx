@@ -60,7 +60,7 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
 
     return (
         <Button
-            title={t("addProcessForm.label.processingMode", "Processing mode")}
+            title={t("scenariosList.tooltip.processingMode", "Processing mode")}
             color={isSelected ? "primary" : "inherit"}
             sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25, mx: 0 }}
             onClick={onClick}
