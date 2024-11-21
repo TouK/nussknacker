@@ -106,6 +106,7 @@
 * [#7193](https://github.com/TouK/nussknacker/pull/7193) Provide tooltips to the scenarios list and scenario details elements
 * [#7187](https://github.com/TouK/nussknacker/pull/7187) Fix "Failed to get node validation" when using literal lists that mixes different types of elements
 * [#7183](https://github.com/TouK/nussknacker/pull/7183) Hide categories from a scenarios list and more scenario details when only one category is available
+* [#7192](https://github.com/TouK/nussknacker/pull/7192) Fix "Failed to get node validation" when opening node details referencing non-existing component
 
 ## 1.17
 
