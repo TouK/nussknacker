@@ -25,18 +25,18 @@ export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChan
     customAceEditorCompleter?;
     showLineNumbers?: boolean;
     commands?: AceKeyCommand[];
+    enableLiveAutocompletion?: boolean;
 }
 
 export const DEFAULT_OPTIONS: IAceOptions = {
     indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
-    enableLiveAutocompletion: true,
     enableSnippets: false,
     fontSize: 14,
     highlightActiveLine: false,
     highlightGutterLine: true,
 };
 
-const DEFAULF_EDITOR_PROPS: IEditorProps = {
+const DEFAULT_EDITOR_PROPS: IEditorProps = {
     $blockScrolling: true,
 };
 
@@ -133,7 +133,15 @@ function editorLangToMode(language: ExpressionLang | string, editorMode?: Editor
 }
 
 export default forwardRef(function AceWrapper(
-    { inputProps, customAceEditorCompleter, showLineNumbers, wrapEnabled = true, commands = [], ...props }: AceWrapperProps,
+    {
+        inputProps,
+        customAceEditorCompleter,
+        showLineNumbers,
+        wrapEnabled = true,
+        commands = [],
+        enableLiveAutocompletion = true,
+        ...props
+    }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
     const { language, readOnly, rows = 1, editorMode } = inputProps;
@@ -183,9 +191,10 @@ export default forwardRef(function AceWrapper(
             className={readOnly ? " read-only" : ""}
             wrapEnabled={!!wrapEnabled}
             showGutter={!!showLineNumbers}
-            editorProps={DEFAULF_EDITOR_PROPS}
+            editorProps={DEFAULT_EDITOR_PROPS}
             setOptions={{
                 ...DEFAULT_OPTIONS,
+                enableLiveAutocompletion,
                 showLineNumbers,
             }}
             enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}

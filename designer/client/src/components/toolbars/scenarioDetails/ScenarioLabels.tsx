@@ -26,6 +26,13 @@ interface AddLabelProps {
     onClick: () => void;
 }
 
+const labelUniqueValidation = (label: string) => ({
+    label,
+    messages: [
+        i18next.t("panels.scenarioDetails.labels.validation.uniqueValue", "This label already exists. Please enter a unique value."),
+    ],
+});
+
 const AddLabel = ({ onClick }: AddLabelProps) => {
     return (
         <Typography
@@ -125,9 +132,12 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
         setIsEdited(true);
     };
 
-    const isInputInSelectedOptions = (inputValue: string): boolean => {
-        return scenarioLabelOptions.some((option) => inputValue === toLabelValue(option));
-    };
+    const isInputInSelectedOptions = useCallback(
+        (inputValue: string): boolean => {
+            return scenarioLabelOptions.some((option) => inputValue === toLabelValue(option));
+        },
+        [scenarioLabelOptions],
+    );
 
     const inputHelperText = useMemo(() => {
         if (inputErrors.length !== 0) {
@@ -151,9 +161,13 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                 }
             }
 
+            if (isInputInSelectedOptions(newInput)) {
+                setInputErrors((prevState) => [...prevState, labelUniqueValidation(newInput)]);
+            }
+
             setInputTyping(false);
         }, 500);
-    }, []);
+    }, [isInputInSelectedOptions]);
 
     const validateSelectedOptions = useMemo(() => {
         return debounce(async (labels: LabelOption[]) => {

@@ -28,10 +28,11 @@ export type CustomCompleterAceEditorProps = {
     showValidation?: boolean;
     isMarked?: boolean;
     className?: string;
+    enableLiveAutocompletion?: boolean;
 };
 
 export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): JSX.Element {
-    const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading } = props;
+    const { className, isMarked, showValidation, fieldErrors, validationLabelInfo, completer, isLoading, enableLiveAutocompletion } = props;
     const { value, onValueChange, ref, ...inputProps } = props.inputProps;
 
     const [editorFocused, setEditorFocused] = useState(false);
@@ -65,6 +66,7 @@ export function CustomCompleterAceEditor(props: CustomCompleterAceEditorProps): 
                             ...inputProps,
                         }}
                         customAceEditorCompleter={completer}
+                        enableLiveAutocompletion={enableLiveAutocompletion}
                     />
                 </Box>
                 <Fade
