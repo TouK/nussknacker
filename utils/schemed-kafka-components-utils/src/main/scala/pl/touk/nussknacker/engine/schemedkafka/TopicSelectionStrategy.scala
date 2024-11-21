@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedT
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
 
 import java.util.regex.Pattern
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 
 trait TopicSelectionStrategy extends Serializable {
 
