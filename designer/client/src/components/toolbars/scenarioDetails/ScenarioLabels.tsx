@@ -26,7 +26,12 @@ interface AddLabelProps {
     onClick: () => void;
 }
 
-const labelUniqueValidation = (label: string) => ({ label, messages: ["This label already exists. Please enter a unique value."] });
+const labelUniqueValidation = (label: string) => ({
+    label,
+    messages: [
+        i18next.t("panels.scenarioDetails.labels.validation.uniqueValue", "This label already exists. Please enter a unique value."),
+    ],
+});
 
 const AddLabel = ({ onClick }: AddLabelProps) => {
     return (
