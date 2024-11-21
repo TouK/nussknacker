@@ -2,16 +2,14 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{DeploymentStatus, PeriodicProcessStatus}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessStateDefinitionManager.statusTooltip
-import pl.touk.nussknacker.engine.management.periodic.model.{
-  PeriodicProcessDeploymentId,
-  PeriodicProcessDeploymentState,
-  PeriodicProcessDeploymentStatus,
-  PeriodicProcessId,
-  ScheduleId,
-  ScheduleName
-}
+import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.ScheduledStatus
+import pl.touk.nussknacker.engine.management.periodic.model._
 
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicLong
@@ -69,6 +67,40 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     statusTooltip(status) shouldEqual
       s"""Schedule ${secScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Scheduled,
          |Schedule ${firstScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Deployed""".stripMargin
+  }
+
+  test("not display custom tooltip for perform single execution when latest version is deployed") {
+    PeriodicStateStatus.customActionTooltips(
+      ProcessStatus(
+        stateStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
+        latestVersionId = VersionId(5),
+        deployedVersionId = Some(VersionId(5))
+      )
+    ) shouldEqual Map.empty
+  }
+
+  test("display custom tooltip for perform single execution when older version is deployed") {
+    PeriodicStateStatus.customActionTooltips(
+      ProcessStatus(
+        stateStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
+        latestVersionId = VersionId(5),
+        deployedVersionId = Some(VersionId(4))
+      )
+    ) shouldEqual Map(
+      ScenarioActionName.PerformSingleExecution -> "There is new version 5 available (version 4 is deployed)"
+    )
+  }
+
+  test("display custom tooltip for perform single execution in CANCELED state") {
+    PeriodicStateStatus.customActionTooltips(
+      ProcessStatus(
+        stateStatus = SimpleStateStatus.Canceled,
+        latestVersionId = VersionId(5),
+        deployedVersionId = Some(VersionId(4))
+      )
+    ) shouldEqual Map(
+      ScenarioActionName.PerformSingleExecution -> "Disabled for CANCELED status."
+    )
   }
 
   private def generateDeploymentId = PeriodicProcessDeploymentId(nextDeploymentId.getAndIncrement())
