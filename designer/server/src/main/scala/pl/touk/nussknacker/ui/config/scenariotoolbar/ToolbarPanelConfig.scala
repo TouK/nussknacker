@@ -53,6 +53,7 @@ final case class ToolbarPanelConfig(
     buttonsVariant: Option[ToolbarButtonVariant],
     buttons: Option[List[ToolbarButtonConfig]],
     hidden: Option[ToolbarCondition],
+    // for custom toolbar components
     additionalParams: Option[Map[String, String]]
 ) {
 
