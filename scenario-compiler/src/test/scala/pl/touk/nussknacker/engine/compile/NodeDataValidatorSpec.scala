@@ -497,6 +497,27 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should return business error when fragment input node referencing fragment that doesn't exist") {
+    validate(
+      FragmentInput(
+        "frInput",
+        FragmentRef(
+          "non-existing-fragment",
+          List(NodeParameter(ParameterName("param1"), "145".spel)),
+          Map("out1" -> "test1")
+        )
+      ),
+      ValidationContext.empty,
+      outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+    ) should matchPattern {
+      case ValidationPerformed(
+            List(UnknownFragment("non-existing-fragment", "frInput")),
+            None,
+            None
+          ) =>
+    }
+  }
+
   test("should validate fragment parameters") {
     inside(
       validate(
