@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { Chip, styled } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     id: string;
@@ -13,6 +14,7 @@ const StyledLabelChip = styled(Chip)({
 });
 
 export function LabelChip({ id, value, filterValue, setFilter }: Props): JSX.Element {
+    const { t } = useTranslation();
     const isSelected = useMemo(() => filterValue.includes(value), [filterValue, value]);
 
     const onClick = useCallback(
@@ -26,6 +28,7 @@ export function LabelChip({ id, value, filterValue, setFilter }: Props): JSX.Ele
 
     return (
         <StyledLabelChip
+            title={t("scenariosList.tooltip.label", "Scenario label: {{label}}", { label: value })}
             key={id}
             color={isSelected ? "primary" : "default"}
             size="small"

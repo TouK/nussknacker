@@ -21,10 +21,18 @@ import i18next from "i18next";
 import { editScenarioLabels } from "../../../actions/nk";
 import { debounce } from "lodash";
 import { ScenarioLabelValidationError } from "../../Labels/types";
+import { useTranslation } from "react-i18next";
 
 interface AddLabelProps {
     onClick: () => void;
 }
+
+const labelUniqueValidation = (label: string) => ({
+    label,
+    messages: [
+        i18next.t("panels.scenarioDetails.labels.validation.uniqueValue", "This label already exists. Please enter a unique value."),
+    ],
+});
 
 const AddLabel = ({ onClick }: AddLabelProps) => {
     return (
@@ -100,6 +108,7 @@ interface Props {
 }
 
 export const ScenarioLabels = ({ readOnly }: Props) => {
+    const { t } = useTranslation();
     const scenarioLabels = useSelector(getScenarioLabels);
     const scenarioLabelOptions: LabelOption[] = useMemo(() => scenarioLabels.map(toLabelOption), [scenarioLabels]);
     const initialScenarioLabelOptionsErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
@@ -125,9 +134,12 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
         setIsEdited(true);
     };
 
-    const isInputInSelectedOptions = (inputValue: string): boolean => {
-        return scenarioLabelOptions.some((option) => inputValue === toLabelValue(option));
-    };
+    const isInputInSelectedOptions = useCallback(
+        (inputValue: string): boolean => {
+            return scenarioLabelOptions.some((option) => inputValue === toLabelValue(option));
+        },
+        [scenarioLabelOptions],
+    );
 
     const inputHelperText = useMemo(() => {
         if (inputErrors.length !== 0) {
@@ -151,9 +163,13 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                 }
             }
 
+            if (isInputInSelectedOptions(newInput)) {
+                setInputErrors((prevState) => [...prevState, labelUniqueValidation(newInput)]);
+            }
+
             setInputTyping(false);
         }, 500);
-    }, []);
+    }, [isInputInSelectedOptions]);
 
     const validateSelectedOptions = useMemo(() => {
         return debounce(async (labels: LabelOption[]) => {
@@ -338,6 +354,9 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 const labelError = labelOptionsErrors.find((error) => error.label === toLabelValue(option));
                                 return (
                                     <StyledLabelChip
+                                        title={t("panels.scenarioDetails.tooltip.label", "Scenario label: {{label}}", {
+                                            label: option.title,
+                                        })}
                                         key={key}
                                         data-testid={`scenario-label-${index}`}
                                         color={labelError ? "error" : "default"}

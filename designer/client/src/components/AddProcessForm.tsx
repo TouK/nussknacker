@@ -19,7 +19,7 @@ import { InfoOutlined } from "@mui/icons-material";
 import Input from "./graph/node-modal/editors/field/Input";
 import { formLabelWidth } from "../containers/theme/styles";
 
-export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
+export type FormValue = { processName: string; processCategory: string; processingMode: ProcessingMode; processEngine: string };
 
 export type TouchedValue = Record<keyof FormValue, boolean>;
 

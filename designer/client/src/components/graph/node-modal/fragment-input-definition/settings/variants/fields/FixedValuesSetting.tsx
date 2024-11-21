@@ -16,6 +16,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
     typ: ReturnedType;
     name: string;
     initialValue: FixedValuesOption;
+    userDefinedListInputLabel: string;
 }
 
 export function FixedValuesSetting({
@@ -30,6 +31,7 @@ export function FixedValuesSetting({
     typ,
     name,
     initialValue,
+    userDefinedListInputLabel,
 }: FixedValuesSetting) {
     return (
         <>
@@ -47,6 +49,7 @@ export function FixedValuesSetting({
                     typ={typ}
                     name={name}
                     initialValue={initialValue}
+                    inputLabel={userDefinedListInputLabel}
                 />
             )}
         </>
