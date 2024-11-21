@@ -103,6 +103,7 @@
 * [#7182](https://github.com/TouK/nussknacker/pull/7182) Provide an unique validation message to the scenario labels
 * [#7178](https://github.com/TouK/nussknacker/pull/7178) Remove autocompletion from markdown editors
 * [#7159](https://github.com/TouK/nussknacker/pull/7159) Fix running scenario tests with provided fragment input validation 
+* [#7193](https://github.com/TouK/nussknacker/pull/7193) Provide tooltips to the scenarios list and scenario details elements
 
 ## 1.17
 
