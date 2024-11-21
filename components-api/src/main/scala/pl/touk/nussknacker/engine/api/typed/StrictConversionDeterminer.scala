@@ -72,10 +72,11 @@ object StrictConversionDeterminer {
       )
   }
 
-  def isAssignable(from: Class[_], to: Class[_]): Boolean = {
+  // We double check with a fallback because lang3 only checks strict assignability subtyping. We also want to check
+  // for possible subtyping, e.g. Int to Long.
+  private def isAssignable(from: Class[_], to: Class[_]): Boolean = {
     (from, to) match {
       case (f, t) if ClassUtils.isAssignable(f, t, true) => true
-      // Number double check by hand because lang3 can incorrectly throw false when dealing with java types
       case (f, t) if AllNumbers.contains(f) && AllNumbers.contains(t) =>
         AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
       case _ => false

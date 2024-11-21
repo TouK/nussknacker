@@ -625,6 +625,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `api/parameters/*/validate` request
     * `scenarioName` is removed
     * `processProperties` is removed
+* [#7115](https://github.com/TouK/nussknacker/pull/7115) Changes in DictApiEndpoints:
+  *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
 
 ### Configuration changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
