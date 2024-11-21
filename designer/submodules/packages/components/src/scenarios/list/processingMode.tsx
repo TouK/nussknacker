@@ -6,6 +6,7 @@ import i18next from "i18next";
 import Streaming from "../../assets/icons/streaming.svg";
 import Batch from "../../assets/icons/batch.svg";
 import RequestResponse from "../../assets/icons/request-response.svg";
+import { useTranslation } from "react-i18next";
 
 export enum ProcessingMode {
     "streaming" = "Unbounded-Stream",
@@ -36,6 +37,7 @@ interface Props {
     filtersContext: FiltersContextType<ScenariosFiltersModel>;
 }
 export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) => {
+    const { t } = useTranslation();
     const { setFilter, getFilter } = filtersContext;
     const filterValue = useMemo(() => getFilter("PROCESSING_MODE", true), [getFilter]);
 
@@ -58,6 +60,7 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
 
     return (
         <Button
+            title={t("addProcessForm.label.processingMode", "Processing mode")}
             color={isSelected ? "primary" : "inherit"}
             sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25, mx: 0 }}
             onClick={onClick}

@@ -3,8 +3,10 @@ import { useProcessFormDataOptions } from "../../useProcessFormDataOptions";
 import HttpService, { ScenarioParametersCombination } from "../../../http/HttpService";
 import { Skeleton, Typography } from "@mui/material";
 import { Scenario } from "../../Process/types";
+import { useTranslation } from "react-i18next";
 
 export const CategoryDetails = ({ scenario }: { scenario: Scenario }) => {
+    const { t } = useTranslation();
     const [allCombinations, setAllCombinations] = useState<ScenarioParametersCombination[]>([]);
     const [isAllCombinationsLoading, setIsAllCombinationsLoading] = useState<boolean>(false);
 
@@ -33,7 +35,11 @@ export const CategoryDetails = ({ scenario }: { scenario: Scenario }) => {
             {isAllCombinationsLoading ? (
                 <Skeleton variant="text" sx={{ fontSize: "1.25rem" }} width={"50%"} />
             ) : (
-                isCategoryFieldVisible && <Typography variant={"body2"}>{scenario.processCategory} /</Typography>
+                isCategoryFieldVisible && (
+                    <Typography title={t("scenarioDetails.label.category", "Category")} variant={"body2"}>
+                        {scenario.processCategory} /
+                    </Typography>
+                )
             )}
         </>
     );

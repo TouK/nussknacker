@@ -21,6 +21,7 @@ import i18next from "i18next";
 import { editScenarioLabels } from "../../../actions/nk";
 import { debounce } from "lodash";
 import { ScenarioLabelValidationError } from "../../Labels/types";
+import { useTranslation } from "react-i18next";
 
 interface AddLabelProps {
     onClick: () => void;
@@ -107,6 +108,7 @@ interface Props {
 }
 
 export const ScenarioLabels = ({ readOnly }: Props) => {
+    const { t } = useTranslation();
     const scenarioLabels = useSelector(getScenarioLabels);
     const scenarioLabelOptions: LabelOption[] = useMemo(() => scenarioLabels.map(toLabelOption), [scenarioLabels]);
     const initialScenarioLabelOptionsErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
@@ -352,6 +354,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 const labelError = labelOptionsErrors.find((error) => error.label === toLabelValue(option));
                                 return (
                                     <StyledLabelChip
+                                        title={t("panels.scenarioDetails.labels.title", "Label")}
                                         key={key}
                                         data-testid={`scenario-label-${index}`}
                                         color={labelError ? "error" : "default"}

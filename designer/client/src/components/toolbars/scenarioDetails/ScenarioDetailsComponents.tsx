@@ -1,4 +1,5 @@
 import { css, styled, Typography } from "@mui/material";
+import i18next from "i18next";
 
 export const PanelScenarioDetails = styled("div")(
     ({ theme }) => css`
@@ -25,6 +26,10 @@ export const ScenarioDetailsItemWrapper = styled("div")(
 );
 
 export const ProcessName = styled(Typography)``;
+
+ProcessName.defaultProps = {
+    title: i18next.t("scenarioDetails.name.title", "Name"),
+};
 
 export const ProcessRename = styled(ProcessName)(({ theme }) => ({
     color: theme.palette.warning.main,
