@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import cats.implicits.toTraverseOps
 import io.circe.{ACursor, Decoder, DecodingFailure, Json}
+import pl.touk.nussknacker.engine.api.json.FromJsonDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import java.math.BigInteger
@@ -58,19 +59,15 @@ object ValueDecoder {
     case record: TypedObjectTypingResult =>
       for {
         fieldsJson <- obj.as[Map[String, Json]]
-        decodedFields <- record.fields.toList.traverse { case (fieldName, fieldType) =>
-          fieldsJson.get(fieldName) match {
-            case Some(fieldJson) => decodeValue(fieldType, fieldJson.hcursor).map(fieldName -> _)
-            case None =>
-              Left(
-                DecodingFailure(
-                  s"Record field '$fieldName' isn't present in encoded Record fields: $fieldsJson",
-                  List()
-                )
-              )
+        decodedFields <-
+          fieldsJson.toList.traverse { case (fieldName, fieldJson) =>
+            val fieldType = record.fields.getOrElse(fieldName, Unknown)
+            decodeValue(fieldType, fieldJson.hcursor).map(fieldName -> _)
           }
-        }
       } yield decodedFields.toMap.asJava
+    case Unknown =>
+      /// For Unknown we fallback to generic json to any conversion. It won't work for some types such as LocalDate but for others should work correctly
+      obj.as[Json].map(FromJsonDecoder.jsonToAny)
     case typ => Left(DecodingFailure(s"Decoding of type [$typ] is not supported.", List()))
   }
 

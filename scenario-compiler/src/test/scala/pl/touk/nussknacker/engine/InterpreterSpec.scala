@@ -6,6 +6,8 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
+import org.scalatest.prop.Tables.Table
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
@@ -33,8 +35,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
+import pl.touk.nussknacker.engine.definition.component.Components
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -47,6 +49,7 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
+import pl.touk.nussknacker.engine.testcomponents.SpelTemplatePartsService
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.service.{
   EagerServiceWithStaticParametersAndReturnType,
@@ -72,6 +75,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     ComponentDefinition("spelNodeService", SpelNodeService),
     ComponentDefinition("withExplicitMethod", WithExplicitDefinitionService),
     ComponentDefinition("spelTemplateService", ServiceUsingSpelTemplate),
+    ComponentDefinition("spelTemplatePartsService", SpelTemplatePartsService),
     ComponentDefinition("optionTypesService", OptionTypesService),
     ComponentDefinition("optionalTypesService", OptionalTypesService),
     ComponentDefinition("nullableTypesService", NullableTypesService),
@@ -1020,6 +1024,52 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction()) shouldBe "someKey"
   }
 
+  test("service using spel template rendered parts") {
+    val testCases = Seq(
+      (
+        "subexpression and literal value",
+        s"Hello#{#input.msisdn}",
+        Transaction(msisdn = "foo"),
+        "[Hello]-literal[foo]-subexpression"
+      ),
+      (
+        "single literal value",
+        "Hello",
+        Transaction(msisdn = "foo"),
+        "[Hello]-literal"
+      ),
+      (
+        "single function call expression",
+        "#{#input.msisdn.toString()}",
+        Transaction(msisdn = "foo"),
+        "[foo]-subexpression"
+      ),
+      (
+        "empty value",
+        "",
+        Transaction(msisdn = "foo"),
+        "[]-literal"
+      ),
+    )
+    for ((description, templateExpression, inputTransaction, expectedOutput) <- testCases) {
+      withClue(s"Test case: $description") {
+        val process = ScenarioBuilder
+          .streaming("test")
+          .source("start", "transaction-source")
+          .enricher(
+            "ex",
+            "out",
+            "spelTemplatePartsService",
+            "template" -> Expression.spelTemplate(templateExpression)
+          )
+          .buildSimpleVariable("result-end", resultVariable, "#out".spel)
+          .emptySink("end-end", "dummySink")
+
+        interpretProcess(process, inputTransaction) should equal(expectedOutput)
+      }
+    }
+  }
+
 }
 
 class ThrowingService extends Service {
@@ -1134,8 +1184,10 @@ object InterpreterSpec {
 
   object ServiceUsingSpelTemplate extends EagerServiceWithStaticParametersAndReturnType {
 
+    private val spelTemplateParameterName = ParameterName("template")
+
     private val spelTemplateParameter = Parameter
-      .optional[String](ParameterName("template"))
+      .optional[String](spelTemplateParameterName)
       .copy(isLazyParameter = true, editor = Some(SpelTemplateParameterEditor))
 
     override def parameters: List[Parameter] = List(spelTemplateParameter)
@@ -1149,7 +1201,7 @@ object InterpreterSpec {
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.head._2.toString)
+      Future.successful(params(spelTemplateParameterName).asInstanceOf[TemplateEvaluationResult].renderedTemplate)
     }
 
   }

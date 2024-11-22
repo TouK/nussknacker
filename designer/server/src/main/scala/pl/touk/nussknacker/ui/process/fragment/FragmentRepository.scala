@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.process.fragment
 
+import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.duration._
@@ -46,10 +46,7 @@ class DefaultFragmentRepository(processRepository: FetchingProcessRepository[Fut
   )(implicit user: LoggedUser): Future[Option[CanonicalProcess]] = {
     processRepository
       .fetchProcessId(fragmentName)
-      .flatMap { processIdOpt =>
-        val processId = processIdOpt.getOrElse(throw ProcessNotFoundError(fragmentName))
-        processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId)
-      }
+      .flatMap(_.map(processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess]).sequence.map(_.flatten))
       .map(_.map(_.json))
   }
 

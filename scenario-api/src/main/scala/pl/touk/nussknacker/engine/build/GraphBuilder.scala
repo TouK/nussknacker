@@ -108,6 +108,17 @@ trait GraphBuilder[R] {
       )
     )
 
+  def fragmentInputWithRawParameters(id: String, params: FragmentParameter*): GraphBuilder[SourceNode] =
+    new SimpleGraphBuilder(
+      SourceNode(
+        FragmentInputDefinition(
+          id = id,
+          parameters = params.toList
+        ),
+        _
+      )
+    )
+
   def fragmentOutput(id: String, outputName: String, params: (String, Expression)*): R =
     creator(EndingNode(FragmentOutputDefinition(id, outputName, params.map(kv => Field(kv._1, kv._2)).toList)))
 

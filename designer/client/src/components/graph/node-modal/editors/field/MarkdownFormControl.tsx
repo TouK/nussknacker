@@ -15,6 +15,7 @@ export const MarkdownFormControl = ({ value, onChange, className, children, read
         {children}
         <CustomCompleterAceEditor
             {...props}
+            enableLiveAutocompletion={false}
             inputProps={{
                 language: ExpressionLang.MD,
                 className,

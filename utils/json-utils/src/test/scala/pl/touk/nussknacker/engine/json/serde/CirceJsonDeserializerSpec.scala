@@ -284,7 +284,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
           |}""".stripMargin)
 
       result shouldEqual Map(
-        "additionalInt"    -> java.math.BigDecimal.valueOf(1234),
+        "additionalInt"    -> 1234,
         "additionalString" -> "foo",
         "additionalObject" -> Map("foo" -> "bar").asJava
       ).asJava

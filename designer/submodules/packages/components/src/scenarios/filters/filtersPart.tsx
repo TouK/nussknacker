@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from "react";
 import { flatten, sortBy, uniq } from "lodash";
 import { useFilterContext } from "../../common";
 import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
-import { useScenarioLabelsQuery, useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
+import { useScenarioLabelsQuery, useScenariosWithCategoryVisible, useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
 import { SimpleOptionsStack } from "./simpleOptionsStack";
@@ -21,6 +21,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
     const { data: userData } = useUserQuery();
     const { data: statusDefinitions = [] } = useStatusDefinitions();
     const { data: availableLabels } = useScenarioLabelsQuery();
+    const { withCategoriesVisible } = useScenariosWithCategoryVisible();
 
     const filterableKeys = useMemo(() => ["createdBy", "modifiedBy"], []);
     const filterableValues = useMemo(() => {
@@ -35,7 +36,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
             label: (availableLabels?.labels || []).map((name) => ({ name })),
             processingMode: processingModeItems,
         };
-    }, [data, filterableKeys, statusDefinitions, userData?.categories]);
+    }, [availableLabels?.labels, data, filterableKeys, statusDefinitions, userData?.categories]);
 
     const statusFilterLabels = statusDefinitions.reduce((map, obj) => {
         map[obj.name] = obj.displayableName;
@@ -102,17 +103,19 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             })}
                         />
                     </FilterMenu>
-                    <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
-                        <SimpleOptionsStack
-                            label={t("table.filter.CATEGORY", "Category")}
-                            options={filterableValues.processCategory}
-                            value={getFilter("CATEGORY", true)}
-                            onChange={setFilter("CATEGORY")}
-                            {...getEventTrackingProps({
-                                selector: EventTrackingSelector.ScenariosByCategory,
-                            })}
-                        />
-                    </FilterMenu>
+                    {withCategoriesVisible && (
+                        <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
+                            <SimpleOptionsStack
+                                label={t("table.filter.CATEGORY", "Category")}
+                                options={filterableValues.processCategory}
+                                value={getFilter("CATEGORY", true)}
+                                onChange={setFilter("CATEGORY")}
+                                {...getEventTrackingProps({
+                                    selector: EventTrackingSelector.ScenariosByCategory,
+                                })}
+                            />
+                        </FilterMenu>
+                    )}
                     <FilterMenu label={t("table.filter.LABEL", "Label")} count={getFilter("LABEL", true).length}>
                         <SimpleOptionsStack
                             label={t("table.filter.LABEL", "Label")}
