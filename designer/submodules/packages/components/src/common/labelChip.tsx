@@ -28,7 +28,7 @@ export function LabelChip({ id, value, filterValue, setFilter }: Props): JSX.Ele
 
     return (
         <StyledLabelChip
-            title={t("scenariosList.tooltip.label", "Scenario label: {{label}}", { label: value })}
+            title={t("scenariosList.tooltip.label", "Label")}
             key={id}
             color={isSelected ? "primary" : "default"}
             size="small"

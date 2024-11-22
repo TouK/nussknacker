@@ -268,11 +268,11 @@ Every unknown accessed field/element will produce `Unknown` data type, which can
 
 ### Type conversions
 
-It is possible to cast or convert from a type to another type and this can be done by implicit and explicit conversion.
+It is possible to convert from a type to another type and this can be done by implicit and explicit conversion.
 
 #### Explicit conversions
 
-Explicit conversions/casts are available as built-in functions.
+Explicit conversions are available as built-in functions and utility classes.
 List of built-in functions:
 - `canBe(className)`/`to(className)`/`toOrNull(className)`
 - `canBeBoolean`/`toBoolean`/`toBooleanOrNull`
@@ -282,17 +282,15 @@ List of built-in functions:
 - `canBeList`/`toList`/`toListOrNull`
 - `canBeMap`/`toMap`/`toMapOrNull`
 
-The aforementioned functions first attempt to cast a value to the specified class. If the cast fails and there is a 
-defined conversion to that class, the conversion is applied.
 The `canBe`, `to` and `toOrNull` functions take the name of target class as a parameter, in contrast to, for
 example, `canBeLong` which has the name of target class in the function name and is the shortcut for: `canBe('Long')`.
 We have added some functions with types in their names, for example: `canBeLong` to have shortcuts to the most common
 types.
 
-Functions with the prefix `canBe` check whether a type can be cast or converted to the appropriate type. Functions with
-the `to` prefix cast or convert a value to the desired type, and if the operation fails, an exception is propagated
-further. Functions with the `to` prefix and `OrNull` suffix cast or convert a value to the desired type,
-and if the operation fails, a null value is returned.
+Functions with the prefix `canBe` check whether a type can be converted to the appropriate type. Functions with the `to`
+prefix convert a value to the desired type, and if the operation fails, an exception is propagated further. Functions
+with the `to` prefix and `OrNull` suffix convert a value to the desired type, and if the operation fails, a null value 
+is returned.
 
 Examples of conversions:
 
@@ -306,6 +304,7 @@ Examples of conversions:
 | `'abc'.toOrNull('Double')`                                               | null                        | Double            |
 | `'abc'.toLong`                                                           | exception thrown in runtime | Long              |
 | `{{name: 'John', age: 22}}.![{key: #this.name, value: #this.age}].toMap` | {John: 22}                  | Map[String, Long] |
+| `'2018-10-23T12:12:13'.to('LocalDateTime')`                              | 2018-10-23T12:12:13+00:00   | LocalDateTime     |
 
 Conversions only make sense between specific types. We limit SpeL's suggestions to show only possible conversions.
 Below is a matrix which shows which types can be converted with each other:
