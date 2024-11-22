@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import org.apache.commons.lang3.{ClassUtils, LocaleUtils}
 import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
 
 import java.nio.charset.Charset
@@ -63,56 +64,49 @@ object TypeConversionHandler {
     StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
   )
 
-  def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
-    handleNumberConversions(givenType.runtimeObjType, superclassCandidate) ||
-    handleStringToValueClassConversions(givenType, superclassCandidate)
-  }
+  def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
+    canBeConvertedToAux(givenType, superclassCandidate, allowOnlyWideningConversions = false)
 
-  def canBeStrictlyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
-    handleStrictNumberConversions(givenType.runtimeObjType, superclassCandidate) ||
-    handleStringToValueClassConversions(givenType, superclassCandidate)
+  def canBeStrictlyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
+    canBeConvertedToAux(givenType, superclassCandidate, allowOnlyWideningConversions = true)
+
+  private def canBeConvertedToAux(
+      givenType: SingleTypingResult,
+      superclassCandidate: TypedClass,
+      allowOnlyWideningConversions: Boolean
+  ) = {
+    handleStringToValueClassConversions(givenType, superclassCandidate) ||
+    handleNumberConversions(givenType.runtimeObjType, superclassCandidate, allowOnlyWideningConversions)
   }
 
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
-  private def handleNumberConversions(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
+  private def handleNumberConversions(
+      givenClass: TypedClass,
+      superclassCandidate: TypedClass,
+      allowOnlyWideningConversions: Boolean
+  ): Boolean = {
     val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
     val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
     // We can't check precision here so we need to be loose here
     // TODO: Add feature flag: strictNumberPrecisionChecking (default false?)
-    if (NumberTypesPromotionStrategy
-        .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
-      ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
-    } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
-      ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _, true))
+    if (allowOnlyWideningConversions) {
+      // TODO: This is probably wrong - relying on index of AllNumbers
+      (boxedGivenClass, boxedSuperclassCandidate) match {
+        case (f, t) if ClassUtils.isAssignable(f, t, true) => true
+        case (f, t) if AllNumbers.contains(f) && AllNumbers.contains(t) =>
+          AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
+        case _ => false
+      }
     } else {
-      false
-    }
-  }
-
-  // See org.springframework.core.convert.support.NumberToNumberConverterFactory
-  private def handleStrictNumberConversions(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
-    val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
-    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
-    // We can't check precision here so we need to be loose here
-    // TODO: Add feature flag: strictNumberPrecisionChecking (default false?)
-
-    def isFloating(candidate: Class[_]): Boolean = {
-      NumberTypesPromotionStrategy.isFloatingNumber(candidate) || candidate == classOf[java.math.BigDecimal]
-    }
-    def isDecimalNumber(candidate: Class[_]): Boolean = {
-      NumberTypesPromotionStrategy.isDecimalNumber(candidate)
-    }
-
-    boxedSuperclassCandidate match {
-      case candidate if isFloating(candidate) =>
+      if (NumberTypesPromotionStrategy
+          .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
         ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
-
-      case candidate if isDecimalNumber(candidate) =>
-        StrictConversionDeterminer.isAssignable(boxedGivenClass, candidate)
-
-      case _ => false
+      } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
+        ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _, true))
+      } else {
+        false
+      }
     }
-
   }
 
   private def handleStringToValueClassConversions(
