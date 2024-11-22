@@ -125,10 +125,16 @@ class FlinkKafkaSource[T](
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): T = {
     val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
+    val removedValue = if (unflattenedParams.size == 1) {
+      unflattenedParams.headOption match {
+        case Some(("Value", inner)) => inner
+        case _                      => unflattenedParams
+      }
+    } else unflattenedParams
     deserializeTestData(
       formatter.parseRecord(
         topics.head,
-        testParametersInfo.createTestRecord(unflattenedParams)
+        testParametersInfo.createTestRecord(removedValue)
       )
     )
   }
