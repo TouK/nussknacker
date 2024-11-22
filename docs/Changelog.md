@@ -18,7 +18,7 @@
 * Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
-### 1.18.0 (Not released yet)
+### 1.18.0 (22 November 2024)
 
 * [#6944](https://github.com/TouK/nussknacker/pull/6944) [#7166](https://github.com/TouK/nussknacker/pull/7166) Changes around adhoc testing feature
   * `test-with-form` button was renamed to `adhoc-testing`

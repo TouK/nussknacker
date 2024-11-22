@@ -2,7 +2,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.18.0 (Not released yet)
+## In version 1.18.0
 
 ### Configuration changes
 
