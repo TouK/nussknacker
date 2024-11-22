@@ -1,4 +1,4 @@
-import { ComponentType, PropsWithChildren } from "react";
+import { ForwardRefExoticComponent, PropsWithChildren, PropsWithoutRef, RefAttributes } from "react";
 import { Module } from "@touk/federated-component";
 
 interface RedirectState {
@@ -40,7 +40,7 @@ export interface ExternalAuthModule extends Module {
     /**
      * provides auth context for hooks
      */
-    default: ComponentType<PropsWithChildren<Props>>;
+    default: ForwardRefExoticComponent<PropsWithoutRef<PropsWithChildren<Props>> & RefAttributes<unknown>>;
     /**
      * returns auth client from context
      */
