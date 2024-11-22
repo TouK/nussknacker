@@ -108,6 +108,7 @@
 * [#7183](https://github.com/TouK/nussknacker/pull/7183) Hide categories from a scenarios list and more scenario details when only one category is available
 * [#7192](https://github.com/TouK/nussknacker/pull/7192) Fix "Failed to get node validation" when opening node details referencing non-existing component
 * [#7190](https://github.com/TouK/nussknacker/pull/7190) Fix "Failed to get node validation" when opening fragment node details for referencing non-existing fragment 
+* [#7215](https://github.com/TouK/nussknacker/pull/7215) Change typing text to spinner during validation and provide delayed adding on enter until validation finishes in a scenario labels and fragment input
 
 ## 1.17
 
