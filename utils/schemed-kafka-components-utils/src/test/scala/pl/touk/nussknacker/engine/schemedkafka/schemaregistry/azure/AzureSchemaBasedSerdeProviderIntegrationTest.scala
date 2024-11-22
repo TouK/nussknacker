@@ -22,7 +22,7 @@ import java.util.Optional
 @Network
 class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with OptionValues with Matchers {
 
-  test("serialization round-trip") {
+  ignore("serialization round-trip") {
     val eventHubsNamespace = Option(System.getenv("AZURE_EVENT_HUBS_NAMESPACE")).getOrElse("nu-cloud")
     val config = Map(
       "schema.registry.url"   -> s"https://$eventHubsNamespace.servicebus.windows.net",

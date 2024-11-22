@@ -87,9 +87,9 @@ class LiteKafkaSourceImpl[K, V](
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
     val removedValue = if (unflattenedParams.size == 1) {
-      unflattenedParams.headOption match {
-        case Some(("Value", inner)) => inner
-        case _                      => unflattenedParams
+      unflattenedParams.head match {
+        case ("Value", inner) => inner
+        case _                => unflattenedParams
       }
     } else unflattenedParams
     formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(removedValue))
