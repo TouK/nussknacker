@@ -660,11 +660,12 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
   )
   .dependsOn(
     flinkDeploymentManager,
-    deploymentManagerApi % Provided,
-    scenarioCompiler     % Provided,
-    componentsApi        % Provided,
-    httpUtils            % Provided,
-    testUtils            % Test
+    deploymentManagerApi         % Provided,
+    periodicDeploymentManagerApi % Provided,
+    scenarioCompiler             % Provided,
+    componentsApi                % Provided,
+    httpUtils                    % Provided,
+    testUtils                    % Test
   )
 
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
@@ -1908,6 +1909,17 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
   )
   .dependsOn(extensionsApi, testUtils % Test)
 
+lazy val periodicDeploymentManagerApi = (project in file("designer/periodic-deployment-manager-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-periodic-deployment-manager-api",
+    libraryDependencies ++= {
+      Seq(
+      )
+    }
+  )
+  .dependsOn(deploymentManagerApi, testUtils % Test)
+
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
   .enablePlugins(GenerateDesignerOpenApiPlugin)
@@ -2031,6 +2043,7 @@ lazy val designer = (project in file("designer/server"))
     processReports,
     security,
     deploymentManagerApi,
+    periodicDeploymentManagerApi,
     restmodel,
     listenerApi,
     defaultHelpers                    % Test,
@@ -2174,6 +2187,7 @@ lazy val modules = List[ProjectReference](
   restmodel,
   listenerApi,
   deploymentManagerApi,
+  periodicDeploymentManagerApi,
   designer,
   sqlComponents,
   schemedKafkaComponentsUtils,

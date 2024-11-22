@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.NuItTest
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.utils.domain.TestFactory.newDBIOActionRunner
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity.{AdditionalProperties, ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.process.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.ui.process.repository.activities.DbScenarioActivityRepository
 import slick.jdbc.{HsqldbProfile, JdbcProfile}
 
