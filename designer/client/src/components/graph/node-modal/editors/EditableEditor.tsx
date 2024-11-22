@@ -1,5 +1,5 @@
 import { isEmpty } from "lodash";
-import React, { forwardRef, useMemo } from "react";
+import React, { forwardRef, ReactNode, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
 import { editors, EditorType, ExtendedEditor, SimpleEditor } from "./expression/Editor";
@@ -24,7 +24,7 @@ interface Props {
     onValueChange: (value: string) => void;
     fieldErrors?: FieldError[];
     variableTypes: VariableTypes;
-    validationLabelInfo?: string;
+    validationLabelInfo?: ReactNode;
     placeholder?: string;
 }
 

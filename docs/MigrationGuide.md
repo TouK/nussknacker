@@ -10,7 +10,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15 
   * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
 
-## In version 1.18.0 (Not released yet)
+## In version 1.18.0
 
 ### Configuration changes
 

@@ -3,7 +3,7 @@ import { EditableEditor } from "../../../../editors/EditableEditor";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import AceEditor from "react-ace";
 import { ListItems } from "./ListItems";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FieldName, FixedValuesOption, onChangeType } from "../../../item";
 import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
@@ -15,7 +15,11 @@ import { GenericValidationRequest } from "../../../../../../../actions/nk/adhocT
 import { debounce } from "lodash";
 import { EditorType } from "../../../../editors/expression/Editor";
 import { useSettings } from "../../SettingsProvider";
-import { Box, Button, FormControl, Stack } from "@mui/material";
+import { Box, Button, CircularProgress, FormControl, Stack } from "@mui/material";
+import { useDelayedEnterAction } from "../../../../../../toolbars/scenarioDetails/useDelayedEnterAction";
+import { IAceEditor } from "react-ace/lib/types";
+
+const ENTER_VALUE_COMMAND = "addValueOnEnter";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
@@ -42,6 +46,7 @@ export const UserDefinedListInput = ({
     initialValue,
     inputLabel,
 }: Props) => {
+    const editorRef = useRef<IAceEditor>(null);
     const { t } = useTranslation();
     const [temporaryListItem, setTemporaryListItem] = useState("");
     const [temporaryValuesTyping, setTemporaryValuesTyping] = useState(false);
@@ -83,6 +88,14 @@ export const UserDefinedListInput = ({
         [typ.refClazzName],
     );
 
+    const { setIsEnterPressed } = useDelayedEnterAction({
+        action: () => {
+            editorRef.current.execCommand(ENTER_VALUE_COMMAND);
+        },
+        errorsLength: temporaryValueErrors.length,
+        inputTyping: temporaryValuesTyping,
+    });
+
     const handleChangeFixedValuesList = (fixedValuesList: FixedValuesOption[]) => {
         onChange(`${path}.valueEditor.fixedValuesList`, fixedValuesList);
         handleTemporaryUserDefinedList(fixedValuesList);
@@ -90,6 +103,7 @@ export const UserDefinedListInput = ({
 
     const handleAddNewListItem = () => {
         if (temporaryValuesTyping) {
+            setIsEnterPressed(true);
             return;
         }
 
@@ -130,7 +144,6 @@ export const UserDefinedListInput = ({
         }
     };
 
-    const ENTER_VALUE_COMMAND = "addValueOnEnter";
     const aceEditorEnterCommand = {
         name: ENTER_VALUE_COMMAND,
         bindKey: { win: "enter", mac: "enter" },
@@ -172,18 +185,22 @@ export const UserDefinedListInput = ({
             <Box width={"80%"} flex={1}>
                 <Stack direction="row" paddingY={1} spacing={1} justifyContent={"space-between"} alignItems={"start"}>
                     <EditableEditor
-                        validationLabelInfo={temporaryValuesTyping && "Typing..."}
+                        validationLabelInfo={
+                            temporaryValuesTyping && <CircularProgress size={"1rem"} sx={(theme) => ({ marginTop: theme.spacing(0.5) })} />
+                        }
                         expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
                         onValueChange={(value) => {
                             setTemporaryListItem(value);
                             setTemporaryValuesTyping(true);
                             setTemporaryValueErrors([]);
                             validateTemporaryListItem(value);
+                            setIsEnterPressed(false);
                         }}
                         variableTypes={variableTypes}
                         readOnly={readOnly}
                         ref={(ref: AceEditor | null) => {
                             if (ref?.editor) {
+                                editorRef.current = ref.editor;
                                 ref.editor.commands.addCommand(aceEditorEnterCommand);
                             }
                         }}
