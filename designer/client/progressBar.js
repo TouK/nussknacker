@@ -19,7 +19,7 @@ function getElapsed() {
 
 function getBar(percentage) {
     const { barLength, almostDone } = options;
-    const bar = padEnd(repeat("◼︎", Math.ceil(percentage * barLength)), barLength, "□");
+    const bar = padEnd(repeat("◼", Math.ceil(percentage * barLength)), barLength, "_");
     const barColor = percentage > almostDone ? chalk.green : percentage > (almostDone * 2) / 3 ? chalk.yellow : chalk.red;
     return barColor(bar);
 }
