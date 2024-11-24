@@ -21,7 +21,6 @@ export function useFragmentInputDefinitionTypeOptions() {
         () =>
             definitionData?.classes?.map((type) => ({
                 value: type.display as string,
-                refClazzName: type.refClazzName,
                 label: ProcessUtils.humanReadableType(type),
             })),
         [definitionData?.classes],
@@ -47,20 +46,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
         addElement("parameters", getDefaultFields(defaultTypeOption.value));
     }, [addElement, defaultTypeOption.value]);
 
-    //TODO: this transformation is needed becacause dicts endpoint operates on type resolved on FE...
-    const fields = useMemo(
-        () =>
-            node.parameters.map((p) => ({
-                ...p,
-                typ: p.typ
-                    ? {
-                          ...p.typ,
-                          refClazzName: orderedTypeOptions.find((typeOption) => typeOption.value === p.typ.refClazzName).refClazzName,
-                      }
-                    : undefined,
-            })) || [],
-        [node.parameters],
-    );
+    const fields = useMemo(() => node.parameters || [], [node.parameters]);
 
     return (
         <NodeCommonDetailsDefinition {...passProps}>
