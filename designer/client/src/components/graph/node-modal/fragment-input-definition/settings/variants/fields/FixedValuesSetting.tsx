@@ -54,7 +54,7 @@ export function FixedValuesSetting({
                     onChange={onChange}
                     path={path}
                     errors={errors}
-                    typ={typ}
+                    typ={{ ...typ, refClazzName: "java.lang." + typ.refClazzName } as ReturnedType}
                     name={name}
                     initialValue={initialValue}
                     inputLabel={userDefinedListInputLabel}
