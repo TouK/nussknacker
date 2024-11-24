@@ -40,7 +40,10 @@ object FragmentParameterValidator {
   val permittedTypesForEditors: List[FragmentClazzRef] = List(
     FragmentClazzRef[java.lang.Boolean],
     FragmentClazzRef[String],
-    FragmentClazzRef[java.lang.Long]
+    FragmentClazzRef[java.lang.Long],
+    FragmentClazzRef("String"),
+    FragmentClazzRef("Boolean"),
+    FragmentClazzRef("Long")
   )
 
 }
