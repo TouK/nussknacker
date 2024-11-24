@@ -85,19 +85,21 @@ export function addNodesWithLayout(
         edges?: Edge[];
     },
 ): GraphState {
-    const currentNodes = state.scenario.scenarioGraph.nodes || [];
-    const currentLayout = state.layout;
+    const { nodes = [], edges = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+    const nextNodes = [...nodes, ...changes.nodes];
+    const nextEdges = changes.edges || edges;
+    const nextLayout = [...state.layout, ...changes.layout];
     return {
         ...state,
         scenario: {
             ...state.scenario,
             scenarioGraph: {
-                ...state.scenario.scenarioGraph,
-                nodes: [...currentNodes, ...changes.nodes],
-                edges: changes.edges,
+                ...scenarioGraph,
+                nodes: nextNodes,
+                edges: nextEdges,
             },
         },
-        layout: [...currentLayout, ...changes.layout],
+        layout: nextLayout,
     };
 }
 
