@@ -74,7 +74,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const isValid = isEmpty(fieldErrors);
 
     return (
-        (<Box className={nodeValue}>
+        <Box className={nodeValue}>
             <Autocomplete
                 disabled={readOnly}
                 renderInput={({ inputProps, InputProps }) => (
@@ -117,9 +117,9 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                     const isSelected = option.key === value?.key;
                     return (
                         // aira-selected is set to false as it overrides styles defined in our menuOption
-                        (<Box component={"li"} sx={menuOption({}, isSelected, false) as SxProps<Theme>} {...props} aria-selected={false}>
+                        <Box component={"li"} sx={menuOption({}, isSelected, false) as SxProps<Theme>} {...props} aria-selected={false}>
                             {option.label}
-                        </Box>)
+                        </Box>
                     );
                 }}
                 onInputChange={async (event, value) => {
@@ -128,7 +128,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 }}
             />
             {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
-        </Box>)
+        </Box>
     );
 };
 

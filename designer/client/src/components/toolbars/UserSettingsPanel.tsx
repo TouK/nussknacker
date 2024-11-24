@@ -19,7 +19,7 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
 
     const value = Object.entries(settings).map(([label, value]) => ({ label, value }));
     return (
-        (<ToolbarWrapper {...props} title={t("panels.userSettings.title", "🧪 User settings")}>
+        <ToolbarWrapper {...props} title={t("panels.userSettings.title", "🧪 User settings")}>
             <Creatable
                 isMulti
                 value={value}
@@ -63,7 +63,7 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
                     MultiValueLabel,
                 }}
             />
-        </ToolbarWrapper>)
+        </ToolbarWrapper>
     );
 }
 

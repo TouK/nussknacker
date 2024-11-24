@@ -23,7 +23,7 @@ const ProcessActions = memo(({ buttonsVariant, children, ...props }: ToolbarPane
     // TODO: better styling of process info toolbar in case of many custom actions
 
     return (
-        (<ToolbarWrapper {...props} title={i18next.t("panels.scenarioActions.title", "Scenario actions")}>
+        <ToolbarWrapper {...props} title={i18next.t("panels.scenarioActions.title", "Scenario actions")}>
             <Box display={"flex"} px={2} pt={2} pb={1.5}>
                 <ProcessStateIcon scenario={scenario} processState={processState} />
                 <Typography component={"div"} variant={"body2"} pl={1}>
@@ -34,10 +34,10 @@ const ProcessActions = memo(({ buttonsVariant, children, ...props }: ToolbarPane
                 {children}
                 {customActions.map((action) => (
                     //TODO: to be replaced by toolbar config
-                    (<ActionButton name={action.name} key={action.name} />)
+                    <ActionButton name={action.name} key={action.name} />
                 ))}
             </ToolbarButtons>
-        </ToolbarWrapper>)
+        </ToolbarWrapper>
     );
 });
 
