@@ -65,47 +65,54 @@ object TypeConversionHandler {
   )
 
   def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
-    canBeConvertedToAux(givenType, superclassCandidate, allowOnlyWideningConversions = false)
+    handleStrictConversion(givenType, superclassCandidate)
 
-  def canBeStrictlyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
-    canBeConvertedToAux(givenType, superclassCandidate, allowOnlyWideningConversions = true)
-
-  private def canBeConvertedToAux(
+  private def handleLooseConversion(
       givenType: SingleTypingResult,
-      superclassCandidate: TypedClass,
-      allowOnlyWideningConversions: Boolean
+      superclassCandidate: TypedClass
   ) = {
     handleStringToValueClassConversions(givenType, superclassCandidate) ||
-    handleNumberConversions(givenType.runtimeObjType, superclassCandidate, allowOnlyWideningConversions)
+    handleLooseNumberConversions(givenType.runtimeObjType, superclassCandidate)
   }
 
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
-  private def handleNumberConversions(
+  private def handleLooseNumberConversions(
       givenClass: TypedClass,
-      superclassCandidate: TypedClass,
-      allowOnlyWideningConversions: Boolean
+      superclassCandidate: TypedClass
   ): Boolean = {
     val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
     val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
     // We can't check precision here so we need to be loose here
     // TODO: Add feature flag: strictNumberPrecisionChecking (default false?)
-    if (allowOnlyWideningConversions) {
-      // TODO: This is probably wrong - relying on index of AllNumbers
-      (boxedGivenClass, boxedSuperclassCandidate) match {
-        case (f, t) if ClassUtils.isAssignable(f, t, true) => true
-        case (f, t) if AllNumbers.contains(f) && AllNumbers.contains(t) =>
-          AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
-        case _ => false
-      }
+    if (NumberTypesPromotionStrategy
+        .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
+      ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
+    } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
+      ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _, true))
     } else {
-      if (NumberTypesPromotionStrategy
-          .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
-        ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
-      } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
-        ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _, true))
-      } else {
-        false
-      }
+      false
+    }
+  }
+
+  def canBeStrictlyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
+    handleLooseConversion(givenType, superclassCandidate)
+
+  private def handleStrictConversion(givenType: SingleTypingResult, superclassCandidate: TypedClass) = {
+    handleStringToValueClassConversions(givenType, superclassCandidate) ||
+    handleStrictNumberConversions(givenType.runtimeObjType, superclassCandidate)
+  }
+
+  private def handleStrictNumberConversions(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
+
+    val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
+    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
+    // TODO: This is probably wrong - relying on index of AllNumbers
+    (boxedGivenClass, boxedSuperclassCandidate) match {
+      case (f, t) if ClassUtils.isAssignable(f, t, true) => true
+      case (f, t) if (AllNumbers.contains(f) && AllNumbers.contains(t)) =>
+        AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
+      case _ => false
+
     }
   }
 
