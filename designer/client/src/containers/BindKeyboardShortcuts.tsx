@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useSelectionActions } from "../components/graph/SelectionContextProvider";
+import { EventTrackingSelector, EventTrackingType, TrackEventParams, useEventTracking } from "./event-tracking";
 import { useDocumentListeners } from "./useDocumentListeners";
-import { EventTrackingSelector, TrackEventParams, EventTrackingType, useEventTracking } from "./event-tracking";
 
 export const isInputTarget = (target: EventTarget): boolean => ["INPUT", "SELECT", "TEXTAREA"].includes(target?.["tagName"]);
 export const isInputEvent = (event: Event): boolean => isInputTarget(event?.target);
@@ -46,12 +46,17 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX
                 if (isInputEvent(event) || !keyHandler) return;
                 return keyHandler(event);
             },
-            copy: (event) =>
-                userActions.copy ? eventWithStatistics({ selector: EventTrackingSelector.CopyNode }, userActions.copy(event)) : null,
-            paste: (event) =>
-                userActions.paste ? eventWithStatistics({ selector: EventTrackingSelector.PasteNode }, userActions.paste(event)) : null,
-            cut: (event) =>
-                userActions.cut ? eventWithStatistics({ selector: EventTrackingSelector.CutNode }, userActions.cut(event)) : null,
+            copy: (event) => {
+                if (isInputEvent(event)) return;
+                userActions.copy ? eventWithStatistics({ selector: EventTrackingSelector.CopyNode }, userActions.copy(event)) : null;
+            },
+            paste: (event) => {
+                userActions.paste ? eventWithStatistics({ selector: EventTrackingSelector.PasteNode }, userActions.paste(event)) : null;
+            },
+            cut: (event) => {
+                if (isInputEvent(event)) return;
+                userActions.cut ? eventWithStatistics({ selector: EventTrackingSelector.CutNode }, userActions.cut(event)) : null;
+            },
         }),
         [eventWithStatistics, keyHandlers, userActions],
     );
