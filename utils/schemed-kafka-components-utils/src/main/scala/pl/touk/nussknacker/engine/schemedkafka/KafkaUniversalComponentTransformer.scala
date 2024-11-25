@@ -105,7 +105,6 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     if (schemaRegistryClient.isTopicWithSchema(
         preparedTopic.prepared.topicName.toUnspecialized.name,
-        topicSelectionStrategy,
         kafkaConfig
       )) {
       val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)

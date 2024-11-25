@@ -42,7 +42,7 @@ class UniversalKafkaDeserializer[T](
       .getOrElse(throw MessageWithoutSchemaIdException)
 
     val schemaWithMetadata = {
-      if (schemaRegistryClient.isTopicWithSchema(topic, new TopicsWithExistingSubjectSelectionStrategy, kafkaConfig)) {
+      if (schemaRegistryClient.isTopicWithSchema(topic, kafkaConfig)) {
         schemaRegistryClient.getSchemaById(writerSchemaId.value)
       } else {
         writerSchemaId.value match {

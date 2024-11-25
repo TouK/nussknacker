@@ -114,7 +114,6 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
 
       if (schemaRegistryClient.isTopicWithSchema(
           topic.name,
-          new TopicsWithExistingSubjectSelectionStrategy,
           kafkaConfig
         )) {
         val valueSchemaOpt = record.valueSchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
