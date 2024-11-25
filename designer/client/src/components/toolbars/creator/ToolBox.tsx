@@ -1,32 +1,20 @@
-import { lighten, styled } from "@mui/material";
-import { getLuminance } from "@mui/system/colorManipulator";
 import React, { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import "react-treeview/react-treeview.css";
 import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
-<<<<<<< HEAD
-import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-=======
 import { getProcessDefinitionData, getStickyNotesSettings } from "../../../reducers/selectors/settings";
->>>>>>> c598a66389 (Remove stickyNotePanel, add stickyNote to creatos panel)
 import { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
-<<<<<<< HEAD
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
-=======
 import { useTranslation } from "react-i18next";
 import { lighten, styled } from "@mui/material";
-
 import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getLuminance } from "@mui/system/colorManipulator";
 import { isPristine } from "../../../reducers/selectors/graph";
 import { concat } from "lodash";
 import { stickyNoteComponentGroup } from "./StickyNoteComponent";
->>>>>>> c598a66389 (Remove stickyNotePanel, add stickyNote to creatos panel)
 
-export const StyledToolbox = styled("div")(({ theme }) => ({
+const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",
     fontWeight: "600",
     padding: 0,
