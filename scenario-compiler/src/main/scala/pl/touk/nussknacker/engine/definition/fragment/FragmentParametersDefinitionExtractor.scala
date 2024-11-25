@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{Writer, WriterT}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -28,11 +30,18 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 
+import scala.util.Try
+
 /*
  * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type), as it would require ExpressionCompiler, ValidationContext and declared dictionaries.
  * They are validated separately when creating fragment in NodeCompiler.compileSource, but if they are not validated it is not a breaking issue anyway as a process using these incorrect values will fail validation.
  */
-class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
+class FragmentParametersDefinitionExtractor(
+    classLoader: ClassLoader,
+    val classDefinitions: Set[ClassDefinition] = Set.empty
+) {
+
+  private val fragmentParameterTypingParser = new FragmentParameterTypingParser(classLoader, classDefinitions)
 
   def extractParametersDefinition(
       fragmentInput: FragmentInput
@@ -73,7 +82,7 @@ class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
 
     val (extractedEditor, validationErrors) = fragmentParameter.valueEditor
       .map(editor =>
-        FragmentParameterValidator.validateAgainstClazzRefAndGetEditor(
+        FragmentParameterValidator(classDefinitions).validateAgainstClazzRefAndGetEditor(
           valueEditor = editor,
           initialValue = fragmentParameter.initialValue,
           refClazz = fragmentParameter.typ,
@@ -133,10 +142,9 @@ class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
 
   private def getParamTypingResult(
       fragmentParameter: FragmentParameter
-  )(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], TypingResult] =
-    fragmentParameter.typ
-      .toRuntimeClass(classLoader)
-      .map(Typed(_))
+  )(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], TypingResult] = {
+    fragmentParameterTypingParser
+      .parseClassNameToTypingResult(fragmentParameter.typ.refClazzName)
       .map(Writer.value[List[PartSubGraphCompilationError], TypingResult])
       .getOrElse(
         Writer
@@ -145,5 +153,6 @@ class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
             List(FragmentParamClassLoadError(fragmentParameter.name, fragmentParameter.typ.refClazzName, nodeId.id))
           )
       )
+  }
 
 }
