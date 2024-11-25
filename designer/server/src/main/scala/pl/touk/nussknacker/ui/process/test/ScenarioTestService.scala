@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.ImplicitConversionDeterminer
+import pl.touk.nussknacker.engine.api.typed.AssignabilityDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
@@ -133,7 +133,7 @@ class ScenarioTestService(
 
   private def assignUserFriendlyEditor(uiSourceParameter: UISourceParameters): UISourceParameters = {
     val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
-      if (ImplicitConversionDeterminer.canBeConvertedTo(uiParameter.typ, Typed.apply(classOf[String])).isValid) {
+      if (AssignabilityDeterminer.isAssignableLoose(uiParameter.typ, Typed.apply(classOf[String])).isValid) {
         uiParameter.copy(editor = StringParameterEditor)
       } else {
         uiParameter
