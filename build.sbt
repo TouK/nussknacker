@@ -644,28 +644,22 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
       Seq(
-        "org.typelevel"       %% "cats-core"                       % catsV                % Provided,
-        "com.typesafe.slick"  %% "slick"                           % slickV               % Provided,
-        "com.typesafe.slick"  %% "slick-hikaricp"                  % slickV               % "provided, test",
-        "com.github.tminglei" %% "slick-pg"                        % slickPgV,
-        "org.hsqldb"           % "hsqldb"                          % hsqldbV              % Test,
-        "org.flywaydb"         % "flyway-core"                     % flywayV              % Provided,
-        "com.cronutils"        % "cron-utils"                      % cronParserV,
-        "com.typesafe.akka"   %% "akka-actor"                      % akkaV,
-        "com.typesafe.akka"   %% "akka-testkit"                    % akkaV                % Test,
-        "com.dimafeng"        %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
-        "com.dimafeng"        %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
+        "com.typesafe.slick" %% "slick-hikaricp"                  % slickV               % "provided, test",
+        "org.hsqldb"          % "hsqldb"                          % hsqldbV              % Test,
+        "com.typesafe.akka"  %% "akka-testkit"                    % akkaV                % Test,
+        "com.dimafeng"       %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
+        "com.dimafeng"       %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
       )
     }
   )
   .dependsOn(
+    commonPeriodicDeploymentManager,
     flinkDeploymentManager,
-    deploymentManagerApi         % Provided,
-    periodicDeploymentManagerApi % Provided,
-    scenarioCompiler             % Provided,
-    componentsApi                % Provided,
-    httpUtils                    % Provided,
-    testUtils                    % Test
+    deploymentManagerApi % Provided,
+    scenarioCompiler     % Provided,
+    componentsApi        % Provided,
+    httpUtils            % Provided,
+    testUtils            % Test
   )
 
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
@@ -1769,6 +1763,25 @@ lazy val commonComponentsTests = (project in engine("common/components-tests"))
     flinkComponentsTestkit % Test
   )
 
+lazy val commonPeriodicDeploymentManager = (project in engine("common/periodic-deployment-manager"))
+  .settings(commonSettings)
+  .settings(publishAssemblySettings: _*)
+  .settings(
+    name := "nussknacker-common-periodic-deployment-manager",
+    libraryDependencies ++= {
+      Seq(
+        "com.typesafe.akka"      %% "akka-actor" % akkaV,
+        "org.typelevel"          %% "cats-core"  % catsV % Provided,
+        "com.cronutils"           % "cron-utils" % cronParserV,
+        "com.softwaremill.retry" %% "retry"      % retryV,
+        "com.github.tminglei"    %% "slick-pg"   % slickPgV,
+      )
+    }
+  )
+  .dependsOn(
+    deploymentManagerApi % Provided,
+  )
+
 lazy val flinkBaseComponents = (project in flink("components/base"))
   .settings(commonSettings)
   .settings(assemblyNoScala("flinkBase.jar"): _*)
@@ -1903,22 +1916,12 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
         "com.typesafe.akka"             %% "akka-actor"   % akkaV,
         "com.softwaremill.sttp.client3" %% "core"         % sttpV,
         "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
+        "com.typesafe.slick"            %% "slick"        % slickV,
         "org.scalatestplus"             %% "mockito-5-10" % scalaTestPlusV % Test
       )
     }
   )
   .dependsOn(extensionsApi, testUtils % Test)
-
-lazy val periodicDeploymentManagerApi = (project in file("designer/periodic-deployment-manager-api"))
-  .settings(commonSettings)
-  .settings(
-    name := "nussknacker-periodic-deployment-manager-api",
-    libraryDependencies ++= {
-      Seq(
-      )
-    }
-  )
-  .dependsOn(deploymentManagerApi, testUtils % Test)
 
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
@@ -2043,7 +2046,6 @@ lazy val designer = (project in file("designer/server"))
     processReports,
     security,
     deploymentManagerApi,
-    periodicDeploymentManagerApi,
     restmodel,
     listenerApi,
     defaultHelpers                    % Test,
@@ -2187,7 +2189,6 @@ lazy val modules = List[ProjectReference](
   restmodel,
   listenerApi,
   deploymentManagerApi,
-  periodicDeploymentManagerApi,
   designer,
   sqlComponents,
   schemedKafkaComponentsUtils,

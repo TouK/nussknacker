@@ -4,12 +4,18 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.common.periodic.PeriodicDeploymentService
+import pl.touk.nussknacker.engine.common.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkPeriodicDeploymentService.jarFileNameRuntimeParam
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
-import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkModelJarProvider, FlinkStreamingRestManager}
+import pl.touk.nussknacker.engine.management.{
+  FlinkConfig,
+  FlinkDeploymentManager,
+  FlinkModelJarProvider,
+  FlinkStreamingRestManager
+}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-import pl.touk.nussknacker.engine.periodic.{DeploymentWithRuntimeParams, PeriodicDeploymentService, RuntimeParams}
 import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 import sttp.client3.SttpBackend
 
