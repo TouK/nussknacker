@@ -1,12 +1,14 @@
+import { Dictionary } from "lodash";
+import { flushSync } from "react-dom";
+import NodeUtils from "../../components/graph/NodeUtils";
+import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
+import { prepareNewNodesWithLayout } from "../../reducers/graph/utils";
+import { getScenarioGraph } from "../../reducers/selectors/graph";
+import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
-import { layoutChanged, Position } from "./ui/layout";
 import { EditNodeAction, EditScenarioLabels } from "./editNode";
-import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
-import NodeUtils from "../../components/graph/NodeUtils";
-import { getScenarioGraph } from "../../reducers/selectors/graph";
-import { flushSync } from "react-dom";
+import { layoutChanged, NodePosition, Position } from "./ui/layout";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -31,7 +33,9 @@ type NodesDisonnectedAction = {
 
 type NodesWithEdgesAddedAction = {
     type: "NODES_WITH_EDGES_ADDED";
-    nodesWithPositions: NodesWithPositions;
+    nodes: NodeType[];
+    layout: NodePosition[];
+    idMapping: Dictionary<string>;
     edges: Edge[];
     processDefinitionData: ProcessDefinitionData;
 };
@@ -43,8 +47,8 @@ type ValidationResultAction = {
 
 type NodeAddedAction = {
     type: "NODE_ADDED";
-    node: NodeType;
-    position: Position;
+    nodes: NodeType[];
+    layout: NodePosition[];
 };
 
 export function deleteNodes(ids: NodeId[]): ThunkAction {
@@ -118,13 +122,20 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
 }
 
 export function nodeAdded(node: NodeType, position: Position): ThunkAction {
-    return (dispatch) => {
+    return (dispatch, getState) => {
         batchGroupBy.startOrContinue();
 
         // We need to disable automatic React batching https://react.dev/blog/2022/03/29/react-v18#new-feature-automatic-batching
         // since it breaks redux undo in this case
         flushSync(() => {
-            dispatch({ type: "NODE_ADDED", node, position });
+            const scenarioGraph = getScenarioGraph(getState());
+            const { nodes, layout } = prepareNewNodesWithLayout(scenarioGraph.nodes, [{ node, position }], false);
+
+            dispatch({
+                type: "NODE_ADDED",
+                nodes,
+                layout,
+            });
             dispatch(layoutChanged());
         });
         batchGroupBy.end();
@@ -133,11 +144,17 @@ export function nodeAdded(node: NodeType, position: Position): ThunkAction {
 
 export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[]): ThunkAction {
     return (dispatch, getState) => {
-        const processDefinitionData = getProcessDefinitionData(getState());
+        const state = getState();
+        const processDefinitionData = getProcessDefinitionData(state);
+        const scenarioGraph = getScenarioGraph(state);
+        const { nodes, layout, idMapping } = prepareNewNodesWithLayout(scenarioGraph.nodes, nodesWithPositions, true);
+
         batchGroupBy.startOrContinue();
         dispatch({
             type: "NODES_WITH_EDGES_ADDED",
-            nodesWithPositions,
+            nodes,
+            layout,
+            idMapping,
             edges,
             processDefinitionData,
         });
