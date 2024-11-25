@@ -32,13 +32,13 @@ object typing {
      * If you need to retain conversion precision, use canBeStrictlyConvertedTo
      */
     final def canBeConvertedTo(typingResult: TypingResult): Boolean =
-      ImplicitConversionDeterminer.canBeConvertedTo(this, typingResult).isValid
+      AssignabilityDeterminer.isAssignableLoose(this, typingResult).isValid
 
     /**
      * Checks if the conversion to a given typingResult can be made without loss of precision
      */
     final def canBeStrictlyConvertedTo(typingResult: TypingResult): Boolean =
-      StrictConversionDeterminer.canBeConvertedTo(this, typingResult).isValid
+      AssignabilityDeterminer.isAssignableStrict(this, typingResult).isValid
 
     def valueOpt: Option[Any]
 
