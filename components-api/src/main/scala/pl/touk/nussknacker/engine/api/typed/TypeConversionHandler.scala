@@ -64,8 +64,8 @@ object TypeConversionHandler {
     StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
   )
 
-  def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
-    handleStrictConversion(givenType, superclassCandidate)
+  def canBeLooselyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
+    handleLooseConversion(givenType, superclassCandidate)
 
   private def handleLooseConversion(
       givenType: SingleTypingResult,
@@ -95,7 +95,7 @@ object TypeConversionHandler {
   }
 
   def canBeStrictlyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
-    handleLooseConversion(givenType, superclassCandidate)
+    handleStrictConversion(givenType, superclassCandidate)
 
   private def handleStrictConversion(givenType: SingleTypingResult, superclassCandidate: TypedClass) = {
     handleStringToValueClassConversions(givenType, superclassCandidate) ||

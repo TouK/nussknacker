@@ -16,7 +16,7 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
 
   import AssignabilityDeterminer.isAssignable
 
-  test("determine if can be subclass for typed object") {
+  test("determine if can be subclass for simple typed objects") {
 
     isAssignableLoose(
       typeMap(
@@ -38,7 +38,9 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
         "Field 'field4' is lacking"
       )
       .invalid
+  }
 
+  test("determine if can be subclass for map of typed objects") {
     isAssignableLoose(
       typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))),
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))

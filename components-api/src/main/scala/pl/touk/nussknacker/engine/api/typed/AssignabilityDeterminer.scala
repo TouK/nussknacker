@@ -241,7 +241,7 @@ object AssignabilityDeterminer {
         to: TypedClass
     ): ValidatedNel[String, Unit] = {
       val errMsgPrefix = s"${from.runtimeObjType.display} cannot be converted to ${to.display}"
-      condNel(TypeConversionHandler.canBeConvertedTo(from, to), (), errMsgPrefix)
+      condNel(TypeConversionHandler.canBeLooselyConvertedTo(from, to), (), errMsgPrefix)
     }
 
   }
