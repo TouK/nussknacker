@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.ImplicitConversionDeterminer
+import pl.touk.nussknacker.engine.api.typed.AssignabilityDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
@@ -134,7 +134,7 @@ class ScenarioTestService(
     val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
       uiParameter.editor match {
         case DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)
-            if uiParameter.typ.canBeImplicitlyConvertedTo(Typed[String]) =>
+            if uiParameter.typ.canBeConvertedTo(Typed[String]) =>
           uiParameter.copy(editor = StringParameterEditor)
         case _ => uiParameter
       }
