@@ -3,18 +3,28 @@ package pl.touk.nussknacker.engine.common.periodic
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, NodesDeploymentData}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  NodesDeploymentData
+}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.{DeploymentStatus, EngineStatusesToReschedule, FinishedScheduledExecutionMetadata, MaxDeploymentsStatus, PeriodicProcessStatus}
+import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.{
+  DeploymentStatus,
+  EngineStatusesToReschedule,
+  FinishedScheduledExecutionMetadata,
+  MaxDeploymentsStatus,
+  PeriodicProcessStatus
+}
 import pl.touk.nussknacker.engine.common.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
-import pl.touk.nussknacker.engine.common.periodic.db.PeriodicProcessesRepository
-import pl.touk.nussknacker.engine.common.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.common.periodic.model._
+import pl.touk.nussknacker.engine.common.periodic.ScheduleProperty.{fromApi, toApi}
 import pl.touk.nussknacker.engine.common.periodic.service._
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
@@ -28,7 +38,7 @@ import scala.util.control.NonFatal
 class PeriodicProcessService(
     delegateDeploymentManager: DeploymentManager,
     periodicDeploymentService: PeriodicDeploymentService,
-    scheduledProcessesRepository: PeriodicProcessesRepository,
+    periodicProcessesManager: PeriodicProcessesManager,
     periodicProcessListener: PeriodicProcessListener,
     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
     deploymentRetryConfig: DeploymentRetryConfig,
@@ -36,19 +46,19 @@ class PeriodicProcessService(
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock,
     actionService: ProcessingTypeActionService,
-    configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
+    configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
+    processingType: String,
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
   import cats.syntax.all._
-  import scheduledProcessesRepository._
-  private type RepositoryAction[T] = scheduledProcessesRepository.Action[T]
-  private type Callback            = () => Future[Unit]
-  private type NeedsReschedule     = Boolean
 
-  private implicit class WithCallbacksSeq(result: RepositoryAction[List[Callback]]) {
+  private type Callback        = () => Future[Unit]
+  private type NeedsReschedule = Boolean
+
+  private implicit class WithCallbacksSeq(result: Future[List[Callback]]) {
     def runWithCallbacks: Future[Unit] =
-      result.run.flatMap(callbacks => Future.sequence(callbacks.map(_()))).map(_ => ())
+      result.flatMap(callbacks => Future.sequence(callbacks.map(_()))).map(_ => ())
   }
 
   private val emptyCallback: Callback = () => Future.successful(())
@@ -58,7 +68,7 @@ class PeriodicProcessService(
   def getScenarioActivitiesSpecificToPeriodicProcess(
       processIdWithName: ProcessIdWithName
   ): Future[List[ScenarioActivity]] = for {
-    schedulesState <- scheduledProcessesRepository.getSchedulesState(processIdWithName.name).run
+    schedulesState <- periodicProcessesManager.getSchedulesState(processIdWithName.name)
     groupedByProcess        = schedulesState.groupedByPeriodicProcess
     deployments             = groupedByProcess.flatMap(_.deployments)
     deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
@@ -82,14 +92,14 @@ class PeriodicProcessService(
   def schedule(
       schedule: ScheduleProperty,
       processVersion: ProcessVersion,
-      canonicalProcess: CanonicalProcess,
       processActionId: ProcessActionId,
+      processingType: String,
       beforeSchedule: => Future[Unit] = Future.unit
   ): Future[Unit] = {
     prepareInitialScheduleDates(schedule) match {
       case Right(scheduleDates) =>
         beforeSchedule.flatMap(_ =>
-          scheduleWithInitialDates(schedule, processVersion, canonicalProcess, scheduleDates, processActionId)
+          scheduleWithInitialDates(schedule, processVersion, scheduleDates, processActionId, processingType)
         )
       case Left(error) =>
         Future.failed(error)
@@ -119,61 +129,65 @@ class PeriodicProcessService(
   private def scheduleWithInitialDates(
       scheduleProperty: ScheduleProperty,
       processVersion: ProcessVersion,
-      canonicalProcess: CanonicalProcess,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
-      processActionId: ProcessActionId
+      processActionId: ProcessActionId,
+      processingType: String,
   ): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
       deploymentWithJarData <- periodicDeploymentService.prepareDeploymentWithRuntimeParams(
         processVersion,
-        canonicalProcess
       )
       enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(
         ProcessConfigEnricher.InitialScheduleData(
-          deploymentWithJarData.process,
           deploymentWithJarData.inputConfigDuringExecutionJson
         )
       )
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
         enrichedProcessConfig.inputConfigDuringExecutionJson
       )
-      _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData, processActionId)
+      _ <- initialSchedule(
+        scheduleProperty,
+        scheduleDates,
+        enrichedDeploymentWithJarData,
+        processActionId,
+        processingType
+      )
     } yield ()
   }
 
   private def initialSchedule(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
-      deploymentWithJarData: DeploymentWithRuntimeParams[CanonicalProcess],
-      processActionId: ProcessActionId
+      deploymentWithJarData: DeploymentWithRuntimeParams,
+      processActionId: ProcessActionId,
+      processingType: String,
   ): Future[Unit] = {
-    scheduledProcessesRepository
-      .create(deploymentWithJarData, scheduleMap, processActionId)
+    periodicProcessesManager
+      .create(deploymentWithJarData, toApi(scheduleMap), processActionId, processingType)
       .flatMap { process =>
         scheduleDates.collect {
           case (name, Some(date)) =>
-            scheduledProcessesRepository
+            periodicProcessesManager
               .schedule(process.id, name, date, deploymentRetryConfig.deployMaxRetries)
               .flatMap { data =>
                 handleEvent(ScheduledEvent(data, firstSchedule = true))
               }
           case (name, None) =>
             logger.warn(s"Schedule $name does not have date to schedule")
-            monad.pure(())
+            Future.successful(())
         }.sequence
       }
-      .run
       .map(_ => ())
   }
 
-  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]] = {
+  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
     for {
-      toBeDeployed <- scheduledProcessesRepository.findToBeDeployed.run.flatMap { toDeployList =>
+      toBeDeployed <- periodicProcessesManager.findToBeDeployed(processingType).flatMap { toDeployList =>
         Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
       }
       // We retry scenarios that failed on deployment. Failure recovery of running scenarios should be handled by Flink's restart strategy
-      toBeRetried <- scheduledProcessesRepository.findToBeRetried.run
+      toBeRetried <- periodicProcessesManager.findToBeRetried(processingType)
       // We don't block scheduled deployments by retries
     } yield toBeDeployed.sortBy(d => (d.runAt, d.createdAt)) ++ toBeRetried.sortBy(d => (d.nextRetryAt, d.createdAt))
   }
@@ -181,8 +195,8 @@ class PeriodicProcessService(
   // Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   // TODO: we show allow to deploy scenarios with different scheduleName to be deployed simultaneous
   private def checkIfNotRunning(
-      toDeploy: PeriodicProcessDeployment[CanonicalProcess]
-  ): Future[Option[PeriodicProcessDeployment[CanonicalProcess]]] = {
+      toDeploy: PeriodicProcessDeployment
+  ): Future[Option[PeriodicProcessDeployment]] = {
     delegateDeploymentManager
       .getProcessStates(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(
@@ -204,7 +218,7 @@ class PeriodicProcessService(
           schedules.groupedByPeriodicProcess
             .collect {
               case processScheduleData
-                  if processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id)) =>
+                  if processScheduleData.deployments.exists(d => needRescheduleDeploymentIds.contains(d.id)) =>
                 reschedule(processScheduleData, needRescheduleDeploymentIds)
             }
             .sequence
@@ -212,11 +226,11 @@ class PeriodicProcessService(
         }
 
     for {
-      schedules <- scheduledProcessesRepository
+      schedules <- periodicProcessesManager
         .findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
-          Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy)
+          Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy),
+          processingType,
         )
-        .run
       // we handle each job separately, if we fail at some point, we will continue on next handleFinished run
       _ <- Future.sequence(schedules.groupByProcessName.toList.map(handleSingleProcess _ tupled))
     } yield ()
@@ -237,7 +251,7 @@ class PeriodicProcessService(
       })
       needRescheduleDeployments <- Future
         .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
-          synchronizeDeploymentState(deploymentData, statusOpt).run.map { needReschedule =>
+          synchronizeDeploymentState(deploymentData, statusOpt).map { needReschedule =>
             Option(deploymentData.id).filter(_ => needReschedule)
           }
         })
@@ -252,9 +266,9 @@ class PeriodicProcessService(
   private def synchronizeDeploymentState(
       deployment: ScheduleDeploymentData,
       processState: Option[StatusDetails]
-  ): RepositoryAction[NeedsReschedule] = {
-    implicit class RichRepositoryAction[Unit](a: RepositoryAction[Unit]) {
-      def needsReschedule(value: Boolean): RepositoryAction[NeedsReschedule] = a.map(_ => value)
+  ): Future[NeedsReschedule] = {
+    implicit class RichFuture[Unit](a: Future[Unit]) {
+      def needsReschedule(value: Boolean): Future[NeedsReschedule] = a.map(_ => value)
     }
     processState.map(_.status) match {
       case Some(status)
@@ -276,21 +290,21 @@ class PeriodicProcessService(
         // so freshly deployed deployments aren't considered
         markFinished(deployment, processState).needsReschedule(value = true)
       case _ =>
-        scheduledProcessesRepository.monad.pure(()).needsReschedule(value = false)
+        Future.successful(()).needsReschedule(value = false)
     }
   }
 
   private def reschedule(
       processScheduleData: PeriodicProcessScheduleData,
       needRescheduleDeploymentIds: Set[PeriodicProcessDeploymentId]
-  ): RepositoryAction[Callback] = {
+  ): Future[Callback] = {
     import processScheduleData._
     val scheduleActions = deployments.map { deployment =>
       if (needRescheduleDeploymentIds.contains(deployment.id))
-        deployment.nextRunAt(clock) match {
+        nextRunAt(deployment, clock) match {
           case Right(Some(futureDate)) =>
             logger.info(s"Rescheduling ${deployment.display} to $futureDate")
-            val action = scheduledProcessesRepository
+            val action = periodicProcessesManager
               .schedule(process.id, deployment.scheduleName, futureDate, deploymentRetryConfig.deployMaxRetries)
               .flatMap { data =>
                 handleEvent(ScheduledEvent(data, firstSchedule = false))
@@ -306,7 +320,7 @@ class PeriodicProcessService(
       else
         Option(deployment)
           .filter(_.state.status == PeriodicProcessDeploymentStatus.Scheduled)
-          .map(_ => scheduledProcessesRepository.monad.pure(()))
+          .map(_ => Future.successful(()))
 
     }
 
@@ -320,18 +334,26 @@ class PeriodicProcessService(
       scheduleActions.flatten.sequence.as(emptyCallback)
   }
 
-  private def markFinished(deployment: ScheduleDeploymentData, state: Option[StatusDetails]): RepositoryAction[Unit] = {
+  private def nextRunAt(deployment: PeriodicProcessDeployment, clock: Clock): Either[String, Option[LocalDateTime]] =
+    (fromApi(deployment.periodicProcess.scheduleProperty), deployment.scheduleName.value) match {
+      case (MultipleScheduleProperty(schedules), Some(name)) =>
+        schedules.get(name).toRight(s"Failed to find schedule: $deployment.scheduleName").flatMap(_.nextRunAt(clock))
+      case (e: SingleScheduleProperty, None) => e.nextRunAt(clock)
+      case (schedule, name)                  => Left(s"Schedule name: $name mismatch with schedule: $schedule")
+    }
+
+  private def markFinished(deployment: ScheduleDeploymentData, state: Option[StatusDetails]): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} with status: ${deployment.state.status} as finished")
     for {
-      _            <- scheduledProcessesRepository.markFinished(deployment.id)
-      currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
+      _            <- periodicProcessesManager.markFinished(deployment.id)
+      currentState <- periodicProcessesManager.findProcessData(deployment.id, processingType)
     } yield handleEvent(FinishedEvent(currentState, state))
   }
 
   private def handleFailedDeployment(
-      deployment: PeriodicProcessDeployment[_],
+      deployment: PeriodicProcessDeployment,
       state: Option[StatusDetails]
-  ): RepositoryAction[Unit] = {
+  ): Future[Unit] = {
     def calculateNextRetryAt = now().plus(deploymentRetryConfig.deployRetryPenalize.toMillis, ChronoUnit.MILLIS)
 
     val retriesLeft =
@@ -350,19 +372,19 @@ class PeriodicProcessService(
     )
 
     for {
-      _ <- scheduledProcessesRepository.markFailedOnDeployWithStatus(deployment.id, status, retriesLeft, nextRetryAt)
-      currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
+      _ <- periodicProcessesManager.markFailedOnDeployWithStatus(deployment.id, status, retriesLeft, nextRetryAt)
+      currentState <- periodicProcessesManager.findProcessData(deployment.id, processingType)
     } yield handleEvent(FailedOnDeployEvent(currentState, state))
   }
 
   private def markFailedAction(
       deployment: ScheduleDeploymentData,
       state: Option[StatusDetails]
-  ): RepositoryAction[Unit] = {
+  ): Future[Unit] = {
     logger.info(s"Marking ${deployment.display} as failed.")
     for {
-      _            <- scheduledProcessesRepository.markFailed(deployment.id)
-      currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
+      _            <- periodicProcessesManager.markFailed(deployment.id)
+      currentState <- periodicProcessesManager.findProcessData(deployment.id, processingType)
     } yield handleEvent(FailedOnRunEvent(currentState, state))
   }
 
@@ -373,10 +395,10 @@ class PeriodicProcessService(
       _ <- activeSchedules.groupedByPeriodicProcess.map(p => deactivateAction(p.process)).sequence.runWithCallbacks
     } yield runningDeploymentsForSchedules.map(deployment => DeploymentId(deployment.toString))
 
-  private def deactivateAction(process: PeriodicProcess[_]): RepositoryAction[Callback] = {
+  private def deactivateAction(process: PeriodicProcess): Future[Callback] = {
     logger.info(s"Deactivate periodic process id: ${process.id.value}")
     for {
-      _ <- scheduledProcessesRepository.markInactive(process.id)
+      _ <- periodicProcessesManager.markInactive(process.id)
       // we want to delete jars only after we successfully mark process as inactive. It's better to leave jar garbage than
       // have process without jar
     } yield () => periodicDeploymentService.cleanAfterDeployment(process.deploymentData.runtimeParams)
@@ -384,15 +406,15 @@ class PeriodicProcessService(
 
   private def markProcessActionExecutionFinished(
       processActionIdOption: Option[ProcessActionId]
-  ): RepositoryAction[Callback] =
-    scheduledProcessesRepository.monad.pure { () =>
+  ): Future[Callback] =
+    Future.successful { () =>
       processActionIdOption
         .map(actionService.markActionExecutionFinished)
         .sequence
         .map(_ => ())
     }
 
-  def deploy(deployment: PeriodicProcessDeployment[CanonicalProcess]): Future[Unit] = {
+  def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
     // TODO: set status before deployment?
     val id = deployment.id
     val deploymentData = DeploymentData(
@@ -410,11 +432,18 @@ class PeriodicProcessService(
       _ <- Future.successful(
         logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData.processVersion, id)
       )
+      processId = deploymentWithJarData.processVersion.processId
+      versionId = deploymentWithJarData.processVersion.versionId
+      canonicalProcessOrError <- periodicProcessesManager.fetchCanonicalProcess(processId, versionId)
+      canonicalProcess = canonicalProcessOrError.getOrElse {
+        throw new PeriodicProcessException(
+          s"Could not fetch CanonicalProcess for processId=$processId, versionId=$versionId"
+        )
+      }
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
         ProcessConfigEnricher.DeployData(
-          deploymentWithJarData.process,
           deploymentWithJarData.inputConfigDuringExecutionJson,
-          deployment
+          deployment,
         )
       )
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
@@ -422,29 +451,29 @@ class PeriodicProcessService(
       )
       externalDeploymentId <- periodicDeploymentService.deployWithRuntimeParams(
         enrichedDeploymentWithJarData,
-        deploymentData
+        deploymentData,
+        canonicalProcess,
       )
     } yield externalDeploymentId
     deploymentAction
       .flatMap { externalDeploymentId =>
         logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData.processVersion, id)
         // TODO: add externalDeploymentId??
-        scheduledProcessesRepository
+        periodicProcessesManager
           .markDeployed(id)
-          .flatMap(_ => scheduledProcessesRepository.findProcessData(id))
+          .flatMap(_ => periodicProcessesManager.findProcessData(id, processingType))
           .flatMap(afterChange => handleEvent(DeployedEvent(afterChange, externalDeploymentId)))
-          .run
       }
       // We can recover since deployment actor watches only future completion.
       .recoverWith { case exception =>
         logger.error(s"Scenario deployment ${deployment.display} failed", exception)
-        handleFailedDeployment(deployment, None).run
+        handleFailedDeployment(deployment, None)
       }
   }
 
   // TODO: allow access to DB in listener?
-  private def handleEvent(event: PeriodicProcessEvent): scheduledProcessesRepository.Action[Unit] = {
-    scheduledProcessesRepository.monad.pure {
+  private def handleEvent(event: PeriodicProcessEvent): Future[Unit] = {
+    Future.successful {
       try {
         periodicProcessListener.onPeriodicProcessEvent.applyOrElse(event, (_: PeriodicProcessEvent) => ())
       } catch {
@@ -503,20 +532,24 @@ class PeriodicProcessService(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int = 1
   ): Future[SchedulesState] =
-    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount).run
+    periodicProcessesManager.getLatestDeploymentsForActiveSchedules(
+      processName,
+      deploymentsPerScheduleMaxCount,
+      processingType
+    )
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
   ): Future[SchedulesState] =
-    scheduledProcessesRepository
+    periodicProcessesManager
       .getLatestDeploymentsForLatestInactiveSchedules(
         processName,
         inactiveProcessesMaxCount,
-        deploymentsPerScheduleMaxCount
+        deploymentsPerScheduleMaxCount,
+        processingType
       )
-      .run
 
   implicit class RuntimeStatusesExt(runtimeStatuses: List[StatusDetails]) {
 
@@ -527,7 +560,7 @@ class PeriodicProcessService(
   }
 
   private def scheduledExecutionStatusAndDateFinished(
-      entity: PeriodicProcessDeployment[Unit],
+      entity: PeriodicProcessDeployment,
   ): Option[FinishedScheduledExecutionMetadata] = {
     for {
       status <- entity.state.status match {

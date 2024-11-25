@@ -2,13 +2,12 @@ package pl.touk.nussknacker.engine.common.periodic
 
 import akka.actor.{Actor, Props, Timers}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.common.periodic.DeploymentActor.{
   CheckToBeDeployed,
   DeploymentCompleted,
   WaitingForDeployment
 }
-import pl.touk.nussknacker.engine.common.periodic.model.PeriodicProcessDeployment
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -20,24 +19,24 @@ object DeploymentActor {
     props(service.findToBeDeployed, service.deploy, interval)
   }
 
-  private[periodic] def props(
-      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]],
-      deploy: PeriodicProcessDeployment[CanonicalProcess] => Future[Unit],
+  private[engine] def props(
+      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
+      deploy: PeriodicProcessDeployment => Future[Unit],
       interval: FiniteDuration
   ) = {
     Props(new DeploymentActor(findToBeDeployed, deploy, interval))
   }
 
-  private[periodic] case object CheckToBeDeployed
+  private[engine] case object CheckToBeDeployed
 
-  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment[CanonicalProcess]])
+  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment])
 
   private case object DeploymentCompleted
 }
 
 class DeploymentActor(
-    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]],
-    deploy: PeriodicProcessDeployment[CanonicalProcess] => Future[Unit],
+    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
+    deploy: PeriodicProcessDeployment => Future[Unit],
     interval: FiniteDuration
 ) extends Actor
     with Timers
@@ -73,7 +72,7 @@ class DeploymentActor(
       }
   }
 
-  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment[CanonicalProcess]): Receive = {
+  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment): Receive = {
     case CheckToBeDeployed =>
       logger.debug(s"Still waiting for ${runDetails.display} to be deployed")
     case DeploymentCompleted =>

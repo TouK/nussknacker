@@ -7,18 +7,20 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.common.periodic.cron.CronParameterValidator
-import pl.touk.nussknacker.engine.common.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.common.periodic.service._
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, DeploymentManagerProvider, MetaDataInitializer}
+import pl.touk.nussknacker.engine.{
+  BaseModelData,
+  DeploymentManagerDependencies,
+  DeploymentManagerProvider,
+  MetaDataInitializer
+}
 
 import scala.concurrent.duration.FiniteDuration
 
-class PeriodicDeploymentManagerProvider(
+abstract class PeriodicDeploymentManagerProvider(
     override val name: String,
     delegate: DeploymentManagerProvider,
-    periodicDeploymentService: PeriodicDeploymentService,
-    periodicProcessesRepository: PeriodicProcessesRepository,
 ) extends DeploymentManagerProvider
     with LazyLogging {
 
@@ -29,6 +31,12 @@ class PeriodicDeploymentManagerProvider(
     label = Some("Schedule"),
     hintText = Some("Quartz cron syntax. You can specify multiple schedulers separated by '|'.")
   )
+
+  protected def createPeriodicDeploymentService(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      config: Config,
+  ): PeriodicDeploymentService
 
   override def createDeploymentManager(
       modelData: BaseModelData,
@@ -45,8 +53,7 @@ class PeriodicDeploymentManagerProvider(
 
         PeriodicDeploymentManager(
           delegate = delegateDeploymentManager,
-          periodicDeploymentService = periodicDeploymentService,
-          periodicProcessesRepository = periodicProcessesRepository,
+          periodicDeploymentService = createPeriodicDeploymentService(modelData, dependencies, config),
           schedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
           processConfigEnricherFactory = ProcessConfigEnricherFactory.noOp,
           periodicBatchConfig = periodicBatchConfig,

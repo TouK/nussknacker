@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.common.periodic.service
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.StatusDetails
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.common.periodic.model.PeriodicProcessDeployment
 
 /*
   Listener is at-least-once. If there are problems e.g. with DB, invocation can be repeated for same event.
@@ -21,29 +21,28 @@ trait PeriodicProcessListenerFactory {
 }
 
 sealed trait PeriodicProcessEvent {
-  val deployment: PeriodicProcessDeployment[CanonicalProcess]
+  val deployment: PeriodicProcessDeployment
 }
 
 case class DeployedEvent(
-    deployment: PeriodicProcessDeployment[CanonicalProcess],
+    deployment: PeriodicProcessDeployment,
     externalDeploymentId: Option[ExternalDeploymentId]
 ) extends PeriodicProcessEvent
 
-case class FinishedEvent(deployment: PeriodicProcessDeployment[CanonicalProcess], processState: Option[StatusDetails])
+case class FinishedEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails])
     extends PeriodicProcessEvent
 
 case class FailedOnDeployEvent(
-    deployment: PeriodicProcessDeployment[CanonicalProcess],
+    deployment: PeriodicProcessDeployment,
     processState: Option[StatusDetails]
 ) extends PeriodicProcessEvent
 
 case class FailedOnRunEvent(
-    deployment: PeriodicProcessDeployment[CanonicalProcess],
+    deployment: PeriodicProcessDeployment,
     processState: Option[StatusDetails]
 ) extends PeriodicProcessEvent
 
-case class ScheduledEvent(deployment: PeriodicProcessDeployment[CanonicalProcess], firstSchedule: Boolean)
-    extends PeriodicProcessEvent
+case class ScheduledEvent(deployment: PeriodicProcessDeployment, firstSchedule: Boolean) extends PeriodicProcessEvent
 
 object EmptyListener extends EmptyListener
 

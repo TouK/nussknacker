@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.common.periodic.service
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.common.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.common.periodic.service.ProcessConfigEnricher.{
   DeployData,
   EnrichedProcessConfig,
@@ -31,7 +31,6 @@ trait ProcessConfigEnricher {
 object ProcessConfigEnricher {
 
   trait ProcessConfigEnricherInputData {
-    def canonicalProcess: CanonicalProcess
     def inputConfigDuringExecutionJson: String
 
     def inputConfigDuringExecution: Config = {
@@ -40,13 +39,11 @@ object ProcessConfigEnricher {
 
   }
 
-  case class InitialScheduleData(canonicalProcess: CanonicalProcess, inputConfigDuringExecutionJson: String)
-      extends ProcessConfigEnricherInputData
+  case class InitialScheduleData(inputConfigDuringExecutionJson: String) extends ProcessConfigEnricherInputData
 
   case class DeployData(
-      canonicalProcess: CanonicalProcess,
       inputConfigDuringExecutionJson: String,
-      deployment: PeriodicProcessDeployment[CanonicalProcess]
+      deployment: PeriodicProcessDeployment
   ) extends ProcessConfigEnricherInputData
 
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)

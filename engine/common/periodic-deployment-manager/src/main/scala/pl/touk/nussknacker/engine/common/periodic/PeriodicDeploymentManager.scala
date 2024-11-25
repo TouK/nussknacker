@@ -8,8 +8,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.common.periodic.Utils.{createActorWithRetry, runSafely}
-import pl.touk.nussknacker.engine.common.periodic.db.PeriodicProcessesRepository
-import pl.touk.nussknacker.engine.common.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListenerFactory, ProcessConfigEnricherFactory}
+import pl.touk.nussknacker.engine.common.periodic.service.{
+  AdditionalDeploymentDataProvider,
+  PeriodicProcessListenerFactory,
+  ProcessConfigEnricherFactory
+}
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId}
 
 import java.time.Clock
@@ -20,7 +23,6 @@ object PeriodicDeploymentManager {
   def apply(
       delegate: DeploymentManager,
       periodicDeploymentService: PeriodicDeploymentService,
-      periodicProcessesRepository: PeriodicProcessesRepository,
       schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
       processConfigEnricherFactory: ProcessConfigEnricherFactory,
       periodicBatchConfig: PeriodicBatchConfig,
@@ -38,7 +40,7 @@ object PeriodicDeploymentManager {
     val service = new PeriodicProcessService(
       delegate,
       periodicDeploymentService,
-      periodicProcessesRepository,
+      dependencies.periodicProcessesManager,
       listener,
       additionalDeploymentDataProvider,
       periodicBatchConfig.deploymentRetry,
@@ -46,7 +48,8 @@ object PeriodicDeploymentManager {
       processConfigEnricher,
       clock,
       dependencies.actionService,
-      dependencies.configsFromProvider
+      dependencies.configsFromProvider,
+      periodicBatchConfig.processingType,
     )
 
     // These actors have to be created with retries because they can initially fail to create due to taken names,
@@ -62,7 +65,11 @@ object PeriodicDeploymentManager {
       dependencies.actorSystem
     )
 
-    val customActionsProvider = customActionsProviderFactory.create(periodicProcessesRepository, service)
+    val customActionsProvider = customActionsProviderFactory.create(
+      dependencies.periodicProcessesManager,
+      service,
+      periodicBatchConfig.processingType
+    )
 
     val toClose = () => {
       runSafely(listener.close())
@@ -76,17 +83,19 @@ object PeriodicDeploymentManager {
       service,
       schedulePropertyExtractorFactory(originalConfig),
       customActionsProvider,
+      periodicBatchConfig.processingType,
       toClose
     )
   }
 
 }
 
-class PeriodicDeploymentManager private[periodic] (
+class PeriodicDeploymentManager private[engine] (
     val delegate: DeploymentManager,
     service: PeriodicProcessService,
     schedulePropertyExtractor: SchedulePropertyExtractor,
     customActionsProvider: PeriodicCustomActionsProvider,
+    processingType: String,
     toClose: () => Unit
 )(implicit val ec: ExecutionContext)
     extends DeploymentManager
@@ -126,10 +135,10 @@ class PeriodicDeploymentManager private[periodic] (
         .schedule(
           scheduleProperty,
           processVersion,
-          canonicalProcess,
           deploymentData.deploymentId.toActionIdOpt.getOrElse(
             throw new IllegalArgumentException(s"deploymentData.deploymentId should be valid ProcessActionId")
           ),
+          processingType,
           cancelScenario(DMCancelScenarioCommand(processVersion.processName, deploymentData.user))
         )
         .map(_ => None)

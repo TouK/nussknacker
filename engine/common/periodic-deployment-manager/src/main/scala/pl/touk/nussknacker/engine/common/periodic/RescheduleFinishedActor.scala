@@ -14,7 +14,7 @@ object RescheduleFinishedActor {
     props(service.handleFinished, interval)
   }
 
-  private[periodic] def props(handleFinished: => Future[Unit], interval: FiniteDuration): Props = {
+  private[engine] def props(handleFinished: => Future[Unit], interval: FiniteDuration): Props = {
     Props(new RescheduleFinishedActor(handleFinished, interval))
   }
 

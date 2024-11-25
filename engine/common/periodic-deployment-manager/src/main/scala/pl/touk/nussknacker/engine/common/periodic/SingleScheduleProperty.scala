@@ -6,12 +6,43 @@ import com.cronutils.model.{Cron, CronType}
 import com.cronutils.parser.CronParser
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 
 import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
 import scala.util.Try
 
 object ScheduleProperty {
   implicit val configuration: Configuration = Configuration.default.withDefaults.withDiscriminator("type")
+
+  def toApi(scheduleProperty: ScheduleProperty): PeriodicProcessesManager.ScheduleProperty = scheduleProperty match {
+    case MultipleScheduleProperty(schedules) =>
+      PeriodicProcessesManager.MultipleScheduleProperty(schedules.view.mapValues(singleToApi).toMap)
+    case p: CronScheduleProperty =>
+      singleToApi(p)
+  }
+
+  private def singleToApi(
+      scheduleProperty: SingleScheduleProperty
+  ): PeriodicProcessesManager.SingleScheduleProperty = scheduleProperty match {
+    case CronScheduleProperty(labelOrCronExpr) =>
+      PeriodicProcessesManager.CronScheduleProperty(labelOrCronExpr)
+  }
+
+  def fromApi(
+      scheduleProperty: PeriodicProcessesManager.ScheduleProperty
+  ): ScheduleProperty = scheduleProperty match {
+    case PeriodicProcessesManager.MultipleScheduleProperty(schedules) =>
+      MultipleScheduleProperty(schedules.view.mapValues(singleFromApi).toMap)
+    case p: PeriodicProcessesManager.CronScheduleProperty =>
+      singleFromApi(p)
+  }
+
+  private def singleFromApi(
+      singleScheduleProperty: PeriodicProcessesManager.SingleScheduleProperty
+  ): SingleScheduleProperty = singleScheduleProperty match {
+    case PeriodicProcessesManager.CronScheduleProperty(labelOrCronExpr) => CronScheduleProperty(labelOrCronExpr)
+  }
+
 }
 
 @ConfiguredJsonCodec sealed trait ScheduleProperty

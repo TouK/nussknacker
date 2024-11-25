@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.common.periodic
 
 import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.{DMCustomActionCommand, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.common.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionResult}
 
 import java.net.URI
@@ -13,11 +13,11 @@ import scala.concurrent.{ExecutionContext, Future}
 class WithRunNowPeriodicCustomActionsProviderFactory extends PeriodicCustomActionsProviderFactory {
 
   override def create(
-      periodicProcessesRepository: PeriodicProcessesRepository,
-      service: PeriodicProcessService
+      periodicProcessesManager: PeriodicProcessesManager,
+      service: PeriodicProcessService,
+      processingType: String,
   ): PeriodicCustomActionsProvider = new PeriodicCustomActionsProvider with LazyLogging {
     implicit val ec: ExecutionContext = ExecutionContext.global
-    import periodicProcessesRepository._
 
     override def customActions: List[CustomActionDefinition] = List(InstantBatchCustomAction())
 
@@ -45,7 +45,7 @@ class WithRunNowPeriodicCustomActionsProviderFactory extends PeriodicCustomActio
           .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
       )
       processDeploymentWithProcessJson <- OptionT.liftF(
-        periodicProcessesRepository.findProcessData(processDeployment.id).run
+        periodicProcessesManager.findProcessData(processDeployment.id, processingType)
       )
       _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
     } yield ()

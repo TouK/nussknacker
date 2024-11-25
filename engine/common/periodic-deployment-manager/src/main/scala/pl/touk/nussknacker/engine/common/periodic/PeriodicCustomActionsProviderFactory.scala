@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.common.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.DMCustomActionCommand
-import pl.touk.nussknacker.engine.common.periodic.db.PeriodicProcessesRepository
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionResult}
 
 import scala.concurrent.Future
@@ -9,15 +9,16 @@ import scala.concurrent.Future
 trait PeriodicCustomActionsProviderFactory {
 
   def create(
-      periodicProcessesRepository: PeriodicProcessesRepository,
-      periodicProcessService: PeriodicProcessService
+      periodicProcessesManager: PeriodicProcessesManager,
+      periodicProcessService: PeriodicProcessService,
+      processingType: String,
   ): PeriodicCustomActionsProvider
 
 }
 
 object PeriodicCustomActionsProviderFactory {
-  def noOp: PeriodicCustomActionsProviderFactory = (_: PeriodicProcessesRepository, _: PeriodicProcessService) =>
-    EmptyPeriodicCustomActionsProvider
+  def noOp: PeriodicCustomActionsProviderFactory =
+    (_: PeriodicProcessesManager, _: PeriodicProcessService, _: String) => EmptyPeriodicCustomActionsProvider
 }
 
 trait PeriodicCustomActionsProvider {

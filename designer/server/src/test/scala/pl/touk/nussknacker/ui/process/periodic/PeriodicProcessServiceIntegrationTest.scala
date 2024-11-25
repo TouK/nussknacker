@@ -12,17 +12,32 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{
+  PeriodicProcessDeploymentState,
+  PeriodicProcessDeploymentStatus,
+  ScheduleData,
+  ScheduleDeploymentData,
+  SchedulesState
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
+import pl.touk.nussknacker.engine.common.periodic.service._
+import pl.touk.nussknacker.engine.common.periodic.{
+  CronScheduleProperty,
+  DeploymentRetryConfig,
+  MultipleScheduleProperty,
+  PeriodicExecutionConfig,
+  PeriodicProcessException,
+  PeriodicProcessService
+}
+import pl.touk.nussknacker.engine.management.periodic.flink.{DeploymentManagerStub, JarManagerStub}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithPostgresDbTesting
-import pl.touk.nussknacker.ui.process.periodic.PeriodicProcessService.PeriodicProcessStatus
-import pl.touk.nussknacker.ui.process.periodic.model._
-import pl.touk.nussknacker.ui.process.periodic.repository.SlickPeriodicProcessesRepository
-import pl.touk.nussknacker.ui.process.periodic.service._
+import pl.touk.nussknacker.ui.process.repository.SlickPeriodicProcessesRepository
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import java.time._
@@ -89,8 +104,9 @@ class PeriodicProcessServiceIntegrationTest
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
         periodicDeploymentService = jarManagerStub,
-        scheduledProcessesRepository =
-          new SlickPeriodicProcessesRepository(db, dbProfile, fixedClock(currentTime), processingType),
+        periodicProcessesManager = new RepositoryBasedPeriodicProcessesManager(
+          new SlickPeriodicProcessesRepository(db, dbProfile, fixedClock(currentTime))
+        ),
         periodicProcessListener = new PeriodicProcessListener {
 
           override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {
@@ -105,7 +121,8 @@ class PeriodicProcessServiceIntegrationTest
         processConfigEnricher = ProcessConfigEnricher.identity,
         clock = fixedClock(currentTime),
         new ProcessingTypeActionServiceStub,
-        Map.empty
+        Map.empty,
+        processingType,
       )
 
   }
@@ -127,32 +144,32 @@ class PeriodicProcessServiceIntegrationTest
       .schedule(
         cronEveryHour,
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
     service
       .schedule(
         cronEvery30Minutes,
         ProcessVersion.empty.copy(processName = every30MinutesProcessName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
     service
       .schedule(
         cronEvery4Hours,
         ProcessVersion.empty.copy(processName = every4HoursProcessName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
     otherProcessingTypeService
       .schedule(
         cronEveryHour,
         ProcessVersion.empty.copy(processName = otherProcessName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
 
@@ -242,8 +259,8 @@ class PeriodicProcessServiceIntegrationTest
       .schedule(
         cronEveryHour,
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
 
@@ -298,8 +315,8 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
 
@@ -313,8 +330,8 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = ProcessName("other")),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
 
@@ -363,8 +380,8 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
 
@@ -432,8 +449,8 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
 
@@ -556,8 +573,8 @@ class PeriodicProcessServiceIntegrationTest
       service.schedule(
         cronEveryHour,
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
     }
 
@@ -586,8 +603,8 @@ class PeriodicProcessServiceIntegrationTest
       .schedule(
         cronEveryHour,
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess,
-        randomProcessActionId
+        randomProcessActionId,
+        processingType,
       )
       .futureValue
     currentTime = timeToTriggerCheck

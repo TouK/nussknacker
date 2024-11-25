@@ -1,13 +1,13 @@
-package pl.touk.nussknacker.engine.management.periodic.flink
+package pl.touk.nussknacker.engine.management.periodic.flink.flink
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicDeploymentService
-import pl.touk.nussknacker.engine.common.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.management.periodic.flink.FlinkPeriodicDeploymentService.jarFileNameRuntimeParam
+import pl.touk.nussknacker.engine.management.periodic.flink.flink.FlinkPeriodicDeploymentService.jarFileNameRuntimeParam
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
 import pl.touk.nussknacker.engine.management.{
   FlinkConfig,
@@ -53,13 +53,11 @@ class FlinkPeriodicDeploymentService(
 
   override def prepareDeploymentWithRuntimeParams(
       processVersion: ProcessVersion,
-      canonicalProcess: CanonicalProcess
-  ): Future[DeploymentWithRuntimeParams[CanonicalProcess]] = {
+  ): Future[DeploymentWithRuntimeParams] = {
     logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).map { jarFileName =>
       DeploymentWithRuntimeParams(
         processVersion = processVersion,
-        process = canonicalProcess,
         inputConfigDuringExecutionJson = inputConfigDuringExecution.serialized,
         runtimeParams = RuntimeParams(Map(jarFileNameRuntimeParam -> jarFileName))
       )
@@ -77,8 +75,9 @@ class FlinkPeriodicDeploymentService(
   }
 
   override def deployWithRuntimeParams(
-      deployment: DeploymentWithRuntimeParams[CanonicalProcess],
-      deploymentData: DeploymentData
+      deployment: DeploymentWithRuntimeParams,
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess,
   ): Future[Option[ExternalDeploymentId]] = {
     val processVersion = deployment.processVersion
     deployment.runtimeParams.params.get(jarFileNameRuntimeParam) match {
@@ -91,7 +90,7 @@ class FlinkPeriodicDeploymentService(
           deployment.inputConfigDuringExecutionJson,
           processVersion,
           deploymentData,
-          deployment.process
+          canonicalProcess,
         )
         flinkClient.runProgram(
           jarFile,
