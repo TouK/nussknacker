@@ -1,3 +1,4 @@
+import { min } from "lodash";
 import React, {
     createContext,
     PropsWithChildren,
@@ -11,6 +12,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { useDebouncedCallback } from "use-debounce";
 import {
     copySelection,
@@ -23,17 +25,15 @@ import {
     selectAll,
 } from "../../actions/nk";
 import { error, success } from "../../actions/notificationActions";
-import { ActionCreators as UndoActionCreators } from "redux-undo";
 import * as ClipboardUtils from "../../common/ClipboardUtils";
 import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
+import { useInterval } from "../../containers/Interval";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
 import { canModifySelectedNodes, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import NodeUtils from "./NodeUtils";
-import { min } from "lodash";
-import { useInterval } from "../../containers/Interval";
 
 const hasTextSelection = () => !!window.getSelection().toString();
 

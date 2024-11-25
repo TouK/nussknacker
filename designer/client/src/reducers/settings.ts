@@ -54,7 +54,9 @@ const initialState: SettingsState = {
     loggedUser: {},
     featuresSettings: {},
     authenticationSettings: {},
-    processDefinitionData: {},
+    processDefinitionData: {
+        edgesForNodes: [],
+    },
     processToolbarsConfiguration: null,
 };
 
