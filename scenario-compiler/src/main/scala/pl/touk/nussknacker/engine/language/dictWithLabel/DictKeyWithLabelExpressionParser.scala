@@ -24,11 +24,11 @@ case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[Strin
 
   // We should support at least types defined in FragmentParameterValidator#permittedTypesForEditors
   override def typingResult: TypingResult = expectedType match {
-    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[Long]) && Try(key.toLong).toOption.isDefined =>
+    case clazz: TypedClass if clazz.canBeConvertedTo(Typed[Long]) && Try(key.toLong).toOption.isDefined =>
       TypedObjectWithValue(clazz.runtimeObjType, key.toLong)
-    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[Boolean]) && Try(key.toBoolean).toOption.isDefined =>
+    case clazz: TypedClass if clazz.canBeConvertedTo(Typed[Boolean]) && Try(key.toBoolean).toOption.isDefined =>
       TypedObjectWithValue(clazz.runtimeObjType, key.toBoolean)
-    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[String]) =>
+    case clazz: TypedClass if clazz.canBeConvertedTo(Typed[String]) =>
       TypedObjectWithValue(clazz.runtimeObjType, key)
     case _ => expectedType
   }
