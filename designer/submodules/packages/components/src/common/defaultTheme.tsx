@@ -83,7 +83,6 @@ export const useDefaultTheme = (parent = {}): Theme => {
                             },
 
                             columnHeaderTitleContainer: {
-                                containerBackground: blendLighten(root.palette.background.paper, 0.12),
                                 padding: "0 6px",
                             },
                             "cell--withRenderer": {
