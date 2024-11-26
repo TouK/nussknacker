@@ -15,6 +15,7 @@
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 * [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
   expression parts used in SpEL template 
+* [#7240](https://github.com/TouK/nussknacker/pull/7240) Fixed race condition problems when getting value from `ParsedSpelExpression` 
 
 ## 1.18
 
