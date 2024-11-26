@@ -54,7 +54,7 @@ final case class ParsedSpelExpression(
   @volatile var parsed: Expression = initial
 
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
-    def value(): T = parsed.getValue(context, desiredResultType).asInstanceOf[T]
+    def value(): T = synchronized { parsed.getValue(context, desiredResultType).asInstanceOf[T] }
 
     try {
       value()
