@@ -15,6 +15,7 @@
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 * [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
   expression parts used in SpEL template 
+* [#7184](https://github.com/TouK/nussknacker/pull/7162) Improve Nu Designer API notifications endpoint, to include events related to currently displayed scenario
 
 ## 1.18
 
