@@ -7,12 +7,14 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
-  * This class determine if type can be subclass of other type. It basically based on fact that TypingResults are
-  * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
-  *
-  * This class, like CommonSupertypeFinder is in spirit of "Be type safety as much as possible, but also provide some helpful
-  * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
-  * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
+  * This class determine whether we can convert a class to another one. We provide two modes of conversion -
+ * 1. Loose conversion is based on the fact that TypingResults are
+ * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult). It is basically how SpEL
+ * can convert things. Like CommonSupertypeFinder it's in the spirit of "Be type safe as much as possible, but also provide some helpful
+ * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
+ * 2. Strict conversion checks whether we can convert the type without losing precision. Eg only widening numerical types
+ * are allowed ( Int -> Long). For other types it should work the same as a loose conversion.
+ *
   */
 object AssignabilityDeterminer {
 
