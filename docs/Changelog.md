@@ -20,6 +20,7 @@
 
 ### 1.18.1 (Not released yet)
 
+* [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
 * [#7237](https://github.com/TouK/nussknacker/pull/7237) Fix: ToJsonEncoder keeps order fields during encoding map
 
 ### 1.18.0 (22 November 2024)
@@ -113,10 +114,6 @@
 * [#7192](https://github.com/TouK/nussknacker/pull/7192) Fix "Failed to get node validation" when opening node details referencing non-existing component
 * [#7190](https://github.com/TouK/nussknacker/pull/7190) Fix "Failed to get node validation" when opening fragment node details for referencing non-existing fragment 
 * [#7215](https://github.com/TouK/nussknacker/pull/7215) Change typing text to spinner during validation and provide delayed adding on enter until validation finishes in a scenario labels and fragment input
-
-### 1.18.1 (Not released yet)
-
-* [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
 
 ## 1.17
 
