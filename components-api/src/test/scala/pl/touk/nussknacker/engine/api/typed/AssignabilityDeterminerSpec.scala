@@ -6,44 +6,44 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
-import pl.touk.nussknacker.engine.api.typed._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
 class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
 
-  // Test data table: (sourceType, targetType, expectedStrict, expectedLoose)
-  val strictConversionCases = Table(
+  val wideningConversionCases = Table(
     ("sourceType", "targetType", "expectedStrict", "expectedLoose"),
-    (typing.Typed[Int], typing.Typed[Int], Valid(()), Valid(())),                           // Same primitive type
-    (typing.Typed[Int], typing.Typed[Double], Valid(()), Valid(())),                        // Primitive widening
-    (typing.Typed[List[Int]], typing.Typed[List[Int]], Valid(()), Valid(())),               // Same generic type
-    (typing.Typed[List[Int]], typing.Typed[List[Any]], Valid(()), Valid(())),               // Generic type variance
-    (typing.Typed[Map[String, Int]], typing.Typed[Map[String, Int]], Valid(()), Valid(())), // Same map type
-    (typing.Typed[Map[String, Int]], typing.Typed[Map[Any, Any]], Valid(()), Valid(()))
-  ) // Different records
+    (Typed[Int], Typed[Int], Valid(()), Valid(())),
+    (Typed[Int], Typed[Double], Valid(()), Valid(())),
+    (Typed[List[Int]], Typed[List[Int]], Valid(()), Valid(())),
+    (Typed[List[Int]], Typed[List[Any]], Valid(()), Valid(())),
+    (Typed[Map[String, Int]], Typed[Map[String, Int]], Valid(()), Valid(())),
+    (Typed[Map[String, Int]], Typed[Map[Any, Any]], Valid(()), Valid(()))
+  )
 
-  test("isAssignableStrict should pass for strict cases") {
-    forAll(strictConversionCases) { (sourceType, targetType, expectedStrict, _) =>
+  test("isAssignableStrict should pass for widening cases") {
+    forAll(wideningConversionCases) { (sourceType, targetType, expectedStrict, _) =>
       val result = AssignabilityDeterminer.isAssignableStrict(sourceType, targetType)
       result shouldBe expectedStrict
     }
   }
 
-  test("isAssignableLoose should pass for strict cases") {
-    forAll(strictConversionCases) { (sourceType, targetType, _, expectedLoose) =>
+  test("isAssignableLoose should pass for widening cases") {
+    forAll(wideningConversionCases) { (sourceType, targetType, _, expectedLoose) =>
       val result = AssignabilityDeterminer.isAssignableLoose(sourceType, targetType)
       result shouldBe expectedLoose
     }
   }
 
-  val looseConversionCases = Table(
+  val narrowingConversionCases = Table(
     ("sourceType", "targetType", "expectedStrict", "expectedLoose"),
-    (typing.Typed[Long], typing.Typed[Int], Invalid(NonEmptyList.of("")), Valid(())),
-    (typing.Typed[Double], typing.Typed[Int], Invalid(NonEmptyList.of("")), Invalid(NonEmptyList.of(""))),
-    (typing.Typed[BigDecimal], typing.Typed[Int], Invalid(NonEmptyList.of("")), Invalid(NonEmptyList.of("")))
+    (Typed[Long], Typed[Int], Invalid(NonEmptyList.of("")), Valid(())),
+    (Typed[Long], Typed[Short], Invalid(NonEmptyList.of("")), Valid(())),
+    (Typed[Double], Typed[Float], Invalid(NonEmptyList.of("")), Valid(())),
+    (Typed[BigDecimal], Typed[Double], Invalid(NonEmptyList.of("")), Valid(()))
   )
 
-  test("isAssignableStrict should fail for looser numerical cases") {
-    forAll(looseConversionCases) { (sourceType, targetType, expectedStrict, _) =>
+  test("isAssignableStrict should fail for narrowing numerical cases") {
+    forAll(narrowingConversionCases) { (sourceType, targetType, expectedStrict, _) =>
       val result = AssignabilityDeterminer.isAssignableStrict(sourceType, targetType)
       result match {
         case Valid(_) if expectedStrict.isValid     => succeed
@@ -53,8 +53,8 @@ class AssignabilityDeterminerSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  test("isAssignableLoose should pass for looser cases") {
-    forAll(looseConversionCases) { (sourceType, targetType, _, expectedLoose) =>
+  test("isAssignableLoose should pass for narrowing cases") {
+    forAll(narrowingConversionCases) { (sourceType, targetType, _, expectedLoose) =>
       val result = AssignabilityDeterminer.isAssignableLoose(sourceType, targetType)
       result match {
         case Valid(_) if expectedLoose.isValid     => succeed
