@@ -44,6 +44,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Removed unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`.
   `MultiMap` was incorrectly handled by Flink's default Kryo serializer, so if you want to copy it to your code
   you should write and register a proper serializer.
+* [#7115](https://github.com/TouK/nussknacker/pull/7115) 
+  * Typing api changes:
+    * CanBeSubclassDeterminer.canBeSubclassOf changed to
+      AssignabilityDeterminer.isAssignableLoose.
+    * TypingResult.canBeSubclassOf changed to TypingResult.canBeConvertedTo
 
 ### REST API changes
 
@@ -60,6 +65,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * added optional query param `enrichedWithUiConfig`
         * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 
+* [#7115](https://github.com/TouK/nussknacker/pull/7115) Changes in DictApiEndpoints:
+    *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
 ### Configuration changes
 
 * [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
@@ -605,9 +612,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `api/parameters/*/validate` request
     * `scenarioName` is removed
     * `processProperties` is removed
-* [#7115](https://github.com/TouK/nussknacker/pull/7115) Changes in DictApiEndpoints:
-  *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
-
 ### Configuration changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
