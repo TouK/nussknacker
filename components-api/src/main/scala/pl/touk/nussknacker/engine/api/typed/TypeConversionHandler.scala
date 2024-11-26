@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrate
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
 
+import java.math.BigInteger
 import java.nio.charset.Charset
 import java.time._
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
@@ -36,8 +37,8 @@ object TypeConversionHandler {
       cl
     }
 
-    def canConvert(value: String, superclassCandidate: TypedClass): Boolean = {
-      ClassUtils.isAssignable(superclassCandidate.klass, klass, true) && Try(
+    def canConvert(value: String, to: TypedClass): Boolean = {
+      ClassUtils.isAssignable(to.klass, klass, true) && Try(
         convert(value)
       ).isSuccess
     }
@@ -64,26 +65,33 @@ object TypeConversionHandler {
     StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
   )
 
-  def canBeLooselyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
-    handleLooseConversion(givenType, superclassCandidate)
+  def canBeLooselyConvertedTo(from: SingleTypingResult, to: TypedClass): Boolean =
+    canBeConvertedToAux(from, to)
 
-  private def handleLooseConversion(
-      givenType: SingleTypingResult,
-      superclassCandidate: TypedClass
-  ) = {
-    handleStringToValueClassConversions(givenType, superclassCandidate) ||
-    handleLooseNumberConversions(givenType.runtimeObjType, superclassCandidate)
+  def canBeStrictlyConvertedTo(from: SingleTypingResult, to: TypedClass): Boolean =
+    canBeConvertedToAux(from, to, strict = true)
+
+  private def canBeConvertedToAux(from: SingleTypingResult, to: TypedClass, strict: Boolean = false) = {
+    handleStringToValueClassConversions(from, to) ||
+    handleNumberConversion(from.runtimeObjType, to, strict)
+  }
+
+  private def handleNumberConversion(from: SingleTypingResult, to: TypedClass, strict: Boolean) = {
+    val boxedGivenClass          = ClassUtils.primitiveToWrapper(from.runtimeObjType.klass)
+    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(to.klass)
+
+    if (strict)
+      handleStrictNumberConversions(boxedGivenClass, boxedSuperclassCandidate)
+    else
+      handleLooseNumberConversion(boxedGivenClass, boxedSuperclassCandidate)
   }
 
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
-  private def handleLooseNumberConversions(
-      givenClass: TypedClass,
-      superclassCandidate: TypedClass
+  private def handleLooseNumberConversion(
+      boxedGivenClass: Class[_],
+      boxedSuperclassCandidate: Class[_]
   ): Boolean = {
-    val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
-    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
     // We can't check precision here so we need to be loose here
-    // TODO: Add feature flag: strictNumberPrecisionChecking (default false?)
     if (NumberTypesPromotionStrategy
         .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
       ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
@@ -94,21 +102,11 @@ object TypeConversionHandler {
     }
   }
 
-  def canBeStrictlyConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
-    handleStrictConversion(givenType, superclassCandidate)
-
-  private def handleStrictConversion(givenType: SingleTypingResult, superclassCandidate: TypedClass) = {
-    handleStringToValueClassConversions(givenType, superclassCandidate) ||
-    handleStrictNumberConversions(givenType.runtimeObjType, superclassCandidate)
-  }
-
-  private def handleStrictNumberConversions(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
-
-    val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
-    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
-    // TODO: This is probably wrong - relying on index of AllNumbers
-    (boxedGivenClass, boxedSuperclassCandidate) match {
-      case (f, t) if ClassUtils.isAssignable(f, t, true) => true
+  private def handleStrictNumberConversions(givenClass: Class[_], to: Class[_]): Boolean = {
+    (givenClass, to) match {
+      case (bigInteger, t)
+          if (bigInteger == classOf[BigInteger] && (t == classOf[BigDecimal] || t == classOf[BigInteger])) =>
+        true
       case (f, t) if (AllNumbers.contains(f) && AllNumbers.contains(t)) =>
         AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
       case _ => false
@@ -117,12 +115,12 @@ object TypeConversionHandler {
   }
 
   private def handleStringToValueClassConversions(
-      givenType: SingleTypingResult,
-      superclassCandidate: TypedClass
+      from: SingleTypingResult,
+      to: TypedClass
   ): Boolean =
-    givenType match {
+    from match {
       case TypedObjectWithValue(_, str: String) =>
-        stringConversions.exists(_.canConvert(str, superclassCandidate))
+        stringConversions.exists(_.canConvert(str, to))
       case _ => false
     }
 
