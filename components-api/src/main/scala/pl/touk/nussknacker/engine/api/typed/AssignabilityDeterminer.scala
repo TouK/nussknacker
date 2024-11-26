@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
  * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult). It is basically how SpEL
  * can convert things. Like CommonSupertypeFinder it's in the spirit of "Be type safe as much as possible, but also provide some helpful
  * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
- * 2. Strict conversion checks whether we can convert the type without losing precision. Eg only widening numerical types
+ * 2. Strict conversion checks whether we can convert to a wider type. Eg only widening numerical types
  * are allowed ( Int -> Long). For other types it should work the same as a loose conversion.
  *
   */

@@ -62,6 +62,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7162](https://github.com/TouK/nussknacker/pull/7162) When component declares that requires parameter with either `SpelTemplateParameterEditor` 
   or `SqlParameterEditor` editor, in the runtime, for the expression evaluation result, will be used the new `TemplateEvaluationResult` 
   class instead of `String` class. To access the previous `String` use `TemplateEvaluationResult.renderedTemplate` method.
+* [#7246](https://github.com/TouK/nussknacker/pull/7246) 
+  * Typing api changes:
+    * CanBeSubclassDeterminer.canBeSubclassOf changed to
+      AssignabilityDeterminer.isAssignableLoose.
+    * TypingResult.canBeSubclassOf changed to TypingResult.canBeConvertedTo
 
 ### REST API changes
 
@@ -78,6 +83,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * added optional query param `enrichedWithUiConfig`
         * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 
+* [#7246](https://github.com/TouK/nussknacker/pull/7246) Changes in DictApiEndpoints:
+    *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
 ### Configuration changes
 
 * [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
@@ -625,9 +632,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `api/parameters/*/validate` request
     * `scenarioName` is removed
     * `processProperties` is removed
-* [#7115](https://github.com/TouK/nussknacker/pull/7115) Changes in DictApiEndpoints:
-  *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
-
 ### Configuration changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
