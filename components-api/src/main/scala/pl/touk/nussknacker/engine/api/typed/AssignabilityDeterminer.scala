@@ -7,7 +7,7 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
-  * This class determine whether we can convert a class to another one. We provide two modes of conversion -
+  * This class determine whether we can assign one type to another type - that is if its the same class, a subclass or can be converted to another type. We provide two modes of conversion -
  * 1. Loose conversion is based on the fact that TypingResults are
  * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult). It is basically how SpEL
  * can convert things. Like CommonSupertypeFinder it's in the spirit of "Be type safe as much as possible, but also provide some helpful
