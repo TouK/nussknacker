@@ -26,6 +26,12 @@ interface ItemProps {
     errors: NodeValidationError[];
 }
 
+//This projection is used for backward-compatibility reasons, since previously fragment input definition type options display part contained full class name
+function resolveSimpleClassName(refClazzName: string): string {
+    const parts = refClazzName.split(".");
+    return parts[parts.length - 1];
+}
+
 export function Item(props: ItemProps): JSX.Element {
     const { index, item, namespace, variableTypes, readOnly, showValidation, onChange, options, errors } = props;
     const { getIsOpen, toggleIsOpen } = useFieldsContext();
@@ -36,7 +42,7 @@ export function Item(props: ItemProps): JSX.Element {
     const [isMarked] = useDiffMark();
     const getCurrentOption = useCallback(
         (typ: ReturnedType | undefined) => {
-            const fallbackValue = { label: typ?.refClazzName, value: typ?.refClazzName };
+            const fallbackValue = { label: resolveSimpleClassName(typ?.refClazzName), value: resolveSimpleClassName(typ?.refClazzName) };
             const foundValue = options.find((item) => isEqual(typ?.refClazzName, item.value));
             return foundValue || fallbackValue;
         },
@@ -70,7 +76,7 @@ export function Item(props: ItemProps): JSX.Element {
                     value={getCurrentOption(item.typ)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
-                    fieldErrors={getValidationErrorsForField(errors, `type`)}
+                    fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$typ`)}
                 />
                 <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>

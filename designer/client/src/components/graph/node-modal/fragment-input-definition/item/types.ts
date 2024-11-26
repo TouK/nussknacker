@@ -81,11 +81,7 @@ export function isAnyValueParameter(item: PermittedTypeParameterVariant): item i
 }
 
 export function isPermittedTypeVariant(item: FragmentInputParameter): item is PermittedTypeParameterVariant {
-    return [
-        item.typ.refClazzName.includes("String"),
-        item.typ.refClazzName.includes("Boolean"),
-        item.typ.refClazzName.includes("Long"),
-    ].includes(true);
+    return [item.typ.refClazzName === "String", item.typ.refClazzName === "Boolean", item.typ.refClazzName === "Long"].includes(true);
 }
 
 export type FieldName = `$param.${string}.$${string}`;
