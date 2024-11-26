@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.util.ServiceLoader
-
 import java.util.UUID
+import scala.collection.SeqMap
+import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 
 object ToJsonEncoder {
@@ -88,9 +89,13 @@ case class ToJsonEncoder(
   // TODO: make encoder aware of NU Types to encode things like multiset differently. Right now its handled by calling
   //  toString on keys.
   private def encodeMap(map: Map[_, _]) = {
-    val mapWithStringKeys = map.view.map { case (k, v) =>
-      k.toString -> v
-    }.toMap
+    // TODO: Switch to SeqMap after removing support for Scala 2.12
+    val mapWithStringKeys = ListMap.from(
+      map.toList.map { case (k, v) =>
+        k.toString -> v
+      }
+    )
+
     fromFields(mapWithStringKeys.mapValuesNow(encode))
   }
 
