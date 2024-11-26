@@ -245,12 +245,7 @@ trait NuResourcesTest
       testCode: => Assertion
   ): Assertion =
     createProcessRequest(process.name) { _ =>
-      // FIXME: sometimes this cant be decoded
-      logger.error(
-        s"FLAKY TEST PROBLEM in test `snapshots process` ---- decoded json: ${parser.decode[Json](responseAs[String]).toString}"
-      )
       val json = parser.decode[Json](responseAs[String]).rightValue
-      logger.error(json.toString)
       val resp = CreateProcessResponse(json)
 
       resp.processName shouldBe process.name

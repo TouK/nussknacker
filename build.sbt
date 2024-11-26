@@ -1,6 +1,5 @@
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
-import org.slf4j.LoggerFactory
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
 import sbt.Keys._
@@ -161,14 +160,6 @@ def forScalaVersion[T](version: String)(provide: PartialFunction[(Int, Int), T])
   }
 }
 
-lazy val testGroupStartLogger = new TestReportListener {
-  private val logger                                            = LoggerFactory.getLogger("TestListener")
-  override def startGroup(name: String): Unit                   = logger.error(s"Starting test group [$name]")
-  override def testEvent(event: TestEvent): Unit                = ()
-  override def endGroup(name: String, t: Throwable): Unit       = ()
-  override def endGroup(name: String, result: TestResult): Unit = ()
-}
-
 lazy val commonSettings =
   publishSettings ++
     Seq(
@@ -179,12 +170,7 @@ lazy val commonSettings =
         "confluent" at "https://packages.confluent.io/maven",
       ),
       // We ignore k8s tests to keep development setup low-dependency
-      Test / testOptions ++= Seq(
-        scalaTestReports,
-        ignoreSlowTests,
-        ignoreExternalDepsTests,
-        Tests.Listeners(List(testGroupStartLogger))
-      ),
+      Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
       libraryDependencies += compilerPlugin(
         "com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value) {
