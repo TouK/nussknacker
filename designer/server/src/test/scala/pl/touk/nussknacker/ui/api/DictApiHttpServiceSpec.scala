@@ -31,10 +31,7 @@ class DictApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
         .Then()
         .statusCode(200)
-        .equalsJsonBody(
-          s"""[
-             |]""".stripMargin
-        )
+        .equalsJsonBody("[]")
 
     }
 
