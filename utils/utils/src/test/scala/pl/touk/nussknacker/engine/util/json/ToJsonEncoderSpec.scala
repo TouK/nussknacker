@@ -9,7 +9,6 @@ import pl.touk.nussknacker.test.ClassLoaderWithServices
 import java.time._
 import java.util
 import java.util.UUID
-import scala.collection.SeqMap
 import scala.collection.immutable.{ListMap, ListSet}
 
 class ToJsonEncoderSpec extends AnyFunSpec with Matchers {
@@ -111,13 +110,11 @@ class ToJsonEncoderSpec extends AnyFunSpec with Matchers {
       "booleanValue"  -> true
     )
 
-    encoder.encode(map) shouldBe Json.obj(
-      "intNumber"     -> fromInt(42),
-      "floatNumber"   -> fromFloatOrNull(42.42f),
-      "someTimestamp" -> fromLong(1496930555793L),
-      "someString"    -> fromString("hello"),
-      "booleanValue"  -> fromBoolean(true),
-    )
+    val expectedJson =
+      """{"intNumber":42,"floatNumber":42.42,"someTimestamp":1496930555793,"someString":"hello","booleanValue":true}"""
+
+    // We compare string because we want to check the order
+    encoder.encode(map).noSpaces shouldBe expectedJson
   }
 
 }
