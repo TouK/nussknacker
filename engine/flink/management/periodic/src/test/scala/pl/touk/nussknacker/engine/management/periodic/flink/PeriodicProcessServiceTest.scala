@@ -9,7 +9,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.api.deployment.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.{
+  PeriodicProcessDeployment,
+  PeriodicProcessDeploymentStatus
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
@@ -19,7 +22,17 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.common.periodic._
 import pl.touk.nussknacker.engine.common.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig
-import pl.touk.nussknacker.engine.common.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedOnDeployEvent, FailedOnRunEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
+import pl.touk.nussknacker.engine.common.periodic.service.{
+  AdditionalDeploymentDataProvider,
+  DeployedEvent,
+  FailedOnDeployEvent,
+  FailedOnRunEvent,
+  FinishedEvent,
+  PeriodicProcessEvent,
+  PeriodicProcessListener,
+  ProcessConfigEnricher,
+  ScheduledEvent
+}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.engine.management.periodic.flink.db.InMemPeriodicProcessesManager
 import pl.touk.nussknacker.engine.management.periodic.flink.db.InMemPeriodicProcessesManager.createPeriodicProcessDeployment
@@ -64,7 +77,7 @@ class PeriodicProcessServiceTest
   )
 
   class Fixture {
-    val manager                    = new InMemPeriodicProcessesManager(processingType = "testProcessingType")
+    val manager                       = new InMemPeriodicProcessesManager(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub                = new JarManagerStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
@@ -123,7 +136,6 @@ class PeriodicProcessServiceTest
       Clock.systemDefaultZone(),
       actionService,
       Map.empty,
-      "testProcessingType",
     )
 
   }
@@ -184,7 +196,7 @@ class PeriodicProcessServiceTest
     )
 
     val finished :: scheduled :: Nil =
-      f.manager.deploymentEntities.map(createPeriodicProcessDeployment(processEntity,_)).toList
+      f.manager.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
     f.events.toList shouldBe List(FinishedEvent(finished, None), ScheduledEvent(scheduled, firstSchedule = false))
   }
 
@@ -236,7 +248,7 @@ class PeriodicProcessServiceTest
     )
 
     val finished :: scheduled :: Nil =
-      f.manager.deploymentEntities.map(createPeriodicProcessDeployment(processEntity,_)).toList
+      f.manager.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
     f.events.toList shouldBe List(
       FinishedEvent(finished, f.delegateDeploymentManagerStub.jobStatus),
       ScheduledEvent(scheduled, firstSchedule = false)
@@ -330,7 +342,7 @@ class PeriodicProcessServiceTest
     val f = new Fixture
 
     f.periodicProcessService
-      .schedule(CronScheduleProperty("0 0 * * * ?"), processVersion, randomProcessActionId, "testProcessingType")
+      .schedule(CronScheduleProperty("0 0 * * * ?"), processVersion, randomProcessActionId)
       .futureValue
 
     val processEntity = f.manager.processEntities.loneElement
@@ -413,7 +425,7 @@ class PeriodicProcessServiceTest
 
     def tryToSchedule(schedule: ScheduleProperty): Unit =
       f.periodicProcessService
-        .schedule(schedule, processVersion, randomProcessActionId, "testProcessingType")
+        .schedule(schedule, processVersion, randomProcessActionId)
         .futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())

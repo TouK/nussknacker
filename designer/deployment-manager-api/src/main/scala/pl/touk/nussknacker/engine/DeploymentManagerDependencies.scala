@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine
 
 import akka.actor.ActorSystem
 import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId}
-import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
+import pl.touk.nussknacker.engine.api.deployment.periodic.{PeriodicProcessesManager, PeriodicProcessesManagerProvider}
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessingTypeActionService,
   ProcessingTypeDeployedScenariosProvider,
@@ -16,7 +16,7 @@ case class DeploymentManagerDependencies(
     deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
     actionService: ProcessingTypeActionService,
     scenarioActivityManager: ScenarioActivityManager,
-    periodicProcessesManager: PeriodicProcessesManager,
+    periodicProcessesManagerProvider: PeriodicProcessesManagerProvider,
     executionContext: ExecutionContext,
     actorSystem: ActorSystem,
     sttpBackend: SttpBackend[Future, Any],

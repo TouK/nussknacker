@@ -45,7 +45,7 @@ class WithRunNowPeriodicCustomActionsProviderFactory extends PeriodicCustomActio
           .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
       )
       processDeploymentWithProcessJson <- OptionT.liftF(
-        periodicProcessesManager.findProcessData(processDeployment.id, processingType)
+        periodicProcessesManager.findProcessData(processDeployment.id)
       )
       _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
     } yield ()

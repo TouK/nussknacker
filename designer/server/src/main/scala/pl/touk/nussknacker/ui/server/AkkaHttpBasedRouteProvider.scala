@@ -64,7 +64,10 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
-import pl.touk.nussknacker.ui.process.periodic.RepositoryBasedPeriodicProcessesManager
+import pl.touk.nussknacker.ui.process.periodic.{
+  RepositoryBasedPeriodicProcessesManager,
+  RepositoryBasedPeriodicProcessesManagerProvider
+}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
@@ -753,7 +756,7 @@ class AkkaHttpBasedRouteProvider(
         scenarioActivityRepository,
         dbioActionRunner,
       ),
-      new RepositoryBasedPeriodicProcessesManager(periodicProcessesRepository),
+      new RepositoryBasedPeriodicProcessesManagerProvider(periodicProcessesRepository),
       system.dispatcher,
       system,
       sttpBackend,

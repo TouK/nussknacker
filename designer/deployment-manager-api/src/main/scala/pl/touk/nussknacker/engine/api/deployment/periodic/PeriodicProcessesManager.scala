@@ -16,7 +16,6 @@ trait PeriodicProcessesManager {
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
-      processingType: String,
   ): Future[PeriodicProcess]
 
   def markInactive(processId: PeriodicProcessId): Future[Unit]
@@ -28,11 +27,11 @@ trait PeriodicProcessesManager {
       deployMaxRetries: Int,
   ): Future[PeriodicProcessDeployment]
 
-  def findProcessData(id: PeriodicProcessDeploymentId, processingType: String): Future[PeriodicProcessDeployment]
+  def findProcessData(id: PeriodicProcessDeploymentId): Future[PeriodicProcessDeployment]
 
-  def findToBeDeployed(processingType: String): Future[Seq[PeriodicProcessDeployment]]
+  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]]
 
-  def findToBeRetried(processingType: String): Future[Seq[PeriodicProcessDeployment]]
+  def findToBeRetried: Future[Seq[PeriodicProcessDeployment]]
 
   def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit]
 
@@ -54,19 +53,16 @@ trait PeriodicProcessesManager {
   def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Future[SchedulesState]
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String
   ): Future[SchedulesState]
 
   def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
-      processingType: String,
   ): Future[SchedulesState]
 
   def fetchCanonicalProcess(
@@ -94,7 +90,6 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
-      processingType: String,
   ): Future[PeriodicProcess] = notImplemented
 
   override def markInactive(processId: PeriodicProcessId): Future[Unit] = notImplemented
@@ -108,12 +103,11 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
 
   override def findProcessData(
       id: PeriodicProcessDeploymentId,
-      processingType: String
   ): Future[PeriodicProcessDeployment] = notImplemented
 
-  override def findToBeDeployed(processingType: String): Future[Seq[PeriodicProcessDeployment]] = notImplemented
+  override def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = notImplemented
 
-  override def findToBeRetried(processingType: String): Future[Seq[PeriodicProcessDeployment]] = notImplemented
+  override def findToBeRetried: Future[Seq[PeriodicProcessDeployment]] = notImplemented
 
   override def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit] = notImplemented
 
@@ -133,19 +127,16 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Future[SchedulesState] = notImplemented
 
   override def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String
   ): Future[SchedulesState] = notImplemented
 
   override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
-      processingType: String,
   ): Future[SchedulesState] = notImplemented
 
   override def fetchCanonicalProcess(

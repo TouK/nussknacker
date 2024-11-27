@@ -47,7 +47,6 @@ class PeriodicProcessService(
     clock: Clock,
     actionService: ProcessingTypeActionService,
     configsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
-    processingType: String,
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -93,14 +92,11 @@ class PeriodicProcessService(
       schedule: ScheduleProperty,
       processVersion: ProcessVersion,
       processActionId: ProcessActionId,
-      processingType: String,
       beforeSchedule: => Future[Unit] = Future.unit
   ): Future[Unit] = {
     prepareInitialScheduleDates(schedule) match {
       case Right(scheduleDates) =>
-        beforeSchedule.flatMap(_ =>
-          scheduleWithInitialDates(schedule, processVersion, scheduleDates, processActionId, processingType)
-        )
+        beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, scheduleDates, processActionId))
       case Left(error) =>
         Future.failed(error)
     }
@@ -131,7 +127,6 @@ class PeriodicProcessService(
       processVersion: ProcessVersion,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
       processActionId: ProcessActionId,
-      processingType: String,
   ): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
@@ -151,7 +146,6 @@ class PeriodicProcessService(
         scheduleDates,
         enrichedDeploymentWithJarData,
         processActionId,
-        processingType
       )
     } yield ()
   }
@@ -161,10 +155,9 @@ class PeriodicProcessService(
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
       deploymentWithJarData: DeploymentWithRuntimeParams,
       processActionId: ProcessActionId,
-      processingType: String,
   ): Future[Unit] = {
     periodicProcessesManager
-      .create(deploymentWithJarData, toApi(scheduleMap), processActionId, processingType)
+      .create(deploymentWithJarData, toApi(scheduleMap), processActionId)
       .flatMap { process =>
         scheduleDates.collect {
           case (name, Some(date)) =>
@@ -183,11 +176,11 @@ class PeriodicProcessService(
 
   def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
     for {
-      toBeDeployed <- periodicProcessesManager.findToBeDeployed(processingType).flatMap { toDeployList =>
+      toBeDeployed <- periodicProcessesManager.findToBeDeployed.flatMap { toDeployList =>
         Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
       }
       // We retry scenarios that failed on deployment. Failure recovery of running scenarios should be handled by Flink's restart strategy
-      toBeRetried <- periodicProcessesManager.findToBeRetried(processingType)
+      toBeRetried <- periodicProcessesManager.findToBeRetried
       // We don't block scheduled deployments by retries
     } yield toBeDeployed.sortBy(d => (d.runAt, d.createdAt)) ++ toBeRetried.sortBy(d => (d.nextRetryAt, d.createdAt))
   }
@@ -229,7 +222,6 @@ class PeriodicProcessService(
       schedules <- periodicProcessesManager
         .findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
           Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy),
-          processingType,
         )
       // we handle each job separately, if we fail at some point, we will continue on next handleFinished run
       _ <- Future.sequence(schedules.groupByProcessName.toList.map(handleSingleProcess _ tupled))
@@ -346,7 +338,7 @@ class PeriodicProcessService(
     logger.info(s"Marking ${deployment.display} with status: ${deployment.state.status} as finished")
     for {
       _            <- periodicProcessesManager.markFinished(deployment.id)
-      currentState <- periodicProcessesManager.findProcessData(deployment.id, processingType)
+      currentState <- periodicProcessesManager.findProcessData(deployment.id)
     } yield handleEvent(FinishedEvent(currentState, state))
   }
 
@@ -373,7 +365,7 @@ class PeriodicProcessService(
 
     for {
       _ <- periodicProcessesManager.markFailedOnDeployWithStatus(deployment.id, status, retriesLeft, nextRetryAt)
-      currentState <- periodicProcessesManager.findProcessData(deployment.id, processingType)
+      currentState <- periodicProcessesManager.findProcessData(deployment.id)
     } yield handleEvent(FailedOnDeployEvent(currentState, state))
   }
 
@@ -384,7 +376,7 @@ class PeriodicProcessService(
     logger.info(s"Marking ${deployment.display} as failed.")
     for {
       _            <- periodicProcessesManager.markFailed(deployment.id)
-      currentState <- periodicProcessesManager.findProcessData(deployment.id, processingType)
+      currentState <- periodicProcessesManager.findProcessData(deployment.id)
     } yield handleEvent(FailedOnRunEvent(currentState, state))
   }
 
@@ -461,7 +453,7 @@ class PeriodicProcessService(
         // TODO: add externalDeploymentId??
         periodicProcessesManager
           .markDeployed(id)
-          .flatMap(_ => periodicProcessesManager.findProcessData(id, processingType))
+          .flatMap(_ => periodicProcessesManager.findProcessData(id))
           .flatMap(afterChange => handleEvent(DeployedEvent(afterChange, externalDeploymentId)))
       }
       // We can recover since deployment actor watches only future completion.
@@ -535,7 +527,6 @@ class PeriodicProcessService(
     periodicProcessesManager.getLatestDeploymentsForActiveSchedules(
       processName,
       deploymentsPerScheduleMaxCount,
-      processingType
     )
 
   def getLatestDeploymentsForLatestInactiveSchedules(
@@ -548,7 +539,6 @@ class PeriodicProcessService(
         processName,
         inactiveProcessesMaxCount,
         deploymentsPerScheduleMaxCount,
-        processingType
       )
 
   implicit class RuntimeStatusesExt(runtimeStatuses: List[StatusDetails]) {

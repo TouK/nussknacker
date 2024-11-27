@@ -15,7 +15,11 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.common.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
-import pl.touk.nussknacker.engine.common.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
+import pl.touk.nussknacker.engine.common.periodic.service.{
+  DefaultAdditionalDeploymentDataProvider,
+  EmptyListener,
+  ProcessConfigEnricher
+}
 import pl.touk.nussknacker.engine.common.periodic._
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.management.periodic.flink.db.InMemPeriodicProcessesManager
@@ -74,7 +78,6 @@ class PeriodicDeploymentManagerTest
       clock = Clock.systemDefaultZone(),
       new ProcessingTypeActionServiceStub,
       Map.empty,
-      "testProcessingType",
     )
 
     val periodicDeploymentManager = new PeriodicDeploymentManager(

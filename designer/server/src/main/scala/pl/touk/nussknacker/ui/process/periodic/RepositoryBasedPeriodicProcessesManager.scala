@@ -12,6 +12,8 @@ import java.time.LocalDateTime
 import scala.concurrent.Future
 
 class RepositoryBasedPeriodicProcessesManager(
+    deploymentManagerName: String,
+    processingType: String,
     periodicProcessesRepository: PeriodicProcessesRepository,
 ) extends PeriodicProcessesManager {
 
@@ -21,7 +23,6 @@ class RepositoryBasedPeriodicProcessesManager(
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       scheduleProperty: PeriodicProcessesManager.ScheduleProperty,
       processActionId: ProcessActionId,
-      processingType: String,
   ): Future[PeriodicProcess] =
     periodicProcessesRepository
       .create(deploymentWithRuntimeParams, scheduleProperty, processActionId, processingType)
@@ -40,14 +41,13 @@ class RepositoryBasedPeriodicProcessesManager(
 
   override def findProcessData(
       id: PeriodicProcessDeploymentId,
-      processingType: String
   ): Future[PeriodicProcessDeployment] =
     periodicProcessesRepository.findProcessData(id).run
 
-  override def findToBeDeployed(processingType: String): Future[Seq[PeriodicProcessDeployment]] =
+  override def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] =
     periodicProcessesRepository.findToBeDeployed(processingType).run
 
-  override def findToBeRetried(processingType: String): Future[Seq[PeriodicProcessDeployment]] =
+  override def findToBeRetried: Future[Seq[PeriodicProcessDeployment]] =
     periodicProcessesRepository.findToBeRetried(processingType).run
 
   override def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit] =
@@ -72,7 +72,6 @@ class RepositoryBasedPeriodicProcessesManager(
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Future[SchedulesState] =
     periodicProcessesRepository
       .getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount, processingType)
@@ -82,7 +81,6 @@ class RepositoryBasedPeriodicProcessesManager(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Future[SchedulesState] =
     periodicProcessesRepository
       .getLatestDeploymentsForLatestInactiveSchedules(
@@ -95,7 +93,6 @@ class RepositoryBasedPeriodicProcessesManager(
 
   override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
-      processingType: String,
   ): Future[SchedulesState] = periodicProcessesRepository
     .findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(expectedDeploymentStatuses, processingType)
     .run

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.streaming
 import akka.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
-import pl.touk.nussknacker.engine.api.deployment.periodic.NoOpPeriodicProcessesManager
+import pl.touk.nussknacker.engine.api.deployment.periodic.NoOpPeriodicProcessesManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   NoOpScenarioActivityManager,
@@ -37,7 +37,7 @@ object FlinkStreamingDeploymentManagerProviderHelper {
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
-      NoOpPeriodicProcessesManager,
+      NoOpPeriodicProcessesManagerProvider,
       actorSystem.dispatcher,
       actorSystem,
       backend

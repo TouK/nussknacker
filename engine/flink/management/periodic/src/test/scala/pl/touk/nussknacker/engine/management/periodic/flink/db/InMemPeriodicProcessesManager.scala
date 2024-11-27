@@ -124,7 +124,6 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
       deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
       scheduleProperty: PeriodicProcessesManager.ScheduleProperty,
       processActionId: ProcessActionId,
-      processingType: String,
   ): Future[PeriodicProcess] = Future.successful {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
@@ -145,7 +144,6 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
 
   override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
-      processingType: String,
   ): Future[SchedulesState] = Future.successful {
     val filteredProcesses = processEntities.filter { pe =>
       pe.processingType == processingType &&
@@ -157,7 +155,6 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Future[SchedulesState] = Future.successful {
     getLatestDeploymentsForPeriodicProcesses(
       processEntities(processName).filter(_.active),
@@ -169,7 +166,6 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
-      processingType: String,
   ): Future[SchedulesState] = Future.successful {
     val filteredProcesses =
       processEntities(processName).filterNot(_.active).sortBy(_.createdAt).takeRight(inactiveProcessesMaxCount)
@@ -196,19 +192,18 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
         }
     } yield deploymentGroupedByScheduleName).toMap)
 
-  override def findToBeDeployed(processingType: String): Future[Seq[PeriodicProcessDeployment]] = {
+  override def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
     val scheduled = findActive(PeriodicProcessDeploymentStatus.Scheduled)
     readyToRun(scheduled)
   }
 
-  override def findToBeRetried(processingType: String): Future[Seq[PeriodicProcessDeployment]] = {
+  override def findToBeRetried: Future[Seq[PeriodicProcessDeployment]] = {
     val toBeRetried = findActive(PeriodicProcessDeploymentStatus.FailedOnDeploy).filter(_.retriesLeft > 0)
     readyToRun(toBeRetried)
   }
 
   override def findProcessData(
       id: PeriodicProcessDeploymentId,
-      processingType: String
   ): Future[PeriodicProcessDeployment] = Future.successful {
     (for {
       d <- deploymentEntities if d.id == id

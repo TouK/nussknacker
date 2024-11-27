@@ -61,7 +61,8 @@ abstract class PeriodicDeploymentManagerProvider(
           EmptyPeriodicProcessListenerFactory,
           DefaultAdditionalDeploymentDataProvider,
           new WithRunNowPeriodicCustomActionsProviderFactory,
-          dependencies
+          dependencies,
+          dependencies.periodicProcessesManagerProvider.provide(name, periodicBatchConfig.processingType)
         )
     }
 

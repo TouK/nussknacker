@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
-import pl.touk.nussknacker.engine.api.deployment.periodic.NoOpPeriodicProcessesManager
+import pl.touk.nussknacker.engine.api.deployment.periodic.NoOpPeriodicProcessesManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -46,7 +46,7 @@ class RequestResponseEmbeddedDeploymentManagerTest
       new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
       new ProcessingTypeActionServiceStub,
       NoOpScenarioActivityManager,
-      NoOpPeriodicProcessesManager,
+      NoOpPeriodicProcessesManagerProvider,
       as.dispatcher,
       as,
       SttpBackendStub.asynchronousFuture

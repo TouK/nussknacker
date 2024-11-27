@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
@@ -30,7 +31,8 @@ object PeriodicDeploymentManager {
       listenerFactory: PeriodicProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
       customActionsProviderFactory: PeriodicCustomActionsProviderFactory,
-      dependencies: DeploymentManagerDependencies
+      dependencies: DeploymentManagerDependencies,
+      periodicProcessesManager: PeriodicProcessesManager,
   ): PeriodicDeploymentManager = {
     import dependencies._
 
@@ -40,7 +42,7 @@ object PeriodicDeploymentManager {
     val service = new PeriodicProcessService(
       delegate,
       periodicDeploymentService,
-      dependencies.periodicProcessesManager,
+      periodicProcessesManager,
       listener,
       additionalDeploymentDataProvider,
       periodicBatchConfig.deploymentRetry,
@@ -49,7 +51,6 @@ object PeriodicDeploymentManager {
       clock,
       dependencies.actionService,
       dependencies.configsFromProvider,
-      periodicBatchConfig.processingType,
     )
 
     // These actors have to be created with retries because they can initially fail to create due to taken names,
@@ -66,7 +67,7 @@ object PeriodicDeploymentManager {
     )
 
     val customActionsProvider = customActionsProviderFactory.create(
-      dependencies.periodicProcessesManager,
+      periodicProcessesManager,
       service,
       periodicBatchConfig.processingType
     )
@@ -138,7 +139,6 @@ class PeriodicDeploymentManager private[engine] (
           deploymentData.deploymentId.toActionIdOpt.getOrElse(
             throw new IllegalArgumentException(s"deploymentData.deploymentId should be valid ProcessActionId")
           ),
-          processingType,
           cancelScenario(DMCancelScenarioCommand(processVersion.processName, deploymentData.user))
         )
         .map(_ => None)
