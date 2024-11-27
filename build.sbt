@@ -1711,6 +1711,7 @@ lazy val httpUtils = (project in utils("http-utils"))
         "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
         "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
+        "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
       )
     }
   )
@@ -1728,19 +1729,18 @@ lazy val openapiComponents = (project in component("openapi"))
   .settings(
     name := "nussknacker-openapi",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-integration"          % swaggerIntegrationV excludeAll (
+      "io.swagger.core.v3" % "swagger-integration"  % swaggerIntegrationV excludeAll (
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
       ),
-      "io.netty"           % "netty-transport-native-epoll" % nettyV,
-      "org.apache.flink"   % "flink-streaming-java"         % flinkV     % Provided,
-      "org.scalatest"     %% "scalatest"                    % scalaTestV % "it,test"
+      "org.apache.flink"   % "flink-streaming-java" % flinkV     % Provided,
+      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test"
     ),
   )
   .dependsOn(
     componentsUtils                % Provided,
     jsonUtils                      % Provided,
-    httpUtils,
+    httpUtils                      % Provided,
     requestResponseComponentsUtils % "it,test",
     flinkComponentsTestkit         % "it,test"
   )
