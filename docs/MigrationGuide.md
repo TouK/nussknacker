@@ -9,6 +9,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
   * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15 
   * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
+* [#7257](https://github.com/TouK/nussknacker/pull/7257) `components-api` doesn't depend on `async-http-client-backend-future`.
+  Instead, it depends on sttp's core. If your component rely on this, you should explicitly add dependency to `async-http-client-backend-future`.
 
 ## In version 1.18.0
 

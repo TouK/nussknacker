@@ -14,7 +14,9 @@
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 * [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
-  expression parts used in SpEL template 
+  expression parts used in SpEL template
+* [#7257](https://github.com/TouK/nussknacker/pull/7257) components-api module: Replaced wide dependency to `async-http-client-backend-future`
+  by the narrowest possible dependency to sttp's core
 
 ## 1.18
 
