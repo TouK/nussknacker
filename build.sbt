@@ -811,7 +811,16 @@ lazy val flinkExecutor = (project in flink("executor"))
         )
     }.toList,
   )
-  .dependsOn(flinkComponentsUtils, scenarioCompiler, flinkExtensionsApi, flinkTestUtils % Test)
+  .dependsOn(
+    flinkComponentsUtils,
+    flinkExtensionsApi,
+    scenarioCompiler,
+    // Various components uses one of library in stack: sttp -> async-http-client -> netty
+    // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
+    // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
+    httpUtils,
+    flinkTestUtils % Test
+  )
 
 lazy val scenarioCompiler = (project in file("scenario-compiler"))
   .settings(commonSettings)
@@ -1355,7 +1364,15 @@ lazy val liteEngineRuntime = (project in lite("runtime"))
       )
     },
   )
-  .dependsOn(liteComponentsApi, scenarioCompiler, testUtils % Test)
+  .dependsOn(
+    liteComponentsApi,
+    scenarioCompiler,
+    // Various components uses one of library in stack: sttp -> async-http-client -> netty
+    // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
+    // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
+    httpUtils,
+    testUtils % Test
+  )
 
 lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration-test"))
   .configs(IntegrationTest)
@@ -1681,6 +1698,9 @@ lazy val processReports = (project in file("designer/processReports"))
   )
   .dependsOn(httpUtils, commonUtils, testUtils % "it,test")
 
+// This dependency is delivered by flink-executor and lite-runtime to ensure the same version of libraries in stack:
+// sttp -> async-http-client -> netty. Different versions of netty in model classpath causes NoClassDefFoundError.
+// Also, thanks to this approach we reduce size of model jar bundle.
 lazy val httpUtils = (project in utils("http-utils"))
   .settings(commonSettings)
   .settings(

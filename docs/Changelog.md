@@ -15,8 +15,11 @@
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 * [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
   expression parts used in SpEL template
-* [#7257](https://github.com/TouK/nussknacker/pull/7257) components-api module: Replaced wide dependency to `async-http-client-backend-future`
-  by the narrowest possible dependency to sttp's core
+* async-http-client and Netty dependency cleanups
+  * [#7257](https://github.com/TouK/nussknacker/pull/7257) `components-api` module: Replaced wide dependency to `async-http-client-backend-future`
+    by the narrowest possible dependency to sttp's core
+  * [#7259](https://github.com/TouK/nussknacker/pull/7259) `flink-executor` and `lite-runtime` modules: Added compile-time
+    dependency to `http-utils` (which depends on `async-http-client-backend-future` and indirectly on Netty) 
 
 ## 1.18
 
