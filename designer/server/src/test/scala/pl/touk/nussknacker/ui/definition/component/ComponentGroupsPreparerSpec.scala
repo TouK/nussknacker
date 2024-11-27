@@ -190,6 +190,7 @@ class ComponentGroupsPreparerSpec
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
+        Set.empty,
         Some(_),
         DesignerWideComponentId.default("Streaming", _)
       ),

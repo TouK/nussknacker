@@ -17,7 +17,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       |processToolbarConfig {
       |  defaultConfig {
       |    topLeft: [
-      |      { type: "tips-panel", hidden: { fragment: true } }
+      |      { type: "tips-panel", hidden: { fragment: true }, additionalParams: { customParam1: "value1" } }
       |    ]
       |    topRight: [
       |      {
@@ -56,7 +56,17 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
   it should "properly create scenario toolbar configuration" in {
     val defaultToolbarConfig = ScenarioToolbarsConfig(
       None,
-      List(ToolbarPanelConfig(TipsPanel, None, None, None, None, Some(ToolbarCondition(Some(true), None, None)))),
+      List(
+        ToolbarPanelConfig(
+          TipsPanel,
+          None,
+          None,
+          None,
+          None,
+          Some(ToolbarCondition(Some(true), None, None)),
+          Some(Map("customParam1" -> "value1"))
+        )
+      ),
       Nil,
       List(
         ToolbarPanelConfig(
@@ -93,8 +103,9 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
                 None,
                 None
               )
-            )
+            ),
           ),
+          None,
           None
         )
       ),
@@ -103,7 +114,17 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
 
     val categoryToolbarConfig = ScenarioToolbarsConfig(
       Some(UUID.fromString("58f1acff-d864-4d66-9f86-0fa7319f7043")),
-      List(ToolbarPanelConfig(TipsPanel, None, None, None, None, Some(ToolbarCondition(Some(true), None, None)))),
+      List(
+        ToolbarPanelConfig(
+          TipsPanel,
+          None,
+          None,
+          None,
+          None,
+          Some(ToolbarCondition(Some(true), None, None)),
+          Some(Map("customParam1" -> "value1"))
+        )
+      ),
       Nil,
       List(
         ToolbarPanelConfig(
@@ -116,10 +137,11 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
               ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None, None)
             )
           ),
+          None,
           None
         )
       ),
-      List(ToolbarPanelConfig(ActivitiesPanel, None, None, None, None, None))
+      List(ToolbarPanelConfig(ActivitiesPanel, None, None, None, None, None, None))
     )
 
     val testingConfigs = Table(

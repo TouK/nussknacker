@@ -10,7 +10,7 @@ import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Sch
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
+import pl.touk.nussknacker.engine.api.json.FromJsonDecoder.jsonToAny
 import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}

@@ -1,4 +1,4 @@
-import { cloneDeep, map, reject, zipWith } from "lodash";
+import { cloneDeep, Dictionary, map, reject, zipObject, zipWith } from "lodash";
 import { Layout, NodePosition, NodesWithPositions } from "../../actions/nk";
 import ProcessUtils from "../../common/ProcessUtils";
 import { ExpressionLang } from "../../components/graph/node-modal/editors/expression/types";
@@ -41,56 +41,65 @@ function getUniqueIds(initialIds: string[], alreadyUsedIds: string[], isCopy: bo
     }, []);
 }
 
-export function prepareNewNodesWithLayout(
-    state: GraphState,
-    nodesWithPositions: NodesWithPositions,
-    isCopy: boolean,
-): { layout: NodePosition[]; nodes: NodeType[]; uniqueIds?: NodeId[] } {
-    const {
-        layout,
-        scenario: {
-            scenarioGraph: { nodes = [] },
-        },
-    } = state;
+function adjustBranchParameters(branchParameters: BranchParams[], uniqueIds: string[]) {
+    return branchParameters?.map(({ branchId, ...branchParameter }: BranchParams) => ({
+        ...branchParameter,
+        branchId: uniqueIds.find((uniqueId) => uniqueId.includes(branchId)),
+    }));
+}
 
-    const alreadyUsedIds = nodes.map((node) => node.id);
-    const initialIds = nodesWithPositions.map((nodeWithPosition) => nodeWithPosition.node.id);
+export function prepareNewNodesWithLayout(
+    currentNodes: NodeType[] = [],
+    newNodesWithPositions: NodesWithPositions,
+    isCopy: boolean,
+): {
+    layout: NodePosition[];
+    nodes: NodeType[];
+    idMapping: Dictionary<string>;
+} {
+    const newNodes = newNodesWithPositions.map(({ node }) => node);
+    const newPositions = newNodesWithPositions.map(({ position }) => position);
+    const alreadyUsedIds = currentNodes.map((node) => node.id);
+    const initialIds = newNodes.map(({ id }) => id);
     const uniqueIds = getUniqueIds(initialIds, alreadyUsedIds, isCopy);
 
-    const updatedNodes = zipWith(nodesWithPositions, uniqueIds, ({ node }, id) => {
-        const nodeCopy = cloneDeep(node);
-        const adjustBranchParametersToTheCopiedElements = (branchParameter: BranchParams) => {
-            branchParameter.branchId = uniqueIds.find((uniqueId) => uniqueId.includes(branchParameter.branchId));
-            return branchParameter;
-        };
-
-        if (nodeCopy.branchParameters) {
-            nodeCopy.branchParameters = nodeCopy.branchParameters.map(adjustBranchParametersToTheCopiedElements);
-        }
-
-        nodeCopy.id = id;
-        return nodeCopy;
-    });
-    const updatedLayout = zipWith(nodesWithPositions, uniqueIds, ({ position }, id) => ({ id, position }));
-
     return {
-        nodes: [...nodes, ...updatedNodes],
-        layout: [...layout, ...updatedLayout],
-        uniqueIds,
+        nodes: zipWith(newNodes, uniqueIds, (node, id) => ({
+            ...node,
+            id,
+            branchParameters: adjustBranchParameters(node.branchParameters, uniqueIds),
+        })),
+        layout: zipWith(newPositions, uniqueIds, (position, id) => ({
+            id,
+            position,
+        })),
+        idMapping: zipObject(initialIds, uniqueIds),
     };
 }
 
-export function addNodesWithLayout(state: GraphState, { nodes, layout }: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
+export function addNodesWithLayout(
+    state: GraphState,
+    changes: {
+        nodes: NodeType[];
+        layout: NodePosition[];
+        edges?: Edge[];
+    },
+): GraphState {
+    const { nodes = [], edges = [], ...scenarioGraph } = state.scenario.scenarioGraph;
+    const nextNodes = [...nodes, ...changes.nodes];
+    const nextEdges = changes.edges || edges;
+    const nextLayout = [...state.layout, ...changes.layout];
     return {
         ...state,
         scenario: {
             ...state.scenario,
             scenarioGraph: {
-                ...state.scenario.scenarioGraph,
-                nodes,
+                ...scenarioGraph,
+                nodes: nextNodes,
+                edges: nextEdges,
             },
         },
-        layout,
+        layout: nextLayout,
     };
 }
 

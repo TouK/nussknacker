@@ -6,6 +6,7 @@ import io.circe.Json
 import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.avro.generic.GenericRecord
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
@@ -43,7 +44,7 @@ class UniversalKafkaSourceFactory(
     val schemaRegistryClientFactory: SchemaRegistryClientFactory,
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
-    protected val implProvider: KafkaSourceImplFactory[Any, Any]
+    protected val implProvider: KafkaSourceImplFactory[Any, Any],
 ) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
     with SourceFactory
     with WithExplicitTypesToExtract
@@ -64,6 +65,40 @@ class UniversalKafkaSourceFactory(
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
+    case step @ TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) :: _,
+          _
+        ) =>
+      val preparedTopic = prepareTopic(topic)
+      val valueValidationResult = if (contentType.equals(ContentTypes.JSON.toString)) {
+        Valid(
+          (
+            Some(
+              RuntimeSchemaData[ParsedSchema](
+                new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson),
+                Some(SchemaId.fromString(ContentTypes.JSON.toString))
+              )
+            ),
+            // This is the type after it leaves source
+            Unknown
+          )
+        )
+      } else {
+        Valid(
+          (
+            Some(
+              RuntimeSchemaData[ParsedSchema](
+                new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain),
+                Some(SchemaId.fromString(ContentTypes.PLAIN.toString))
+              )
+            ),
+            // This is the type after it leaves source
+            Unknown
+          )
+        )
+      }
+      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: _,

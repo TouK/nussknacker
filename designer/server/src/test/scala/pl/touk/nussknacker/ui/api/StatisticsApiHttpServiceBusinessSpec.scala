@@ -184,7 +184,7 @@ class StatisticsApiHttpServiceBusinessSpec
           (RequestIdStat.name, matchesRegex(uuidRegex)),
           (DesignerUptimeInSeconds.name, matchesRegex("\\d+")),
           //  TODO: Should make a proper test for component mapping
-          ("c_bltnfltr", equalTo("1"))
+          ("c_fltr", equalTo("1"))
         )
     }
   }

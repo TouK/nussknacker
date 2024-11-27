@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.util.functions
 
 import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.api.generics.GenericType
+import pl.touk.nussknacker.engine.api.json.FromJsonDecoder
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.functions.NumericUtils.ToNumberTypingFunction
-import pl.touk.nussknacker.engine.util.json.{JsonUtils, ToJsonEncoder}
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 object conversion extends ConversionUtils
 
@@ -41,7 +42,7 @@ trait ConversionUtils extends HideToString {
 
   private def toJsonEither(value: String): Either[Throwable, Any] = {
     io.circe.parser.parse(value) match {
-      case Right(json) => Right(JsonUtils.jsonToAny(json))
+      case Right(json) => Right(FromJsonDecoder.jsonToAny(json))
       case Left(ex)    => Left(new IllegalArgumentException(s"Cannot convert [$value] to JSON", ex))
     }
   }
