@@ -1,16 +1,15 @@
+import { lighten, styled } from "@mui/material";
+import { getLuminance } from "@mui/system/colorManipulator";
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import "react-treeview/react-treeview.css";
 import { filterComponentsByLabel } from "../../../common/ProcessDefinitionUtils";
+import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { ComponentGroup } from "../../../types";
-import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 import Tool from "./Tool";
-import { useTranslation } from "react-i18next";
-import { lighten, styled } from "@mui/material";
-
-import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
-import { getLuminance } from "@mui/system/colorManipulator";
+import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 
 const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",
@@ -78,6 +77,7 @@ const StyledToolbox = styled("div")(({ theme }) => ({
         padding: theme.spacing(0.75, 0.5, 0.75, 4),
         border: "none",
         borderRight: 0,
+        userSelect: "none",
         "&.disabled": {
             opacity: 0.4,
             cursor: "not-allowed !important",
@@ -88,7 +88,7 @@ const StyledToolbox = styled("div")(({ theme }) => ({
                 cursor: "grabbing",
             },
 
-            "&:hover": {
+            "&:hover, &:focus-within": {
                 backgroundColor: theme.palette.action.hover,
                 color: lighten(theme.palette.text.primary, 0.2),
             },
@@ -104,7 +104,13 @@ const StyledToolbox = styled("div")(({ theme }) => ({
     },
 }));
 
-export default function ToolBox(props: { filter: string }): JSX.Element {
+type ToolBoxProps = {
+    filter: string;
+    addTreeElement?: (group: ComponentGroup) => React.ReactElement | null;
+    addGroupLabelElement?: (group: ComponentGroup) => React.ReactElement | null;
+};
+
+export default function ToolBox(props: ToolBoxProps): JSX.Element {
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const { t } = useTranslation();
 
@@ -126,6 +132,8 @@ export default function ToolBox(props: { filter: string }): JSX.Element {
                         componentGroup={componentGroup}
                         highlights={filters}
                         flatten={groups.length === 1}
+                        addTreeElement={props.addTreeElement?.(componentGroup)}
+                        addGroupLabelElement={props.addGroupLabelElement?.(componentGroup)}
                     />
                 ))
             ) : (

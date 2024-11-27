@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -18,7 +19,12 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  ContentTypes,
+  ContentTypesSchemas,
+  SchemaBasedSerdeProvider,
+  SchemaRegistryClientFactory
+}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.schemedkafka.{
   KafkaUniversalComponentTransformer,
@@ -76,14 +82,30 @@ class UniversalKafkaSinkFactory(
     schemaVersionParamName,
     sinkKeyParamName,
     sinkRawEditorParamName,
-    sinkValidationModeParamName
+    sinkValidationModeParamName,
+    contentTypeParamName
   )
+
+  private lazy val jsonSchema =
+    RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForJson), None)
+  private lazy val plainSchema =
+    RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](ContentTypesSchemas.schemaForPlain), None)
 
   override protected def topicFrom(value: String): TopicName.ForSink = TopicName.ForSink(value)
 
   protected def rawEditorParameterStep(
       context: ValidationContext
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
+    case TransformationStep(
+          (`topicParamName`, _) ::
+          (`contentTypeParamName`, _) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, DefinedEagerParameter(true, _)) :: Nil,
+          _
+        ) =>
+      NextParameters(
+        validationModeParamDeclaration.createParameter() :: rawValueParamDeclaration.createParameter() :: Nil
+      )
     case TransformationStep(
           (`topicParamName`, _) ::
           (`schemaVersionParamName`, _) ::
@@ -133,6 +155,40 @@ class UniversalKafkaSinkFactory(
                 Some(TransformationState(runtimeSchemaData, extractedSinkParameter))
               )
             }
+        }
+        .valueOr { errors =>
+          FinalResults(context, errors.toList)
+        }
+    case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, _) ::
+          (`sinkValidationModeParamName`, DefinedEagerParameter(mode: String, _)) ::
+          (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
+          _
+        ) =>
+      val runtimeSchemaData = runtimeSchemaDataForContentType(contentType)
+      schemaSupportDispatcher
+        .forSchemaType(runtimeSchemaData.schema.schemaType())
+        .extractParameter(
+          runtimeSchemaData.schema,
+          rawMode = true,
+          validationMode = extractValidationMode(mode),
+          rawParameter = rawValueParamDeclaration.createParameter(),
+          restrictedParamNames
+        )
+        .map { extractedSinkParameter =>
+          val validationAgainstSchemaErrors = extractedSinkParameter
+            .validateParams(Map(sinkValueParamName -> value))
+            .swap
+            .map(_.toList)
+            .getOrElse(List.empty)
+          FinalResults(
+            context,
+            validationAgainstSchemaErrors,
+            Some(TransformationState(runtimeSchemaData, extractedSinkParameter))
+          )
         }
         .valueOr { errors =>
           FinalResults(context, errors.toList)
@@ -191,8 +247,48 @@ class UniversalKafkaSinkFactory(
           FinalResults(context, errors.toList)
         }
     case TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+          (`contentTypeParamName`, DefinedEagerParameter(contentType: String, _)) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, DefinedEagerParameter(false, _)) :: Nil,
+          _
+        ) =>
+      val schemaData = runtimeSchemaDataForContentType(contentType)
+
+      schemaSupportDispatcher
+        .forSchemaType(schemaData.schema.schemaType())
+        .extractParameter(
+          schemaData.schema,
+          rawMode = false,
+          validationMode = ValidationMode.lax,
+          rawValueParamDeclaration.createParameter(),
+          restrictedParamNames
+        )
+        .map[TransformationStepResult] { valueParam =>
+          val state = TransformationState(schemaData, valueParam)
+          // shouldn't happen except for empty schema, but it can lead to infinite loop...
+          if (valueParam.toParameters.isEmpty) {
+            FinalResults(context, Nil, Some(state))
+          } else {
+            NextParameters(valueParam.toParameters, state = Some(state))
+          }
+        }
+        .valueOr { errors =>
+          FinalResults(context, errors.toList)
+        }
+    case TransformationStep(
           (`topicParamName`, _) ::
           (`schemaVersionParamName`, _) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, DefinedEagerParameter(false, _)) ::
+          valueParams,
+          Some(state)
+        ) =>
+      val errors = state.schemaBasedParameter.validateParams(valueParams.toMap).swap.map(_.toList).getOrElse(Nil)
+      FinalResults(context, errors, Some(state))
+    case TransformationStep(
+          (`topicParamName`, _) ::
+          (`contentTypeParamName`, _) ::
           (`sinkKeyParamName`, _) ::
           (`sinkRawEditorParamName`, DefinedEagerParameter(false, _)) ::
           valueParams,
@@ -265,5 +361,11 @@ class UniversalKafkaSinkFactory(
 
   override def allowedProcessingModes: AllowedProcessingModes =
     AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
+
+  private def runtimeSchemaDataForContentType(contentType: String): RuntimeSchemaData[ParsedSchema] = {
+    if (contentType.equals(ContentTypes.JSON.toString)) { jsonSchema }
+    else if (contentType.equals(ContentTypes.PLAIN.toString)) { plainSchema }
+    else { throw new IllegalStateException("Content Type should be JSON or PLAIN, is neither") }
+  }
 
 }

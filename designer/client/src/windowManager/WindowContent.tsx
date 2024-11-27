@@ -13,7 +13,7 @@ function cleanList<T extends NonNullable<unknown>>(elements: (T | null | undefin
     return elements.filter(Boolean) as T[];
 }
 
-type WindowContentProps = Omit<DefaultContentProps, "buttons"> &
+export type WindowContentProps = Omit<DefaultContentProps, "buttons"> &
     PropsWithChildren<{
         icon?: ReactElement;
         subheader?: ReactElement;

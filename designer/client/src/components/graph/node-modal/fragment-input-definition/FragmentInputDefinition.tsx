@@ -14,13 +14,13 @@ interface Props extends Omit<MapVariableProps<FragmentInputParameter>, "readOnly
     isEditMode?: boolean;
 }
 
-export function useTypeOptions<Value = string>() {
+export function useFragmentInputDefinitionTypeOptions() {
     const definitionData = useSelector(getProcessDefinitionData);
+
     const typeOptions = useMemo(
         () =>
             definitionData?.classes?.map((type) => ({
-                // TODO: Instead of using type assertion type, set refClazzName as a union of available clazzNames
-                value: type.refClazzName as Value,
+                value: type.display as string,
                 label: ProcessUtils.humanReadableType(type),
             })),
         [definitionData?.classes],
@@ -40,7 +40,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
     const { node, setProperty, isEditMode, showValidation } = passProps;
 
     const readOnly = !isEditMode;
-    const { orderedTypeOptions, defaultTypeOption } = useTypeOptions();
+    const { orderedTypeOptions, defaultTypeOption } = useFragmentInputDefinitionTypeOptions();
 
     const addField = useCallback(() => {
         addElement("parameters", getDefaultFields(defaultTypeOption.value));

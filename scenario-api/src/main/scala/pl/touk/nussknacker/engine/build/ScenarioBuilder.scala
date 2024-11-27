@@ -7,7 +7,8 @@ import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.SourceNode
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
+import pl.touk.nussknacker.engine.graph.node.{SourceNode, SubsequentNode}
 
 class ProcessMetaDataBuilder private[build] (metaData: MetaData) {
 
@@ -120,16 +121,22 @@ object ScenarioBuilder {
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(slug))))
 
   def fragmentWithInputNodeId(id: String, inputNodeId: String, params: (String, Class[_])*): ProcessGraphBuilder = {
-    new ProcessGraphBuilder(
-      GraphBuilder
-        .fragmentInput(inputNodeId, params: _*)
-        .creator
-        .andThen(r => EspProcess(MetaData(id, FragmentSpecificData()), NonEmptyList.of(r)).toCanonicalProcess)
-    )
+    createFragment(id, GraphBuilder.fragmentInput(inputNodeId, params: _*))
+  }
+
+  def fragmentWithRawParameters(id: String, params: FragmentParameter*): ProcessGraphBuilder = {
+    createFragment(id, GraphBuilder.fragmentInputWithRawParameters(id, params: _*))
   }
 
   def fragment(id: String, params: (String, Class[_])*): ProcessGraphBuilder = {
     fragmentWithInputNodeId(id, id, params: _*)
+  }
+
+  private def createFragment(id: String, graphBuilder: GraphBuilder[SourceNode]): ProcessGraphBuilder = {
+    new ProcessGraphBuilder(
+      graphBuilder.creator
+        .andThen(r => EspProcess(MetaData(id, FragmentSpecificData()), NonEmptyList.of(r)).toCanonicalProcess)
+    )
   }
 
 }
