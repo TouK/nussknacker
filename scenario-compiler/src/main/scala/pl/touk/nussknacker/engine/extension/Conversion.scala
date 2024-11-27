@@ -130,13 +130,6 @@ object ToStringConversion extends Conversion[String] {
   override def convertEither(value: Any): Either[Throwable, String] = Right(value.toString)
 }
 
-abstract class ToCollectionConversion[T >: Null <: AnyRef: ClassTag] extends Conversion[T] {
-  private val collectionClass = classOf[JCollection[_]]
-
-  override def appliesToConversion(clazz: Class[_]): Boolean =
-    clazz != resultTypeClass && (clazz.isAOrChildOf(collectionClass) || clazz == unknownClass || clazz.isArray)
-}
-
 object ToByteConversion extends ToNumericConversion[JByte] {
 
   override def convertEither(value: Any): Either[Throwable, JByte] = value match {

@@ -5,6 +5,7 @@ import {
     AutocompleteInputChangeReason,
     Box,
     Chip,
+    CircularProgress,
     createFilterOptions,
     Link,
     styled,
@@ -15,16 +16,25 @@ import {
     useTheme,
 } from "@mui/material";
 import { selectStyled } from "../../../stylesheets/SelectStyled";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HttpService from "../../../http/HttpService";
 import i18next from "i18next";
 import { editScenarioLabels } from "../../../actions/nk";
 import { debounce } from "lodash";
 import { ScenarioLabelValidationError } from "../../Labels/types";
+import { useTranslation } from "react-i18next";
+import { useDelayedEnterAction } from "./useDelayedEnterAction";
 
 interface AddLabelProps {
     onClick: () => void;
 }
+
+const labelUniqueValidation = (label: string) => ({
+    label,
+    messages: [
+        i18next.t("panels.scenarioDetails.labels.validation.uniqueValue", "This label already exists. Please enter a unique value."),
+    ],
+});
 
 const AddLabel = ({ onClick }: AddLabelProps) => {
     return (
@@ -100,6 +110,8 @@ interface Props {
 }
 
 export const ScenarioLabels = ({ readOnly }: Props) => {
+    const { t } = useTranslation();
+    const autocompleteRef = useRef(null);
     const scenarioLabels = useSelector(getScenarioLabels);
     const scenarioLabelOptions: LabelOption[] = useMemo(() => scenarioLabels.map(toLabelOption), [scenarioLabels]);
     const initialScenarioLabelOptionsErrors = useSelector(getScenarioLabelsErrors).filter((error) =>
@@ -125,9 +137,12 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
         setIsEdited(true);
     };
 
-    const isInputInSelectedOptions = (inputValue: string): boolean => {
-        return scenarioLabelOptions.some((option) => inputValue === toLabelValue(option));
-    };
+    const isInputInSelectedOptions = useCallback(
+        (inputValue: string): boolean => {
+            return scenarioLabelOptions.some((option) => inputValue === toLabelValue(option));
+        },
+        [scenarioLabelOptions],
+    );
 
     const inputHelperText = useMemo(() => {
         if (inputErrors.length !== 0) {
@@ -151,9 +166,13 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                 }
             }
 
+            if (isInputInSelectedOptions(newInput)) {
+                setInputErrors((prevState) => [...prevState, labelUniqueValidation(newInput)]);
+            }
+
             setInputTyping(false);
         }, 500);
-    }, []);
+    }, [isInputInSelectedOptions]);
 
     const validateSelectedOptions = useMemo(() => {
         return debounce(async (labels: LabelOption[]) => {
@@ -177,10 +196,13 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
         }
     }, []);
 
-    const setLabels = (options: LabelOption[]) => {
-        const newLabels = options.map(toLabelValue);
-        dispatch(editScenarioLabels(newLabels));
-    };
+    const setLabels = useCallback(
+        (options: LabelOption[]) => {
+            const newLabels = options.map(toLabelValue);
+            dispatch(editScenarioLabels(newLabels));
+        },
+        [dispatch],
+    );
 
     useEffect(() => {
         validateSelectedOptions(scenarioLabelOptions);
@@ -200,12 +222,28 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
         }
     }, [scenarioLabelOptions, showEditor]);
 
+    const { setIsEnterPressed } = useDelayedEnterAction({
+        action: () => {
+            const enterEvent = new KeyboardEvent("keydown", {
+                key: "Enter",
+                keyCode: 13,
+                code: "Enter",
+                bubbles: true,
+                cancelable: true,
+            });
+            autocompleteRef.current.dispatchEvent(enterEvent);
+        },
+        errorsLength: inputErrors.length,
+        inputTyping,
+    });
+
     return (
         <>
             {!showEditor ? (
                 <AddLabel onClick={handleAddLabelClick} />
             ) : (
                 <StyledAutocomplete
+                    ref={autocompleteRef}
                     data-testid={"Labels"}
                     isEdited={isEdited}
                     id="scenario-labels"
@@ -250,11 +288,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                     isOptionEqualToValue={(v1: LabelOption, v2: LabelOption) => v1.value === v2.value}
                     loading={isFetching || inputTyping}
                     clearOnBlur
-                    loadingText={
-                        inputTyping
-                            ? i18next.t("panels.scenarioDetails.labels.labelTyping", "Typing...")
-                            : i18next.t("panels.scenarioDetails.labels.labelsLoading", "Loading...")
-                    }
+                    loadingText={<CircularProgress size={"1rem"} />}
                     multiple
                     noOptionsText={i18next.t("panels.scenarioDetails.labels.noAvailableLabels", "No labels")}
                     onBlur={() => {
@@ -284,6 +318,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                     }}
                     onInputChange={(_, newInputValue: string, reason: AutocompleteInputChangeReason) => {
                         if (reason === "input") {
+                            setIsEnterPressed(false);
                             setInputTyping(true);
                         }
                         setInputErrors([]);
@@ -315,6 +350,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                             event.key === "Enter" &&
                                             (inputErrors.length !== 0 || inputTyping || isInputInSelectedOptions(input))
                                         ) {
+                                            setIsEnterPressed(true);
                                             event.stopPropagation();
                                         }
                                     },
@@ -338,6 +374,7 @@ export const ScenarioLabels = ({ readOnly }: Props) => {
                                 const labelError = labelOptionsErrors.find((error) => error.label === toLabelValue(option));
                                 return (
                                     <StyledLabelChip
+                                        title={t("panels.scenarioDetails.tooltip.label", "Label")}
                                         key={key}
                                         data-testid={`scenario-label-${index}`}
                                         color={labelError ? "error" : "default"}

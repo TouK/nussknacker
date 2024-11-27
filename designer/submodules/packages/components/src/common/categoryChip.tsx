@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { Button, Chip, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     category: string;
@@ -23,6 +24,7 @@ export function CategoryChip({ category, filterValues, setFilter }: Props): JSX.
 }
 
 export function CategoryButton({ category, filterValues, setFilter }: Props): JSX.Element {
+    const { t } = useTranslation();
     const isSelected = useMemo(() => filterValues.includes(category), [filterValues, category]);
 
     const onClick = useCallback(
@@ -36,6 +38,7 @@ export function CategoryButton({ category, filterValues, setFilter }: Props): JS
 
     return (
         <Typography
+            title={t("scenariosList.tooltip.category", "Category")}
             component={Button}
             color={isSelected ? "primary" : "inherit"}
             sx={{

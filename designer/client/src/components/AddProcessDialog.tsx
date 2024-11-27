@@ -1,9 +1,9 @@
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
-import HttpService, { ProcessingMode, ScenarioParametersCombination } from "../http/HttpService";
+import HttpService, { ProcessingMode } from "../http/HttpService";
 import { WindowContent } from "../windowManager";
 import { AddProcessForm, FormValue, TouchedValue } from "./AddProcessForm";
 import { extendErrors, mandatoryValueValidator } from "./graph/node-modal/editors/Validators";
@@ -12,6 +12,7 @@ import { NodeValidationError } from "../types";
 import { flow, isEmpty, transform } from "lodash";
 import { useProcessFormDataOptions } from "./useProcessFormDataOptions";
 import { LoadingButtonTypes } from "../windowManager/LoadingButton";
+import { useGetAllCombinations } from "./useGetAllCombinations";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;
@@ -22,7 +23,12 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     const { t } = useTranslation();
     const { isFragment = false, errors = [], ...passProps } = props;
     const nameValidators = useProcessNameValidators();
-    const [value, setState] = useState<FormValue>({ processName: "", processCategory: "", processingMode: "", processEngine: "" });
+    const [value, setState] = useState<FormValue>({
+        processName: "",
+        processCategory: "",
+        processingMode: "" as ProcessingMode,
+        processEngine: "",
+    });
     const [touched, setTouched] = useState<TouchedValue>({
         processName: false,
         processCategory: false,
@@ -30,8 +36,13 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         processEngine: false,
     });
     const [processNameFromBackend, setProcessNameFromBackendError] = useState<NodeValidationError[]>([]);
-    const [engineSetupErrors, setEngineSetupErrors] = useState<Record<string, string[]>>({});
-    const [allCombinations, setAllCombinations] = useState<ScenarioParametersCombination[]>([]);
+
+    const { engineSetupErrors, allCombinations } = useGetAllCombinations({
+        processCategory: value.processCategory,
+        processingMode: value.processingMode,
+        processEngine: value.processEngine,
+    });
+
     const engineErrors: NodeValidationError[] = (engineSetupErrors[value.processEngine] ?? []).map((error) => ({
         fieldName: "processEngine",
         errorType: "SaveNotAllowed",
@@ -122,12 +133,6 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         setTouched(touched);
     };
 
-    useEffect(() => {
-        HttpService.fetchScenarioParametersCombinations().then((response) => {
-            setAllCombinations(response.data.combinations);
-            setEngineSetupErrors(response.data.engineSetupErrors);
-        });
-    }, []);
     return (
         <WindowContent buttons={buttons} {...passProps}>
             <AddProcessForm

@@ -22,15 +22,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * modified method:
       * `def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]` - changed argument, to include information about latest and deployed versions 
 
-## In version 1.18.0 (Not released yet)
+## In version 1.18.0
 
 ### Configuration changes
 
-* [6944](https://github.com/TouK/nussknacker/pull/6944)
+* [#6944](https://github.com/TouK/nussknacker/pull/6944)
   * Button name for 'test adhoc' was renamed from `test-with-form` to `adhoc-testing`
     If you are using custom button config remember to update button type to `type: "adhoc-testing"` in `processToolbarConfig`
 
-* [7039](https://github.com/TouK/nussknacker/pull/7039)
+* [#7039](https://github.com/TouK/nussknacker/pull/7039)
     * Scenario Activity audit log is available
     * logger name, `scenario-activity-audit`, it is optional, does not have to be configured
     * it uses MDC context, example of configuration in `logback.xml`:
@@ -45,6 +45,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
           </encoder>
         </appender>
     ```
+
+* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
 
 ### Code API changes
 
@@ -70,7 +72,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### REST API changes
 
-* [6944](https://github.com/TouK/nussknacker/pull/6944)
+* [#6944](https://github.com/TouK/nussknacker/pull/6944)
   *  New endpoint `/api/scenarioTesting/{scenarioName}/adhoc/validate`
 * [#6766](https://github.com/TouK/nussknacker/pull/6766)
   * Process API changes:
@@ -116,8 +118,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#7113](https://github.com/TouK/nussknacker/pull/7113) Scala 2.13 was updated to 2.13.15, you should update your `flink-scala-2.13` to 1.1.2
 
-### Configuration changes
-* [#6979](https://github.com/TouK/nussknacker/pull/6979) Add `type: "activities-panel"` to the `processToolbarConfig` which replaces removed `{ type: "versions-panel" }` `{ type: "comments-panel" }` and `{ type: "attachments-panel" }`
+* [#7187](https://github.com/TouK/nussknacker/pull/7187) JSON decoding in `request` source (request-response processing mode) 
+  and in `kafka` source (streaming processing mode): For small decimal numbers is used either `Integer` or `Long` (depending on number size)
+  instead of `BigDecimal`. This change should be transparent in most cases as this value was mostly used after `#CONV.toNumber()` invocation
+  which still will return a `Number`.
 
 ## In version 1.17.0
 
@@ -126,7 +130,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6248](https://github.com/TouK/nussknacker/pull/6248) Removed implicit conversion from string to SpeL
   expression (`pl.touk.nussknacker.engine.spel.Implicits`). The conversion should be replaced by
   `pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion.spel`.
-* [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
+* [#6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
 * Component's API changes
@@ -1111,7 +1115,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Some methods from API classes (e.g. `Parameter.validate`) and classes (`InterpretationResult`) moved to interpreter
     * `DeploymentManagerProvider.createDeploymentManager` takes now `BaseModelData` as an argument instead of `ModelData`. If you want to use this data to invoke scenario, you should
       cast it to invokable representation via: `import ModelData._; modelData.asInvokableModelData`
-* [#2878](https://github.com/TouK/nussknacker/pull/2878) [2898](https://github.com/TouK/nussknacker/pull/2898) [#2924](https://github.com/TouK/nussknacker/pull/2924) Cleaning up of `-utils` modules
+* [#2878](https://github.com/TouK/nussknacker/pull/2878) [#2898](https://github.com/TouK/nussknacker/pull/2898) [#2924](https://github.com/TouK/nussknacker/pull/2924) Cleaning up of `-utils` modules
   * Extracted internal classes, not intended to be used in extensions to nussknacker-internal-utils module
   * Extracted component classes, not used directly by runtime/designer to nussknacker-components-utils module
   * Extracted kafka component classes, not used directly by lite-kafka-runtime/kafka-test-utils to nussknacker-kafka-components-utils
@@ -1330,7 +1334,7 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
 * [#2501](https://github.com/TouK/nussknacker/pull/2501) `nussknacker-baseengine-components` module renamed to `nussknacker-lite-base-components`
 * [#2221](https://github.com/TouK/nussknacker/pull/2221) ReflectUtils `fixedClassSimpleNameWithoutParentModule` renamed to `simpleNameWithoutSuffix`
 * [#2495](https://github.com/TouK/nussknacker/pull/2495) TypeSpecificDataInitializer trait change to TypeSpecificDataInitializ
-* [2245](https://github.com/TouK/nussknacker/pull/2245) `FailedEvent` has been specified in `FailedOnDeployEvent` and `FailedOnRunEvent`
+* [#2245](https://github.com/TouK/nussknacker/pull/2245) `FailedEvent` has been specified in `FailedOnDeployEvent` and `FailedOnRunEvent`
 ## In version 1.0.0
 
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) [#2090](https://github.com/TouK/nussknacker/pull/2090) Upgrade do Flink 1.13.

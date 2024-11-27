@@ -65,9 +65,10 @@ object ToolbarPanel {
       `type`: ToolbarPanelType,
       title: Option[String],
       buttonsVariant: Option[ToolbarButtonVariant],
-      buttons: Option[List[ToolbarButton]]
+      buttons: Option[List[ToolbarButton]],
+      additionalParams: Option[Map[String, String]]
   ): ToolbarPanel =
-    ToolbarPanel(`type`.toString, title, buttonsVariant, buttons)
+    ToolbarPanel(`type`.toString, title, buttonsVariant, buttons, additionalParams)
 
   def fromConfig(config: ToolbarPanelConfig, scenario: ScenarioWithDetailsEntity[_]): ToolbarPanel =
     ToolbarPanel(
@@ -80,7 +81,8 @@ object ToolbarPanel {
             verifyCondition(button.hidden, scenario)
           })
           .map(button => ToolbarButton.fromConfig(button, scenario))
-      )
+      ),
+      config.additionalParams
     )
 
 }
@@ -90,7 +92,8 @@ final case class ToolbarPanel(
     id: String,
     title: Option[String],
     buttonsVariant: Option[ToolbarButtonVariant],
-    buttons: Option[List[ToolbarButton]]
+    buttons: Option[List[ToolbarButton]],
+    additionalParams: Option[Map[String, String]]
 )
 
 object ToolbarButton {

@@ -28,6 +28,8 @@ object ScenarioStatistics {
 
   private val nameForFragment = "Fragment"
 
+  private val sameNameForComponentInDifferentGroups = List("kafka", "table")
+
   private def fromNussknackerPackage(component: ComponentDefinitionWithImplementation): Boolean =
     component.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")
 
@@ -166,7 +168,9 @@ object ScenarioStatistics {
           val componentIdOrCustom = components.find(_.designerWideId == designerWideId) match {
             case Some(componentDefinition) =>
               if (fromNussknackerPackage(componentDefinition)) {
-                componentDefinition.id.toString
+                if (sameNameForComponentInDifferentGroups.contains(componentDefinition.name))
+                  componentDefinition.id.toString
+                else componentDefinition.name
               } else nameForCustom
             case None => nameForFragment
           }

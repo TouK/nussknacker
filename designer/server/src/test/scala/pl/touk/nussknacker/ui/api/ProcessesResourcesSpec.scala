@@ -1223,9 +1223,9 @@ class ProcessesResourcesSpec
       toolbar shouldBe ScenarioToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
-          ToolbarPanel(SearchPanel, None, None, None),
-          ToolbarPanel(TipsPanel, None, None, None),
-          ToolbarPanel(CreatorPanel, None, None, None)
+          ToolbarPanel(SearchPanel, None, None, None, None),
+          ToolbarPanel(TipsPanel, None, None, None, None),
+          ToolbarPanel(CreatorPanel, None, None, None, None)
         ),
         List(),
         List(
@@ -1246,7 +1246,8 @@ class ProcessesResourcesSpec
                   disabled = false
                 )
               )
-            )
+            ),
+            None
           )
         ),
         List()

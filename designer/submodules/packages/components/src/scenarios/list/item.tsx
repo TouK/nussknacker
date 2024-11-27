@@ -13,6 +13,7 @@ import { ScenarioStatus } from "./scenarioStatus";
 import { ProcessingModeItem } from "./processingMode";
 import { formatDateTime } from "nussknackerUi/DateUtils";
 import { LabelChip } from "../../common/labelChip";
+import { useScenariosWithCategoryVisible } from "../useScenariosQuery";
 
 function Category({
     category,
@@ -60,11 +61,16 @@ const HighlightedName = styled(Highlight)({
 export function FirstLine({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
     const filtersContext = useFilterContext<ScenariosFiltersModel>();
+    const { withCategoriesVisible } = useScenariosWithCategoryVisible();
 
     return (
         <div style={{ display: "flex" }}>
-            <Category category={row.processCategory} filtersContext={filtersContext} />
-            <span style={{ paddingLeft: 8, paddingRight: 8 }}>/</span>
+            {withCategoriesVisible && (
+                <>
+                    <Category category={row.processCategory} filtersContext={filtersContext} />
+                    <span style={{ paddingLeft: 8, paddingRight: 8 }}>/</span>
+                </>
+            )}
             <CopyTooltip text={row.name} title={t("scenario.copyName", "Copy name to clipboard")}>
                 <HighlightedName value={row.name} filterText={filtersContext.getFilter("NAME")} />
             </CopyTooltip>
