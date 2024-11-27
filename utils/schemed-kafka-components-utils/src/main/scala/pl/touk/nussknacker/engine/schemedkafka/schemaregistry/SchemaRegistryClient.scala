@@ -3,11 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
-import pl.touk.nussknacker.engine.schemedkafka.{
-  TopicSelectionStrategy,
-  TopicsMatchingPatternWithExistingSubjectsSelectionStrategy,
-  TopicsWithExistingSubjectSelectionStrategy
-}
+import pl.touk.nussknacker.engine.schemedkafka.TopicsWithExistingSubjectSelectionStrategy
 
 trait SchemaRegistryClient extends Serializable {
 

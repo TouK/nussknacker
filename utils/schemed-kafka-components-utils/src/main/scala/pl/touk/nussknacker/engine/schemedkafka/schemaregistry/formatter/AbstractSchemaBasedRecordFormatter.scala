@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, serialization}
-import pl.touk.nussknacker.engine.schemedkafka.TopicsWithExistingSubjectSelectionStrategy
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   ContentTypes,
   ContentTypesSchemas,
@@ -143,7 +142,7 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
 
     }
 
-    record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
+    record.consumerRecord.copy(topic = Some(topic.name)).toKafkaConsumerRecord(topic, serializeKeyValue)
   }
 
   protected def readRecordKeyMessage(
