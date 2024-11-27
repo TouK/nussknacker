@@ -32,14 +32,14 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
   def createTopic(name: String, partitions: Int = 5): Unit = {
     adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()
     // When kraft enabled, topics doesn't appear instantly after createTopic
-    val maxTime = 10.seconds
+    val timeout = 10.seconds
     Await.result(
       retry.Pause(10, 1.second)(Timer.default)(
         Future {
           topic(name)
         }
       ),
-      maxTime
+      timeout
     )
   }
 
