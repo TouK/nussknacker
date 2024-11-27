@@ -1,5 +1,5 @@
 import { css } from "@mui/material";
-    
+
 export const nodeInputCss = css({
     height: "35px",
     width: "100%",
