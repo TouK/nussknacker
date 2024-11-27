@@ -6,7 +6,7 @@ import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
 import { ExternalLink, NuIcon } from "../common";
 import { filterRules } from "./filterRules";
 import { ComponentsFiltersModel } from "./filters";
-import { GridActionsCellItem, GridColDef } from "@mui/x-data-grid";
+import { GridActionsCellItem } from "@mui/x-data-grid";
 import { useNavigate } from "react-router-dom";
 import { ProcessingModesCell } from "./cellRenderers/processingModesCell";
 
@@ -15,15 +15,14 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
 
-    const columns: (GridColDef & { display?: string })[] = useMemo(
-        (): (GridColDef & { display?: string })[] => [
+    const columns = useMemo(
+        (): Columns<ComponentType> => [
             {
                 field: "name",
                 minWidth: 200,
                 cellClassName: "noPadding stretch",
                 headerName: t("table.title.NAME", "Name"),
-                flex: 4,
-                display: "flex",
+                flex: 1,
                 renderCell: (props) => <NameCell {...props} />,
                 sortComparator: (v1, v2) => v1.toString().toLowerCase().localeCompare(v2.toString().toLowerCase()),
                 hideable: false,

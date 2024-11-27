@@ -62,7 +62,6 @@ export const useDefaultTheme = (parent = {}): Theme => {
                             }),
                             root: {
                                 border: 0,
-                                "--DataGrid-containerBackground": blendLighten(root.palette.background.paper, 0.12),
                             },
                             row: {
                                 ":nth-of-type(even):not(:hover)": {
@@ -72,6 +71,9 @@ export const useDefaultTheme = (parent = {}): Theme => {
                             overlay: {
                                 backgroundColor: alpha(root.palette.common.black, root.palette.action.hoverOpacity * 3),
                                 zIndex: root.zIndex.mobileStepper - 1,
+                            },
+                            columnHeadersInner: {
+                                backgroundColor: blendLighten(root.palette.background.paper, 0.12),
                             },
                             cell: {
                                 "&:focus-within": {

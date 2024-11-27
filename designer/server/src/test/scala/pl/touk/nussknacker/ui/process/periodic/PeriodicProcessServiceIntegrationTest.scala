@@ -12,6 +12,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -426,9 +427,12 @@ class PeriodicProcessServiceIntegrationTest
     toDeployAfterFinish should have length 1
     toDeployAfterFinish.head.scheduleName.value.value shouldBe secondSchedule
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
+    val firstActivity = eventually {
+      val result = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+      result should not be empty
+      result.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    }
+    firstActivity shouldBe
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
         scenarioActivityId = firstActivity.scenarioActivityId,
@@ -441,8 +445,7 @@ class PeriodicProcessServiceIntegrationTest
         createdAt = firstActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
-      ),
-    )
+      )
   }
 
   it should "handle multiple one time schedules" in withFixture() { f =>
