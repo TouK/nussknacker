@@ -6,15 +6,20 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, FetchingProcessRepository}
-import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService.ScenarioActivityFetchError
-import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService.ScenarioActivityFetchError.NoScenario
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService.ScenarioActivityFetchError
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService.ScenarioActivityFetchError.NoScenario
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.Ordered.orderingToOrdered
 
-class ScenarioActivityService(
+// TODO: In current implementation, we do not have a single ScenarioActivity-related service.
+// - there is repository, that also encapsulates some very basic logic of validations/conversions
+// - there is a logging decorator for that repository
+// - the logic of fetching activities is used in multiple places, so it is encapsulated in this FetchScenarioActivityService
+// - a complete ScenarioActivityService should be implemented, that would encapsulate logic from this service, and from repository and its decorator
+class FetchScenarioActivityService(
     deploymentManagerDispatcher: DeploymentManagerDispatcher,
     scenarioActivityRepository: ScenarioActivityRepository,
     fetchingProcessRepository: FetchingProcessRepository[Future],
@@ -58,7 +63,7 @@ class ScenarioActivityService(
 
 }
 
-object ScenarioActivityService {
+object FetchScenarioActivityService {
   sealed trait ScenarioActivityFetchError
 
   object ScenarioActivityFetchError {

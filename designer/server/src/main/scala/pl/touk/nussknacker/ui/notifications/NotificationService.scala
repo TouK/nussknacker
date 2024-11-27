@@ -2,8 +2,9 @@ package pl.touk.nussknacker.ui.notifications
 
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioActionRepository}
-import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 
@@ -15,15 +16,33 @@ final case class NotificationConfig(duration: FiniteDuration)
 
 trait NotificationService {
 
-  def notifications(processName: Option[ProcessName])(
-      implicit user: LoggedUser,
-      ec: ExecutionContext
+  def notifications(scope: NotificationsScope)(
+      implicit ec: ExecutionContext
   ): Future[List[Notification]]
 
 }
 
+object NotificationService {
+
+  sealed trait NotificationsScope
+
+  object NotificationsScope {
+
+    final case class NotificationsForLoggedUser(
+        user: LoggedUser,
+    ) extends NotificationsScope
+
+    final case class NotificationsForLoggedUserAndScenario(
+        user: LoggedUser,
+        processName: ProcessName,
+    ) extends NotificationsScope
+
+  }
+
+}
+
 class NotificationServiceImpl(
-    scenarioActivityService: ScenarioActivityService,
+    scenarioActivityService: FetchScenarioActivityService,
     scenarioActionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     config: NotificationConfig,
@@ -31,25 +50,24 @@ class NotificationServiceImpl(
 ) extends NotificationService {
 
   override def notifications(
-      processNameOpt: Option[ProcessName]
-  )(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]] = {
+      scope: NotificationsScope,
+  )(implicit ec: ExecutionContext): Future[List[Notification]] = {
     val now   = clock.instant()
     val limit = now.minusMillis(config.duration.toMillis)
-    processNameOpt match {
-      case Some(processName) =>
+    scope match {
+      case NotificationsScope.NotificationsForLoggedUser(user) =>
+        notificationsForUserActions(user, limit)
+      case NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName) =>
         for {
-          notificationsForUserActions        <- notificationsForUserActions(limit)
-          notificationsForScenarioActivities <- notificationsForScenarioActivities(processName, limit)
+          notificationsForUserActions        <- notificationsForUserActions(user, limit)
+          notificationsForScenarioActivities <- notificationsForScenarioActivities(user, processName, limit)
         } yield notificationsForUserActions ++ notificationsForScenarioActivities
-      case None =>
-        notificationsForUserActions(limit)
     }
 
   }
 
-  private def notificationsForUserActions(limit: Instant)(
-      implicit user: LoggedUser,
-      ec: ExecutionContext
+  private def notificationsForUserActions(user: LoggedUser, limit: Instant)(
+      implicit ec: ExecutionContext
   ): Future[List[Notification]] = dbioRunner.run {
     scenarioActionRepository
       .getUserActionsAfter(
@@ -76,12 +94,11 @@ class NotificationServiceImpl(
       })
   }
 
-  private def notificationsForScenarioActivities(processName: ProcessName, limit: Instant)(
-      implicit user: LoggedUser,
-      ec: ExecutionContext
+  private def notificationsForScenarioActivities(user: LoggedUser, processName: ProcessName, limit: Instant)(
+      implicit ec: ExecutionContext
   ): Future[List[Notification]] = {
     for {
-      allActivities <- scenarioActivityService.fetchActivities(processName, Some(limit)).value.map {
+      allActivities <- scenarioActivityService.fetchActivities(processName, Some(limit))(user).value.map {
         case Right(activities) => activities
         case Left(_)           => List.empty
       }

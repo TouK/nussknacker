@@ -28,6 +28,7 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -38,7 +39,7 @@ import pl.touk.nussknacker.ui.process.repository.{
   DbScenarioActionRepository,
   ScenarioWithDetailsEntity
 }
-import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
@@ -75,7 +76,7 @@ class NotificationServiceTest
     processRepository,
   )
 
-  private val scenarioActivityService = new ScenarioActivityService(
+  private val scenarioActivityService = new FetchScenarioActivityService(
     deploymentManagerDispatcher = dmDispatcher,
     scenarioActivityRepository = scenarioActivityRepository,
     fetchingProcessRepository = processRepository,
@@ -100,7 +101,9 @@ class NotificationServiceTest
     val (deploymentService, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
-      notificationService.notifications(None)(user, global).futureValue
+      notificationService
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .futureValue
 
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
@@ -152,7 +155,9 @@ class NotificationServiceTest
     val (deploymentService, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser): List[Notification] =
-      notificationService.notifications(Some(processName))(user, global).futureValue
+      notificationService
+        .notifications(NotificationsScope.NotificationsForLoggedUserAndScenario(user, processName))(global)
+        .futureValue
 
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
@@ -249,14 +254,21 @@ class NotificationServiceTest
 
     val user = TestFactory.adminUser("fooUser", "fooUser")
     deployProcess(Success(None), user)
-    val notificationsAfterDeploy = notificationService.notifications(None)(user, global).futureValue
+    val notificationsAfterDeploy =
+      notificationService
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .futureValue
+
     notificationsAfterDeploy should have length 1
     val deployNotificationId = notificationsAfterDeploy.head.id
 
     deploymentService
       .markActionExecutionFinished("Streaming", passedDeploymentId.value.toActionIdOpt.value)
       .futureValue
-    val notificationAfterExecutionFinished = notificationService.notifications(None)(user, global).futureValue
+    val notificationAfterExecutionFinished =
+      notificationService
+        .notifications(NotificationsScope.NotificationsForLoggedUser(user))(global)
+        .futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
     notificationAfterExecutionFinished.head.id should not equal deployNotificationId

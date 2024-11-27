@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
   ModifyCommentError
 }
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
-import pl.touk.nussknacker.ui.process.scenarioactivity.ScenarioActivityService
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
@@ -39,7 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
     authManager: AuthManager,
-    scenarioActivityService: ScenarioActivityService,
+    scenarioActivityService: FetchScenarioActivityService,
     scenarioActivityRepository: ScenarioActivityRepository,
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
