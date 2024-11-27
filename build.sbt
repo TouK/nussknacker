@@ -1916,7 +1916,6 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
         "com.typesafe.akka"             %% "akka-actor"   % akkaV,
         "com.softwaremill.sttp.client3" %% "core"         % sttpV,
         "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
-        "com.typesafe.slick"            %% "slick"        % slickV,
         "org.scalatestplus"             %% "mockito-5-10" % scalaTestPlusV % Test
       )
     }
