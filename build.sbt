@@ -1503,11 +1503,12 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
     libraryDependencies ++= {
       Seq(
         // From version 4.0.0 onwards, skuber uses pekko instead of akka, so we need to migrate to pekko first
-        "io.github.hagay3"           %% "skuber"        % "3.2" exclude ("commons-logging", "commons-logging"),
-        "com.github.julien-truffaut" %% "monocle-core"  % monocleV,
-        "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
-        "com.typesafe.akka"          %% "akka-slf4j"    % akkaV     % Test,
-        "org.wiremock"                % "wiremock"      % wireMockV % Test,
+        "io.github.hagay3"              %% "skuber"                           % "3.2" exclude ("commons-logging", "commons-logging"),
+        "com.github.julien-truffaut"    %% "monocle-core"                     % monocleV,
+        "com.github.julien-truffaut"    %% "monocle-macro"                    % monocleV,
+        "com.typesafe.akka"             %% "akka-slf4j"                       % akkaV     % Test,
+        "org.wiremock"                   % "wiremock"                         % wireMockV % Test,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV     % Test,
       )
     },
     buildAndImportRuntimeImageToK3d := {
@@ -1686,9 +1687,10 @@ lazy val httpUtils = (project in utils("http-utils"))
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
-        "com.softwaremill.sttp.client3" %% "json-common" % sttpV,
-        "com.softwaremill.sttp.client3" %% "circe"       % sttpV,
+        "com.softwaremill.sttp.client3" %% "core"                             % sttpV,
+        "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
+        "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
       )
     }
   )
