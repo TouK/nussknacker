@@ -33,8 +33,6 @@ export default function PerformSingleExecutionButton(props: ToolbarButtonProps) 
 
     const actionTooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.PerformSingleExecution);
 
-    const deployedVersionDescription = scenarioState.deployedVersionId ? ` (version ${scenarioState.deployedVersionId} is deployed)` : ``;
-
     const tooltip =
         actionTooltip === ActionTooltip.NotAllowedForDeployedVersion
             ? t(
@@ -42,7 +40,9 @@ export default function PerformSingleExecutionButton(props: ToolbarButtonProps) 
                   "There is new version {{ latestVersion }} available.{{ deployedVersionDescription }}",
                   {
                       latestVersion: scenarioState.latestVersionId,
-                      deployedVersionDescription: deployedVersionDescription,
+                      deployedVersionDescription: scenarioState?.deployedVersionId
+                          ? ` (version ${scenarioState.deployedVersionId} is deployed)`
+                          : ``,
                   },
               )
             : actionTooltip === ActionTooltip.NotAllowedInCurrentState
