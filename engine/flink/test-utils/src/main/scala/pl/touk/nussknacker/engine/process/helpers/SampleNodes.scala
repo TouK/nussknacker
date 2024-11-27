@@ -13,7 +13,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.apache.flink.streaming.runtime.streamrecord.{RecordAttributes, StreamRecord}
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
@@ -406,6 +406,9 @@ object SampleNodes {
             val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
             output.collect(outputResult)
           }
+
+          override def processRecordAttributes(recordAttributes: RecordAttributes): Unit =
+            super.processRecordAttributes(recordAttributes)
         }
         str.transform("collectTimestammp", ctx.valueWithContextInfo.forUnknown, streamOperator)
       }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeutils.CompositeTypeSerializerUtil.IntermediateCompatibilityResult
 import org.apache.flink.api.common.typeutils.{
   CompositeTypeSerializerUtil,
   TypeSerializer,
@@ -123,6 +124,29 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
 
 abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnapshot[T] with LazyLogging {
 
+  private val constructIntermediateCompatibilityResult
+      : (Array[TypeSerializer[_]], Array[TypeSerializerSnapshot[_]]) => IntermediateCompatibilityResult[T] = {
+    try {
+      // Flink 1.19
+      val method = classOf[CompositeTypeSerializerUtil].getMethod(
+        "constructIntermediateCompatibilityResult",
+        classOf[Array[TypeSerializer[_]]],
+        classOf[Array[TypeSerializerSnapshot[_]]],
+      )
+      (a, b) => method.invoke(null, a, b).asInstanceOf[IntermediateCompatibilityResult[T]]
+    } catch {
+      // Flink 1.18
+      case _: NoSuchMethodException =>
+        val method = classOf[CompositeTypeSerializerUtil].getMethod(
+          "constructIntermediateCompatibilityResult",
+          classOf[Array[TypeSerializerSnapshot[_]]],
+          classOf[Array[TypeSerializerSnapshot[_]]],
+        )
+        (a, b) =>
+          method.invoke(null, a.map(_.snapshotConfiguration()), b).asInstanceOf[IntermediateCompatibilityResult[T]]
+    }
+  }
+
   protected var serializersSnapshots: Array[(String, TypeSerializerSnapshot[_])] = _
 
   protected def compatibilityRequiresSameKeys: Boolean
@@ -172,7 +196,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val newSerializersToUse = newSerializers.filter(k => commons.contains(k._1))
       val snapshotsToUse      = serializersSnapshots.filter(k => commons.contains(k._1))
 
-      val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
+      val fieldsCompatibility = constructIntermediateCompatibilityResult(
         newSerializersToUse.map(_._2),
         snapshotsToUse.map(_._2)
       )

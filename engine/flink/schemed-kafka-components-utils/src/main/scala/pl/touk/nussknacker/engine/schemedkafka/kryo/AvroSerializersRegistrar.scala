@@ -19,9 +19,36 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
 
   override def register(modelConfig: Config, executionConfig: ExecutionConfig): Unit = {
     logger.debug("Registering default avro serializers")
-    AvroUtils.getAvroUtils.addAvroSerializersIfRequired(executionConfig, classOf[GenericData.Record])
+    try {
+      registerInFlink1_19(executionConfig)
+    } catch {
+      case _: NoSuchMethodException => registerInFlink1_18(executionConfig)
+    }
     val resolvedKafkaConfig = resolveConfig(modelConfig)
     registerGenericRecordSchemaIdSerializationForGlobalKafkaConfigIfNeed(resolvedKafkaConfig, executionConfig)
+  }
+
+  private def registerInFlink1_19(executionConfig: ExecutionConfig): Unit = {
+    val avroUtils      = AvroUtils.getAvroUtils
+    val avroUtilsClass = avroUtils.getClass
+    val addAvroSerializersIfRequired = avroUtilsClass.getMethod(
+      "addAvroSerializersIfRequired",
+      avroUtilsClass.getClassLoader.loadClass("org.apache.flink.api.common.serialization.SerializerConfig"),
+      classOf[Class[_]]
+    )
+    val serializerConfig = executionConfig.getClass.getMethod("getSerializerConfig").invoke(executionConfig)
+    addAvroSerializersIfRequired.invoke(avroUtils, serializerConfig, classOf[GenericData.Record])
+  }
+
+  private def registerInFlink1_18(executionConfig: ExecutionConfig): Unit = {
+    val avroUtils      = AvroUtils.getAvroUtils
+    val avroUtilsClass = avroUtils.getClass
+    val addAvroSerializersIfRequired = avroUtilsClass.getMethod(
+      "addAvroSerializersIfRequired",
+      avroUtilsClass.getClassLoader.loadClass("org.apache.flink.api.common.ExecutionConfig"),
+      classOf[Class[_]]
+    )
+    addAvroSerializersIfRequired.invoke(avroUtils, executionConfig, classOf[GenericData.Record])
   }
 
   private def resolveConfig(modelConfig: Config): Option[KafkaConfig] = {
