@@ -9,6 +9,7 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 
 import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
+import scala.collection.compat._
 import scala.util.Try
 
 object ScheduleProperty {
