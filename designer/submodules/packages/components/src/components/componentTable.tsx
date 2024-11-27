@@ -39,6 +39,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
             {
                 field: "componentGroupName",
                 cellClassName: "noPadding stretch",
+                display: "flex",
                 minWidth: 150,
                 headerName: t("table.title.GROUP", "Group"),
                 renderCell: (props) => <FilterLinkCell<ComponentsFiltersModel> filterKey="GROUP" {...props} />,
@@ -47,7 +48,8 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 field: "categories",
                 headerName: t("table.title.CATEGORIES", "Categories"),
                 minWidth: 350,
-                flex: 4,
+                flex: 2,
+                display: "flex",
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <CategoriesCell {...props} />,
                 sortingOrder: ["desc", "asc", null],
@@ -55,8 +57,9 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
             {
                 field: "allowedProcessingModes",
                 headerName: t("table.title.PROCESSING_MODE", "Processing modes"),
-                minWidth: 350,
-                flex: 3,
+                minWidth: 500,
+                display: "flex",
+                flex: 4,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <ProcessingModesCell {...props} />,
                 sortingOrder: ["desc", "asc", null],
@@ -64,6 +67,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
             {
                 field: "links",
                 type: "actions",
+                display: "flex",
                 getActions: ({ row }) =>
                     row.links.map((link, i) => (
                         <GridActionsCellItem
