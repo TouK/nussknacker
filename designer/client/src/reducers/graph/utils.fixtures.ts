@@ -166,8 +166,9 @@ export const state: GraphState = {
             status: {
                 name: "NOT_DEPLOYED",
             },
-            version: null,
-            applicableActions: ["DEPLOY", "ARCHIVE", "RENAME"],
+            latestVersionId: 1,
+            deployedVersionId: 1,
+            visibleActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             allowedActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             actionTooltips: {},
             icon: "/assets/states/not-deployed.svg",

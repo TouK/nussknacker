@@ -41,12 +41,12 @@ trait ProcessStateDefinitionManager {
   /**
    * Actions that are applicable to scenario in general. They may be available only in particular states, as defined by `def statusActions`
    */
-  def applicableActions: List[ScenarioActionName] = defaultApplicableActions
+  def visibleActions: List[ScenarioActionName] = defaultApplicableActions
 
   /**
    * Custom tooltips for actions
    */
-  def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String] = Map.empty
+  def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, ScenarioActionTooltip] = Map.empty
 
   /**
     * Allowed transitions between states.
@@ -66,7 +66,9 @@ trait ProcessStateDefinitionManager {
       statusDetails.externalDeploymentId,
       statusDetails.status,
       statusDetails.version,
-      applicableActions,
+      latestVersionId,
+      deployedVersionId,
+      visibleActions,
       statusActions(status),
       actionTooltips(status),
       statusIcon(statusDetails.status),

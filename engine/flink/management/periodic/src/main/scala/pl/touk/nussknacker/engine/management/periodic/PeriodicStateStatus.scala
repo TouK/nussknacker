@@ -4,7 +4,12 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.P
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{
+  ScenarioActionName,
+  ScenarioActionTooltip,
+  StateDefinitionDetails,
+  StateStatus
+}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -71,21 +76,15 @@ object PeriodicStateStatus {
     ),
   )
 
-  def customActionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String] = {
+  def customActionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, ScenarioActionTooltip] = {
     processStatus match {
       case ProcessStatus(_: ScheduledStatus, latestVersionId, deployedVersionId)
           if deployedVersionId.contains(latestVersionId) =>
         Map.empty
-      case ProcessStatus(_: ScheduledStatus, latestVersionId, deployedVersionIdOpt) =>
-        val deployedVersionStr = deployedVersionIdOpt match {
-          case Some(deployedVersionId) => s" (version ${deployedVersionId.value} is deployed)"
-          case None                    => ""
-        }
-        Map(
-          ScenarioActionName.PerformSingleExecution -> s"There is new version ${latestVersionId.value} available$deployedVersionStr"
-        )
-      case ProcessStatus(other, _, _) =>
-        Map(ScenarioActionName.PerformSingleExecution -> s"Disabled for ${other.name} status.")
+      case ProcessStatus(_: ScheduledStatus, _, _) =>
+        Map(ScenarioActionName.PerformSingleExecution -> ScenarioActionTooltip.NotAllowedForDeployedVersion)
+      case ProcessStatus(_, _, _) =>
+        Map(ScenarioActionName.PerformSingleExecution -> ScenarioActionTooltip.NotAllowedInCurrentState)
     }
   }
 

@@ -1,4 +1,4 @@
-import { ActionName, PredefinedActionName, ProcessStateType, Scenario } from "./types";
+import { ActionName, PredefinedActionName, ProcessStateType, Scenario, ActionTooltip } from "./types";
 import {
     descriptionProcessArchived,
     descriptionFragment,
@@ -19,7 +19,7 @@ class ProcessStateUtils {
     public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Archive);
 
     public canSeePerformSingleExecution = (state: ProcessStateType): boolean =>
-        state?.applicableActions.includes(PredefinedActionName.PerformSingleExecution);
+        state?.visibleActions.includes(PredefinedActionName.PerformSingleExecution);
 
     public canPerformSingleExecution = (state: ProcessStateType): boolean =>
         state?.allowedActions.includes(PredefinedActionName.PerformSingleExecution);
@@ -67,7 +67,7 @@ class ProcessStateUtils {
         return `${name}-${processState?.icon || state?.icon || unknownIcon}`;
     }
 
-    getActionCustomTooltip(processState: ProcessStateType, actionName: ActionName): string | undefined {
+    getActionCustomTooltip(processState: ProcessStateType, actionName: ActionName): ActionTooltip | undefined {
         return processState?.actionTooltips[actionName] || undefined;
     }
 }
