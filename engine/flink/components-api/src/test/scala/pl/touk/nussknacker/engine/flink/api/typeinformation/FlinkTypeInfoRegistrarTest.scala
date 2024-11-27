@@ -42,6 +42,7 @@ class FlinkTypeInfoRegistrarTest extends AnyFunSuite with Matchers {
   }
 
   test("Looking for TypeInformation for a NU types with registrar should return a specific TypeInformation") {
+    FlinkTypeInfoRegistrar.enableFlinkTypeInfoRegistration()
     FlinkTypeInfoRegistrar.ensureTypeInfosAreRegistered()
 
     nuTypesMapping.foreach { case (klass, expected) =>

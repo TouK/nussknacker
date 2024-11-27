@@ -12,7 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 // It is a singleton as Flink's only contains a global registry for such purpose
 object FlinkTypeInfoRegistrar {
 
-  private val typeInfoRegistrationEnabled = new AtomicBoolean(true)
+  // TODO: Until we use Flink 1.18 we need to disable info registration
+  private val typeInfoRegistrationEnabled = new AtomicBoolean(false)
 
   private val DisableFlinkTypeInfoRegistrationEnvVarName = "NU_DISABLE_FLINK_TYPE_INFO_REGISTRATION"
 
