@@ -1541,20 +1541,20 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.commons"             % "commons-text"                     % flinkCommonsTextV,
-        "org.typelevel"                 %% "cats-core"                        % catsV,
-        "com.beachape"                  %% "enumeratum"                       % enumeratumV,
-        "com.typesafe.scala-logging"    %% "scala-logging"                    % scalaLoggingV,
-        "com.typesafe"                   % "config"                           % configV,
-        "org.semver4j"                   % "semver4j"                         % "5.4.0",
-        "javax.validation"               % "validation-api"                   % javaxValidationApiV,
-        "org.scala-lang.modules"        %% "scala-collection-compat"          % scalaCollectionsCompatV,
-        "com.iheart"                    %% "ficus"                            % ficusV,
-        "org.springframework"            % "spring-core"                      % springV,
-        "org.springframework"            % "spring-expression"                % springV        % Test,
-        "com.google.code.findbugs"       % "jsr305"                           % findBugsV,
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
-        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort"    % scalaTestPlusV % Test
+        "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
+        "org.typelevel"                 %% "cats-core"                     % catsV,
+        "com.beachape"                  %% "enumeratum"                    % enumeratumV,
+        "com.typesafe.scala-logging"    %% "scala-logging"                 % scalaLoggingV,
+        "com.typesafe"                   % "config"                        % configV,
+        "org.semver4j"                   % "semver4j"                      % "5.4.0",
+        "javax.validation"               % "validation-api"                % javaxValidationApiV,
+        "org.scala-lang.modules"        %% "scala-collection-compat"       % scalaCollectionsCompatV,
+        "com.iheart"                    %% "ficus"                         % ficusV,
+        "org.springframework"            % "spring-core"                   % springV,
+        "org.springframework"            % "spring-expression"             % springV        % Test,
+        "com.google.code.findbugs"       % "jsr305"                        % findBugsV,
+        "com.softwaremill.sttp.client3" %% "core"                          % sttpV,
+        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
       )
     }
   )
