@@ -63,12 +63,12 @@ class PeriodicDeploymentManagerTest
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
     val manager                       = new InMemPeriodicProcessesManager(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val jarManagerStub                = new JarManagerStub
+    val periodicDeploymentServiceStub = new PeriodicDeploymentServiceStub
     val preparedDeploymentData        = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
-      periodicDeploymentService = jarManagerStub,
+      periodicDeploymentService = periodicDeploymentServiceStub,
       periodicProcessesManager = manager,
       periodicProcessListener = EmptyListener,
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,

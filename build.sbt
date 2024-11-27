@@ -2061,7 +2061,7 @@ lazy val designer = (project in file("designer/server"))
     liteEmbeddedDeploymentManager     % Provided,
     liteK8sDeploymentManager          % Provided,
     developmentTestsDeploymentManager % Provided,
-    flinkPeriodicDeploymentManager    % Provided,
+    flinkPeriodicDeploymentManager    % "provided, test->test",
     schemedKafkaComponentsUtils       % Provided,
   )
 

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeployment
 
 import scala.concurrent.Future
 
-class JarManagerStub extends PeriodicDeploymentService {
+class PeriodicDeploymentServiceStub extends PeriodicDeploymentService {
 
   var deployWithJarFuture: Future[Option[ExternalDeploymentId]]            = Future.successful(None)
   var lastDeploymentWithRuntimeParams: Option[DeploymentWithRuntimeParams] = None

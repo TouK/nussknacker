@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.common.periodic._
 import pl.touk.nussknacker.engine.common.periodic.service._
-import pl.touk.nussknacker.engine.management.periodic.flink.{DeploymentManagerStub, JarManagerStub}
+import pl.touk.nussknacker.engine.management.periodic.flink.{DeploymentManagerStub, PeriodicDeploymentServiceStub}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithPostgresDbTesting
 import pl.touk.nussknacker.test.base.it.WithClock
@@ -94,7 +94,7 @@ class PeriodicProcessServiceIntegrationTest
       executionConfig: PeriodicExecutionConfig
   ) {
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val jarManagerStub                = new JarManagerStub
+    val periodicDeploymentServiceStub = new PeriodicDeploymentServiceStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener                  = false
 
@@ -105,7 +105,7 @@ class PeriodicProcessServiceIntegrationTest
     ) =
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
-        periodicDeploymentService = jarManagerStub,
+        periodicDeploymentService = periodicDeploymentServiceStub,
         periodicProcessesManager = new RepositoryBasedPeriodicProcessesManagerProvider(
           new SlickPeriodicProcessesRepository(dbRef.db, dbRef.profile, fixedClock(currentTime))
         ).provide(deploymentManagerName, processingType),
@@ -269,7 +269,7 @@ class PeriodicProcessServiceIntegrationTest
   ) { f =>
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
     var currentTime        = startTime
-    f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.periodicDeploymentServiceStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
 
     def service = f.periodicProcessService(currentTime)
 
@@ -621,7 +621,7 @@ class PeriodicProcessServiceIntegrationTest
     val timeToTriggerCheck = startTime.plus(1, ChronoUnit.HOURS)
     var currentTime        = startTime
 
-    f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.periodicDeploymentServiceStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     def service = f.periodicProcessService(currentTime)
 
     val processIdWithName = f.prepareProcess(processName).dbioActionValues

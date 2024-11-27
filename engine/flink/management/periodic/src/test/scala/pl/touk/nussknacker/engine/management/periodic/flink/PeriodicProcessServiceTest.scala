@@ -79,7 +79,7 @@ class PeriodicProcessServiceTest
   class Fixture {
     val manager                       = new InMemPeriodicProcessesManager(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
-    val jarManagerStub                = new JarManagerStub
+    val periodicDeploymentServiceStub = new PeriodicDeploymentServiceStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
 
@@ -87,7 +87,7 @@ class PeriodicProcessServiceTest
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
-      periodicDeploymentService = jarManagerStub,
+      periodicDeploymentService = periodicDeploymentServiceStub,
       periodicProcessesManager = manager,
       new PeriodicProcessListener {
 
@@ -391,7 +391,7 @@ class PeriodicProcessServiceTest
     val deploymentEntity = f.manager.deploymentEntities.loneElement
     deploymentEntity.status shouldBe PeriodicProcessDeploymentStatus.Deployed
     ConfigFactory
-      .parseString(f.jarManagerStub.lastDeploymentWithRuntimeParams.value.inputConfigDuringExecutionJson)
+      .parseString(f.periodicDeploymentServiceStub.lastDeploymentWithRuntimeParams.value.inputConfigDuringExecutionJson)
       .getString("runAt") shouldBe deploymentEntity.runAt.toString
 
     val expectedDetails =
@@ -403,7 +403,7 @@ class PeriodicProcessServiceTest
   test("deploy - should handle failed deployment") {
     val f = new Fixture
     f.manager.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-    f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    f.periodicDeploymentServiceStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     val toSchedule = createPeriodicProcessDeployment(
       f.manager.processEntities.loneElement,
       f.manager.deploymentEntities.loneElement,
