@@ -2,12 +2,7 @@
 
 exports[`ProcessStateIcon tests should show data from loaded process.state 1`] = `
 .emotion-0 {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
-  width: 100%;
-  height: 100%;
   width: 20px;
   height: 20px;
 }
@@ -28,12 +23,7 @@ exports[`ProcessStateIcon tests should show data from loaded process.state 1`] =
 
 exports[`ProcessStateIcon tests should show defaults for loaded process.state without data 1`] = `
 .emotion-0 {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
-  width: 100%;
-  height: 100%;
   width: 20px;
   height: 20px;
 }
@@ -53,12 +43,7 @@ exports[`ProcessStateIcon tests should show defaults for loaded process.state wi
 
 exports[`ProcessStateIcon tests should show defaults for missing process.state and stateProcess 1`] = `
 .emotion-0 {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
-  width: 100%;
-  height: 100%;
   width: 20px;
   height: 20px;
 }
@@ -78,12 +63,7 @@ exports[`ProcessStateIcon tests should show defaults for missing process.state a
 
 exports[`ProcessStateIcon tests should show defaults if loadedProcess is empty 1`] = `
 .emotion-0 {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
-  width: 100%;
-  height: 100%;
   width: 20px;
   height: 20px;
 }
@@ -103,12 +83,7 @@ exports[`ProcessStateIcon tests should show defaults if loadedProcess is empty 1
 
 exports[`ProcessStateIcon tests should show loadedProcess data 1`] = `
 .emotion-0 {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
-  width: 100%;
-  height: 100%;
   width: 20px;
   height: 20px;
 }
