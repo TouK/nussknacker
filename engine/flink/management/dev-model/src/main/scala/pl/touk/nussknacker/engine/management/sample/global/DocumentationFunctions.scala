@@ -62,7 +62,7 @@ object DocumentationFunctions {
         (left.withoutValue, right.withoutValue) match {
           case (`intType`, `intType`)       => intType.validNel
           case (`doubleType`, `doubleType`) => doubleType.validNel
-          case (l, r) if List(l, r).forall(_.canBeSubclassOf(numberType)) =>
+          case (l, r) if List(l, r).forall(_.canBeConvertedTo(numberType)) =>
             OtherError(s"Addition of ${l.display} and ${r.display} is not supported").invalidNel
           case (`stringType`, `stringType`) => stringType.validNel
           case _                            => ArgumentTypeError.invalidNel
@@ -110,7 +110,7 @@ object DocumentationFunctions {
           case Some(v) => v.validNel
           case None    => OtherError("No field with given name").invalidNel
         }
-      case TypedObjectTypingResult(_, _, _) :: x :: Nil if x.canBeSubclassOf(stringType) =>
+      case TypedObjectTypingResult(_, _, _) :: x :: Nil if x.canBeConvertedTo(stringType) =>
         OtherError("Expected string with known value").invalidNel
       case _ =>
         ArgumentTypeError.invalidNel

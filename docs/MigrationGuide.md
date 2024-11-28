@@ -9,7 +9,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
     * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15
     * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
-
+* [#7246](https://github.com/TouK/nussknacker/pull/7246)
+    * Typing api changes:
+        * CanBeSubclassDeterminer.canBeSubclassOf changed to
+          AssignabilityDeterminer.isAssignableLoose.
+        * TypingResult.canBeSubclassOf changed to TypingResult.canBeConvertedTo
 
 ## In version 1.18.0
 
@@ -71,6 +75,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * added optional query param `enrichedWithUiConfig`
         * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 
+* [#7246](https://github.com/TouK/nussknacker/pull/7246) Changes in DictApiEndpoints:
+    *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
 ### Configuration changes
 
 * [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
@@ -618,7 +624,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `api/parameters/*/validate` request
     * `scenarioName` is removed
     * `processProperties` is removed
-
 ### Configuration changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
