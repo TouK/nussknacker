@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated
 import org.apache.kafka.clients.admin.ListTopicsOptions
+import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.errors.TimeoutException
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryError}
@@ -57,6 +58,8 @@ class AllNonHiddenTopicsSelectionStrategy extends TopicSelectionStrategy {
             case _: TimeoutException => List.empty
             case _                   => throw err
           }
+        case _: KafkaException =>
+          List.empty
       }
     }
 
