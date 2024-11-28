@@ -1503,11 +1503,12 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
     libraryDependencies ++= {
       Seq(
         // From version 4.0.0 onwards, skuber uses pekko instead of akka, so we need to migrate to pekko first
-        "io.github.hagay3"           %% "skuber"        % "3.2" exclude ("commons-logging", "commons-logging"),
-        "com.github.julien-truffaut" %% "monocle-core"  % monocleV,
-        "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
-        "com.typesafe.akka"          %% "akka-slf4j"    % akkaV     % Test,
-        "org.wiremock"                % "wiremock"      % wireMockV % Test,
+        "io.github.hagay3"              %% "skuber"                           % "3.2" exclude ("commons-logging", "commons-logging"),
+        "com.github.julien-truffaut"    %% "monocle-core"                     % monocleV,
+        "com.github.julien-truffaut"    %% "monocle-macro"                    % monocleV,
+        "com.typesafe.akka"             %% "akka-slf4j"                       % akkaV     % Test,
+        "org.wiremock"                   % "wiremock"                         % wireMockV % Test,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV     % Test,
       )
     },
     buildAndImportRuntimeImageToK3d := {
@@ -1541,20 +1542,20 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.commons"             % "commons-text"                     % flinkCommonsTextV,
-        "org.typelevel"                 %% "cats-core"                        % catsV,
-        "com.beachape"                  %% "enumeratum"                       % enumeratumV,
-        "com.typesafe.scala-logging"    %% "scala-logging"                    % scalaLoggingV,
-        "com.typesafe"                   % "config"                           % configV,
-        "org.semver4j"                   % "semver4j"                         % "5.4.0",
-        "javax.validation"               % "validation-api"                   % javaxValidationApiV,
-        "org.scala-lang.modules"        %% "scala-collection-compat"          % scalaCollectionsCompatV,
-        "com.iheart"                    %% "ficus"                            % ficusV,
-        "org.springframework"            % "spring-core"                      % springV,
-        "org.springframework"            % "spring-expression"                % springV        % Test,
-        "com.google.code.findbugs"       % "jsr305"                           % findBugsV,
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
-        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort"    % scalaTestPlusV % Test
+        "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
+        "org.typelevel"                 %% "cats-core"                     % catsV,
+        "com.beachape"                  %% "enumeratum"                    % enumeratumV,
+        "com.typesafe.scala-logging"    %% "scala-logging"                 % scalaLoggingV,
+        "com.typesafe"                   % "config"                        % configV,
+        "org.semver4j"                   % "semver4j"                      % "5.4.0",
+        "javax.validation"               % "validation-api"                % javaxValidationApiV,
+        "org.scala-lang.modules"        %% "scala-collection-compat"       % scalaCollectionsCompatV,
+        "com.iheart"                    %% "ficus"                         % ficusV,
+        "org.springframework"            % "spring-core"                   % springV,
+        "org.springframework"            % "spring-expression"             % springV        % Test,
+        "com.google.code.findbugs"       % "jsr305"                        % findBugsV,
+        "com.softwaremill.sttp.client3" %% "core"                          % sttpV,
+        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
       )
     }
   )
@@ -1686,9 +1687,10 @@ lazy val httpUtils = (project in utils("http-utils"))
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
-        "com.softwaremill.sttp.client3" %% "json-common" % sttpV,
-        "com.softwaremill.sttp.client3" %% "circe"       % sttpV,
+        "com.softwaremill.sttp.client3" %% "core"                             % sttpV,
+        "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
+        "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
       )
     }
   )
