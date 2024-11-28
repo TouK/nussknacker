@@ -32,11 +32,11 @@ abstract class PeriodicDeploymentManagerProvider(
     hintText = Some("Quartz cron syntax. You can specify multiple schedulers separated by '|'.")
   )
 
-  protected def createPeriodicDeploymentService(
+  protected def createPeriodicDeploymentHandler(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
       config: Config,
-  ): PeriodicDeploymentService
+  ): PeriodicDeploymentHandler
 
   override def createDeploymentManager(
       modelData: BaseModelData,
@@ -53,7 +53,7 @@ abstract class PeriodicDeploymentManagerProvider(
 
         PeriodicDeploymentManager(
           delegate = delegateDeploymentManager,
-          periodicDeploymentService = createPeriodicDeploymentService(modelData, dependencies, config),
+          periodicDeploymentHandler = createPeriodicDeploymentHandler(modelData, dependencies, config),
           schedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
           processConfigEnricherFactory = ProcessConfigEnricherFactory.noOp,
           periodicBatchConfig = periodicBatchConfig,

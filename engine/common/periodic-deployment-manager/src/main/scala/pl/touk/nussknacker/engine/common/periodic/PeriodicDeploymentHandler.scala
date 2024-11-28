@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeployment
 
 import scala.concurrent.Future
 
-trait PeriodicDeploymentService {
+trait PeriodicDeploymentHandler {
 
   def prepareDeploymentWithRuntimeParams(
       processVersion: ProcessVersion,

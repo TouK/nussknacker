@@ -98,9 +98,9 @@ class RepositoryBasedPeriodicProcessesManager(
     .run
 
   override def fetchCanonicalProcess(
-      processId: ProcessId,
+      processName: ProcessName,
       versionId: VersionId
   ): Future[Option[CanonicalProcess]] =
-    periodicProcessesRepository.fetchCanonicalProcess(processId, versionId).run
+    periodicProcessesRepository.fetchCanonicalProcess(processName, versionId).run
 
 }

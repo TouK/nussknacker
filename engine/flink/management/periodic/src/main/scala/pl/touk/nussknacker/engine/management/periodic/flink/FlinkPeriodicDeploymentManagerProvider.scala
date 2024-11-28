@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.management.periodic.flink.flink
+package pl.touk.nussknacker.engine.management.periodic.flink
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.common.periodic.{
   PeriodicBatchConfig,
-  PeriodicDeploymentManagerProvider,
-  PeriodicDeploymentService
+  PeriodicDeploymentHandler,
+  PeriodicDeploymentManagerProvider
 }
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -16,18 +16,18 @@ class FlinkPeriodicDeploymentManagerProvider
       delegate = new FlinkStreamingDeploymentManagerProvider(),
     ) {
 
-  override protected def createPeriodicDeploymentService(
+  override protected def createPeriodicDeploymentHandler(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
       config: Config
-  ): PeriodicDeploymentService = {
+  ): PeriodicDeploymentHandler = {
     import dependencies._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
     val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
     val flinkConfig         = config.rootAs[FlinkConfig]
 
-    FlinkPeriodicDeploymentService(
+    FlinkPeriodicDeploymentHandler(
       flinkConfig = flinkConfig,
       jarsDir = periodicBatchConfig.jarsDir,
       modelData = modelData,

@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager.ScheduleProperty
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 
 import java.time.LocalDateTime
@@ -66,7 +66,7 @@ trait PeriodicProcessesManager {
   ): Future[SchedulesState]
 
   def fetchCanonicalProcess(
-      processId: ProcessId,
+      processName: ProcessName,
       versionId: VersionId,
   ): Future[Option[CanonicalProcess]]
 
@@ -140,7 +140,7 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
   ): Future[SchedulesState] = notImplemented
 
   override def fetchCanonicalProcess(
-      processId: ProcessId,
+      processName: ProcessName,
       versionId: VersionId
   ): Future[Option[CanonicalProcess]] = notImplemented
 

@@ -8,9 +8,9 @@ import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithR
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.common.periodic.PeriodicDeploymentService
+import pl.touk.nussknacker.engine.common.periodic.PeriodicDeploymentHandler
 import pl.touk.nussknacker.engine.management.FlinkModelJarProvider
-import pl.touk.nussknacker.engine.management.periodic.flink.flink.FlinkPeriodicDeploymentService
+import pl.touk.nussknacker.engine.management.periodic.flink.FlinkPeriodicDeploymentHandler
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -40,9 +40,9 @@ class JarManagerTest extends AnyFunSuite with Matchers with ScalaFutures with Pa
   private def createJarManager(
       jarsDir: Path,
       modelJarProvider: FlinkModelJarProvider = new FlinkModelJarProvider(currentModelUrls)
-  ): PeriodicDeploymentService = {
+  ): PeriodicDeploymentHandler = {
 
-    new FlinkPeriodicDeploymentService(
+    new FlinkPeriodicDeploymentHandler(
       flinkClient = new FlinkClientStub,
       jarsDir = jarsDir,
       inputConfigDuringExecution = InputConfigDuringExecution(ConfigFactory.empty()),

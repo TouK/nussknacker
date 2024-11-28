@@ -37,7 +37,7 @@ import scala.util.control.NonFatal
 
 class PeriodicProcessService(
     delegateDeploymentManager: DeploymentManager,
-    periodicDeploymentService: PeriodicDeploymentService,
+    periodicDeploymentHandler: PeriodicDeploymentHandler,
     periodicProcessesManager: PeriodicProcessesManager,
     periodicProcessListener: PeriodicProcessListener,
     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
@@ -130,7 +130,7 @@ class PeriodicProcessService(
   ): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
-      deploymentWithJarData <- periodicDeploymentService.prepareDeploymentWithRuntimeParams(
+      deploymentWithJarData <- periodicDeploymentHandler.prepareDeploymentWithRuntimeParams(
         processVersion,
       )
       enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(
@@ -393,7 +393,7 @@ class PeriodicProcessService(
       _ <- periodicProcessesManager.markInactive(process.id)
       // we want to delete jars only after we successfully mark process as inactive. It's better to leave jar garbage than
       // have process without jar
-    } yield () => periodicDeploymentService.cleanAfterDeployment(process.deploymentData.runtimeParams)
+    } yield () => periodicDeploymentHandler.cleanAfterDeployment(process.deploymentData.runtimeParams)
   }
 
   private def markProcessActionExecutionFinished(
@@ -424,12 +424,12 @@ class PeriodicProcessService(
       _ <- Future.successful(
         logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData.processVersion, id)
       )
-      processId = deploymentWithJarData.processVersion.processId
-      versionId = deploymentWithJarData.processVersion.versionId
-      canonicalProcessOrError <- periodicProcessesManager.fetchCanonicalProcess(processId, versionId)
+      processName = deploymentWithJarData.processVersion.processName
+      versionId   = deploymentWithJarData.processVersion.versionId
+      canonicalProcessOrError <- periodicProcessesManager.fetchCanonicalProcess(processName, versionId)
       canonicalProcess = canonicalProcessOrError.getOrElse {
         throw new PeriodicProcessException(
-          s"Could not fetch CanonicalProcess for processId=$processId, versionId=$versionId"
+          s"Could not fetch CanonicalProcess for processName=$processName, versionId=$versionId"
         )
       }
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
@@ -441,7 +441,7 @@ class PeriodicProcessService(
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
         enrichedProcessConfig.inputConfigDuringExecutionJson
       )
-      externalDeploymentId <- periodicDeploymentService.deployWithRuntimeParams(
+      externalDeploymentId <- periodicDeploymentHandler.deployWithRuntimeParams(
         enrichedDeploymentWithJarData,
         deploymentData,
         canonicalProcess,

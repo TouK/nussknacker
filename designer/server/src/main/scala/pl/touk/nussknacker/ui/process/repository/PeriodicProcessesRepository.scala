@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.ScheduleProperty.{fromApi, toApi}
 import pl.touk.nussknacker.engine.common.periodic._
@@ -152,8 +152,8 @@ trait PeriodicProcessesRepository {
   ): Action[PeriodicProcessDeployment]
 
   def fetchCanonicalProcess(
-      processId: ProcessId,
-      versionId: VersionId
+      processName: ProcessName,
+      versionId: VersionId,
   ): Action[Option[CanonicalProcess]]
 
 }
@@ -448,12 +448,15 @@ class SlickPeriodicProcessesRepository(
     update.map(_ => ())
   }
 
-  def fetchCanonicalProcess(processId: ProcessId, versionId: VersionId): Action[Option[CanonicalProcess]] = {
-    processVersionsTable
-      .filter(v => v.processId === processId && v.id === versionId)
+  def fetchCanonicalProcess(processName: ProcessName, versionId: VersionId): Action[Option[CanonicalProcess]] = {
+    processesTable
+      .filter(_.name === processName)
+      .join(processVersionsTable)
+      .on((process, version) => process.id === version.processId)
+      .filter { case (_, version) => version.id === versionId }
       .result
       .headOption
-      .map(_.flatMap(_.json))
+      .map(_.flatMap(_._2.json))
   }
 
   private def activePeriodicProcessWithDeploymentQuery(processingType: String) = {

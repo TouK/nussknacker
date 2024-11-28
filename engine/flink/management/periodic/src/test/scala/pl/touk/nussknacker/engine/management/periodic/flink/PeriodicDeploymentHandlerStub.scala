@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.management.periodic.flink
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.{DeploymentWithRuntimeParams, RuntimeParams}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.common.periodic.PeriodicDeploymentService
+import pl.touk.nussknacker.engine.common.periodic.PeriodicDeploymentHandler
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 
 import scala.concurrent.Future
 
-class PeriodicDeploymentServiceStub extends PeriodicDeploymentService {
+class PeriodicDeploymentHandlerStub extends PeriodicDeploymentHandler {
 
   var deployWithJarFuture: Future[Option[ExternalDeploymentId]]            = Future.successful(None)
   var lastDeploymentWithRuntimeParams: Option[DeploymentWithRuntimeParams] = None

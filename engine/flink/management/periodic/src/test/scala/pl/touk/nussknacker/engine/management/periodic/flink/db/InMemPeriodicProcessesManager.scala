@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.ScheduleProperty.{fromApi, toApi}
@@ -303,9 +303,9 @@ class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProc
   }
 
   override def fetchCanonicalProcess(
-      processId: ProcessId,
+      processName: ProcessName,
       versionId: VersionId
-  ): Future[Option[CanonicalProcess]] = Future.successful(Some(canonicalProcess(ProcessName("unused-name"))))
+  ): Future[Option[CanonicalProcess]] = Future.successful(Some(canonicalProcess(processName)))
 
 }
 
