@@ -13,6 +13,7 @@ import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
 import { NodeValue } from "../../node";
 import { SettingsProvider } from "../settings/SettingsProvider";
+import { resolveSimpleClassName } from "./utils";
 
 interface ItemProps {
     index: number;
@@ -24,12 +25,6 @@ interface ItemProps {
     onChange: (path: string, value: onChangeType) => void;
     options: Option[];
     errors: NodeValidationError[];
-}
-
-//This projection is used for backward-compatibility reasons, since previously fragment input definition type options display part contained full class name
-function resolveSimpleClassName(refClazzName: string): string {
-    const parts = refClazzName.split(".");
-    return parts[parts.length - 1];
 }
 
 export function Item(props: ItemProps): JSX.Element {

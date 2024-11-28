@@ -1,4 +1,5 @@
 import { Expression, ReturnedType } from "../../../../../types";
+import { resolveSimpleClassName } from "./utils";
 
 export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueCompileTimeValidation | ValueEditor;
 
@@ -81,7 +82,11 @@ export function isAnyValueParameter(item: PermittedTypeParameterVariant): item i
 }
 
 export function isPermittedTypeVariant(item: FragmentInputParameter): item is PermittedTypeParameterVariant {
-    return [item.typ.refClazzName === "String", item.typ.refClazzName === "Boolean", item.typ.refClazzName === "Long"].includes(true);
+    return [
+        resolveSimpleClassName(item.typ.refClazzName) === "String",
+        resolveSimpleClassName(item.typ.refClazzName) === "Boolean",
+        resolveSimpleClassName(item.typ.refClazzName) === "Long",
+    ].includes(true);
 }
 
 export type FieldName = `$param.${string}.$${string}`;
