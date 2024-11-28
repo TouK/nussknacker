@@ -24,11 +24,11 @@ case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[Strin
 
   // We should support at least types defined in FragmentParameterValidator#permittedTypesForEditors
   override def typingResult: TypingResult = expectedType match {
-    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[Long]) && Try(key.toLong).toOption.isDefined =>
+    case clazz: TypedClass if clazz.canBeConvertedTo(Typed[Long]) && Try(key.toLong).toOption.isDefined =>
       TypedObjectWithValue(clazz.runtimeObjType, key.toLong)
-    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[Boolean]) && Try(key.toBoolean).toOption.isDefined =>
+    case clazz: TypedClass if clazz.canBeConvertedTo(Typed[Boolean]) && Try(key.toBoolean).toOption.isDefined =>
       TypedObjectWithValue(clazz.runtimeObjType, key.toBoolean)
-    case clazz: TypedClass if clazz.canBeSubclassOf(Typed[String]) =>
+    case clazz: TypedClass if clazz.canBeConvertedTo(Typed[String]) =>
       TypedObjectWithValue(clazz.runtimeObjType, key)
     case _ => expectedType
   }
@@ -85,11 +85,11 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
     override def language: Language = languageId
 
     override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
-      if (expectedType.canBeSubclassOf(Typed[Long])) {
+      if (expectedType.canBeConvertedTo(Typed[Long])) {
         key.toLong.asInstanceOf[T]
-      } else if (expectedType.canBeSubclassOf(Typed[Boolean])) {
+      } else if (expectedType.canBeConvertedTo(Typed[Boolean])) {
         key.toBoolean.asInstanceOf[T]
-      } else if (expectedType.canBeSubclassOf(Typed[String])) {
+      } else if (expectedType.canBeConvertedTo(Typed[String])) {
         key.asInstanceOf[T]
       } else {
         throw new IllegalStateException(
