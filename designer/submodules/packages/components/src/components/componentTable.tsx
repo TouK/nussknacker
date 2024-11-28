@@ -6,7 +6,7 @@ import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
 import { ExternalLink, NuIcon } from "../common";
 import { filterRules } from "./filterRules";
 import { ComponentsFiltersModel } from "./filters";
-import { GridActionsCellItem } from "@mui/x-data-grid";
+import { GridActionsCellItem, GridColDef } from "@mui/x-data-grid";
 import { useNavigate } from "react-router-dom";
 import { ProcessingModesCell } from "./cellRenderers/processingModesCell";
 
@@ -15,14 +15,15 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
 
-    const columns = useMemo(
-        (): Columns<ComponentType> => [
+    const columns: (GridColDef & { display?: string })[] = useMemo(
+        (): (GridColDef & { display?: string })[] => [
             {
                 field: "name",
                 minWidth: 200,
                 cellClassName: "noPadding stretch",
                 headerName: t("table.title.NAME", "Name"),
-                flex: 1,
+                flex: 4,
+                display: "flex",
                 renderCell: (props) => <NameCell {...props} />,
                 sortComparator: (v1, v2) => v1.toString().toLowerCase().localeCompare(v2.toString().toLowerCase()),
                 hideable: false,
@@ -38,6 +39,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
             {
                 field: "componentGroupName",
                 cellClassName: "noPadding stretch",
+                display: "flex",
                 minWidth: 150,
                 headerName: t("table.title.GROUP", "Group"),
                 renderCell: (props) => <FilterLinkCell<ComponentsFiltersModel> filterKey="GROUP" {...props} />,
@@ -46,7 +48,8 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 field: "categories",
                 headerName: t("table.title.CATEGORIES", "Categories"),
                 minWidth: 350,
-                flex: 4,
+                flex: 2,
+                display: "flex",
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <CategoriesCell {...props} />,
                 sortingOrder: ["desc", "asc", null],
@@ -54,8 +57,9 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
             {
                 field: "allowedProcessingModes",
                 headerName: t("table.title.PROCESSING_MODE", "Processing modes"),
-                minWidth: 350,
-                flex: 3,
+                minWidth: 500,
+                display: "flex",
+                flex: 4,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <ProcessingModesCell {...props} />,
                 sortingOrder: ["desc", "asc", null],
@@ -63,6 +67,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
             {
                 field: "links",
                 type: "actions",
+                display: "flex",
                 getActions: ({ row }) =>
                     row.links.map((link, i) => (
                         <GridActionsCellItem
