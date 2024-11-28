@@ -411,9 +411,9 @@ class SpelExpressionSuggester(
 
   private def determineIterableElementTypingResult(parent: TypingResult): TypingResult = {
     parent match {
-      case tc: SingleTypingResult if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+      case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) =>
         tc.runtimeObjType.params.headOption.getOrElse(Unknown)
-      case tc: SingleTypingResult if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+      case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
         Typed.record(
           Map(
             "key"   -> tc.runtimeObjType.params.headOption.getOrElse(Unknown),

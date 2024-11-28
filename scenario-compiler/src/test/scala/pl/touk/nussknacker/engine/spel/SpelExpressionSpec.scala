@@ -2048,7 +2048,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       val parsedRoundTripExpression = parse[Any](mapExpression + ".toList.toMap", customCtx).validValue
       parsedRoundTripExpression.evaluateSync[Any](customCtx) shouldBe givenMap
       val roundTripTypeIsAGeneralizationOfGivenType =
-        givenMapExpression.returnType canBeSubclassOf parsedRoundTripExpression.returnType
+        givenMapExpression.returnType canBeConvertedTo parsedRoundTripExpression.returnType
       roundTripTypeIsAGeneralizationOfGivenType shouldBe true
     }
 
