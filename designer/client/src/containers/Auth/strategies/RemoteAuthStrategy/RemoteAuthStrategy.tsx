@@ -3,7 +3,7 @@ import React, { FunctionComponent, PropsWithChildren } from "react";
 import { PendingPromise } from "../../../../common/PendingPromise";
 import SystemUtils from "../../../../common/SystemUtils";
 import { ErrorBoundary } from "../../../../components/common/error-boundary";
-import { RemoteComponent } from "../../../../components/RemoteComponent";
+import { PlainRemoteComponent } from "../../../../components/RemoteComponent";
 import { RemoteAuthenticationSettings } from "../../../../reducers/settings";
 import { AuthErrorCodes } from "../../AuthErrorCodes";
 import { Strategy, StrategyConstructor } from "../../Strategy";
@@ -18,9 +18,9 @@ function createAuthWrapper(url: ModuleUrl, onInit: AuthLibCallback): FunctionCom
     return function Wrapper({ children }: PropsWithChildren<unknown>) {
         return (
             <ErrorBoundary>
-                <RemoteComponent<RemoteAuthProviderProps> url={url} onInit={onInit}>
+                <PlainRemoteComponent<RemoteAuthProviderProps> url={url} onInit={onInit}>
                     {children}
-                </RemoteComponent>
+                </PlainRemoteComponent>
             </ErrorBoundary>
         );
     };

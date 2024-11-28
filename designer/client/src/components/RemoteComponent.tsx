@@ -1,9 +1,9 @@
-import React, { useMemo } from "react";
-import LoaderSpinner from "./spinner/Spinner";
 import { FederatedComponent, FederatedComponentProps, getFederatedComponentLoader } from "@touk/federated-component";
-import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
+import React, { useMemo } from "react";
 import SystemUtils from "../common/SystemUtils";
+import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import { useWindows, WindowKind } from "../windowManager";
+import LoaderSpinner from "./spinner/Spinner";
 
 export const loadExternalReactModule = getFederatedComponentLoader({ Wrapper: NuThemeProvider });
 export const loadExternalReactModuleWithAuth = getFederatedComponentLoader({
@@ -13,6 +13,17 @@ export const loadExternalReactModuleWithAuth = getFederatedComponentLoader({
 
 window["loadExternalReactModule"] = loadExternalReactModule;
 window["loadExternalReactModuleWithAuth"] = loadExternalReactModuleWithAuth;
+
+function PlainRemoteComponentRender<P extends NonNullable<unknown>, T = unknown>(
+    props: FederatedComponentProps<P>,
+    ref: React.ForwardedRef<T>,
+) {
+    return <FederatedComponent<P, T> ref={ref} {...props} fallback={<LoaderSpinner show={true} />} buildHash={__BUILD_HASH__} />;
+}
+
+export const PlainRemoteComponent = React.forwardRef(PlainRemoteComponentRender) as <P extends NonNullable<unknown>, T = unknown>(
+    props: FederatedComponentProps<P> & React.RefAttributes<T>,
+) => React.ReactElement;
 
 export type RemoteToolbarContentProps = {
     openRemoteModuleWindow: <P extends NonNullable<unknown>>(props: P & { url?: string; title?: string }) => void;
@@ -32,15 +43,7 @@ function RemoteComponentRender<P extends NonNullable<unknown>, T = unknown>(prop
         [open],
     );
 
-    return (
-        <FederatedComponent<P, T>
-            ref={ref}
-            {...sharedContext}
-            {...props}
-            fallback={<LoaderSpinner show={true} />}
-            buildHash={__BUILD_HASH__}
-        />
-    );
+    return <PlainRemoteComponent<P, T> ref={ref} {...sharedContext} {...props} />;
 }
 
 export const RemoteComponent = React.forwardRef(RemoteComponentRender) as <P extends NonNullable<unknown>, T = unknown>(
