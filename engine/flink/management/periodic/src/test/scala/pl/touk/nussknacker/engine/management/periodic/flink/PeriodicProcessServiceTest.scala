@@ -62,11 +62,6 @@ class PeriodicProcessServiceTest
   private val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
   private val cronInPast   = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
 
-  private val canonicalProcess = ScenarioBuilder
-    .streaming(processName.value)
-    .source("start", "source")
-    .emptySink("end", "KafkaSink")
-
   private val processVersion = ProcessVersion(
     versionId = VersionId(1),
     processName = processName,
@@ -115,7 +110,7 @@ class PeriodicProcessServiceTest
             EnrichedProcessConfig(
               initialScheduleData.inputConfigDuringExecution.withValue(
                 "processName",
-                ConfigValueFactory.fromAnyRef("testProcessName")
+                ConfigValueFactory.fromAnyRef(processName.value)
               )
             )
           )
