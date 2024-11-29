@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
@@ -35,7 +35,7 @@ package object definition {
       expression: Expression
   )
 
-  @JsonCodec final case class UIParameter(
+  final case class UIParameter(
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
@@ -53,6 +53,42 @@ package object definition {
       // This attribute is used only by external project
       requiredParam: Boolean,
   )
+
+  object UIParameter {
+
+    implicit val uiParameterEncoder: Encoder[UIParameter] = deriveConfiguredEncoder
+
+    implicit val uiParameterDecoder: Decoder[UIParameter] = {
+      Decoder.instance { c =>
+        for {
+          name                <- c.downField("name").as[String]
+          typ                 <- c.downField("typ").as[TypingResult]
+          editor              <- c.downField("editor").as[ParameterEditor]
+          defaultValue        <- c.downField("defaultValue").as[Expression]
+          additionalVariables <- c.downField("additionalVariables").as[Map[String, TypingResult]]
+          variablesToHide     <- c.downField("variablesToHide").as[Set[String]]
+          branchParam         <- c.downField("branchParam").as[Boolean]
+          hintText            <- c.downField("hintText").as[Option[String]]
+          label               <- c.downField("label").as[String]
+          // requiredParam field was introduced in the 1.18 version and old versions do not provide it
+          // This fallback is needed to migrate the scenario to older versions of NU and can be removed in future releases
+          requiredParam <- c.downField("requiredParam").as[Option[Boolean]].map(_.getOrElse(true))
+        } yield UIParameter(
+          name = name,
+          typ = typ,
+          editor = editor,
+          defaultValue = defaultValue,
+          additionalVariables = additionalVariables,
+          variablesToHide = variablesToHide,
+          branchParam = branchParam,
+          hintText = hintText,
+          label = label,
+          requiredParam = requiredParam
+        )
+      }
+    }
+
+  }
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
       // These parameters are mostly used for method based, static components. For dynamic components, it is the last fallback
@@ -133,11 +169,6 @@ package object definition {
       label: Option[String],
       hintText: Option[String]
   )
-
-  object UIParameter {
-    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] =
-      deriveConfiguredDecoder[UIParameter]
-  }
 
   object UICustomAction {
 
