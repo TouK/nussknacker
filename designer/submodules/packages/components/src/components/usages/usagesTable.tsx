@@ -54,6 +54,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 field: "state",
                 cellClassName: "stretch",
                 headerName: t("table.usages.title.STATUS", "Status"),
+                display: "flex",
                 minWidth: 130,
                 renderCell: (props) => {
                     if (!props.value) {
