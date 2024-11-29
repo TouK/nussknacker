@@ -2055,10 +2055,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parsed.evaluateSync[Any](customCtx) shouldBe 11
     parsed.evaluateSync[Any](customCtx) shouldBe 11
   }
-  /*
-  // This test is commented out as it was indeterministic and ugly, but it was used to verify race condition problems on
+
+  // This test is ignored as it was indeterministic and ugly, but it was used to verify race condition problems on
   // ParsedSpelExpression.getValue. Without the synchronized block inside its method the test would fail the majority of times
-  test(
+  ignore(
     "should not throw 'Failed to instantiate CompiledExpression' when getValue is called on ParsedSpelExpression by multiple threads"
   ) {
     val spelExpression =
@@ -2099,7 +2099,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
     Await.result(firstFailureOrCompletion, 15.seconds)
   }
-   */
 
 }
 

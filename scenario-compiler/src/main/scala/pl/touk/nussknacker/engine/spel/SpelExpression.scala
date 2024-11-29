@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompil
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
 
 /**
@@ -51,11 +52,22 @@ final case class ParsedSpelExpression(
     parser: () => ValidatedNel[ExpressionParseError, Expression],
     initial: Expression
 ) extends LazyLogging {
-  @volatile var parsed: Expression = initial
+  @volatile var parsed: Expression        = initial
+  private val firstInterpretationFinished = new AtomicBoolean()
 
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
-    def value(): T = synchronized { parsed.getValue(context, desiredResultType).asInstanceOf[T] }
-
+    // This is handled in a safe way as there could be problems with concurrent evaluation due to argument conversions on expression
+    def value(): T = {
+      if (!firstInterpretationFinished.get()) {
+        synchronized {
+          val valueToReturn = parsed.getValue(context, desiredResultType).asInstanceOf[T]
+          firstInterpretationFinished.set(true)
+          valueToReturn
+        }
+      } else {
+        parsed.getValue(context, desiredResultType).asInstanceOf[T]
+      }
+    }
     try {
       value()
     } catch {
