@@ -56,8 +56,10 @@ final case class ParsedSpelExpression(
   private val firstInterpretationFinished = new AtomicBoolean()
 
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
-    // This is handled in a safe way as there could be problems with concurrent evaluation due to argument conversions on expression
     def value(): T = {
+      // There is a bug in Spring's SpelExpression class: interpretedCount variable is not synchronized with ReflectiveMethodExecutor.didArgumentConversionOccur.
+      // The letter mentioned method check argumentConversionOccurred Boolean which could be false not because conversion not occurred but because method.invoke()
+      // isn't finished yet. Due to this problem we can compile expression which shouldn't be compiled and it generates IllegalStateException errors.
       if (!firstInterpretationFinished.get()) {
         synchronized {
           val valueToReturn = parsed.getValue(context, desiredResultType).asInstanceOf[T]
