@@ -3,11 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
-import pl.touk.nussknacker.engine.schemedkafka.{
-  TopicSelectionStrategy,
-  TopicsMatchingPatternWithExistingSubjectsSelectionStrategy,
-  TopicsWithExistingSubjectSelectionStrategy
-}
+import pl.touk.nussknacker.engine.schemedkafka.TopicsWithExistingSubjectSelectionStrategy
 
 trait SchemaRegistryClient extends Serializable {
 
@@ -44,12 +40,13 @@ trait SchemaRegistryClient extends Serializable {
 
   def getAllVersions(topic: UnspecializedTopicName, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
 
-  def isTopicWithSchema(topic: String, strategy: TopicSelectionStrategy, kafkaConfig: KafkaConfig): Boolean = {
-    val topicsWithSchema = strategy match {
-      case strategy: TopicsMatchingPatternWithExistingSubjectsSelectionStrategy => strategy.getTopics(this, kafkaConfig)
-      case _ => new TopicsWithExistingSubjectSelectionStrategy().getTopics(this, kafkaConfig)
+  def isTopicWithSchema(topic: String, kafkaConfig: KafkaConfig): Boolean = {
+    if (!kafkaConfig.showTopicsWithoutSchema) {
+      true
+    } else {
+      val topicsWithSchema = new TopicsWithExistingSubjectSelectionStrategy().getTopics(this, kafkaConfig)
+      topicsWithSchema.exists(_.map(_.name).contains(topic))
     }
-    topicsWithSchema.exists(_.map(_.name).contains(topic))
   }
 
 }
