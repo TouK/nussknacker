@@ -23,7 +23,7 @@ class FragmentParameterTypingParser(classLoader: ClassLoader, classDefinitions: 
           classDefinition.clazzName
         }
 
-    val mapPattern  = "Map\\[(.+),(.+)\\]".r
+    val mapPattern  = "Map\\[(.+),\\s*(.+)\\]".r
     val listPattern = "List\\[(.+)\\]".r
     val setPattern  = "Set\\[(.+)\\]".r
 
