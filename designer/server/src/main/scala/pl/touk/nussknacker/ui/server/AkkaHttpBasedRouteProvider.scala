@@ -314,14 +314,14 @@ class AkkaHttpBasedRouteProvider(
         processService,
         fragmentRepository
       )
-      val scenarioActivityService = new FetchScenarioActivityService(
+      val fetchScenarioActivityService = new FetchScenarioActivityService(
         dmDispatcher,
         scenarioActivityRepository,
         futureProcessRepository,
         dbioRunner,
       )
       val notificationService = new NotificationServiceImpl(
-        scenarioActivityService,
+        fetchScenarioActivityService,
         actionRepository,
         dbioRunner,
         notificationsConfig
@@ -411,7 +411,7 @@ class AkkaHttpBasedRouteProvider(
 
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         authManager = authManager,
-        scenarioActivityService = scenarioActivityService,
+        fetchScenarioActivityService = fetchScenarioActivityService,
         scenarioActivityRepository = scenarioActivityRepository,
         scenarioService = processService,
         scenarioAuthorizer = processAuthorizer,
