@@ -247,7 +247,7 @@ describe("Components list", () => {
         });
 
         // Sort by processing mode
-        cy.get("[role='columnheader'][aria-label='Processing modes']").dblclick({ force: true });
+        cy.get("[role='columnheader'][data-field='allowedProcessingModes']").dblclick({ force: true });
 
         cy.get("#app-container>main").matchImage();
     });

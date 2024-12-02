@@ -1,5 +1,5 @@
 import React, { HTMLProps, useCallback, useState } from "react";
-import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 import { NodeValue } from "../node";
 import { selectStyled } from "../../../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
@@ -61,7 +61,7 @@ export function TypeSelect({
 
     return (
         <NodeValue marked={isMarked} onKeyDown={preventEsc} sx={{ width: "100%" }}>
-            <Select
+            <CreatableSelect
                 id={props.id}
                 aria-label={"type-select"}
                 className={cx(`${nodeValue}`, props.className)}
