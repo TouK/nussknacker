@@ -17,8 +17,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager`:
     * added new arguments to `def processState` method (`latestVersionId: VersionId`, `deployedVersionId: Option[VersionId]`)
     * added new methods with default implementations: 
-      * `def visibleActions: List[ScenarioActionName]` - allows to specify, which actions are applicable to scenario (and consequently should be visible in Designer), by default all previously available actions
-      * `def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, ScenarioActionTooltip]` - allows to define custom tooltips for actions (from predefined list of tooltips handled by Designer), if not defined the default is still used
+      * `def applicableActions: List[ScenarioActionName]` - allows to specify, which actions are applicable to scenario (and consequently should be visible in Designer), by default all previously available actions
+      * `def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String]` - allows to define custom tooltips for actions, if not defined the default is still used
     * modified method:
       * `def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]` - changed argument, to include information about latest and deployed versions 
 

@@ -67,25 +67,19 @@ export interface Scenario {
 
 export type ProcessName = Scenario["name"];
 
-export enum ActionTooltip {
-    NotAllowedForDeployedVersion = "NOT_ALLOWED_FOR_DEPLOYED_VERSION",
-    NotAllowedInCurrentState = "NOT_ALLOWED_IN_CURRENT_STATE",
-}
-
 export type ProcessStateType = {
     status: StatusType;
-    latestVersionId: number;
-    deployedVersionId?: number;
     externalDeploymentId?: string;
-    visibleActions: Array<ActionName>;
+    applicableActions: Array<ActionName>;
     allowedActions: Array<ActionName>;
-    actionTooltips: Record<ActionName, ActionTooltip>;
+    actionTooltips: Record<ActionName, string>;
     icon: string;
     tooltip: string;
     description: string;
     startTime?: Date;
     attributes?: UnknownRecord;
     errors?: Array<string>;
+    version?: number | null;
 };
 
 export type StatusType = {

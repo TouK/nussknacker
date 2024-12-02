@@ -4,7 +4,6 @@ import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 
 import java.net.URI
@@ -26,13 +25,10 @@ import java.net.URI
 @JsonCodec case class ProcessState(
     externalDeploymentId: Option[ExternalDeploymentId],
     status: StateStatus,
-    // TODO: Designed does not need the `version` field, it can be removed after confirming no other service depends on it
     version: Option[ProcessVersion],
-    latestVersionId: VersionId,
-    deployedVersionId: Option[VersionId],
-    visibleActions: List[ScenarioActionName],
+    applicableActions: List[ScenarioActionName],
     allowedActions: List[ScenarioActionName],
-    actionTooltips: Map[ScenarioActionName, ScenarioActionTooltip],
+    actionTooltips: Map[ScenarioActionName, String],
     icon: URI,
     tooltip: String,
     description: String,
@@ -95,23 +91,3 @@ case class StatusDetails(
     attributes: Option[Json] = None,
     errors: List[String] = List.empty
 )
-
-sealed trait ScenarioActionTooltip
-
-object ScenarioActionTooltip {
-  case object NotAllowedInCurrentState     extends ScenarioActionTooltip
-  case object NotAllowedForDeployedVersion extends ScenarioActionTooltip
-
-  implicit val encoder: Encoder[ScenarioActionTooltip] =
-    Encoder.encodeString.contramap {
-      case NotAllowedInCurrentState     => "NOT_ALLOWED_IN_CURRENT_STATE"
-      case NotAllowedForDeployedVersion => "NOT_ALLOWED_FOR_DEPLOYED_VERSION"
-    }
-
-  implicit val decoder: Decoder[ScenarioActionTooltip] =
-    Decoder.decodeString.map {
-      case "NOT_ALLOWED_IN_CURRENT_STATE"     => NotAllowedInCurrentState
-      case "NOT_ALLOWED_FOR_DEPLOYED_VERSION" => NotAllowedForDeployedVersion
-    }
-
-}

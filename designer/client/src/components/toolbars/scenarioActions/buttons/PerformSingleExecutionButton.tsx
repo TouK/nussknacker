@@ -14,7 +14,7 @@ import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 import ProcessStateUtils from "../../../Process/ProcessStateUtils";
 import { RootState } from "../../../../reducers";
 import { getProcessState } from "../../../../reducers/selectors/scenarioState";
-import { ActionTooltip, PredefinedActionName } from "../../../Process/types";
+import { PredefinedActionName } from "../../../Process/types";
 
 export default function PerformSingleExecutionButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
@@ -31,25 +31,7 @@ export default function PerformSingleExecutionButton(props: ToolbarButtonProps) 
     const action = (p, c) => HttpService.performSingleExecution(p, c).finally(() => dispatch(loadProcessState(processName)));
     const message = t("panels.actions.perform-single-execution.dialog", "Perform single execution", { name: processName });
 
-    const actionTooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.PerformSingleExecution);
-
-    const tooltip =
-        actionTooltip === ActionTooltip.NotAllowedForDeployedVersion
-            ? t(
-                  "panels.actions.perform-single-execution.tooltip.not-allowed-for-deployed-version",
-                  "There is new version {{ latestVersion }} available.{{ deployedVersionDescription }}",
-                  {
-                      latestVersion: scenarioState.latestVersionId,
-                      deployedVersionDescription: scenarioState?.deployedVersionId
-                          ? ` (version ${scenarioState.deployedVersionId} is deployed)`
-                          : ``,
-                  },
-              )
-            : actionTooltip === ActionTooltip.NotAllowedInCurrentState
-            ? t("panels.actions.perform-single-execution.tooltip.not-allowed-in-current-state", "Disabled for {{ status }} status.", {
-                  status: scenarioState.status.name,
-              })
-            : "run now";
+    const tooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.PerformSingleExecution) ?? "run now";
 
     if (isVisible) {
         return (
