@@ -4,6 +4,7 @@ import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 
 import java.net.URI
@@ -26,7 +27,7 @@ import java.net.URI
     externalDeploymentId: Option[ExternalDeploymentId],
     status: StateStatus,
     version: Option[ProcessVersion],
-    applicableActions: List[ScenarioActionName],
+    visibleActions: List[ScenarioActionName],
     allowedActions: List[ScenarioActionName],
     actionTooltips: Map[ScenarioActionName, String],
     icon: URI,

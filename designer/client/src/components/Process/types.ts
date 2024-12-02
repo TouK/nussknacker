@@ -70,7 +70,7 @@ export type ProcessName = Scenario["name"];
 export type ProcessStateType = {
     status: StatusType;
     externalDeploymentId?: string;
-    applicableActions: Array<ActionName>;
+    visibleActions: Array<ActionName>;
     allowedActions: Array<ActionName>;
     actionTooltips: Record<ActionName, string>;
     icon: string;

@@ -26,12 +26,12 @@ class OverridingProcessStateDefinitionManager(
     statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty,
-    customApplicableActions: Option[List[ScenarioActionName]] = None,
+    customVisibleActions: Option[List[ScenarioActionName]] = None,
     customActionTooltips: Option[ProcessStatus => Map[ScenarioActionName, String]] = None,
 ) extends ProcessStateDefinitionManager {
 
-  override def applicableActions: List[ScenarioActionName] =
-    customApplicableActions.getOrElse(delegate.applicableActions)
+  override def visibleActions: List[ScenarioActionName] =
+    customVisibleActions.getOrElse(delegate.visibleActions)
 
   override def statusActions(processStatus: ProcessStatus): List[ScenarioActionName] =
     statusActionsPF.applyOrElse(processStatus, delegate.statusActions)

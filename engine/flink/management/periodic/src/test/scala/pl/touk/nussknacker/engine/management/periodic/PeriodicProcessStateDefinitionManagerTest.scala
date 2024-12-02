@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, ScenarioActionTooltip}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{DeploymentStatus, PeriodicProcessStatus}
@@ -87,7 +87,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
         deployedVersionId = Some(VersionId(4))
       )
     ) shouldEqual Map(
-      ScenarioActionName.PerformSingleExecution -> ScenarioActionTooltip.NotAllowedForDeployedVersion
+      ScenarioActionName.PerformSingleExecution -> "There is new version 5 available (version 4 is deployed)"
     )
   }
 
@@ -99,7 +99,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
         deployedVersionId = Some(VersionId(4))
       )
     ) shouldEqual Map(
-      ScenarioActionName.PerformSingleExecution -> ScenarioActionTooltip.NotAllowedInCurrentState
+      ScenarioActionName.PerformSingleExecution -> "Disabled for CANCELED status."
     )
   }
 

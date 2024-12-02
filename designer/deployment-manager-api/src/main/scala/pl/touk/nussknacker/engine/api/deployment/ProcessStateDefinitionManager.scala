@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{ProcessStatus, defaultApplicableActions}
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.{ProcessStatus, defaultVisibleActions}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.VersionId
 
@@ -41,7 +41,7 @@ trait ProcessStateDefinitionManager {
   /**
    * Actions that are applicable to scenario in general. They may be available only in particular states, as defined by `def statusActions`
    */
-  def applicableActions: List[ScenarioActionName] = defaultApplicableActions
+  def visibleActions: List[ScenarioActionName] = defaultVisibleActions
 
   /**
    * Custom tooltips for actions
@@ -66,7 +66,7 @@ trait ProcessStateDefinitionManager {
       statusDetails.externalDeploymentId,
       statusDetails.status,
       statusDetails.version,
-      applicableActions,
+      visibleActions,
       statusActions(status),
       actionTooltips(status),
       statusIcon(statusDetails.status),
@@ -98,7 +98,7 @@ object ProcessStateDefinitionManager {
   /**
    * Actions, that are applicable in standard use-cases for most deployment managers.
    */
-  val defaultApplicableActions: List[ScenarioActionName] = List(
+  val defaultVisibleActions: List[ScenarioActionName] = List(
     ScenarioActionName.Cancel,
     ScenarioActionName.Deploy,
     ScenarioActionName.Pause,

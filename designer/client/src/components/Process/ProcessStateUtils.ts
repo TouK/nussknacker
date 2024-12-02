@@ -19,7 +19,7 @@ class ProcessStateUtils {
     public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Archive);
 
     public canSeePerformSingleExecution = (state: ProcessStateType): boolean =>
-        state?.applicableActions.includes(PredefinedActionName.PerformSingleExecution);
+        state?.visibleActions.includes(PredefinedActionName.PerformSingleExecution);
 
     public canPerformSingleExecution = (state: ProcessStateType): boolean =>
         state?.allowedActions.includes(PredefinedActionName.PerformSingleExecution);

@@ -31,7 +31,8 @@ export default function PerformSingleExecutionButton(props: ToolbarButtonProps) 
     const action = (p, c) => HttpService.performSingleExecution(p, c).finally(() => dispatch(loadProcessState(processName)));
     const message = t("panels.actions.perform-single-execution.dialog", "Perform single execution", { name: processName });
 
-    const tooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.PerformSingleExecution) ?? "run now";
+    const defaultTooltip = t("panels.actions.perform-single-execution.tooltip", "run now");
+    const tooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.PerformSingleExecution) ?? defaultTooltip;
 
     if (isVisible) {
         return (
