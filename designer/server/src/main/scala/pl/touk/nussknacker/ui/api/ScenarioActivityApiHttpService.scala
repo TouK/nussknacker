@@ -39,7 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
     authManager: AuthManager,
-    scenarioActivityService: FetchScenarioActivityService,
+    fetchScenarioActivityService: FetchScenarioActivityService,
     scenarioActivityRepository: ScenarioActivityRepository,
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
@@ -243,7 +243,7 @@ class ScenarioActivityApiHttpService(
   )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
     EitherT.right {
       for {
-        combinedActivities <- scenarioActivityService.fetchActivities(processIdWithName, after = None)
+        combinedActivities <- fetchScenarioActivityService.fetchActivities(processIdWithName, after = None)
         //  The API endpoint returning scenario activities does not yet have support for filtering. We made a decision to:
         //  - for activities not related to deployments:        always display them on FE
         //  - for activities related to batch deployments:      always display them on FE

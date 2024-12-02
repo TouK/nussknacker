@@ -42,7 +42,7 @@ object NotificationService {
 }
 
 class NotificationServiceImpl(
-    scenarioActivityService: FetchScenarioActivityService,
+    fetchScenarioActivityService: FetchScenarioActivityService,
     scenarioActionRepository: ScenarioActionRepository,
     dbioRunner: DBIOActionRunner,
     config: NotificationConfig,
@@ -98,7 +98,7 @@ class NotificationServiceImpl(
       implicit ec: ExecutionContext
   ): Future[List[Notification]] = {
     for {
-      allActivities <- scenarioActivityService.fetchActivities(processName, Some(limit))(user).value.map {
+      allActivities <- fetchScenarioActivityService.fetchActivities(processName, Some(limit))(user).value.map {
         case Right(activities) => activities
         case Left(_)           => List.empty
       }
