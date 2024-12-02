@@ -9,6 +9,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
   * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15 
   * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
+* [#7257](https://github.com/TouK/nussknacker/pull/7257) [#7259](https://github.com/TouK/nussknacker/pull/7259) `components-api` module 
+  doesn't depend on `async-http-client-backend-future`, `http-utils` module is delivered by `flink-executor` and `lite-runtime` modules.
+  If your component had compile-time dependency to `http-utils`, it should be replaced by provided scope
+  If your component relied on the fact that `components-api` depends on `async-http-client-backend-future`, 
+  `async-http-client-backend-future` should be added as a provided dependency
 
 ## In version 1.18.0
 
@@ -57,6 +62,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7162](https://github.com/TouK/nussknacker/pull/7162) When component declares that requires parameter with either `SpelTemplateParameterEditor` 
   or `SqlParameterEditor` editor, in the runtime, for the expression evaluation result, will be used the new `TemplateEvaluationResult` 
   class instead of `String` class. To access the previous `String` use `TemplateEvaluationResult.renderedTemplate` method.
+* [#7246](https://github.com/TouK/nussknacker/pull/7246) 
+  * Typing api changes:
+    * CanBeSubclassDeterminer.canBeSubclassOf changed to
+      AssignabilityDeterminer.isAssignableLoose.
+    * TypingResult.canBeSubclassOf changed to TypingResult.canBeConvertedTo
 
 ### REST API changes
 
@@ -73,6 +83,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * added optional query param `enrichedWithUiConfig`
         * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
 
+* [#7246](https://github.com/TouK/nussknacker/pull/7246) Changes in DictApiEndpoints:
+    *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
 ### Configuration changes
 
 * [#6958](https://github.com/TouK/nussknacker/pull/6958) Added message size limit in the "Kafka" exceptionHandler: `maxMessageBytes`.
@@ -620,7 +632,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `api/parameters/*/validate` request
     * `scenarioName` is removed
     * `processProperties` is removed
-
 ### Configuration changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`

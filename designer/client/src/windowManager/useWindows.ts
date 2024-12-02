@@ -33,7 +33,15 @@ const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
 };
 
 export function useWindows(parent?: WindowId) {
-    const { open: _open, closeAll, windows } = useWindowManager(parent);
+    let windowManager: ReturnType<typeof useWindowManager>;
+
+    try {
+        windowManager = useWindowManager(parent);
+    } catch (e) {
+        throw "used outside WindowManager context";
+    }
+
+    const { open: _open, closeAll, windows } = windowManager;
     useRemoveFocusOnEscKey(windows.length > 0);
     const [settings] = useUserSettings();
     const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);

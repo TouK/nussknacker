@@ -45,7 +45,9 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
   private def returnType(elements: LazyParameter[util.Collection[AnyRef]]): typing.TypingResult =
     elements.returnType match {
       case tc: SingleTypingResult
-          if tc.runtimeObjType.canBeSubclassOf(Typed[util.Collection[_]]) && tc.runtimeObjType.params.nonEmpty =>
+          if tc.runtimeObjType.canBeConvertedTo(
+            Typed[util.Collection[_]]
+          ) && tc.runtimeObjType.params.nonEmpty =>
         tc.runtimeObjType.params.head
       case _ => Unknown
     }

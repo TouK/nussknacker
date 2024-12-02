@@ -41,7 +41,7 @@ class AzureTestsFromFileIntegrationTest
 
   private val kafkaConfig = KafkaConfig(Some(schemaRegistryConfigMap), None, showTopicsWithoutSchema = false)
 
-  ignore("test from file round-trip") {
+  test("test from file round-trip") {
     val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(kafkaConfig.schemaRegistryClientKafkaConfig)
     val serdeProvider        = UniversalSchemaBasedSerdeProvider.create(UniversalSchemaRegistryClientFactory)
     val factory   = serdeProvider.deserializationSchemaFactory.create[String, GenericRecord](kafkaConfig, None, None)

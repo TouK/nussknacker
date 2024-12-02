@@ -3,8 +3,10 @@ package pl.touk.nussknacker.engine.api.typed
 import org.apache.commons.lang3.{ClassUtils, LocaleUtils}
 import org.springframework.util.StringUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
 
+import java.math.BigInteger
 import java.nio.charset.Charset
 import java.time._
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
@@ -20,8 +22,8 @@ object TypeConversionHandler {
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
-    * Given to this we cannot to be sure if conversion is safe or not based on type (without scale knowledge).
-    * So we have two options: enforce user to convert to some type without floating point (e.g. BigInteger) or be loose in this point.
+    * Given to this we cannot be sure if conversion is safe or not based on type (without scale knowledge).
+    * So we have two options: force user to convert to some type without floating point (e.g. BigInteger) or be loose in this point.
     * Be default we will be loose.
     */
   // TODO: Add feature flag: strictBigDecimalChecking (default false?)
@@ -35,8 +37,8 @@ object TypeConversionHandler {
       cl
     }
 
-    def canConvert(value: String, superclassCandidate: TypedClass): Boolean = {
-      ClassUtils.isAssignable(superclassCandidate.klass, klass, true) && Try(
+    def canConvert(value: String, to: TypedClass): Boolean = {
+      ClassUtils.isAssignable(to.klass, klass, true) && Try(
         convert(value)
       ).isSuccess
     }
@@ -63,17 +65,33 @@ object TypeConversionHandler {
     StringConversion[ChronoLocalDateTime[_]](LocalDateTime.parse)
   )
 
-  def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
-    handleNumberConversions(givenType.runtimeObjType, superclassCandidate) ||
-    handleStringToValueClassConversions(givenType, superclassCandidate)
+  def canBeLooselyConvertedTo(from: SingleTypingResult, to: TypedClass): Boolean =
+    canBeConvertedToAux(from, to)
+
+  def canBeStrictlyConvertedTo(from: SingleTypingResult, to: TypedClass): Boolean =
+    canBeConvertedToAux(from, to, strict = true)
+
+  private def canBeConvertedToAux(from: SingleTypingResult, to: TypedClass, strict: Boolean = false) = {
+    handleStringToValueClassConversions(from, to) ||
+    handleNumberConversion(from.runtimeObjType, to, strict)
+  }
+
+  private def handleNumberConversion(from: SingleTypingResult, to: TypedClass, strict: Boolean) = {
+    val boxedGivenClass          = ClassUtils.primitiveToWrapper(from.runtimeObjType.klass)
+    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(to.klass)
+
+    if (strict)
+      handleStrictNumberConversions(boxedGivenClass, boxedSuperclassCandidate)
+    else
+      handleLooseNumberConversion(boxedGivenClass, boxedSuperclassCandidate)
   }
 
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
-  private def handleNumberConversions(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
-    val boxedGivenClass          = ClassUtils.primitiveToWrapper(givenClass.klass)
-    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
+  private def handleLooseNumberConversion(
+      boxedGivenClass: Class[_],
+      boxedSuperclassCandidate: Class[_]
+  ): Boolean = {
     // We can't check precision here so we need to be loose here
-    // TODO: Add feature flag: strictNumberPrecisionChecking (default false?)
     if (NumberTypesPromotionStrategy
         .isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
       ClassUtils.isAssignable(boxedGivenClass, classOf[Number], true)
@@ -84,13 +102,25 @@ object TypeConversionHandler {
     }
   }
 
+  private def handleStrictNumberConversions(givenClass: Class[_], to: Class[_]): Boolean = {
+    (givenClass, to) match {
+      case (bigInteger, t)
+          if (bigInteger == classOf[BigInteger] && (t == classOf[BigDecimal] || t == classOf[BigInteger])) =>
+        true
+      case (f, t) if (AllNumbers.contains(f) && AllNumbers.contains(t)) =>
+        AllNumbers.indexOf(f) >= AllNumbers.indexOf(t)
+      case _ => false
+
+    }
+  }
+
   private def handleStringToValueClassConversions(
-      givenType: SingleTypingResult,
-      superclassCandidate: TypedClass
+      from: SingleTypingResult,
+      to: TypedClass
   ): Boolean =
-    givenType match {
+    from match {
       case TypedObjectWithValue(_, str: String) =>
-        stringConversions.exists(_.canConvert(str, superclassCandidate))
+        stringConversions.exists(_.canConvert(str, to))
       case _ => false
     }
 

@@ -56,13 +56,15 @@ class DictApiHttpService(
           case Some((_, dictionaries, classLoader)) =>
             val decoder = new TypingResultDecoder(ClassUtils.forName(_, classLoader)).decodeTypingResults
 
-            decoder.decodeJson(dictListRequestDto.expectedType.value) match {
+            decoder.decodeJson(dictListRequestDto.expectedType) match {
               case Left(failure) => Future.successful(businessError(MalformedTypingResult(failure.getMessage())))
               case Right(expectedType) =>
                 Future {
                   success(
                     dictionaries
-                      .filter { case (id, definition) => definition.valueType(id).canBeSubclassOf(expectedType) }
+                      .filter { case (id, definition) =>
+                        definition.valueType(id).canBeStrictlyConvertedTo(expectedType)
+                      }
                       .map { case (id, _) => DictDto(id, id) }
                       .toList
                   )
