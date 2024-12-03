@@ -2,7 +2,7 @@ import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator
 import Field, { FieldType } from "./editors/field/Field";
 import React, { useMemo, useState } from "react";
 import { useDiffMark } from "./PathsToMark";
-import { NodeType, NodeValidationError, UINodeType } from "../../../types";
+import { NodeType, NodeValidationError, NodeOrPropertiesType } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessNodesIds } from "../../../reducers/selectors/graph";
 import NodeUtils from "../NodeUtils";
@@ -11,7 +11,7 @@ import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableSty
 
 interface IdFieldProps {
     isEditMode?: boolean;
-    node: UINodeType;
+    node: NodeOrPropertiesType;
     renderFieldLabel: (paramName: string) => React.ReactNode;
     setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
@@ -37,7 +37,7 @@ export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showV
     const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node]);
     const marked = useMemo(() => isMarked(FAKE_NAME_PROP_NAME) || isMarked(propName), [isMarked]);
 
-    const isUniqueValueValidator = !NodeUtils.nodeIsProperties(node) && uniqueScenarioValueValidator(otherNodes);
+    const isUniqueValueValidator = uniqueScenarioValueValidator(otherNodes);
 
     const fieldErrors = getValidationErrorsForField(
         isUniqueValueValidator ? extendErrors(errors, value, FAKE_NAME_PROP_NAME, [isUniqueValueValidator]) : errors,

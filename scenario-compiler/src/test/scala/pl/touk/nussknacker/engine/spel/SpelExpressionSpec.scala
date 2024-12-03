@@ -12,6 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
@@ -25,7 +26,7 @@ import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
@@ -52,12 +53,21 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-import java.math.{BigDecimal, BigInteger}
-import java.nio.charset.Charset
-import java.time.chrono.ChronoLocalDate
-import java.time.{LocalDate, LocalDateTime}
+import java.lang.{
+  Boolean => JBoolean,
+  Byte => JByte,
+  Double => JDouble,
+  Float => JFloat,
+  Integer => JInteger,
+  Long => JLong,
+  Short => JShort
+}
+import java.math.{BigDecimal => JBigDecimal, BigInteger => JBigInteger}
+import java.nio.charset.{Charset, StandardCharsets}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 import java.util
-import java.util.{Collections, Currency, Locale, Optional, UUID}
+import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -71,10 +81,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private implicit class EvaluateSyncTyped(expression: TypedExpression) {
 
-    def evaluateSync[T](ctx: Context = ctx): T = {
+    def evaluateSync[T](ctx: Context = ctx, skipReturnTypeCheck: Boolean = false): T = {
       val evaluationResult = expression.expression.evaluate[T](ctx, Map.empty)
       expression.typingInfo.typingResult match {
-        case result: SingleTypingResult if evaluationResult != null =>
+        case result: SingleTypingResult if evaluationResult != null && !skipReturnTypeCheck =>
           result.runtimeObjType.klass isAssignableFrom evaluationResult.getClass shouldBe true
         case _ =>
       }
@@ -89,20 +99,27 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private implicit val nid: NodeId = NodeId("")
 
-  private val bigValue = BigDecimal.valueOf(4187338076L)
+  private val bigValue = JBigDecimal.valueOf(4187338076L)
 
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
 
   private val ctx = Context("abc").withVariables(
     Map(
-      "obj"            -> testValue,
-      "strVal"         -> "",
-      "mapValue"       -> Map("foo" -> "bar").asJava,
-      "array"          -> Array("a", "b"),
-      "intArray"       -> Array(1, 2, 3),
-      "nestedArray"    -> Array(Array(1, 2), Array(3, 4)),
-      "arrayOfUnknown" -> Array("unknown".asInstanceOf[Any]),
-      "unknownString"  -> ContainerOfUnknown("unknown")
+      "obj"                                         -> testValue,
+      "strVal"                                      -> "",
+      "mapValue"                                    -> Map("foo" -> "bar").asJava,
+      "array"                                       -> Array("a", "b"),
+      "intArray"                                    -> Array(1, 2, 3),
+      "nestedArray"                                 -> Array(Array(1, 2), Array(3, 4)),
+      "arrayOfUnknown"                              -> Array("unknown".asInstanceOf[Any]),
+      "unknownString"                               -> ContainerOfUnknown("unknown"),
+      "setVal"                                      -> Set("a").asJava,
+      "containerWithUnknownObject"                  -> ContainerOfUnknown(SampleValue(1)),
+      "containerWithUnknownObjectWithStaticMethods" -> ContainerOfUnknown(new JavaClassWithStaticParameterlessMethod()),
+      "containerWithUnknownClassWithStaticMethods" -> ContainerOfUnknown(
+        classOf[JavaClassWithStaticParameterlessMethod]
+      ),
+      "containerWithUnknownArray" -> ContainerOfUnknown(Array("a", "b", "c")),
     )
   )
 
@@ -126,10 +143,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       id: String,
       value: Long,
       children: java.util.List[Test] = List[Test]().asJava,
-      bigValue: BigDecimal = BigDecimal.valueOf(0L)
+      bigValue: JBigDecimal = JBigDecimal.valueOf(0L)
   )
 
   case class ContainerOfUnknown(value: Any)
+
+  case class ContainerOfGenericMap(value: JMap[_, _])
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -236,13 +255,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[LocalDate],
       classOf[ChronoLocalDate],
       classOf[SampleValue],
+      classOf[JavaClassWithStaticParameterlessMethod],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     )
     ClassDefinitionTestUtils.createDefinitionForClassesWithExtensions(typesFromGlobalVariables ++ customClasses: _*)
   }
 
-  private def evaluate[T: TypeTag](expr: String): T =
-    parse[T](expr = expr, context = ctx).validExpression.evaluateSync[T](ctx)
+  private def evaluate[T: TypeTag](expr: String, context: Context = ctx): T =
+    parse[T](expr = expr, context = context).validExpression.evaluateSync[T](context)
 
   test("parsing first selection on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").validExpression
@@ -261,6 +281,98 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("parsing Indexer on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}[0]").validExpression.evaluateSync[Any](ctx) should equal(1)
+  }
+
+  test(
+    "should not allow to call parameterless method in indexer on unknown that is not allowed in class definitions (IndexedType.OBJECT case)"
+  ) {
+    // we test here on non-(map, array, collection, string) object because those types handling is hardcoded in Indexer.getValueRef method and is quite safe
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownObject.value['productArity']", // productArity is not exposed method in ClassDefinitionSet
+      ).validExpression.evaluateSync[Any](ctx)
+    }
+  }
+
+  test(
+    "should allow to invoke not allowed parentless method in indexer on unknown when dynamicPropertyAccessAllowed=true"
+  ) {
+    parse[Any](
+      "#containerWithUnknownObject.value['productArity']",
+      dynamicPropertyAccessAllowed = true
+    ).validExpression.evaluateSync[Any](ctx) shouldBe 2
+  }
+
+  test("should allow to call parameterless method in indexer on unknown that is allowed in class definitions") {
+    parse[AnyRef]("#containerWithUnknownObject.value['toString']").validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "SampleValue(1,)"
+  }
+
+  test(
+    "should allow to call parameterless method in indexer on unknown that is allowed in class definitions - reflective property accessor"
+  ) {
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any]("#containerWithUnknownObject.value['class']").validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test(
+    "should not allow to call parameterless method in indexer on unknown that is not allowed in class definitions - reflective property accessor"
+  ) {
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any]("#containerWithUnknownObject.value['getSomeHiddenGetter']").validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test("indexer access on unknown - static methods on objects case") {
+    parse[Any](
+      "#containerWithUnknownObjectWithStaticMethods.value['someAllowedParameterlessStaticMethod']"
+    ).validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "allowed"
+
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownObjectWithStaticMethods.value['someHiddenParameterlessStaticMethod']"
+      ).validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test("indexer access on unknown - static methods on class types case") {
+    parse[Any](
+      "#containerWithUnknownClassWithStaticMethods.value['someAllowedParameterlessStaticMethod']"
+    ).validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "allowed"
+
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parse[Any](
+        "#containerWithUnknownClassWithStaticMethods.value['someHiddenParameterlessStaticMethod']"
+      ).validExpression
+        .evaluateSync[AnyRef](ctx)
+    }
+  }
+
+  test("indexer access on unknown - array like case") {
+    parse[Any](
+      "#containerWithUnknownArray.value[0]"
+    ).validExpression
+      .evaluateSync[AnyRef](ctx) shouldBe "a"
+  }
+
+  test("projection access on unknown - array like case") {
+    parse[java.util.List[Object]](
+      "#containerWithUnknownArray.value.![#this.toString() + \"Val\"]"
+    ).validExpression
+      .evaluateSync[java.util.ArrayList[String]](ctx) should equal(util.Arrays.asList("aVal", "bVal", "cVal"))
+  }
+
+  test("selection access on unknown - array like case") {
+    parse[java.util.List[Object]](
+      "#containerWithUnknownArray.value.?[#this.toString() == \"b\"]"
+    ).validExpression
+      .evaluateSync[java.util.ArrayList[String]](ctx) should equal(util.Arrays.asList("b"))
   }
 
   test("parsing Selection on array") {
@@ -306,11 +418,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("blocking excluded in runtime, without previous static validation, allowed class and package") {
-    parse[BigInteger](
+    parse[JBigInteger](
       "T(java.math.BigInteger).valueOf(1L)",
       staticMethodInvocationsChecking = false,
       methodExecutionForUnknownAllowed = true
-    ).validExpression.evaluateSync[BigInteger](ctx) should equal(BigInteger.ONE)
+    ).validExpression.evaluateSync[JBigInteger](ctx) should equal(JBigInteger.ONE)
   }
 
   test("blocking excluded in runtime, allowed reference") {
@@ -517,9 +629,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("handle big decimals") {
-    bigValue.compareTo(BigDecimal.valueOf(50 * 1024 * 1024)) should be > 0
-    bigValue.compareTo(BigDecimal.valueOf(50 * 1024 * 1024L)) should be > 0
-    parse[Any]("#obj.bigValue").validExpression.evaluateSync[BigDecimal](ctx) should equal(bigValue)
+    bigValue.compareTo(JBigDecimal.valueOf(50 * 1024 * 1024)) should be > 0
+    bigValue.compareTo(JBigDecimal.valueOf(50 * 1024 * 1024L)) should be > 0
+    parse[Any]("#obj.bigValue").validExpression.evaluateSync[JBigDecimal](ctx) should equal(bigValue)
     parse[Boolean]("#obj.bigValue < 50*1024*1024").validExpression.evaluateSync[Boolean](ctx) should equal(false)
     parse[Boolean]("#obj.bigValue < 50*1024*1024L").validExpression.evaluateSync[Boolean](ctx) should equal(false)
   }
@@ -976,16 +1088,21 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("evaluates expression with template context") {
     parse[String]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template).validExpression
-      .evaluateSync[String]() shouldBe "alamakota 444"
+      .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
+      .renderedTemplate shouldBe "alamakota 444"
     parse[String](
       "alamakota #{444 + #obj.value} #{#mapValue.foo}",
       ctx,
       flavour = SpelExpressionParser.Template
-    ).validExpression.evaluateSync[String]() shouldBe "alamakota 446 bar"
+    ).validExpression
+      .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
+      .renderedTemplate shouldBe "alamakota 446 bar"
   }
 
   test("evaluates empty template as empty string") {
-    parse[String]("", ctx, flavour = SpelExpressionParser.Template).validExpression.evaluateSync[String]() shouldBe ""
+    parse[String]("", ctx, flavour = SpelExpressionParser.Template).validExpression
+      .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
+      .renderedTemplate shouldBe ""
   }
 
   test("variables with TypeMap type") {
@@ -1288,17 +1405,33 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should not validate array constructor") {
+  test("should not allow array constructor") {
     List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
       illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
     )
   }
 
-  test("indexing on maps and lists should validate nodes inside indexer") {
+  test("indexing on maps and lists should validate expression inside indexer") {
     List("#processHelper.stringOnStringMap[#invalidRef]", "{1,2,3}[#invalidRef]").map(expr =>
       parse[Any](expr, ctxWithGlobal).invalidValue shouldBe NonEmptyList.one(
         UnresolvedReferenceError("invalidRef")
       )
+    )
+  }
+
+  test("indexing on unknown should validate expression inside indexer") {
+    parse[Any]("#unknownString.value[#invalidRef]", ctx).invalidValue shouldBe NonEmptyList.one(
+      UnresolvedReferenceError("invalidRef")
+    )
+  }
+
+  test("indexing on class should validate expression inside indexer") {
+    parse[Any](
+      "T(java.time.LocalDate)[#invalidRef]",
+      ctx,
+      dynamicPropertyAccessAllowed = true
+    ).invalidValue shouldBe NonEmptyList.one(
+      UnresolvedReferenceError("invalidRef")
     )
   }
 
@@ -1365,53 +1498,46 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     forAll(
       Table(
         ("expression", "expectedResult"),
-        ("#unknownString.value.canCastTo('java.lang.String')", true),
-        ("#unknownString.value.canCastTo('java.lang.Integer')", false),
+        ("#unknownString.value.canBe('java.lang.String')", true),
+        ("#unknownString.value.canBe('java.lang.Integer')", false),
       )
     ) { (expression, expectedResult) =>
       evaluate[Any](expression) shouldBe expectedResult
     }
   }
 
-  test("should return unknownMethodError during invoke cast on simple types") {
-    forAll(
-      Table(
-        ("expression", "expectedMethod", "expectedType"),
-        ("11.canCastTo('java.lang.String')", "canCastTo", "Integer"),
-        ("true.canCastTo('java.lang.String')", "canCastTo", "Boolean"),
-        ("'true'.canCastTo('java.lang.String')", "canCastTo", "String"),
-        ("11.castTo('java.lang.String')", "castTo", "Integer"),
-        ("true.castTo('java.lang.String')", "castTo", "Boolean"),
-        ("'true'.castTo('java.lang.String')", "castTo", "String"),
-      )
-    ) { (expression, expectedMethod, expectedType) =>
-      parse[Any](expression, ctx).invalidValue.toList should matchPattern {
-        case UnknownMethodError(`expectedMethod`, `expectedType`) :: Nil =>
-      }
-    }
-  }
-
   test("should compute correct result type based on parameter") {
-    val parsed = parse[Any]("#unknownString.value.castTo('java.lang.String')", ctx).validValue
+    val parsed = parse[Any]("#unknownString.value.to('java.lang.String')", ctx).validValue
     parsed.returnType shouldBe Typed.typedClass[String]
     parsed.expression.evaluateSync[Any](ctx) shouldBe a[java.lang.String]
   }
 
   test("should return an error if the cast return type cannot be determined at parse time") {
-    parse[Any]("#unknownString.value.castTo('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
-      case GenericFunctionError("Casting to 'java.util.XYZ' is not allowed") :: Nil =>
+    parse[Any]("#unknownString.value.to('java.util.XYZ')", ctx).invalidValue.toList should matchPattern {
+      case GenericFunctionError("Cannot cast or convert to: 'java.util.XYZ'") :: Nil =>
     }
-    parse[Any]("#unknownString.value.castTo(#obj.id)", ctx).invalidValue.toList should matchPattern {
-      case ArgumentTypeError("castTo", _, _) :: Nil =>
+    parse[Any]("#unknownString.value.to(#obj.id)", ctx).invalidValue.toList should matchPattern {
+      case ArgumentTypeError("to", _, _) :: Nil =>
     }
   }
 
   test("should throw exception if cast fails") {
     val caught = intercept[SpelExpressionEvaluationException] {
-      evaluate[Any]("#unknownString.value.castTo('java.lang.Integer')")
+      evaluate[Any]("#unknownString.value.to('java.lang.Integer')")
     }
-    caught.getCause shouldBe a[ClassCastException]
-    caught.getMessage should include("Cannot cast: class java.lang.String to: java.lang.Integer")
+    caught.getMessage should include("Cannot cast or convert value: unknown to: 'java.lang.Integer'")
+    caught.getCause shouldBe a[IllegalStateException]
+  }
+
+  test("should not allow cast to disallowed classes") {
+    parse[Any](
+      "#hashMap.value.to('java.util.HashMap').remove('testKey')",
+      ctx.withVariable("hashMap", ContainerOfUnknown(new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava)))
+    ).invalidValue.toList should matchPattern {
+      case GenericFunctionError("Cannot cast or convert to: 'java.util.HashMap'") :: IllegalInvocationError(
+            Unknown
+          ) :: Nil =>
+    }
   }
 
   test(
@@ -1423,31 +1549,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       Table(
         ("expression", "expectedType", "expectedResult", "methodExecutionForUnknownAllowed"),
         ("#arrayOfUnknown", typedArray(Unknown), Array("unknown"), false),
-        (
-          "#arrayOfUnknown.![#this.castTo('java.lang.String')]",
-          typedArray(Typed.typedClass[String]),
-          Array("unknown"),
-          false
-        ),
-        (
-          "#arrayOfUnknown.![#this.canCastTo('java.lang.String')]",
-          typedArray(Typed.typedClass[Boolean]),
-          Array(true),
-          false
-        ),
         ("#arrayOfUnknown.![#this.toString()]", typedArray(Typed.typedClass[String]), Array("unknown"), false),
-        (
-          "#arrayOfUnknown.![#this.castTo('java.lang.String')]",
-          typedArray(Typed.typedClass[String]),
-          Array("unknown"),
-          true
-        ),
-        (
-          "#arrayOfUnknown.![#this.canCastTo('java.lang.String')]",
-          typedArray(Typed.typedClass[Boolean]),
-          Array(true),
-          true
-        ),
         ("#arrayOfUnknown.![#this.toString()]", typedArray(Typed.typedClass[String]), Array("unknown"), true),
       )
     ) { (expression, expectedType, expectedResult, methodExecutionForUnknownAllowed) =>
@@ -1482,37 +1584,491 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should not allow cast to disallowed classes") {
-    parse[Any](
-      "#hashMap.value.castTo('java.util.HashMap').remove('testKey')",
-      ctx.withVariable("hashMap", ContainerOfUnknown(new java.util.HashMap[String, Int](Map("testKey" -> 2).asJava)))
-    ).invalidValue.toList should matchPattern {
-      case GenericFunctionError("Casting to 'java.util.HashMap' is not allowed") :: IllegalInvocationError(
-            Unknown
-          ) :: Nil =>
+  test("should return null if toOrNull fails") {
+    evaluate[Any]("#unknownString.value.toOrNull('java.lang.Long')") == null shouldBe true
+  }
+
+  test("should toOrNull succeed") {
+    evaluate[Any](
+      "#unknownLong.value.toOrNull('java.lang.Long')",
+      ctx.withVariable("unknownLong", ContainerOfUnknown(11L))
+    ) shouldBe 11L
+  }
+
+  test("should allow invoke conversion methods with class simple names") {
+    evaluate[Any](
+      "{#unknownLong.value.toOrNull('Long'), #unknownLong.value.to('Long'), #unknownLong.value.canBe('Long')}",
+      ctx.withVariable("unknownLong", ContainerOfUnknown(11L))
+    ) shouldBe List(11L, 11L, true).asJava
+  }
+
+  test("should convert a List to a Map") {
+    val mapStringStringType =
+      Typed.genericTypeClass[JMap[_, _]](List(Typed.typedClass[String], Typed.typedClass[String]))
+    val mapStringUnknownType =
+      Typed.genericTypeClass[JMap[_, _]](List(Typed.typedClass[String], Unknown))
+    val stringMap = Map("foo" -> "bar", "baz" -> "qux").asJava
+    val nullableMap = {
+      val result = new util.HashMap[String, String]()
+      result.put("foo", "bar")
+      result.put("baz", null)
+      result.put(null, "qux")
+      result
+    }
+    val mapWithDifferentValueTypes = Map("foo" -> "bar", "baz" -> 1).asJava
+    val mapWithKeyAndValueFields   = Map("key" -> "foo", "value" -> 123).asJava
+    val customCtx = ctx
+      .withVariable("stringMap", stringMap)
+      .withVariable("mapWithDifferentValueTypes", mapWithDifferentValueTypes)
+      .withVariable("nullableMap", nullableMap)
+      .withVariable("containerWithMapWithKeyAndValueFields", ContainerOfGenericMap(mapWithKeyAndValueFields))
+
+    forAll(
+      Table(
+        ("expression", "expectedType", "expectedResult"),
+        (
+          "#stringMap.![{key: #this.key + '_k', value: #this.value + '_v'}].toMap",
+          mapStringStringType,
+          Map("foo_k" -> "bar_v", "baz_k" -> "qux_v").asJava
+        ),
+        (
+          "#mapWithDifferentValueTypes.![{key: #this.key, value: #this.value}].toMap",
+          mapStringUnknownType,
+          mapWithDifferentValueTypes
+        ),
+        (
+          "#nullableMap.![{key: #this.key, value: #this.value}].toMap",
+          mapStringStringType,
+          nullableMap
+        ),
+        (
+          "{}.toMap",
+          Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
+          Map.empty.asJava,
+        ),
+        (
+          "{#containerWithMapWithKeyAndValueFields.value}.toMap",
+          Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown)),
+          Map("foo" -> 123).asJava,
+        )
+      )
+    ) { (expression, expectedType, expectedResult) =>
+      val parsed = parse[Any](expr = expression, context = customCtx).validValue
+      parsed.returnType.withoutValue shouldBe expectedType
+      parsed.expression.evaluateSync[Any](customCtx) shouldBe expectedResult
     }
   }
 
-  test("should return null if castToOrNull fails") {
-    evaluate[Any]("#unknownString.value.castToOrNull('java.lang.Integer')") == null shouldBe true
+  test("should return error msg if record in map project does not contain required fields") {
+    parse[Any]("#mapValue.![{invalid_key: #this.key}].toMap()", ctx).invalidValue.toList should matchPattern {
+      case GenericFunctionError("List element must contain 'key' and 'value' fields") :: Nil =>
+    }
   }
 
-  test("should castToOrNull succeed") {
-    evaluate[Any]("#unknownString.value.castToOrNull('java.lang.String')") shouldBe "unknown"
+  test("should type conversion of list of unknown to map correctly and return error in runtime") {
+    val parsed = parse[Any]("{1, 'foo', false}.toMap", ctx).validValue
+    parsed.returnType.withoutValue shouldBe Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    an[SpelExpressionEvaluationException] shouldBe thrownBy {
+      parsed.expression.evaluateSync[Any](ctx)
+    }
   }
 
-  test("should allow invoke cast methods with class simple names") {
-    evaluate[Any](
-      "{#unknownString.value.castToOrNull('String'), #unknownString.value.castTo('String'), " +
-        "#unknownString.value.canCastTo('String')}"
-    ) shouldBe List("unknown", "unknown", true).asJava
+  test("should convert value to a given type") {
+    val map                         = Map("a" -> "b").asJava
+    val emptyMap                    = Map().asJava
+    val list                        = List("a").asJava
+    val listOfTuples                = List(Map("key" -> "a", "value" -> "b").asJava).asJava
+    val emptyList                   = List().asJava
+    val emptyTuplesList             = List(Map().asJava).asJava
+    val convertedDoubleToBigDecimal = NumberUtils.convertNumberToTargetClass(1.1, classOf[JBigDecimal])
+    val zoneOffset                  = ZoneOffset.of("+01:00")
+    val zoneId                      = ZoneId.of("Europe/Warsaw")
+    val locale                      = StringUtils.parseLocale("pl_PL")
+    val charset                     = StandardCharsets.UTF_8
+    val currency                    = Currency.getInstance("USD")
+    val uuid                        = UUID.fromString("7447e433-83dd-47d0-a115-769a03236bca")
+    val localTime                   = LocalTime.parse("10:15:30")
+    val localDate                   = LocalDate.parse("2024-11-04")
+    val localDateTime               = LocalDateTime.parse("2024-11-04T10:15:30")
+    val customCtx = ctx
+      .withVariable("unknownInteger", ContainerOfUnknown(1))
+      .withVariable("unknownBoolean", ContainerOfUnknown(false))
+      .withVariable("unknownBooleanString", ContainerOfUnknown("false"))
+      .withVariable("unknownLong", ContainerOfUnknown(11L))
+      .withVariable("unknownLongString", ContainerOfUnknown("11"))
+      .withVariable("unknownDouble", ContainerOfUnknown(1.1))
+      .withVariable("unknownDoubleString", ContainerOfUnknown("1.1"))
+      .withVariable("unknownBigDecimal", ContainerOfUnknown(BigDecimal(2.1).bigDecimal))
+      .withVariable("unknownBigDecimalString", ContainerOfUnknown("2.1"))
+      .withVariable("unknownMap", ContainerOfUnknown(map))
+      .withVariable("unknownList", ContainerOfUnknown(list))
+      .withVariable("unknownListOfTuples", ContainerOfUnknown(listOfTuples))
+      .withVariable("unknownEmptyList", ContainerOfUnknown(emptyList))
+      .withVariable("unknownEmptyTuplesList", ContainerOfUnknown(emptyTuplesList))
+    val byteTyping                = Typed.typedClass[JByte]
+    val shortTyping               = Typed.typedClass[JShort]
+    val integerTyping             = Typed.typedClass[JInteger]
+    val longTyping                = Typed.typedClass[JLong]
+    val floatTyping               = Typed.typedClass[JFloat]
+    val doubleTyping              = Typed.typedClass[JDouble]
+    val bigDecimalTyping          = Typed.typedClass[JBigDecimal]
+    val bigIntegerTyping          = Typed.typedClass[JBigInteger]
+    val booleanTyping             = Typed.typedClass[JBoolean]
+    val stringTyping              = Typed.typedClass[String]
+    val mapTyping                 = Typed.genericTypeClass[JMap[_, _]](List(Unknown, Unknown))
+    val listTyping                = Typed.genericTypeClass[JList[_]](List(Unknown))
+    val zoneOffsetTyping          = Typed.typedClass[ZoneOffset]
+    val zoneIdTyping              = Typed.typedClass[ZoneId]
+    val localeTyping              = Typed.typedClass[Locale]
+    val charsetTyping             = Typed.typedClass[Charset]
+    val currencyTyping            = Typed.typedClass[Currency]
+    val uuidTyping                = Typed.typedClass[UUID]
+    val localTimeTyping           = Typed.typedClass[LocalTime]
+    val localDateTyping           = Typed.typedClass[LocalDate]
+    val localDateTimeTyping       = Typed.typedClass[LocalDateTime]
+    val chronoLocalDateTyping     = Typed.typedClass[ChronoLocalDate]
+    val chronoLocalDateTimeTyping = Typed.typedClass[ChronoLocalDateTime[_]]
+    forAll(
+      Table(
+        ("expression", "expectedType", "expectedResult"),
+        ("1.to('Long')", longTyping, 1),
+        ("1.1.to('Long')", longTyping, 1),
+        ("'1'.to('Long')", longTyping, 1),
+        ("1.toOrNull('Long')", longTyping, 1),
+        ("1.1.toOrNull('Long')", longTyping, 1),
+        ("'1'.toOrNull('Long')", longTyping, 1),
+        ("'a'.toOrNull('Long')", longTyping, null),
+        ("#unknownLong.value.to('Long')", longTyping, 11),
+        ("#unknownLongString.value.to('Long')", longTyping, 11),
+        ("#unknownDouble.value.to('Long')", longTyping, 1),
+        ("#unknownDoubleString.value.to('Long')", longTyping, 1),
+        ("#unknownBoolean.value.toOrNull('Long')", longTyping, null),
+        ("1.to('Double')", doubleTyping, 1.0),
+        ("1.1.to('Double')", doubleTyping, 1.1),
+        ("'1'.to('Double')", doubleTyping, 1.0),
+        ("1.toOrNull('Double')", doubleTyping, 1.0),
+        ("1.1.toOrNull('Double')", doubleTyping, 1.1),
+        ("'1'.toOrNull('Double')", doubleTyping, 1.0),
+        ("'a'.toOrNull('Double')", doubleTyping, null),
+        ("#unknownLong.value.to('Double')", doubleTyping, 11.0),
+        ("#unknownLongString.value.to('Double')", doubleTyping, 11.0),
+        ("#unknownDouble.value.to('Double')", doubleTyping, 1.1),
+        ("#unknownDoubleString.value.to('Double')", doubleTyping, 1.1),
+        ("#unknownBoolean.value.toOrNull('Double')", doubleTyping, null),
+        ("1.to('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.1.to('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
+        ("'1'.to('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.1.toOrNull('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
+        ("'1'.toOrNull('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("'a'.toOrNull('BigDecimal')", bigDecimalTyping, null),
+        ("#unknownLong.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(11).bigDecimal),
+        ("#unknownLongString.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(11).bigDecimal),
+        ("#unknownDouble.value.to('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
+        ("#unknownDoubleString.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("#unknownBoolean.value.toOrNull('BigDecimal')", bigDecimalTyping, null),
+        ("'true'.to('Boolean')", booleanTyping, true),
+        ("#unknownInteger.value.toOrNull('Boolean')", booleanTyping, null),
+        ("'a'.toOrNull('Boolean')", booleanTyping, null),
+        ("'true'.toOrNull('Boolean')", booleanTyping, true),
+        ("#unknownBoolean.value.to('Boolean')", booleanTyping, false),
+        ("'a'.to('String')", stringTyping, "a"),
+        ("'a'.toOrNull('String')", stringTyping, "a"),
+        ("1.to('Byte')", byteTyping, 1.byteValue),
+        ("'1'.to('Byte')", byteTyping, 1.byteValue),
+        ("1.toOrNull('Byte')", byteTyping, 1.byteValue),
+        ("'1'.toOrNull('Byte')", byteTyping, 1.byteValue),
+        ("1.to('Short')", shortTyping, 1.shortValue),
+        ("'1'.to('Short')", shortTyping, 1.shortValue),
+        ("1.toOrNull('Short')", shortTyping, 1.shortValue),
+        ("'1'.toOrNull('Short')", shortTyping, 1.shortValue),
+        ("1.to('Integer')", integerTyping, 1),
+        ("'1'.to('Integer')", integerTyping, 1),
+        ("1.toOrNull('Integer')", integerTyping, 1),
+        ("'1'.toOrNull('Integer')", integerTyping, 1),
+        ("1.1.to('Float')", floatTyping, 1.1.floatValue),
+        ("'1.1'.to('Float')", floatTyping, 1.1.floatValue),
+        ("1.1.toOrNull('Float')", floatTyping, 1.1.floatValue),
+        ("'1.1'.toOrNull('Float')", floatTyping, 1.1.floatValue),
+        ("1.to('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("'1'.to('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("1.toOrNull('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("'1'.toOrNull('BigInteger')", bigIntegerTyping, JBigInteger.ONE),
+        ("'+01:00'.to('ZoneOffset')", zoneOffsetTyping, zoneOffset),
+        ("'Europe/Warsaw'.to('ZoneId')", zoneIdTyping, zoneId),
+        ("'pl_PL'.to('Locale')", localeTyping, locale),
+        ("'UTF-8'.to('Charset')", charsetTyping, charset),
+        ("'USD'.to('Currency')", currencyTyping, currency),
+        ("'7447e433-83dd-47d0-a115-769a03236bca'.to('UUID')", uuidTyping, uuid),
+        ("'10:15:30'.to('LocalTime')", localTimeTyping, localTime),
+        ("'2024-11-04'.to('LocalDate')", localDateTyping, localDate),
+        ("'2024-11-04T10:15:30'.to('LocalDateTime')", localDateTimeTyping, localDateTime),
+        ("'2024-11-04'.to('ChronoLocalDate')", chronoLocalDateTyping, localDate),
+        ("'2024-11-04T10:15:30'.to('ChronoLocalDateTime')", chronoLocalDateTimeTyping, localDateTime),
+        ("#unknownString.value.to('String')", stringTyping, "unknown"),
+        ("#unknownMap.value.to('Map')", mapTyping, map),
+        ("#unknownMap.value.toOrNull('Map')", mapTyping, map),
+        ("#unknownList.value.to('List')", listTyping, list),
+        ("#unknownList.value.toOrNull('List')", listTyping, list),
+        ("#unknownListOfTuples.value.to('Map')", mapTyping, map),
+        ("#unknownListOfTuples.value.toOrNull('Map')", mapTyping, map),
+        ("#unknownEmptyList.value.to('Map')", mapTyping, emptyMap),
+        ("#unknownEmptyList.value.to('List')", listTyping, emptyList),
+        ("#unknownString.value.toOrNull('Map')", mapTyping, null),
+        ("#unknownEmptyTuplesList.value.toOrNull('Map')", mapTyping, null),
+        ("#unknownEmptyTuplesList.value.to('List')", listTyping, emptyTuplesList),
+        ("#unknownString.value.toOrNull('List')", listTyping, null),
+        ("1.toLong()", longTyping, 1),
+        ("1.1.toLong()", longTyping, 1),
+        ("'1'.toLong()", longTyping, 1),
+        ("1.toLongOrNull()", longTyping, 1),
+        ("1.1.toLongOrNull()", longTyping, 1),
+        ("'1'.toLongOrNull()", longTyping, 1),
+        ("'a'.toLongOrNull()", longTyping, null),
+        ("#unknownLong.value.toLong()", longTyping, 11),
+        ("#unknownLongString.value.toLong()", longTyping, 11),
+        ("#unknownDouble.value.toLong()", longTyping, 1),
+        ("#unknownDoubleString.value.toLong()", longTyping, 1),
+        ("#unknownBoolean.value.toLongOrNull()", longTyping, null),
+        ("1.toDouble()", doubleTyping, 1.0),
+        ("'1'.toDouble()", doubleTyping, 1.0),
+        ("1.toDoubleOrNull()", doubleTyping, 1.0),
+        ("'1'.toDoubleOrNull()", doubleTyping, 1.0),
+        ("'a'.toDoubleOrNull()", doubleTyping, null),
+        ("#unknownLong.value.toDouble()", doubleTyping, 11.0),
+        ("#unknownLongString.value.toDouble()", doubleTyping, 11.0),
+        ("#unknownDouble.value.toDouble()", doubleTyping, 1.1),
+        ("#unknownDoubleString.value.toDouble()", doubleTyping, 1.1),
+        ("#unknownBoolean.value.toDoubleOrNull()", doubleTyping, null),
+        ("1.toBigDecimal()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.1.toBigDecimal()", bigDecimalTyping, convertedDoubleToBigDecimal),
+        ("'1'.toBigDecimal()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.1.toBigDecimalOrNull()", bigDecimalTyping, convertedDoubleToBigDecimal),
+        ("'1'.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("'a'.toBigDecimalOrNull()", bigDecimalTyping, null),
+        ("#unknownLong.value.toBigDecimal()", bigDecimalTyping, BigDecimal(11).bigDecimal),
+        ("#unknownLongString.value.toBigDecimal()", bigDecimalTyping, BigDecimal(11).bigDecimal),
+        ("#unknownDouble.value.toBigDecimal()", bigDecimalTyping, convertedDoubleToBigDecimal),
+        ("#unknownDoubleString.value.toBigDecimal()", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        ("#unknownBoolean.value.toBigDecimalOrNull()", bigDecimalTyping, null),
+        ("'true'.toBoolean()", booleanTyping, true),
+        ("#unknownInteger.value.toBooleanOrNull()", booleanTyping, null),
+        ("'a'.toBooleanOrNull()", booleanTyping, null),
+        ("'true'.toBooleanOrNull()", booleanTyping, true),
+        ("#unknownBoolean.value.toBoolean()", booleanTyping, false),
+        ("#unknownMap.value.toMap()", mapTyping, map),
+        ("#unknownMap.value.toMapOrNull()", mapTyping, map),
+        ("#unknownList.value.toList()", listTyping, list),
+        ("#unknownList.value.toListOrNull()", listTyping, list),
+        ("#unknownListOfTuples.value.toMap()", mapTyping, map),
+        ("#unknownListOfTuples.value.toMapOrNull()", mapTyping, map),
+        ("#unknownEmptyList.value.toMap()", mapTyping, emptyMap),
+        ("#unknownEmptyList.value.toList()", listTyping, emptyList),
+        ("#unknownString.value.toMapOrNull()", mapTyping, null),
+        ("#unknownEmptyTuplesList.value.toMapOrNull()", mapTyping, null),
+        ("#unknownEmptyTuplesList.value.toList()", listTyping, emptyTuplesList),
+        ("#unknownString.value.toListOrNull()", listTyping, null),
+        ("#arrayOfUnknown.toList()", listTyping, List("unknown").asJava),
+      )
+    ) { (expression, expectedType, expectedResult) =>
+      val parsed = parse[Any](expr = expression, context = customCtx).validValue
+      parsed.returnType.withoutValue shouldBe expectedType
+      parsed.expression.evaluateSync[Any](customCtx) shouldBe expectedResult
+    }
+  }
+
+  test("should check if unknown can be converted to a given type") {
+    val map        = Map("a" -> "b").asJava
+    val list       = List("a").asJava
+    val tuplesList = List(Map("key" -> "a", "value" -> "b").asJava).asJava
+    val customCtx = ctx
+      .withVariable("unknownBoolean", ContainerOfUnknown(true))
+      .withVariable("unknownBooleanString", ContainerOfUnknown("false"))
+      .withVariable("unknownLong", ContainerOfUnknown(11L))
+      .withVariable("unknownLongString", ContainerOfUnknown("11"))
+      .withVariable("unknownDouble", ContainerOfUnknown(1.1))
+      .withVariable("unknownDoubleString", ContainerOfUnknown("1.1"))
+      .withVariable("unknownBigDecimal", ContainerOfUnknown(BigDecimal(2.1).bigDecimal))
+      .withVariable("unknownBigDecimalString", ContainerOfUnknown("2.1"))
+      .withVariable("unknownList", ContainerOfUnknown(list))
+      .withVariable("unknownListOfTuples", ContainerOfUnknown(tuplesList))
+      .withVariable("unknownMap", ContainerOfUnknown(map))
+    forAll(
+      Table(
+        ("expression", "result"),
+        ("#unknownBoolean.value.canBe('Boolean')", true),
+        ("#unknownBooleanString.value.canBe('Boolean')", true),
+        ("#unknownString.value.canBe('Boolean')", false),
+        ("#unknownLong.value.canBe('Byte')", true),
+        ("#unknownLongString.value.canBe('Byte')", true),
+        ("#unknownString.value.canBe('Byte')", false),
+        ("#unknownLong.value.canBe('Short')", true),
+        ("#unknownLongString.value.canBe('Short')", true),
+        ("#unknownString.value.canBe('Short')", false),
+        ("#unknownLong.value.canBe('Integer')", true),
+        ("#unknownLongString.value.canBe('Integer')", true),
+        ("#unknownString.value.canBe('Integer')", false),
+        ("#unknownLong.value.canBe('Long')", true),
+        ("#unknownLongString.value.canBe('Long')", true),
+        ("#unknownString.value.canBe('Long')", false),
+        ("#unknownLong.value.canBe('BigInteger')", true),
+        ("#unknownLongString.value.canBe('BigInteger')", true),
+        ("#unknownString.value.canBe('BigInteger')", false),
+        ("#unknownDouble.value.canBe('Double')", true),
+        ("#unknownDoubleString.value.canBe('Double')", true),
+        ("#unknownString.value.canBe('Double')", false),
+        ("#unknownDouble.value.canBe('Float')", true),
+        ("#unknownDoubleString.value.canBe('Float')", true),
+        ("#unknownString.value.canBe('Float')", false),
+        ("#unknownBigDecimal.value.canBe('BigDecimal')", true),
+        ("#unknownBigDecimalString.value.canBe('BigDecimal')", true),
+        ("#unknownString.value.canBe('BigDecimal')", false),
+        ("#unknownList.value.canBe('List')", true),
+        ("#unknownList.value.canBe('Map')", false),
+        ("#unknownMap.value.canBe('List')", true),
+        ("#unknownMap.value.canBe('Map')", true),
+        ("#unknownListOfTuples.value.canBe('List')", true),
+        ("#unknownListOfTuples.value.canBe('Map')", true),
+        ("#unknownBoolean.value.canBeBoolean", true),
+        ("#unknownBooleanString.value.canBeBoolean", true),
+        ("#unknownString.value.canBeBoolean", false),
+        ("#unknownLong.value.canBeLong", true),
+        ("#unknownLongString.value.canBeLong", true),
+        ("#unknownString.value.canBeLong", false),
+        ("#unknownDouble.value.canBeDouble", true),
+        ("#unknownDoubleString.value.canBeDouble", true),
+        ("#unknownString.value.canBeDouble", false),
+        ("#unknownBigDecimal.value.canBeBigDecimal", true),
+        ("#unknownBigDecimalString.value.canBeBigDecimal", true),
+        ("#unknownString.value.canBeBigDecimal", false),
+        ("#unknownList.value.canBeList", true),
+        ("#unknownList.value.canBeMap", false),
+        ("#unknownMap.value.canBeList", true),
+        ("#unknownMap.value.canBeMap", true),
+        ("#unknownListOfTuples.value.canBeList", true),
+        ("#unknownListOfTuples.value.canBeMap", true),
+        ("#arrayOfUnknown.canBeList", true),
+      )
+    ) { (expression, result) =>
+      evaluate[Any](expression, customCtx) shouldBe result
+    }
+  }
+
+  test("should throw exception if a value cannot be converted to primitive") {
+    val customCtx = ctx
+      .withVariable("unknownBoolean", ContainerOfUnknown(true))
+      .withVariable("unknownLong", ContainerOfUnknown(11L))
+      .withVariable("unknownDouble", ContainerOfUnknown(1.1))
+      .withVariable("unknownBigDecimal", ContainerOfUnknown(BigDecimal(2.1).bigDecimal))
+    Table(
+      "expression",
+      "#unknownDouble.value.toBoolean()",
+      "#unknownLong.value.toBoolean()",
+      "#unknownString.value.toBoolean()",
+      "#unknownString.value.toLong()",
+      "#unknownBoolean.value.toLong()",
+      "#unknownString.value.toDouble()",
+      "#unknownBoolean.value.toDouble()",
+      "#unknownBoolean.value.toBigDecimal()",
+      "#unknownString.value.toBigDecimal()",
+      "#unknownString.value.toList()",
+      "#unknownString.value.toMap()",
+    ).forEvery { expression =>
+      val caught = intercept[SpelExpressionEvaluationException] {
+        evaluate[Any](expression, customCtx)
+      }
+      caught.getCause.getCause.getMessage should (
+        include("Cannot convert:") or
+          include("is neither a decimal digit number")
+      )
+    }
+  }
+
+  test("should convert a set to a list") {
+    val parsed = parse[Any]("#setVal.toList()", ctx).validValue
+    parsed.returnType shouldBe Typed.genericTypeClass[JList[_]](List(Typed.typedClass[String]))
+    parsed.evaluateSync[Any](ctx) shouldBe List("a").asJava
+  }
+
+  test("should convert a map to a list analogical as list can be converted to map") {
+    val listClass = classOf[JList[_]]
+
+    val containerWithMapWithIntValues            = Map("foo" -> 123, "bar" -> 234).asJava
+    val containerWithMapWithDifferentTypesValues = Map("foo" -> 123, "bar" -> "baz").asJava
+    val customCtx = Context("someContextId")
+      .withVariable("containerWithMapWithIntValues", ContainerOfGenericMap(containerWithMapWithIntValues))
+      .withVariable(
+        "containerWithMapWithDifferentTypesValues",
+        ContainerOfGenericMap(containerWithMapWithDifferentTypesValues)
+      )
+
+    forAll(
+      Table(
+        ("mapExpression", "expectedKeyType", "expectedValueType", "expectedToListResult"),
+        ("{:}", Typed[String], Unknown, List.empty.asJava),
+        ("{foo: 123}", Typed[String], Typed[Int], List(Map("key" -> "foo", "value" -> 123).asJava).asJava),
+        (
+          "#containerWithMapWithIntValues.value",
+          Unknown,
+          Unknown,
+          List(
+            Map("key" -> "foo", "value" -> 123).asJava,
+            Map("key" -> "bar", "value" -> 234).asJava,
+          ).asJava
+        ),
+        (
+          "#containerWithMapWithDifferentTypesValues.value",
+          Unknown,
+          Unknown,
+          List(
+            Map("key" -> "foo", "value" -> 123).asJava,
+            Map("key" -> "bar", "value" -> "baz").asJava,
+          ).asJava
+        ),
+      )
+    ) { (mapExpression, expectedKeyType, expectedValueType, expectedToListResult) =>
+      val givenMapExpression = parse[Any](mapExpression, customCtx).validValue
+      val givenMap           = givenMapExpression.evaluateSync[Any](customCtx)
+
+      val parsedToListExpression = parse[Any](mapExpression + ".toList", customCtx).validValue
+      inside(parsedToListExpression.returnType) {
+        case TypedClass(`listClass`, (entryType: TypedObjectTypingResult) :: Nil) =>
+          entryType.runtimeObjType.klass shouldBe classOf[JMap[_, _]]
+          entryType.fields.keySet shouldBe Set("key", "value")
+          entryType.fields("key") shouldBe expectedKeyType
+          entryType.fields("value") shouldBe expectedValueType
+      }
+      parsedToListExpression.evaluateSync[Any](customCtx) shouldBe expectedToListResult
+
+      val parsedRoundTripExpression = parse[Any](mapExpression + ".toList.toMap", customCtx).validValue
+      parsedRoundTripExpression.evaluateSync[Any](customCtx) shouldBe givenMap
+      val roundTripTypeIsAGeneralizationOfGivenType =
+        givenMapExpression.returnType canBeConvertedTo parsedRoundTripExpression.returnType
+      roundTripTypeIsAGeneralizationOfGivenType shouldBe true
+    }
+
+  }
+
+  test("should allow use no param method property accessor on unknown") {
+    val customCtx = ctx.withVariable("unknownInt", ContainerOfUnknown("11"))
+    val parsed    = parse[Any]("#unknownInt.value.toLongOrNull", customCtx).validValue
+    parsed.evaluateSync[Any](customCtx) shouldBe 11
+    parsed.evaluateSync[Any](customCtx) shouldBe 11
   }
 
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
 
-case class SampleValue(value: Int, anyObject: Any = "")
+case class SampleValue(value: Int, anyObject: Any = "") {
+
+  @Hidden
+  def getSomeHiddenGetter: String = {
+    "someHidden"
+  }
+
+}
 
 object SimpleEnum extends Enumeration {
   // we must explicitly define Value class to recognize if type is matching

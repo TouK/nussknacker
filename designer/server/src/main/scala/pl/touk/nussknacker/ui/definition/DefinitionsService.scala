@@ -9,12 +9,18 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.definition.DefinitionsService.{createUIParameter, createUIScenarioPropertyConfig}
+import pl.touk.nussknacker.ui.definition.DefinitionsService.{
+  ComponentUiConfigMode,
+  createUIParameter,
+  createUIScenarioPropertyConfig
+}
 import pl.touk.nussknacker.ui.definition.component.{ComponentGroupsPreparer, ComponentWithStaticDefinition}
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{FragmentPropertiesConfig, UiScenarioPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
+import pl.touk.nussknacker.ui.process.processingtype.{DesignerModelData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,7 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 // enters the scenario view. The core domain logic should be done during Model definition extraction
 class DefinitionsService(
     modelData: ModelData,
-    staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
+    staticDefinitionForDynamicComponents: DesignerModelData.DynamicComponentsStaticDefinitions,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     fragmentPropertiesConfig: Map[String, ScenarioPropertyConfig],
     deploymentManager: DeploymentManager,
@@ -33,7 +39,11 @@ class DefinitionsService(
     fragmentPropertiesDocsUrl: Option[String]
 )(implicit ec: ExecutionContext) {
 
-  def prepareUIDefinitions(processingType: ProcessingType, forFragment: Boolean)(
+  def prepareUIDefinitions(
+      processingType: ProcessingType,
+      forFragment: Boolean,
+      componentUiConfigMode: ComponentUiConfigMode
+  )(
       implicit user: LoggedUser
   ): Future[UIDefinitions] = {
     fragmentRepository.fetchLatestFragments(processingType).map { fragments =>
@@ -41,21 +51,39 @@ class DefinitionsService(
         alignedComponentsDefinitionProvider
           .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment, fragments)
 
-      val withStaticDefinition = alignedComponentsDefinition.map {
-        case dynamic: DynamicComponentDefinitionWithImplementation =>
-          val staticDefinition = staticDefinitionForDynamicComponents.getOrElse(
-            dynamic.id,
-            throw new IllegalStateException(s"Static definition for dynamic component: $dynamic should be precomputed")
-          )
-          ComponentWithStaticDefinition(dynamic, staticDefinition)
-        case methodBased: MethodBasedComponentDefinitionWithImplementation =>
-          ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
-        case other =>
-          throw new IllegalStateException(s"Unknown component representation: $other")
+      val withStaticDefinition = {
+        val (components, cachedStaticDefinitionsForDynamicComponents) = componentUiConfigMode match {
+          case ComponentUiConfigMode.EnrichedWithUiConfig =>
+            (alignedComponentsDefinition.components, staticDefinitionForDynamicComponents.finalDefinitions)
+          case ComponentUiConfigMode.BasicConfig =>
+            (
+              alignedComponentsDefinition.basicComponentsUnsafe,
+              staticDefinitionForDynamicComponents.basicDefinitionsUnsafe
+            )
+        }
+
+        components.map {
+          case dynamic: DynamicComponentDefinitionWithImplementation =>
+            val staticDefinition = cachedStaticDefinitionsForDynamicComponents.getOrElse(
+              dynamic.id,
+              throw new IllegalStateException(
+                s"Static definition for dynamic component: $dynamic should be precomputed"
+              )
+            )
+            ComponentWithStaticDefinition(dynamic, staticDefinition)
+          case methodBased: MethodBasedComponentDefinitionWithImplementation =>
+            ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)
+          case other =>
+            throw new IllegalStateException(s"Unknown component representation: $other")
+        }
       }
 
-      val finalizedScenarioPropertiesConfig = scenarioPropertiesConfigFinalizer
-        .finalizeScenarioProperties(scenarioPropertiesConfig)
+      val finalizedScenarioPropertiesConfig = componentUiConfigMode match {
+        case ComponentUiConfigMode.EnrichedWithUiConfig =>
+          scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioPropertiesConfig)
+        case ComponentUiConfigMode.BasicConfig =>
+          scenarioPropertiesConfig
+      }
 
       import net.ceedubs.ficus.Ficus._
       val scenarioPropertiesDocsUrl = modelData.modelConfig.getAs[String]("scenarioPropertiesDocsUrl")
@@ -136,20 +164,32 @@ object DefinitionsService {
   def createUIParameter(parameter: Parameter): UIParameter = {
     UIParameter(
       name = parameter.name.value,
-      typ = parameter.typ,
+      typ = toUIType(parameter.typ),
       editor = parameter.finalEditor,
       defaultValue = parameter.finalDefaultValue,
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
       variablesToHide = parameter.variablesToHide,
       branchParam = parameter.branchParam,
       hintText = parameter.hintText,
-      label = parameter.label
+      label = parameter.label,
+      requiredParam = !parameter.isOptional,
     )
+  }
+
+  private def toUIType(typingResult: TypingResult): TypingResult = {
+    if (typingResult == Typed[TemplateEvaluationResult]) Typed[String] else typingResult
   }
 
   def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
     UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
+  }
+
+  sealed trait ComponentUiConfigMode
+
+  object ComponentUiConfigMode {
+    case object EnrichedWithUiConfig extends ComponentUiConfigMode
+    case object BasicConfig          extends ComponentUiConfigMode
   }
 
 }

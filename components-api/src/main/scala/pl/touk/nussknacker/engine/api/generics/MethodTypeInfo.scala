@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.generics
 
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 
 object MethodTypeInfo {
   private val arrayClass = classOf[Array[Object]]
@@ -21,6 +21,12 @@ object MethodTypeInfo {
 
   def withoutVarargs(params: List[Parameter], result: TypingResult): MethodTypeInfo =
     MethodTypeInfo(params, None, result)
+
+  def noArgTypeInfo(returnType: TypingResult) = MethodTypeInfo(
+    noVarArgs = Nil,
+    varArg = None,
+    result = returnType
+  )
 
 }
 

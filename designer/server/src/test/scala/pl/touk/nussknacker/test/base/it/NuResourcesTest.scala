@@ -18,7 +18,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.VersionId.initialVersionId
@@ -119,7 +118,8 @@ trait NuResourcesTest
       scenarioResolverByProcessingType,
       processChangeListener,
       None,
-      deploymentCommentSettings
+      deploymentCommentSettings,
+      mapProcessingTypeDataProvider()
     )
 
   protected val processingTypeConfig: ProcessingTypeConfig =
@@ -139,7 +139,8 @@ trait NuResourcesTest
         deploymentManagerDependencies,
         deploymentManagerProvider.defaultEngineSetupName,
         processingTypeConfig.deploymentConfig,
-        processingTypeConfig.category
+        processingTypeConfig.category,
+        modelDependencies.componentDefinitionExtractionMode
       )
     )
 
@@ -468,7 +469,10 @@ trait NuResourcesTest
         forwardedUserName = None
       )
     for {
-      _  <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))
+      // FIXME: Using method `runInSerializableTransactionWithRetry` is a workaround for problem with flaky tests
+      // (some tests failed with [java.sql.SQLTransactionRollbackException: transaction rollback: serialization failure])
+      // the underlying cause of that errors needs investigating
+      _  <- dbioRunner.runInSerializableTransactionWithRetry(writeProcessRepository.saveNewProcess(action))
       id <- futureFetchingScenarioRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }

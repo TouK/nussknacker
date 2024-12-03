@@ -370,7 +370,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (TypedClass(_, Nil), TypedClass(_, Nil)) => invalid(typingResult, schema, rootSchema, path)
       case _ =>
         condNel(
-          typingResult.canBeSubclassOf(schemaAsTypedResult),
+          typingResult.canBeConvertedTo(schemaAsTypedResult),
           (),
           OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema))
         )

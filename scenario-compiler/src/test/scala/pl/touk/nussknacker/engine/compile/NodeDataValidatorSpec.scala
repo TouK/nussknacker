@@ -497,6 +497,27 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should return business error when fragment input node referencing fragment that doesn't exist") {
+    validate(
+      FragmentInput(
+        "frInput",
+        FragmentRef(
+          "non-existing-fragment",
+          List(NodeParameter(ParameterName("param1"), "145".spel)),
+          Map("out1" -> "test1")
+        )
+      ),
+      ValidationContext.empty,
+      outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+    ) should matchPattern {
+      case ValidationPerformed(
+            List(UnknownFragment("non-existing-fragment", "frInput")),
+            None,
+            None
+          ) =>
+    }
+  }
+
   test("should validate fragment parameters") {
     inside(
       validate(
@@ -1107,6 +1128,66 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       error.paramName shouldBe paramName
       error.refClazzName shouldBe invalidType
       error.nodeIds shouldBe Set(nodeId)
+    }
+  }
+
+  test("should allow usage of generic type in FragmentInputDefinition parameter") {
+    val nodeId: String = "in"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              ParameterName(paramName),
+              FragmentClazzRef("Map[String, Double]"),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
+    }
+  }
+
+  test(
+    "should not allow usage of generic type in FragmentInputDefinition parameter when occurring type is not on classpath"
+  ) {
+    val nodeId: String = "in"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              ParameterName(paramName),
+              FragmentClazzRef("Map[String, Foo]"),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe List(FragmentParamClassLoadError(ParameterName("param1"), "Map[String, Foo]", "in"))
     }
   }
 

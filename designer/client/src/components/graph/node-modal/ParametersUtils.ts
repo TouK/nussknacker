@@ -1,4 +1,3 @@
-import NodeUtils from "../NodeUtils";
 import { NodeType, Parameter, UIParameter } from "../../../types";
 import { cloneDeep, get, set } from "lodash";
 
@@ -13,7 +12,7 @@ const findUnusedParameters = (parameters: Array<Parameter>, definitions: UIParam
 };
 
 const parametersPath = (node) => {
-    switch (NodeUtils.nodeType(node)) {
+    switch (node.type) {
         case "CustomNode":
             return `parameters`;
         case "Join":
@@ -35,7 +34,7 @@ const parametersPath = (node) => {
 export function adjustParameters(node: NodeType, parameterDefinitions: UIParameter[]): AdjustReturn {
     const path = parametersPath(node);
 
-    if (!path) {
+    if (!path || !parameterDefinitions) {
         return { adjustedNode: node, unusedParameters: [] };
     }
 
@@ -43,7 +42,7 @@ export function adjustParameters(node: NodeType, parameterDefinitions: UIParamet
     const currentParameters = get(currentNode, path);
     //TODO: currently dynamic branch parameters are *not* supported...
     const adjustedParameters = parameterDefinitions
-        ?.filter((def) => !def.branchParam)
+        .filter((def) => !def.branchParam)
         .map((def) => {
             const currentParam = currentParameters.find((p) => p.name == def.name);
             const parameterFromDefinition = {

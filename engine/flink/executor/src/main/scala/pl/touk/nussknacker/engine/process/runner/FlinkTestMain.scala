@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData}
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
@@ -32,7 +32,16 @@ object FlinkTestMain extends FlinkRunner {
     val processVersion = ProcessVersion.empty.copy(processName =
       ProcessName("snapshot version")
     ) // testing process may be unreleased, so it has no version
-    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration).runTest
+    new FlinkTestMain(
+      modelData,
+      process,
+      scenarioTestData,
+      processVersion,
+      DeploymentData.empty.copy(additionalModelConfigs =
+        AdditionalModelConfigs(modelData.additionalConfigsFromProvider)
+      ),
+      configuration
+    ).runTest
   }
 
 }

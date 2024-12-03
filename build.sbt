@@ -16,7 +16,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 // Warning: Flink doesn't work correctly with 2.12.11
 val scala212 = "2.12.10"
-val scala213 = "2.13.12"
+val scala213 = "2.13.15"
 
 lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
@@ -27,10 +27,10 @@ lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
-// Silencer 1.7.x require Scala 2.12.11 (see warning above)
+// Silencer 1.7.x requires Scala 2.12.11+
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.17"
+lazy val silencerV      = "1.7.19"
 lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
@@ -288,7 +288,7 @@ val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
 val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV                = "3.6.2"
+val kafkaV                = "3.8.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV               = "5.2.23.RELEASE"
 val scalaTestV            = "3.2.18"
@@ -355,6 +355,7 @@ val findBugsV                 = "3.0.2"
 val enumeratumV               = "1.7.4"
 val ujsonV                    = "4.0.1"
 val igniteV                   = "2.10.0"
+val retryV                    = "0.3.6"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion) {
@@ -364,7 +365,7 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
     ) // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
   case (2, 13) =>
     Seq(
-      "pl.touk" %% "flink-scala-2-13" % "1.1.1"
+      "pl.touk" %% "flink-scala-2-13" % "1.1.2"
     ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
 }.map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
@@ -812,7 +813,16 @@ lazy val flinkExecutor = (project in flink("executor"))
         )
     }.toList,
   )
-  .dependsOn(flinkComponentsUtils, scenarioCompiler, flinkExtensionsApi, flinkTestUtils % Test)
+  .dependsOn(
+    flinkComponentsUtils,
+    flinkExtensionsApi,
+    scenarioCompiler,
+    // Various components uses one of library in stack: sttp -> async-http-client -> netty
+    // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
+    // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
+    httpUtils,
+    flinkTestUtils % Test
+  )
 
 lazy val scenarioCompiler = (project in file("scenario-compiler"))
   .settings(commonSettings)
@@ -1021,11 +1031,12 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
     name := "nussknacker-kafka-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" %% "kafka"            % kafkaV excludeAll (
+        "org.apache.kafka"       %% "kafka"            % kafkaV excludeAll (
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "org.slf4j"         % "log4j-over-slf4j" % slf4jV
+        "org.slf4j"               % "log4j-over-slf4j" % slf4jV,
+        "com.softwaremill.retry" %% "retry"            % retryV
       )
     }
   )
@@ -1355,7 +1366,15 @@ lazy val liteEngineRuntime = (project in lite("runtime"))
       )
     },
   )
-  .dependsOn(liteComponentsApi, scenarioCompiler, testUtils % Test)
+  .dependsOn(
+    liteComponentsApi,
+    scenarioCompiler,
+    // Various components uses one of library in stack: sttp -> async-http-client -> netty
+    // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
+    // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
+    httpUtils,
+    testUtils % Test
+  )
 
 lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration-test"))
   .configs(IntegrationTest)
@@ -1504,11 +1523,12 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
     libraryDependencies ++= {
       Seq(
         // From version 4.0.0 onwards, skuber uses pekko instead of akka, so we need to migrate to pekko first
-        "io.github.hagay3"           %% "skuber"        % "3.2" exclude ("commons-logging", "commons-logging"),
-        "com.github.julien-truffaut" %% "monocle-core"  % monocleV,
-        "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
-        "com.typesafe.akka"          %% "akka-slf4j"    % akkaV     % Test,
-        "org.wiremock"                % "wiremock"      % wireMockV % Test,
+        "io.github.hagay3"              %% "skuber"                           % "3.2" exclude ("commons-logging", "commons-logging"),
+        "com.github.julien-truffaut"    %% "monocle-core"                     % monocleV,
+        "com.github.julien-truffaut"    %% "monocle-macro"                    % monocleV,
+        "com.typesafe.akka"             %% "akka-slf4j"                       % akkaV     % Test,
+        "org.wiremock"                   % "wiremock"                         % wireMockV % Test,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV     % Test,
       )
     },
     buildAndImportRuntimeImageToK3d := {
@@ -1542,20 +1562,20 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.commons"             % "commons-text"                     % flinkCommonsTextV,
-        "org.typelevel"                 %% "cats-core"                        % catsV,
-        "com.beachape"                  %% "enumeratum"                       % enumeratumV,
-        "com.typesafe.scala-logging"    %% "scala-logging"                    % scalaLoggingV,
-        "com.typesafe"                   % "config"                           % configV,
-        "org.semver4j"                   % "semver4j"                         % "5.4.0",
-        "javax.validation"               % "validation-api"                   % javaxValidationApiV,
-        "org.scala-lang.modules"        %% "scala-collection-compat"          % scalaCollectionsCompatV,
-        "com.iheart"                    %% "ficus"                            % ficusV,
-        "org.springframework"            % "spring-core"                      % springV,
-        "org.springframework"            % "spring-expression"                % springV        % Test,
-        "com.google.code.findbugs"       % "jsr305"                           % findBugsV,
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
-        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort"    % scalaTestPlusV % Test
+        "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
+        "org.typelevel"                 %% "cats-core"                     % catsV,
+        "com.beachape"                  %% "enumeratum"                    % enumeratumV,
+        "com.typesafe.scala-logging"    %% "scala-logging"                 % scalaLoggingV,
+        "com.typesafe"                   % "config"                        % configV,
+        "org.semver4j"                   % "semver4j"                      % "5.4.0",
+        "javax.validation"               % "validation-api"                % javaxValidationApiV,
+        "org.scala-lang.modules"        %% "scala-collection-compat"       % scalaCollectionsCompatV,
+        "com.iheart"                    %% "ficus"                         % ficusV,
+        "org.springframework"            % "spring-core"                   % springV,
+        "org.springframework"            % "spring-expression"             % springV        % Test,
+        "com.google.code.findbugs"       % "jsr305"                        % findBugsV,
+        "com.softwaremill.sttp.client3" %% "core"                          % sttpV,
+        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
       )
     }
   )
@@ -1646,7 +1666,8 @@ lazy val flinkComponentsApi = (project in flink("components-api"))
     name := "nussknacker-flink-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
+        "org.apache.flink" % "flink-streaming-java" % flinkV     % Provided,
+        "org.scalatest"   %% "scalatest"            % scalaTestV % Test
       )
     }
   )
@@ -1680,15 +1701,20 @@ lazy val processReports = (project in file("designer/processReports"))
   )
   .dependsOn(httpUtils, commonUtils, testUtils % "it,test")
 
+// This dependency is delivered by flink-executor and lite-runtime to ensure the same version of libraries in stack:
+// sttp -> async-http-client -> netty. Different versions of netty in model classpath causes NoClassDefFoundError.
+// Also, thanks to this approach we reduce size of model jar bundle.
 lazy val httpUtils = (project in utils("http-utils"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
-        "com.softwaremill.sttp.client3" %% "json-common" % sttpV,
-        "com.softwaremill.sttp.client3" %% "circe"       % sttpV,
+        "com.softwaremill.sttp.client3" %% "core"                             % sttpV,
+        "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
+        "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
+        "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
       )
     }
   )
@@ -1706,19 +1732,18 @@ lazy val openapiComponents = (project in component("openapi"))
   .settings(
     name := "nussknacker-openapi",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-integration"          % swaggerIntegrationV excludeAll (
+      "io.swagger.core.v3" % "swagger-integration"  % swaggerIntegrationV excludeAll (
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
       ),
-      "io.netty"           % "netty-transport-native-epoll" % nettyV,
-      "org.apache.flink"   % "flink-streaming-java"         % flinkV     % Provided,
-      "org.scalatest"     %% "scalatest"                    % scalaTestV % "it,test"
+      "org.apache.flink"   % "flink-streaming-java" % flinkV     % Provided,
+      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test"
     ),
   )
   .dependsOn(
     componentsUtils                % Provided,
     jsonUtils                      % Provided,
-    httpUtils,
+    httpUtils                      % Provided,
     requestResponseComponentsUtils % "it,test",
     flinkComponentsTestkit         % "it,test"
   )

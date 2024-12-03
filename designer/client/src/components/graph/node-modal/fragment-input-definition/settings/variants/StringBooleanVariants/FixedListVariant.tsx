@@ -43,6 +43,7 @@ export const FixedListVariant = ({ item, path, onChange, readOnly, variableTypes
                 typ={item.typ}
                 name={item.name}
                 initialValue={item.initialValue}
+                userDefinedListInputLabel={t("fragment.userDefinedList.label.possibleValues", "Possible values:")}
             />
             <InitialValue
                 path={path}

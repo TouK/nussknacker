@@ -199,13 +199,13 @@ person2 = name: "John"; age: 24
 listOfPersons = {person1, person2}
 ```
 
-| Expression                     | Result           | Type          |
-| ------------                   | --------         | --------      |
-| `{1,2,3,4}.![#this * 2]`       | {2, 4, 6, 8}     | List[Integer] |
-| `#listOfPersons.![#this.name]` | {'Alex', 'John'} | List[String]  |
-| `#listOfPersons.![#this.age]`  | {42, 24}         | List[Integer] |
-| `#listOfPersons.![7]`          | {7, 7}           | List[Integer] |
-
+| Expression                                                      | Result               | Type                 |
+|-----------------------------------------------------------------|----------------------|----------------------|
+| `{1,2,3,4}.![#this * 2]`                                        | {2, 4, 6, 8}         | List[Integer]        |
+| `#listOfPersons.![#this.name]`                                  | {'Alex', 'John'}     | List[String]         |
+| `#listOfPersons.![#this.age]`                                   | {42, 24}             | List[Integer]        |
+| `#listOfPersons.![7]`                                           | {7, 7}               | List[Integer]        |
+| `#listOfPersons.![{key: #this.name, value: #this.age}].toMap()` | {Alex: 42, John: 24} | Map[String, Integer] |
 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
@@ -238,16 +238,113 @@ If you need to invoke the same method in many places, probably the best solution
 | ------------                                                 | --------  | -------- |
 | `{1, 2, 3, 4}.?[#this > 1].![#this > 2 ? #this * 2 : #this]` | {2, 6, 8} | Double   |
 
+### Dynamic navigation
+
+When we deal with structures which schema is not known to Nussknacker (e.g. data from kafka topics without existing avro/json schema) we will end-up
+with `Unknown` type in designer. For such a type (`Unknown`) we allow dynamic-like access using `[]` operator to access nested fields/elements.
+
+Example `exampleObject` json-like variable
+```
+{
+    "someField": 123,
+    "someNestedObject": {
+        "someFieldInNestedObject": "value"
+    },
+    "someArrayWithObjects": [
+        {
+            "someFieldInObjectInArray": "value" 
+        }
+    ]
+}
+```
+
+can be accessed in e.g. in following ways:
+
+* `#exampleObjects['someField']`
+* `#exampleObjects['someNestedObject']['someFieldInNestedObject']`
+* `#exampleObjects['someArrayWithObjects'][0]['someFieldInObjectInArray']`
+
+Every unknown accessed field/element will produce `Unknown` data type, which can be further navigated or [converted](#type-conversions) to a desired type.
+
 ### Type conversions
 
 It is possible to convert from a type to another type and this can be done by implicit and explicit conversion.
+
+#### Explicit conversions
+
+Explicit conversions are available as built-in functions and utility classes.
+List of built-in functions:
+- `canBe(className)`/`to(className)`/`toOrNull(className)`
+- `canBeBoolean`/`toBoolean`/`toBooleanOrNull`
+- `canBeLong`/`toLong`/`toLongOrNull`
+- `canBeDouble`/`toDouble`/`toDoubleOrNull`
+- `canBeBigDecimal`/`toBigDecimal`/`toBigDecimalOrNull`
+- `canBeList`/`toList`/`toListOrNull`
+- `canBeMap`/`toMap`/`toMapOrNull`
+
+The `canBe`, `to` and `toOrNull` functions take the name of target class as a parameter, in contrast to, for
+example, `canBeLong` which has the name of target class in the function name and is the shortcut for: `canBe('Long')`.
+We have added some functions with types in their names, for example: `canBeLong` to have shortcuts to the most common
+types.
+
+Functions with the prefix `canBe` check whether a type can be converted to the appropriate type. Functions with the `to`
+prefix convert a value to the desired type, and if the operation fails, an exception is propagated further. Functions
+with the `to` prefix and `OrNull` suffix convert a value to the desired type, and if the operation fails, a null value 
+is returned.
+
+Examples of conversions:
+
+| Expression                                                               | Result                      | Type              |
+|--------------------------------------------------------------------------|-----------------------------|-------------------|
+| `'123'.canBeDouble`                                                      | true                        | Boolean           |
+| `'123'.toDouble`                                                         | 123.0                       | Double            |
+| `'abc'.toDoubleOrNull`                                                   | null                        | Double            |
+| `'123'.canBe('Double')`                                                  | true                        | Boolean           |
+| `'123'.to('Double')`                                                     | 123.0                       | Double            |
+| `'abc'.toOrNull('Double')`                                               | null                        | Double            |
+| `'abc'.toLong`                                                           | exception thrown in runtime | Long              |
+| `{{name: 'John', age: 22}}.![{key: #this.name, value: #this.age}].toMap` | {John: 22}                  | Map[String, Long] |
+| `'2018-10-23T12:12:13'.to('LocalDateTime')`                              | 2018-10-23T12:12:13+00:00   | LocalDateTime     |
+
+Conversions only make sense between specific types. We limit SpeL's suggestions to show only possible conversions.
+Below is a matrix which shows which types can be converted with each other:
+
+| Source type :arrow_down: \ Target type :arrow_right: | BigDecimal         | BigInteger         | Boolean       | Byte               | Charset       | ChronoLocalDate    | ChronoLocalDateTime | Currency      | Double             | Float              | Integer            | List          | Locale        | LocalDate     | LocalDateTime | LocalTime     | Long               | Map           | Unknown       | UUID          | Short              | String             | ZoneId        | ZoneOffset    | All existing types |
+|------------------------------------------------------|--------------------|--------------------|---------------|--------------------|---------------|--------------------|---------------------|---------------|--------------------|--------------------|--------------------|---------------|---------------|---------------|---------------|---------------|--------------------|---------------|---------------|---------------|--------------------|--------------------|---------------|---------------|--------------------|
+| BigDecimal                                           | :x:                | :heavy_check_mark: | :x:           | :exclamation:      | :x:           | :x:                | :x:                 | :x:           | :heavy_check_mark: | :exclamation:      | :exclamation:      | :x:           | :x:           | :x:           | :x:           | :x:           | :heavy_check_mark: | :x:           | :x:           | :x:           | :exclamation:      | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| BigInteger                                           | :heavy_check_mark: | :x:                | :x:           | :exclamation:      | :x:           | :x:                | :x:                 | :x:           | :heavy_check_mark: | :exclamation:      | :exclamation:      | :x:           | :x:           | :x:           | :x:           | :x:           | :heavy_check_mark: | :x:           | :x:           | :x:           | :exclamation:      | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| Byte                                                 | :heavy_check_mark: | :heavy_check_mark: | :x:           | :x:                | :x:           | :x:                | :x:                 | :x:           | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x:           | :x:           | :x:           | :x:           | :x:           | :heavy_check_mark: | :x:           | :x:           | :x:           | :heavy_check_mark: | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| Double                                               | :heavy_check_mark: | :heavy_check_mark: | :x:           | :exclamation:      | :x:           | :x:                | :x:                 | :x:           | :x:                | :exclamation:      | :heavy_check_mark: | :x:           | :x:           | :x:           | :x:           | :x:           | :heavy_check_mark: | :x:           | :x:           | :x:           | :exclamation:      | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| Float                                                | :heavy_check_mark: | :heavy_check_mark: | :x:           | :exclamation:      | :x:           | :x:                | :x:                 | :x:           | :heavy_check_mark: | :x:                | :heavy_check_mark: | :x:           | :x:           | :x:           | :x:           | :x:           | :heavy_check_mark: | :x:           | :x:           | :x:           | :exclamation:      | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| Integer                                              | :heavy_check_mark: | :heavy_check_mark: | :x:           | :exclamation:      | :x:           | :x:                | :x:                 | :x:           | :heavy_check_mark: | :exclamation:      | :x:                | :x:           | :x:           | :x:           | :x:           | :x:           | :heavy_check_mark: | :x:           | :x:           | :x:           | :exclamation:      | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| LocalDate                                            | :x:                | :x:                | :x:           | :x:                | :x:           | :heavy_check_mark: | :x:                 | :x:           | :x:                | :x:                | :x:                | :x:           | :x:           | :x:           | :x:           | :x:           | :x:                | :x:           | :x:           | :x:           | :x:                | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| LocalDateTime                                        | :x:                | :x:                | :x:           | :x:                | :x:           | :x:                | :heavy_check_mark:  | :x:           | :x:                | :x:                | :x:                | :x:           | :x:           | :x:           | :x:           | :x:           | :x:                | :x:           | :x:           | :x:           | :x:                | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| Long                                                 | :heavy_check_mark: | :heavy_check_mark: | :x:           | :exclamation:      | :x:           | :x:                | :x:                 | :x:           | :heavy_check_mark: | :exclamation:      | :exclamation:      | :x:           | :x:           | :x:           | :x:           | :x:           | :x:                | :x:           | :x:           | :x:           | :exclamation:      | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| Unknown                                              | :exclamation:      | :exclamation:      | :exclamation: | :exclamation:      | :exclamation: | :exclamation:      | :exclamation:       | :exclamation: | :exclamation:      | :exclamation:      | :exclamation:      | :exclamation: | :exclamation: | :exclamation: | :exclamation: | :exclamation: | :exclamation:      | :exclamation: | :exclamation: | :exclamation: | :exclamation:      | :exclamation:      | :exclamation: | :exclamation: | :exclamation:      |
+| UUID                                                 | :x:                | :x:                | :x:           | :x:                | :x:           | :x:                | :x:                 | :x:           | :x:                | :x:                | :x:                | :x:           | :x:           | :x:           | :x:           | :x:           | :x:                | :x:           | :x:           | :x:           | :x:                | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| Short                                                | :heavy_check_mark: | :heavy_check_mark: | :x:           | :heavy_check_mark: | :x:           | :x:                | :x:                 | :x:           | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x:           | :x:           | :x:           | :x:           | :x:           | :heavy_check_mark: | :x:           | :x:           | :x:           | :x:                | :heavy_check_mark: | :x:           | :x:           | :x:                |
+| String                                               | :exclamation:      | :exclamation:      | :exclamation: | :exclamation:      | :exclamation: | :exclamation:      | :exclamation:       | :exclamation: | :exclamation:      | :exclamation:      | :exclamation:      | :exclamation: | :exclamation: | :exclamation: | :exclamation: | :exclamation: | :exclamation:      | :exclamation: | :exclamation: | :exclamation: | :exclamation:      | :exclamation:      | :exclamation: | :exclamation: | :exclamation:      |
+
+Where:
+:heavy_check_mark: - conversion is possible
+:x: - conversion is  not possible
+:exclamation: - conversion is potentially failing
+
+Examples of utility classes usage:
+
+| Expression                                                      | Result                     | Type            |
+|-----------------------------------------------------------------|----------------------------|-----------------|
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
 
 #### Implicit conversion
 
 SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
 numeric types and between `String` and some useful logical value types. Implicit conversion means that when finding
 the "input value" of type "input type" (see the table below) in the context where "target type" is expected, Nussknacker
-will try to convert the type of the "input value" to the "target type". Some examples:
+will try to convert the type of the "input value" to the "target type". This behaviour can be encountered in particular 
+when passing certain values to method parameters (these values can be automatically converted to the desired type). 
+Some conversions example:
 
 | Input value                              | Input type | Conversion target type |
 |------------------------------------------|------------|------------------------|
@@ -270,33 +367,9 @@ Usage example:
 | Expression                          | Input value       | Input type | Target type |
 |-------------------------------------|-------------------|------------|-------------|
 | `#DATE.now.atZone('Europe/Warsaw')` | `'Europe/Warsaw'` | String     | ZoneId      |
-| `'' + 42`                           | `42`              | Integer    | String      |
+| `'' + 42`                           | `'42'`            | Integer    | String      |
 
 More usage examples can be found in [this section](#conversions-between-datetime-types).
-
-#### Explicit conversions
-
-Explicit conversions are available in utility classes and build-in java conversion mechanisms:
-
-| Expression                                                      | Result                     | Type            |
-|-----------------------------------------------------------------|----------------------------|-----------------|
-| `#NUMERIC.toNumber('42')`                                       | 42                         | Number          |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
-
-### Casting
-
-When a type cannot be determined by parser, the type is presented as `Unknown`. When we know what the type will be on
-runtime, we can cast a given type, and then we can operate on the cast type.
-
-E.g. having a variable `obj` of a type: `List[Unknown]` and we know the elements are strings then we can cast elements
-to String: `#obj.![#this.castToOrNull('String')]`.
-
-Available methods:
-- `canCastTo` - checks if a type can be cast to a given class.
-- `castTo` - casts a type to a given class or throws exception if type cannot be cast.
-- `castToOrNull` - casts a type to a given class or return null if type cannot be cast.
 
 ## Built-in helpers
 
@@ -389,3 +462,4 @@ On the other hand, formatter created using `#DATE_FORMAT.formatter()` method wil
 - `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
 
 For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).
+

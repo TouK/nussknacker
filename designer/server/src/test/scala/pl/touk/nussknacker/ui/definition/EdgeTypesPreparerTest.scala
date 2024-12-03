@@ -22,6 +22,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
   test("return edge types for fragment, filters, switches and components with multiple inputs") {
     val sampleFragmentDef = new FragmentComponentDefinitionExtractor(
       getClass.getClassLoader,
+      Set.empty,
       Some(_),
       DesignerWideComponentId.default(Streaming.stringify, _)
     )
@@ -31,7 +32,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
       .modelDefinition()
       .withComponent(sampleFragmentDef)
 
-    val edgeTypes = EdgeTypesPreparer.prepareEdgeTypes(definitionsWithFragments.components)
+    val edgeTypes = EdgeTypesPreparer.prepareEdgeTypes(definitionsWithFragments.components.components)
 
     edgeTypes.toSet shouldBe Set(
       UINodeEdges(

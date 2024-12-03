@@ -1,15 +1,13 @@
 import React, { HTMLProps, useCallback, useState } from "react";
-import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 import { NodeValue } from "../node";
 import { selectStyled } from "../../../../stylesheets/SelectStyled";
-import { styled, useTheme } from "@mui/material";
+import { useTheme } from "@mui/material";
 import ValidationLabels from "../../../modals/ValidationLabels";
 import { FieldError } from "../editors/Validators";
 import { cx } from "@emotion/css";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 import { isEmpty } from "lodash";
-
-const StyledNodeValue = styled(NodeValue)({ width: "100%" });
 
 function useCaptureEsc() {
     const [captureEsc, setCaptureEsc] = useState(false);
@@ -41,7 +39,7 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     isMarked?: boolean;
     value: Option;
     placeholder?: string;
-    fieldErrors: FieldError[];
+    fieldErrors?: FieldError[];
 }
 
 export function TypeSelect({
@@ -52,7 +50,7 @@ export function TypeSelect({
     onChange,
     onBlur,
     placeholder,
-    fieldErrors,
+    fieldErrors = [],
     ...props
 }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
@@ -62,8 +60,8 @@ export function TypeSelect({
         selectStyled(theme);
 
     return (
-        <StyledNodeValue marked={isMarked} onKeyDown={preventEsc}>
-            <Select
+        <NodeValue marked={isMarked} onKeyDown={preventEsc} sx={{ width: "100%" }}>
+            <CreatableSelect
                 id={props.id}
                 aria-label={"type-select"}
                 className={cx(`${nodeValue}`, props.className)}
@@ -107,6 +105,6 @@ export function TypeSelect({
                 }}
             />
             <ValidationLabels fieldErrors={fieldErrors} />
-        </StyledNodeValue>
+        </NodeValue>
     );
 }

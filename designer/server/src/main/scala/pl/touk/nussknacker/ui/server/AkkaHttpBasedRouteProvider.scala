@@ -12,6 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -133,6 +134,7 @@ class AkkaHttpBasedRouteProvider(
         scenarioActivityRepository,
         dbioRunner,
         sttpBackend,
+        featureTogglesConfig,
       )
 
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
@@ -230,6 +232,10 @@ class AkkaHttpBasedRouteProvider(
           futureProcessRepository
         )
 
+      val additionalComponentConfigs = processingTypeDataProvider.mapValues { processingTypeData =>
+        processingTypeData.designerModelData.modelData.additionalConfigsFromProvider
+      }
+
       val legacyDeploymentService = new LegacyDeploymentService(
         dmDispatcher,
         processRepository,
@@ -239,7 +245,8 @@ class AkkaHttpBasedRouteProvider(
         scenarioResolver,
         processChangeListener,
         featureTogglesConfig.scenarioStateTimeout,
-        featureTogglesConfig.deploymentCommentSettings
+        featureTogglesConfig.deploymentCommentSettings,
+        additionalComponentConfigs
       )
       legacyDeploymentService.invalidateInProgressActions()
 
@@ -436,7 +443,8 @@ class AkkaHttpBasedRouteProvider(
             deploymentRepository,
             dmDispatcher,
             dbioRunner,
-            Clock.systemDefaultZone()
+            Clock.systemDefaultZone(),
+            additionalComponentConfigs
           )
         val activityService =
           new ActivityService(
@@ -539,7 +547,7 @@ class AkkaHttpBasedRouteProvider(
           }
           .all
           .values
-          .flatten
+          .flatMap(_.components)
           .toList,
         designerClock,
         dbioRunner,
@@ -692,14 +700,20 @@ class AkkaHttpBasedRouteProvider(
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
+      featureTogglesConfig: FeatureTogglesConfig
   )(implicit executionContext: ExecutionContext): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
         acquire = IO(
           new ReloadableProcessingTypeDataProvider(
             processingTypeDataLoader.loadProcessingTypeData(
-              getModelDependencies(additionalUIConfigProvider, _),
+              getModelDependencies(
+                additionalUIConfigProvider,
+                _,
+                featureTogglesConfig.componentDefinitionExtractionMode
+              ),
               getDeploymentManagerDependencies(
+                additionalUIConfigProvider,
                 actionServiceProvider,
                 scenarioActivityRepository,
                 dbioActionRunner,
@@ -715,12 +729,14 @@ class AkkaHttpBasedRouteProvider(
   }
 
   private def getDeploymentManagerDependencies(
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
   )(implicit executionContext: ExecutionContext) = {
+    val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     DeploymentManagerDependencies(
       DefaultProcessingTypeDeployedScenariosProvider(dbRef, processingType),
       new DefaultProcessingTypeActionService(
@@ -733,20 +749,23 @@ class AkkaHttpBasedRouteProvider(
       ),
       system.dispatcher,
       system,
-      sttpBackend
+      sttpBackend,
+      additionalConfigsFromProvider
     )
   }
 
   private def getModelDependencies(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      processingType: ProcessingType
+      processingType: ProcessingType,
+      componentDefinitionExtractionMode: ComponentDefinitionExtractionMode
   ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     ModelDependencies(
       additionalConfigsFromProvider,
       DesignerWideComponentId.default(processingType, _),
       workingDirectoryOpt = None, // we use the default working directory
-      _ => true
+      _ => true,
+      componentDefinitionExtractionMode,
     )
   }
 

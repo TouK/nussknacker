@@ -6,13 +6,14 @@ import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{ComponentAdditionalConfig, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.{
   NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -119,12 +120,17 @@ object TestFactory {
     Streaming.stringify -> new ScenarioResolver(sampleResolver, Streaming.stringify)
   )
 
+  def additionalComponentConfigsByProcessingType
+      : ProcessingTypeDataProvider[Map[DesignerWideComponentId, ComponentAdditionalConfig], _] =
+    mapProcessingTypeDataProvider()
+
   val modelDependencies: ModelDependencies =
     ModelDependencies(
       TestAdditionalUIConfigProvider.componentAdditionalConfigMap,
       componentId => DesignerWideComponentId(componentId.toString),
       workingDirectoryOpt = None,
-      _ => true
+      _ => true,
+      ComponentDefinitionExtractionMode.FinalAndBasicDefinitions
     )
 
   val deploymentManagerDependencies: DeploymentManagerDependencies = {

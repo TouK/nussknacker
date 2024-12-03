@@ -1,6 +1,6 @@
 import { useWindowManager, WindowId, WindowType } from "@touk/window-manager";
 import { defaults } from "lodash";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useUserSettings } from "../common/userSettings";
 import { ConfirmDialogData } from "../components/modals/GenericConfirmDialog";
 import { InfoDialogData } from "../components/modals/GenericInfoDialog";
@@ -8,28 +8,41 @@ import { Scenario } from "../components/Process/types";
 import { NodeType } from "../types";
 import { WindowKind } from "./WindowKind";
 
-export const NodeViewMode = {
-    edit: false,
-    readonly: true,
-    descriptionView: "description",
-    descriptionEdit: "descriptionEdit",
-} as const;
-export type NodeViewMode = (typeof NodeViewMode)[keyof typeof NodeViewMode];
+const useRemoveFocusOnEscKey = (isWindowOpen: boolean) => {
+    useEffect(() => {
+        if (!isWindowOpen) {
+            return;
+        }
 
-function mapModeToKind(mode: NodeViewMode): WindowKind {
-    switch (mode) {
-        case NodeViewMode.readonly:
-            return WindowKind.viewNode;
-        case NodeViewMode.descriptionView:
-            return WindowKind.viewDescription;
-        case NodeViewMode.descriptionEdit:
-            return WindowKind.editDescription;
-    }
-    return WindowKind.editNode;
-}
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const activeElement = document.activeElement as HTMLElement;
+            const tagName = activeElement.tagName.toLowerCase();
+            const allowedTagNames = ["input", "textarea", "select"];
+
+            if (event.key === "Escape" && allowedTagNames.includes(tagName)) {
+                activeElement.blur(); // Removes focus from the current active element
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isWindowOpen]);
+};
 
 export function useWindows(parent?: WindowId) {
-    const { open: _open, closeAll } = useWindowManager(parent);
+    let windowManager: ReturnType<typeof useWindowManager>;
+
+    try {
+        windowManager = useWindowManager(parent);
+    } catch (e) {
+        throw "used outside WindowManager context";
+    }
+
+    const { open: _open, closeAll, windows } = windowManager;
+    useRemoveFocusOnEscKey(windows.length > 0);
     const [settings] = useUserSettings();
     const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);
 
@@ -42,15 +55,14 @@ export function useWindows(parent?: WindowId) {
     );
 
     const openNodeWindow = useCallback(
-        (node: NodeType, scenario: Scenario, viewMode: NodeViewMode = false, layoutData?: WindowType["layoutData"]) => {
+        (node: NodeType, scenario: Scenario, readonly?: boolean) => {
             return open({
                 id: node.id,
                 title: node.id,
                 isResizable: true,
-                kind: mapModeToKind(viewMode),
+                kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
                 meta: { node, scenario },
                 shouldCloseOnEsc: false,
-                layoutData,
             });
         },
         [open],

@@ -2942,6 +2942,7 @@ paths:
                       variablesToHide: []
                       branchParam: false
                       label: name
+                      requiredParam: true
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
@@ -5079,16 +5080,7 @@ components:
       required:
       - expectedType
       properties:
-        expectedType:
-          oneOf:
-          - $ref: '#/components/schemas/TypedClass'
-          - $ref: '#/components/schemas/TypedDict'
-          - $ref: '#/components/schemas/TypedNull'
-          - $ref: '#/components/schemas/TypedObjectTypingResult'
-          - $ref: '#/components/schemas/TypedObjectWithValue'
-          - $ref: '#/components/schemas/TypedTaggedValue'
-          - $ref: '#/components/schemas/TypedUnion'
-          - $ref: '#/components/schemas/Unknown'
+        expectedType: {}
     DictParameterEditor:
       title: DictParameterEditor
       type: object
@@ -7001,6 +6993,7 @@ components:
       - additionalVariables
       - branchParam
       - label
+      - requiredParam
       properties:
         name:
           type: string
@@ -7033,6 +7026,8 @@ components:
           - 'null'
         label:
           type: string
+        requiredParam:
+          type: boolean
     UIValueParameterDto:
       title: UIValueParameterDto
       type: object

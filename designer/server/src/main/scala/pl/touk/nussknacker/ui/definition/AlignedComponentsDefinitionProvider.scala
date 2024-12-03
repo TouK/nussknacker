@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.ui.definition
 
-import cats.data.NonEmptySet
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{ComponentDefinitionWithImplementation, Components}
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
@@ -21,7 +19,7 @@ class AlignedComponentsDefinitionProvider(
   def getAlignedComponentsWithBuiltInComponentsAndFragments(
       forFragment: Boolean,
       fragments: List[CanonicalProcess],
-  ): List[ComponentDefinitionWithImplementation] = {
+  ): Components = {
     val filteredModel = if (forFragment) {
       modelDefinition
         .filterComponents(_.componentType != ComponentType.Source)
@@ -61,6 +59,7 @@ object AlignedComponentsDefinitionProvider {
       new BuiltInComponentsDefinitionsPreparer(designerModelData.modelData.componentsUiConfig),
       new FragmentComponentDefinitionExtractor(
         designerModelData.modelData.modelClassLoader.classLoader,
+        designerModelData.modelData.modelDefinitionWithClasses.classDefinitions.all,
         designerModelData.modelData.componentsUiConfig.groupName,
         designerModelData.modelData.determineDesignerWideId
       ),

@@ -31,7 +31,7 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     service.addConverter(new ObjectToArrayConverter(service))
     // For purpose of concise usage of numbers in spel templates
     service.addConverter(classOf[Number], classOf[String], (source: Number) => source.toString)
-    service.addConverter(new RuntimeConversionHandler.ArrayToListConverter(service))
+    service.addConverter(new ConversionHandler.ArrayToListConverter(service))
     service
   }
 

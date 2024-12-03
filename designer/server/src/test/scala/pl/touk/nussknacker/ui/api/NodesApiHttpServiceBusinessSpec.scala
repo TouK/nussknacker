@@ -342,6 +342,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "additionalVariables": {},
              |      "variablesToHide": [],
              |      "branchParam": false,
+             |      "requiredParam": true,
              |      "hintText": null,
              |      "label": "Topic"
              |    },
@@ -363,6 +364,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "additionalVariables": {},
              |      "variablesToHide": [],
              |      "branchParam": false,
+             |      "requiredParam": true,
              |      "hintText": null,
              |      "label": "Value"
              |    }
@@ -497,22 +499,34 @@ class NodesApiHttpServiceBusinessSpec
              |}""".stripMargin)
     }
 
-    "return 404 for not existent fragment validation" in {
-      val fragmentName = "fragment"
+    "return 200 for fragment input node referencing fragment that doesn't exist" in {
+      val nonExistingFragmentName = "non-existing-fragment"
 
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
         }
         .basicAuthAllPermUser()
-        .jsonBody(exampleNodeValidationRequestForFragment(fragmentName))
+        .jsonBody(exampleNodeValidationRequestForFragment(nonExistingFragmentName))
         .when()
         .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
         .Then()
-        .statusCode(404)
-        .body(
-          equalTo(s"No scenario $fragmentName found")
-        )
+        .statusCode(200)
+        .equalsJsonBody(s"""{
+             |  "parameters": null,
+             |  "expressionType": null,
+             |  "validationErrors": [
+             |    {
+             |      "typ": "UnknownFragment",
+             |      "message": "Unknown fragment",
+             |      "description": "Node fragment uses fragment non-existing-fragment which is missing",
+             |      "fieldName": null,
+             |      "errorType": "SaveAllowed",
+             |      "details": null
+             |    }
+             |  ],
+             |  "validationPerformed": true
+             |}""".stripMargin)
     }
   }
 

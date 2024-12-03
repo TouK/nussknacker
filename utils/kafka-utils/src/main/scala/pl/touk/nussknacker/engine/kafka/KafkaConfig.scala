@@ -29,7 +29,8 @@ case class KafkaConfig(
     avroAsJsonSerialization: Option[Boolean] = None,
     kafkaAddress: Option[String] = None,
     idleTimeout: Option[IdlenessConfig] = None,
-    sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None
+    sinkDeliveryGuarantee: Option[SinkDeliveryGuarantee.Value] = None,
+    showTopicsWithoutSchema: Boolean = true
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(

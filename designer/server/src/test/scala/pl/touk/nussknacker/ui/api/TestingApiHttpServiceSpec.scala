@@ -6,10 +6,13 @@ import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
@@ -45,6 +48,36 @@ class TestingApiHttpServiceSpec
       "Raw editor" -> Expression.spel("true"),
       "Value"      -> Expression.spel("#input")
     )
+
+  private val fragmentFixedParameter = FragmentParameter(
+    ParameterName("paramFixedString"),
+    FragmentClazzRef[java.lang.String],
+    initialValue = Some(FixedExpressionValue("'uno'", "uno")),
+    hintText = None,
+    valueEditor = Some(
+      ValueInputWithFixedValuesProvided(
+        fixedValuesList = List(
+          FixedExpressionValue("'uno'", "uno"),
+          FixedExpressionValue("'due'", "due"),
+        ),
+        allowOtherValue = false
+      )
+    ),
+    valueCompileTimeValidation = None
+  )
+
+  private val fragmentRawStringParameter = FragmentParameter(
+    ParameterName("paramRawString"),
+    FragmentClazzRef[java.lang.String],
+    initialValue = None,
+    hintText = None,
+    valueEditor = None,
+    valueCompileTimeValidation = None
+  )
+
+  private def exampleFragment(parameter: FragmentParameter) = ScenarioBuilder
+    .fragmentWithRawParameters("fragment", parameter)
+    .fragmentOutput("fragmentEnd", "output", "out" -> "'hola'".spel)
 
   "The endpoint for capabilities should" - {
     "return valid capabilities for scenario with all capabilities" in {
@@ -162,8 +195,125 @@ class TestingApiHttpServiceSpec
              |
              |                ],
              |                "branchParam": false,
+             |                "requiredParam": true,
              |                "hintText": null,
              |                "label": "elements"
+             |            }
+             |        ]
+             |    }
+             |]
+             |""".stripMargin
+        )
+    }
+    "generate parameters for fragment with fixed list parameter" in {
+      val fragment = exampleFragment(fragmentFixedParameter)
+      given()
+        .applicationState {
+          createSavedScenario(fragment)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(canonicalGraphStr(fragment))
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/parameters")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""[
+             |    {
+             |        "sourceId": "fragment",
+             |        "parameters": [
+             |            {
+             |                "name": "paramFixedString",
+             |                "typ": {
+             |                    "display": "String",
+             |                    "type": "TypedClass",
+             |                    "refClazzName": "java.lang.String",
+             |                    "params": [
+             |
+             |                    ]
+             |                },
+             |                "editor": {
+             |                    "possibleValues": [
+             |                        {
+             |                            "expression": "",
+             |                            "label": ""
+             |                        },
+             |                        {
+             |                            "expression": "'uno'",
+             |                            "label": "uno"
+             |                        },
+             |                        {
+             |                            "expression": "'due'",
+             |                            "label": "due"
+             |                        }
+             |                    ],
+             |                    "type": "FixedValuesParameterEditor"
+             |                },
+             |                "defaultValue": {
+             |                    "language": "spel",
+             |                    "expression": "'uno'"
+             |                },
+             |                "additionalVariables": {
+             |
+             |                },
+             |                "variablesToHide": [
+             |
+             |                ],
+             |                "branchParam": false,
+             |                "hintText": null,
+             |                "label": "paramFixedString",
+             |                "requiredParam": false
+             |            }
+             |        ]
+             |    }
+             |]
+             |""".stripMargin
+        )
+    }
+    "Generate parameters with simplified (single) editor for fragment with raw string parameter" in {
+      val fragment = exampleFragment(fragmentRawStringParameter)
+      given()
+        .applicationState {
+          createSavedScenario(fragment)
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .jsonBody(canonicalGraphStr(fragment))
+        .post(s"$nuDesignerHttpAddress/api/scenarioTesting/${fragment.name}/parameters")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(
+          s"""[
+             |    {
+             |        "sourceId": "fragment",
+             |        "parameters": [
+             |            {
+             |                "name": "paramRawString",
+             |                "typ": {
+             |                    "display": "String",
+             |                    "type": "TypedClass",
+             |                    "refClazzName": "java.lang.String",
+             |                    "params": [
+             |
+             |                    ]
+             |                },
+             |                "editor": {
+             |                    "type": "StringParameterEditor"
+             |                },
+             |                "defaultValue": {
+             |                    "language": "spel",
+             |                    "expression": ""
+             |                },
+             |                "additionalVariables": {
+             |
+             |                },
+             |                "variablesToHide": [
+             |
+             |                ],
+             |                "branchParam": false,
+             |                "hintText": null,
+             |                "label": "paramRawString",
+             |                "requiredParam": false
              |            }
              |        ]
              |    }
@@ -248,4 +398,7 @@ class TestingApiHttpServiceSpec
 
   private val exampleScenarioGraph    = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
   private val exampleScenarioGraphStr = Encoder[ScenarioGraph].apply(exampleScenarioGraph).toString()
+
+  private def canonicalGraphStr(canonical: CanonicalProcess) =
+    Encoder[ScenarioGraph].apply(CanonicalProcessConverter.toScenarioGraph(canonical)).toString()
 }

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.validation.Validations.isVariableNameValid
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
-import pl.touk.nussknacker.engine.extension.Cast
+import pl.touk.nussknacker.engine.extension.CastOrConversionExt
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -287,12 +287,12 @@ class SpelExpressionSuggester(
                     Future.successful(fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil)))
                   case _ => successfulNil
                 }
-              case m: MethodReference if Cast.isCastMethod(m.getName) =>
-                parentPrevNodeTyping match {
-                  case Unknown =>
-                    castMethodsSuggestions(classOf[Object])
-                  case TypedClass(klass, _) =>
-                    castMethodsSuggestions(klass)
+              case m: MethodReference if CastOrConversionExt.isCastOrConversionMethod(m.getName) =>
+                parentPrevNodeTyping.withoutValue match {
+                  case t @ Unknown =>
+                    castOrConversionMethodsSuggestions(classOf[Object], t)
+                  case t @ TypedClass(klass, _) =>
+                    castOrConversionMethodsSuggestions(klass, t)
                   case _ => successfulNil
                 }
               case _ => successfulNil
@@ -338,18 +338,31 @@ class SpelExpressionSuggester(
     suggestions
   }
 
-  private def castMethodsSuggestions(
-      klass: Class[_]
+  private def castOrConversionMethodsSuggestions(
+      invocationTargetClass: Class[_],
+      invocationTargetTyping: TypingResult,
   )(implicit ec: ExecutionContext): Future[Iterable[ExpressionSuggestion]] =
     Future {
-      val allowedClassesForCastParameter = klass
+      val allowedClassesForCastParameter = invocationTargetClass
         .findAllowedClassesForCastParameter(clssDefinitions)
         .mapValuesNow(_.clazzName)
-      allowedClassesForCastParameter.keySet
+      val castSuggestions = allowedClassesForCastParameter.keySet
         .classesBySimpleNamesRegardingClashes()
         .map { case (name, clazz) =>
           ExpressionSuggestion(name, allowedClassesForCastParameter.getOrElse(clazz, Unknown), false, None, Nil)
         }
+      val conversionSuggestions = CastOrConversionExt
+        .allowedConversions(invocationTargetClass)
+        .map(c =>
+          ExpressionSuggestion(
+            c.resultTypeClass.simpleName(),
+            c.typingFunction(invocationTargetTyping).getOrElse(c.typingResult),
+            false,
+            None,
+            Nil
+          )
+        )
+      (castSuggestions ++ conversionSuggestions).toSet
     }
 
   private def expressionContainOddNumberOfQuotesOrOddNumberOfDoubleQuotes(plainExpression: String): Boolean =
@@ -398,9 +411,9 @@ class SpelExpressionSuggester(
 
   private def determineIterableElementTypingResult(parent: TypingResult): TypingResult = {
     parent match {
-      case tc: SingleTypingResult if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+      case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Collection[_]]) =>
         tc.runtimeObjType.params.headOption.getOrElse(Unknown)
-      case tc: SingleTypingResult if tc.runtimeObjType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+      case tc: SingleTypingResult if tc.runtimeObjType.canBeConvertedTo(Typed[java.util.Map[_, _]]) =>
         Typed.record(
           Map(
             "key"   -> tc.runtimeObjType.params.headOption.getOrElse(Unknown),

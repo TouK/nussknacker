@@ -1,26 +1,45 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import io.circe.{Json, JsonObject}
+import io.circe.Json
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, Inside, OptionValues}
-import pl.touk.nussknacker.engine.api.{CirceUtil, DisplayJsonWithEncoder}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentAdditionalConfig,
+  DesignerWideComponentId,
+  ParameterAdditionalUIConfig
+}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ValueInputWithDictEditor
+}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.flink.test.{
   FlinkTestConfiguration,
   RecordingExceptionConsumer,
   RecordingExceptionConsumerProvider
 }
-import pl.touk.nussknacker.engine.graph.node.Case
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{Case, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.process.runner.FlinkTestMainSpec.{
+  fragmentWithValidationName,
+  processWithFragmentParameterValidation
+}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelConfigs, ModelData}
+import pl.touk.nussknacker.engine.deployment.AdditionalModelConfigs
 
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -654,6 +673,79 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         variable(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime))
       )
     }
+
+    "should throw exception when parameter was modified by AdditionalUiConfigProvider with dict editor and flink wasn't provided with additional config" in {
+      val process =
+        ScenarioBuilder
+          .streaming(scenarioName)
+          .source(sourceNodeId, "input")
+          .processor(
+            "eager1",
+            "collectingEager",
+            "static"  -> Expression.dictKeyWithLabel("'s'", Some("s")),
+            "dynamic" -> "#input.id".spel
+          )
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
+
+      val run = Future {
+        runFlinkTest(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))), useIOMonadInInterpreter)
+      }
+      val dictEditorException = intercept[IllegalStateException](Await.result(run, 10 seconds))
+      dictEditorException.getMessage shouldBe "DictKeyWithLabel expression can only be used with DictParameterEditor, got Some(DualParameterEditor(StringParameterEditor,RAW))"
+    }
+
+    "should run correctly when parameter was modified by AdditionalUiConfigProvider with dict editor and flink was provided with additional config" in {
+      val modifiedComponentName = "collectingEager"
+      val modifiedParameterName = "static"
+      val process =
+        ScenarioBuilder
+          .streaming(scenarioName)
+          .source(sourceNodeId, "input")
+          .processor(
+            "eager1",
+            modifiedComponentName,
+            modifiedParameterName -> Expression.dictKeyWithLabel("'s'", Some("s")),
+            "dynamic"             -> "#input.id".spel
+          )
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
+
+      val results = runFlinkTest(
+        process,
+        ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))),
+        useIOMonadInInterpreter,
+        additionalConfigsFromProvider = Map(
+          DesignerWideComponentId("service-" + modifiedComponentName) -> ComponentAdditionalConfig(
+            parameterConfigs = Map(
+              ParameterName(modifiedParameterName) -> ParameterAdditionalUIConfig(
+                required = false,
+                initialValue = None,
+                hintText = None,
+                valueEditor = Some(ValueInputWithDictEditor("someDictId", allowOtherValue = false)),
+                valueCompileTimeValidation = None
+              )
+            )
+          )
+        )
+      )
+      results.exceptions should have length 0
+    }
+
+    "should not throw exception when process fragment has parameter validation defined" in {
+      val scenario = ScenarioBuilder
+        .streaming("scenario1")
+        .source(sourceNodeId, "input")
+        .fragmentOneOut("sub", fragmentWithValidationName, "output", "fragmentResult", "param" -> "'asd'".spel)
+        .emptySink("out", "valueMonitor", "Value" -> "1".spel)
+
+      val resolved = FragmentResolver(List(processWithFragmentParameterValidation)).resolve(scenario)
+
+      val results = runFlinkTest(
+        resolved.valueOr { _ => throw new IllegalArgumentException("Won't happen") },
+        ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("0|1|2|3|4|5|6")))),
+        useIOMonadInInterpreter
+      )
+      results.exceptions.length shouldBe 0
+    }
   }
 
   private def createTestRecord(
@@ -667,13 +759,16 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       useIOMonadInInterpreter: Boolean,
-      enrichDefaultConfig: Config => Config = identity
+      enrichDefaultConfig: Config => Config = identity,
+      additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig] = Map.empty
   ): TestResults[_] = {
     val config = enrichDefaultConfig(ConfigFactory.load("application.conf"))
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
 
     // We need to set context loader to avoid forking in sbt
-    val modelData = ModelData.duringFlinkExecution(config)
+    val modelData = ModelData.duringFlinkExecution(
+      ModelConfigs(config, AdditionalModelConfigs(additionalConfigsFromProvider))
+    )
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration())
     }
@@ -707,6 +802,34 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
     }
 
     Json.obj("pretty" -> toJson(value))
+  }
+
+}
+
+object FlinkTestMainSpec {
+  private val fragmentWithValidationName = "fragmentWithValidation"
+
+  private val processWithFragmentParameterValidation: CanonicalProcess = {
+    val fragmentParamName = ParameterName("param")
+    val fragmentParam = FragmentParameter(fragmentParamName, FragmentClazzRef[String]).copy(
+      valueCompileTimeValidation = Some(
+        ParameterValueCompileTimeValidation(
+          validationExpression = Expression.spel("true"),
+          validationFailedMessage = Some("param validation failed")
+        )
+      )
+    )
+
+    CanonicalProcess(
+      MetaData(fragmentWithValidationName, FragmentSpecificData()),
+      List(
+        FlatNode(
+          FragmentInputDefinition("start", List(fragmentParam))
+        ),
+        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
   }
 
 }

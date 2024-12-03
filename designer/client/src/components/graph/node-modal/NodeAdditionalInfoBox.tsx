@@ -1,14 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
-import HttpService from "../../../http/HttpService";
 import { useDebounce } from "use-debounce";
-import { NodeType } from "../../../types";
+import { NodeOrPropertiesType } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessName } from "./NodeDetailsContent/selectors";
-import NodeUtils from "../NodeUtils";
 import { MarkdownStyled } from "./MarkdownStyled";
 
 interface Props {
-    node: NodeType;
+    node: NodeOrPropertiesType;
+    handleGetAdditionalInfo: (
+        processName: string,
+        node: NodeOrPropertiesType,
+        controller: AbortController,
+    ) => Promise<AdditionalInfo | null>;
 }
 
 //Types should match implementations of AdditionalInfo on Backend!
@@ -20,7 +23,7 @@ interface MarkdownAdditionalInfo {
 }
 
 export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
-    const { node } = props;
+    const { node, handleGetAdditionalInfo } = props;
     const processName = useSelector(getProcessName);
 
     const [additionalInfo, setAdditionalInfo] = useState<AdditionalInfo>(null);
@@ -29,23 +32,21 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
     const [debouncedNode] = useDebounce(node, 1000);
 
-    const getAdditionalInfo = useCallback((processName: string, debouncedNode: NodeType) => {
-        const controller = new AbortController();
-        const fetch = (node: NodeType) =>
-            NodeUtils.nodeIsProperties(node)
-                ? HttpService.getPropertiesAdditionalInfo(processName, node, controller)
-                : HttpService.getNodeAdditionalInfo(processName, node, controller);
-
-        fetch(debouncedNode).then((data) => {
-            // signal should cancel request, but for some reason it doesn't in dev
-            if (!controller.signal.aborted && data) {
-                setAdditionalInfo(data);
-            }
-        });
-        return () => {
-            controller.abort();
-        };
-    }, []);
+    const getAdditionalInfo = useCallback(
+        (processName: string, debouncedNode: NodeOrPropertiesType) => {
+            const controller = new AbortController();
+            handleGetAdditionalInfo(processName, debouncedNode, controller).then((data) => {
+                // signal should cancel request, but for some reason it doesn't in dev
+                if (!controller.signal.aborted && data) {
+                    setAdditionalInfo(data);
+                }
+            });
+            return () => {
+                controller.abort();
+            };
+        },
+        [handleGetAdditionalInfo],
+    );
 
     useEffect(() => {
         if (processName) {

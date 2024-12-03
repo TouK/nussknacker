@@ -7,10 +7,10 @@ import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.extension.{ExtensionAwareMethodsDiscovery, ExtensionsAwareMethodInvoker}
+import pl.touk.nussknacker.engine.extension.ExtensionMethodResolver
+import pl.touk.nussknacker.engine.spel.internal.propertyAccessors.MethodAccessChecker
 import pl.touk.nussknacker.engine.spel.{NuReflectiveMethodExecutor, internal}
 
-import java.lang.reflect.Method
 import java.util
 import java.util.Collections
 import scala.jdk.CollectionConverters._
@@ -42,7 +42,7 @@ class EvaluationContextPreparer(
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      private val methodInvoker = new ExtensionsAwareMethodInvoker(classLoader, classDefinitionSet)
+      private val extensionMethodResolver = new ExtensionMethodResolver(classDefinitionSet)
 
       override def resolve(
           context: EvaluationContext,
@@ -52,16 +52,15 @@ class EvaluationContextPreparer(
       ): MethodExecutor = {
         val methodExecutor =
           super.resolve(context, targetObject, name, argumentTypes).asInstanceOf[ReflectiveMethodExecutor]
-        if (methodExecutor == null) {
-          null
-        } else {
+        if (methodExecutor != null) {
           spelExpressionExcludeList.blockExcluded(targetObject, name)
-          new NuReflectiveMethodExecutor(methodExecutor, methodInvoker)
+          new NuReflectiveMethodExecutor(methodExecutor)
+        } else {
+          // If methods are found by default resolver, we fallback to the extension methods resolver
+          extensionMethodResolver.resolve(context, targetObject, name, argumentTypes)
         }
       }
 
-      override def getMethods(classType: Class[_]): Array[Method] =
-        ExtensionAwareMethodsDiscovery.discover(classType)
     }
     Collections.singletonList(mr)
   }
@@ -93,7 +92,11 @@ object EvaluationContextPreparer {
       classDefinitionSet: ClassDefinitionSet
   ): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
-    val propertyAccessors = internal.propertyAccessors.configured()
+    val propertyAccessors =
+      internal.propertyAccessors.configured(
+        MethodAccessChecker.create(classDefinitionSet, expressionConfig.dynamicPropertyAccessAllowed),
+        classDefinitionSet,
+      )
     new EvaluationContextPreparer(
       classLoader,
       expressionConfig.globalImports,

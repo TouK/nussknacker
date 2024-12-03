@@ -5,7 +5,7 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
+import pl.touk.nussknacker.engine.api.{Hidden, HideToString, TemplateEvaluationResult}
 
 import java.lang.reflect.{AccessibleObject, Member, Method}
 import java.text.NumberFormat
@@ -109,8 +109,9 @@ object ClassExtractionSettings {
         // we want only boxed types
         ClassPredicate { case cl => cl.isPrimitive },
         ExactClassPredicate[ReturningSingleClassPromotionStrategy],
-        // We use this type only programmable
+        // We use these types only programmable
         ClassNamePredicate("pl.touk.nussknacker.engine.spel.SpelExpressionRepr"),
+        ExactClassPredicate[TemplateEvaluationResult],
       )
 
   lazy val ExcludedCollectionFunctionalClasses: List[ClassPredicate] = List(
@@ -269,6 +270,10 @@ object ClassExtractionSettings {
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[util.Map[_, _]]),
         Set("containsKey", "containsValue", "get", "getOrDefault", "isEmpty", "size", "values", "keySet")
+      ),
+      MemberNamePredicate(
+        SuperClassPredicate(ExactClassPredicate[util.Map.Entry[_, _]]),
+        Set("getKey", "getValue")
       ),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[Optional[_]]),

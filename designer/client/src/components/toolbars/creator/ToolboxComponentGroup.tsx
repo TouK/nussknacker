@@ -28,10 +28,12 @@ interface Props {
     componentGroup: ComponentGroup;
     highlights?: string[];
     flatten?: boolean;
+    addTreeElement?: React.ReactElement | null;
+    addGroupLabelElement?: React.ReactElement | null;
 }
 
 export function ToolboxComponentGroup(props: Props): JSX.Element {
-    const { componentGroup, highlights = [], flatten } = props;
+    const { componentGroup, highlights = [], flatten, addGroupLabelElement, addTreeElement } = props;
     const dispatch = useDispatch();
     const closedComponentGroups = useSelector(getClosedComponentGroups);
     const { name } = componentGroup;
@@ -53,6 +55,7 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
             <Box
                 display={"flex"}
                 alignItems={"center"}
+                justifyContent={"space-between"}
                 width={"95%"}
                 height={"100%"}
                 pl={2}
@@ -61,9 +64,10 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
                 <Typography component={"span"} variant={"body2"}>
                     {name}
                 </Typography>
+                {addGroupLabelElement}
             </Box>
         ),
-        [highlighted, name, toggle, toggleForceCollapsed],
+        [addGroupLabelElement, highlighted, name, toggle, toggleForceCollapsed],
     );
 
     const elements = useMemo(
@@ -89,6 +93,7 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
             onClick={highlighted ? toggleForceCollapsed : toggle}
         >
             {elements}
+            {addTreeElement}
         </TreeView>
     );
 }

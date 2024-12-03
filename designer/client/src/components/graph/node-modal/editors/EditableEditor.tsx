@@ -1,5 +1,5 @@
 import { isEmpty } from "lodash";
-import React, { forwardRef, useMemo } from "react";
+import React, { forwardRef, ReactNode, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
 import { editors, EditorType, ExtendedEditor, SimpleEditor } from "./expression/Editor";
@@ -22,14 +22,14 @@ interface Props {
     isMarked?: boolean;
     showValidation?: boolean;
     onValueChange: (value: string) => void;
-    fieldErrors: FieldError[];
+    fieldErrors?: FieldError[];
     variableTypes: VariableTypes;
-    validationLabelInfo?: string;
+    validationLabelInfo?: ReactNode;
     placeholder?: string;
 }
 
 export const EditableEditor = forwardRef((props: Props, ref) => {
-    const { expressionObj, valueClassName, param, fieldErrors, validationLabelInfo } = props;
+    const { expressionObj, valueClassName, param, fieldErrors = [], validationLabelInfo } = props;
 
     const editorType = useMemo(() => (isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type), [param]);
 

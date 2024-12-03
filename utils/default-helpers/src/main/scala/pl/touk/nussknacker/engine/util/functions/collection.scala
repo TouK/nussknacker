@@ -356,7 +356,9 @@ object CollectionUtils {
             listType.copy(params = unknownMapType :: Nil)
           case _ if firstComponentType.withoutValue == secondComponentType.withoutValue =>
             listType.copy(params = firstComponentType.withoutValue :: Nil)
-          case _ if firstComponentType.canBeSubclassOf(numberType) && secondComponentType.canBeSubclassOf(numberType) =>
+          case _
+              if firstComponentType.canBeConvertedTo(numberType) && secondComponentType
+                .canBeConvertedTo(numberType) =>
             Typed.genericTypeClass(fClass, List(numberType))
           case _ => listType.copy(params = Unknown :: Nil)
         }

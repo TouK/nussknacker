@@ -1,7 +1,7 @@
 import { Theme } from "@mui/material";
 import "react-datetime/css/react-datetime.css";
-import { blendDarken, blendLighten, getBorderColor } from "./helpers";
 import { nodeInput, rowAceEditor } from "../../components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { blendDarken, blendLighten, getBorderColor } from "./helpers";
 
 const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker .ace_gutter": {
@@ -27,10 +27,6 @@ const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker": {
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.secondary,
-        outline: `1px solid ${getBorderColor(theme)}`,
-        "&:focus-within": {
-            outline: `1px solid ${theme.palette.primary.main}`,
-        },
     },
     ".ace-nussknacker .ace_cursor": {
         color: "#F8F8F0",
@@ -240,7 +236,7 @@ export const globalStyles = (theme: Theme) => ({
             backgroundColor: theme.palette.action.hover,
         },
     },
-    [`.${nodeInput}[readonly], .${nodeInput}[type='checkbox'][readonly]:after, .${nodeInput}[type='radio'][readonly]:after, .${rowAceEditor}.read-only, .${rowAceEditor} .read-only .ace_scroller`]:
+    [`.${nodeInput}[readonly], .${nodeInput}[type='checkbox'][readonly]:after, .${nodeInput}[type='radio'][readonly]:after, .${rowAceEditor}.read-only, .${rowAceEditor} .read-only .ace_scroller, .${rowAceEditor}.read-only .ace_content`]:
         {
             backgroundColor: `${theme.palette.action.disabledBackground} !important`,
             color: `${theme.palette.action.disabled} !important`,

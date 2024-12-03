@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsCom
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
+  Components,
   CustomComponentSpecificData
 }
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
@@ -189,6 +190,7 @@ class ComponentGroupsPreparerSpec
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, groupNameMapping)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
+        Set.empty,
         Some(_),
         DesignerWideComponentId.default("Streaming", _)
       ),
@@ -207,9 +209,9 @@ class ComponentGroupsPreparerSpec
   }
 
   private def withStaticDefinition(
-      components: List[ComponentDefinitionWithImplementation]
+      components: Components
   ): List[ComponentWithStaticDefinition] = {
-    components
+    components.components
       .map {
         case methodBased: MethodBasedComponentDefinitionWithImplementation =>
           component.ComponentWithStaticDefinition(methodBased, methodBased.staticDefinition)

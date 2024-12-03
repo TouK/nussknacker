@@ -176,7 +176,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, Map.empty)),
-      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, Some(_), determineDesignerWideId),
+      new FragmentComponentDefinitionExtractor(getClass.getClassLoader, Set.empty, Some(_), determineDesignerWideId),
       modelDefinition,
       ProcessingMode.UnboundedStream
     )
@@ -186,6 +186,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         forFragment = false,
         fragments = List.empty
       )
+      .components
   }
 
   private val processingTypeAndInfoToNonFragmentDesignerWideId =

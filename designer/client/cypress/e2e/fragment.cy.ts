@@ -66,7 +66,7 @@ describe("Fragment", () => {
         cy.get("[data-testid='settings:4']").contains("Typing...").should("not.exist");
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{enter}");
         cy.get("[data-testid='settings:4']")
-            .contains(/Add list item/i)
+            .contains(/Suggested values/i)
             .siblings()
             .eq(0)
             .find("[data-testid='form-helper-text']")
@@ -157,6 +157,11 @@ describe("Fragment", () => {
             .eq(0)
             .click();
         cy.get("[id$='option-1']").click({ force: true });
+
+        // Provide String Fixed value inputMode
+        cy.get("@window").contains("+").click();
+        cy.get("[data-testid='fieldsRow:8']").find("[placeholder='Field name']").type("generic_type");
+        cy.get("[data-testid='fieldsRow:8']").contains("String").click().type("List[String]{enter}");
 
         cy.get("@window")
             .contains(/^apply$/i)
@@ -281,7 +286,7 @@ describe("Fragment", () => {
         cy.get("[model-id=input]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible").as("window");
         cy.get("@window").contains("+").click();
-        cy.get("[data-testid='fieldsRow:8']").find("[placeholder='Field name']").type("test5");
+        cy.get("[data-testid='fieldsRow:9']").find("[placeholder='Field name']").type("test5");
         cy.get("@window")
             .contains(/^apply$/i)
             .click();
@@ -385,6 +390,7 @@ describe("Fragment", () => {
                 force: true,
             });
         cy.layoutScenario();
+
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
@@ -396,17 +402,25 @@ describe("Fragment", () => {
         // and it can be a situation that dead-end node is dropped before the scenario is visible.
         // To be sure that element is visible, let's click on it first
         cy.get("@output").click();
-        cy.contains("dead-end")
-            .first()
-            .should("be.visible")
-            .drag("@output", {
-                target: {
-                    x: 30,
-                    y: 30,
-                },
-                force: true,
+        cy.get("@output").then((node) => {
+            const { left, top } = node.position();
+            cy.contains("dead-end")
+                .first()
+                .should("be.visible")
+                .drag("@output", {
+                    target: {
+                        x: 0,
+                        y: node.height() / 2,
+                    },
+                    force: true,
+                });
+            // make sure dropped on edge
+            cy.dragNode("dead-end", {
+                x: left,
+                y: top + node.height() / 2,
             });
-        cy.get("@output").click().type("{backspace}");
+        });
+        cy.get("@output").click({ force: true }).type("{backspace}");
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
         cy.contains(/^save$/i).should("be.disabled");

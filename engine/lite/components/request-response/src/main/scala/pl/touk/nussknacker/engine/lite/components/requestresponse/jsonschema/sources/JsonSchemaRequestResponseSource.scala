@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
-import pl.touk.nussknacker.engine.json.swagger.extractor.FromJsonDecoder
+import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
@@ -94,7 +94,7 @@ class JsonSchemaRequestResponseSource(
             val json                       = ToJsonEncoder.defaultForTests.encode(paramValue)
             val schema                     = getFirstMatchingSchemaForJson(cs, json)
             val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
-            FromJsonDecoder.decode(json, swaggerTyped)
+            FromJsonSchemaBasedDecoder.decode(json, swaggerTyped)
           }
           .getOrElse {
             throw new IllegalArgumentException( // Should never happen since CombinedSchema is created using SinkRawValueParamName but still...
@@ -105,7 +105,7 @@ class JsonSchemaRequestResponseSource(
       case _ =>
         val json = ToJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
         val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
-        FromJsonDecoder.decode(json, swaggerTyped)
+        FromJsonSchemaBasedDecoder.decode(json, swaggerTyped)
     }
   }
 

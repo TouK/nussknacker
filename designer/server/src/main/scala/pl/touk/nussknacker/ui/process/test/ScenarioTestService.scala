@@ -3,11 +3,11 @@ package pl.touk.nussknacker.ui.process.test
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.CanBeSubclassDeterminer
+import pl.touk.nussknacker.engine.api.typed.AssignabilityDeterminer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
@@ -17,7 +17,6 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceP
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
-import pl.touk.nussknacker.ui.process.label.ScenarioLabel
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -133,10 +132,11 @@ class ScenarioTestService(
 
   private def assignUserFriendlyEditor(uiSourceParameter: UISourceParameters): UISourceParameters = {
     val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
-      if (CanBeSubclassDeterminer.canBeSubclassOf(uiParameter.typ, Typed.apply(classOf[String])).isValid) {
-        uiParameter.copy(editor = StringParameterEditor)
-      } else {
-        uiParameter
+      uiParameter.editor match {
+        case DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)
+            if uiParameter.typ.canBeConvertedTo(Typed[String]) =>
+          uiParameter.copy(editor = StringParameterEditor)
+        case _ => uiParameter
       }
     }
     uiSourceParameter.copy(parameters = adaptedParameters)

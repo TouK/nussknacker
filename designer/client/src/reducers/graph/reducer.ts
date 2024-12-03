@@ -1,27 +1,27 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy, uniq, xor, zipObject } from "lodash";
+import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy } from "lodash";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
 import { Action, Reducer } from "../../actions/reduxTypes";
+import ProcessUtils from "../../common/ProcessUtils";
+import NodeUtils from "../../components/graph/NodeUtils";
 import * as GraphUtils from "../../components/graph/utils/graphUtils";
+import { ValidationResult } from "../../types";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
+import { batchGroupBy } from "./batchGroupBy";
+import { correctFetchedDetails } from "./correctFetchedDetails";
+import { NestedKeyOf } from "./nestedKeyOf";
+import { selectionState } from "./selectionState";
 import { GraphState } from "./types";
 import {
     addNodesWithLayout,
     adjustBranchParametersAfterDisconnect,
     createEdge,
     enrichNodeWithProcessDependentData,
-    prepareNewNodesWithLayout,
     updateAfterNodeDelete,
     updateLayoutAfterNodeIdChange,
 } from "./utils";
-import { ValidationResult } from "../../types";
-import NodeUtils from "../../components/graph/NodeUtils";
-import { batchGroupBy } from "./batchGroupBy";
-import { NestedKeyOf } from "./nestedKeyOf";
-import ProcessUtils from "../../common/ProcessUtils";
-import { correctFetchedDetails } from "./correctFetchedDetails";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -143,6 +143,16 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
             };
         }
+        case "EDIT_PROPERTIES": {
+            return {
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: { ...action.scenarioGraphAfterChange },
+                    validationResult: updateValidationResult(state, action),
+                },
+            };
+        }
         case "PROCESS_RENAME": {
             return {
                 ...state,
@@ -223,49 +233,33 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             };
         }
         case "NODE_ADDED": {
-            const nodeWithPosition = {
-                node: action.node,
-                position: action.position,
-            };
-            const { uniqueIds, nodes, layout } = prepareNewNodesWithLayout(state, [nodeWithPosition], false);
-            return {
-                ...addNodesWithLayout(state, { nodes, layout }),
-                selectionState: uniqueIds,
-            };
+            return addNodesWithLayout(state, {
+                nodes: action.nodes,
+                layout: action.layout,
+            });
         }
         case "NODES_WITH_EDGES_ADDED": {
-            const { nodes, layout, uniqueIds } = prepareNewNodesWithLayout(state, action.nodesWithPositions, true);
+            const { nodes, layout, idMapping, processDefinitionData, edges } = action;
 
-            const idToUniqueId = zipObject(
-                action.nodesWithPositions.map((n) => n.node.id),
-                uniqueIds,
-            );
-            const edgesWithValidIds = action.edges.map((edge) => ({
+            const edgesWithValidIds = edges.map((edge) => ({
                 ...edge,
-                from: idToUniqueId[edge.from],
-                to: idToUniqueId[edge.to],
+                from: idMapping[edge.from],
+                to: idMapping[edge.to],
             }));
 
-            const updatedEdges = edgesWithValidIds.reduce((edges, edge) => {
+            const adjustedEdges = edgesWithValidIds.reduce((edges, edge) => {
                 const fromNode = nodes.find((n) => n.id === edge.from);
                 const toNode = nodes.find((n) => n.id === edge.to);
                 const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
-                const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, action.processDefinitionData);
+                const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, processDefinitionData);
                 return edges.concat(newEdge);
             }, state.scenario.scenarioGraph.edges);
 
-            const stateWithNodesAdded = addNodesWithLayout(state, { nodes, layout });
-            return {
-                ...stateWithNodesAdded,
-                scenario: {
-                    ...stateWithNodesAdded.scenario,
-                    scenarioGraph: {
-                        ...stateWithNodesAdded.scenario.scenarioGraph,
-                        edges: updatedEdges,
-                    },
-                },
-                selectionState: uniqueIds,
-            };
+            return addNodesWithLayout(state, {
+                nodes,
+                layout,
+                edges: adjustedEdges,
+            });
         }
         case "VALIDATION_RESULT": {
             return {
@@ -305,24 +299,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 processCountsRefresh: null,
             };
         }
-        case "EXPAND_SELECTION": {
-            return {
-                ...state,
-                selectionState: uniq([...state.selectionState, ...action.nodeIds]),
-            };
-        }
-        case "TOGGLE_SELECTION": {
-            return {
-                ...state,
-                selectionState: xor(state.selectionState, action.nodeIds),
-            };
-        }
-        case "RESET_SELECTION": {
-            return {
-                ...state,
-                selectionState: action.nodeIds ? action.nodeIds : [],
-            };
-        }
         default:
             return state;
     }
@@ -334,6 +310,7 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
             nodes,
         },
     },
+    selectionState,
 });
 
 const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);

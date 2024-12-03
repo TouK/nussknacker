@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.api.common.typeutils.{CompositeTypeSerializerUtil, TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, MultisetTypeInfo, RowTypeInfo}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.TypedMultiset
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{FlinkTypeInfoRegistrar, TypeInformationDetection}
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
@@ -16,6 +15,8 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
   TypedScalaMapTypeInformation
 }
 import pl.touk.nussknacker.engine.util.Implicits._
+
+import scala.jdk.CollectionConverters._
 
 // TODO: handle avro types - see FlinkConfluentUtils
 /*
@@ -29,27 +30,6 @@ import pl.touk.nussknacker.engine.util.Implicits._
  */
 class TypingResultAwareTypeInformationDetection extends TypeInformationDetection {
 
-  private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
-    Typed.typedClass[String]                  -> Types.STRING,
-    Typed.typedClass[Boolean]                 -> Types.BOOLEAN,
-    Typed.typedClass[Byte]                    -> Types.BYTE,
-    Typed.typedClass[Short]                   -> Types.SHORT,
-    Typed.typedClass[Integer]                 -> Types.INT,
-    Typed.typedClass[Long]                    -> Types.LONG,
-    Typed.typedClass[Float]                   -> Types.FLOAT,
-    Typed.typedClass[Double]                  -> Types.DOUBLE,
-    Typed.typedClass[Character]               -> Types.CHAR,
-    Typed.typedClass[java.math.BigDecimal]    -> Types.BIG_DEC,
-    Typed.typedClass[java.math.BigInteger]    -> Types.BIG_INT,
-    Typed.typedClass[java.time.LocalDate]     -> Types.LOCAL_DATE,
-    Typed.typedClass[java.time.LocalTime]     -> Types.LOCAL_TIME,
-    Typed.typedClass[java.time.LocalDateTime] -> Types.LOCAL_DATE_TIME,
-    Typed.typedClass[java.time.Instant]       -> Types.INSTANT,
-    Typed.typedClass[java.sql.Date]           -> Types.SQL_DATE,
-    Typed.typedClass[java.sql.Time]           -> Types.SQL_TIME,
-    Typed.typedClass[java.sql.Timestamp]      -> Types.SQL_TIMESTAMP,
-  )
-
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val variables = forType(
       Typed.record(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
@@ -62,6 +42,7 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
 
   def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
+      case FlinkBelow119AdditionalTypeInfo(typeInfo) => typeInfo
       case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
         new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
       case TypedClass(klass, elementType :: Nil) if klass == classOf[Array[AnyRef]] =>
@@ -82,8 +63,6 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
       // We generally don't use scala Maps in our runtime, but it is useful for some internal type infos: TODO move it somewhere else
       case a: TypedObjectTypingResult if a.runtimeObjType.klass == classOf[Map[String, _]] =>
         createScalaMapTypeInformation(a)
-      case a: SingleTypingResult if registeredTypeInfos.contains(a.runtimeObjType) =>
-        registeredTypeInfos(a.runtimeObjType)
       // TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
       case a: SingleTypingResult if a.runtimeObjType.params.isEmpty =>
         TypeInformation.of(a.runtimeObjType.klass)
@@ -95,21 +74,34 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
     }).asInstanceOf[TypeInformation[T]]
   }
 
+  // This extractor is to allow using of predefined type infos in Flink < 1.19. Type info registration was added in 1.19
+  // It should be removed when we stop supporting Flink < 1.19
+  private object FlinkBelow119AdditionalTypeInfo extends Serializable {
+
+    def unapply(typingResult: TypingResult): Option[TypeInformation[_]] = {
+      if (FlinkTypeInfoRegistrar.isFlinkTypeInfoRegistrationEnabled) {
+        None
+      } else {
+        for {
+          clazz <- Option(typingResult).collect { case TypedClass(clazz, Nil) =>
+            clazz
+          }
+          typeInfo <- FlinkTypeInfoRegistrar.typeInfoToRegister.collectFirst {
+            case FlinkTypeInfoRegistrar.RegistrationEntry(`clazz`, factoryClass) =>
+              val factory = factoryClass.getDeclaredConstructor().newInstance()
+              factory.createTypeInfo(clazz, Map.empty[String, TypeInformation[_]].asJava)
+          }
+        } yield typeInfo
+      }
+    }
+
+  }
+
   private def createScalaMapTypeInformation(typingResult: TypedObjectTypingResult) =
-    TypedScalaMapTypeInformation(typingResult.fields.mapValuesNow(forType), constructIntermediateCompatibilityResult)
+    TypedScalaMapTypeInformation(typingResult.fields.mapValuesNow(forType))
 
   private def createJavaMapTypeInformation(typingResult: TypedObjectTypingResult) =
-    TypedJavaMapTypeInformation(typingResult.fields.mapValuesNow(forType), constructIntermediateCompatibilityResult)
-
-  protected def constructIntermediateCompatibilityResult(
-      newNestedSerializers: Array[TypeSerializer[_]],
-      oldNestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
-  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing] = {
-    CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
-      newNestedSerializers.map(_.snapshotConfiguration()),
-      oldNestedSerializerSnapshots
-    )
-  }
+    TypedJavaMapTypeInformation(typingResult.fields.mapValuesNow(forType))
 
   def forValueWithContext[T](
       validationContext: ValidationContext,

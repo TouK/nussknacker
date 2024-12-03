@@ -46,7 +46,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        | ) WITH (
        |  'connector' = 'kafka',
        |  'topic' = '${inputTopicNameTest1.name}',
-       |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
+       |  'properties.bootstrap.servers' = '${kafkaServerWithDependencies.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
        |  'format' = 'json'
@@ -59,7 +59,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        | ) WITH (
        |  'connector' = 'kafka',
        |  'topic' = '${inputTopicNameTest2.name}',
-       |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
+       |  'properties.bootstrap.servers' = '${kafkaServerWithDependencies.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
        |  'format' = 'json'
@@ -72,7 +72,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        | ) WITH (
        |  'connector' = 'kafka',
        |  'topic' = '${outputTopicNameTest2.name}',
-       |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
+       |  'properties.bootstrap.servers' = '${kafkaServerWithDependencies.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
        |  'format' = 'json'
@@ -85,7 +85,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        | ) WITH (
        |  'connector' = 'kafka',
        |  'topic' = '${inputTopicNameTest3.name}',
-       |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
+       |  'properties.bootstrap.servers' = '${kafkaServerWithDependencies.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
        |  'format' = 'json'
@@ -98,7 +98,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        | ) WITH (
        |  'connector' = 'kafka',
        |  'topic' = '${outputTopicNameTest3.name}',
-       |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
+       |  'properties.bootstrap.servers' = '${kafkaServerWithDependencies.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
        |  'format' = 'json'

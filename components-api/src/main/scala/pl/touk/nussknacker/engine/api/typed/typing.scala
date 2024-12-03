@@ -27,15 +27,18 @@ object typing {
   // TODO: Rename to Typed, maybe NuType?
   sealed trait TypingResult {
 
-    // TODO: We should split this method into two or three methods:
-    //       - Simple, strictly checking subclassing similar to isAssignable, where we don't do heuristics like
-    //         Any can be subclass of Int, or for Union of Int and String can be subclass of Int
-    //       - The one with heuristics considering limitations of our tool like poor support for generics, lack
-    //         of casting allowing things described above
-    //       - The one that allow things above + SPeL conversions like any Number to any Number conversion,
-    //         String to LocalDate etc. This one should be accessible only for context where SPeL is used
-    final def canBeSubclassOf(typingResult: TypingResult): Boolean =
-      CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult).isValid
+    /**
+     * Checks if there exists a conversion to a given typingResult, with possible loss of precision, e.g. long to int.
+     * If you need to retain conversion precision, use canBeStrictlyConvertedTo
+     */
+    final def canBeConvertedTo(typingResult: TypingResult): Boolean =
+      AssignabilityDeterminer.isAssignableLoose(this, typingResult).isValid
+
+    /**
+     * Checks if the conversion to a given typingResult can be made without loss of precision
+     */
+    final def canBeStrictlyConvertedTo(typingResult: TypingResult): Boolean =
+      AssignabilityDeterminer.isAssignableStrict(this, typingResult).isValid
 
     def valueOpt: Option[Any]
 
@@ -83,7 +86,7 @@ object typing {
         fields.map { case (fieldName, fieldType) =>
           fieldName -> fieldType.withoutValue
         },
-        runtimeObjType,
+        runtimeObjType.withoutValue,
         additionalInfo
       )
 
@@ -206,7 +209,7 @@ object typing {
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
     override val valueOpt: None.type = None
 
-    override def withoutValue: TypedClass = this
+    override def withoutValue: TypedClass = TypedClass(klass, params.map(_.withoutValue))
 
     override def display: String = {
       val className = if (klass.isArray) "List" else ReflectUtils.simpleNameWithoutSuffix(runtimeObjType.klass)
@@ -353,8 +356,9 @@ object typing {
             supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
             javaList
           )
+        case set: java.util.Set[_] =>
+          genericTypeClass(classOf[java.util.Set[_]], List(supertypeOfElementTypes(set.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        // TODO: handle more types, for example Set
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>
@@ -465,7 +469,9 @@ object typing {
   case class CastTypedValue[T: TypeTag]() {
 
     def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
-      Option(typingResult).filter(_.canBeSubclassOf(Typed.fromDetailedType[T])).map(new TypingResultTypedValue(_))
+      Option(typingResult)
+        .filter(_.canBeConvertedTo(Typed.fromDetailedType[T]))
+        .map(new TypingResultTypedValue(_))
     }
 
   }

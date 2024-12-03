@@ -197,10 +197,10 @@ object PrettyValidationErrors {
           "Please check component definition",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
-      case RequireValueFromEmptyFixedList(paramName, _) =>
+      case EmptyFixedListForRequiredField(paramName, _) =>
         node(
-          s"Required parameter '${paramName.value}' cannot be a member of an empty fixed list",
-          description = "Please check component definition",
+          s"Non-empty fixed list of values have to be declared for required parameter",
+          description = "Please add a value to the list of possible values",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>

@@ -140,9 +140,9 @@ class UsageStatisticsReportsSettingsServiceTest
       .map(url => StatisticEncryptionSupport.decodeToString(url.toString))
       .head
 
-    url should include("c_srvcccntsrvc=5")
+    url should include("c_ccntsrvc=5")
     url should include("c_cstm=2")
-    url shouldNot include("c_bltnchc")
+    url shouldNot include("c_chc")
   }
 
   test("should combined statistics for all scenarios") {
@@ -195,7 +195,7 @@ class UsageStatisticsReportsSettingsServiceTest
       LiteEmbeddedDMCount    -> 0,
       UnknownDMCount         -> 0,
       ActiveScenarioCount    -> 2,
-      "c_srvcccntsrvc"       -> 5,
+      "c_ccntsrvc"           -> 5,
       "c_cstm"               -> 2,
     ).map { case (k, v) => (k.toString, v.toString) }
 

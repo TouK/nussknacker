@@ -73,21 +73,29 @@ object ComponentDefinitionExtractor {
         case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
       }
 
-    val componentId = ComponentId(componentType, componentName)
-
-    def additionalConfigFromProvider(overriddenDesignerWideId: Option[DesignerWideComponentId]) = {
-      val designerWideId = overriddenDesignerWideId.getOrElse(determineDesignerWideId(componentId))
-
+    def additionalConfigFromProvider(designerWideId: DesignerWideComponentId) = {
       additionalConfigsFromProvider
         .get(designerWideId)
         .map(ComponentAdditionalConfigConverter.toComponentConfig)
         .getOrElse(ComponentConfig.zero)
-        .copy(
-          componentId = Some(designerWideId)
-        )
     }
 
-    def withUiDefinitionForNotDisabledComponent[T](
+    def configFor(defaultConfig: ComponentConfig) = {
+      val componentId                             = ComponentId(componentType, componentName)
+      val configFromAdditional                    = additionalConfigs.getConfig(componentId)
+      val combinedConfigWithoutConfigFromProvider = configFromAdditional |+| configFromDefinition |+| defaultConfig
+      val designerWideId =
+        combinedConfigWithoutConfigFromProvider.componentId.getOrElse(determineDesignerWideId(componentId))
+
+      val finalCombinedConfig =
+        additionalConfigFromProvider(designerWideId) |+| combinedConfigWithoutConfigFromProvider
+
+      finalCombinedConfig.copy(
+        componentId = Some(designerWideId)
+      )
+    }
+
+    def withUiDefinitionForNotDisabledComponent[T <: ComponentDefinitionWithImplementation](
         returnType: Option[TypingResult]
     )(f: (ComponentUiDefinition, Map[ParameterName, ParameterConfig]) => T): Option[T] = {
       val defaultConfig =
@@ -96,12 +104,8 @@ object ComponentDefinitionExtractor {
           returnType.isDefined,
           customCanBeEnding
         )
-      val configFromAdditional                    = additionalConfigs.getConfig(componentId)
-      val combinedConfigWithoutConfigFromProvider = configFromAdditional |+| configFromDefinition |+| defaultConfig
-      val designerWideId                          = combinedConfigWithoutConfigFromProvider.componentId
-      val finalCombinedConfig = additionalConfigFromProvider(designerWideId) |+| combinedConfigWithoutConfigFromProvider
 
-      filterOutDisabledAndComputeFinalUiDefinition(finalCombinedConfig, additionalConfigs.groupName).map(f.tupled)
+      filterOutDisabledAndComputeFinalUiDefinition(configFor(defaultConfig), additionalConfigs.groupName).map(f.tupled)
     }
 
     (component match {
@@ -131,16 +135,13 @@ object ComponentDefinitionExtractor {
         // We skip defaultConfig here, it is not needed for parameters, and it would generate a cycle of dependency:
         // method definition need parameters config, which need default config which need return type (for group determining)
         // which need method definition
-        val combinedConfigWithoutConfigFromProvider =
-          additionalConfigs.getConfig(componentId) |+| configFromDefinition
-        val configFromProvider = additionalConfigFromProvider(combinedConfigWithoutConfigFromProvider.componentId)
-        val combinedConfigForParametersExtraction = configFromProvider |+| combinedConfigWithoutConfigFromProvider
+        val componentConfigForParametersExtraction = configFor(defaultConfig = ComponentConfig.zero)
 
         methodDefinitionExtractor
           .extractMethodDefinition(
             component,
             findMainComponentMethod(component),
-            combinedConfigForParametersExtraction.params.getOrElse(Map.empty)
+            componentConfigForParametersExtraction.params.getOrElse(Map.empty)
           )
           .map { methodDef =>
             def notReturnAnything(typ: TypingResult) =
