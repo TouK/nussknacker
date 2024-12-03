@@ -23,6 +23,7 @@
 * [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
 * [#7237](https://github.com/TouK/nussknacker/pull/7237) Fix: ToJsonEncoder keeps order fields during encoding map
 * [#7240](https://github.com/TouK/nussknacker/pull/7240) Fixed race condition problem during SpEL expression evaluation
+* [#7269](https://github.com/TouK/nussknacker/pull/7269) Fixed focus scrolling in expression editor
 
 ### 1.18.0 (22 November 2024)
 
