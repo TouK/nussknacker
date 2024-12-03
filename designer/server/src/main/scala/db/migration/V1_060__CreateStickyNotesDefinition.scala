@@ -6,7 +6,6 @@ import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import slick.jdbc.JdbcProfile
 import slick.sql.SqlProfile.ColumnOption.NotNull
 import shapeless.syntax.std.tuple._
-
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
