@@ -101,6 +101,22 @@ class ToJsonEncoderSpec extends AnyFunSpec with Matchers {
 
   }
 
+  it("should convert map to json and keep order of keys") {
+    val map = ListMap(
+      "intNumber"     -> 42,
+      "floatNumber"   -> 42.42,
+      "someTimestamp" -> 1496930555793L,
+      "someString"    -> "hello",
+      "booleanValue"  -> true
+    )
+
+    val expectedJson =
+      """{"intNumber":42,"floatNumber":42.42,"someTimestamp":1496930555793,"someString":"hello","booleanValue":true}"""
+
+    // We compare string because we want to check the order
+    encoder.encode(map).noSpaces shouldBe expectedJson
+  }
+
 }
 
 class CustomJsonEncoderCustomisation1 extends ToJsonEncoderCustomisation {

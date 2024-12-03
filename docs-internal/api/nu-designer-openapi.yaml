@@ -6993,7 +6993,6 @@ components:
       - additionalVariables
       - branchParam
       - label
-      - requiredParam
       properties:
         name:
           type: string
@@ -7027,7 +7026,9 @@ components:
         label:
           type: string
         requiredParam:
-          type: boolean
+          type:
+          - boolean
+          - 'null'
     UIValueParameterDto:
       title: UIValueParameterDto
       type: object
