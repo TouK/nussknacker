@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.api.common.typeutils.{CompositeTypeSerializerUtil, TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, MultisetTypeInfo, RowTypeInfo}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -99,20 +98,10 @@ class TypingResultAwareTypeInformationDetection extends TypeInformationDetection
   }
 
   private def createScalaMapTypeInformation(typingResult: TypedObjectTypingResult) =
-    TypedScalaMapTypeInformation(typingResult.fields.mapValuesNow(forType), constructIntermediateCompatibilityResult)
+    TypedScalaMapTypeInformation(typingResult.fields.mapValuesNow(forType))
 
   private def createJavaMapTypeInformation(typingResult: TypedObjectTypingResult) =
-    TypedJavaMapTypeInformation(typingResult.fields.mapValuesNow(forType), constructIntermediateCompatibilityResult)
-
-  protected def constructIntermediateCompatibilityResult(
-      newNestedSerializers: Array[TypeSerializer[_]],
-      oldNestedSerializerSnapshots: Array[TypeSerializerSnapshot[_]]
-  ): CompositeTypeSerializerUtil.IntermediateCompatibilityResult[Nothing] = {
-    CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
-      newNestedSerializers.map(_.snapshotConfiguration()),
-      oldNestedSerializerSnapshots
-    )
-  }
+    TypedJavaMapTypeInformation(typingResult.fields.mapValuesNow(forType))
 
   def forValueWithContext[T](
       validationContext: ValidationContext,

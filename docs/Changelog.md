@@ -24,6 +24,7 @@
 * [#7237](https://github.com/TouK/nussknacker/pull/7237) Fix: ToJsonEncoder keeps order fields during encoding map
 * [#7240](https://github.com/TouK/nussknacker/pull/7240) Fixed race condition problem during SpEL expression evaluation
 * [#7269](https://github.com/TouK/nussknacker/pull/7269) Fixed focus scrolling in expression editor
+* [#7270](https://github.com/TouK/nussknacker/pull/7270) Savepoint deserialization fixup - some taken savepoints (e.g. for scenarios with async enrichers) were not deserializable which led to errors during redeployments on Flink
 
 ### 1.18.0 (22 November 2024)
 
