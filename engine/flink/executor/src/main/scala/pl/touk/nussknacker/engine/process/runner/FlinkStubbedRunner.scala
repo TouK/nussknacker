@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.{
   ConfigUtils,
   Configuration,
@@ -21,7 +22,7 @@ import java.net.{MalformedURLException, URL}
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-trait FlinkStubbedRunner {
+trait FlinkStubbedRunner { self: LazyLogging =>
 
   protected def modelData: ModelData
 
@@ -29,13 +30,16 @@ trait FlinkStubbedRunner {
 
   protected def configuration: Configuration
 
-  protected def createEnv: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment(
-    MetaDataExtractor
-      .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
-      .parallelism
-      .getOrElse(1),
-    configuration
-  )
+  protected def createEnv: StreamExecutionEnvironment = {
+    logger.debug(s"Creating LocalEnvironment for model with classpath: ${modelData.modelClassLoader}")
+    StreamExecutionEnvironment.createLocalEnvironment(
+      MetaDataExtractor
+        .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
+        .parallelism
+        .getOrElse(1),
+      configuration
+    )
+  }
 
   // we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
   protected def execute[T](

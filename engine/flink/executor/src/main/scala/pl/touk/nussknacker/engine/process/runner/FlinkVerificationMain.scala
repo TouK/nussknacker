@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
@@ -10,6 +11,8 @@ import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompi
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListenerHolder, TestRunId, TestServiceInvocationCollector}
+
+import scala.util.Using
 
 object FlinkVerificationMain extends FlinkRunner {
 
@@ -33,16 +36,26 @@ class FlinkVerificationMain(
     deploymentData: DeploymentData,
     savepointPath: String,
     val configuration: Configuration
-) extends FlinkStubbedRunner {
+) extends FlinkStubbedRunner
+    with LazyLogging {
 
   def runTest(): Unit = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
-    val resultCollector    = new TestServiceInvocationCollector(collectingListener)
-    val registrar          = prepareRegistrar()
-    val env                = createEnv
+    try {
+      val resultCollector = new TestServiceInvocationCollector(collectingListener)
+      val registrar       = prepareRegistrar()
+      val env             = createEnv
 
-    registrar.register(env, process, processVersion, deploymentData, resultCollector)
-    execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
+      try {
+        registrar.register(env, process, processVersion, deploymentData, resultCollector)
+        execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
+      } finally {
+        logger.debug(s"Closing LocalEnvironment for model with classpath: ${modelData.modelClassLoader}")
+        env.close()
+      }
+    } finally {
+      collectingListener.close()
+    }
   }
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {

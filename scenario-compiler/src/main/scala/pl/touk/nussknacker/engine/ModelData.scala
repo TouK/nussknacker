@@ -275,6 +275,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   final def close(): Unit = {
     designerDictServices.close()
+    modelClassLoader.close()
   }
 
 }
