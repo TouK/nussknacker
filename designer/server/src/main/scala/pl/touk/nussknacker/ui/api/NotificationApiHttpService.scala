@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.description.NotificationApiEndpoints
 import pl.touk.nussknacker.ui.notifications.NotificationService
+import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsScope
 import pl.touk.nussknacker.ui.security.api.AuthManager
 
 import scala.concurrent.ExecutionContext
@@ -21,8 +22,15 @@ class NotificationApiHttpService(
   expose {
     notificationApiEndpoints.notificationEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
-      .serverLogic { implicit loggedUser => _ =>
-        notificationService.notifications
+      .serverLogic { implicit loggedUser => processNameOpt =>
+        val scope = processNameOpt match {
+          case Some(processName) =>
+            NotificationsScope.NotificationsForLoggedUserAndScenario(loggedUser, processName)
+          case None =>
+            NotificationsScope.NotificationsForLoggedUser(loggedUser)
+        }
+        notificationService
+          .notifications(scope)
           .map { notificationList => success(notificationList) }
       }
   }

@@ -51,8 +51,6 @@ const handleRefresh =
         }
         toRefresh.forEach((data) => {
             switch (data) {
-                case "versions":
-                    return dispatch(getScenarioActivities(scenarioName));
                 case "activity":
                     return dispatch(getScenarioActivities(scenarioName));
                 case "state":
@@ -90,7 +88,7 @@ export function Notifications(): JSX.Element {
     const currentScenarioName = useSelector(getProcessName);
 
     const refresh = useCallback(() => {
-        HttpService.loadBackendNotifications()
+        HttpService.loadBackendNotifications(currentScenarioName)
             .then((notifications) => {
                 handleChangeConnectionError(null);
                 dispatch(updateBackendNotifications(notifications.map(({ id }) => id)));
@@ -124,7 +122,7 @@ export function Notifications(): JSX.Element {
 
 type NotificationType = "info" | "error" | "success";
 
-type DataToRefresh = "versions" | "activity" | "state";
+type DataToRefresh = "activity" | "state";
 
 export type BackendNotification = {
     id: string;

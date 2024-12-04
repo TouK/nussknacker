@@ -69,6 +69,7 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLo
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.repository.activities.{DbScenarioActivityRepository, ScenarioActivityRepository}
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -313,8 +314,19 @@ class AkkaHttpBasedRouteProvider(
         processService,
         fragmentRepository
       )
-      val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
-      val processAuthorizer   = new AuthorizeProcess(futureProcessRepository)
+      val fetchScenarioActivityService = new FetchScenarioActivityService(
+        dmDispatcher,
+        scenarioActivityRepository,
+        futureProcessRepository,
+        dbioRunner,
+      )
+      val notificationService = new NotificationServiceImpl(
+        fetchScenarioActivityService,
+        actionRepository,
+        dbioRunner,
+        notificationsConfig
+      )
+      val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
       val appApiHttpService = new AppApiHttpService(
         config = resolvedConfig,
         authManager = authManager,
@@ -399,7 +411,7 @@ class AkkaHttpBasedRouteProvider(
 
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         authManager = authManager,
-        deploymentManagerDispatcher = dmDispatcher,
+        fetchScenarioActivityService = fetchScenarioActivityService,
         scenarioActivityRepository = scenarioActivityRepository,
         scenarioService = processService,
         scenarioAuthorizer = processAuthorizer,

@@ -180,8 +180,9 @@ class HttpService {
         this.#notificationActions = na;
     }
 
-    loadBackendNotifications(): Promise<BackendNotification[]> {
-        return api.get<BackendNotification[]>("/notifications").then((d) => {
+    loadBackendNotifications(scenarioName: string | undefined): Promise<BackendNotification[]> {
+        const path = scenarioName !== undefined ? `/notifications?scenarioName=${scenarioName}` : `/notifications`;
+        return api.get<BackendNotification[]>(path).then((d) => {
             return d.data;
         });
     }

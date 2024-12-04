@@ -18,7 +18,6 @@ import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.ScenarioActi
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.{Comment => _, _}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.{Dtos, Endpoints}
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
-import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository
 import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepository.{
   CommentModificationMetadata,
@@ -26,6 +25,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
   ModifyCommentError
 }
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
+import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
@@ -39,7 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
     authManager: AuthManager,
-    deploymentManagerDispatcher: DeploymentManagerDispatcher,
+    fetchScenarioActivityService: FetchScenarioActivityService,
     scenarioActivityRepository: ScenarioActivityRepository,
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
@@ -240,18 +240,10 @@ class ScenarioActivityApiHttpService(
 
   private def fetchActivities(
       processIdWithName: ProcessIdWithName
-  )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] =
+  )(implicit loggedUser: LoggedUser): EitherT[Future, ScenarioActivityError, List[Dtos.ScenarioActivity]] = {
     EitherT.right {
       for {
-        generalActivities <- dbioActionRunner.run(scenarioActivityRepository.findActivities(processIdWithName.id))
-        deploymentManager <- deploymentManagerDispatcher.deploymentManager(processIdWithName)
-        deploymentManagerSpecificActivities <- deploymentManager match {
-          case Some(manager: ManagerSpecificScenarioActivitiesStoredByManager) =>
-            manager.managerSpecificScenarioActivities(processIdWithName)
-          case Some(_) | None =>
-            Future.successful(List.empty)
-        }
-        combinedActivities = generalActivities ++ deploymentManagerSpecificActivities
+        combinedActivities <- fetchScenarioActivityService.fetchActivities(processIdWithName, after = None)
         //  The API endpoint returning scenario activities does not yet have support for filtering. We made a decision to:
         //  - for activities not related to deployments:        always display them on FE
         //  - for activities related to batch deployments:      always display them on FE
@@ -268,6 +260,7 @@ class ScenarioActivityApiHttpService(
         sortedResult = combinedSuccessfulActivities.map(toDto).toList.sortBy(_.date)
       } yield sortedResult
     }
+  }
 
   private def toDto(scenarioComment: ScenarioComment): Dtos.ScenarioActivityComment = scenarioComment match {
     case ScenarioComment.WithContent(comment, _, _) =>
