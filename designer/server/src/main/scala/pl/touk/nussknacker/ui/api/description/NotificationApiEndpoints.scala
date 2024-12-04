@@ -8,16 +8,17 @@ import pl.touk.nussknacker.ui.notifications.{DataToRefresh, Notification}
 import sttp.model.StatusCode.Ok
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.json.circe.jsonBody
-import sttp.tapir.{EndpointInput, statusCode}
+import sttp.tapir.{Codec, CodecFormat, EndpointInput, query, statusCode}
 
 class NotificationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  lazy val notificationEndpoint: SecuredEndpoint[Unit, Unit, List[Notification], Any] =
+  lazy val notificationEndpoint: SecuredEndpoint[Option[ProcessName], Unit, List[Notification], Any] =
     baseNuApiEndpoint
       .summary("Endpoint to display notifications")
       .tag("Notifications")
       .get
       .in("notifications")
+      .in(query[Option[ProcessName]]("scenarioName"))
       .out(
         statusCode(Ok).and(
           jsonBody[List[Notification]].example(
@@ -30,7 +31,6 @@ class NotificationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Bas
                   message = "Deployment finished",
                   `type` = None,
                   toRefresh = List(
-                    DataToRefresh(DataToRefresh.versions.id),
                     DataToRefresh(DataToRefresh.activity.id),
                     DataToRefresh(DataToRefresh.state.id)
                   )
@@ -41,5 +41,9 @@ class NotificationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Bas
         )
       )
       .withSecurity(auth)
+
+  private implicit val processNameCodec: Codec[String, ProcessName, CodecFormat.TextPlain] = {
+    Codec.string.map(str => ProcessName(str))(_.value)
+  }
 
 }
