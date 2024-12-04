@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.{
   BaseModelData,
@@ -25,7 +25,9 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
   override def resolve(
       idWithName: ProcessIdWithName,
       statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     val lastStateActionStatus = lastStateAction match {
       case Some(action) if action.actionName == ScenarioActionName.Deploy =>
@@ -35,7 +37,13 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       case _ =>
         SimpleStateStatus.NotDeployed
     }
-    Future.successful(processStateDefinitionManager.processState(StatusDetails(lastStateActionStatus, None)))
+    Future.successful(
+      processStateDefinitionManager.processState(
+        StatusDetails(lastStateActionStatus, None),
+        latestVersionId,
+        deployedVersionId
+      )
+    )
   }
 
   override def getProcessStates(
@@ -59,14 +67,14 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
 trait StubbingCommands { self: DeploymentManager =>
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
-    case _: DMValidateScenarioCommand                        => Future.successful(())
-    case _: DMRunDeploymentCommand                           => Future.successful(None)
-    case _: DMStopDeploymentCommand                          => Future.successful(SavepointResult(""))
-    case _: DMStopScenarioCommand                            => Future.successful(SavepointResult(""))
-    case _: DMCancelDeploymentCommand                        => Future.successful(())
-    case _: DMCancelScenarioCommand                          => Future.successful(())
-    case _: DMMakeScenarioSavepointCommand                   => Future.successful(SavepointResult(""))
-    case _: DMCustomActionCommand | _: DMTestScenarioCommand => notImplemented
+    case _: DMValidateScenarioCommand      => Future.successful(())
+    case _: DMRunDeploymentCommand         => Future.successful(None)
+    case _: DMStopDeploymentCommand        => Future.successful(SavepointResult(""))
+    case _: DMStopScenarioCommand          => Future.successful(SavepointResult(""))
+    case _: DMCancelDeploymentCommand      => Future.successful(())
+    case _: DMCancelScenarioCommand        => Future.successful(())
+    case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
+    case _: DMPerformSingleExecutionCommand | _: DMCustomActionCommand | _: DMTestScenarioCommand => notImplemented
   }
 
 }

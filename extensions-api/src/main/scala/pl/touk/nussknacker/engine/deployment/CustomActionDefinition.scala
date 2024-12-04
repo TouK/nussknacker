@@ -32,3 +32,5 @@ case class CustomActionParameter(
 )
 
 case class CustomActionResult(msg: String)
+
+case class SingleExecutionResult(msg: String)

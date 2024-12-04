@@ -17,20 +17,7 @@ export function ActionButton({ name, type }: ActionButtonProps): JSX.Element {
     const customActions = useSelector(getCustomActions);
     const action = useMemo(() => customActions.find((a) => a.name === name), [customActions, name]);
 
-    // FIXME: This part requires further changes within periodic scenario engine.
-    // Currently we use experimental api of custom actions for periodic scenarios (an experimental engine).
-    // Part of this experimental engine allows to run immediately scheduled scenario. This activity will be moved inside core deployment operations and aligned with other deployment engines.
-    // Here we want to disable that one action button in confusing situation when user looks at scenario version that is not currently deployed.
-    const isDeployed = useSelector(isDeployedVersion);
-    const disabledValue = useMemo(() => !isDeployed, [isDeployed, name]);
-
     return action ? (
-        <CustomActionButton
-            action={action}
-            processName={processName}
-            processStatus={status}
-            disabled={name === "run now" ? disabledValue : false}
-            type={type}
-        />
+        <CustomActionButton action={action} processName={processName} disabled={false} processStatus={status} type={type} />
     ) : null;
 }

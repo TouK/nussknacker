@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 import java.net.URI
@@ -20,15 +21,23 @@ import java.net.URI
   */
 class OverridingProcessStateDefinitionManager(
     delegate: ProcessStateDefinitionManager,
-    statusActionsPF: PartialFunction[StateStatus, List[ScenarioActionName]] = PartialFunction.empty,
+    statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = PartialFunction.empty,
     statusIconsPF: PartialFunction[StateStatus, URI] = PartialFunction.empty,
     statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
-    customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty
+    customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty,
+    customVisibleActions: Option[List[ScenarioActionName]] = None,
+    customActionTooltips: Option[ProcessStatus => Map[ScenarioActionName, String]] = None,
 ) extends ProcessStateDefinitionManager {
 
-  override def statusActions(stateStatus: StateStatus): List[ScenarioActionName] =
-    statusActionsPF.applyOrElse(stateStatus, delegate.statusActions)
+  override def visibleActions: List[ScenarioActionName] =
+    customVisibleActions.getOrElse(delegate.visibleActions)
+
+  override def statusActions(processStatus: ProcessStatus): List[ScenarioActionName] =
+    statusActionsPF.applyOrElse(processStatus, delegate.statusActions)
+
+  override def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String] =
+    customActionTooltips.map(_(processStatus)).getOrElse(delegate.actionTooltips(processStatus))
 
   override def statusIcon(stateStatus: StateStatus): URI =
     statusIconsPF.orElse(stateDefinitionsPF(_.icon)).applyOrElse(stateStatus, delegate.statusIcon)

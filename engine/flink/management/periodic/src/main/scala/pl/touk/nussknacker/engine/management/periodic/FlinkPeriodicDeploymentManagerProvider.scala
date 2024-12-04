@@ -58,7 +58,6 @@ class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider w
           modelData = modelData,
           EmptyPeriodicProcessListenerFactory,
           DefaultAdditionalDeploymentDataProvider,
-          new WithRunNowPeriodicCustomActionsProviderFactory,
           dependencies
         )
     }

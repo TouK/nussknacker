@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
@@ -63,9 +63,13 @@ object MockableDeploymentManagerProvider {
     override def resolve(
         idWithName: ProcessIdWithName,
         statusDetails: List[StatusDetails],
-        lastStateAction: Option[ProcessAction]
+        lastStateAction: Option[ProcessAction],
+        latestVersionId: VersionId,
+        deployedVersionId: Option[VersionId],
     ): Future[ProcessState] = {
-      Future.successful(processStateDefinitionManager.processState(statusDetails.head))
+      Future.successful(
+        processStateDefinitionManager.processState(statusDetails.head, latestVersionId, deployedVersionId)
+      )
     }
 
     override def processStateDefinitionManager: ProcessStateDefinitionManager =

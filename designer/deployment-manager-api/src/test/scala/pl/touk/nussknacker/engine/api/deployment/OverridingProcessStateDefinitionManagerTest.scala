@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
@@ -27,7 +28,7 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
       )
     )
 
-    override def statusActions(stateStatus: StateStatus): List[ScenarioActionName] = Nil
+    override def statusActions(processStatus: ProcessStatus): List[ScenarioActionName] = Nil
   }
 
   test("should combine delegate state definitions with custom overrides") {

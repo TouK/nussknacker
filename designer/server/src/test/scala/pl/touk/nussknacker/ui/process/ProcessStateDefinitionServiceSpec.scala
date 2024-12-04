@@ -4,12 +4,11 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessingType, Source, SourceFactory}
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.security.Permission
@@ -158,8 +157,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   }
 
   private val emptyStateDefinitionManager = new ProcessStateDefinitionManager {
-    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]         = Map.empty
-    override def statusActions(stateStatus: StateStatus): List[ScenarioActionName] = Nil
+    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]             = Map.empty
+    override def statusActions(processStatus: ProcessStatus): List[ScenarioActionName] = Nil
   }
 
   private def createProcessingTypeDataMap(

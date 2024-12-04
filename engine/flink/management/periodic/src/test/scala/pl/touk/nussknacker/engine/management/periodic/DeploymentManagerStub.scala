@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
@@ -30,11 +30,15 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
   override def resolve(
       idWithName: ProcessIdWithName,
       statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
   ): Future[ProcessState] =
     Future.successful(
       processStateDefinitionManager.processState(
-        statusDetails.headOption.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None))
+        statusDetails.headOption.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None)),
+        latestVersionId,
+        deployedVersionId
       )
     )
 
