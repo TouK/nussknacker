@@ -27,7 +27,8 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
         () => activities.findIndex((activeItem) => activeItem.uiType === "item" && activeItem.type === "SCENARIO_DEPLOYED"),
         [activities],
     );
-    const isRunning = firstDeployedIndex === index && scenarioState.status.name === "RUNNING";
+    const scenarioStatusesToActiveDeploy = ["RUNNING", "SCHEDULED"];
+    const isRunning = firstDeployedIndex === index && scenarioStatusesToActiveDeploy.includes(scenarioState.status.name);
     const isFirstDateItem = activities.findIndex((activeItem) => activeItem.uiType === "date") === index;
 
     useEffect(() => {
