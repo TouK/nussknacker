@@ -2067,6 +2067,13 @@ paths:
           type:
           - string
           - 'null'
+      - name: scenarioName
+        in: query
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -2084,11 +2091,11 @@ paths:
                     scenarioName: scenario1
                     message: Deployment finished
                     toRefresh:
-                    - versions
                     - activity
                     - state
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter scenarioName'
           content:
             text/plain:
               schema:
@@ -5023,7 +5030,6 @@ components:
       title: DataToRefresh
       type: string
       enum:
-      - versions
       - activity
       - state
     DateParameterEditor:
