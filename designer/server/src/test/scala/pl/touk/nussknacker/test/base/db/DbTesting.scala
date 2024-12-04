@@ -93,6 +93,8 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
     session.prepareStatement("""delete from "environments"""").execute()
     session.prepareStatement("""delete from "processes"""").execute()
     session.prepareStatement("""delete from "fingerprints"""").execute()
+    session.prepareStatement("""delete from "periodic_processes"""").execute()
+    session.prepareStatement("""delete from "periodic_process_deployments"""").execute()
   }
 
 }

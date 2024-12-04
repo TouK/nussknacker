@@ -1,1 +1,1 @@
-pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
+pl.touk.nussknacker.engine.management.periodic.flink.cron.CronParameterValidator

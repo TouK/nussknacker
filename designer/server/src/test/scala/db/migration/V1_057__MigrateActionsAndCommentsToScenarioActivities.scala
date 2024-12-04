@@ -8,12 +8,11 @@ import db.migration.V1_057__MigrateActionsAndCommentsToScenarioActivitiesDefinit
 import io.circe.syntax.EncoderOps
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ScenarioComment.WithContent
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
+import pl.touk.nussknacker.engine.common.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.NuItTest
