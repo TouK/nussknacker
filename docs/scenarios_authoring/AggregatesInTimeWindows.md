@@ -14,6 +14,9 @@ Nussknacker implements 3 types of time windows - tumbling, sliding and session w
 
 Regardless of the window type used, events are grouped into windows based on the event time. Therefore, it is important to understand where Nussknacker takes information about event time from, can event time info be accessed from SpEL and so on - you can find more info [here](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only).
 
+Finally, understanding watermarks and problems caused by idle sources will clarify why in certain situations aggregate events or results of joins are not generated. A good description of the problem can be found [here](https://medium.com/@ipolyzos_/understanding-watermarks-in-apache-flink-c8793a50fbb8).
+
+
 
 ## Common behavior
 

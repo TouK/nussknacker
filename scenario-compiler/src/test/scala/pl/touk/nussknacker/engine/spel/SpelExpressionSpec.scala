@@ -11,6 +11,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -67,11 +68,14 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 import java.util
+import java.util.concurrent.Executors
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import scala.annotation.varargs
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
+import scala.util.{Failure, Success}
 
 class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with OptionValues {
 
@@ -2055,6 +2059,50 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val parsed    = parse[Any]("#unknownInt.value.toLongOrNull", customCtx).validValue
     parsed.evaluateSync[Any](customCtx) shouldBe 11
     parsed.evaluateSync[Any](customCtx) shouldBe 11
+  }
+
+  // This test is ignored as it was indeterministic and ugly, but it was used to verify race condition problems on
+  // ParsedSpelExpression.getValue. Without the synchronized block inside its method the test would fail the majority of times
+  ignore(
+    "should not throw 'Failed to instantiate CompiledExpression' when getValue is called on ParsedSpelExpression by multiple threads"
+  ) {
+    val spelExpression =
+      parse[LocalDateTime]("T(java.time.LocalDateTime).now().minusDays(14)", ctx).validValue.expression
+        .asInstanceOf[SpelExpression]
+
+    val threadPool                                        = Executors.newFixedThreadPool(1000)
+    implicit val customExecutionContext: ExecutionContext = ExecutionContext.fromExecutor(threadPool)
+
+    // A promise to signal when an exception occurs
+    val failurePromise = Promise[Unit]()
+
+    val tasks = (1 to 10000).map { _ =>
+      Future {
+        try {
+          Thread.sleep(100)
+          // evaluate calls getValue on problematic SpelExpression object
+          spelExpression.evaluate[LocalDateTime](Context("fooId"), Map.empty)
+        } catch {
+          // The real problematic exception is wrapped in SpelExpressionEvaluationException by evaluate method
+          case e: SpelExpressionEvaluationException =>
+            failurePromise.tryFailure(e.cause)
+        }
+      }
+    }
+    val firstFailureOrCompletion = Future.firstCompletedOf(Seq(Future.sequence(tasks), failurePromise.future))
+
+    firstFailureOrCompletion.onComplete {
+      case Success(_) =>
+        println("All tasks completed successfully.")
+        threadPool.shutdown()
+      case Failure(e: IllegalStateException) if e.getMessage == "Failed to instantiate CompiledExpression" =>
+        fail("Exception occurred due to race condition.", e)
+        threadPool.shutdown()
+      case Failure(e) =>
+        fail("Unknown exception occurred", e)
+        threadPool.shutdown()
+    }
+    Await.result(firstFailureOrCompletion, 15.seconds)
   }
 
 }
