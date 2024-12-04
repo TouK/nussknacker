@@ -359,6 +359,31 @@ class HttpService {
             });
     }
 
+    performSingleExecution(processName: string, comment?: string) {
+        const data = {
+            comment: comment,
+        };
+        return api
+            .post(`/processManagement/performSingleExecution/${encodeURIComponent(processName)}`, data)
+            .then((res) => {
+                const msg = res.data.msg;
+                this.#addInfo(msg);
+                return {
+                    isSuccess: res.data.isSuccess,
+                    msg: msg,
+                };
+            })
+            .catch((error) => {
+                const msg = error.response.data.msg || error.response.data;
+                const result = {
+                    isSuccess: false,
+                    msg: msg,
+                };
+                if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
+                return result;
+            });
+    }
+
     customAction(processName: string, actionName: string, params: Record<string, unknown>, comment?: string) {
         const data = {
             actionName: actionName,
@@ -859,7 +884,7 @@ class HttpService {
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
-                    expectedType: { type: type, refClazzName, params: [] },
+                expectedType: { type: type, refClazzName, params: [] },
             })
             .catch((error) =>
                 Promise.reject(

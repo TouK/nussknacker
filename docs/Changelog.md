@@ -21,6 +21,9 @@
   * [#7259](https://github.com/TouK/nussknacker/pull/7259) `flink-executor` and `lite-runtime` modules: Added compile-time
     dependency to `http-utils` (which depends on `async-http-client-backend-future` and indirectly on Netty)
 * [#7066](https://github.com/TouK/nussknacker/pull/7066) Kafka source and sink can now operate with schemaless topics. They accept any json. Data will not be validated with schema.
+* [#7165](https://github.com/TouK/nussknacker/pull/7165) Added PerformSingleExecution scenario action
+    * Added support for PerformSingleExecution action in DeploymentManager and in GUI
+    * Improved scenario state management to include information about current and deployed versions and allow more customization
 
 ## 1.18
 

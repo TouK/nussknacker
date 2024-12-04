@@ -1,14 +1,9 @@
 package pl.touk.nussknacker.development.manager
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{
-  OverridingProcessStateDefinitionManager,
-  ProcessStateDefinitionManager,
-  ScenarioActionName,
-  StateDefinitionDetails,
-  StateStatus
-}
+import pl.touk.nussknacker.engine.api.deployment._
 
 class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager)
     extends OverridingProcessStateDefinitionManager(
@@ -27,7 +22,7 @@ object DevelopmentStateStatus {
   val PreparingResourcesActionName: ScenarioActionName = ScenarioActionName("PREPARING")
   val TestActionName: ScenarioActionName               = ScenarioActionName("TEST")
 
-  val statusActionsPF: PartialFunction[StateStatus, List[ScenarioActionName]] = {
+  val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = _.stateStatus match {
     case DevelopmentStateStatus.AfterRunningStatus       => List(ScenarioActionName.Cancel)
     case DevelopmentStateStatus.PreparingResourcesStatus => List(ScenarioActionName.Deploy)
     case DevelopmentStateStatus.TestStatus               => List(ScenarioActionName.Deploy)

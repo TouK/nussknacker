@@ -1,16 +1,9 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
-import pl.touk.nussknacker.engine.api.deployment.{
-  DeploymentStatus,
-  NoAttributesDeploymentStatus,
-  NoAttributesStateStatus,
-  ProblemDeploymentStatus,
-  ScenarioActionName,
-  StateDefinitionDetails,
-  StateStatus
-}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
@@ -97,7 +90,7 @@ object SimpleStateStatus {
       status
     )
 
-  val statusActionsPF: PartialFunction[StateStatus, List[ScenarioActionName]] = {
+  val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = _.stateStatus match {
     case SimpleStateStatus.NotDeployed =>
       List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
     case SimpleStateStatus.DuringDeploy => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
