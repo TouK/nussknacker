@@ -22,6 +22,7 @@
 
 * [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
 * [#7237](https://github.com/TouK/nussknacker/pull/7237) Fix: ToJsonEncoder keeps order fields during encoding map
+* [#7283](https://github.com/TouK/nussknacker/pull/7283) fix deployment status indicator for periodic scenarios type
 
 ### 1.18.0 (22 November 2024)
 
