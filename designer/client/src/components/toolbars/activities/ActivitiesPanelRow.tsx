@@ -28,7 +28,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
         [activities],
     );
     const scenarioStatusesToActiveDeploy = ["RUNNING", "SCHEDULED"];
-    const isRunning = firstDeployedIndex === index && scenarioStatusesToActiveDeploy.includes(scenarioState.status.name);
+    const isDeploymentActive = firstDeployedIndex === index && scenarioStatusesToActiveDeploy.includes(scenarioState.status.name);
     const isFirstDateItem = activities.findIndex((activeItem) => activeItem.uiType === "date") === index;
 
     useEffect(() => {
@@ -42,7 +42,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
             case "item": {
                 return (
                     <ActivityItemProvider>
-                        <ActivityItem activity={activity} ref={rowRef} isRunning={isRunning} searchQuery={searchQuery} />
+                        <ActivityItem activity={activity} ref={rowRef} isDeploymentActive={isDeploymentActive} searchQuery={searchQuery} />
                     </ActivityItemProvider>
                 );
             }
@@ -70,7 +70,7 @@ export const ActivitiesPanelRow = memo(({ index, style, setRowHeight, handleShow
                 return null;
             }
         }
-    }, [activity, handleHideRows, handleShowRows, isRunning, isFirstDateItem, searchQuery, t]);
+    }, [activity, handleHideRows, handleShowRows, isDeploymentActive, isFirstDateItem, searchQuery, t]);
 
     return (
         <div style={style} data-testid={`activity-row-${index}`}>

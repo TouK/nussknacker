@@ -28,7 +28,7 @@ const StyledActivityBody = styled("div")(({ theme }) => ({
 
 export const ActivityItem = forwardRef(
     (
-        { activity, isRunning, searchQuery }: { activity: ItemActivity; isRunning: boolean; searchQuery: string },
+        { activity, isDeploymentActive, searchQuery }: { activity: ItemActivity; isDeploymentActive: boolean; searchQuery: string },
         ref: ForwardedRef<HTMLDivElement>,
     ) => {
         const { t } = useTranslation();
@@ -55,7 +55,7 @@ export const ActivityItem = forwardRef(
             >
                 <StyledActivityContent isActiveFound={activity.isActiveFound} isFound={activity.isFound}>
                     <ActivityItemHeader
-                        isRunning={isRunning}
+                        isDeploymentActive={isDeploymentActive}
                         searchQuery={searchQuery}
                         activity={activity}
                         isActiveFound={activity.isActiveFound}
