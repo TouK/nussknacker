@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
@@ -26,13 +26,7 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
-import pl.touk.nussknacker.ui.process.deployment.{
-  CommonCommandData,
-  DeploymentManagerDispatcher,
-  DeploymentService,
-  RunDeploymentCommand,
-  ScenarioResolver
-}
+import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
@@ -178,11 +172,20 @@ class NotificationServiceTest
   }
 
   private val notDeployed =
-    SimpleProcessStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
+    SimpleProcessStateDefinitionManager.processState(
+      StatusDetails(SimpleStateStatus.NotDeployed, None),
+      VersionId(1),
+      None
+    )
 
   private def createServices(deploymentManager: DeploymentManager) = {
     when(
-      deploymentManager.getProcessState(any[ProcessIdWithName], any[Option[ProcessAction]])(any[DataFreshnessPolicy])
+      deploymentManager.getProcessState(
+        any[ProcessIdWithName],
+        any[Option[ProcessAction]],
+        any[VersionId],
+        any[Option[VersionId]]
+      )(any[DataFreshnessPolicy])
     )
       .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(notDeployed)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]

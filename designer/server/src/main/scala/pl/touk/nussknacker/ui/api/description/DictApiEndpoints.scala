@@ -23,7 +23,6 @@ import scala.language.implicitConversions
 
 class DictApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-
   lazy val dictionaryEntryQueryEndpoint: SecuredEndpoint[(String, String, String), DictError, List[DictEntry], Any] =
     baseNuApiEndpoint
       .summary("Get list of dictionary entries matching the label pattern")
@@ -82,7 +81,6 @@ class DictApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoin
 }
 
 object DictApiEndpoints {
-
 
   object Dtos {
 

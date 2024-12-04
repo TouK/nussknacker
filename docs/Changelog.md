@@ -1,19 +1,5 @@
 # Changelog
 
-## 1.19
-
-#### Highlights
-
-##### End-user
-
-##### Administrator
-
-### 1.19.0 (Not released yet)
-
-* [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
-* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
-* [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
-
 ## 1.18
 
 #### Highlights
@@ -38,6 +24,9 @@
 * [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 * [#7162](https://github.com/TouK/nussknacker/pull/7162) Component API enhancement: ability to access information about
   expression parts used in SpEL template
+* [#7165](https://github.com/TouK/nussknacker/pull/7165) Added PerformSingleExecution scenario action
+    * Added support for PerformSingleExecution action in DeploymentManager and in GUI
+    * Improved scenario state management to include information about current and deployed versions and allow more customization
 
 ### 1.18.1 (9 December 2024)
 
