@@ -1,26 +1,25 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import cats.data.Validated.Invalid
-import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ModelDependencies}
+import pl.touk.nussknacker.engine.ModelDependencies
 import pl.touk.nussknacker.engine.api.component.{ComponentProvider, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
+import pl.touk.nussknacker.ui.config.DesignerRootConfig
+import pl.touk.nussknacker.ui.loadableconfig.LoadableProcessingTypeConfigs
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
-import cats.effect.unsafe.implicits.global
-import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
-import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 
 import java.nio.file.Path
 import scala.jdk.CollectionConverters._
@@ -281,14 +280,13 @@ class ScenarioParametersServiceTest
 
     val workPath = designerServerModuleDir.resolve("work")
     logDirectoryStructure(workPath)
-    val processingTypeDataReader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(
-      new LoadableConfigBasedNussknackerConfig(IO.pure {
-        ConfigWithUnresolvedVersion(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
-      })
-    )
 
-    val processingTypeData = processingTypeDataReader
+    val processingTypeConfigs = LoadableProcessingTypeConfigs.extractProcessingTypeConfigs(
+      DesignerRootConfig.from(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
+    )
+    val processingTypeData = ProcessingTypesConfigBasedProcessingTypeDataLoader
       .loadProcessingTypeData(
+        processingTypeConfigs,
         processingType =>
           ModelDependencies(
             Map.empty,
@@ -299,7 +297,6 @@ class ScenarioParametersServiceTest
           ),
         _ => TestFactory.deploymentManagerDependencies,
       )
-      .unsafeRunSync()
     val parametersService = processingTypeData.getCombined().parametersService
 
     parametersService.scenarioParametersCombinationsWithWritePermission(TestFactory.adminUser()) shouldEqual List(
