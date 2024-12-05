@@ -4,8 +4,6 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCod
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
@@ -38,10 +36,10 @@ import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
+import pl.touk.nussknacker.ui.config.{DesignerRootConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.loadableconfig.LoadableProcessingTypeConfigs
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -147,13 +145,11 @@ trait NuResourcesTest
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val processingTypeDataReader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(
-      new LoadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(testConfig)))
-    )
+    val rootConfig            = DesignerRootConfig.from(testConfig)
+    val processingTypeConfigs = LoadableProcessingTypeConfigs.extractProcessingTypeConfigs(rootConfig)
     ProcessingTypeDataProvider(
-      processingTypeDataReader
-        .loadProcessingTypeData(_ => modelDependencies, _ => deploymentManagerDependencies)
-        .unsafeRunSync()
+      ProcessingTypesConfigBasedProcessingTypeDataLoader
+        .loadProcessingTypeData(processingTypeConfigs, _ => modelDependencies, _ => deploymentManagerDependencies)
     )
   }
 

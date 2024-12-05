@@ -6,9 +6,14 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.ui.config.DesignerRootConfig
+import pl.touk.nussknacker.ui.loadableconfig.{
+  EachTimeLoadingRootConfigLoadableProcessingTypeConfigs,
+  LoadableDesignerRootConfig,
+  LoadableProcessingTypeConfigs
+}
 
-class LoadableConfigBasedNussknackerConfigSpec extends AnyFunSuite {
+class LoadableDesignerRootConfigSpec extends AnyFunSuite {
 
   test("should throw when required configuration is missing") {
     val config = ConfigFactory
@@ -31,8 +36,8 @@ class LoadableConfigBasedNussknackerConfigSpec extends AnyFunSuite {
       .resolve()
 
     intercept[typesafe.config.ConfigException] {
-      loadableConfigBasedNussknackerConfig(config)
-        .loadProcessingTypeConfigs()
+      staticConfigBasedLoadableProcessingTypeConfigs(config)
+        .loadProcessingTypeConfigs(DesignerRootConfig.from(ConfigFactory.empty()))
         .unsafeRunSync()
     }.getMessage should include("No configuration setting found for key 'deploymentConfig.type'")
   }
@@ -47,14 +52,14 @@ class LoadableConfigBasedNussknackerConfigSpec extends AnyFunSuite {
       .resolve()
 
     intercept[RuntimeException] {
-      loadableConfigBasedNussknackerConfig(config)
-        .loadProcessingTypeConfigs()
+      staticConfigBasedLoadableProcessingTypeConfigs(config)
+        .loadProcessingTypeConfigs(DesignerRootConfig.from(ConfigFactory.empty()))
         .unsafeRunSync()
     }.getMessage should include("No scenario types configuration provided")
   }
 
   test("should load the second config when reloaded") {
-    val nussknackerConfig = loadDifferentConfigPerInvocationNussknackerConfig(
+    val loadableProcessingTypeConfigs = loadDifferentConfigPerInvocationLoadableProcessingTypeConfigs(
       config1 = ConfigFactory
         .parseString(
           """
@@ -103,39 +108,37 @@ class LoadableConfigBasedNussknackerConfigSpec extends AnyFunSuite {
         .resolve()
     )
 
-    val processingTypes1 = nussknackerConfig
-      .loadProcessingTypeConfigs()
+    val processingTypes1 = loadableProcessingTypeConfigs
+      .loadProcessingTypeConfigs(DesignerRootConfig.from(ConfigFactory.empty()))
       .unsafeRunSync()
 
     processingTypes1.keys.toSet shouldBe Set("streaming")
 
-    val processingTypes2 = nussknackerConfig
-      .loadProcessingTypeConfigs()
+    val processingTypes2 = loadableProcessingTypeConfigs
+      .loadProcessingTypeConfigs(DesignerRootConfig.from(ConfigFactory.empty()))
       .unsafeRunSync()
 
     processingTypes2.keys.toSet shouldBe Set("streaming", "streaming2")
   }
 
-  private def loadableConfigBasedNussknackerConfig(config: Config): LoadableConfigBasedNussknackerConfig = {
-    loadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(config)))
+  private def staticConfigBasedLoadableProcessingTypeConfigs(config: Config): LoadableProcessingTypeConfigs = {
+    new EachTimeLoadingRootConfigLoadableProcessingTypeConfigs(
+      LoadableDesignerRootConfig(IO.pure(DesignerRootConfig.from(config)))
+    )
   }
 
-  private def loadableConfigBasedNussknackerConfig(
-      loadConfig: IO[ConfigWithUnresolvedVersion]
-  ): LoadableConfigBasedNussknackerConfig = {
-    new LoadableConfigBasedNussknackerConfig(loadConfig)
-  }
-
-  private def loadDifferentConfigPerInvocationNussknackerConfig(config1: Config, config2: Config, configs: Config*) = {
+  private def loadDifferentConfigPerInvocationLoadableProcessingTypeConfigs(config1: Config, config2: Config, configs: Config*): LoadableProcessingTypeConfigs = {
     val ref        = Ref.unsafe[IO, Int](0)
     val allConfigs = config1 :: config2 :: configs.toList
     val loadConfig = ref.getAndUpdate(_ + 1).flatMap { idx =>
       allConfigs.lift(idx) match {
-        case Some(config) => IO.pure(ConfigWithUnresolvedVersion(config))
+        case Some(config) => IO.pure(DesignerRootConfig.from(config))
         case None         => IO.raiseError(throw new IllegalStateException(s"Cannot load the config more than [$idx]"))
       }
     }
-    loadableConfigBasedNussknackerConfig(loadConfig)
+    new EachTimeLoadingRootConfigLoadableProcessingTypeConfigs(
+      LoadableDesignerRootConfig(loadConfig)
+    )
   }
 
 }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.processingtype.loader
 import cats.effect.IO
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelDependencies}
+import pl.touk.nussknacker.ui.config.DesignerRootConfig
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 import pl.touk.nussknacker.ui.process.processingtype.{
   CombinedProcessingTypeData,
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
 trait ProcessingTypeDataLoader {
 
   def loadProcessingTypeData(
+      rootConfigLoadedAtStart: DesignerRootConfig,
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]]

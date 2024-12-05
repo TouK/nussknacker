@@ -10,6 +10,7 @@ import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings
 import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.ui.config.DesignerRootConfig
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 
 import java.util.concurrent.atomic.AtomicReference
@@ -23,10 +24,10 @@ class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSy
   private implicit val systemImplicit: ActorSystem                = system
   private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
 
-  def start(config: ConfigWithUnresolvedVersion, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
+  def start(rootConfig: DesignerRootConfig, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
     for {
-      route <- routeProvider.createRoute(config)
-      _     <- createAkkaHttpBinding(config, route, metricRegistry)
+      route <- routeProvider.createRoute(rootConfig)
+      _     <- createAkkaHttpBinding(rootConfig.rawConfig, route, metricRegistry)
     } yield {
       RouteInterceptor.set(route)
     }

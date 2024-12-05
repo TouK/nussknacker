@@ -8,37 +8,33 @@ import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
-import pl.touk.nussknacker.ui.{LoadableDesignerConfigBasedNussknackerConfig, NussknackerConfig}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
+import pl.touk.nussknacker.ui.loadableconfig.{
+  EachTimeLoadingRootConfigLoadableProcessingTypeConfigs,
+  LoadableDesignerRootConfig,
+  LoadableProcessingTypeConfigs
+}
 import pl.touk.nussknacker.ui.process.processingtype.loader._
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 
 import java.time.Clock
 
-object NussknackerAppFactory
-
-class NussknackerAppFactory(nussknackerConfig: NussknackerConfig, processingTypeDataLoader: ProcessingTypeDataLoader)
-    extends LazyLogging {
-
-  def this(nussknackerConfig: NussknackerConfig) = {
-    this(nussknackerConfig, new ProcessingTypesConfigBasedProcessingTypeDataLoader(nussknackerConfig))
-  }
-
-  def this(classLoader: ClassLoader) = {
-    this(new LoadableDesignerConfigBasedNussknackerConfig(classLoader))
-  }
+class NussknackerAppFactory(
+    loadableDesignerRootConfig: LoadableDesignerRootConfig,
+    processingTypeDataLoader: ProcessingTypeDataLoader
+) extends LazyLogging {
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
-      config <- Resource.eval(nussknackerConfig.loadApplicationConfig())
-      system <- createActorSystem(config)
+      rootConfig <- Resource.eval(loadableDesignerRootConfig.loadDesignerRootConfig())
+      system     <- createActorSystem(rootConfig.rawConfig)
       materializer = Materializer(system)
       _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))
       _                      <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry        <- createGeneralPurposeMetricsRegistry()
-      db                     <- DbRef.create(config.resolved)
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock, config.resolved)
+      db                     <- DbRef.create(rootConfig.rawConfig.resolved)
+      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock, rootConfig.rawConfig.resolved)
       server = new NussknackerHttpServer(
         new AkkaHttpBasedRouteProvider(
           db,
@@ -52,7 +48,7 @@ class NussknackerAppFactory(nussknackerConfig: NussknackerConfig, processingType
         ),
         system
       )
-      _ <- server.start(config, metricsRegistry)
+      _ <- server.start(rootConfig, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()
@@ -84,6 +80,16 @@ class NussknackerAppFactory(nussknackerConfig: NussknackerConfig, processingType
       )(
         release = _ => IO(logger.info("Stopping Nussknacker ..."))
       )
+  }
+
+}
+
+object NussknackerAppFactory {
+
+  def apply(loadableDesignerRootConfig: LoadableDesignerRootConfig): NussknackerAppFactory = {
+    val loadableProcessingTypeConfig = LoadableProcessingTypeConfigs.default(loadableDesignerRootConfig)
+    val processingTypeDataLoader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(loadableProcessingTypeConfig)
+    new NussknackerAppFactory(loadableDesignerRootConfig, processingTypeDataLoader)
   }
 
 }
