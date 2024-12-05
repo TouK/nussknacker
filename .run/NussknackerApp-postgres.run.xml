@@ -30,7 +30,7 @@
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/designer/server/work" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="pl.touk.nussknacker.ui.*" />
+        <option name="PATTERN" value="pl.touk.nussknacker.ui.config.processingtype.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

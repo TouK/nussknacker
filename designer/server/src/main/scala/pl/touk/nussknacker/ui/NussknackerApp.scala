@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui
 
 import cats.effect.{ExitCode, IO, IOApp}
-import pl.touk.nussknacker.ui.config.DesignerRootConfigLoader
+import pl.touk.nussknacker.ui.config.root.DesignerRootConfigLoader
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.loadableconfig.LoadableDesignerRootConfig
+import pl.touk.nussknacker.ui.config.root.LoadableDesignerRootConfig
 
 object NussknackerApp extends IOApp {
 

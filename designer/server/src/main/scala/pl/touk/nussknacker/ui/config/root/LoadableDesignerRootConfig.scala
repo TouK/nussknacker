@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.ui.loadableconfig
+package pl.touk.nussknacker.ui.config.root
 
 import cats.effect.IO
-import pl.touk.nussknacker.ui.config.DesignerRootConfig
+import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
 
 trait LoadableDesignerRootConfig {
 

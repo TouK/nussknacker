@@ -8,13 +8,10 @@ import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
+import pl.touk.nussknacker.ui.config.root.LoadableDesignerRootConfig
+import pl.touk.nussknacker.ui.config.processingtype.LoadableProcessingTypeConfigsFactory
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
-import pl.touk.nussknacker.ui.loadableconfig.{
-  EachTimeLoadingRootConfigLoadableProcessingTypeConfigs,
-  LoadableDesignerRootConfig,
-  LoadableProcessingTypeConfigs
-}
 import pl.touk.nussknacker.ui.process.processingtype.loader._
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 
@@ -87,7 +84,7 @@ class NussknackerAppFactory(
 object NussknackerAppFactory {
 
   def apply(loadableDesignerRootConfig: LoadableDesignerRootConfig): NussknackerAppFactory = {
-    val loadableProcessingTypeConfig = LoadableProcessingTypeConfigs.default(loadableDesignerRootConfig)
+    val loadableProcessingTypeConfig = LoadableProcessingTypeConfigsFactory.create(loadableDesignerRootConfig)
     val processingTypeDataLoader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(loadableProcessingTypeConfig)
     new NussknackerAppFactory(loadableDesignerRootConfig, processingTypeDataLoader)
   }

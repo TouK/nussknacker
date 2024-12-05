@@ -8,9 +8,9 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithDesignerConfig
-import pl.touk.nussknacker.ui.config.DesignerRootConfig
+import pl.touk.nussknacker.ui.config.root.LoadableDesignerRootConfig
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.loadableconfig.LoadableDesignerRootConfig
+import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
 
 trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with WithClock with BeforeAndAfterAll {
   this: Suite with WithDesignerConfig =>
