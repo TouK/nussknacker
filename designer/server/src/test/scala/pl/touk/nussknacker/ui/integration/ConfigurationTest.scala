@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.config.DesignerRootConfigLoader
 import cats.effect.unsafe.implicits.global
 import java.net.URI
 import java.nio.file.Files
@@ -29,7 +29,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   }
 
   test("defaultConfig works") {
-    DesignerConfigLoader
+    DesignerRootConfigLoader
       .load(globalConfig, classLoader)
       .unsafeRunSync()
       .resolved
@@ -39,7 +39,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultDesignerConfig.conf
 
-    val loadedConfig = DesignerConfigLoader
+    val loadedConfig = DesignerRootConfigLoader
       .load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
       .unsafeRunSync()
 
@@ -81,7 +81,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
     val result =
       try {
         System.setProperty(randomPropertyName, "I win!")
-        DesignerConfigLoader
+        DesignerRootConfigLoader
           .load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
           .unsafeRunSync()
       } finally {
