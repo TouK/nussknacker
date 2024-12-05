@@ -13,7 +13,7 @@ export const StyledHeader = styled(Window.Header)(({ isMaximized, isStatic, them
                 : blendLighten(theme.palette.background.paper, 0.1),
         backgroundColor: "var(--backgroundColor)",
         cursor: draggable ? "grab" : "inherit",
-        "body:has(&:active) *": {
+        ":active": {
             cursor: draggable ? "grabbing" : "inherit",
         },
     };
