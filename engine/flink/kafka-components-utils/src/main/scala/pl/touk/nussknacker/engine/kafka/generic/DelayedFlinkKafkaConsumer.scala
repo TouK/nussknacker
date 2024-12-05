@@ -46,6 +46,7 @@ import scala.jdk.CollectionConverters._
 
 object DelayedFlinkKafkaConsumer {
 
+  @silent("deprecated")
   def apply[T](
       topics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
       schema: KafkaDeserializationSchema[T],
@@ -88,6 +89,7 @@ object DelayedFlinkKafkaConsumer {
     }
   }
 
+  @silent("deprecated")
   type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
 }
 
@@ -154,6 +156,7 @@ object DelayedKafkaFetcher {
   private val maxSleepTime = time.Duration.of(30, ChronoUnit.SECONDS).toMillis
 }
 
+@silent("deprecated")
 class DelayedKafkaFetcher[T](
     sourceContext: SourceFunction.SourceContext[T],
     assignedPartitionsWithInitialOffsets: util.Map[KafkaTopicPartition, lang.Long],
@@ -188,6 +191,7 @@ class DelayedKafkaFetcher[T](
     with LazyLogging {
   import DelayedKafkaFetcher._
 
+  @silent("deprecated")
   override def emitRecordsWithTimestamps(
       records: util.Queue[T],
       partitionState: KafkaTopicPartitionState[T, TopicPartition],
