@@ -170,7 +170,7 @@ object DefinitionsService {
       branchParam = parameter.branchParam,
       hintText = parameter.hintText,
       label = parameter.label,
-      requiredParam = !parameter.isOptional,
+      requiredParam = Some(!parameter.isOptional),
     )
   }
 
