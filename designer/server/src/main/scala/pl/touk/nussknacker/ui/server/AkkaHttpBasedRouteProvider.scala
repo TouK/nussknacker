@@ -25,7 +25,6 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsC
 import pl.touk.nussknacker.ui.config.{
   AttachmentsConfig,
   ComponentLinksConfigExtractor,
-  DesignerRootConfig,
   FeatureTogglesConfig,
   UsageStatisticsReportsConfig
 }
@@ -41,6 +40,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
+import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}

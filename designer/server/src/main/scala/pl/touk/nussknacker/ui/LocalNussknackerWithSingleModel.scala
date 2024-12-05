@@ -4,9 +4,9 @@ import cats.effect.{IO, Resource}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
-import pl.touk.nussknacker.ui.config.DesignerRootConfig
+import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.loadableconfig.LoadableDesignerRootConfig
+import pl.touk.nussknacker.ui.config.root.LoadableDesignerRootConfig
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 
 import java.io.File
