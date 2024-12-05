@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.config.DesignerRootConfigLoader
+import pl.touk.nussknacker.ui.config.root.DesignerRootConfigLoader
 import cats.effect.unsafe.implicits.global
 import java.net.URI
 import java.nio.file.Files

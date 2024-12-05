@@ -16,8 +16,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.config.DesignerRootConfig
-import pl.touk.nussknacker.ui.loadableconfig.LoadableProcessingTypeConfigs
+import pl.touk.nussknacker.ui.loadableconfig.{DesignerRootConfig, LoadableProcessingTypeConfigs}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui
+package pl.touk.nussknacker.ui.config.processingtype
 
 import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Ref}
@@ -6,14 +6,10 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
-import pl.touk.nussknacker.ui.config.DesignerRootConfig
-import pl.touk.nussknacker.ui.loadableconfig.{
-  EachTimeLoadingRootConfigLoadableProcessingTypeConfigs,
-  LoadableDesignerRootConfig,
-  LoadableProcessingTypeConfigs
-}
+import pl.touk.nussknacker.ui.config.root.LoadableDesignerRootConfig
+import pl.touk.nussknacker.ui.loadableconfig.{DesignerRootConfig, LoadableProcessingTypeConfigs}
 
-class LoadableDesignerRootConfigSpec extends AnyFunSuite {
+class EachTimeLoadingRootConfigLoadableProcessingTypeConfigsSpec extends AnyFunSuite {
 
   test("should throw when required configuration is missing") {
     val config = ConfigFactory
@@ -127,7 +123,11 @@ class LoadableDesignerRootConfigSpec extends AnyFunSuite {
     )
   }
 
-  private def loadDifferentConfigPerInvocationLoadableProcessingTypeConfigs(config1: Config, config2: Config, configs: Config*): LoadableProcessingTypeConfigs = {
+  private def loadDifferentConfigPerInvocationLoadableProcessingTypeConfigs(
+      config1: Config,
+      config2: Config,
+      configs: Config*
+  ): LoadableProcessingTypeConfigs = {
     val ref        = Ref.unsafe[IO, Int](0)
     val allConfigs = config1 :: config2 :: configs.toList
     val loadConfig = ref.getAndUpdate(_ + 1).flatMap { idx =>

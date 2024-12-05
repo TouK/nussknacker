@@ -38,8 +38,8 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.config.{DesignerRootConfig, FeatureTogglesConfig}
-import pl.touk.nussknacker.ui.loadableconfig.LoadableProcessingTypeConfigs
+import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.loadableconfig.{DesignerRootConfig, LoadableProcessingTypeConfigs}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._

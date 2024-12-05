@@ -1,9 +1,10 @@
-package pl.touk.nussknacker.ui.config
+package pl.touk.nussknacker.ui.config.root
 
 import cats.effect.IO
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
+import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
 
 /**
   * This class handles two parts of ui config loading:
@@ -35,14 +36,3 @@ object DesignerRootConfigLoader {
 
 }
 
-// TODO: We should extract a class for all configuration options that should be available to designer instead of returning raw hocon config.
-//       Thanks to that it will be easier to split processing type config from rest of configs and use this interface programmatically
-final case class DesignerRootConfig(rawConfig: ConfigWithUnresolvedVersion)
-
-object DesignerRootConfig {
-
-  def from(config: Config): DesignerRootConfig = {
-    DesignerRootConfig(ConfigWithUnresolvedVersion(config))
-  }
-
-}

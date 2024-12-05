@@ -1,15 +1,15 @@
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
-import pl.project13.scala.sbt.JmhPlugin._
-import sbt.Keys._
-import sbt._
+import pl.project13.scala.sbt.JmhPlugin.*
+import sbt.*
+import sbt.Keys.*
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
-import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations.*
 
 import scala.language.postfixOps
-import scala.sys.process._
+import scala.sys.process.*
 import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
@@ -1913,6 +1913,18 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   )
   .dependsOn(extensionsApi)
 
+lazy val loadableConfigApi = (project in file("designer/loadable-config-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-loadable-config-api",
+    libraryDependencies ++= {
+      Seq(
+        "org.typelevel" %% "cats-effect" % catsEffectV
+      )
+    }
+  )
+  .dependsOn(extensionsApi)
+
 lazy val deploymentManagerApi = (project in file("designer/deployment-manager-api"))
   .settings(commonSettings)
   .settings(
@@ -2053,6 +2065,7 @@ lazy val designer = (project in file("designer/server"))
     deploymentManagerApi,
     restmodel,
     listenerApi,
+    loadableConfigApi,
     defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
@@ -2193,6 +2206,7 @@ lazy val modules = List[ProjectReference](
   httpUtils,
   restmodel,
   listenerApi,
+  loadableConfigApi,
   deploymentManagerApi,
   designer,
   sqlComponents,
