@@ -199,7 +199,9 @@ class FlinkRestManager(
           s"Trying to cancel $processName${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
         )
         Future.successful(())
-      case single :: Nil => cancelFlinkJob(single)
+      case single :: Nil =>
+        logger.info(s"Cancelling Flink job with deploymentId: ${single.externalDeploymentId.getOrElse("")}.")
+        cancelFlinkJob(single)
       case moreThanOne @ (_ :: _ :: _) =>
         logger.warn(
           s"Found duplicate jobs of $processName${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOne. Cancelling all in non terminal state."
@@ -233,6 +235,7 @@ class FlinkRestManager(
       deploymentId: ExternalDeploymentId,
       savepointDir: Option[String]
   ): Future[SavepointResult] = {
+    logger.debug(s"Stopping Flink job: ${deploymentId.value}.")
     client.stop(deploymentId, savepointDir)
   }
 
