@@ -11,6 +11,7 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 import { LastAction } from "./item";
 import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
 import { formatDateTime } from "nussknackerUi/DateUtils";
+import { useScenariosWithCategoryVisible } from "../useScenariosQuery";
 
 export function TablePart(props: ListPartProps<RowType>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -18,9 +19,10 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
     const filtersContext = useFilterContext<ScenariosFiltersModel>();
     const _filterText = useMemo(() => filtersContext.getFilter("NAME"), [filtersContext]);
     const [filterText] = useDebouncedValue(_filterText, 400);
+    const { withCategoriesVisible } = useScenariosWithCategoryVisible();
 
-    const columns = useMemo(
-        (): Columns<RowType> => [
+    const columns = useMemo((): Columns<RowType> => {
+        const availableColumns: Columns<RowType | undefined> = [
             {
                 field: "id",
                 cellClassName: "noPadding stretch",
@@ -31,13 +33,15 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 minWidth: 200,
                 flex: 2,
             },
-            {
-                field: "processCategory",
-                cellClassName: "noPadding stretch",
-                headerName: t("table.scenarios.title.PROCESS_CATEGORY", "Category"),
-                renderCell: (props) => <FilterLinkCell<ScenariosFiltersModel> filterKey="CATEGORY" {...props} />,
-                flex: 1,
-            },
+            withCategoriesVisible
+                ? {
+                      field: "processCategory",
+                      cellClassName: "noPadding stretch",
+                      headerName: t("table.scenarios.title.PROCESS_CATEGORY", "Category"),
+                      renderCell: (props) => <FilterLinkCell<ScenariosFiltersModel> filterKey="CATEGORY" {...props} />,
+                      flex: 1,
+                  }
+                : undefined,
             {
                 field: "createdBy",
                 cellClassName: "noPadding stretch",
@@ -107,9 +111,10 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 sortable: false,
                 align: "center",
             },
-        ],
-        [filterText, t],
-    );
+        ];
+
+        return availableColumns.filter((data) => data !== undefined);
+    }, [filterText, t, withCategoriesVisible]);
 
     const [visibleColumns, setVisibleColumns] = useState(
         columns.reduce((previousValue, currentValue) => {

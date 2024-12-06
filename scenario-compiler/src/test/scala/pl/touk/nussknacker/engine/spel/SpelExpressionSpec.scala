@@ -11,6 +11,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -67,11 +68,14 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 import java.util
+import java.util.concurrent.Executors
 import java.util.{Collections, Currency, List => JList, Locale, Map => JMap, Optional, UUID}
 import scala.annotation.varargs
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
+import scala.util.{Failure, Success}
 
 class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with OptionValues {
 
@@ -1926,7 +1930,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownString.value.canBe('BigDecimal')", false),
         ("#unknownList.value.canBe('List')", true),
         ("#unknownList.value.canBe('Map')", false),
-        ("#unknownMap.value.canBe('List')", false),
+        ("#unknownMap.value.canBe('List')", true),
         ("#unknownMap.value.canBe('Map')", true),
         ("#unknownListOfTuples.value.canBe('List')", true),
         ("#unknownListOfTuples.value.canBe('Map')", true),
@@ -1944,7 +1948,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownString.value.canBeBigDecimal", false),
         ("#unknownList.value.canBeList", true),
         ("#unknownList.value.canBeMap", false),
-        ("#unknownMap.value.canBeList", false),
+        ("#unknownMap.value.canBeList", true),
         ("#unknownMap.value.canBeMap", true),
         ("#unknownListOfTuples.value.canBeList", true),
         ("#unknownListOfTuples.value.canBeMap", true),
@@ -1991,11 +1995,114 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parsed.evaluateSync[Any](ctx) shouldBe List("a").asJava
   }
 
+  test("should convert a map to a list analogical as list can be converted to map") {
+    val listClass = classOf[JList[_]]
+
+    val containerWithMapWithIntValues            = Map("foo" -> 123, "bar" -> 234).asJava
+    val containerWithMapWithDifferentTypesValues = Map("foo" -> 123, "bar" -> "baz").asJava
+    val customCtx = Context("someContextId")
+      .withVariable("containerWithMapWithIntValues", ContainerOfGenericMap(containerWithMapWithIntValues))
+      .withVariable(
+        "containerWithMapWithDifferentTypesValues",
+        ContainerOfGenericMap(containerWithMapWithDifferentTypesValues)
+      )
+
+    forAll(
+      Table(
+        ("mapExpression", "expectedKeyType", "expectedValueType", "expectedToListResult"),
+        ("{:}", Typed[String], Unknown, List.empty.asJava),
+        ("{foo: 123}", Typed[String], Typed[Int], List(Map("key" -> "foo", "value" -> 123).asJava).asJava),
+        (
+          "#containerWithMapWithIntValues.value",
+          Unknown,
+          Unknown,
+          List(
+            Map("key" -> "foo", "value" -> 123).asJava,
+            Map("key" -> "bar", "value" -> 234).asJava,
+          ).asJava
+        ),
+        (
+          "#containerWithMapWithDifferentTypesValues.value",
+          Unknown,
+          Unknown,
+          List(
+            Map("key" -> "foo", "value" -> 123).asJava,
+            Map("key" -> "bar", "value" -> "baz").asJava,
+          ).asJava
+        ),
+      )
+    ) { (mapExpression, expectedKeyType, expectedValueType, expectedToListResult) =>
+      val givenMapExpression = parse[Any](mapExpression, customCtx).validValue
+      val givenMap           = givenMapExpression.evaluateSync[Any](customCtx)
+
+      val parsedToListExpression = parse[Any](mapExpression + ".toList", customCtx).validValue
+      inside(parsedToListExpression.returnType) {
+        case TypedClass(`listClass`, (entryType: TypedObjectTypingResult) :: Nil) =>
+          entryType.runtimeObjType.klass shouldBe classOf[JMap[_, _]]
+          entryType.fields.keySet shouldBe Set("key", "value")
+          entryType.fields("key") shouldBe expectedKeyType
+          entryType.fields("value") shouldBe expectedValueType
+      }
+      parsedToListExpression.evaluateSync[Any](customCtx) shouldBe expectedToListResult
+
+      val parsedRoundTripExpression = parse[Any](mapExpression + ".toList.toMap", customCtx).validValue
+      parsedRoundTripExpression.evaluateSync[Any](customCtx) shouldBe givenMap
+      val roundTripTypeIsAGeneralizationOfGivenType =
+        givenMapExpression.returnType canBeConvertedTo parsedRoundTripExpression.returnType
+      roundTripTypeIsAGeneralizationOfGivenType shouldBe true
+    }
+
+  }
+
   test("should allow use no param method property accessor on unknown") {
     val customCtx = ctx.withVariable("unknownInt", ContainerOfUnknown("11"))
     val parsed    = parse[Any]("#unknownInt.value.toLongOrNull", customCtx).validValue
     parsed.evaluateSync[Any](customCtx) shouldBe 11
     parsed.evaluateSync[Any](customCtx) shouldBe 11
+  }
+
+  // This test is ignored as it was indeterministic and ugly, but it was used to verify race condition problems on
+  // ParsedSpelExpression.getValue. Without the synchronized block inside its method the test would fail the majority of times
+  ignore(
+    "should not throw 'Failed to instantiate CompiledExpression' when getValue is called on ParsedSpelExpression by multiple threads"
+  ) {
+    val spelExpression =
+      parse[LocalDateTime]("T(java.time.LocalDateTime).now().minusDays(14)", ctx).validValue.expression
+        .asInstanceOf[SpelExpression]
+
+    val threadPool                                        = Executors.newFixedThreadPool(1000)
+    implicit val customExecutionContext: ExecutionContext = ExecutionContext.fromExecutor(threadPool)
+
+    // A promise to signal when an exception occurs
+    val failurePromise = Promise[Unit]()
+
+    val tasks = (1 to 10000).map { _ =>
+      Future {
+        try {
+          Thread.sleep(100)
+          // evaluate calls getValue on problematic SpelExpression object
+          spelExpression.evaluate[LocalDateTime](Context("fooId"), Map.empty)
+        } catch {
+          // The real problematic exception is wrapped in SpelExpressionEvaluationException by evaluate method
+          case e: SpelExpressionEvaluationException =>
+            failurePromise.tryFailure(e.cause)
+        }
+      }
+    }
+    val firstFailureOrCompletion = Future.firstCompletedOf(Seq(Future.sequence(tasks), failurePromise.future))
+
+    firstFailureOrCompletion.onComplete {
+      case Success(_) =>
+        println("All tasks completed successfully.")
+        threadPool.shutdown()
+      case Failure(e: IllegalStateException) if e.getMessage == "Failed to instantiate CompiledExpression" =>
+        fail("Exception occurred due to race condition.", e)
+        threadPool.shutdown()
+      case Failure(e) =>
+        fail("Unknown exception occurred", e)
+        threadPool.shutdown()
+    }
+    Await.result(firstFailureOrCompletion, 15.seconds)
   }
 
 }

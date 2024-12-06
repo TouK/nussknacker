@@ -25,7 +25,7 @@ export const TOOLBAR_WRAPPER_CLASSNAME = "toolbar-wrapper";
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const theme = useTheme();
-    const { title, children, id, onClose, onExpand, onCollapse, color = theme.palette.background.paper, disableCollapse } = props;
+    const { title, children, id, onClose, onExpand, onCollapse, color, disableCollapse } = props;
     const handlerProps = useDragHandler();
 
     const dispatch = useDispatch();
@@ -59,7 +59,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                 borderRadius: theme.spacing(0.5),
             }}
             expanded={!isCollapsedLocal}
-            color={color}
+            color={color || theme.palette.background.paper}
             width={SIDEBAR_WIDTH}
             data-testid={id}
             {...(isCollapsible ? {} : handlerProps)}
@@ -67,7 +67,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
             {(isCollapsible || onClose) && (
                 <PanelHeader
                     {...(isCollapsible ? handlerProps : {})}
-                    color={color}
+                    color={color || theme.palette.background.paper}
                     onClick={toggleCollapsed}
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
@@ -82,6 +82,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                         textTransform={"uppercase"}
                         variant={"overline"}
                         sx={{
+                            color: color ? "inherit" : undefined,
                             "::after": {
                                 // force line height for empty
                                 content: "' '",

@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 
 import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
+import pl.touk.nussknacker.engine.schemedkafka.TopicsWithExistingSubjectSelectionStrategy
 
 trait SchemaRegistryClient extends Serializable {
 
@@ -38,6 +39,15 @@ trait SchemaRegistryClient extends Serializable {
   def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 
   def getAllVersions(topic: UnspecializedTopicName, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
+
+  def isTopicWithSchema(topic: String, kafkaConfig: KafkaConfig): Boolean = {
+    if (!kafkaConfig.showTopicsWithoutSchema) {
+      true
+    } else {
+      val topicsWithSchema = new TopicsWithExistingSubjectSelectionStrategy().getTopics(this, kafkaConfig)
+      topicsWithSchema.exists(_.map(_.name).contains(topic))
+    }
+  }
 
 }
 

@@ -23,7 +23,7 @@ class SpelExpressionValidator(typer: Typer) {
           Valid(collected)
         case a if a == Typed[String] && expectedType == Typed[TemplateEvaluationResult] =>
           Valid(collected)
-        case a if a.canBeSubclassOf(expectedType) =>
+        case a if a.canBeConvertedTo(expectedType) =>
           Valid(collected)
         case a =>
           Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, a)))

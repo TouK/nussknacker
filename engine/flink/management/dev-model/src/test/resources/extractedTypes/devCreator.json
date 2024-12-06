@@ -13613,6 +13613,32 @@
       "refClazzName": "java.util.Map"
     },
     "methods": {
+      "canBe": [
+        {
+          "description": "Checks if a type can be converted to a given class",
+          "name": "canBe",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
+      "canBeList": [
+        {
+          "description": "Check whether can be convert to a list",
+          "name": "canBeList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {"refClazzName": "java.lang.Boolean"}
+            }
+          ]
+        }
+      ],
       "containsKey": [
         {
           "name": "containsKey",
@@ -13708,6 +13734,78 @@
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
           }
+        }
+      ],
+      "to": [
+        {
+          "description": "Converts a type to a given class or throws exception if type cannot be converted.",
+          "name": "to",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "toList": [
+        {
+          "description": "Convert to a list or throw exception in case of failure",
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toListOrNull": [
+        {
+          "description": "Convert to a list or null in case of failure",
+          "name": "toListOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "toOrNull": [
+        {
+          "description": "Converts a type to a given class or return null if type cannot be converted.",
+          "name": "toOrNull",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "className", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
         }
       ],
       "toString": [

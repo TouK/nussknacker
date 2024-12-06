@@ -1,9 +1,9 @@
-import { ModuleString, ModuleUrl, splitUrl } from "@touk/federated-component";
+import { ModuleUrl } from "@touk/federated-component";
 import React, { FunctionComponent, PropsWithChildren } from "react";
 import { PendingPromise } from "../../../../common/PendingPromise";
 import SystemUtils from "../../../../common/SystemUtils";
 import { ErrorBoundary } from "../../../../components/common/error-boundary";
-import { RemoteComponent } from "../../../../components/RemoteComponent";
+import { PlainRemoteComponent } from "../../../../components/RemoteComponent";
 import { RemoteAuthenticationSettings } from "../../../../reducers/settings";
 import { AuthErrorCodes } from "../../AuthErrorCodes";
 import { Strategy, StrategyConstructor } from "../../Strategy";
@@ -14,22 +14,13 @@ type RemoteAuthProviderProps = PropsWithChildren<{
     onInit: AuthLibCallback;
 }>;
 
-function createAuthWrapper(
-    {
-        url,
-        scope,
-    }: {
-        url: ModuleUrl;
-        scope: ModuleString;
-    },
-    onInit: AuthLibCallback,
-): FunctionComponent {
+function createAuthWrapper(url: ModuleUrl, onInit: AuthLibCallback): FunctionComponent {
     return function Wrapper({ children }: PropsWithChildren<unknown>) {
         return (
             <ErrorBoundary>
-                <RemoteComponent<RemoteAuthProviderProps> url={url} scope={scope} onInit={onInit}>
+                <PlainRemoteComponent<RemoteAuthProviderProps> url={url} onInit={onInit}>
                     {children}
-                </RemoteComponent>
+                </PlainRemoteComponent>
             </ErrorBoundary>
         );
     };
@@ -65,15 +56,8 @@ export const RemoteAuthStrategy: StrategyConstructor = class RemoteAuthStrategy 
 
     constructor(private settings: RemoteAuthenticationSettings) {}
 
-    private get urlWithScope(): {
-        scope: ModuleString;
-        url: ModuleUrl;
-    } {
-        const [url, scope] = splitUrl(this.settings.moduleUrl as ModuleUrl);
-        return {
-            url,
-            scope,
-        };
+    private get urlWithScope(): ModuleUrl {
+        return this.settings.moduleUrl as ModuleUrl;
     }
 
     private onError?: (error: AuthErrorCodes) => void = () => {

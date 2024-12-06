@@ -26,6 +26,7 @@ object KafkaUniversalComponentTransformer {
   final val sinkValueParamName          = ParameterName("Value")
   final val sinkValidationModeParamName = ParameterName("Value validation mode")
   final val sinkRawEditorParamName      = ParameterName("Raw editor")
+  final val contentTypeParamName        = ParameterName("Content type")
 
   def extractValidationMode(value: String): ValidationMode =
     ValidationMode.fromString(value, sinkValidationModeParamName)
@@ -46,7 +47,11 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
     schemaRegistryClientFactory.create(kafkaConfig)
 
-  protected def topicSelectionStrategy: TopicSelectionStrategy = new AllTopicsSelectionStrategy
+  protected def topicSelectionStrategy: TopicSelectionStrategy = {
+    if (kafkaConfig.showTopicsWithoutSchema) {
+      new AllNonHiddenTopicsSelectionStrategy
+    } else new TopicsWithExistingSubjectSelectionStrategy
+  }
 
   @transient protected lazy val kafkaConfig: KafkaConfig = prepareKafkaConfig
 
@@ -62,7 +67,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
   protected def getTopicParam(
       implicit nodeId: NodeId
   ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)
+    val topics = topicSelectionStrategy.getTopics(schemaRegistryClient, kafkaConfig)
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)
@@ -95,18 +100,37 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       )
   }
 
-  protected def getVersionParam(
+  protected def getVersionOrContentTypeParam(
       preparedTopic: PreparedKafkaTopic[TN],
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
-    (versions match {
-      case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
-      case Invalid(e) =>
-        Writer[List[ProcessCompilationError], List[Integer]](
-          List(CustomNodeError(e.getMessage, Some(topicParamName))),
-          Nil
-        )
-    }).map(getVersionParam)
+    if (schemaRegistryClient.isTopicWithSchema(
+        preparedTopic.prepared.topicName.toUnspecialized.name,
+        kafkaConfig
+      )) {
+      val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
+      (versions match {
+        case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
+        case Invalid(e) =>
+          Writer[List[ProcessCompilationError], List[Integer]](
+            List(CustomNodeError(e.getMessage, Some(topicParamName))),
+            Nil
+          )
+      }).map(getVersionParam)
+    } else {
+      val contentTypesValues = List(
+        FixedExpressionValue(s"'${ContentTypes.JSON}'", s"${ContentTypes.JSON}"),
+        // TODO: Remove comment once plain is working correctly
+        // FixedExpressionValue(s"'${ContentTypes.PLAIN}'", s"${ContentTypes.PLAIN}")
+      )
+
+      Writer[List[ProcessCompilationError], List[FixedExpressionValue]](Nil, contentTypesValues).map(contentTypes =>
+        ParameterDeclaration
+          .mandatory[String](KafkaUniversalComponentTransformer.contentTypeParamName)
+          .withCreator(
+            modify = _.copy(editor = Some(FixedValuesParameterEditor(contentTypes)))
+          )
+      )
+    }
   }
 
   protected def getVersionParam(
@@ -189,13 +213,13 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
       nextParams: List[Parameter]
   )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep((topicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
-      val preparedTopic = prepareTopic(topic)
-      val versionParam  = getVersionParam(preparedTopic)
+      val preparedTopic             = prepareTopic(topic)
+      val versionOrContentTypeParam = getVersionOrContentTypeParam(preparedTopic)
       val topicValidationErrors =
         validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
       NextParameters(
-        versionParam.value.createParameter() :: nextParams,
-        errors = versionParam.written ++ topicValidationErrors
+        versionOrContentTypeParam.value.createParameter() :: nextParams,
+        errors = versionOrContentTypeParam.written ++ topicValidationErrors
       )
     case TransformationStep((`topicParamName`, _) :: Nil, _) =>
       NextParameters(parameters = fallbackVersionOptionParam.createParameter() :: nextParams)
@@ -210,5 +234,7 @@ abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValid
 
   // override it if you use other parameter name for topic
   @transient protected lazy val topicParamName: ParameterName = KafkaUniversalComponentTransformer.topicParamName
+  @transient protected lazy val contentTypeParamName: ParameterName =
+    KafkaUniversalComponentTransformer.contentTypeParamName
 
 }

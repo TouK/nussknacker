@@ -9,9 +9,13 @@ import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  ContentTypes,
+  ContentTypesSchemas,
   SchemaId,
   SchemaIdFromMessageExtractor,
-  SchemaRegistryClient
+  SchemaRegistryClient,
+  SchemaWithMetadata,
+  StringSchemaId
 }
 
 import java.nio.charset.StandardCharsets
@@ -106,12 +110,39 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
           .map(keyJson => readRecordKeyMessage(keySchemaOpt, topic, keyJson))
           .getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid avro key"))
       }
-      val valueSchemaOpt = record.valueSchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
-      val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)
-      (keyBytes, valueBytes)
+
+      if (schemaRegistryClient.isTopicWithSchema(
+          topic.name,
+          kafkaConfig
+        )) {
+        val valueSchemaOpt = record.valueSchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
+        val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)
+        (keyBytes, valueBytes)
+      } else {
+        val schema = record.valueSchemaId.flatMap {
+          case StringSchemaId(contentType) =>
+            if (contentType.equals(ContentTypes.JSON.toString)) {
+              Some(
+                SchemaWithMetadata(
+                  ContentTypesSchemas.schemaForJson,
+                  SchemaId.fromString(ContentTypes.JSON.toString)
+                ).schema
+              )
+            } else if (contentType.equals(ContentTypes.PLAIN.toString)) {
+              None
+            } else
+              throw new IllegalStateException("Schemaless topic should have json or plain content type, got neither")
+          case _ =>
+            throw new IllegalStateException("Schemaless topic should have json or plain content type, got neither")
+
+        }
+        val valueBytes = readValueMessage(schema, topic, value)
+        (keyBytes, valueBytes)
+      }
+
     }
 
-    record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
+    record.consumerRecord.copy(topic = Some(topic.name)).toKafkaConsumerRecord(topic, serializeKeyValue)
   }
 
   protected def readRecordKeyMessage(

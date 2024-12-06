@@ -1,4 +1,5 @@
 import { Expression, ReturnedType } from "../../../../../types";
+import { resolveRefClazzName } from "./utils";
 
 export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueCompileTimeValidation | ValueEditor;
 
@@ -82,9 +83,9 @@ export function isAnyValueParameter(item: PermittedTypeParameterVariant): item i
 
 export function isPermittedTypeVariant(item: FragmentInputParameter): item is PermittedTypeParameterVariant {
     return [
-        item.typ.refClazzName.includes("String"),
-        item.typ.refClazzName.includes("Boolean"),
-        item.typ.refClazzName.includes("Long"),
+        resolveRefClazzName(item.typ.refClazzName) === "String",
+        resolveRefClazzName(item.typ.refClazzName) === "Boolean",
+        resolveRefClazzName(item.typ.refClazzName) === "Long",
     ].includes(true);
 }
 

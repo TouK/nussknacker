@@ -12,8 +12,8 @@ const runningHeaderBackground = (theme: Theme) => blend(theme.palette.background
 const activeFoundItemBackground = (theme: Theme) => blend(theme.palette.background.paper, theme.palette.primary.main, 0.2);
 const foundItemBackground = (theme: Theme) => blend(theme.palette.background.paper, theme.palette.primary.main, 0.08);
 
-export const getHeaderColors = (theme: Theme, isHighlighted: boolean, isRunning: boolean, isActiveFound: boolean) => {
-    if (isRunning && isActiveFound) {
+export const getHeaderColors = (theme: Theme, isHighlighted: boolean, isDeploymentActive: boolean, isActiveFound: boolean) => {
+    if (isDeploymentActive && isActiveFound) {
         return {
             backgroundColor: runningActiveFoundHeaderBackground(theme),
             border: activeBorder(theme),
@@ -27,7 +27,7 @@ export const getHeaderColors = (theme: Theme, isHighlighted: boolean, isRunning:
         };
     }
 
-    if (isRunning) {
+    if (isDeploymentActive) {
         return {
             backgroundColor: runningHeaderBackground(theme),
             border: defaultBorder(theme),

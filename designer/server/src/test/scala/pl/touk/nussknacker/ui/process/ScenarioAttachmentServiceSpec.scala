@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIO
 
 import java.io.ByteArrayInputStream
-import java.time.Clock
+import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
@@ -59,7 +59,8 @@ private object TestProcessActivityRepository extends ScenarioActivityRepository 
 
   override def clock: Clock = Clock.systemUTC()
 
-  override def findActivities(scenarioId: ProcessId): DB[Seq[ScenarioActivity]] = notSupported("findActivities")
+  override def findActivities(scenarioId: ProcessId, after: Option[Instant]): DB[Seq[ScenarioActivity]] =
+    notSupported("findActivities")
 
   override def addActivity(scenarioActivity: ScenarioActivity): DB[ScenarioActivityId] = notSupported("addActivity")
 

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.json.swagger.extractor
+package pl.touk.nussknacker.engine.json.swagger.decode
 
 import io.circe.Json
 import io.circe.Json.{fromBoolean, fromInt, fromLong, fromString, fromValues}
@@ -6,12 +6,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.json.swagger.extractor.FromJsonDecoder.JsonToObjectError
+import pl.touk.nussknacker.engine.json.swagger.decode.FromJsonSchemaBasedDecoder.JsonToObjectError
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 
-class FromJsonDecoderTest extends AnyFunSuite with Matchers {
+class FromJsonSchemaBasedDecoderTest extends AnyFunSuite with Matchers {
 
   private val json = Json.obj(
     "field1"       -> fromString("value"),
@@ -46,7 +46,7 @@ class FromJsonDecoderTest extends AnyFunSuite with Matchers {
       AdditionalPropertiesDisabled
     )
 
-    val value = FromJsonDecoder.decode(json, definition)
+    val value = FromJsonSchemaBasedDecoder.decode(json, definition)
 
     value shouldBe a[TypedMap]
     val fields = value.asInstanceOf[TypedMap]
@@ -62,7 +62,7 @@ class FromJsonDecoderTest extends AnyFunSuite with Matchers {
     fields.get("nullField").asInstanceOf[AnyRef] shouldBe null
     val mapField = fields.get("mapField").asInstanceOf[TypedMap]
     mapField.get("a") shouldBe "1"
-    mapField.get("b") shouldBe java.math.BigDecimal.valueOf(2)
+    mapField.get("b") shouldBe 2
     mapField.get("c") shouldBe a[java.util.List[_]]
     fields.get("mapOfStringsField") shouldBe a[TypedMap]
   }
@@ -73,7 +73,7 @@ class FromJsonDecoderTest extends AnyFunSuite with Matchers {
       AdditionalPropertiesDisabled
     )
 
-    val ex = intercept[JsonToObjectError](FromJsonDecoder.decode(json, definition))
+    val ex = intercept[JsonToObjectError](FromJsonSchemaBasedDecoder.decode(json, definition))
 
     ex.getMessage shouldBe "JSON returned by service has invalid type at mapField.b. Expected: SwaggerString. Returned json: 2"
     ex.path shouldBe "mapField.b"
@@ -82,27 +82,27 @@ class FromJsonDecoderTest extends AnyFunSuite with Matchers {
   test("should skip additionalFields when schema/SwaggerObject does not allow them") {
     val definitionWithoutFields =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
-    extractor.FromJsonDecoder.decode(json, definitionWithoutFields) shouldBe TypedMap(Map.empty)
+    decode.FromJsonSchemaBasedDecoder.decode(json, definitionWithoutFields) shouldBe TypedMap(Map.empty)
 
     val definitionWithOneField = SwaggerObject(elementType = Map("field2" -> SwaggerLong), AdditionalPropertiesDisabled)
-    extractor.FromJsonDecoder.decode(json, definitionWithOneField) shouldBe TypedMap(Map("field2" -> 1L))
+    decode.FromJsonSchemaBasedDecoder.decode(json, definitionWithOneField) shouldBe TypedMap(Map("field2" -> 1L))
 
   }
 
   test("should not trim additional fields fields when additionalPropertiesOn") {
     val json       = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
-    extractor.FromJsonDecoder.decode(json, definition) shouldBe TypedMap(
+    decode.FromJsonSchemaBasedDecoder.decode(json, definition) shouldBe TypedMap(
       Map(
         "field1" -> "value",
-        "field2" -> java.math.BigDecimal.valueOf(1)
+        "field2" -> 1
       )
     )
 
     val jsonIntegers = Json.obj("field1" -> fromInt(2), "field2" -> fromInt(1))
     val definition2 =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
-    extractor.FromJsonDecoder.decode(jsonIntegers, definition2) shouldBe TypedMap(
+    decode.FromJsonSchemaBasedDecoder.decode(jsonIntegers, definition2) shouldBe TypedMap(
       Map(
         "field1" -> 2L,
         "field2" -> 1L
@@ -115,7 +115,7 @@ class FromJsonDecoderTest extends AnyFunSuite with Matchers {
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
-      extractor.FromJsonDecoder.decode(json, definition)
+      decode.FromJsonSchemaBasedDecoder.decode(json, definition)
     }
 
     ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""
@@ -125,7 +125,7 @@ class FromJsonDecoderTest extends AnyFunSuite with Matchers {
     val definition =
       SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))))
 
-    val value = FromJsonDecoder.decode(json, definition)
+    val value = FromJsonSchemaBasedDecoder.decode(json, definition)
 
     value shouldBe a[TypedMap]
     val fields = value.asInstanceOf[TypedMap]
@@ -143,7 +143,7 @@ class FromJsonDecoderTest extends AnyFunSuite with Matchers {
     )
 
     def assertPath(json: Json, path: String) =
-      intercept[JsonToObjectError](FromJsonDecoder.decode(json, definition)).path shouldBe path
+      intercept[JsonToObjectError](FromJsonSchemaBasedDecoder.decode(json, definition)).path shouldBe path
 
     assertPath(Json.obj("string" -> fromLong(1)), "string")
     assertPath(

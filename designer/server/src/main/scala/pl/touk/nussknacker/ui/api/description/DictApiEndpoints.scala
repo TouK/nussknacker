@@ -16,7 +16,8 @@ import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.DictError.{
 import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.Dtos._
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
-import sttp.tapir.json.circe.jsonBody
+import sttp.tapir.json.circe._
+import sttp.tapir.Schema
 
 import scala.language.implicitConversions
 
@@ -84,10 +85,7 @@ object DictApiEndpoints {
   object Dtos {
 
     @JsonCodec
-    case class TypingResultInJson(value: Json)
-
-    @JsonCodec
-    case class DictListRequestDto(expectedType: TypingResultInJson)
+    case class DictListRequestDto(expectedType: Json)
 
     @JsonCodec
     case class DictDto(
@@ -95,9 +93,8 @@ object DictApiEndpoints {
         label: String // TODO: introduce separate labels for dictionaries, currently this is just equal to id
     )
 
-    implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = TypingDtoSchemas.typingResult.as
+    implicit lazy val dictListRequestDtoSchema: Schema[DictListRequestDto] = Schema.derived[DictListRequestDto]
     implicit lazy val dictEntrySchema: Schema[DictEntry]                   = Schema.derived
-    implicit lazy val dictListRequestDtoSchema: Schema[DictListRequestDto] = Schema.derived
     implicit lazy val dictDtoSchema: Schema[DictDto]                       = Schema.derived
 
   }

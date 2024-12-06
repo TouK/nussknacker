@@ -11,12 +11,25 @@ import pl.touk.nussknacker.engine.api.TemplateRenderedPart.{RenderedLiteral, Ren
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{BoundedStreamComponent, ComponentDefinition}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedLazyParameter, NodeDependencyValue, SingleInputDynamicComponent}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, SpelTemplateParameterEditor}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedLazyParameter,
+  NodeDependencyValue,
+  SingleInputDynamicComponent
+}
+import pl.touk.nussknacker.engine.api.definition.{
+  NodeDependency,
+  OutputVariableNameDependency,
+  Parameter,
+  SpelTemplateParameterEditor
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.api.process.{AbstractOneParamLazyParameterFunction, FlinkCustomNodeContext, FlinkCustomStreamTransformation}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  AbstractOneParamLazyParameterFunction,
+  FlinkCustomNodeContext,
+  FlinkCustomStreamTransformation
+}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -25,7 +38,11 @@ import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class SpelTemplateLazyParameterTest extends AnyFunSuite with FlinkSpec with Matchers with ValidatedValuesDetailedMessage {
+class SpelTemplateLazyParameterTest
+    extends AnyFunSuite
+    with FlinkSpec
+    with Matchers
+    with ValidatedValuesDetailedMessage {
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
@@ -94,24 +111,26 @@ object SpelTemplatePartsCustomTransformer
       params.extractUnsafe[LazyParameter[TemplateEvaluationResult]](spelTemplateParameterName)
     FlinkCustomStreamTransformation {
       (dataStream: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) =>
-        dataStream.flatMap(
-          new AbstractOneParamLazyParameterFunction[TemplateEvaluationResult](
-            templateLazyParam,
-            flinkCustomNodeContext.lazyParameterHelper
-          ) with FlatMapFunction[Context, ValueWithContext[String]] {
-            override def flatMap(value: Context, out: Collector[ValueWithContext[String]]): Unit = {
-              collectHandlingErrors(value, out) {
-                val templateResult = evaluateParameter(value)
-                val result = templateResult.renderedParts.map {
-                  case RenderedLiteral(value)       => s"[$value]-literal"
-                  case RenderedSubExpression(value) => s"[$value]-subexpression"
-                }.mkString
-                ValueWithContext(result, value)
+        dataStream
+          .flatMap(
+            new AbstractOneParamLazyParameterFunction[TemplateEvaluationResult](
+              templateLazyParam,
+              flinkCustomNodeContext.lazyParameterHelper
+            ) with FlatMapFunction[Context, ValueWithContext[String]] {
+              override def flatMap(value: Context, out: Collector[ValueWithContext[String]]): Unit = {
+                collectHandlingErrors(value, out) {
+                  val templateResult = evaluateParameter(value)
+                  val result = templateResult.renderedParts.map {
+                    case RenderedLiteral(value)       => s"[$value]-literal"
+                    case RenderedSubExpression(value) => s"[$value]-subexpression"
+                  }.mkString
+                  ValueWithContext(result, value)
+                }
               }
-            }
-          },
-          flinkCustomNodeContext.valueWithContextInfo.forClass[String]
-        ).asInstanceOf[DataStream[ValueWithContext[AnyRef]]]
+            },
+            flinkCustomNodeContext.valueWithContextInfo.forClass[String]
+          )
+          .asInstanceOf[DataStream[ValueWithContext[AnyRef]]]
     }
   }
 
