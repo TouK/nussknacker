@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData
@@ -55,7 +56,8 @@ private[periodic] class FlinkJarManager(
     logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).map { jarFileName =>
       DeploymentWithJarData(
-        processVersion = processVersion,
+        processName = processVersion.processName,
+        versionId = processVersion.versionId,
         process = canonicalProcess,
         inputConfigDuringExecutionJson = inputConfigDuringExecution.serialized,
         jarFileName = jarFileName
@@ -77,14 +79,14 @@ private[periodic] class FlinkJarManager(
       deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
       deploymentData: DeploymentData
   ): Future[Option[ExternalDeploymentId]] = {
-    val processVersion = deploymentWithJarData.processVersion
     logger.info(
-      s"Deploying scenario ${processVersion.processName}, version id: ${processVersion.versionId} and jar: ${deploymentWithJarData.jarFileName}"
+      s"Deploying scenario ${deploymentWithJarData.processName}, version id: ${deploymentWithJarData.versionId} and jar: ${deploymentWithJarData.jarFileName}"
     )
     val jarFile = jarsDir.resolve(deploymentWithJarData.jarFileName).toFile
     val args = FlinkDeploymentManager.prepareProgramArgs(
       deploymentWithJarData.inputConfigDuringExecutionJson,
-      processVersion,
+      ProcessVersion.empty
+        .copy(processName = deploymentWithJarData.processName, versionId = deploymentWithJarData.versionId),
       deploymentData,
       deploymentWithJarData.process
     )

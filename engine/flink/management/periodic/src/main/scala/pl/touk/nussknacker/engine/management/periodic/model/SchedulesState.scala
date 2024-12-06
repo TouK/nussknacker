@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.periodic.model
 
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.management.periodic.ScheduleProperty
 import pl.touk.nussknacker.engine.management.periodic.db.{PeriodicProcessDeploymentEntity, PeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -19,14 +21,15 @@ case class SchedulesState(schedules: Map[ScheduleId, ScheduleData]) {
   def isEmpty: Boolean = schedules.isEmpty
 
   def groupByProcessName: Map[ProcessName, SchedulesState] =
-    schedules.groupBy(_._2.process.processVersion.processName).mapValuesNow(SchedulesState)
+    schedules.groupBy(_._2.periodicProcessMetadata.processName).mapValuesNow(SchedulesState)
 
   lazy val groupedByPeriodicProcess: List[PeriodicProcessScheduleData] =
-    schedules.toList.groupBy(_._2.process).toList.map { case (periodicProcess, groupedSchedules) =>
-      val deploymentsForSchedules = groupedSchedules.flatMap { case (scheduleId, scheduleData) =>
-        scheduleData.latestDeployments.map(_.toFullDeploymentData(periodicProcess, scheduleId.scheduleName))
-      }
-      PeriodicProcessScheduleData(periodicProcess, deploymentsForSchedules)
+    schedules.toList.groupBy(_._2.periodicProcessMetadata).toList.map {
+      case (periodicProcessMetadata, groupedSchedules) =>
+        val deploymentsForSchedules = groupedSchedules.flatMap { case (scheduleId, scheduleData) =>
+          scheduleData.latestDeployments.map(_.toFullDeploymentData(periodicProcessMetadata, scheduleId.scheduleName))
+        }
+        PeriodicProcessScheduleData(periodicProcessMetadata, deploymentsForSchedules)
     }
 
 }
@@ -35,7 +38,20 @@ case class SchedulesState(schedules: Map[ScheduleId, ScheduleData]) {
 // For most operations it will contain only one latest deployment but for purpose of statuses of historical deployments
 // it has list instead of one element.
 // This structure should contain SingleScheduleProperty as well. See note above
-case class ScheduleData(process: PeriodicProcess[Unit], latestDeployments: List[ScheduleDeploymentData])
+case class ScheduleData(
+    periodicProcessMetadata: PeriodicProcessMetadata,
+    latestDeployments: List[ScheduleDeploymentData]
+)
+
+case class PeriodicProcessMetadata(
+    id: PeriodicProcessId,
+    processName: ProcessName,
+    versionId: VersionId,
+    jarFileName: String,
+    scheduleProperty: ScheduleProperty,
+    active: Boolean,
+    processActionId: Option[ProcessActionId],
+)
 
 // To identify schedule we need scheduleName - None for SingleScheduleProperty and Some(key) for MultipleScheduleProperty keys
 // Also we need PeriodicProcessId to distinguish between active schedules and some inactive from the past for the same PeriodicProcessId
@@ -53,10 +69,19 @@ case class ScheduleDeploymentData(
 ) {
 
   def toFullDeploymentData(
-      process: PeriodicProcess[Unit],
+      periodicProcessMetadata: PeriodicProcessMetadata,
       scheduleName: ScheduleName
-  ): PeriodicProcessDeployment[Unit] =
-    PeriodicProcessDeployment(id, process, createdAt, runAt, scheduleName, retriesLeft, nextRetryAt, state)
+  ): PeriodicProcessDeployment =
+    PeriodicProcessDeployment(
+      id,
+      periodicProcessMetadata,
+      createdAt,
+      runAt,
+      scheduleName,
+      retriesLeft,
+      nextRetryAt,
+      state
+    )
 
   def display = s"deploymentId=$id"
 
@@ -80,14 +105,14 @@ object ScheduleDeploymentData {
 
 // These below are temporary structures, see notice next to SchedulesState
 case class PeriodicProcessScheduleData(
-    process: PeriodicProcess[Unit],
-    deployments: List[PeriodicProcessDeployment[Unit]]
+    periodicProcessMetadata: PeriodicProcessMetadata,
+    deployments: List[PeriodicProcessDeployment]
 ) {
-  def existsDeployment(predicate: PeriodicProcessDeployment[Unit] => Boolean): Boolean = deployments.exists(predicate)
+  def existsDeployment(predicate: PeriodicProcessDeployment => Boolean): Boolean = deployments.exists(predicate)
 
   def display: String = {
     val deploymentsForSchedules = deployments.map(_.display)
-    s"processName=${process.processVersion.processName}, deploymentsForSchedules=$deploymentsForSchedules"
+    s"processName=${periodicProcessMetadata.processName}, deploymentsForSchedules=$deploymentsForSchedules"
   }
 
 }

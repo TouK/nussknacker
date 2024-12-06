@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.management.periodic.model
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 
 case class DeploymentWithJarData[ProcessRep](
-    processVersion: ProcessVersion,
+    processName: ProcessName,
+    versionId: VersionId,
     process: ProcessRep,
     inputConfigDuringExecutionJson: String,
     jarFileName: String

@@ -8,7 +8,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.DeploymentActor.CheckToBeDeployed
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
+import pl.touk.nussknacker.engine.management.periodic.model.{
+  PeriodicProcessDeployment,
+  PeriodicProcessDeploymentWithFullProcess
+}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -33,11 +36,11 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
   }
 
   private def shouldFindToBeDeployedScenarios(
-      result: Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]]
+      result: Future[Seq[PeriodicProcessDeploymentWithFullProcess]]
   ): Unit = {
     val probe   = TestProbe()
     var counter = 0
-    def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]] = {
+    def findToBeDeployed: Future[Seq[PeriodicProcessDeploymentWithFullProcess]] = {
       counter += 1
       probe.ref ! s"invoked $counter"
       result
@@ -54,14 +57,14 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
   }
 
   test("should deploy found scenario") {
-    val probe                                                          = TestProbe()
-    val waitingDeployment                                              = PeriodicProcessDeploymentGen()
-    var toBeDeployed: Seq[PeriodicProcessDeployment[CanonicalProcess]] = Seq(waitingDeployment)
-    var actor: ActorRef                                                = null
-    def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]] = {
+    val probe                                                       = TestProbe()
+    val waitingDeployment                                           = PeriodicProcessDeploymentGen()
+    var toBeDeployed: Seq[PeriodicProcessDeploymentWithFullProcess] = Seq(waitingDeployment)
+    var actor: ActorRef                                             = null
+    def findToBeDeployed: Future[Seq[PeriodicProcessDeploymentWithFullProcess]] = {
       Future.successful(toBeDeployed)
     }
-    def deploy(deployment: PeriodicProcessDeployment[CanonicalProcess]): Future[Unit] = {
+    def deploy(deployment: PeriodicProcessDeploymentWithFullProcess): Future[Unit] = {
       probe.ref ! deployment
       // Simulate periodic check for waiting scenarios while deploying a scenario.
       actor ! CheckToBeDeployed

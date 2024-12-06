@@ -21,29 +21,28 @@ trait PeriodicProcessListenerFactory {
 }
 
 sealed trait PeriodicProcessEvent {
-  val deployment: PeriodicProcessDeployment[CanonicalProcess]
+  val deployment: PeriodicProcessDeployment
 }
 
 case class DeployedEvent(
-    deployment: PeriodicProcessDeployment[CanonicalProcess],
+    deployment: PeriodicProcessDeployment,
     externalDeploymentId: Option[ExternalDeploymentId]
 ) extends PeriodicProcessEvent
 
-case class FinishedEvent(deployment: PeriodicProcessDeployment[CanonicalProcess], processState: Option[StatusDetails])
+case class FinishedEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails])
     extends PeriodicProcessEvent
 
 case class FailedOnDeployEvent(
-    deployment: PeriodicProcessDeployment[CanonicalProcess],
+    deployment: PeriodicProcessDeployment,
     processState: Option[StatusDetails]
 ) extends PeriodicProcessEvent
 
 case class FailedOnRunEvent(
-    deployment: PeriodicProcessDeployment[CanonicalProcess],
+    deployment: PeriodicProcessDeployment,
     processState: Option[StatusDetails]
 ) extends PeriodicProcessEvent
 
-case class ScheduledEvent(deployment: PeriodicProcessDeployment[CanonicalProcess], firstSchedule: Boolean)
-    extends PeriodicProcessEvent
+case class ScheduledEvent(deployment: PeriodicProcessDeployment, firstSchedule: Boolean) extends PeriodicProcessEvent
 
 object EmptyListener extends EmptyListener
 

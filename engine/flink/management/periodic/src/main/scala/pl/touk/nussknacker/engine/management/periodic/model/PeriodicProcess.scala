@@ -16,6 +16,4 @@ case class PeriodicProcess[ProcessRep](
     active: Boolean,
     createdAt: LocalDateTime,
     processActionId: Option[ProcessActionId]
-) {
-  val processVersion: ProcessVersion = deploymentData.processVersion
-}
+)
