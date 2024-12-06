@@ -1,18 +1,5 @@
 # Changelog
 
-## 1.19
-
-#### Highlights
-
-##### End-user
-
-##### Administrator
-
-### 1.19.0 (Not released yet)
-
-* [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
-* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
-* [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 
 ## 1.18
 
@@ -34,6 +21,8 @@
 
 ### 1.18-esp
 * [#7145](https://github.com/TouK/nussknacker/pull/7145) Lift TypingResult information for dictionaries
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+* [#7123](https://github.com/TouK/nussknacker/pull/7123) Fix deployments for scenarios with dict editors after model reload
 
 ### 1.18.1 (Not released yet)
 
