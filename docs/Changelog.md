@@ -29,7 +29,7 @@
 * [#7283](https://github.com/TouK/nussknacker/pull/7283) Fix deployment status indicator for periodic scenarios type
 * [#7254](https://github.com/TouK/nussknacker/pull/7254) Fix “Maximum update depth exceeded” issue when node details window is open and size of the window changed
 * [#7254](https://github.com/TouK/nussknacker/pull/7254) Fix manual window size change
-  
+* [#7290](https://github.com/TouK/nussknacker/pull/7290) Update swagger-parser (2.1.22 -> 2.1.24) to fix shading issue (https://github.com/swagger-api/swagger-parser/issues/2126>)
 
 ### 1.18.0 (22 November 2024)
 
