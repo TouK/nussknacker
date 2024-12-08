@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import org.springframework.expression.Expression
-import pl.touk.nussknacker.engine.api.TemplateEvaluationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -19,13 +18,9 @@ class SpelExpressionValidator(typer: Typer) {
     val typedExpression = typer.typeExpression(expr, ctx)
     typedExpression.andThen { collected =>
       collected.finalResult.typingResult match {
-        case _ if expectedType == Typed[SpelExpressionRepr] =>
+        case a: TypingResult if a.canBeConvertedTo(expectedType) || expectedType == Typed[SpelExpressionRepr] =>
           Valid(collected)
-        case a if a == Typed[String] && expectedType == Typed[TemplateEvaluationResult] =>
-          Valid(collected)
-        case a if a.canBeConvertedTo(expectedType) =>
-          Valid(collected)
-        case a =>
+        case a: TypingResult =>
           Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, a)))
       }
     }

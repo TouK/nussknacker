@@ -41,7 +41,10 @@ object DatabaseQueryEnricher {
 
   final val queryParamName: ParameterName = ParameterName("Query")
 
-  final val queryParam = Parameter[String](queryParamName).copy(editor = Some(SqlParameterEditor))
+  final val queryParamDeclaration =
+    ParameterDeclaration
+      .mandatory[String](queryParamName)
+      .withCreator(modify = _.copy(editor = Some(SqlParameterEditor)))
 
   final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")
 
@@ -129,7 +132,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     NextParameters(parameters =
       resultStrategyParamDeclaration.createParameter() ::
-        queryParam ::
+        queryParamDeclaration.createParameter() ::
         cacheTTLParamDeclaration.createParameter() :: Nil
     )
   }
@@ -139,15 +142,14 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   ): ContextTransformationDefinition = {
     case TransformationStep(
           (`resultStrategyParamName`, DefinedEagerParameter(strategyName: String, _)) ::
-          (`queryParamName`, DefinedEagerParameter(query: TemplateEvaluationResult, _)) ::
+          (`queryParamName`, DefinedEagerParameter(query: String, _)) ::
           (`cacheTTLParamName`, _) :: Nil,
           None
         ) =>
-      val renderedQuery = query.renderedTemplate
-      if (renderedQuery.isEmpty) {
+      if (query.isEmpty) {
         FinalResults(context, errors = CustomNodeError("Query is missing", Some(queryParamName)) :: Nil, state = None)
       } else {
-        parseQuery(context, dependencies, strategyName, renderedQuery)
+        parseQuery(context, dependencies, strategyName, query)
       }
   }
 
