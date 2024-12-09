@@ -542,6 +542,7 @@ object SampleNodes {
 
     override def canBeEnding: Boolean = true
 
+    @silent("deprecated")
     @MethodToInvoke(returnType = classOf[String])
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
@@ -570,6 +571,7 @@ object SampleNodes {
       ): FlatMapFunction[Context, ValueWithContext[String]] =
         (ctx, collector) => collector.collect(ValueWithContext(serializableValue, ctx))
 
+      @silent("deprecated")
       override def toFlinkFunction(flinkCustomNodeContext: FlinkCustomNodeContext): SinkFunction[String] =
         new SinkFunction[String] {
           override def invoke(value: String, context: SinkFunction.Context): Unit = resultsHolder.add(value)
