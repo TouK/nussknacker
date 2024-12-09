@@ -38,7 +38,7 @@ class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider w
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
       config: Config,
-      scenarioStateCacheTTL: Option[FiniteDuration]
+      scenarioStateCacheTTL: Option[FiniteDuration],
   ): ValidatedNel[String, DeploymentManager] = {
     logger.info("Creating FlinkPeriodic scenario manager")
     delegate.createDeploymentManager(modelData, dependencies, config, scenarioStateCacheTTL).map {
@@ -58,7 +58,8 @@ class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider w
           modelData = modelData,
           EmptyPeriodicProcessListenerFactory,
           DefaultAdditionalDeploymentDataProvider,
-          dependencies
+          dependencies,
+          scenarioStateCacheTTL,
         )
     }
 

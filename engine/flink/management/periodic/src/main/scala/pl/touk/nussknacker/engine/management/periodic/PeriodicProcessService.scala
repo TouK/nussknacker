@@ -28,7 +28,6 @@ import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeplo
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong
-import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong.longUUID
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import java.time.chrono.ChronoLocalDateTime
@@ -386,7 +385,8 @@ class PeriodicProcessService(
     } yield handleEvent(FailedOnRunEvent(currentState.deployment, state))
   }
 
-  def deactivate(processName: ProcessName): Future[Iterable[DeploymentId]] =
+  def deactivate(processName: ProcessName): Future[Iterable[DeploymentId]] = {
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     for {
       activeSchedules                     <- getLatestDeploymentsForActiveSchedules(processName)
       (runningDeploymentsForSchedules, _) <- synchronizeDeploymentsStates(processName, activeSchedules)
@@ -395,6 +395,7 @@ class PeriodicProcessService(
         .sequence
         .runWithCallbacks
     } yield runningDeploymentsForSchedules.map(deployment => DeploymentId(deployment.toString))
+  }
 
   private def deactivateAction(process: PeriodicProcessMetadata): RepositoryAction[Callback] = {
     logger.info(s"Deactivate periodic process id: ${process.id.value}")
@@ -507,7 +508,7 @@ class PeriodicProcessService(
   private def mergeStatusWithDeployments(
       name: ProcessName,
       runtimeStatuses: List[StatusDetails]
-  ): Future[StatusDetails] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[StatusDetails] = {
     def toDeploymentStatuses(schedulesState: SchedulesState) = schedulesState.schedules.toList
       .flatMap { case (scheduleId, scheduleData) =>
         scheduleData.latestDeployments.map { deployment =>
@@ -540,21 +541,20 @@ class PeriodicProcessService(
   def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int = 1
-  ): Future[SchedulesState] =
-    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount).run
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] =
+    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount)
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  ): Future[SchedulesState] =
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] =
     scheduledProcessesRepository
       .getLatestDeploymentsForLatestInactiveSchedules(
         processName,
         inactiveProcessesMaxCount,
         deploymentsPerScheduleMaxCount
       )
-      .run
 
   implicit class RuntimeStatusesExt(runtimeStatuses: List[StatusDetails]) {
 

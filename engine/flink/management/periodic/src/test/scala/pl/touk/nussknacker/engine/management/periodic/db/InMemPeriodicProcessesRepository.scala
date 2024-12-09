@@ -2,14 +2,15 @@ package pl.touk.nussknacker.engine.management.periodic.db
 
 import cats.{Id, Monad}
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{
   DeploymentIdSequence,
-  ProcessIdSequence
+  ProcessIdSequence,
+  getLatestDeploymentQueryCount
 }
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeploymentWithFullProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -26,6 +27,8 @@ import scala.util.Random
 object InMemPeriodicProcessesRepository {
   private val ProcessIdSequence    = new AtomicLong(0)
   private val DeploymentIdSequence = new AtomicLong(0)
+
+  val getLatestDeploymentQueryCount = new AtomicLong(0)
 }
 
 class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicProcessesRepository {
@@ -167,21 +170,49 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState] =
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] = {
+    getLatestDeploymentQueryCount.incrementAndGet()
     getLatestDeploymentsForPeriodicProcesses(
       processEntities(processName).filter(_.active),
       deploymentsPerScheduleMaxCount
-    )
+    ).run
+  }
+
+  override def getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount: Int)(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[Map[ProcessName, SchedulesState]] = {
+    getLatestDeploymentQueryCount.incrementAndGet()
+    allProcessEntities.map { case (processName, list) =>
+      processName -> getLatestDeploymentsForPeriodicProcesses(
+        list.filter(_.active),
+        deploymentsPerScheduleMaxCount
+      )
+    }
+  }.run
 
   override def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] = {
+    getLatestDeploymentQueryCount.incrementAndGet()
     val filteredProcesses =
       processEntities(processName).filterNot(_.active).sortBy(_.createdAt).takeRight(inactiveProcessesMaxCount)
-    getLatestDeploymentsForPeriodicProcesses(filteredProcesses, deploymentsPerScheduleMaxCount)
+    getLatestDeploymentsForPeriodicProcesses(filteredProcesses, deploymentsPerScheduleMaxCount).run
   }
+
+  override def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]] = {
+    getLatestDeploymentQueryCount.incrementAndGet()
+    allProcessEntities.map { case (processName, list) =>
+      processName -> getLatestDeploymentsForPeriodicProcesses(
+        list.filterNot(_.active).sortBy(_.createdAt).takeRight(inactiveProcessesMaxCount),
+        deploymentsPerScheduleMaxCount
+      )
+    }
+  }.run
 
   private def getLatestDeploymentsForPeriodicProcesses(
       processes: Seq[PeriodicProcessEntity],
@@ -227,6 +258,12 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     processEntities(processName)
       .filter(_.active)
       .map(PeriodicProcessesRepository.createPeriodicProcessWithJson)
+
+  private def allProcessEntities: Map[ProcessName, Seq[PeriodicProcessEntity]] =
+    processEntities
+      .filter(process => process.processingType == processingType)
+      .toSeq
+      .groupBy(_.processName)
 
   private def processEntities(processName: ProcessName): Seq[PeriodicProcessEntity] =
     processEntities

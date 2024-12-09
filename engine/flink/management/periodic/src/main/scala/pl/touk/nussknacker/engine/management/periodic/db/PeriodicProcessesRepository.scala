@@ -4,7 +4,7 @@ import cats.Monad
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic._
@@ -19,7 +19,7 @@ import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
-import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -157,13 +157,22 @@ trait PeriodicProcessesRepository {
   def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState]
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState]
+
+  def getLatestDeploymentsForActiveSchedules(
+      deploymentsPerScheduleMaxCount: Int
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]]
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState]
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState]
+
+  def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]]
 
   def findToBeDeployed: Action[Seq[PeriodicProcessDeploymentWithFullProcess]]
 
@@ -232,6 +241,7 @@ class SlickPeriodicProcessesRepository(
         (createPeriodicProcessMetadataFromColumnValues(periodicProcessMetadataColumnValues), deploymentEntity)
       })
       .map(toSchedulesState)
+      .map(_.getOrElse(scenarioName, SchedulesState(Map.empty)))
   }
 
   override def create(
@@ -345,33 +355,55 @@ class SlickPeriodicProcessesRepository(
     getLatestDeploymentsForEachSchedule(
       processesHavingDeploymentsWithMatchingStatus,
       deploymentsPerScheduleMaxCount = 1
-    )
+    ).map(_.values.headOption.getOrElse(SchedulesState(Map.empty)))
   }
 
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] = {
     val activeProcessesQuery = PeriodicProcessesWithoutJson.filter(p => p.processName === processName && p.active)
     getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount)
+      .map(_.getOrElse(processName, SchedulesState(Map.empty)))
+      .run
+  }
+
+  override def getLatestDeploymentsForActiveSchedules(
+      deploymentsPerScheduleMaxCount: Int
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]] = {
+    val activeProcessesQuery = PeriodicProcessesWithoutJson.filter(_.active)
+    getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount).run
   }
 
   override def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] = {
     val filteredProcessesQuery = PeriodicProcessesWithoutJson
       .filter(p => p.processName === processName && !p.active)
       .sortBy(_.createdAt.desc)
       .take(inactiveProcessesMaxCount)
     getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount)
+      .map(_.getOrElse(processName, SchedulesState(Map.empty)))
+      .run
+  }
+
+  override def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]] = {
+    val filteredProcessesQuery = PeriodicProcessesWithoutJson
+      .filter(!_.active)
+      .sortBy(_.createdAt.desc)
+      .take(inactiveProcessesMaxCount)
+    getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount).run
   }
 
   private def getLatestDeploymentsForEachSchedule(
       periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
       deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState] = {
+  ): Action[Map[ProcessName, SchedulesState]] = {
     val filteredPeriodicProcessQuery = periodicProcessesQuery.filter(p => p.processingType === processingType)
     val latestDeploymentsForSchedules = profile match {
       case _: ExPostgresProfile =>
@@ -535,6 +567,14 @@ class SlickPeriodicProcessesRepository(
   }
 
   private def toSchedulesState(
+      list: Seq[(PeriodicProcessMetadata, PeriodicProcessDeploymentEntity)]
+  ): Map[ProcessName, SchedulesState] = {
+    list
+      .groupBy(_._1.processName)
+      .map { case (processName, list) => processName -> toSchedulesStateForSinglePeriodicProcess(list) }
+  }
+
+  private def toSchedulesStateForSinglePeriodicProcess(
       list: Seq[(PeriodicProcessMetadata, PeriodicProcessDeploymentEntity)]
   ): SchedulesState = {
     SchedulesState(
