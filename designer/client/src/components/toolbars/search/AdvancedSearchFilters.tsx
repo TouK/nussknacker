@@ -1,9 +1,8 @@
-import React, { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
+import React, { MutableRefObject, useEffect, useMemo } from "react";
 import { Button, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
 import { SearchLabel } from "../../sidePanels/SearchLabel";
-import { SearchQuery } from "./SearchResults";
 import { resolveSearchQuery } from "./utils";
 
 const transformInput = (input: string, fieldName: string) => {
@@ -40,9 +39,10 @@ export function AdvancedSearchFilters({
 
     const displayNames = useMemo(
         () => ({
-            id: t("panels.search.field.id", "Name"),
+            name: t("panels.search.field.id", "Name"),
             description: t("panels.search.field.description", "Description"),
             type: t("panels.search.field.type", "Type"),
+            componentGroup: t("panels.search.field.componentGroup", "Component Group"),
             paramName: t("panels.search.field.paramName", "Label"),
             paramValue: t("panels.search.field.paramValue", "Value"),
             outputValue: t("panels.search.field.outputValue", "Output"),
@@ -105,23 +105,26 @@ export function AdvancedSearchFilters({
             }}
         >
             <Typography fontWeight="bold">{t("search.panel.advancedFilters.label", "Advanced Search")}</Typography>
-            <SearchLabeledInput name="id">
-                <SearchLabel label={displayNames["id"]} />
-            </SearchLabeledInput>
-            <SearchLabeledInput name="description">
-                <SearchLabel label={displayNames["description"]} />
-            </SearchLabeledInput>
-            <SearchLabeledInput name="paramName">
-                <SearchLabel label={displayNames["paramName"]} />
+            <SearchLabeledInput name="name">
+                <SearchLabel label={displayNames["name"]} />
             </SearchLabeledInput>
             <SearchLabeledInput name="paramValue">
                 <SearchLabel label={displayNames["paramValue"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="outputValue">
-                <SearchLabel label={displayNames["outputValue"]} />
+            <SearchLabeledInput name="componentGroup">
+                <SearchLabel label={displayNames["componentGroup"]} />
             </SearchLabeledInput>
             <SearchLabeledInput name="type">
                 <SearchLabel label={displayNames["type"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput name="paramName">
+                <SearchLabel label={displayNames["paramName"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput name="description">
+                <SearchLabel label={displayNames["description"]} />
+            </SearchLabeledInput>
+            <SearchLabeledInput name="outputValue">
+                <SearchLabel label={displayNames["outputValue"]} />
             </SearchLabeledInput>
             <SearchLabeledInput name="edgeExpression">
                 <SearchLabel label={displayNames["edgeExpression"]} />

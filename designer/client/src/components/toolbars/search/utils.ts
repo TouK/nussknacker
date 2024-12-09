@@ -15,8 +15,13 @@ type FilterSelector = { name: string; selector: Selector }[];
 
 const fieldsSelectors: FilterSelector = [
     {
-        name: "id",
+        name: "name",
+
         selector: (node) => node.id,
+    },
+    {
+        name: "componentGroup",
+        selector: (node) => node.type,
     },
     {
         name: "description",
@@ -24,7 +29,7 @@ const fieldsSelectors: FilterSelector = [
     },
     {
         name: "type",
-        selector: (node) => node.type,
+        selector: (node) => [node.nodeType, node.type, node.ref?.typ],
     },
     {
         name: "paramValue",
@@ -95,12 +100,14 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
     const displayNames = useMemo(
         () => ({
             id: t("panels.search.field.id", "Name"),
+            name: t("panels.search.field.id", "Name"),
             description: t("panels.search.field.description", "Description"),
-            type: t("panels.search.field.type", "Type"),
+            componentGroup: t("panels.search.field.componentGroup", "component Group"),
             paramName: t("panels.search.field.paramName", "Label"),
             paramValue: t("panels.search.field.paramValue", "Value"),
             outputValue: t("panels.search.field.outputValue", "Output"),
             edgeExpression: t("panels.search.field.edgeExpression", "Edge"),
+            type: t("panels.search.field.type", "Type"),
         }),
         [t],
     );
