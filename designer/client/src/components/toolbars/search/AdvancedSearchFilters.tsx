@@ -3,7 +3,8 @@ import { Button, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
 import { SearchLabel } from "../../sidePanels/SearchLabel";
-import { resolveSearchQuery } from "./utils";
+import { useNodeTypes, resolveSearchQuery } from "./utils";
+import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";
 
 const transformInput = (input: string, fieldName: string) => {
     return input === "" ? "" : `${fieldName}:(${input})`;
@@ -111,12 +112,12 @@ export function AdvancedSearchFilters({
             <SearchLabeledInput name="paramValue">
                 <SearchLabel label={displayNames["paramValue"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="componentGroup">
+            <SearchLabeledAutocomplete name="componentGroup" values={useNodeTypes("componentGroup")}>
                 <SearchLabel label={displayNames["componentGroup"]} />
-            </SearchLabeledInput>
-            <SearchLabeledInput name="type">
+            </SearchLabeledAutocomplete>
+            <SearchLabeledAutocomplete name="type" values={useNodeTypes("type")}>
                 <SearchLabel label={displayNames["type"]} />
-            </SearchLabeledInput>
+            </SearchLabeledAutocomplete>
             <SearchLabeledInput name="paramName">
                 <SearchLabel label={displayNames["paramName"]} />
             </SearchLabeledInput>

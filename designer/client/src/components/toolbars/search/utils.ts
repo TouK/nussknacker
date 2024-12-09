@@ -1,7 +1,6 @@
 import { Edge, NodeType } from "../../../types";
-import { uniq } from "lodash";
+import { isEqual, uniq } from "lodash";
 import { useSelector } from "react-redux";
-import { isEqual } from "lodash";
 import { getScenario } from "../../../reducers/selectors/graph";
 import NodeUtils from "../../graph/NodeUtils";
 import { useMemo } from "react";
@@ -29,7 +28,7 @@ const fieldsSelectors: FilterSelector = [
     },
     {
         name: "type",
-        selector: (node) => [node.nodeType, node.type, node.ref?.typ],
+        selector: (node) => [node.nodeType, node.ref?.typ, node.ref?.id],
     },
     {
         name: "paramValue",
@@ -83,6 +82,20 @@ const findFieldsUsingSelectorWithName = (selectorName: string, filterValues: str
             ),
     );
 };
+
+export function useNodeTypes(selectorName: string): string[] {
+    const { scenarioGraph } = useSelector(getScenario);
+    const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
+
+    return useMemo(() => {
+        const nodeSelector = fieldsSelectors.find((selector) => selector.name == selectorName)?.selector;
+        const partial = allNodes
+            .flatMap((node) => ensureArray(nodeSelector(node)).filter((item) => item !== undefined))
+            .map((selectorResult) => (typeof selectorResult === "string" ? selectorResult : selectorResult?.expression));
+
+        return uniq(partial);
+    }, [allNodes]);
+}
 
 export function useFilteredNodes(searchQuery: SearchQuery): {
     groups: string[];
