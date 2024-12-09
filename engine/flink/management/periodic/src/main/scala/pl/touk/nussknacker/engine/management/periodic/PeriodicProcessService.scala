@@ -248,6 +248,9 @@ class PeriodicProcessService(
       scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
         (deployment, runtimeStatuses.getStatus(deployment.id))
       })
+      _ = logger.debug(
+        s"Process '$processName' schedule deployments with status: ${scheduleDeploymentsWithStatus.map(_.toString)}"
+      )
       needRescheduleDeployments <- Future
         .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
           synchronizeDeploymentState(deploymentData, statusOpt).run.map { needReschedule =>
