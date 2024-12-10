@@ -28,6 +28,7 @@ import pl.touk.nussknacker.ui.config.{
   FeatureTogglesConfig,
   UsageStatisticsReportsConfig
 }
+import pl.touk.nussknacker.ui.configloader.DesignerRootConfig
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
@@ -40,7 +41,6 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
-import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
@@ -93,12 +93,11 @@ import pl.touk.nussknacker.ui.validation.{
   UIProcessValidator
 }
 import sttp.client3.SttpBackend
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.io.Source
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -106,24 +105,25 @@ import scala.util.control.NonFatal
 class AkkaHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
+    sttpBackend: SttpBackend[Future, Any],
     processingTypeDataLoader: ProcessingTypeDataLoader,
     feStatisticsRepository: FEStatisticsRepository[Future],
     designerClock: Clock
-)(implicit system: ActorSystem, materializer: Materializer)
-    extends RouteProvider[Route]
+)(
+    implicit system: ActorSystem,
+    materializer: Materializer,
+    executionContextWithIORuntime: ExecutionContextWithIORuntime
+) extends RouteProvider[Route]
     with Directives
     with LazyLogging {
 
   override def createRoute(rootConfig: DesignerRootConfig): Resource[IO, Route] = {
-    implicit val executionContextWithIORuntime: ExecutionContextWithIORuntime =
-      ActorSystemBasedExecutionContextWithIORuntime.createFrom(system)
     import executionContextWithIORuntime.ioRuntime
+    val resolvedRootConfig   = rootConfig.rawConfig.resolved
+    val environment          = resolvedRootConfig.getString("environment")
+    val featureTogglesConfig = FeatureTogglesConfig.create(resolvedRootConfig)
+    logger.info(s"Designer config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
     for {
-      sttpBackend <- createSttpBackend()
-      resolvedRootConfig   = rootConfig.rawConfig.resolved
-      environment          = resolvedRootConfig.getString("environment")
-      featureTogglesConfig = FeatureTogglesConfig.create(resolvedRootConfig)
-      _                    = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
       actionServiceSupplier      = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedRootConfig, sttpBackend)
@@ -131,7 +131,6 @@ class AkkaHttpBasedRouteProvider(
       scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
       dbioRunner                 = DBIOActionRunner(dbRef)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
-        rootConfig,
         additionalUIConfigProvider,
         actionServiceSupplier,
         scenarioActivityRepository,
@@ -620,15 +619,6 @@ class AkkaHttpBasedRouteProvider(
     }
   }
 
-  private def createSttpBackend()(implicit executionContext: ExecutionContext) = {
-    Resource
-      .make(
-        acquire = IO(AsyncHttpClientFutureBackend.usingConfigBuilder(identity))
-      )(
-        release = backend => IO.fromFuture(IO(backend.close()))
-      )
-  }
-
   private def initMetrics(
       metricsRegistry: MetricRegistry,
       config: Config,
@@ -709,19 +699,17 @@ class AkkaHttpBasedRouteProvider(
   }
 
   private def prepareProcessingTypeDataReload(
-      rootConfigLoadedAtStart: DesignerRootConfig,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
       scenarioActivityRepository: ScenarioActivityRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       featureTogglesConfig: FeatureTogglesConfig
-  )(implicit executionContext: ExecutionContext): Resource[IO, ReloadableProcessingTypeDataProvider] = {
+  ): Resource[IO, ReloadableProcessingTypeDataProvider] = {
     Resource
       .make(
         acquire = IO.pure {
           val laodProcessingTypeDataIO = processingTypeDataLoader.loadProcessingTypeData(
-            rootConfigLoadedAtStart,
             getModelDependencies(
               additionalUIConfigProvider,
               _,
@@ -750,7 +738,7 @@ class AkkaHttpBasedRouteProvider(
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
-  )(implicit executionContext: ExecutionContext) = {
+  ) = {
     val additionalConfigsFromProvider = additionalUIConfigProvider.getAllForProcessingType(processingType)
     DeploymentManagerDependencies(
       DefaultProcessingTypeDeployedScenariosProvider(dbRef, processingType),
@@ -784,11 +772,7 @@ class AkkaHttpBasedRouteProvider(
     )
   }
 
-  private def createProcessingTypeDataReload() = {}
-
-  private def createAdditionalUIConfigProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
-      implicit ec: ExecutionContext
-  ) = {
+  private def createAdditionalUIConfigProvider(config: Config, sttpBackend: SttpBackend[Future, Any]) = {
     val additionalUIConfigProviderFactory: AdditionalUIConfigProviderFactory = {
       Multiplicity(
         ScalaServiceLoader.load[AdditionalUIConfigProviderFactory](getClass.getClassLoader)

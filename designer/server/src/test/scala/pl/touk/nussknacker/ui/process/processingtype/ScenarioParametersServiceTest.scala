@@ -16,7 +16,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.loadableconfig.{DesignerRootConfig, LoadableProcessingTypeConfigs}
+import pl.touk.nussknacker.ui.configloader.{DesignerRootConfig, ProcessingTypeConfigsLoader}
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
@@ -280,7 +280,7 @@ class ScenarioParametersServiceTest
     val workPath = designerServerModuleDir.resolve("work")
     logDirectoryStructure(workPath)
 
-    val processingTypeConfigs = LoadableProcessingTypeConfigs.extractProcessingTypeConfigs(
+    val processingTypeConfigs = ProcessingTypeConfigsLoader.extractProcessingTypeConfigs(
       DesignerRootConfig.from(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
     )
     val processingTypeData = ProcessingTypesConfigBasedProcessingTypeDataLoader

@@ -8,25 +8,41 @@ import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
-import pl.touk.nussknacker.ui.config.root.LoadableDesignerRootConfig
-import pl.touk.nussknacker.ui.config.processingtype.LoadableProcessingTypeConfigsFactory
+import pl.touk.nussknacker.ui.config.processingtype.ProcessingTypeConfigsLoaderFactoryServiceLoader
+import pl.touk.nussknacker.ui.config.root.DesignerRootConfigLoader
+import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
-import pl.touk.nussknacker.ui.process.processingtype.loader._
+import pl.touk.nussknacker.ui.process.processingtype.loader.{
+  ProcessingTypeDataLoader,
+  ProcessingTypesConfigBasedProcessingTypeDataLoader
+}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
+import pl.touk.nussknacker.ui.util.ActorSystemBasedExecutionContextWithIORuntime
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import java.time.Clock
+import scala.concurrent.ExecutionContext
 
 class NussknackerAppFactory(
-    loadableDesignerRootConfig: LoadableDesignerRootConfig,
-    processingTypeDataLoader: ProcessingTypeDataLoader
+    designerRootConfigLoader: DesignerRootConfigLoader,
+    processingTypeConfigsLoaderFactory: ProcessingTypeConfigsLoaderFactory,
+    createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader
 ) extends LazyLogging {
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
-      rootConfig <- Resource.eval(loadableDesignerRootConfig.loadDesignerRootConfig())
+      rootConfig <- Resource.eval(designerRootConfigLoader.loadDesignerRootConfig())
       system     <- createActorSystem(rootConfig.rawConfig)
-      materializer = Materializer(system)
+      executionContextWithIORuntime = ActorSystemBasedExecutionContextWithIORuntime.createFrom(system)
+      sttpBackend <- createSttpBackend
+      processingTypeConfigsLoader = processingTypeConfigsLoaderFactory.create(
+        rootConfig,
+        sttpBackend,
+        executionContextWithIORuntime
+      )
+      processingTypeDataLoader = createProcessingTypeDataLoader(processingTypeConfigsLoader)
+      materializer             = Materializer(system)
       _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))
       _                      <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry        <- createGeneralPurposeMetricsRegistry()
@@ -36,12 +52,14 @@ class NussknackerAppFactory(
         new AkkaHttpBasedRouteProvider(
           db,
           metricsRegistry,
+          sttpBackend,
           processingTypeDataLoader,
           feStatisticsRepository,
           clock
         )(
           system,
-          materializer
+          materializer,
+          executionContextWithIORuntime
         ),
         system
       )
@@ -49,6 +67,15 @@ class NussknackerAppFactory(
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()
+  }
+
+  private def createSttpBackend = {
+    Resource
+      .make(
+        acquire = IO(AsyncHttpClientFutureBackend.usingConfigBuilder(identity))
+      )(
+        release = backend => IO.fromFuture(IO(backend.close()))
+      )
   }
 
   private def createActorSystem(config: ConfigWithUnresolvedVersion) = {
@@ -83,10 +110,14 @@ class NussknackerAppFactory(
 
 object NussknackerAppFactory {
 
-  def apply(loadableDesignerRootConfig: LoadableDesignerRootConfig): NussknackerAppFactory = {
-    val loadableProcessingTypeConfig = LoadableProcessingTypeConfigsFactory.create(loadableDesignerRootConfig)
-    val processingTypeDataLoader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(loadableProcessingTypeConfig)
-    new NussknackerAppFactory(loadableDesignerRootConfig, processingTypeDataLoader)
+  def apply(designerRootConfigLoader: DesignerRootConfigLoader): NussknackerAppFactory = {
+    val processingTypeConfigsLoaderFactory =
+      ProcessingTypeConfigsLoaderFactoryServiceLoader.loadService(designerRootConfigLoader)
+    new NussknackerAppFactory(
+      designerRootConfigLoader,
+      processingTypeConfigsLoaderFactory,
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(_)
+    )
   }
 
 }

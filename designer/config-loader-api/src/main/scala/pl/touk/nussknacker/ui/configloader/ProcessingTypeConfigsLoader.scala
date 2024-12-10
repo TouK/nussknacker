@@ -1,18 +1,17 @@
-package pl.touk.nussknacker.ui.loadableconfig
+package pl.touk.nussknacker.ui.configloader
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import cats.effect.IO
 
-trait LoadableProcessingTypeConfigs {
+trait ProcessingTypeConfigsLoader {
 
-  // rootConfigLoadedAtStart is used for external project purpose - don't remove it
-  def loadProcessingTypeConfigs(rootConfigLoadedAtStart: DesignerRootConfig): IO[Map[String, ProcessingTypeConfig]]
+  def loadProcessingTypeConfigs(): IO[Map[String, ProcessingTypeConfig]]
 
 }
 
-object LoadableProcessingTypeConfigs extends LazyLogging {
+object ProcessingTypeConfigsLoader extends LazyLogging {
 
   def extractProcessingTypeConfigs(rootConfig: DesignerRootConfig): Map[String, ProcessingTypeConfig] = {
     rootConfig.rawConfig

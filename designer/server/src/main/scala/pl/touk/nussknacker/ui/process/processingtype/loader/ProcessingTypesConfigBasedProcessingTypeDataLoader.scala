@@ -6,21 +6,20 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.loadableconfig.{DesignerRootConfig, LoadableProcessingTypeConfigs}
+import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigsLoader
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
-class ProcessingTypesConfigBasedProcessingTypeDataLoader(loadableProcessingTypeConfigs: LoadableProcessingTypeConfigs)
+class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLoader: ProcessingTypeConfigsLoader)
     extends ProcessingTypeDataLoader {
 
   override def loadProcessingTypeData(
-      designerRootConfig: DesignerRootConfig,
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
-    loadableProcessingTypeConfigs
-      .loadProcessingTypeConfigs(designerRootConfig)
+    processingTypeConfigsLoader
+      .loadProcessingTypeConfigs()
       .map(
         ProcessingTypesConfigBasedProcessingTypeDataLoader
           .loadProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies)

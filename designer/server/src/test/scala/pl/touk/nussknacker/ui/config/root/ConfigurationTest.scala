@@ -1,13 +1,13 @@
-package pl.touk.nussknacker.ui.integration
+package pl.touk.nussknacker.ui.config.root
 
+import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
-import pl.touk.nussknacker.ui.config.root.DesignerRootConfigLoader
-import cats.effect.unsafe.implicits.global
+
 import java.net.URI
 import java.nio.file.Files
 import java.util.UUID
@@ -29,8 +29,8 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   }
 
   test("defaultConfig works") {
-    DesignerRootConfigLoader
-      .load(globalConfig, classLoader)
+    new DesignerRootConfigLoaderImpl(classLoader)
+      .load(globalConfig)
       .unsafeRunSync()
       .resolved
       .getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
@@ -39,8 +39,8 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultDesignerConfig.conf
 
-    val loadedConfig = DesignerRootConfigLoader
-      .load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
+    val loadedConfig = new DesignerRootConfigLoaderImpl(classLoader)
+      .load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader))
       .unsafeRunSync()
 
     loadedConfig.resolved.getString("foo") shouldEqual "./storage"
@@ -81,8 +81,8 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
     val result =
       try {
         System.setProperty(randomPropertyName, "I win!")
-        DesignerRootConfigLoader
-          .load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
+        new DesignerRootConfigLoaderImpl(classLoader)
+          .load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader))
           .unsafeRunSync()
       } finally {
         System.getProperties.remove(randomPropertyName)
