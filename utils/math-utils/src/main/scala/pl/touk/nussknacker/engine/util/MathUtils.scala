@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{
 }
 
 import java.lang
+import java.math.MathContext
 import java.math.RoundingMode
 
 trait MathUtils {
@@ -77,6 +78,27 @@ trait MathUtils {
     implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
       NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
     promoteThenSum(n1, n2)
+  }
+
+  @Hidden
+  def largeFloatSquare(number: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
+    val converted = convertToPromotedType(number)
+    multiply(converted, converted)
+  }
+
+  @Hidden
+  def largeFloatSqrt(number: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
+
+    val converted = convertToPromotedType(number)
+
+    converted match {
+      case converted: java.lang.Double     => Math.sqrt(converted)
+      case converted: java.math.BigDecimal => converted.sqrt(MathContext.DECIMAL128)
+    }
   }
 
   def plus(n1: Number, n2: Number): Number = sum(n1, n2)
