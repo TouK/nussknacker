@@ -25,6 +25,7 @@
     * Added support for PerformSingleExecution action in DeploymentManager and in GUI
     * Improved scenario state management to include information about current and deployed versions and allow more customization
 * [#7184](https://github.com/TouK/nussknacker/pull/7184) Improve Nu Designer API notifications endpoint, to include events related to currently displayed scenario
+* [#7307](https://github.com/TouK/nussknacker/pull/7307) Added StddevPop, StddevSamp, VarPop and VarSamp aggregations
 
 ## 1.18
 
