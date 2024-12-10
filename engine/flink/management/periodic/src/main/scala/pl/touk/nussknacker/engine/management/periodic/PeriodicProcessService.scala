@@ -245,9 +245,14 @@ class PeriodicProcessService(
     for {
       runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
       _ = logger.debug(s"Process '$processName' runtime statuses: ${runtimeStatuses.map(_.toString)}")
-      scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
-        (deployment, runtimeStatuses.getStatus(deployment.id))
-      })
+      scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap { scheduleData =>
+        logger.debug(
+          s"Process '$processName' latest deployment ids: ${scheduleData.latestDeployments.map(_.id.toString)}"
+        )
+        scheduleData.latestDeployments.map { deployment =>
+          (deployment, runtimeStatuses.getStatus(deployment.id))
+        }
+      }
       _ = logger.debug(
         s"Process '$processName' schedule deployments with status: ${scheduleDeploymentsWithStatus.map(_.toString)}"
       )
