@@ -43,7 +43,6 @@ export function AdvancedSearchFilters({
             name: t("panels.search.field.id", "Name"),
             description: t("panels.search.field.description", "Description"),
             type: t("panels.search.field.type", "Type"),
-            componentGroup: t("panels.search.field.componentGroup", "Component Group"),
             paramName: t("panels.search.field.paramName", "Label"),
             paramValue: t("panels.search.field.paramValue", "Value"),
             outputValue: t("panels.search.field.outputValue", "Output"),
@@ -112,10 +111,7 @@ export function AdvancedSearchFilters({
             <SearchLabeledInput name="paramValue">
                 <SearchLabel label={displayNames["paramValue"]} />
             </SearchLabeledInput>
-            <SearchLabeledAutocomplete name="componentGroup" values={useNodeTypes("componentGroup")}>
-                <SearchLabel label={displayNames["componentGroup"]} />
-            </SearchLabeledAutocomplete>
-            <SearchLabeledAutocomplete name="type" values={useNodeTypes("type")}>
+            <SearchLabeledAutocomplete name="type" values={useNodeTypes()}>
                 <SearchLabel label={displayNames["type"]} />
             </SearchLabeledAutocomplete>
             <SearchLabeledInput name="paramName">

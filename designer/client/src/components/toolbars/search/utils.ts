@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ensureArray } from "../../../common/arrayUtils";
 import { SearchQuery } from "./SearchResults";
+import { getComponentGroups } from "../../../reducers/selectors/settings";
 
 type SelectorResult = { expression: string } | string;
 type Selector = (node: NodeType) => SelectorResult | SelectorResult[];
@@ -19,16 +20,12 @@ const fieldsSelectors: FilterSelector = [
         selector: (node) => node.id,
     },
     {
-        name: "componentGroup",
-        selector: (node) => node.type,
-    },
-    {
         name: "description",
         selector: (node) => node.additionalFields?.description,
     },
     {
         name: "type",
-        selector: (node) => [node.nodeType, node.ref?.typ, node.ref?.id],
+        selector: (node) => [node.nodeType, node.ref?.typ, node.ref?.id, node.type, node.service?.id],
     },
     {
         name: "paramValue",
@@ -83,17 +80,29 @@ const findFieldsUsingSelectorWithName = (selectorName: string, filterValues: str
     );
 };
 
-export function useNodeTypes(selectorName: string): string[] {
-    const { scenarioGraph } = useSelector(getScenario);
-    const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
+function useComponentTypes(): Set<string> {
+    const componentsGroups = useSelector(getComponentGroups);
 
     return useMemo(() => {
-        const nodeSelector = fieldsSelectors.find((selector) => selector.name == selectorName)?.selector;
-        const partial = allNodes
-            .flatMap((node) => ensureArray(nodeSelector(node)).filter((item) => item !== undefined))
-            .map((selectorResult) => (typeof selectorResult === "string" ? selectorResult : selectorResult?.expression));
+        return new Set(
+            componentsGroups.flatMap((componentGroup) => componentGroup.components).map((component) => component.label.toLowerCase()),
+        );
+    }, []);
+}
 
-        return uniq(partial);
+export function useNodeTypes(): string[] {
+    const { scenarioGraph } = useSelector(getScenario);
+    const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
+    const componentsSet = useComponentTypes();
+
+    return useMemo(() => {
+        const nodeSelector = fieldsSelectors.find((selector) => selector.name == "type")?.selector;
+        const availableTypes = allNodes
+            .flatMap((node) => ensureArray(nodeSelector(node)).filter((item) => item !== undefined))
+            .map((selectorResult) => (typeof selectorResult === "string" ? selectorResult : selectorResult?.expression))
+            .filter((type) => componentsSet.has(type.toLowerCase()));
+
+        return uniq(availableTypes);
     }, [allNodes]);
 }
 
@@ -112,10 +121,8 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
 
     const displayNames = useMemo(
         () => ({
-            id: t("panels.search.field.id", "Name"),
             name: t("panels.search.field.id", "Name"),
             description: t("panels.search.field.description", "Description"),
-            componentGroup: t("panels.search.field.componentGroup", "component Group"),
             paramName: t("panels.search.field.paramName", "Label"),
             paramValue: t("panels.search.field.paramValue", "Value"),
             outputValue: t("panels.search.field.outputValue", "Output"),

@@ -11,7 +11,7 @@ export const SearchLabeledAutocomplete = ({ children, name, values }) => {
                 className={nodeInput}
                 renderInput={(params) => (
                     <div ref={params.InputProps.ref}>
-                        <input name={name} {...params.inputProps} placeholder="Type to search..." className={nodeInput} />
+                        <input name={name} {...params.inputProps} className={nodeInput} />
                     </div>
                 )}
             />
