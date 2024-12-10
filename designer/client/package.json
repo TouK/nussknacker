@@ -159,7 +159,7 @@
         "babel-loader": "8.2.3",
         "babel-plugin-istanbul": "6.1.1",
         "chalk": "4.1.2",
-        "chevrotain": "11.0.3",
+        "chevrotain": "10.5.0",
         "color": "4.2.0",
         "copy-webpack-plugin": "11.0.0",
         "crypto-browserify": "3.12.0",
