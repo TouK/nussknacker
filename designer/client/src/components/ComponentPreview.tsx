@@ -7,8 +7,6 @@ import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
 import { alpha, styled, useTheme } from "@mui/material";
 import { blend } from "@mui/system";
 import { blendLighten, getBorderColor } from "../containers/theme/helpers";
-import { StickyNotePreview } from "./StickyNotePreview";
-import { StickyNoteType } from "../types/stickyNote";
 
 export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
     const theme = useTheme();
@@ -77,9 +75,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
 
     const colors = isOver ? nodeColorsHover : nodeColors;
 
-    return node?.type === StickyNoteType ? (
-        <StickyNotePreview isActive={isActive} isOver={isOver} />
-    ) : (
+    return (
         <div className={cx(colors, nodeStyles)}>
             <div className={cx(imageStyles, imageColors)}>
                 <ComponentIcon node={node} />
