@@ -122,7 +122,21 @@ trait PeriodicProcessesTableFactory {
       createdAt,
       processActionId
     ) <> (
-      (PeriodicProcessEntity.createWithoutJson _).tupled,
+      (PeriodicProcessEntity
+        .apply(
+          _: PeriodicProcessId,
+          _: ProcessName,
+          _: VersionId,
+          _: String,
+          None,
+          _: String,
+          _: String,
+          _: String,
+          _: Boolean,
+          _: LocalDateTime,
+          _: Option[ProcessActionId]
+        ))
+        .tupled,
       (e: PeriodicProcessEntity) =>
         PeriodicProcessEntity.unapply(e).map {
           case (
@@ -130,7 +144,7 @@ trait PeriodicProcessesTableFactory {
                 processName,
                 versionId,
                 processingType,
-                _,
+                None,
                 inputConfigDuringExecutionJson,
                 jarFileName,
                 scheduleProperty,
@@ -182,32 +196,6 @@ object PeriodicProcessEntity {
       processVersionId,
       processingType,
       Some(ProcessMarshaller.fromJsonUnsafe(processJson)),
-      inputConfigDuringExecutionJson,
-      jarFileName,
-      scheduleProperty,
-      active,
-      createdAt,
-      processActionId
-    )
-
-  def createWithoutJson(
-      id: PeriodicProcessId,
-      processName: ProcessName,
-      processVersionId: VersionId,
-      processingType: String,
-      inputConfigDuringExecutionJson: String,
-      jarFileName: String,
-      scheduleProperty: String,
-      active: Boolean,
-      createdAt: LocalDateTime,
-      processActionId: Option[ProcessActionId]
-  ): PeriodicProcessEntity =
-    PeriodicProcessEntity(
-      id,
-      processName,
-      processVersionId,
-      processingType,
-      None,
       inputConfigDuringExecutionJson,
       jarFileName,
       scheduleProperty,
