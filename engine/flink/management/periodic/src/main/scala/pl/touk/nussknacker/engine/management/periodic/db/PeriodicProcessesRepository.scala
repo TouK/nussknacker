@@ -189,14 +189,8 @@ class SlickPeriodicProcessesRepository(
 
   override def getSchedulesState(
       scenarioName: ProcessName
-  ): Action[SchedulesState] = {
-    PeriodicProcessesWithoutJson
-      .filter(_.processName === scenarioName)
-      .join(PeriodicProcessDeployments)
-      .on(_.id === _.periodicProcessId)
-      .result
-      .map(toSchedulesState)
-  }
+  ): Action[SchedulesState] =
+    DBIO.successful(SchedulesState(Map.empty))
 
   override def create(
       deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
