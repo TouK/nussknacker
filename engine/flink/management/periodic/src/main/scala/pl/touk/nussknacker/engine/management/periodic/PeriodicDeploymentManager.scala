@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.management.periodic.Utils.{createActorWithRetr
 import pl.touk.nussknacker.engine.management.periodic.db.{
   DbInitializer,
   PeriodicProcessesRepository,
+  PeriodicProcessesRepositoryCachingDecorator,
   SlickPeriodicProcessesRepository
 }
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
@@ -26,6 +27,7 @@ import slick.jdbc
 import slick.jdbc.JdbcProfile
 
 import java.time.Clock
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
@@ -40,7 +42,8 @@ object PeriodicDeploymentManager {
       modelData: BaseModelData,
       listenerFactory: PeriodicProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
-      dependencies: DeploymentManagerDependencies
+      dependencies: DeploymentManagerDependencies,
+      scenarioStateCacheTTL: Option[FiniteDuration],
   ): PeriodicDeploymentManager = {
     import dependencies._
 
@@ -49,13 +52,17 @@ object PeriodicDeploymentManager {
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
     val scheduledProcessesRepository =
       new SlickPeriodicProcessesRepository(db, dbProfile, clock, periodicBatchConfig.processingType)
+    val repositoryWithCaching = scenarioStateCacheTTL match {
+      case Some(ttl) => new PeriodicProcessesRepositoryCachingDecorator(scheduledProcessesRepository, ttl)
+      case None      => scheduledProcessesRepository
+    }
     val jarManager            = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData)
     val listener              = listenerFactory.create(originalConfig)
     val processConfigEnricher = processConfigEnricherFactory(originalConfig)
     val service = new PeriodicProcessService(
       delegate,
       jarManager,
-      scheduledProcessesRepository,
+      repositoryWithCaching,
       listener,
       additionalDeploymentDataProvider,
       periodicBatchConfig.deploymentRetry,
@@ -263,17 +270,20 @@ class PeriodicDeploymentManager private[periodic] (
   }
 
   // TODO: Why we don't allow running not scheduled scenario? Maybe we can try to schedule it?
-  private def instantSchedule(processName: ProcessName): OptionT[Future, Unit] = for {
-    // schedule for immediate run
-    processDeployment <- OptionT(
-      service
-        .getLatestDeploymentsForActiveSchedules(processName)
-        .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
-    )
-    processDeploymentWithProcessJson <- OptionT.liftF(
-      repository.findProcessData(processDeployment.id).run
-    )
-    _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
-  } yield ()
+  private def instantSchedule(processName: ProcessName): OptionT[Future, Unit] = {
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    for {
+      // schedule for immediate run
+      processDeployment <- OptionT(
+        service
+          .getLatestDeploymentsForActiveSchedules(processName)
+          .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
+      )
+      processDeploymentWithProcessJson <- OptionT.liftF(
+        repository.findProcessData(processDeployment.id).run
+      )
+      _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
+    } yield ()
+  }
 
 }
