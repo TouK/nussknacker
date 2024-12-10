@@ -4,7 +4,13 @@ import cats.effect.IO
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
-import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
+import pl.touk.nussknacker.ui.configloader.DesignerRootConfig
+
+trait DesignerRootConfigLoader {
+
+  def loadDesignerRootConfig(): IO[DesignerRootConfig]
+
+}
 
 /**
   * This class handles two parts of ui config loading:
@@ -15,18 +21,18 @@ import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
   * Result of config loading still keep version with unresolved env variables for purpose of config loading on model side - see
   * InputConfigDuringExecution and ModelConfigLoader
   */
-object DesignerRootConfigLoader {
+private[root] class DesignerRootConfigLoaderImpl(classLoader: ClassLoader) extends DesignerRootConfigLoader {
 
   private val defaultConfigResource = "defaultDesignerConfig.conf"
 
-  def load(classLoader: ClassLoader): IO[DesignerRootConfig] = {
+  override def loadDesignerRootConfig(): IO[DesignerRootConfig] = {
     for {
       baseConfig   <- IO.blocking(ConfigFactoryExt.parseUnresolved(classLoader = classLoader))
-      loadedConfig <- load(baseConfig, classLoader)
+      loadedConfig <- load(baseConfig)
     } yield DesignerRootConfig(loadedConfig)
   }
 
-  def load(baseUnresolvedConfig: Config, classLoader: ClassLoader): IO[ConfigWithUnresolvedVersion] = {
+  def load(baseUnresolvedConfig: Config): IO[ConfigWithUnresolvedVersion] = {
     IO.blocking {
       val parsedDefaultUiConfig                  = ConfigFactory.parseResources(classLoader, defaultConfigResource)
       val unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
@@ -36,3 +42,10 @@ object DesignerRootConfigLoader {
 
 }
 
+object DesignerRootConfigLoader {
+
+  def apply(classLoader: ClassLoader): DesignerRootConfigLoader = new DesignerRootConfigLoaderImpl(classLoader)
+
+  def fromConfig(config: => Config): DesignerRootConfigLoader = () => IO.delay(DesignerRootConfig.from(config))
+
+}

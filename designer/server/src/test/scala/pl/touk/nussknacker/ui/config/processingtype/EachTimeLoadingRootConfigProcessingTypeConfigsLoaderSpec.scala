@@ -6,10 +6,10 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
-import pl.touk.nussknacker.ui.config.root.LoadableDesignerRootConfig
-import pl.touk.nussknacker.ui.loadableconfig.{DesignerRootConfig, LoadableProcessingTypeConfigs}
+import pl.touk.nussknacker.ui.config.root.DesignerRootConfigLoader
+import pl.touk.nussknacker.ui.configloader.{DesignerRootConfig, ProcessingTypeConfigsLoader}
 
-class EachTimeLoadingRootConfigLoadableProcessingTypeConfigsSpec extends AnyFunSuite {
+class EachTimeLoadingRootConfigProcessingTypeConfigsLoaderSpec extends AnyFunSuite {
 
   test("should throw when required configuration is missing") {
     val config = ConfigFactory
@@ -32,8 +32,8 @@ class EachTimeLoadingRootConfigLoadableProcessingTypeConfigsSpec extends AnyFunS
       .resolve()
 
     intercept[typesafe.config.ConfigException] {
-      staticConfigBasedLoadableProcessingTypeConfigs(config)
-        .loadProcessingTypeConfigs(DesignerRootConfig.from(ConfigFactory.empty()))
+      staticConfigBasedProcessingTypeConfigsLoader(config)
+        .loadProcessingTypeConfigs()
         .unsafeRunSync()
     }.getMessage should include("No configuration setting found for key 'deploymentConfig.type'")
   }
@@ -48,14 +48,14 @@ class EachTimeLoadingRootConfigLoadableProcessingTypeConfigsSpec extends AnyFunS
       .resolve()
 
     intercept[RuntimeException] {
-      staticConfigBasedLoadableProcessingTypeConfigs(config)
-        .loadProcessingTypeConfigs(DesignerRootConfig.from(ConfigFactory.empty()))
+      staticConfigBasedProcessingTypeConfigsLoader(config)
+        .loadProcessingTypeConfigs()
         .unsafeRunSync()
     }.getMessage should include("No scenario types configuration provided")
   }
 
   test("should load the second config when reloaded") {
-    val loadableProcessingTypeConfigs = loadDifferentConfigPerInvocationLoadableProcessingTypeConfigs(
+    val processingTypeConfigsLoader = loadDifferentConfigPerInvocationProcessingTypeConfigsLoader(
       config1 = ConfigFactory
         .parseString(
           """
@@ -104,30 +104,30 @@ class EachTimeLoadingRootConfigLoadableProcessingTypeConfigsSpec extends AnyFunS
         .resolve()
     )
 
-    val processingTypes1 = loadableProcessingTypeConfigs
-      .loadProcessingTypeConfigs(DesignerRootConfig.from(ConfigFactory.empty()))
+    val processingTypes1 = processingTypeConfigsLoader
+      .loadProcessingTypeConfigs()
       .unsafeRunSync()
 
     processingTypes1.keys.toSet shouldBe Set("streaming")
 
-    val processingTypes2 = loadableProcessingTypeConfigs
-      .loadProcessingTypeConfigs(DesignerRootConfig.from(ConfigFactory.empty()))
+    val processingTypes2 = processingTypeConfigsLoader
+      .loadProcessingTypeConfigs()
       .unsafeRunSync()
 
     processingTypes2.keys.toSet shouldBe Set("streaming", "streaming2")
   }
 
-  private def staticConfigBasedLoadableProcessingTypeConfigs(config: Config): LoadableProcessingTypeConfigs = {
-    new EachTimeLoadingRootConfigLoadableProcessingTypeConfigs(
-      LoadableDesignerRootConfig(IO.pure(DesignerRootConfig.from(config)))
+  private def staticConfigBasedProcessingTypeConfigsLoader(config: Config): ProcessingTypeConfigsLoader = {
+    new EachTimeLoadingRootConfigProcessingTypeConfigsLoader(
+      DesignerRootConfigLoader.fromConfig(config)
     )
   }
 
-  private def loadDifferentConfigPerInvocationLoadableProcessingTypeConfigs(
+  private def loadDifferentConfigPerInvocationProcessingTypeConfigsLoader(
       config1: Config,
       config2: Config,
       configs: Config*
-  ): LoadableProcessingTypeConfigs = {
+  ): ProcessingTypeConfigsLoader = {
     val ref        = Ref.unsafe[IO, Int](0)
     val allConfigs = config1 :: config2 :: configs.toList
     val loadConfig = ref.getAndUpdate(_ + 1).flatMap { idx =>
@@ -136,9 +136,7 @@ class EachTimeLoadingRootConfigLoadableProcessingTypeConfigsSpec extends AnyFunS
         case None         => IO.raiseError(throw new IllegalStateException(s"Cannot load the config more than [$idx]"))
       }
     }
-    new EachTimeLoadingRootConfigLoadableProcessingTypeConfigs(
-      LoadableDesignerRootConfig(loadConfig)
-    )
+    new EachTimeLoadingRootConfigProcessingTypeConfigsLoader(() => loadConfig)
   }
 
 }

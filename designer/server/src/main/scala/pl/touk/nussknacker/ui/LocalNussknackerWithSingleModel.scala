@@ -4,9 +4,8 @@ import cats.effect.{IO, Resource}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
-import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.config.root.LoadableDesignerRootConfig
+import pl.touk.nussknacker.ui.config.root.DesignerRootConfigLoader
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 
 import java.io.File
@@ -50,8 +49,12 @@ object LocalNussknackerWithSingleModel {
       modelData = Map(typeName -> (category, modelData)),
       deploymentManagerProvider = deploymentManagerProvider
     )
-    val loadableDesignerConfig = LoadableDesignerRootConfig(IO.delay(DesignerRootConfig.from(appConfig)))
-    val appFactory             = new NussknackerAppFactory(loadableDesignerConfig, local)
+    val designerConfigLoader = DesignerRootConfigLoader.fromConfig(appConfig)
+    val appFactory = new NussknackerAppFactory(
+      designerConfigLoader,
+      (_, _, _) => () => IO.pure(Map.empty),
+      _ => local
+    )
     appFactory.createApp()
   }
 

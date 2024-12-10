@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType}
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 

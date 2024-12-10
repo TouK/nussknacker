@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.loadableconfig
+package pl.touk.nussknacker.ui.configloader
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion

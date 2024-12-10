@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.testing.{DeploymentManagerProviderStub, LocalM
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.loadableconfig.DesignerRootConfig
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.RealLoggedUser
@@ -57,7 +56,6 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
     )
     loader
       .loadProcessingTypeData(
-        DesignerRootConfig.from(ConfigFactory.empty()),
         _ => modelDependencies,
         _ => TestFactory.deploymentManagerDependencies
       )

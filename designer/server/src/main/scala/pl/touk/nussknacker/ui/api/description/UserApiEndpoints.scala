@@ -6,7 +6,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api._
 import sttp.model.StatusCode.Ok
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.derevo.schema

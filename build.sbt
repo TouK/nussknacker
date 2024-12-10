@@ -1913,10 +1913,10 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   )
   .dependsOn(extensionsApi)
 
-lazy val loadableConfigApi = (project in file("designer/loadable-config-api"))
+lazy val configLoaderApi = (project in file("designer/config-loader-api"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-loadable-config-api",
+    name := "nussknacker-config-loader-api",
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-effect" % catsEffectV
@@ -2065,7 +2065,7 @@ lazy val designer = (project in file("designer/server"))
     deploymentManagerApi,
     restmodel,
     listenerApi,
-    loadableConfigApi,
+    configLoaderApi,
     defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
@@ -2206,7 +2206,7 @@ lazy val modules = List[ProjectReference](
   httpUtils,
   restmodel,
   listenerApi,
-  loadableConfigApi,
+  configLoaderApi,
   deploymentManagerApi,
   designer,
   sqlComponents,
