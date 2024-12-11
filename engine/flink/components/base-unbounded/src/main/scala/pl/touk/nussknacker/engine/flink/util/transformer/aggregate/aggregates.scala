@@ -218,8 +218,7 @@ object aggregates {
       LargeFloatSumState.fromNumber(MathUtils.largeFloatingSum(asNumber, other.asNumber))
     }
 
-    // used instead of MathUtils.divide because currently MathUtils.divide has issue where BigDecimal division can
-    // result in result with very low scale
+    // used instead of MathUtils.divide to use default scale in BigDecimal
     def dividedByLong(count: Long): Number = {
       asNumber match {
         case null =>

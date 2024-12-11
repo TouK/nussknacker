@@ -140,6 +140,8 @@ trait MathUtils {
       override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = {
         n1.divide(
           n2,
+          // This is copied behaviour of divide operation in spel (class OpDivide) but it can lead to issues when both big decimals have small scales.
+          // Small scales happen when integer is converted to BigDecimal using SpringNumberUtils.convertNumberToTargetClass
           Math.max(n1.scale(), n2.scale),
           RoundingMode.HALF_EVEN
         ) // same scale and rounding as used by OpDivide in SpelExpression.java
