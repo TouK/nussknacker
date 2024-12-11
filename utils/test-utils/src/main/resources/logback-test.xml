@@ -19,9 +19,9 @@
 
     <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
     <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
-    <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>
-    <logger name="slick.jdbc.JdbcBackend.parameter" level="DEBUG"/>
-    <logger name="slick.jdbc.StatementInvoker.result" level="DEBUG"/>
+    <logger name="slick.jdbc.JdbcBackend.statement" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
+    <logger name="slick.jdbc.JdbcBackend.parameter" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
+    <logger name="slick.jdbc.StatementInvoker.result" level="${SLICK_SQL_LOG_LEVEL:-INFO}"/>
     <logger name="DockerTest" level="DEBUG"/>
     <!-- To not show "The module flink-runtime-web could not be found in the class path" stack trace, even when debug enabled -->
     <logger name="org.apache.flink.runtime.dispatcher.DispatcherRestEndpoint" level="INFO"/>
