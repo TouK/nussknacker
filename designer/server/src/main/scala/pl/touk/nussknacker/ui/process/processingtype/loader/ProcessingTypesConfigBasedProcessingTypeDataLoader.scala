@@ -75,6 +75,7 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
       new URLClassLoader(Seq(Paths.get("designer/server/work/managers/").toUri.toURL), this.getClass.getClassLoader)
     ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType, managersClassLoader)
   }
+  // todo:
 //  private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
 //    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](
 //      typeConfig.deploymentManagerType,

@@ -7,10 +7,7 @@ import java.time.format.DateTimeFormatter
 import io.circe.{Encoder, Json}
 import io.circe.Json._
 import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.util.Implicits._
-
 import java.util.ServiceLoader
-
 import java.util.UUID
 import scala.jdk.CollectionConverters._
 
@@ -89,9 +86,10 @@ case class ToJsonEncoder(
   //  toString on keys.
   private def encodeMap(map: Map[_, _]) = {
     val mapWithStringKeys = map.view.map { case (k, v) =>
-      k.toString -> v
-    }.toMap
-    fromFields(mapWithStringKeys.mapValuesNow(encode))
+      k.toString -> encode(v)
+    }
+
+    fromFields(mapWithStringKeys)
   }
 
 }

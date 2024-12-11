@@ -180,8 +180,9 @@ class HttpService {
         this.#notificationActions = na;
     }
 
-    loadBackendNotifications(): Promise<BackendNotification[]> {
-        return api.get<BackendNotification[]>("/notifications").then((d) => {
+    loadBackendNotifications(scenarioName: string | undefined): Promise<BackendNotification[]> {
+        const path = scenarioName !== undefined ? `/notifications?scenarioName=${scenarioName}` : `/notifications`;
+        return api.get<BackendNotification[]>(path).then((d) => {
             return d.data;
         });
     }
@@ -356,6 +357,31 @@ class HttpService {
                 } else {
                     throw error;
                 }
+            });
+    }
+
+    performSingleExecution(processName: string, comment?: string) {
+        const data = {
+            comment: comment,
+        };
+        return api
+            .post(`/processManagement/performSingleExecution/${encodeURIComponent(processName)}`, data)
+            .then((res) => {
+                const msg = res.data.msg;
+                this.#addInfo(msg);
+                return {
+                    isSuccess: res.data.isSuccess,
+                    msg: msg,
+                };
+            })
+            .catch((error) => {
+                const msg = error.response.data.msg || error.response.data;
+                const result = {
+                    isSuccess: false,
+                    msg: msg,
+                };
+                if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
+                return result;
             });
     }
 

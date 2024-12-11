@@ -50,8 +50,10 @@ package object definition {
       branchParam: Boolean,
       hintText: Option[String],
       label: String,
-      // This attribute is used only by external project
-      requiredParam: Boolean,
+      // This attribute is in use only by the external project and was introduced in the 1.18 version
+      // The option is for decoder backward compatibility to decode responses from older versions
+      // The option can be removed in future releases
+      requiredParam: Option[Boolean],
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(

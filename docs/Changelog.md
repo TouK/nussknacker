@@ -21,6 +21,10 @@
   * [#7259](https://github.com/TouK/nussknacker/pull/7259) `flink-executor` and `lite-runtime` modules: Added compile-time
     dependency to `http-utils` (which depends on `async-http-client-backend-future` and indirectly on Netty)
 * [#7066](https://github.com/TouK/nussknacker/pull/7066) Kafka source and sink can now operate with schemaless topics. They accept any json. Data will not be validated with schema.
+* [#7165](https://github.com/TouK/nussknacker/pull/7165) Added PerformSingleExecution scenario action
+    * Added support for PerformSingleExecution action in DeploymentManager and in GUI
+    * Improved scenario state management to include information about current and deployed versions and allow more customization
+* [#7184](https://github.com/TouK/nussknacker/pull/7184) Improve Nu Designer API notifications endpoint, to include events related to currently displayed scenario
 
 ## 1.18
 
@@ -39,6 +43,20 @@
 
 * Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
+
+### 1.18.1 (9 December 2024)
+
+* [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
+* [#7237](https://github.com/TouK/nussknacker/pull/7237) Fix: ToJsonEncoder keeps order fields during encoding map
+* [#7240](https://github.com/TouK/nussknacker/pull/7240) Fixed race condition problem during SpEL expression evaluation
+* [#7269](https://github.com/TouK/nussknacker/pull/7269) Fixed focus scrolling in expression editor
+* [#7270](https://github.com/TouK/nussknacker/pull/7270) Savepoint deserialization fixup - some taken savepoints (e.g. for scenarios with async enrichers) were not deserializable which led to errors during redeployments on Flink
+* [#7279](https://github.com/TouK/nussknacker/pull/7279) Fixed Flink TaskManager and Designer containers restarts in installation example
+* [#7283](https://github.com/TouK/nussknacker/pull/7283) Fix deployment status indicator for periodic scenarios type
+* [#7254](https://github.com/TouK/nussknacker/pull/7254) Fix “Maximum update depth exceeded” issue when node details window is open and size of the window changed
+* [#7254](https://github.com/TouK/nussknacker/pull/7254) Fix manual window size change
+* [#7290](https://github.com/TouK/nussknacker/pull/7290) Update swagger-parser (2.1.22 -> 2.1.24) to fix shading issue (https://github.com/swagger-api/swagger-parser/issues/2126)
+  * [#7299](https://github.com/TouK/nussknacker/pull/7299) Cursor rendering optimization
 
 ### 1.18.0 (22 November 2024)
 
@@ -131,11 +149,6 @@
 * [#7192](https://github.com/TouK/nussknacker/pull/7192) Fix "Failed to get node validation" when opening node details referencing non-existing component
 * [#7190](https://github.com/TouK/nussknacker/pull/7190) Fix "Failed to get node validation" when opening fragment node details for referencing non-existing fragment 
 * [#7215](https://github.com/TouK/nussknacker/pull/7215) Change typing text to spinner during validation and provide delayed adding on enter until validation finishes in a scenario labels and fragment input
-
-### 1.18.1 (Not released yet)
-
-* [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
-* [#7270](https://github.com/TouK/nussknacker/pull/7270) Savepoint deserialization fixup - some taken savepoints (e.g. for scenarios with async enrichers) were not deserializable which led to errors during redeployments on Flink
 
 ## 1.17
 

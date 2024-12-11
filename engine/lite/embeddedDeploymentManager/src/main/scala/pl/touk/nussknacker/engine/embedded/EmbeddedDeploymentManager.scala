@@ -5,18 +5,9 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
-import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
-import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies, ModelData}
-import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.newdeployment
-import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 import pl.touk.nussknacker.engine.{ModelData, newdeployment}
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 
@@ -77,7 +68,7 @@ class EmbeddedDeploymentManager(
       case command: DMCancelScenarioCommand   => cancelScenario(command)
       case command: DMTestScenarioCommand     => testScenario(command)
       case _: DMStopDeploymentCommand | _: DMStopScenarioCommand | _: DMMakeScenarioSavepointCommand |
-          _: DMCustomActionCommand =>
+          _: DMCustomActionCommand | _: DMPerformSingleExecutionCommand =>
         notImplemented
     }
 

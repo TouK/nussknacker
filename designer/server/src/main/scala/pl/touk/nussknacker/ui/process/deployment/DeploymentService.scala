@@ -75,9 +75,10 @@ class DeploymentService(
 
   def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
     command match {
-      case command: RunDeploymentCommand  => runDeployment(command)
-      case command: CancelScenarioCommand => cancelScenario(command)
-      case command: CustomActionCommand   => processCustomAction(command)
+      case command: RunDeploymentCommand          => runDeployment(command)
+      case command: CancelScenarioCommand         => cancelScenario(command)
+      case command: PerformSingleExecutionCommand => processSingleExecution(command)
+      case command: CustomActionCommand           => processCustomAction(command)
     }
   }
 
@@ -311,7 +312,8 @@ class DeploymentService(
   )(implicit user: LoggedUser): List[CustomActionDefinition] = {
     val fixedActionDefinitions = List(
       CustomActionDefinition(ScenarioActionName.Deploy, Nil, Nil, None),
-      CustomActionDefinition(ScenarioActionName.Cancel, Nil, Nil, None)
+      CustomActionDefinition(ScenarioActionName.Cancel, Nil, Nil, None),
+      CustomActionDefinition(ScenarioActionName.PerformSingleExecution, Nil, Nil, None)
     )
     val actionsDefinedInCustomActions = dispatcher
       .deploymentManagerUnsafe(processingType)
@@ -489,6 +491,8 @@ class DeploymentService(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName]
   )(implicit freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
+    val processVersionId  = processDetails.processVersionId
+    val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
     dispatcher
       .deploymentManager(processDetails.processingType)
       .map { manager =>
@@ -499,18 +503,34 @@ class DeploymentService(
         } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
           DBIOAction.successful(
-            manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.DuringDeploy, None))
+            manager.processStateDefinitionManager.processState(
+              StatusDetails(SimpleStateStatus.DuringDeploy, None),
+              processVersionId,
+              deployedVersionId,
+            )
           )
         } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
           DBIOAction.successful(
-            manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.DuringCancel, None))
+            manager.processStateDefinitionManager.processState(
+              StatusDetails(SimpleStateStatus.DuringCancel, None),
+              processVersionId,
+              deployedVersionId,
+            )
           )
         } else {
           processDetails.lastStateAction match {
             case Some(_) =>
               DBIOAction
-                .from(getStateFromDeploymentManager(manager, processDetails.idWithName, processDetails.lastStateAction))
+                .from(
+                  getStateFromDeploymentManager(
+                    manager,
+                    processDetails.idWithName,
+                    processDetails.lastStateAction,
+                    processVersionId,
+                    deployedVersionId,
+                  )
+                )
                 .map { statusWithFreshness =>
                   logger.debug(
                     s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
@@ -521,40 +541,62 @@ class DeploymentService(
             case _ => // We assume that the process never deployed should have no state at the engine
               logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
               DBIOAction.successful(
-                manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
+                manager.processStateDefinitionManager.processState(
+                  StatusDetails(SimpleStateStatus.NotDeployed, None),
+                  processVersionId,
+                  deployedVersionId,
+                )
               )
           }
         }
       }
-      .getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.ErrorFailedToGet))
+      .getOrElse(
+        DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet(processVersionId))
+      )
   }
 
   // We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
   private def getArchivedProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit manager: DeploymentManager) = {
+    val processVersionId  = processDetails.processVersionId
+    val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
     processDetails.lastStateAction.map(a => (a.actionName, a.state)) match {
       case Some((Cancel, _)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(
-          manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.Canceled, None))
+          manager.processStateDefinitionManager.processState(
+            StatusDetails(SimpleStateStatus.Canceled, None),
+            processVersionId,
+            deployedVersionId,
+          )
         )
       case Some((Deploy, ProcessActionState.ExecutionFinished)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Finished} ")
         DBIOAction.successful(
-          manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.Finished, None))
+          manager.processStateDefinitionManager.processState(
+            StatusDetails(SimpleStateStatus.Finished, None),
+            processVersionId,
+            deployedVersionId,
+          )
         )
       case Some(_) =>
         logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.ArchivedShouldBeCanceled}")
         DBIOAction.successful(
           manager.processStateDefinitionManager.processState(
-            StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None)
+            StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None),
+            processVersionId,
+            deployedVersionId,
           )
         )
       case _ =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
         DBIOAction.successful(
-          manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
+          manager.processStateDefinitionManager.processState(
+            StatusDetails(SimpleStateStatus.NotDeployed, None),
+            processVersionId,
+            deployedVersionId,
+          )
         )
     }
   }
@@ -569,19 +611,23 @@ class DeploymentService(
   private def getStateFromDeploymentManager(
       deploymentManager: DeploymentManager,
       processIdWithName: ProcessIdWithName,
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
   )(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
 
-    val state = deploymentManager.getProcessState(processIdWithName, lastStateAction).recover { case NonFatal(e) =>
-      logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
-      failedToGetProcessState
-    }
+    val state = deploymentManager
+      .getProcessState(processIdWithName, lastStateAction, latestVersionId, deployedVersionId)
+      .recover { case NonFatal(e) =>
+        logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
+        failedToGetProcessState(latestVersionId)
+      }
 
     scenarioStateTimeout
       .map { timeout =>
-        state.withTimeout(timeout, timeoutResult = failedToGetProcessState).map {
+        state.withTimeout(timeout, timeoutResult = failedToGetProcessState(latestVersionId)).map {
           case CompletedNormally(value) =>
             value
           case CompletedByTimeout(value) =>
@@ -653,8 +699,8 @@ class DeploymentService(
     }
   }
 
-  private lazy val failedToGetProcessState =
-    WithDataFreshnessStatus.fresh(SimpleProcessStateDefinitionManager.ErrorFailedToGet)
+  private def failedToGetProcessState(versionId: VersionId) =
+    WithDataFreshnessStatus.fresh(SimpleProcessStateDefinitionManager.errorFailedToGet(versionId))
 
   // It is very naive implementation for situation when designer was restarted after spawning some long running action
   // like deploy but before marking it as finished. Without this, user will always see "during deploy" status - even
@@ -666,13 +712,46 @@ class DeploymentService(
     Await.result(dbioRunner.run(actionRepository.deleteInProgressActions()), 10 seconds)
   }
 
+  private def processSingleExecution(command: PerformSingleExecutionCommand): Future[SingleExecutionResult] = {
+    processAction(
+      command = command,
+      actionName = ScenarioActionName.PerformSingleExecution,
+      actionParams = Map.empty,
+      dmCommandCreator = ctx =>
+        DMPerformSingleExecutionCommand(
+          ctx.latestScenarioDetails.toEngineProcessVersion,
+          ctx.latestScenarioDetails.json,
+          command.commonData.user.toManagerUser,
+        )
+    )
+  }
+
+  private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
+    processAction(
+      command = command,
+      actionName = command.actionName,
+      actionParams = command.params,
+      dmCommandCreator = ctx =>
+        DMCustomActionCommand(
+          command.actionName,
+          ctx.latestScenarioDetails.toEngineProcessVersion,
+          ctx.latestScenarioDetails.json,
+          command.commonData.user.toManagerUser,
+          command.params
+        )
+    )
+  }
+
   // TODO: further changes
   //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
   //       - better comment validation
-  private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
+  private def processAction[COMMAND <: ScenarioCommand[RESULT], RESULT](
+      command: COMMAND,
+      actionName: ScenarioActionName,
+      actionParams: Map[String, String],
+      dmCommandCreator: CommandContext[CanonicalProcess] => DMScenarioCommand[RESULT],
+  ): Future[RESULT] = {
     import command.commonData._
-    val actionName: ScenarioActionName    = command.actionName
-    val actionParams: Map[String, String] = command.params
     for {
       validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
@@ -682,13 +761,7 @@ class DeploymentService(
         p => Some(p.processVersionId),
         _ => None
       )
-      dmCommand = DMCustomActionCommand(
-        actionName,
-        ctx.latestScenarioDetails.toEngineProcessVersion,
-        ctx.latestScenarioDetails.json,
-        user.toManagerUser,
-        actionParams
-      )
+      dmCommand = dmCommandCreator(ctx)
       actionResult <- runActionAndHandleResults(
         actionName,
         validatedComment,

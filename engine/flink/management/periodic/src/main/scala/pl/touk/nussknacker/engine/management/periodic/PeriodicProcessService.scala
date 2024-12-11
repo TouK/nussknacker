@@ -27,6 +27,8 @@ import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesReposi
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
+import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong
+import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong.longUUID
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import java.time.chrono.ChronoLocalDateTime
@@ -75,7 +77,11 @@ class PeriodicProcessService(
     activities = deploymentsWithStatuses.map { case (deployment, metadata) =>
       ScenarioActivity.PerformedScheduledExecution(
         scenarioId = ScenarioId(processIdWithName.id.value),
-        scenarioActivityId = ScenarioActivityId.random,
+        // The periodic process executions are stored in the PeriodicProcessService datasource, with ids of type Long
+        // We need the ScenarioActivityId to be a unique UUID, generated in an idempotent way from Long id.
+        // It is important, because if the ScenarioActivityId would change, the activity may be treated as a new one,
+        // and, for example, GUI may have to refresh more often than necessary .
+        scenarioActivityId = ScenarioActivityId(DeterministicUUIDFromLong.longUUID(deployment.id.value)),
         user = ScenarioUser.internalNuUser,
         date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
         scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
@@ -239,9 +245,17 @@ class PeriodicProcessService(
     for {
       runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
       _ = logger.debug(s"Process '$processName' runtime statuses: ${runtimeStatuses.map(_.toString)}")
-      scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
-        (deployment, runtimeStatuses.getStatus(deployment.id))
-      })
+      scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap { scheduleData =>
+        logger.debug(
+          s"Process '$processName' latest deployment ids: ${scheduleData.latestDeployments.map(_.id.toString)}"
+        )
+        scheduleData.latestDeployments.map { deployment =>
+          (deployment, runtimeStatuses.getStatus(deployment.id))
+        }
+      }
+      _ = logger.debug(
+        s"Process '$processName' schedule deployments with status: ${scheduleDeploymentsWithStatus.map(_.toString)}"
+      )
       needRescheduleDeployments <- Future
         .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
           synchronizeDeploymentState(deploymentData, statusOpt).run.map { needReschedule =>

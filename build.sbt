@@ -1187,8 +1187,6 @@ lazy val jsonUtils = (project in utils("json-utils"))
         ExclusionRule(organization = "javax.validation"),
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation"),
-        // due to swagger-parser duplicated files with different implementation https://github.com/swagger-api/swagger-parser/issues/2126
-        ExclusionRule("io.swagger", "swagger-parser-safe-url-resolver")
       ),
       "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
     )
@@ -1719,8 +1717,8 @@ lazy val httpUtils = (project in utils("http-utils"))
   )
   .dependsOn(componentsApi % Provided, testUtils % Test)
 
-val swaggerParserV      = "2.1.22"
-val swaggerIntegrationV = "2.2.10"
+val swaggerParserV      = "2.1.24"
+val swaggerIntegrationV = "2.2.26"
 
 lazy val openapiComponents = (project in component("openapi"))
   .configs(IntegrationTest)

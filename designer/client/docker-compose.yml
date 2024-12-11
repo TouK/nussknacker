@@ -20,7 +20,7 @@ services:
 
   redpanda:
     container_name: cypress_e2e_redpanda
-    image: vectorized/redpanda:v23.3.12
+    image: redpandadata/redpanda:v23.3.12
     command:
       - redpanda start
       - --smp 1

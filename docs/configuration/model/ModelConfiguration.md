@@ -54,12 +54,12 @@ Below you can see typical component configuration, each section describes config
 ```
   components {
     sqlHsql {
-      providerType: sql
+      providerType: databaseEnricher
       jdbcUrl: jdbc:hsql...//
       admin/pass
     }
     sqlOracle {
-      providerType: sql
+      providerType: databaseEnricher
       jdbcUrl: jdbc:oracle...//
       admin/pass
     }
