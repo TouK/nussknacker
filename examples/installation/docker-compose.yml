@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     ports:
       - 8080:8080
+      - 8181:8181
     depends_on:
       grafana:
         condition: service_healthy

@@ -1,18 +1,24 @@
 package pl.touk.nussknacker.test.installationexample
 
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import cats.effect.unsafe.implicits.global
 import com.dimafeng.testcontainers.{DockerComposeContainer, ServiceLogConsumer, WaitingForService}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.Logger
-import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
+import pl.touk.nussknacker.test.MiscUtils._
+import pl.touk.nussknacker.test.WithTestHttpClientCreator
 import pl.touk.nussknacker.test.containers.ContainerExt.toContainerExt
 import pl.touk.nussknacker.test.installationexample.DockerBasedInstallationExampleNuEnvironment.{JSON, slf4jLogger}
+import sttp.client3._
+import sttp.model.MediaType
 import ujson.Value
-import pl.touk.nussknacker.test.MiscUtils._
 
 import java.io.{File => JFile}
 import java.time.Duration
+import scala.util.Try
 
 class DockerBasedInstallationExampleNuEnvironment(
     nussknackerImageVersion: String,
@@ -42,7 +48,16 @@ class DockerBasedInstallationExampleNuEnvironment(
 
   start()
 
-  val client: DockerBasedInstallationExampleClient = new DockerBasedInstallationExampleClient(this)
+  private val (dockerBasedInstallationExampleClient, closeHandler) =
+    DockerBasedInstallationExampleClient.create(this).allocated.unsafeRunSync()
+
+  val client: DockerBasedInstallationExampleClient = dockerBasedInstallationExampleClient
+
+  override def stop(): Unit = {
+    closeHandler.unsafeRunSync()
+    super.stop()
+  }
+
 }
 
 object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
@@ -53,9 +68,22 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
 
 }
 
-class DockerBasedInstallationExampleClient(env: DockerBasedInstallationExampleNuEnvironment) {
+object DockerBasedInstallationExampleClient extends WithTestHttpClientCreator {
+
+  def create(env: DockerBasedInstallationExampleNuEnvironment): Resource[IO, DockerBasedInstallationExampleClient] = {
+    createHttpClient(sslContext = None)
+      .map(new DockerBasedInstallationExampleClient(env, _))
+  }
+
+}
+
+class DockerBasedInstallationExampleClient private (
+    env: DockerBasedInstallationExampleNuEnvironment,
+    sttpBackend: SttpBackend[Identity, Any]
+) {
 
   private val bootstrapSetupService = unsafeContainerByServiceName("bootstrap-setup")
+  private val nginxService          = unsafeContainerByServiceName("nginx")
 
   def deployAndWaitForRunningState(scenarioName: String): Unit = {
     bootstrapSetupService.executeBash(
@@ -88,8 +116,22 @@ class DockerBasedInstallationExampleClient(env: DockerBasedInstallationExampleNu
     bootstrapSetupService.executeBash(s"""/app/utils/kafka/purge-topic.sh "$topic" """)
   }
 
+  def sendHttpRequest(serviceSlug: String, payload: JSON): Either[Throwable, HttpResponse] = {
+    val response = sttp.client3.basicRequest
+      .post(uri"http://${nginxService.getHost}:8181/scenario/$serviceSlug")
+      .contentType(MediaType.ApplicationJson)
+      .body(payload.render())
+      .response(asStringAlways)
+      .send(sttpBackend)
+
+    Try(ujson.read(response.body)).toEither
+      .map(body => HttpResponse(response.code.code, ujson.read(body)))
+  }
+
   private def unsafeContainerByServiceName(name: String) = env
     .getContainerByServiceName(name)
     .getOrElse(throw new IllegalStateException(s"'$name' service not available!"))
 
 }
+
+final case class HttpResponse(status: Int, body: JSON)

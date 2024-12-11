@@ -346,7 +346,6 @@ val caffeineCacheV            = "3.1.8"
 val sttpV                     = "3.9.8"
 val tapirV                    = "1.11.7"
 val openapiCirceYamlV         = "0.11.3"
-val retryV                    = "0.3.6"
 //we use legacy version because this one supports Scala 2.12
 val monocleV                  = "2.1.0"
 val jmxPrometheusJavaagentV   = "0.20.0"
@@ -2085,6 +2084,7 @@ lazy val designer = (project in file("designer/server"))
 //    liteK8sDeploymentManager          % Provided,
 //    developmentTestsDeploymentManager % Provided,
 //    flinkPeriodicDeploymentManager    % Provided,
+    requestResponseRuntime            % Test,
     schemedKafkaComponentsUtils       % Provided,
   )
 
