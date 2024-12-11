@@ -7,9 +7,9 @@ import slick.lifted.MappedTo
 import java.time.{Clock, LocalDateTime}
 
 // TODO: We should separate schedules concept from deployments - fully switch to ScheduleData and ScheduleDeploymentData
-case class PeriodicProcessDeployment[ProcessRep](
+case class PeriodicProcessDeployment[DeploymentData <: DeploymentWithJarData](
     id: PeriodicProcessDeploymentId,
-    periodicProcess: PeriodicProcess[ProcessRep],
+    periodicProcess: PeriodicProcess[DeploymentData],
     createdAt: LocalDateTime,
     runAt: LocalDateTime,
     scheduleName: ScheduleName,

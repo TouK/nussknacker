@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.management.periodic.DeploymentActor.{
   DeploymentCompleted,
   WaitingForDeployment
 }
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 
 import scala.concurrent.Future
@@ -21,8 +22,8 @@ object DeploymentActor {
   }
 
   private[periodic] def props(
-      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]],
-      deploy: PeriodicProcessDeployment[CanonicalProcess] => Future[Unit],
+      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[WithCanonicalProcess]]],
+      deploy: PeriodicProcessDeployment[WithCanonicalProcess] => Future[Unit],
       interval: FiniteDuration
   ) = {
     Props(new DeploymentActor(findToBeDeployed, deploy, interval))
@@ -30,14 +31,14 @@ object DeploymentActor {
 
   private[periodic] case object CheckToBeDeployed
 
-  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment[CanonicalProcess]])
+  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment[WithCanonicalProcess]])
 
   private case object DeploymentCompleted
 }
 
 class DeploymentActor(
-    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]],
-    deploy: PeriodicProcessDeployment[CanonicalProcess] => Future[Unit],
+    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[WithCanonicalProcess]]],
+    deploy: PeriodicProcessDeployment[WithCanonicalProcess] => Future[Unit],
     interval: FiniteDuration
 ) extends Actor
     with Timers
@@ -73,7 +74,7 @@ class DeploymentActor(
       }
   }
 
-  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment[CanonicalProcess]): Receive = {
+  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment[WithCanonicalProcess]): Receive = {
     case CheckToBeDeployed =>
       logger.debug(s"Still waiting for ${runDetails.display} to be deployed")
     case DeploymentCompleted =>
