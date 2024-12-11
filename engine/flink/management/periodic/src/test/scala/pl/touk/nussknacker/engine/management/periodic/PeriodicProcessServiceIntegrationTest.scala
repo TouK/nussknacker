@@ -70,11 +70,11 @@ class PeriodicProcessServiceIntegrationTest
 
   private val sampleProcess = CanonicalProcess(MetaData(processName.value, StreamMetaData()), Nil)
 
-  private val startTime = Instant.parse("2021-04-06T11:18:00Z")
+  private val startTime = Instant.parse("2021-04-06T13:18:00Z")
 
   // we truncate to millis, as HSQL stores with that precision...
   private def fixedClock(instant: Instant) =
-    Clock.tick(Clock.fixed(instant, ZoneId.systemDefault()), java.time.Duration.ofMillis(1))
+    Clock.tick(Clock.fixed(instant, ZoneOffset.UTC), java.time.Duration.ofMillis(1))
 
   private def localTime(instant: Instant) = LocalDateTime.now(fixedClock(instant))
 
@@ -550,7 +550,7 @@ class PeriodicProcessServiceIntegrationTest
     inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
 
     val activities = service
-      .getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, Some(startTime.plusMillis(4000)))
+      .getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, Some(startTime))
       .futureValue
     val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]

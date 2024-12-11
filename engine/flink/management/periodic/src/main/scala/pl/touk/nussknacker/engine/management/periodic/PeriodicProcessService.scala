@@ -581,11 +581,11 @@ class PeriodicProcessService(
 
   // LocalDateTime's in the context of PeriodicProcess are created using clock with system default timezone
   private def instantAtSystemDefaultZone(localDateTime: LocalDateTime): Instant = {
-    localDateTime.atZone(ZoneId.systemDefault).toInstant
+    localDateTime.atZone(clock.getZone).toInstant
   }
 
   private def localDateTimeAtSystemDefaultZone(instant: Instant): LocalDateTime = {
-    instant.atZone(ZoneId.systemDefault).toLocalDateTime
+    instant.atZone(clock.getZone).toLocalDateTime
   }
 
 }
