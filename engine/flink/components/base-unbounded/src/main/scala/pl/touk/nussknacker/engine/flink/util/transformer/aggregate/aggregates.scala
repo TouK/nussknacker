@@ -218,6 +218,18 @@ object aggregates {
       LargeFloatSumState.fromNumber(MathUtils.largeFloatingSum(asNumber, other.asNumber))
     }
 
+    // used instead of MathUtils.divide because currently MathUtils.divide has issue where BigDecimal division can
+    // result in result with very low scale
+    def dividedByLong(count: Long): Number = {
+      asNumber match {
+        case null =>
+          // will be replaced to Double.Nan in alignToExpectedType iff return type is known to be Double
+          null
+        case sum: java.lang.Double     => (sum / count)
+        case sum: java.math.BigDecimal => (BigDecimal(sum) / BigDecimal(count)).bigDecimal
+      }
+    }
+
   }
 
   object LargeFloatSumState {
@@ -254,13 +266,7 @@ object aggregates {
 
     override def result(finalAggregate: Aggregate): AnyRef = {
       val count = finalAggregate.count
-      finalAggregate.sum.asNumber match {
-        case null =>
-          // will be replaced to Double.Nan in alignToExpectedType iff return type is known to be Double
-          null
-        case sum: java.lang.Double     => (sum / count).asInstanceOf[AnyRef]
-        case sum: java.math.BigDecimal => (BigDecimal(sum) / BigDecimal(count)).bigDecimal
-      }
+      finalAggregate.sum.dividedByLong(count)
     }
 
     override def computeStoredType(input: typing.TypingResult): Validated[String, typing.TypingResult] =
@@ -323,8 +329,8 @@ object aggregates {
         MathUtils.minus(finalAggregate.sum.asNumber, finalAggregate.sum.asNumber)
       } else {
         val count              = finalAggregate.count
-        val average            = MathUtils.divide(finalAggregate.sum.asNumber, count)
-        val averageSquare      = MathUtils.divide(finalAggregate.squaresSum.asNumber, count)
+        val average            = finalAggregate.sum.dividedByLong(count)
+        val averageSquare      = finalAggregate.squaresSum.dividedByLong(count)
         val populationVariance = MathUtils.minus(averageSquare, MathUtils.largeFloatSquare(average))
         val variance = if (isForSampleInsteadOfBeingForPopulation) {
           MathUtils.multiply(count.toDouble / (count - 1), populationVariance)
