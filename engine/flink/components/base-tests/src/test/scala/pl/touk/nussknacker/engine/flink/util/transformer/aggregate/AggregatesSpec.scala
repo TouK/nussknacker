@@ -157,13 +157,13 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for population standard deviation on double") {
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(5, 4, 3, 2, 1), agg)
-    (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2) < EPS_DOUBLE) shouldBe true
+    result.asInstanceOf[Double] * result.asInstanceOf[Double] shouldBe 2.0d +- EPS_DOUBLE
   }
 
   test("should calculate correct results for sample standard deviation on double") {
     val agg    = SampleStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(5, 4, 3, 2, 1), agg)
-    (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2.5) < EPS_DOUBLE) shouldBe true
+    result.asInstanceOf[Double] * result.asInstanceOf[Double] shouldBe 2.5 +- EPS_DOUBLE
   }
 
   test("should calculate correct results for population variance on double") {
@@ -175,7 +175,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for sample variance on double") {
     val agg    = SampleVarianceAggregator
     val result = addElementsAndComputeResult(List(5, 4, 3, 2, 1), agg)
-    result shouldBe 2.5
+    result.asInstanceOf[Double] shouldBe 2.5 +- EPS_DOUBLE
   }
 
   test("should calculate correct results for population standard deviation on BigInt") {
@@ -235,13 +235,13 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for population standard deviation on float") {
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
-    (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2) < EPS_DOUBLE) shouldBe true
+    result.asInstanceOf[Double] * result.asInstanceOf[Double] shouldBe 2.0 +- EPS_DOUBLE
   }
 
   test("should calculate correct results for sample standard deviation on float") {
     val agg    = SampleStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
-    (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2.5) < EPS_DOUBLE) shouldBe true
+    result.asInstanceOf[Double] * result.asInstanceOf[Double] shouldBe 2.5 +- EPS_DOUBLE
   }
 
   test("should calculate correct results for population variance on float") {
