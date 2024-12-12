@@ -231,7 +231,7 @@ object aggregates {
       }
     }
 
-    def emptyState(): LargeFloatSumState = {
+    def emptyState: LargeFloatSumState = {
       LargeFloatSumState.fromNumber(null)
     }
 
@@ -241,7 +241,7 @@ object aggregates {
 
     override type Aggregate = AverageAggregatorState
 
-    override def zero: AverageAggregatorState = AverageAggregatorState(LargeFloatSumState.emptyState(), 0)
+    override def zero: AverageAggregatorState = AverageAggregatorState(LargeFloatSumState.emptyState, 0)
 
     override def addElement(element: Element, aggregate: Aggregate): Aggregate = {
       if (element == null) aggregate
@@ -300,7 +300,7 @@ object aggregates {
     override type Aggregate = StandardDeviationState
 
     override def zero: StandardDeviationState =
-      StandardDeviationState(LargeFloatSumState.emptyState(), LargeFloatSumState.emptyState(), 0)
+      StandardDeviationState(LargeFloatSumState.emptyState, LargeFloatSumState.emptyState, 0)
 
     override def addElement(element: Element, aggregate: Aggregate): Aggregate = {
       if (element == null) aggregate

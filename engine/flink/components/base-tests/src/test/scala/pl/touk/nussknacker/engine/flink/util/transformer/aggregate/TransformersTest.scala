@@ -6,11 +6,10 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
+import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  CannotCreateObjectError,
-  ExpressionParserCompilationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -514,7 +513,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   test(
     "emit aggregate for extra window when no data come for standard deviation and variance aggregator for return type BigDecimal"
   ) {
-    for (aggregatorName <- List("#AGG.stddevPop", "#AGG.stddevSamp", "#AGG.varPop", "#AGG.varSamp")) {
+    val table = Table(
+      "aggregatorExpression",
+      "#AGG.stddevPop", "#AGG.stddevSamp", "#AGG.varPop", "#AGG.varSamp"
+    )
+
+    forAll(table) { aggregatorName =>
       val id = "1"
 
       val model =
