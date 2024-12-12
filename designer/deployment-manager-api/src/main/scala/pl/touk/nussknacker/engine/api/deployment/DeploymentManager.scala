@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.newdeployment
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
@@ -93,7 +94,8 @@ trait DeploymentManager extends AutoCloseable {
 trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>
 
   def managerSpecificScenarioActivities(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      after: Option[Instant],
   ): Future[List[ScenarioActivity]]
 
 }

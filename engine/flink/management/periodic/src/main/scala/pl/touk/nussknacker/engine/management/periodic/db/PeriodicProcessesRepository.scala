@@ -15,7 +15,7 @@ import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
-import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -113,7 +113,8 @@ trait PeriodicProcessesRepository {
   def markInactive(processId: PeriodicProcessId): Action[Unit]
 
   def getSchedulesState(
-      scenarioName: ProcessName
+      scenarioName: ProcessName,
+      after: Option[LocalDateTime],
   ): Action[SchedulesState]
 
   def create(
@@ -188,12 +189,14 @@ class SlickPeriodicProcessesRepository(
   override def run[T](action: DBIOAction[T, NoStream, Effect.All]): Future[T] = db.run(action.transactionally)
 
   override def getSchedulesState(
-      scenarioName: ProcessName
+      scenarioName: ProcessName,
+      afterOpt: Option[LocalDateTime],
   ): Action[SchedulesState] = {
     PeriodicProcessesWithoutJson
       .filter(_.processName === scenarioName)
       .join(PeriodicProcessDeployments)
       .on(_.id === _.periodicProcessId)
+      .filterOpt(afterOpt)((entities, after) => entities._2.completedAt > after)
       .result
       .map(toSchedulesState)
   }

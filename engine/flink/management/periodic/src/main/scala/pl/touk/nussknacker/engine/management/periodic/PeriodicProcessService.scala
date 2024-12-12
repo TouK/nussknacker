@@ -28,12 +28,11 @@ import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeplo
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong
-import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong.longUUID
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time.{Clock, Instant, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -68,9 +67,12 @@ class PeriodicProcessService(
   private implicit val localDateTimeOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   def getScenarioActivitiesSpecificToPeriodicProcess(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      after: Option[Instant],
   ): Future[List[ScenarioActivity]] = for {
-    schedulesState <- scheduledProcessesRepository.getSchedulesState(processIdWithName.name).run
+    schedulesState <- scheduledProcessesRepository
+      .getSchedulesState(processIdWithName.name, after.map(localDateTimeAtSystemDefaultZone))
+      .run
     groupedByProcess        = schedulesState.groupedByPeriodicProcess
     deployments             = groupedByProcess.flatMap(_.deployments)
     deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
@@ -575,7 +577,11 @@ class PeriodicProcessService(
 
   // LocalDateTime's in the context of PeriodicProcess are created using clock with system default timezone
   private def instantAtSystemDefaultZone(localDateTime: LocalDateTime): Instant = {
-    localDateTime.atZone(ZoneId.systemDefault).toInstant
+    localDateTime.atZone(clock.getZone).toInstant
+  }
+
+  private def localDateTimeAtSystemDefaultZone(instant: Instant): LocalDateTime = {
+    instant.atZone(clock.getZone).toLocalDateTime
   }
 
 }
