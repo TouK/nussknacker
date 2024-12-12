@@ -278,7 +278,8 @@ class NotificationServiceTest
     SimpleProcessStateDefinitionManager.processState(
       StatusDetails(SimpleStateStatus.NotDeployed, None),
       VersionId(1),
-      None
+      None,
+      Some(VersionId(1)),
     )
 
   private def createServices(deploymentManager: DeploymentManager) = {
@@ -287,7 +288,8 @@ class NotificationServiceTest
         any[ProcessIdWithName],
         any[Option[ProcessAction]],
         any[VersionId],
-        any[Option[VersionId]]
+        any[Option[VersionId]],
+        any[Option[VersionId]],
       )(any[DataFreshnessPolicy])
     )
       .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(notDeployed)))

@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Typography } from "@mui/material";
 import httpService from "../../http/HttpService";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
+import { getProcessVersionId, getProcessName } from "../../reducers/selectors/graph";
 import { AddAttachment, Attachment } from "../processAttach/AddAttachment";
 import { AttachmentEl } from "../processAttach/AttachmentEl";
 import { getScenarioActivities } from "../../actions/nk/scenarioActivities";
