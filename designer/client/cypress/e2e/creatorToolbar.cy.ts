@@ -26,7 +26,7 @@ describe("Creator toolbar", () => {
         cy.contains(/^types$/i).click();
         cy.contains(/^services$/i).click();
         cy.contains(/^sinks$/i).click();
-        cy.contains(/^stickyNotes$/i).click();
+        cy.contains(/^sticky notes$/i).click();
         cy.reload();
         cy.get("@toolbar").matchImage();
         cy.get("@toolbar").find("input").type("var");
