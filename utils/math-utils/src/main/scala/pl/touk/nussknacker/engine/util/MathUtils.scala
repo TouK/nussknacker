@@ -129,6 +129,7 @@ trait MathUtils {
     })(NumberTypesPromotionStrategy.ForMathOperation)
   }
 
+  // divide method has peculiar behaviour when it comes to BigDecimals (see its implementation), hence this method is sometimes needed
   def divideWithDefaultBigDecimalScale(n1: Number, n2: Number): Number = {
     if (n1.isInstanceOf[java.math.BigDecimal] || n2.isInstanceOf[java.math.BigDecimal]) {
       (BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.math.BigDecimal]))
