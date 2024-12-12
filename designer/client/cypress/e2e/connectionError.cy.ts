@@ -82,12 +82,12 @@ describe("Connection error", () => {
 
         const statusIntervalTick = 10000;
         const visibleStatusToastMessageBeforeConnectionError = () => {
-            cy.intercept("/api/processes/*/status", { statusCode: 502 });
+            cy.intercept("/api/processes/*/status?currentlyPresentedVersionId=*", { statusCode: 502 });
 
             // Check if the status toast message is not visible after the backend connection issue. We need to speed up interval to not wait 12s for a request
             cy.contains(/Cannot fetch status/).should("be.visible");
 
-            cy.intercept("/api/processes/*/status", (req) => {
+            cy.intercept("/api/processes/*/status?currentlyPresentedVersionId=*", (req) => {
                 req.continue();
             });
         };

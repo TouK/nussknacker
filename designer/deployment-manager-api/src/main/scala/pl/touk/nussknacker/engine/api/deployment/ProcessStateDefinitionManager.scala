@@ -59,9 +59,10 @@ trait ProcessStateDefinitionManager {
   def processState(
       statusDetails: StatusDetails,
       latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId]
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): ProcessState = {
-    val status = ProcessStatus(statusDetails.status, latestVersionId, deployedVersionId)
+    val status = ProcessStatus(statusDetails.status, latestVersionId, deployedVersionId, currentlyPresentedVersionId)
     ProcessState(
       statusDetails.externalDeploymentId,
       statusDetails.status,
@@ -92,7 +93,8 @@ object ProcessStateDefinitionManager {
   final case class ProcessStatus(
       stateStatus: StateStatus,
       latestVersionId: VersionId,
-      deployedVersionId: Option[VersionId]
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   )
 
   /**

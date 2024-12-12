@@ -17,10 +17,16 @@ trait DeploymentManagerInconsistentStateHandlerMixIn {
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
     Future.successful(
-      processStateDefinitionManager.processState(engineStateResolvedWithLastAction, latestVersionId, deployedVersionId)
+      processStateDefinitionManager.processState(
+        engineStateResolvedWithLastAction,
+        latestVersionId,
+        deployedVersionId,
+        currentlyPresentedVersionId
+      )
     )
   }
 
@@ -46,6 +52,7 @@ trait DeploymentManager extends AutoCloseable {
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   )(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
@@ -56,7 +63,8 @@ trait DeploymentManager extends AutoCloseable {
         statusDetailsWithFreshness.value,
         lastStateAction,
         latestVersionId,
-        deployedVersionId
+        deployedVersionId,
+        currentlyPresentedVersionId,
       ).map(state => statusDetailsWithFreshness.map(_ => state))
     } yield stateWithFreshness
   }
@@ -79,6 +87,7 @@ trait DeploymentManager extends AutoCloseable {
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager

@@ -204,6 +204,7 @@ class PeriodicDeploymentManager private[periodic] (
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     val statusDetails = statusDetailsList.head
     // TODO: add "real" presentation of deployments in GUI
@@ -213,7 +214,8 @@ class PeriodicDeploymentManager private[periodic] (
           statusDetails.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status
         ),
         latestVersionId,
-        deployedVersionId
+        deployedVersionId,
+        currentlyPresentedVersionId,
       )
     Future.successful(mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(statusDetails.status)))
   }

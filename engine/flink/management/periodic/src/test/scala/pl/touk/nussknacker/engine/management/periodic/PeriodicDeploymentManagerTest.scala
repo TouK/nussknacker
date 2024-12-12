@@ -89,10 +89,11 @@ class PeriodicDeploymentManagerTest
     def getAllowedActions(
         statusDetails: StatusDetails,
         latestVersionId: VersionId,
-        deployedVersionId: Option[VersionId]
+        deployedVersionId: Option[VersionId],
+        currentlyPresentedVersionId: Option[VersionId],
     ): List[ScenarioActionName] = {
       periodicDeploymentManager.processStateDefinitionManager
-        .processState(statusDetails, latestVersionId, deployedVersionId)
+        .processState(statusDetails, latestVersionId, deployedVersionId, currentlyPresentedVersionId)
         .allowedActions
     }
 
@@ -130,12 +131,18 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetails, processVersion.versionId, None) shouldBe List(
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel,
       ScenarioActionName.Deploy
     )
     f.periodicDeploymentManager
-      .getProcessState(idWithName, None, processVersion.versionId, Some(processVersion.versionId))
+      .getProcessState(
+        idWithName,
+        None,
+        processVersion.versionId,
+        Some(processVersion.versionId),
+        Some(processVersion.versionId)
+      )
       .futureValue
       .value
       .status shouldBe a[ScheduledStatus]
@@ -148,7 +155,7 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetails, processVersion.versionId, None) shouldBe List(
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel,
       ScenarioActionName.Deploy
     )
@@ -166,7 +173,10 @@ class PeriodicDeploymentManagerTest
     f.periodicProcessService.deactivate(processName).futureValue
 
     val state =
-      f.periodicDeploymentManager.getProcessState(idWithName, None, processVersion.versionId, None).futureValue.value
+      f.periodicDeploymentManager
+        .getProcessState(idWithName, None, processVersion.versionId, None, Some(processVersion.versionId))
+        .futureValue
+        .value
 
     state.status shouldBe SimpleStateStatus.Finished
     state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
@@ -179,7 +189,9 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe SimpleStateStatus.Running
-    f.getAllowedActions(statusDetails, processVersion.versionId, None) shouldBe List(ScenarioActionName.Cancel)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel
+    )
   }
 
   test("getProcessState - should be waiting for reschedule if job finished on Flink but scenario is still deployed") {
@@ -189,7 +201,9 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe WaitingForScheduleStatus
-    f.getAllowedActions(statusDetails, processVersion.versionId, None) shouldBe List(ScenarioActionName.Cancel)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel
+    )
   }
 
   test("getProcessState - should be failed after unsuccessful deployment") {
@@ -198,7 +212,9 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe ProblemStateStatus.Failed
-    f.getAllowedActions(statusDetails, processVersion.versionId, None) shouldBe List(ScenarioActionName.Cancel)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel
+    )
   }
 
   test("deploy - should fail for invalid periodic property") {
@@ -283,7 +299,9 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe ProblemStateStatus.Failed
-    f.getAllowedActions(statusDetails, processVersion.versionId, None) shouldBe List(ScenarioActionName.Cancel)
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
+      ScenarioActionName.Cancel
+    )
   }
 
   test("should redeploy failed scenario") {
@@ -292,7 +310,12 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
     val statusDetailsBeforeRedeploy = f.getMergedStatusDetails
     statusDetailsBeforeRedeploy.status shouldBe ProblemStateStatus.Failed
-    f.getAllowedActions(statusDetailsBeforeRedeploy, processVersion.versionId, None) shouldBe List(
+    f.getAllowedActions(
+      statusDetailsBeforeRedeploy,
+      processVersion.versionId,
+      None,
+      Some(processVersion.versionId)
+    ) shouldBe List(
       ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 
@@ -315,7 +338,12 @@ class PeriodicDeploymentManagerTest
     val statusDetailsAfterRedeploy = f.getMergedStatusDetails
     // Previous job is still visible as Failed.
     statusDetailsAfterRedeploy.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetailsAfterRedeploy, processVersion.versionId, None) shouldBe List(
+    f.getAllowedActions(
+      statusDetailsAfterRedeploy,
+      processVersion.versionId,
+      None,
+      Some(processVersion.versionId)
+    ) shouldBe List(
       ScenarioActionName.Cancel,
       ScenarioActionName.Deploy
     )
@@ -348,7 +376,7 @@ class PeriodicDeploymentManagerTest
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deploymentId))
     val statusDetails = f.getMergedStatusDetails
-    f.getAllowedActions(statusDetails, processVersion.versionId, None) shouldBe List(
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 
@@ -375,7 +403,7 @@ class PeriodicDeploymentManagerTest
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
     val statusDetails = f.getMergedStatusDetails
-    f.getAllowedActions(statusDetails, processVersion.versionId, None) shouldBe List(
+    f.getAllowedActions(statusDetails, processVersion.versionId, None, Some(processVersion.versionId)) shouldBe List(
       ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 

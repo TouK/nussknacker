@@ -74,20 +74,24 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       ProcessStatus(
         stateStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
         latestVersionId = VersionId(5),
-        deployedVersionId = Some(VersionId(5))
+        deployedVersionId = Some(VersionId(5)),
+        currentlyPresentedVersionId = Some(VersionId(5)),
       )
     ) shouldEqual Map.empty
   }
 
-  test("display custom tooltip for perform single execution when older version is deployed") {
+  test(
+    "display custom tooltip for perform single execution when deployed version is different than currently displayed"
+  ) {
     PeriodicStateStatus.customActionTooltips(
       ProcessStatus(
         stateStatus = ScheduledStatus(nextRunAt = LocalDateTime.now()),
         latestVersionId = VersionId(5),
-        deployedVersionId = Some(VersionId(4))
+        deployedVersionId = Some(VersionId(4)),
+        currentlyPresentedVersionId = Some(VersionId(5)),
       )
     ) shouldEqual Map(
-      ScenarioActionName.PerformSingleExecution -> "There is new version 5 available (version 4 is deployed)"
+      ScenarioActionName.PerformSingleExecution -> "Version 4 is deployed, but different version 5 is displayed"
     )
   }
 
@@ -96,7 +100,8 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       ProcessStatus(
         stateStatus = SimpleStateStatus.Canceled,
         latestVersionId = VersionId(5),
-        deployedVersionId = Some(VersionId(4))
+        deployedVersionId = Some(VersionId(4)),
+        currentlyPresentedVersionId = Some(VersionId(5)),
       )
     ) shouldEqual Map(
       ScenarioActionName.PerformSingleExecution -> "Disabled for CANCELED status."

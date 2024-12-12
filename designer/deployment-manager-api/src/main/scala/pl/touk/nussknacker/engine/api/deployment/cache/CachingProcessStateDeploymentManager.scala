@@ -29,8 +29,16 @@ class CachingProcessStateDeploymentManager(
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] =
-    delegate.resolve(idWithName, statusDetails, lastStateAction, latestVersionId, deployedVersionId)
+    delegate.resolve(
+      idWithName,
+      statusDetails,
+      lastStateAction,
+      latestVersionId,
+      deployedVersionId,
+      currentlyPresentedVersionId
+    )
 
   override def getProcessStates(
       name: ProcessName

@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
@@ -208,9 +208,11 @@ class ProcessesResources(
         }
       } ~ path("processes" / ProcessNameSegment / "status") { processName =>
         (get & processId(processName)) { processId =>
-          complete {
-            implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-            processStateService.getProcessState(processId).map(ToResponseMarshallable(_))
+          currentlyPresentedVersionIdParameter { currentlyPresentedVersionId =>
+            complete {
+              implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+              processStateService.getProcessState(processId, currentlyPresentedVersionId).map(ToResponseMarshallable(_))
+            }
           }
         }
       } ~ path("processes" / ProcessNameSegment / "toolbars") { processName =>
@@ -283,6 +285,10 @@ class ProcessesResources(
   private def validationFlagsToMode(skipValidateAndResolve: Boolean, skipNodeResults: Boolean) = {
     if (skipValidateAndResolve) FetchScenarioGraph.DontValidate
     else FetchScenarioGraph.ValidateAndResolve(!skipNodeResults)
+  }
+
+  private def currentlyPresentedVersionIdParameter = {
+    parameters(Symbol("currentlyPresentedVersionId").as[VersionId].?)
   }
 
 }
