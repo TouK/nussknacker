@@ -5,14 +5,14 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ScalaServiceLoader}
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.NussknackerConfig
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
+import pl.touk.nussknacker.engine.util.UrlUtils._
 
-import java.net.URL
-import java.nio.file.Paths
+import java.nio.file.Path
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConfig)
@@ -23,70 +23,62 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
-    config
-      .loadProcessingTypeConfigs()
-      .map { processingTypesConfig =>
-        // This step with splitting DeploymentManagerProvider loading for all processing types
-        // and after that creating ProcessingTypeData is done because of the deduplication of deployments
-        // See DeploymentManagerProvider.engineSetupIdentity
-        val providerWithNameInputData = processingTypesConfig.mapValuesNow { processingTypeConfig =>
-          val provider = createDeploymentManagerProvider(processingTypeConfig)
-          val nameInputData = EngineNameInputData(
-            provider.defaultEngineSetupName,
-            provider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
-            processingTypeConfig.engineSetupName
-          )
-          (processingTypeConfig, provider, nameInputData)
-        }
-        val engineSetupNames =
-          ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
-        val processingTypesData = providerWithNameInputData
-          .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
-            logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
-            val modelDependencies = getModelDependencies(processingType)
-            val processingTypeData = ProcessingTypeData.createProcessingTypeData(
-              processingType,
-              ModelData(processingTypeConfig, modelDependencies),
-              deploymentManagerProvider,
-              getDeploymentManagerDependencies(processingType),
-              engineSetupNames(processingType),
-              processingTypeConfig.deploymentConfig,
-              processingTypeConfig.category,
-              modelDependencies.componentDefinitionExtractionMode
-            )
-            processingType -> processingTypeData
-          }
-
-        // Here all processing types are loaded and we are ready to perform additional configuration validations
-        // to assert the loaded configuration is correct (fail-fast approach).
-        val combinedData = CombinedProcessingTypeData.create(processingTypesData)
-
-        ProcessingTypeDataState(
-          processingTypesData.mapValuesNow(toValueWithRestriction),
-          () => combinedData,
-          // We pass here new Object to enforce update of observers
-          new Object
+    for {
+      managersDir           <- config.managersDir()
+      processingTypesConfig <- config.loadProcessingTypeConfigs()
+    } yield {
+      // This step with splitting DeploymentManagerProvider loading for all processing types
+      // and after that creating ProcessingTypeData is done because of the deduplication of deployments
+      // See DeploymentManagerProvider.engineSetupIdentity
+      val providerWithNameInputData = processingTypesConfig.mapValuesNow { processingTypeConfig =>
+        val provider = createDeploymentManagerProvider(managersDir, processingTypeConfig)
+        val nameInputData = EngineNameInputData(
+          provider.defaultEngineSetupName,
+          provider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
+          processingTypeConfig.engineSetupName
         )
+        (processingTypeConfig, provider, nameInputData)
       }
+      val engineSetupNames =
+        ScenarioParametersDeterminer.determineEngineSetupNames(providerWithNameInputData.mapValuesNow(_._3))
+      val processingTypesData = providerWithNameInputData
+        .map { case (processingType, (processingTypeConfig, deploymentManagerProvider, _)) =>
+          logger.debug(s"Creating Processing Type: $processingType with config: $processingTypeConfig")
+          val modelDependencies = getModelDependencies(processingType)
+          val processingTypeData = ProcessingTypeData.createProcessingTypeData(
+            processingType,
+            ModelData(processingTypeConfig, modelDependencies),
+            deploymentManagerProvider,
+            getDeploymentManagerDependencies(processingType),
+            engineSetupNames(processingType),
+            processingTypeConfig.deploymentConfig,
+            processingTypeConfig.category,
+            modelDependencies.componentDefinitionExtractionMode
+          )
+          processingType -> processingTypeData
+        }
+
+      // Here all processing types are loaded and we are ready to perform additional configuration validations
+      // to assert the loaded configuration is correct (fail-fast approach).
+      val combinedData = CombinedProcessingTypeData.create(processingTypesData)
+
+      ProcessingTypeDataState(
+        processingTypesData.mapValuesNow(toValueWithRestriction),
+        () => combinedData,
+        // We pass here new Object to enforce update of observers
+        new Object
+      )
+    }
   }
 
-  private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
+  private def createDeploymentManagerProvider(
+      managersDir: Path,
+      typeConfig: ProcessingTypeConfig
+  ): DeploymentManagerProvider = {
     val managersClassLoader =
-      new URLClassLoader(Seq(Paths.get("designer/server/work/managers/").toUri.toURL), this.getClass.getClassLoader)
-    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType, managersClassLoader)
+      new URLClassLoader(managersDir.toUri.toURL.expandFiles(".jar"), this.getClass.getClassLoader)
+    ScalaServiceLoader
+      .loadNamed[DeploymentManagerProvider](typeConfig.deploymentManagerType, managersClassLoader) // todo: close
   }
-  // todo:
-//  private def createDeploymentManagerProvider(typeConfig: ProcessingTypeConfig): DeploymentManagerProvider = {
-//    ScalaServiceLoader.loadNamed[DeploymentManagerProvider](
-//      typeConfig.deploymentManagerType,
-//      ModelClassLoader(
-//        "engine/lite/deploymentManager/target/scala-2.13/classes/" ::
-//          "engine/lite/embeddedDeploymentManager/target/scala-2.13/classes/" ::
-//          "engine/lite/runtime/target/scala-2.13/classes/" ::
-//          Nil,
-//        None)
-//        .classLoader
-//    )
-//  }
 
 }

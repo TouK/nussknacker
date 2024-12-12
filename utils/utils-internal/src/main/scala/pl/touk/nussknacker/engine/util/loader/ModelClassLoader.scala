@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.util.loader
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.util.StringUtils._
+import pl.touk.nussknacker.engine.util.UrlUtils._
 
 import java.io.File
-import java.net.{URI, URL, URLClassLoader}
+import java.net.{URL, URLClassLoader}
 import java.nio.file.Path
 
 case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) {
@@ -29,46 +31,30 @@ object ModelClassLoader extends LazyLogging {
       workingDirectoryOpt: Option[Path],
       jarExtension: String = defaultJarExtension
   ): ModelClassLoader = {
-    val postProcessedURLs = expandFiles(urls.map(convertToURL(_, workingDirectoryOpt)), jarExtension)
+    val postProcessedURLs = validateExistence(
+      urls.map(_.convertToURL(workingDirectoryOpt)).flatMap(_.expandFiles(jarExtension))
+    )
     ModelClassLoader(
       new URLClassLoader(postProcessedURLs.toArray, this.getClass.getClassLoader),
       postProcessedURLs.toList
     )
   }
 
-  private def expandFiles(urls: Iterable[URL], jarExtension: String): Iterable[URL] = {
-    urls.flatMap {
-      case url if url.getProtocol.toLowerCase == "file" =>
-        val file = new File(url.toURI)
-        if (file.isDirectory) {
-          val expanded =
-            expandFiles(file.listFiles().filterNot(_.getName.startsWith(".")).map(_.toURI.toURL), jarExtension)
-          if (expanded.isEmpty) {
-            List.empty
-          } else if (expanded.exists(_.getFile.endsWith(jarExtension))) { // not expand if nested jars not exists
-            expanded
-          } else {
-            List(url)
-          }
-        } else {
-          List(url)
-        }
-      case url => List(url)
+  private def validateExistence(urls: Iterable[URL]): Iterable[URL] = {
+    urls.filterNot(url => doesExist(url)).toList match {
+      case Nil => urls
+      case notExisted =>
+        throw new IllegalArgumentException(s"The following URLs don't exist: [${notExisted.mkString(",")}]")
     }
   }
 
-  private def convertToURL(urlString: String, workingDirectoryOpt: Option[Path]): URL = {
-    val uri = new URI(urlString)
-    if (uri.isAbsolute) {
-      uri.toURL
-    } else {
-      val pathPart = uri.getSchemeSpecificPart
-      val path = workingDirectoryOpt.map { workingDirectory =>
-        workingDirectory.resolve(pathPart)
-      } getOrElse {
-        Path.of(pathPart)
-      }
-      path.toUri.toURL
+  private def doesExist(url: URL): Boolean = {
+    url.getProtocol match {
+      case "file" =>
+        val file = new File(url.toURI)
+        file.exists() && file.isFile
+      case _ =>
+        false
     }
   }
 

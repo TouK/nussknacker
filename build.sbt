@@ -1503,7 +1503,8 @@ lazy val developmentTestsDeployManagerArtifacts =
 
 developmentTestsDeployManagerArtifacts := List(
   (liteEmbeddedDeploymentManager / assembly).value     -> "managers/lite-embedded-manager.jar",
-  (developmentTestsDeploymentManager / assembly).value -> "managers/developmentTestsManager.jar"
+  (developmentTestsDeploymentManager / assembly).value -> "managers/developmentTestsManager.jar",
+  (liteK8sDeploymentManager / assembly).value          -> "managers/lite-k8s-manager.jar"
 )
 
 lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")

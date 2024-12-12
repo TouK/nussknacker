@@ -17,6 +17,8 @@ import scala.concurrent.duration.FiniteDuration
 
 class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
+  override val name: String = "lite-embedded"
+
   override def createDeploymentManager(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
@@ -43,7 +45,5 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     Nil,
     List(EmbeddedRequestResponseScenarioValidator)
   )
-
-  override def name: String = "lite-embedded"
 
 }

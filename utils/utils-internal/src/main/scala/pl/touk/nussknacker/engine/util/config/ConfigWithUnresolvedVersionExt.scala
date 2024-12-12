@@ -24,6 +24,14 @@ class ConfigWithUnresolvedVersionExt(val config: ConfigWithUnresolvedVersion) {
     }
   }
 
+  def readSafeString(path: String): Option[String] = {
+    if (config.resolved.hasPath(path)) {
+      Some(config.resolved.getString(path))
+    } else {
+      None
+    }
+  }
+
 }
 
 object ConfigWithUnresolvedVersionExt {
