@@ -63,7 +63,7 @@ class JarManagerTest extends AnyFunSuite with Matchers with ScalaFutures with Pa
     val modelJarProvider = new FlinkModelJarProvider(currentModelUrls)
     val jarManager       = createJarManager(jarsDir, modelJarProvider)
 
-    def verifyAndDeleteJar(result: Future[DeploymentWithJarData[CanonicalProcess]]): Unit = {
+    def verifyAndDeleteJar(result: Future[DeploymentWithJarData.WithCanonicalProcess]): Unit = {
       val copiedJarFile = jarsDir.resolve(result.futureValue.jarFileName)
       Files.exists(copiedJarFile) shouldBe true
       Files.readAllBytes(copiedJarFile) shouldBe modelJarFileContent
