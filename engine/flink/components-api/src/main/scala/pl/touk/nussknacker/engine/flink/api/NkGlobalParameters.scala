@@ -100,9 +100,11 @@ object NkGlobalParameters {
       val configMap = parameters.configParameters
         .map(ConfigGlobalParametersToMapEncoder.encode)
         .getOrElse(Map.empty)
+
       val namespaceTagsMap = parameters.namespaceParameters
         .map(p => encodeWithKeyPrefix(p.tags, namespaceTagsMapPrefix))
         .getOrElse(Map.empty)
+
       val additionalInformationMap =
         encodeWithKeyPrefix(parameters.additionalInformation, additionalInformationMapPrefix)
 
@@ -112,8 +114,8 @@ object NkGlobalParameters {
     def decode(map: Map[String, String]): Option[NkGlobalParameters] = {
       def decodeWithKeyPrefix(map: Map[String, String], prefix: String): Map[String, String] = {
         map.view
-          .filter { case (key, _) => key.startsWith(prefix) }
-          .map { case (key, value) => key.stripPrefix(prefix) -> value }
+          .filter { case (key, _) => key.startsWith(s"$prefix.") }
+          .map { case (key, value) => key.stripPrefix(s"$prefix.") -> value }
           .toMap
       }
 
@@ -130,10 +132,12 @@ object NkGlobalParameters {
       val buildInfoOpt = map.get("buildInfo")
 
       val configParameters = ConfigGlobalParametersToMapEncoder.decode(map)
+
       val namespaceTags = {
         val namespaceTagsMap = decodeWithKeyPrefix(map, namespaceTagsMapPrefix)
         if (namespaceTagsMap.isEmpty) None else Some(NamespaceMetricsTags(namespaceTagsMap))
       }
+
       val additionalInformation = decodeWithKeyPrefix(map, additionalInformationMapPrefix)
 
       for {

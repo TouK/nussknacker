@@ -160,14 +160,14 @@ class FlinkRestManager(
       val userConfig = executionConfig.`user-config`
 
       for {
-        version <- userConfig.get("additionalInformation.versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
-        user    <- userConfig.get("additionalInformation.user").map(_.asString.getOrElse(""))
-        modelVersion = userConfig.get("additionalInformation.modelVersion").flatMap(_.asString).map(_.toInt)
+        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
+        user    <- userConfig.get("user").map(_.asString.getOrElse(""))
+        modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
         processId = ProcessId(
-          userConfig.get("additionalInformation.processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L)
+          userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L)
         )
         labels = userConfig
-          .get("additionalInformation.labels")
+          .get("labels")
           .flatMap(_.asArray)
           .map(_.toList.flatMap(_.asString))
           .toList
