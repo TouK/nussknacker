@@ -43,6 +43,7 @@ export default forwardRef(function AceWithSettings(
 
         const scrollToView = throttle(
             () => {
+                if (!editor.isFocused()) return;
                 // before setting cursor position ensure all position calculations are actual
                 editor?.renderer.updateFull(true);
                 const activeElement = editor.container.querySelector(".ace_cursor") || document.activeElement;

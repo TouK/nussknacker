@@ -1,11 +1,11 @@
 /* @refresh reset */
 import { dia, g } from "jointjs";
 import { throttle } from "lodash";
+import { isVisualTesting } from "../../devHelpers";
 import { GlobalCursor } from "./GlobalCursor";
 import { select, Selection } from "d3-selection";
 import { D3ZoomEvent, zoom, ZoomBehavior, ZoomedElementBaseType, zoomIdentity, ZoomTransform } from "d3-zoom";
 import { rafThrottle } from "./rafThrottle";
-import { isVisualTesting } from "../toolbarSettings/DEV_TOOLBARS";
 
 function isModified(event: MouseEvent | TouchEvent) {
     return event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
