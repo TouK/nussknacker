@@ -59,6 +59,7 @@
   * in order to use it, DM must implement interface `schedulingSupported`, that handles deployments on a specific engine
   * implementation provided for Flink DM
 * [#7443](https://github.com/TouK/nussknacker/pull/7443) Indexing on record is more similar to indexing on map. The change lets us access record values dynamically. For example now spel expression "{a: 5, b: 10}[#input.field]" compiles and has type "Integer" inferred from types of values of the record. This lets us access record value based on user input, for instance if user passes "{"field": "b"}" to scenario we will get value "10", whereas input {"field": "c"} would result in "null". Expression "{a: 5}["b"]" still does not compile because it is known at compile time that record does not have property "b".
+* [#7324](https://github.com/TouK/nussknacker/pull/7324) Fix: Passing Flink Job Global Params
 
 ## 1.18
 
@@ -77,9 +78,6 @@
 
 * Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
-
-### 1.18.2 (Not released)
-* [#7324](https://github.com/TouK/nussknacker/pull/7324) Fix: Passing Flink Job Global Params
 
 ### 1.18.1 (9 December 2024)
 
