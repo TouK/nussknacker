@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{
 }
 
 import java.lang
+import java.math.MathContext
 import java.math.RoundingMode
 
 trait MathUtils {
@@ -79,6 +80,27 @@ trait MathUtils {
     promoteThenSum(n1, n2)
   }
 
+  @Hidden
+  def largeFloatSquare(number: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
+    val converted = convertToPromotedType(number)
+    multiply(converted, converted)
+  }
+
+  @Hidden
+  def largeFloatSqrt(number: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
+
+    val converted = convertToPromotedType(number)
+
+    converted match {
+      case converted: java.lang.Double     => Math.sqrt(converted)
+      case converted: java.math.BigDecimal => converted.sqrt(MathContext.DECIMAL128)
+    }
+  }
+
   def plus(n1: Number, n2: Number): Number = sum(n1, n2)
 
   def minus(n1: Number, n2: Number): Number = {
@@ -107,6 +129,16 @@ trait MathUtils {
     })(NumberTypesPromotionStrategy.ForMathOperation)
   }
 
+  def divideWithDefaultBigDecimalScale(n1: Number, n2: Number): Number = {
+    if (n1.isInstanceOf[java.math.BigDecimal] || n2.isInstanceOf[java.math.BigDecimal]) {
+      (BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.math.BigDecimal]))
+        /
+          BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.math.BigDecimal]))).bigDecimal
+    } else {
+      divide(n1, n2)
+    }
+  }
+
   def divide(n1: Number, n2: Number): Number = {
     withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForPromotingMathOp {
       override def onInts(n1: java.lang.Integer, n2: java.lang.Integer): java.lang.Integer = n1 / n2
@@ -118,6 +150,8 @@ trait MathUtils {
       override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = {
         n1.divide(
           n2,
+          // This is copied behaviour of divide operation in spel (class OpDivide) but it can lead to issues when both big decimals have small scales.
+          // Small scales happen when integer is converted to BigDecimal using SpringNumberUtils.convertNumberToTargetClass
           Math.max(n1.scale(), n2.scale),
           RoundingMode.HALF_EVEN
         ) // same scale and rounding as used by OpDivide in SpelExpression.java

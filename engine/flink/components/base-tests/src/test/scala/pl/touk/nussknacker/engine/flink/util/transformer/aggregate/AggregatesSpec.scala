@@ -3,8 +3,25 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregatesSpec.{EPS_BIG_DECIMAL, EPS_DOUBLE}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{
+  AverageAggregator,
+  CountWhenAggregator,
+  FirstAggregator,
+  LastAggregator,
+  ListAggregator,
+  MapAggregator,
+  MaxAggregator,
+  MinAggregator,
+  OptionAggregator,
+  PopulationStandardDeviationAggregator,
+  PopulationVarianceAggregator,
+  SampleStandardDeviationAggregator,
+  SampleVarianceAggregator,
+  SetAggregator,
+  SumAggregator
+}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.lang.{Integer => JInt, Long => JLong}
@@ -83,56 +100,48 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for first aggregator") {
     val agg = FirstAggregator
-    agg.result(
-      agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))
-    ) shouldEqual 5
+    resultOnElements(List(5, 8), agg) shouldEqual 5
   }
 
   test("should calculate correct results for countWhen aggregator") {
     val agg = CountWhenAggregator
-    agg.result(
-      agg.addElement(
-        false.asInstanceOf[agg.Element],
-        agg.addElement(true.asInstanceOf[agg.Element], agg.addElement(true.asInstanceOf[agg.Element], agg.zero))
-      )
-    ) shouldEqual 2
+    resultOnElements(List(true, true), agg) shouldEqual 2
   }
 
   test("should calculate correct results for average aggregator") {
     val agg = AverageAggregator
-    agg.result(
-      agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(7.asInstanceOf[agg.Element], agg.zero))
-    ) shouldEqual 7.5
+    resultOnElements(List(7, 8), agg) shouldEqual 7.5
   }
 
   test("should calculate correct results for average aggregator on BigInt") {
     val agg = AverageAggregator
-    agg.result(
-      agg.addElement(
-        new BigInteger("8").asInstanceOf[agg.Element],
-        agg.addElement(new BigInteger("7").asInstanceOf[agg.Element], agg.zero)
-      )
-    ) shouldEqual new java.math.BigDecimal("7.5")
+    resultOnElements(List(new BigInteger("7"), new BigInteger("8")), agg) shouldEqual new java.math.BigDecimal("7.5")
   }
 
   test("should calculate correct results for average aggregator on float") {
     val agg = AverageAggregator
-    agg.result(
-      agg.addElement(
-        8.0f.asInstanceOf[agg.Element],
-        agg.addElement(7.0f.asInstanceOf[agg.Element], agg.zero)
-      )
-    ) shouldEqual 7.5
+    resultOnElements(List(7.0f, 8.0f), agg) shouldEqual 7.5
   }
 
   test("should calculate correct results for average aggregator on BigDecimal") {
     val agg = AverageAggregator
-    agg.result(
-      agg.addElement(
-        new java.math.BigDecimal("8").asInstanceOf[agg.Element],
-        agg.addElement(new java.math.BigDecimal("7").asInstanceOf[agg.Element], agg.zero)
-      )
+    resultOnElements(
+      List(new java.math.BigDecimal("7"), new java.math.BigDecimal("8")),
+      agg
     ) shouldEqual new java.math.BigDecimal("7.5")
+  }
+
+  test("average aggregator should ignore nulls") {
+    val agg = AverageAggregator
+    resultOnElements(
+      List(null, new BigInteger("7"), null, new BigInteger("8")),
+      agg
+    ) shouldEqual new java.math.BigDecimal("7.5")
+  }
+
+  test("average aggregator should ignore null") {
+    val agg = AverageAggregator
+    resultOnElements(List(null), agg) shouldEqual null
   }
 
   test("AverageAggregator should calculate correct results for empty aggregation set") {
@@ -145,11 +154,277 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     require(result == null)
   }
 
+  test("should calculate correct results for population standard deviation on double") {
+    val agg    = PopulationStandardDeviationAggregator
+    val result = resultOnElements(List(5, 4, 3, 2, 1), agg)
+    (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2) < EPS_DOUBLE) shouldBe true
+  }
+
+  test("should calculate correct results for sample standard deviation on double") {
+    val agg    = SampleStandardDeviationAggregator
+    val result = resultOnElements(List(5, 4, 3, 2, 1), agg)
+    (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2.5) < EPS_DOUBLE) shouldBe true
+  }
+
+  test("should calculate correct results for population variance on double") {
+    val agg    = PopulationVarianceAggregator
+    val result = resultOnElements(List(5, 4, 3, 2, 1), agg)
+    result shouldBe 2
+  }
+
+  test("should calculate correct results for sample variance on double") {
+    val agg    = SampleVarianceAggregator
+    val result = resultOnElements(List(5, 4, 3, 2, 1), agg)
+    result shouldBe 2.5
+  }
+
+  test("should calculate correct results for population standard deviation on BigInt") {
+    val agg = PopulationStandardDeviationAggregator
+    val result = resultOnElements(
+      List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .multiply(result.asInstanceOf[java.math.BigDecimal])
+      .subtract(new java.math.BigDecimal("2"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should calculate correct results for sample standard deviation on BigInt") {
+    val agg = SampleStandardDeviationAggregator
+    val result = resultOnElements(
+      List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .multiply(result.asInstanceOf[java.math.BigDecimal])
+      .subtract(new java.math.BigDecimal("2.5"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should calculate correct results for population variance on BigInt") {
+    val agg = PopulationVarianceAggregator
+    val result = resultOnElements(
+      List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .subtract(new java.math.BigDecimal("2"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should calculate correct results for sample variance on BigInt") {
+    val agg = SampleVarianceAggregator
+    val result = resultOnElements(
+      List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .subtract(new java.math.BigDecimal("2.5"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should calculate correct results for population standard deviation on float") {
+    val agg    = PopulationStandardDeviationAggregator
+    val result = resultOnElements(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
+    (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2) < EPS_DOUBLE) shouldBe true
+  }
+
+  test("should calculate correct results for sample standard deviation on float") {
+    val agg    = SampleStandardDeviationAggregator
+    val result = resultOnElements(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
+    (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2.5) < EPS_DOUBLE) shouldBe true
+  }
+
+  test("should calculate correct results for population variance on float") {
+    val agg    = PopulationVarianceAggregator
+    val result = resultOnElements(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
+    result shouldBe 2
+  }
+
+  test("should calculate correct results for sample variance on float") {
+    val agg    = SampleVarianceAggregator
+    val result = resultOnElements(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
+    result shouldBe 2.5
+  }
+
+  test("should calculate correct results for population standard deviation on BigDecimal") {
+    val agg = PopulationStandardDeviationAggregator
+    val result = resultOnElements(
+      List(
+        new java.math.BigDecimal("5"),
+        new java.math.BigDecimal("4"),
+        new java.math.BigDecimal("3"),
+        new java.math.BigDecimal("2"),
+        new java.math.BigDecimal("1")
+      ),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .multiply(result.asInstanceOf[java.math.BigDecimal])
+      .subtract(new java.math.BigDecimal("2"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should calculate correct results for sample standard deviation on BigDecimal") {
+    val agg = SampleStandardDeviationAggregator
+    val result = resultOnElements(
+      List(
+        new java.math.BigDecimal("5"),
+        new java.math.BigDecimal("4"),
+        new java.math.BigDecimal("3"),
+        new java.math.BigDecimal("2"),
+        new java.math.BigDecimal("1")
+      ),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .multiply(result.asInstanceOf[java.math.BigDecimal])
+      .subtract(new java.math.BigDecimal("2.5"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should calculate correct results for population variance on BigDecimal") {
+    val agg = PopulationVarianceAggregator
+    val result = resultOnElements(
+      List(
+        new java.math.BigDecimal("5"),
+        new java.math.BigDecimal("4"),
+        new java.math.BigDecimal("3"),
+        new java.math.BigDecimal("2"),
+        new java.math.BigDecimal("1")
+      ),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .subtract(new java.math.BigDecimal("2"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should calculate correct results for sample variance on BigDecimal") {
+    val agg = SampleVarianceAggregator
+    val result = resultOnElements(
+      List(
+        new java.math.BigDecimal("5"),
+        new java.math.BigDecimal("4"),
+        new java.math.BigDecimal("3"),
+        new java.math.BigDecimal("2"),
+        new java.math.BigDecimal("1")
+      ),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .subtract(new java.math.BigDecimal("2.5"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should ignore nulls for sample variance") {
+    val agg = SampleVarianceAggregator
+    val result = resultOnElements(
+      List(
+        null,
+        new java.math.BigDecimal("5"),
+        new java.math.BigDecimal("4"),
+        null,
+        new java.math.BigDecimal("3"),
+        new java.math.BigDecimal("2"),
+        new java.math.BigDecimal("1")
+      ),
+      agg
+    )
+    result
+      .asInstanceOf[java.math.BigDecimal]
+      .subtract(new java.math.BigDecimal("2.5"))
+      .abs()
+      .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+  }
+
+  test("should ignore null for sample variance") {
+    val agg = SampleVarianceAggregator
+    val result = resultOnElements(
+      List(
+        null
+      ),
+      agg
+    )
+    result shouldEqual null
+  }
+
+  test("should calculate correct results for population standard deviation on empty set") {
+    val agg    = PopulationStandardDeviationAggregator
+    val result = resultOnElements(List(), agg)
+    // null is returned because method alignToExpectedType did not run
+    require(result == null)
+  }
+
+  test("should calculate correct results for sample standard deviation on empty set") {
+    val agg    = SampleStandardDeviationAggregator
+    val result = resultOnElements(List(), agg)
+    // null is returned because method alignToExpectedType did not run
+    require(result == null)
+  }
+
+  test("should calculate correct results for population variance on empty set") {
+    val agg    = PopulationVarianceAggregator
+    val result = resultOnElements(List(), agg)
+    // null is returned because method alignToExpectedType did not run
+    require(result == null)
+  }
+
+  test("should calculate correct results for sample variance on empty set") {
+    val agg    = SampleVarianceAggregator
+    val result = resultOnElements(List(), agg)
+    // null is returned because method alignToExpectedType did not run
+    require(result == null)
+  }
+
+  test("should calculate correct results for population standard deviation on single element double set") {
+    val agg    = PopulationStandardDeviationAggregator
+    val result = resultOnElements(List(1.0d), agg)
+    // null is returned because method alignToExpectedType did not run
+    require(result.asInstanceOf[Double] == 0)
+  }
+
+  test("should calculate correct results for population standard deviation on single element float set") {
+    val agg    = PopulationStandardDeviationAggregator
+    val result = resultOnElements(List(1.0f), agg)
+    // null is returned because method alignToExpectedType did not run
+    require(result.asInstanceOf[Double] == 0)
+  }
+
+  test("should calculate correct results for population standard deviation on single element BigDecimal set") {
+    val agg    = PopulationStandardDeviationAggregator
+    val result = resultOnElements(List(new java.math.BigDecimal("1.0")), agg)
+    // null is returned because method alignToExpectedType did not run
+    require(result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) == -1)
+  }
+
+  test("should calculate correct results for population standard deviation on single element BigInteger set") {
+    val agg    = PopulationStandardDeviationAggregator
+    val result = resultOnElements(List(new java.math.BigInteger("1")), agg)
+    // null is returned because method alignToExpectedType did not run
+    require(result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) == -1)
+  }
+
   test("should calculate correct results for last aggregator") {
     val agg = LastAggregator
-    agg.result(
-      agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))
-    ) shouldEqual 8
+    resultOnElements(List(5, 8), agg) shouldEqual 8
   }
 
   test("should compute output and stored type for simple aggregators") {
@@ -344,5 +619,18 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     aggregator.mergeAggregates(rightElemState, leftElemState) shouldBe combinedState
   }
 
+  def resultOnElements[T](elements: List[T], aggregator: Aggregator): AnyRef = {
+    aggregator.result(
+      elements.foldLeft(aggregator.zero)((state, element) =>
+        aggregator.addElement(element.asInstanceOf[aggregator.Element], state)
+      )
+    )
+  }
+
   class JustAnyClass
+}
+
+object AggregatesSpec {
+  val EPS_DOUBLE      = 0.000001;
+  val EPS_BIG_DECIMAL = new java.math.BigDecimal("0.000001")
 }
