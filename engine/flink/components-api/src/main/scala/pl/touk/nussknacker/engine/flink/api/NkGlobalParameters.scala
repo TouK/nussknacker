@@ -84,7 +84,7 @@ object NkGlobalParameters {
 
     def encode(parameters: NkGlobalParameters): Map[String, String] = {
       def encodeWithKeyPrefix(map: Map[String, String], prefix: String): Map[String, String] = {
-        map.map { case (key, value) => s"$prefix$key" -> value }
+        map.map { case (key, value) => s"$prefix.$key" -> value }
       }
 
       val baseProperties = Map[String, String](
