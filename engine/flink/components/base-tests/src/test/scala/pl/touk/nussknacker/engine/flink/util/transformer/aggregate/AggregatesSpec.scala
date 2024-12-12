@@ -148,7 +148,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     ) shouldEqual new java.math.BigDecimal("7.5")
   }
 
-  test("should produce null on single null") {
+  test("should produce null on single null input") {
     forAll (statisticalAggregators) { agg =>
       addElementsAndComputeResult(List(null), agg) shouldEqual null
     }

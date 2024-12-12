@@ -167,58 +167,29 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
   }
 
-  test("stddevPop aggregate") {
-    val id = "1"
+  test("standard deviation and average aggregates") {
+    val table = Table(
+      ("aggregate", "secondValue"),
+        ("#AGG.stddevPop", Math.sqrt(0.25)),
+      ("#AGG.stddevSamp", Math.sqrt(0.5)),
+        ("#AGG.varPop", 0.25),
+          ("#AGG.varSamp", 0.5)
+    )
 
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
-    val testProcess = sliding("#AGG.stddevPop", "#input.eId", emitWhenEventLeft = false)
+    forAll(table) { (aggregationName, secondValue) =>
+      val id = "1"
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables.map(e => e.asInstanceOf[Double] * e.asInstanceOf[Double]) shouldBe List(0.0, 0.25)
-  }
+      val model =
+        modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
+      val testProcess = sliding(aggregationName, "#input.eId", emitWhenEventLeft = false)
 
-  test("stddevSamp aggregate") {
-    val id = "1"
-
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
-    val testProcess = sliding("#AGG.stddevSamp", "#input.eId", emitWhenEventLeft = false)
-
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    val mapped = aggregateVariables
-      .map(e => e.asInstanceOf[Double] * e.asInstanceOf[Double])
-    mapped.size shouldBe 2
-    mapped(0) shouldBe 0.0 +- 0.0001
-    mapped(1) shouldBe 0.5 +- 0.0001
-  }
-
-  test("varPop aggregate") {
-    val id = "1"
-
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
-    val testProcess = sliding("#AGG.varPop", "#input.eId", emitWhenEventLeft = false)
-
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-      .map(e => e.asInstanceOf[Double])
-    aggregateVariables.size shouldBe 2
-    aggregateVariables(0) shouldBe 0.0 +- 0.00001
-    aggregateVariables(1) shouldBe 0.25 +- 0.00001
-  }
-
-  test("varSamp aggregate") {
-    val id = "1"
-
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b")))
-    val testProcess = sliding("#AGG.varSamp", "#input.eId", emitWhenEventLeft = false)
-
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-      .map(e => e.asInstanceOf[Double])
-    aggregateVariables.size shouldBe 2
-    aggregateVariables(0) shouldBe 0.0 +- 0.000001
-    aggregateVariables(1) shouldBe 0.5 +- 0.000001
+      val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+      val mapped = aggregateVariables
+        .map(e => e.asInstanceOf[Double])
+      mapped.size shouldBe 2
+      mapped(0) shouldBe 0.0 +- 0.0001
+      mapped(1) shouldBe secondValue +- 0.0001
+    }
   }
 
   test("sliding aggregate should emit context of variables") {
