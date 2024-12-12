@@ -100,32 +100,32 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for first aggregator") {
     val agg = FirstAggregator
-    resultOnElements(List(5, 8), agg) shouldEqual 5
+    addElementsAndComputeResult(List(5, 8), agg) shouldEqual 5
   }
 
   test("should calculate correct results for countWhen aggregator") {
     val agg = CountWhenAggregator
-    resultOnElements(List(true, true), agg) shouldEqual 2
+    addElementsAndComputeResult(List(true, true), agg) shouldEqual 2
   }
 
   test("should calculate correct results for average aggregator") {
     val agg = AverageAggregator
-    resultOnElements(List(7, 8), agg) shouldEqual 7.5
+    addElementsAndComputeResult(List(7, 8), agg) shouldEqual 7.5
   }
 
   test("should calculate correct results for average aggregator on BigInt") {
     val agg = AverageAggregator
-    resultOnElements(List(new BigInteger("7"), new BigInteger("8")), agg) shouldEqual new java.math.BigDecimal("7.5")
+    addElementsAndComputeResult(List(new BigInteger("7"), new BigInteger("8")), agg) shouldEqual new java.math.BigDecimal("7.5")
   }
 
   test("should calculate correct results for average aggregator on float") {
     val agg = AverageAggregator
-    resultOnElements(List(7.0f, 8.0f), agg) shouldEqual 7.5
+    addElementsAndComputeResult(List(7.0f, 8.0f), agg) shouldEqual 7.5
   }
 
   test("should calculate correct results for average aggregator on BigDecimal") {
     val agg = AverageAggregator
-    resultOnElements(
+    addElementsAndComputeResult(
       List(new java.math.BigDecimal("7"), new java.math.BigDecimal("8")),
       agg
     ) shouldEqual new java.math.BigDecimal("7.5")
@@ -133,7 +133,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("average aggregator should ignore nulls") {
     val agg = AverageAggregator
-    resultOnElements(
+    addElementsAndComputeResult(
       List(null, new BigInteger("7"), null, new BigInteger("8")),
       agg
     ) shouldEqual new java.math.BigDecimal("7.5")
@@ -141,7 +141,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("average aggregator should ignore null") {
     val agg = AverageAggregator
-    resultOnElements(List(null), agg) shouldEqual null
+    addElementsAndComputeResult(List(null), agg) shouldEqual null
   }
 
   test("AverageAggregator should calculate correct results for empty aggregation set") {
@@ -156,31 +156,31 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for population standard deviation on double") {
     val agg    = PopulationStandardDeviationAggregator
-    val result = resultOnElements(List(5, 4, 3, 2, 1), agg)
+    val result = addElementsAndComputeResult(List(5, 4, 3, 2, 1), agg)
     (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2) < EPS_DOUBLE) shouldBe true
   }
 
   test("should calculate correct results for sample standard deviation on double") {
     val agg    = SampleStandardDeviationAggregator
-    val result = resultOnElements(List(5, 4, 3, 2, 1), agg)
+    val result = addElementsAndComputeResult(List(5, 4, 3, 2, 1), agg)
     (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2.5) < EPS_DOUBLE) shouldBe true
   }
 
   test("should calculate correct results for population variance on double") {
     val agg    = PopulationVarianceAggregator
-    val result = resultOnElements(List(5, 4, 3, 2, 1), agg)
+    val result = addElementsAndComputeResult(List(5, 4, 3, 2, 1), agg)
     result shouldBe 2
   }
 
   test("should calculate correct results for sample variance on double") {
     val agg    = SampleVarianceAggregator
-    val result = resultOnElements(List(5, 4, 3, 2, 1), agg)
+    val result = addElementsAndComputeResult(List(5, 4, 3, 2, 1), agg)
     result shouldBe 2.5
   }
 
   test("should calculate correct results for population standard deviation on BigInt") {
     val agg = PopulationStandardDeviationAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
       agg
     )
@@ -194,7 +194,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for sample standard deviation on BigInt") {
     val agg = SampleStandardDeviationAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
       agg
     )
@@ -208,7 +208,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for population variance on BigInt") {
     val agg = PopulationVarianceAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
       agg
     )
@@ -221,7 +221,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for sample variance on BigInt") {
     val agg = SampleVarianceAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
       agg
     )
@@ -234,31 +234,31 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for population standard deviation on float") {
     val agg    = PopulationStandardDeviationAggregator
-    val result = resultOnElements(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
+    val result = addElementsAndComputeResult(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
     (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2) < EPS_DOUBLE) shouldBe true
   }
 
   test("should calculate correct results for sample standard deviation on float") {
     val agg    = SampleStandardDeviationAggregator
-    val result = resultOnElements(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
+    val result = addElementsAndComputeResult(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
     (Math.abs(result.asInstanceOf[Double] * result.asInstanceOf[Double] - 2.5) < EPS_DOUBLE) shouldBe true
   }
 
   test("should calculate correct results for population variance on float") {
     val agg    = PopulationVarianceAggregator
-    val result = resultOnElements(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
+    val result = addElementsAndComputeResult(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
     result shouldBe 2
   }
 
   test("should calculate correct results for sample variance on float") {
     val agg    = SampleVarianceAggregator
-    val result = resultOnElements(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
+    val result = addElementsAndComputeResult(List(5.0f, 4.0f, 3.0f, 2.0f, 1.0f), agg)
     result shouldBe 2.5
   }
 
   test("should calculate correct results for population standard deviation on BigDecimal") {
     val agg = PopulationStandardDeviationAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(
         new java.math.BigDecimal("5"),
         new java.math.BigDecimal("4"),
@@ -278,7 +278,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for sample standard deviation on BigDecimal") {
     val agg = SampleStandardDeviationAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(
         new java.math.BigDecimal("5"),
         new java.math.BigDecimal("4"),
@@ -298,7 +298,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for population variance on BigDecimal") {
     val agg = PopulationVarianceAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(
         new java.math.BigDecimal("5"),
         new java.math.BigDecimal("4"),
@@ -317,7 +317,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for sample variance on BigDecimal") {
     val agg = SampleVarianceAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(
         new java.math.BigDecimal("5"),
         new java.math.BigDecimal("4"),
@@ -336,7 +336,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should ignore nulls for sample variance") {
     val agg = SampleVarianceAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(
         null,
         new java.math.BigDecimal("5"),
@@ -357,7 +357,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should ignore null for sample variance") {
     val agg = SampleVarianceAggregator
-    val result = resultOnElements(
+    val result = addElementsAndComputeResult(
       List(
         null
       ),
@@ -368,63 +368,63 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   test("should calculate correct results for population standard deviation on empty set") {
     val agg    = PopulationStandardDeviationAggregator
-    val result = resultOnElements(List(), agg)
+    val result = addElementsAndComputeResult(List(), agg)
     // null is returned because method alignToExpectedType did not run
     require(result == null)
   }
 
   test("should calculate correct results for sample standard deviation on empty set") {
     val agg    = SampleStandardDeviationAggregator
-    val result = resultOnElements(List(), agg)
+    val result = addElementsAndComputeResult(List(), agg)
     // null is returned because method alignToExpectedType did not run
     require(result == null)
   }
 
   test("should calculate correct results for population variance on empty set") {
     val agg    = PopulationVarianceAggregator
-    val result = resultOnElements(List(), agg)
+    val result = addElementsAndComputeResult(List(), agg)
     // null is returned because method alignToExpectedType did not run
     require(result == null)
   }
 
   test("should calculate correct results for sample variance on empty set") {
     val agg    = SampleVarianceAggregator
-    val result = resultOnElements(List(), agg)
+    val result = addElementsAndComputeResult(List(), agg)
     // null is returned because method alignToExpectedType did not run
     require(result == null)
   }
 
   test("should calculate correct results for population standard deviation on single element double set") {
     val agg    = PopulationStandardDeviationAggregator
-    val result = resultOnElements(List(1.0d), agg)
+    val result = addElementsAndComputeResult(List(1.0d), agg)
     // null is returned because method alignToExpectedType did not run
     require(result.asInstanceOf[Double] == 0)
   }
 
   test("should calculate correct results for population standard deviation on single element float set") {
     val agg    = PopulationStandardDeviationAggregator
-    val result = resultOnElements(List(1.0f), agg)
+    val result = addElementsAndComputeResult(List(1.0f), agg)
     // null is returned because method alignToExpectedType did not run
     require(result.asInstanceOf[Double] == 0)
   }
 
   test("should calculate correct results for population standard deviation on single element BigDecimal set") {
     val agg    = PopulationStandardDeviationAggregator
-    val result = resultOnElements(List(new java.math.BigDecimal("1.0")), agg)
+    val result = addElementsAndComputeResult(List(new java.math.BigDecimal("1.0")), agg)
     // null is returned because method alignToExpectedType did not run
     require(result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) == -1)
   }
 
   test("should calculate correct results for population standard deviation on single element BigInteger set") {
     val agg    = PopulationStandardDeviationAggregator
-    val result = resultOnElements(List(new java.math.BigInteger("1")), agg)
+    val result = addElementsAndComputeResult(List(new java.math.BigInteger("1")), agg)
     // null is returned because method alignToExpectedType did not run
     require(result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) == -1)
   }
 
   test("should calculate correct results for last aggregator") {
     val agg = LastAggregator
-    resultOnElements(List(5, 8), agg) shouldEqual 8
+    addElementsAndComputeResult(List(5, 8), agg) shouldEqual 8
   }
 
   test("should compute output and stored type for simple aggregators") {
@@ -619,7 +619,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     aggregator.mergeAggregates(rightElemState, leftElemState) shouldBe combinedState
   }
 
-  def resultOnElements[T](elements: List[T], aggregator: Aggregator): AnyRef = {
+  private def addElementsAndComputeResult[T](elements: List[T], aggregator: Aggregator): AnyRef = {
     aggregator.result(
       elements.foldLeft(aggregator.zero)((state, element) =>
         aggregator.addElement(element.asInstanceOf[aggregator.Element], state)
