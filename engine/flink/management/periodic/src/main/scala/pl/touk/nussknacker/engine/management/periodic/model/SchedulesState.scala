@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic.model
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.db.{PeriodicProcessDeploymentEntity, PeriodicProcessesRepository}
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithoutCanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.LocalDateTime
@@ -35,7 +36,10 @@ case class SchedulesState(schedules: Map[ScheduleId, ScheduleData]) {
 // For most operations it will contain only one latest deployment but for purpose of statuses of historical deployments
 // it has list instead of one element.
 // This structure should contain SingleScheduleProperty as well. See note above
-case class ScheduleData(process: PeriodicProcess[Unit], latestDeployments: List[ScheduleDeploymentData])
+case class ScheduleData(
+    process: PeriodicProcess[WithoutCanonicalProcess],
+    latestDeployments: List[ScheduleDeploymentData]
+)
 
 // To identify schedule we need scheduleName - None for SingleScheduleProperty and Some(key) for MultipleScheduleProperty keys
 // Also we need PeriodicProcessId to distinguish between active schedules and some inactive from the past for the same PeriodicProcessId
@@ -53,9 +57,9 @@ case class ScheduleDeploymentData(
 ) {
 
   def toFullDeploymentData(
-      process: PeriodicProcess[Unit],
+      process: PeriodicProcess[WithoutCanonicalProcess],
       scheduleName: ScheduleName
-  ): PeriodicProcessDeployment[Unit] =
+  ): PeriodicProcessDeployment[WithoutCanonicalProcess] =
     PeriodicProcessDeployment(id, process, createdAt, runAt, scheduleName, retriesLeft, nextRetryAt, state)
 
   def display = s"deploymentId=$id"
@@ -80,10 +84,11 @@ object ScheduleDeploymentData {
 
 // These below are temporary structures, see notice next to SchedulesState
 case class PeriodicProcessScheduleData(
-    process: PeriodicProcess[Unit],
-    deployments: List[PeriodicProcessDeployment[Unit]]
+    process: PeriodicProcess[WithoutCanonicalProcess],
+    deployments: List[PeriodicProcessDeployment[WithoutCanonicalProcess]]
 ) {
-  def existsDeployment(predicate: PeriodicProcessDeployment[Unit] => Boolean): Boolean = deployments.exists(predicate)
+  def existsDeployment(predicate: PeriodicProcessDeployment[WithoutCanonicalProcess] => Boolean): Boolean =
+    deployments.exists(predicate)
 
   def display: String = {
     val deploymentsForSchedules = deployments.map(_.display)

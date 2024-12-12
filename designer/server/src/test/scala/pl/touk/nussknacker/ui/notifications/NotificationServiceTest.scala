@@ -200,7 +200,7 @@ class NotificationServiceTest
         Some(processName),
         "SCENARIO_CREATED",
         None,
-        List(DataToRefresh.activity, DataToRefresh.state)
+        List(DataToRefresh.activity)
       ),
       Notification(
         notifications(2).id,
