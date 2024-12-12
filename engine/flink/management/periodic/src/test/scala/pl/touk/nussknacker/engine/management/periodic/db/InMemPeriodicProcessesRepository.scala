@@ -116,6 +116,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
 
   override def getSchedulesState(
       scenarioName: ProcessName,
+      after: Option[LocalDateTime],
   ): Action[SchedulesState] = {
     val filteredProcesses = processEntities.filter { pe =>
       pe.processName == scenarioName && deploymentEntities.exists(d => d.periodicProcessId == pe.id)

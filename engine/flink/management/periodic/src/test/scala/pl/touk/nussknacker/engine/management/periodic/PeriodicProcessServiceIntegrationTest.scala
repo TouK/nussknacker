@@ -253,7 +253,7 @@ class PeriodicProcessServiceIntegrationTest
     //       and state of deployment
     inactiveStates.firstScheduleData.latestDeployments.head.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
@@ -302,7 +302,7 @@ class PeriodicProcessServiceIntegrationTest
     service.deploy(toBeRetried).futureValue
     service.findToBeDeployed.futureValue.toList shouldBe Nil
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(
@@ -383,7 +383,7 @@ class PeriodicProcessServiceIntegrationTest
     service.deactivate(processName).futureValue
     service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
 
-    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+    val activities = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     activities shouldBe empty
   }
 
@@ -430,7 +430,7 @@ class PeriodicProcessServiceIntegrationTest
     toDeployAfterFinish.head.scheduleName.value.value shouldBe secondSchedule
 
     val firstActivity = eventually {
-      val result = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+      val result = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
       result should not be empty
       result.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     }
@@ -549,7 +549,7 @@ class PeriodicProcessServiceIntegrationTest
     inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
 
-    val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+    val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
@@ -648,7 +648,7 @@ class PeriodicProcessServiceIntegrationTest
     val stateAfterHandleFinished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterHandleFinished.latestDeploymentForSingleSchedule.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(
       ScenarioActivity.PerformedScheduledExecution(

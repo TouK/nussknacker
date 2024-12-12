@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
@@ -250,9 +250,10 @@ class PeriodicDeploymentManager private[periodic] (
   //    - we may need to refactor PeriodicDeploymentManager data source first
 
   override def managerSpecificScenarioActivities(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      after: Option[Instant],
   ): Future[List[ScenarioActivity]] =
-    service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName)
+    service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, after)
 
   private def actionInstantBatch(command: DMPerformSingleExecutionCommand): Future[SingleExecutionResult] = {
     val processName           = command.processVersion.processName
