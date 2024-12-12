@@ -6,7 +6,6 @@ import pl.touk.nussknacker.ui.notifications.NotificationService.NotificationsSco
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioActionRepository}
 import pl.touk.nussknacker.ui.process.scenarioactivity.FetchScenarioActivityService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 
 import java.time.{Clock, Instant}
 import scala.concurrent.duration.FiniteDuration
@@ -103,11 +102,7 @@ class NotificationServiceImpl(
         case Left(_)           => List.empty
       }
       notificationsForScenarioActivities = allActivities.map { activity =>
-        Notification.scenarioStateUpdateNotification(
-          s"${activity.scenarioActivityId.value.toString}_${activity.lastModifiedAt.toEpochMilli}",
-          activity.activityType.entryName,
-          processName
-        )
+        Notification.scenarioStateUpdateNotification(activity, processName)
       }
     } yield notificationsForScenarioActivities
   }
