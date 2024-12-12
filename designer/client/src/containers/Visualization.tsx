@@ -20,7 +20,7 @@ import { useRouteLeavingGuard } from "../components/RouteLeavingGuard";
 import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import Toolbars from "../components/toolbars/Toolbars";
 import { RootState } from "../reducers";
-import { getGraph, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
+import { getGraph, getProcessVersionId, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
 import { getCapabilities } from "../reducers/selectors/other";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { useWindows } from "../windowManager";
@@ -51,9 +51,10 @@ function useUnmountCleanup() {
 function useProcessState(refreshTime = 10000) {
     const dispatch = useDispatch();
     const scenario = useSelector(getScenario);
+    const versionId = useSelector(getProcessVersionId);
     const { isFragment, isArchived, name } = scenario || {};
 
-    const fetch = useCallback(() => dispatch(loadProcessState(name)), [dispatch, name]);
+    const fetch = useCallback(() => dispatch(loadProcessState(name, versionId)), [dispatch, name, versionId]);
     const disabled = !name || isFragment || isArchived;
 
     useInterval(fetch, {

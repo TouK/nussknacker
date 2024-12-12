@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -66,9 +67,15 @@ object MockableDeploymentManagerProvider {
         lastStateAction: Option[ProcessAction],
         latestVersionId: VersionId,
         deployedVersionId: Option[VersionId],
+        currentlyPresentedVersionId: Option[VersionId],
     ): Future[ProcessState] = {
       Future.successful(
-        processStateDefinitionManager.processState(statusDetails.head, latestVersionId, deployedVersionId)
+        processStateDefinitionManager.processState(
+          statusDetails.head,
+          latestVersionId,
+          deployedVersionId,
+          currentlyPresentedVersionId
+        )
       )
     }
 
@@ -138,7 +145,8 @@ object MockableDeploymentManagerProvider {
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
     override def managerSpecificScenarioActivities(
-        processIdWithName: ProcessIdWithName
+        processIdWithName: ProcessIdWithName,
+        after: Option[Instant],
     ): Future[List[ScenarioActivity]] =
       Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
 

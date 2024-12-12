@@ -24,16 +24,19 @@ import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
 }
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.{
+  WithCanonicalProcess,
+  WithoutCanonicalProcess
+}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong
-import pl.touk.nussknacker.engine.management.periodic.util.DeterministicUUIDFromLong.longUUID
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time.{Clock, Instant, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -68,9 +71,12 @@ class PeriodicProcessService(
   private implicit val localDateTimeOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   def getScenarioActivitiesSpecificToPeriodicProcess(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      after: Option[Instant],
   ): Future[List[ScenarioActivity]] = for {
-    schedulesState <- scheduledProcessesRepository.getSchedulesState(processIdWithName.name).run
+    schedulesState <- scheduledProcessesRepository
+      .getSchedulesState(processIdWithName.name, after.map(localDateTimeAtSystemDefaultZone))
+      .run
     groupedByProcess        = schedulesState.groupedByPeriodicProcess
     deployments             = groupedByProcess.flatMap(_.deployments)
     deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
@@ -158,7 +164,7 @@ class PeriodicProcessService(
   private def initialSchedule(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
-      deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
+      deploymentWithJarData: DeploymentWithJarData.WithCanonicalProcess,
       processActionId: ProcessActionId
   ): Future[Unit] = {
     scheduledProcessesRepository
@@ -180,7 +186,7 @@ class PeriodicProcessService(
       .map(_ => ())
   }
 
-  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]] = {
+  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[WithCanonicalProcess]]] = {
     for {
       toBeDeployed <- scheduledProcessesRepository.findToBeDeployed.run.flatMap { toDeployList =>
         Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
@@ -194,8 +200,8 @@ class PeriodicProcessService(
   // Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   // TODO: we show allow to deploy scenarios with different scheduleName to be deployed simultaneous
   private def checkIfNotRunning(
-      toDeploy: PeriodicProcessDeployment[CanonicalProcess]
-  ): Future[Option[PeriodicProcessDeployment[CanonicalProcess]]] = {
+      toDeploy: PeriodicProcessDeployment[WithCanonicalProcess]
+  ): Future[Option[PeriodicProcessDeployment[WithCanonicalProcess]]] = {
     delegateDeploymentManager
       .getProcessStates(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(
@@ -394,7 +400,7 @@ class PeriodicProcessService(
       _ <- activeSchedules.groupedByPeriodicProcess.map(p => deactivateAction(p.process)).sequence.runWithCallbacks
     } yield runningDeploymentsForSchedules.map(deployment => DeploymentId(deployment.toString))
 
-  private def deactivateAction(process: PeriodicProcess[_]): RepositoryAction[Callback] = {
+  private def deactivateAction(process: PeriodicProcess[WithoutCanonicalProcess]): RepositoryAction[Callback] = {
     logger.info(s"Deactivate periodic process id: ${process.id.value}")
     for {
       _ <- scheduledProcessesRepository.markInactive(process.id)
@@ -413,7 +419,7 @@ class PeriodicProcessService(
         .map(_ => ())
     }
 
-  def deploy(deployment: PeriodicProcessDeployment[CanonicalProcess]): Future[Unit] = {
+  def deploy(deployment: PeriodicProcessDeployment[WithCanonicalProcess]): Future[Unit] = {
     // TODO: set status before deployment?
     val id = deployment.id
     val deploymentData = DeploymentData(
@@ -545,7 +551,7 @@ class PeriodicProcessService(
   }
 
   private def scheduledExecutionStatusAndDateFinished(
-      entity: PeriodicProcessDeployment[Unit],
+      entity: PeriodicProcessDeployment[WithoutCanonicalProcess],
   ): Option[FinishedScheduledExecutionMetadata] = {
     for {
       status <- entity.state.status match {
@@ -575,7 +581,11 @@ class PeriodicProcessService(
 
   // LocalDateTime's in the context of PeriodicProcess are created using clock with system default timezone
   private def instantAtSystemDefaultZone(localDateTime: LocalDateTime): Instant = {
-    localDateTime.atZone(ZoneId.systemDefault).toInstant
+    localDateTime.atZone(clock.getZone).toInstant
+  }
+
+  private def localDateTimeAtSystemDefaultZone(instant: Instant): LocalDateTime = {
+    instant.atZone(clock.getZone).toLocalDateTime
   }
 
 }

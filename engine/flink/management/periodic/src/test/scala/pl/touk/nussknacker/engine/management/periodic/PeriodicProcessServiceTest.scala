@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig
@@ -85,7 +86,7 @@ class PeriodicProcessServiceTest
       additionalDeploymentDataProvider = new AdditionalDeploymentDataProvider {
 
         override def prepareAdditionalData(
-            runDetails: PeriodicProcessDeployment[CanonicalProcess]
+            runDetails: PeriodicProcessDeployment[WithCanonicalProcess]
         ): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
 

@@ -437,11 +437,13 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
   private def doEditComment(comment: String)(
       entity: ScenarioActivityEntityData
   )(implicit user: LoggedUser): ScenarioActivityEntityData = {
+    val now = clock.instant()
     entity.copy(
       comment = Some(comment),
       lastModifiedByUserName = Some(user.username),
+      lastModifiedAt = Some(Timestamp.from(now)),
       additionalProperties = entity.additionalProperties.withProperty(
-        key = s"comment_replaced_by_${user.username}_at_${clock.instant()}",
+        key = s"comment_replaced_by_${user.username}_at_$now",
         value = entity.comment.getOrElse(""),
       )
     )

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState } from "../../../../actions/nk";
 import Icon from "../../../../assets/img/toolbarButtons/deploy.svg";
 import HttpService from "../../../../http/HttpService";
-import { getProcessName, hasError, isDeployPossible, isSaveDisabled } from "../../../../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId, hasError, isDeployPossible, isSaveDisabled } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager";
@@ -19,6 +19,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const saveDisabled = useSelector(isSaveDisabled);
     const hasErrors = useSelector(hasError);
     const processName = useSelector(getProcessName);
+    const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const { disabled, type } = props;
 
@@ -38,7 +39,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const { open } = useWindows();
 
     const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", { name: processName });
-    const action = (p, c) => HttpService.deploy(p, c).finally(() => dispatch(loadProcessState(processName)));
+    const action = (p, c) => HttpService.deploy(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
 
     return (
         <ToolbarButton

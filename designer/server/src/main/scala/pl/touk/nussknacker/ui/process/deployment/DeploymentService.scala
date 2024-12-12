@@ -203,7 +203,7 @@ class DeploymentService(
         _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
         // 1.7. check if action is allowed for current state
         inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-        processState          <- getProcessState(processDetails, inProgressActionNames)
+        processState          <- getProcessState(processDetails, inProgressActionNames, None)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         // 1.8. create new action, action is started with "in progress" state, the whole command execution can take some time
         actionId <- actionRepository.addInProgressAction(
@@ -430,13 +430,14 @@ class DeploymentService(
 
   // TODO: check deployment id to be sure that returned status is for given deployment
   override def getProcessState(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      currentlyPresentedVersionId: Option[VersionId],
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails        <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      result                <- getProcessState(processDetails, inProgressActionNames)
+      result                <- getProcessState(processDetails, inProgressActionNames, currentlyPresentedVersionId)
     } yield result)
   }
 
@@ -445,7 +446,7 @@ class DeploymentService(
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      result                <- getProcessState(processDetails, inProgressActionNames)
+      result                <- getProcessState(processDetails, inProgressActionNames, None)
     } yield result)
   }
 
@@ -462,7 +463,8 @@ class DeploymentService(
             case process =>
               getProcessState(
                 process.toEntity,
-                actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty)
+                actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
+                None,
               ).map(state => process.copy(state = Some(state)))
           }
           .sequence[DB, ScenarioWithDetails]
@@ -489,7 +491,8 @@ class DeploymentService(
 
   private def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_],
-      inProgressActionNames: Set[ScenarioActionName]
+      inProgressActionNames: Set[ScenarioActionName],
+      currentlyPresentedVersionId: Option[VersionId],
   )(implicit freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
     val processVersionId  = processDetails.processVersionId
     val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
@@ -499,7 +502,7 @@ class DeploymentService(
         if (processDetails.isFragment) {
           throw new FragmentStateException
         } else if (processDetails.isArchived) {
-          getArchivedProcessState(processDetails)(manager)
+          getArchivedProcessState(processDetails, currentlyPresentedVersionId)(manager)
         } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
           DBIOAction.successful(
@@ -507,6 +510,7 @@ class DeploymentService(
               StatusDetails(SimpleStateStatus.DuringDeploy, None),
               processVersionId,
               deployedVersionId,
+              currentlyPresentedVersionId,
             )
           )
         } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
@@ -516,6 +520,7 @@ class DeploymentService(
               StatusDetails(SimpleStateStatus.DuringCancel, None),
               processVersionId,
               deployedVersionId,
+              currentlyPresentedVersionId,
             )
           )
         } else {
@@ -529,6 +534,7 @@ class DeploymentService(
                     processDetails.lastStateAction,
                     processVersionId,
                     deployedVersionId,
+                    currentlyPresentedVersionId,
                   )
                 )
                 .map { statusWithFreshness =>
@@ -545,6 +551,7 @@ class DeploymentService(
                   StatusDetails(SimpleStateStatus.NotDeployed, None),
                   processVersionId,
                   deployedVersionId,
+                  currentlyPresentedVersionId,
                 )
               )
           }
@@ -557,7 +564,8 @@ class DeploymentService(
 
   // We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
   private def getArchivedProcessState(
-      processDetails: ScenarioWithDetailsEntity[_]
+      processDetails: ScenarioWithDetailsEntity[_],
+      currentlyPresentedVersionId: Option[VersionId],
   )(implicit manager: DeploymentManager) = {
     val processVersionId  = processDetails.processVersionId
     val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
@@ -569,6 +577,7 @@ class DeploymentService(
             StatusDetails(SimpleStateStatus.Canceled, None),
             processVersionId,
             deployedVersionId,
+            currentlyPresentedVersionId,
           )
         )
       case Some((Deploy, ProcessActionState.ExecutionFinished)) =>
@@ -578,6 +587,7 @@ class DeploymentService(
             StatusDetails(SimpleStateStatus.Finished, None),
             processVersionId,
             deployedVersionId,
+            currentlyPresentedVersionId,
           )
         )
       case Some(_) =>
@@ -587,6 +597,7 @@ class DeploymentService(
             StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None),
             processVersionId,
             deployedVersionId,
+            currentlyPresentedVersionId,
           )
         )
       case _ =>
@@ -596,6 +607,7 @@ class DeploymentService(
             StatusDetails(SimpleStateStatus.NotDeployed, None),
             processVersionId,
             deployedVersionId,
+            currentlyPresentedVersionId,
           )
         )
     }
@@ -614,12 +626,19 @@ class DeploymentService(
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   )(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
 
     val state = deploymentManager
-      .getProcessState(processIdWithName, lastStateAction, latestVersionId, deployedVersionId)
+      .getProcessState(
+        processIdWithName,
+        lastStateAction,
+        latestVersionId,
+        deployedVersionId,
+        currentlyPresentedVersionId
+      )
       .recover { case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetProcessState(latestVersionId)

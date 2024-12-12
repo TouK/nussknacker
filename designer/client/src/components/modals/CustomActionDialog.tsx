@@ -19,6 +19,7 @@ import { nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyle
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import CommentInput from "../comment/CommentInput";
+import { getProcessVersionId } from "../../reducers/selectors/graph";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -95,6 +96,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 
 export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomAction>): JSX.Element {
     const processName = useSelector(getProcessName);
+    const processVersionId = useSelector(getProcessVersionId);
     const dispatch = useDispatch();
     const action = props.data.meta;
     const [validationError, setValidationError] = useState("");
@@ -111,7 +113,7 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const confirmAction = useCallback(async () => {
         await HttpService.customAction(processName, action.name, value, comment).then((response) => {
             if (response.isSuccess) {
-                dispatch(loadProcessState(processName));
+                dispatch(loadProcessState(processName, processVersionId));
                 props.close();
             } else {
                 setValidationError(response.msg);
