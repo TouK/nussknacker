@@ -9,9 +9,9 @@ import java.time.LocalDateTime
 
 case class PeriodicProcessId(value: Long) extends MappedTo[Long]
 
-case class PeriodicProcess[ProcessRep](
+case class PeriodicProcess[DeploymentData <: DeploymentWithJarData](
     id: PeriodicProcessId,
-    deploymentData: DeploymentWithJarData[ProcessRep],
+    deploymentData: DeploymentData,
     scheduleProperty: ScheduleProperty,
     active: Boolean,
     createdAt: LocalDateTime,

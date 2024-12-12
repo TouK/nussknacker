@@ -1,6 +1,6 @@
 import { padStart } from "lodash";
 import { useCallback, useMemo } from "react";
-import { AggMapLikeLexer, AggMapLikeParser } from "./aggMapLikeParser";
+import { AggMapLikeParser } from "./aggMapLikeParser";
 
 export function useAggParamsSerializer(): [
     (text: string) => Record<string, string>,
@@ -8,14 +8,7 @@ export function useAggParamsSerializer(): [
 ] {
     const parser = useMemo(() => new AggMapLikeParser(), []);
 
-    const deserialize = useCallback(
-        (text: string): Record<string, string> => {
-            const lexingResult = AggMapLikeLexer.tokenize(text);
-            parser.input = lexingResult.tokens;
-            return parser.object() || null;
-        },
-        [parser],
-    );
+    const deserialize = useCallback((input: string) => parser.parseObject(input), [parser]);
 
     const serialize = useCallback((paramName: string, map: Record<string, string>): string => {
         const entries = Object.entries(map || {}).map(([key, value]) => {
@@ -40,14 +33,7 @@ export function useAggParamsSerializer(): [
 export function useGroupByParamsSerializer(): [(text: string) => string[], (paramName: string, arr: string[]) => string] {
     const parser = useMemo(() => new AggMapLikeParser(), []);
 
-    const deserialize = useCallback(
-        (text: string): string[] => {
-            const lexingResult = AggMapLikeLexer.tokenize(text);
-            parser.input = lexingResult.tokens;
-            return parser.collection() || null;
-        },
-        [parser],
-    );
+    const deserialize = useCallback((input: string) => parser.parseList(input), [parser]);
 
     const serialize = useCallback((paramName: string, arr: string[]): string => {
         const entries = arr.map((value) => {

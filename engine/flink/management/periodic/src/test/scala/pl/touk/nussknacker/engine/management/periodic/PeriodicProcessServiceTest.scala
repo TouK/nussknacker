@@ -15,10 +15,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
-import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.{
-  createPeriodicProcessDeployment,
-  createPeriodicProcessDeploymentWithFullProcess
-}
+import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig
@@ -88,7 +86,7 @@ class PeriodicProcessServiceTest
       additionalDeploymentDataProvider = new AdditionalDeploymentDataProvider {
 
         override def prepareAdditionalData(
-            runDetails: PeriodicProcessDeployment
+            runDetails: PeriodicProcessDeployment[WithCanonicalProcess]
         ): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
 
@@ -141,7 +139,7 @@ class PeriodicProcessServiceTest
       PeriodicProcessDeploymentStatus.Scheduled,
       deployMaxRetries = 0
     )
-    fWithNoRetries.periodicProcessService.findToBeDeployed.futureValue.map(_.deployment.id) shouldBe List(scheduledId1)
+    fWithNoRetries.periodicProcessService.findToBeDeployed.futureValue.map(_.id) shouldBe List(scheduledId1)
 
     val fWithRetries = new Fixture
     val failedId2 = fWithRetries.repository.addActiveProcess(
@@ -154,10 +152,7 @@ class PeriodicProcessServiceTest
       PeriodicProcessDeploymentStatus.Scheduled,
       deployMaxRetries = 1
     )
-    fWithRetries.periodicProcessService.findToBeDeployed.futureValue.map(_.deployment.id) shouldBe List(
-      scheduledId2,
-      failedId2
-    )
+    fWithRetries.periodicProcessService.findToBeDeployed.futureValue.map(_.id) shouldBe List(scheduledId2, failedId2)
   }
 
   test("findToBeDeployed - should not return scenarios with different processing type") {
@@ -366,7 +361,7 @@ class PeriodicProcessServiceTest
   test("deploy - should deploy and mark as so") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-    val toSchedule = createPeriodicProcessDeploymentWithFullProcess(
+    val toSchedule = createPeriodicProcessDeployment(
       f.repository.processEntities.loneElement,
       f.repository.deploymentEntities.loneElement
     )
@@ -388,7 +383,7 @@ class PeriodicProcessServiceTest
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
     f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
-    val toSchedule = createPeriodicProcessDeploymentWithFullProcess(
+    val toSchedule = createPeriodicProcessDeployment(
       f.repository.processEntities.loneElement,
       f.repository.deploymentEntities.loneElement
     )

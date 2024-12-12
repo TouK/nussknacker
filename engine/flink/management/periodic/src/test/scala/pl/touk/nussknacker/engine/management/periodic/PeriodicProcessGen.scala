@@ -4,18 +4,18 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.CronSchedulePropertyExtractor.CronPropertyDefaultName
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcess, PeriodicProcessId}
 
 import java.time.LocalDateTime
 
 object PeriodicProcessGen {
 
-  def apply(): PeriodicProcess[CanonicalProcess] = {
+  def apply(): PeriodicProcess[WithCanonicalProcess] = {
     PeriodicProcess(
       id = PeriodicProcessId(42),
-      deploymentData = DeploymentWithJarData(
-        processName = ProcessVersion.empty.processName,
-        versionId = ProcessVersion.empty.versionId,
+      deploymentData = DeploymentWithJarData.WithCanonicalProcess(
+        processVersion = ProcessVersion.empty,
         process = buildCanonicalProcess(),
         inputConfigDuringExecutionJson = "{}",
         jarFileName = "jar-file-name.jar"

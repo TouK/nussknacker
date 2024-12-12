@@ -45,9 +45,7 @@ class FetchScenarioActivityService(
       deploymentManager <- deploymentManagerDispatcher.deploymentManager(processIdWithName)
       deploymentManagerSpecificActivities <- deploymentManager match {
         case Some(manager: ManagerSpecificScenarioActivitiesStoredByManager) =>
-          manager
-            .managerSpecificScenarioActivities(processIdWithName)
-            .map(_.filter { activity => after.forall(after => activity.date > after) })
+          manager.managerSpecificScenarioActivities(processIdWithName, after)
         case Some(_) | None =>
           Future.successful(List.empty)
       }

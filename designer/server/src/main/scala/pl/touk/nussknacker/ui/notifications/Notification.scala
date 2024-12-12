@@ -3,9 +3,15 @@ package pl.touk.nussknacker.ui.notifications
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentRelatedActivity,
+  ProcessActionState,
+  ScenarioActionName,
+  ScenarioActivity
+}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
+import pl.touk.nussknacker.ui.util.ScenarioActivityUtils.ScenarioActivityOps
 import sttp.tapir.Schema
 import sttp.tapir.derevo.schema
 
@@ -69,17 +75,20 @@ object Notification {
   }
 
   def scenarioStateUpdateNotification(
-      id: String,
-      activityName: String,
+      activity: ScenarioActivity,
       name: ProcessName
   ): Notification = {
-    // We don't want to display this notification, because it causes the activities toolbar to refresh
+    val toRefresh = activity match {
+      case _: DeploymentRelatedActivity => List(DataToRefresh.activity, DataToRefresh.state)
+      case _                            => List(DataToRefresh.activity)
+    }
     Notification(
-      id = id,
+      id = s"${activity.scenarioActivityId.value.toString}_${activity.lastModifiedAt.toEpochMilli}",
       scenarioName = Some(name),
-      message = activityName,
+      message = activity.activityType.entryName,
+      // We don't want to display this notification, because it causes the activities toolbar to refresh
       `type` = None,
-      toRefresh = List(DataToRefresh.activity, DataToRefresh.state)
+      toRefresh = toRefresh
     )
   }
 

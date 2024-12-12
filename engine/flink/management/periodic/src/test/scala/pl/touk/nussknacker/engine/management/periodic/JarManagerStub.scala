@@ -9,15 +9,15 @@ import scala.concurrent.Future
 
 class JarManagerStub extends JarManager {
 
-  var deployWithJarFuture: Future[Option[ExternalDeploymentId]]                  = Future.successful(None)
-  var lastDeploymentWithJarData: Option[DeploymentWithJarData[CanonicalProcess]] = None
+  var deployWithJarFuture: Future[Option[ExternalDeploymentId]]                     = Future.successful(None)
+  var lastDeploymentWithJarData: Option[DeploymentWithJarData.WithCanonicalProcess] = None
 
   override def prepareDeploymentWithJar(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess
-  ): Future[DeploymentWithJarData[CanonicalProcess]] = {
+  ): Future[DeploymentWithJarData.WithCanonicalProcess] = {
     Future.successful(
-      model.DeploymentWithJarData(
+      model.DeploymentWithJarData.WithCanonicalProcess(
         processName = processVersion.processName,
         versionId = processVersion.versionId,
         process = canonicalProcess,
@@ -28,7 +28,7 @@ class JarManagerStub extends JarManager {
   }
 
   override def deployWithJar(
-      deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
+      deploymentWithJarData: DeploymentWithJarData.WithCanonicalProcess,
       deploymentData: DeploymentData,
   ): Future[Option[ExternalDeploymentId]] = {
     lastDeploymentWithJarData = Some(deploymentWithJarData)

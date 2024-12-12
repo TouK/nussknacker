@@ -8,10 +8,8 @@ import pl.touk.nussknacker.engine.management.periodic.DeploymentActor.{
   DeploymentCompleted,
   WaitingForDeployment
 }
-import pl.touk.nussknacker.engine.management.periodic.model.{
-  PeriodicProcessDeployment,
-  PeriodicProcessDeploymentWithFullProcess
-}
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -24,8 +22,8 @@ object DeploymentActor {
   }
 
   private[periodic] def props(
-      findToBeDeployed: => Future[Seq[PeriodicProcessDeploymentWithFullProcess]],
-      deploy: PeriodicProcessDeploymentWithFullProcess => Future[Unit],
+      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[WithCanonicalProcess]]],
+      deploy: PeriodicProcessDeployment[WithCanonicalProcess] => Future[Unit],
       interval: FiniteDuration
   ) = {
     Props(new DeploymentActor(findToBeDeployed, deploy, interval))
@@ -33,14 +31,14 @@ object DeploymentActor {
 
   private[periodic] case object CheckToBeDeployed
 
-  private case class WaitingForDeployment(ids: List[PeriodicProcessDeploymentWithFullProcess])
+  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment[WithCanonicalProcess]])
 
   private case object DeploymentCompleted
 }
 
 class DeploymentActor(
-    findToBeDeployed: => Future[Seq[PeriodicProcessDeploymentWithFullProcess]],
-    deploy: PeriodicProcessDeploymentWithFullProcess => Future[Unit],
+    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment[WithCanonicalProcess]]],
+    deploy: PeriodicProcessDeployment[WithCanonicalProcess] => Future[Unit],
     interval: FiniteDuration
 ) extends Actor
     with Timers
@@ -58,25 +56,25 @@ class DeploymentActor(
       logger.trace("Checking scenarios to be deployed")
       findToBeDeployed.onComplete {
         case Success(runDetailsSeq) =>
-          logger.debug(s"Found ${runDetailsSeq.size} to be deployed: ${runDetailsSeq.map(_.deployment.display)}")
+          logger.debug(s"Found ${runDetailsSeq.size} to be deployed: ${runDetailsSeq.map(_.display)}")
           self ! WaitingForDeployment(runDetailsSeq.toList)
         case Failure(exception) =>
           logger.error("Finding scenarios to be deployed failed unexpectedly", exception)
       }
     case WaitingForDeployment(Nil) =>
     case WaitingForDeployment(runDetails :: _) =>
-      logger.info(s"Found a scenario to be deployed: ${runDetails.deployment.display}")
-      context.become(receiveOngoingDeployment(runDetails.deployment))
+      logger.info(s"Found a scenario to be deployed: ${runDetails.display}")
+      context.become(receiveOngoingDeployment(runDetails))
       deploy(runDetails) onComplete {
         case Success(_) =>
           self ! DeploymentCompleted
         case Failure(exception) =>
-          logger.error(s"Deployment of ${runDetails.deployment.display} failed unexpectedly", exception)
+          logger.error(s"Deployment of ${runDetails.display} failed unexpectedly", exception)
           self ! DeploymentCompleted
       }
   }
 
-  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment): Receive = {
+  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment[WithCanonicalProcess]): Receive = {
     case CheckToBeDeployed =>
       logger.debug(s"Still waiting for ${runDetails.display} to be deployed")
     case DeploymentCompleted =>

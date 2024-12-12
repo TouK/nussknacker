@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.newdeployment
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
@@ -17,10 +18,16 @@ trait DeploymentManagerInconsistentStateHandlerMixIn {
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
     Future.successful(
-      processStateDefinitionManager.processState(engineStateResolvedWithLastAction, latestVersionId, deployedVersionId)
+      processStateDefinitionManager.processState(
+        engineStateResolvedWithLastAction,
+        latestVersionId,
+        deployedVersionId,
+        currentlyPresentedVersionId
+      )
     )
   }
 
@@ -46,6 +53,7 @@ trait DeploymentManager extends AutoCloseable {
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   )(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
@@ -56,7 +64,8 @@ trait DeploymentManager extends AutoCloseable {
         statusDetailsWithFreshness.value,
         lastStateAction,
         latestVersionId,
-        deployedVersionId
+        deployedVersionId,
+        currentlyPresentedVersionId,
       ).map(state => statusDetailsWithFreshness.map(_ => state))
     } yield stateWithFreshness
   }
@@ -79,6 +88,7 @@ trait DeploymentManager extends AutoCloseable {
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
@@ -93,7 +103,8 @@ trait DeploymentManager extends AutoCloseable {
 trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>
 
   def managerSpecificScenarioActivities(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      after: Option[Instant],
   ): Future[List[ScenarioActivity]]
 
 }

@@ -1,22 +1,15 @@
 package pl.touk.nussknacker.engine.management.periodic.model
 
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.{MultipleScheduleProperty, SingleScheduleProperty}
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import slick.lifted.MappedTo
 
 import java.time.{Clock, LocalDateTime}
 
-case class PeriodicProcessDeploymentWithFullProcess(
-    deployment: PeriodicProcessDeployment,
-    process: CanonicalProcess,
-    inputConfigDuringExecutionJson: String,
-)
-
 // TODO: We should separate schedules concept from deployments - fully switch to ScheduleData and ScheduleDeploymentData
-case class PeriodicProcessDeployment(
+case class PeriodicProcessDeployment[DeploymentData <: DeploymentWithJarData](
     id: PeriodicProcessDeploymentId,
-    periodicProcessMetadata: PeriodicProcessMetadata,
+    periodicProcess: PeriodicProcess[DeploymentData],
     createdAt: LocalDateTime,
     runAt: LocalDateTime,
     scheduleName: ScheduleName,
@@ -26,7 +19,7 @@ case class PeriodicProcessDeployment(
 ) {
 
   def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] =
-    (periodicProcessMetadata.scheduleProperty, scheduleName.value) match {
+    (periodicProcess.scheduleProperty, scheduleName.value) match {
       case (MultipleScheduleProperty(schedules), Some(name)) =>
         schedules.get(name).toRight(s"Failed to find schedule: $scheduleName").flatMap(_.nextRunAt(clock))
       case (e: SingleScheduleProperty, None) => e.nextRunAt(clock)
@@ -34,7 +27,7 @@ case class PeriodicProcessDeployment(
     }
 
   def display: String =
-    s"${periodicProcessMetadata.processName} with scheduleName=${scheduleName.display} and deploymentId=$id"
+    s"${periodicProcess.processVersion} with scheduleName=${scheduleName.display} and deploymentId=$id"
 
 }
 

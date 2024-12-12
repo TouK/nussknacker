@@ -31,8 +31,16 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
-    Future.successful(processStateDefinitionManager.processState(stubbedStatus, latestVersionId, deployedVersionId))
+    Future.successful(
+      processStateDefinitionManager.processState(
+        stubbedStatus,
+        latestVersionId,
+        deployedVersionId,
+        currentlyPresentedVersionId
+      )
+    )
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager

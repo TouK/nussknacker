@@ -28,6 +28,7 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     val lastStateActionStatus = lastStateAction match {
       case Some(action) if action.actionName == ScenarioActionName.Deploy =>
@@ -41,7 +42,8 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       processStateDefinitionManager.processState(
         StatusDetails(lastStateActionStatus, None),
         latestVersionId,
-        deployedVersionId
+        deployedVersionId,
+        currentlyPresentedVersionId,
       )
     )
   }

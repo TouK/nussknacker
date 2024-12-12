@@ -25,6 +25,7 @@
     * Added support for PerformSingleExecution action in DeploymentManager and in GUI
     * Improved scenario state management to include information about current and deployed versions and allow more customization
 * [#7184](https://github.com/TouK/nussknacker/pull/7184) Improve Nu Designer API notifications endpoint, to include events related to currently displayed scenario
+* [#7323](https://github.com/TouK/nussknacker/pull/7323) Improve Periodic DeploymentManager db queries
 
 ## 1.18
 
@@ -44,7 +45,7 @@
 * Flink upgrade to 1.19.1. Note: it is possible to use Nussknacker with older versions of Flink, but it requires some extra steps. See [Migration guide](MigrationGuide.md) for details.
 * Performance optimisations of the serialisation of events passing through Flink's `DataStream`s.
 
-### 1.18.1 (Not released yet)
+### 1.18.1 (9 December 2024)
 
 * [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
 * [#7237](https://github.com/TouK/nussknacker/pull/7237) Fix: ToJsonEncoder keeps order fields during encoding map
@@ -52,7 +53,11 @@
 * [#7269](https://github.com/TouK/nussknacker/pull/7269) Fixed focus scrolling in expression editor
 * [#7270](https://github.com/TouK/nussknacker/pull/7270) Savepoint deserialization fixup - some taken savepoints (e.g. for scenarios with async enrichers) were not deserializable which led to errors during redeployments on Flink
 * [#7279](https://github.com/TouK/nussknacker/pull/7279) Fixed Flink TaskManager and Designer containers restarts in installation example
-* [#7283](https://github.com/TouK/nussknacker/pull/7283) fix deployment status indicator for periodic scenarios type
+* [#7283](https://github.com/TouK/nussknacker/pull/7283) Fix deployment status indicator for periodic scenarios type
+* [#7254](https://github.com/TouK/nussknacker/pull/7254) Fix “Maximum update depth exceeded” issue when node details window is open and size of the window changed
+* [#7254](https://github.com/TouK/nussknacker/pull/7254) Fix manual window size change
+* [#7290](https://github.com/TouK/nussknacker/pull/7290) Update swagger-parser (2.1.22 -> 2.1.24) to fix shading issue (https://github.com/swagger-api/swagger-parser/issues/2126)
+  * [#7299](https://github.com/TouK/nussknacker/pull/7299) Cursor rendering optimization
 
 ### 1.18.0 (22 November 2024)
 
