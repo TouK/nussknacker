@@ -12,6 +12,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
   test("global parameters set and read from context are equal") {
     val globalParamsWithAllOptionalValues = NkGlobalParameters(
       buildInfo = "aBuildInfo",
+      deploymentId = "1",
       processVersion = ProcessVersion(
         VersionId.initialVersionId,
         ProcessName("aProcessName"),
@@ -27,6 +28,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
 
     val globalParamsWithNoOptionalValues = NkGlobalParameters(
       buildInfo = "aBuildInfo",
+      deploymentId = "1",
       processVersion = ProcessVersion(
         VersionId.initialVersionId,
         ProcessName("aProcessName"),
@@ -46,6 +48,7 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
       val globalParamsFromEc = NkGlobalParameters.readFromContext(ec).get
 
       params.buildInfo shouldBe globalParamsFromEc.buildInfo
+      params.deploymentId shouldBe globalParamsFromEc.deploymentId
       params.processVersion shouldBe globalParamsFromEc.processVersion
       params.configParameters shouldBe globalParamsFromEc.configParameters
       params.namespaceParameters shouldBe globalParamsFromEc.namespaceParameters

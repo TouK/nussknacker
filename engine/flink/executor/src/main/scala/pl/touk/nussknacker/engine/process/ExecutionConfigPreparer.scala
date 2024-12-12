@@ -57,30 +57,19 @@ object ExecutionConfigPreparer extends LazyLogging {
         config,
         NkGlobalParameters.create(
           buildInfo,
+          deploymentData.deploymentId.value,
           jobData.processVersion,
           modelConfig,
           namespaceTags = NamespaceMetricsTags(jobData.metaData.name.value, namingStrategy),
-          prepareMap(jobData.processVersion, deploymentData)
+          prepareMap(deploymentData)
         )
       )
     }
 
-    private def prepareMap(processVersion: ProcessVersion, deploymentData: DeploymentData) = {
-
-      val baseProperties = Map[String, String](
-        "buildInfo"    -> buildInfo,
-        "versionId"    -> processVersion.versionId.value.toString,
-        "processId"    -> processVersion.processId.value.toString,
-        "labels"       -> Encoder[List[String]].apply(processVersion.labels).noSpaces,
-        "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
-        "user"         -> processVersion.user,
-        "deploymentId" -> deploymentData.deploymentId.value
-      )
-      val scenarioProperties = deploymentData.additionalDeploymentData.map { case (k, v) =>
+    private def prepareMap(deploymentData: DeploymentData) =
+      deploymentData.additionalDeploymentData.map { case (k, v) =>
         s"deployment.properties.$k" -> v
       }
-      baseProperties ++ scenarioProperties
-    }
 
   }
 

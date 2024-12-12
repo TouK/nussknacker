@@ -28,6 +28,9 @@
 * [#7184](https://github.com/TouK/nussknacker/pull/7184) Improve Nu Designer API notifications endpoint, to include events related to currently displayed scenario
 * [#7323](https://github.com/TouK/nussknacker/pull/7323) Improve Periodic DeploymentManager db queries
 
+### 1.18.2 (Not released)
+* [#7324](https://github.com/TouK/nussknacker/pull/7324) Fix: Passing Flink Job Global Params
+
 ### 1.18.1 (9 December 2024)
 
 * [#7207](https://github.com/TouK/nussknacker/pull/7207) Fixed minor clipboard, keyboard and focus related bugs
