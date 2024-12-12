@@ -284,7 +284,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     forAll(table) { agg =>
       val result = addElementsAndComputeResult(List(1.0d), agg)
       // null is returned because method alignToExpectedType did not run
-      require(result.asInstanceOf[Double] == 0)
+      result.asInstanceOf[Double] shouldBe 0
     }
   }
 
@@ -292,21 +292,21 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(1.0f), agg)
     // null is returned because method alignToExpectedType did not run
-    require(result.asInstanceOf[Double] == 0)
+    result.asInstanceOf[Double] shouldBe 0
   }
 
   test("should calculate correct results for population standard deviation on single element BigDecimal set") {
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(new java.math.BigDecimal("1.0")), agg)
     // null is returned because method alignToExpectedType did not run
-    require(result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) == -1)
+    result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) shouldBe -1
   }
 
   test("should calculate correct results for population standard deviation on single element BigInteger set") {
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(new java.math.BigInteger("1")), agg)
     // null is returned because method alignToExpectedType did not run
-    require(result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) == -1)
+    result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) shouldBe -1
   }
 
   test("should calculate correct results for last aggregator") {

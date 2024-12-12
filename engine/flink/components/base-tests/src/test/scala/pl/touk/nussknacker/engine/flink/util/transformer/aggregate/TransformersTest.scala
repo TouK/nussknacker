@@ -187,13 +187,11 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testProcess = sliding("#AGG.stddevSamp", "#input.eId", emitWhenEventLeft = false)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    require(
-      aggregateVariables
-        .map(e => e.asInstanceOf[Double] * e.asInstanceOf[Double])
-        .zip(List(0.0, 0.5))
-        .map(e => math.abs(e._1 - e._2))
-        .max < 0.000001
-    )
+    val mapped = aggregateVariables
+      .map(e => e.asInstanceOf[Double] * e.asInstanceOf[Double])
+    mapped.size shouldBe 2
+    mapped(0) shouldBe 0.0 +- 0.0001
+    mapped(1) shouldBe 0.5 +- 0.0001
   }
 
   test("varPop aggregate") {
@@ -204,7 +202,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testProcess = sliding("#AGG.varPop", "#input.eId", emitWhenEventLeft = false)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    require(aggregateVariables.zip(List(0.0, 0.25)).map(e => math.abs(e._1.asInstanceOf[Double] - e._2)).max < 0.000001)
+      .map(e => e.asInstanceOf[Double])
+    aggregateVariables.size shouldBe 2
+    aggregateVariables(0) shouldBe 0.0 +- 0.00001
+    aggregateVariables(1) shouldBe 0.25 +- 0.00001
   }
 
   test("varSamp aggregate") {
@@ -215,7 +216,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val testProcess = sliding("#AGG.varSamp", "#input.eId", emitWhenEventLeft = false)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    require(aggregateVariables.zip(List(0.0, 0.5)).map(e => math.abs(e._1.asInstanceOf[Double] - e._2)).max < 0.000001)
+      .map(e => e.asInstanceOf[Double])
+    aggregateVariables.size shouldBe 2
+    aggregateVariables(0) shouldBe 0.0 +- 0.000001
+    aggregateVariables(1) shouldBe 0.5 +- 0.000001
   }
 
   test("sliding aggregate should emit context of variables") {
@@ -475,7 +479,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables.length shouldEqual (2)
     aggregateVariables(0) shouldEqual 1.0
-    require((aggregateVariables(1).asInstanceOf[Double].isNaN))
+    aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
   }
 
   test(
@@ -491,7 +495,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
       aggregateVariables.length shouldEqual (2)
       aggregateVariables(0) shouldEqual 0.0
-      require((aggregateVariables(1).asInstanceOf[Double].isNaN))
+      aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
     }
   }
 
