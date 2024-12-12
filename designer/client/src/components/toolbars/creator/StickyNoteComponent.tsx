@@ -13,7 +13,7 @@ export const stickyNoteComponentGroup = (pristine: boolean) => {
                     disabled: () => !pristine,
                 },
             ],
-            name: "stickyNotes",
+            name: "sticky notes",
         } as ComponentGroup,
     ];
 };
