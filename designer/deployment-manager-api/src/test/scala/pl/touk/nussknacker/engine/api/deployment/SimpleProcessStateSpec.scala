@@ -15,7 +15,8 @@ class SimpleProcessStateSpec extends AnyFunSpec with Matchers with Inside {
     SimpleProcessStateDefinitionManager.processState(
       StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12"))),
       VersionId(1),
-      None
+      None,
+      None,
     )
 
   it("scenario state should be during deploy") {

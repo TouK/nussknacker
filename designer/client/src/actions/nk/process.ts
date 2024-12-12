@@ -26,9 +26,9 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
     };
 }
 
-export function loadProcessState(processName: ProcessName): ThunkAction {
+export function loadProcessState(processName: ProcessName, processVersionId: number): ThunkAction {
     return (dispatch) =>
-        HttpService.fetchProcessState(processName).then(({ data }) =>
+        HttpService.fetchProcessState(processName, processVersionId).then(({ data }) =>
             dispatch({
                 type: "PROCESS_STATE_LOADED",
                 processState: data,

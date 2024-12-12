@@ -61,8 +61,8 @@ export const isPerformSingleExecutionVisible = createSelector([getProcessState],
     ProcessStateUtils.canSeePerformSingleExecution(state),
 );
 export const isPerformSingleExecutionPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isFragment],
-    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canPerformSingleExecution(state),
+    [hasError, getProcessState, isFragment],
+    (error, state, fragment) => !fragment && !error && ProcessStateUtils.canPerformSingleExecution(state),
 );
 export const isMigrationPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],

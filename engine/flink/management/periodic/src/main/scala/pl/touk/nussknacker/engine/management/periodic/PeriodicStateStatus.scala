@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -35,16 +36,21 @@ object PeriodicStateStatus {
   val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")
 
   val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = {
-    case ProcessStatus(SimpleStateStatus.Running, _, _) =>
-      List(ScenarioActionName.Cancel) // periodic processes cannot be redeployed from GUI
-    case ProcessStatus(_: ScheduledStatus, latestVersionId, deployedVersionId)
-        if deployedVersionId.contains(latestVersionId) =>
+    case ProcessStatus(SimpleStateStatus.Running, _, _, _) =>
+      // periodic processes cannot be redeployed from GUI
+      List(ScenarioActionName.Cancel)
+    case ProcessStatus(_: ScheduledStatus, _, deployedVersionId, Some(currentlyPresentedVersionId))
+        if deployedVersionId.contains(currentlyPresentedVersionId) =>
       List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.PerformSingleExecution)
-    case ProcessStatus(_: ScheduledStatus, _, _) =>
+    case ProcessStatus(_: ScheduledStatus, _, _, None) =>
+      // At the moment of deployment or validation, we may not have the information about the currently displayed version
+      // In that case we assume, that it was validated before the deployment was initiated.
+      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.PerformSingleExecution)
+    case ProcessStatus(_: ScheduledStatus, _, _, _) =>
       List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
-    case ProcessStatus(WaitingForScheduleStatus, _, _) =>
+    case ProcessStatus(WaitingForScheduleStatus, _, _, _) =>
       List(ScenarioActionName.Cancel) // or maybe should it be empty??
-    case ProcessStatus(_: ProblemStateStatus, _, _) =>
+    case ProcessStatus(_: ProblemStateStatus, _, _, _) =>
       List(ScenarioActionName.Cancel) // redeploy is not allowed
   }
 
@@ -73,18 +79,18 @@ object PeriodicStateStatus {
 
   def customActionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String] = {
     processStatus match {
-      case ProcessStatus(_: ScheduledStatus, latestVersionId, deployedVersionId)
-          if deployedVersionId.contains(latestVersionId) =>
+      case ProcessStatus(_: ScheduledStatus, _, deployedVersionId, currentlyPresentedVersionId)
+          if currentlyPresentedVersionId == deployedVersionId =>
         Map.empty
-      case ProcessStatus(_: ScheduledStatus, latestVersionId, deployedVersionIdOpt) =>
-        val deployedVersionStr = deployedVersionIdOpt match {
-          case Some(deployedVersionId) => s" (version ${deployedVersionId.value} is deployed)"
-          case None                    => ""
+      case ProcessStatus(_: ScheduledStatus, _, deployedVersionIdOpt, currentlyPresentedVersionId) =>
+        def print(versionIdOpt: Option[VersionId]) = versionIdOpt match {
+          case Some(versionId) => s"${versionId.value}"
+          case None            => "[unknown]"
         }
         Map(
-          ScenarioActionName.PerformSingleExecution -> s"There is new version ${latestVersionId.value} available$deployedVersionStr"
+          ScenarioActionName.PerformSingleExecution -> s"Version ${print(deployedVersionIdOpt)} is deployed, but different version ${print(currentlyPresentedVersionId)} is displayed"
         )
-      case ProcessStatus(other, _, _) =>
+      case ProcessStatus(other, _, _, _) =>
         Map(ScenarioActionName.PerformSingleExecution -> s"Disabled for ${other.name} status.")
     }
   }
