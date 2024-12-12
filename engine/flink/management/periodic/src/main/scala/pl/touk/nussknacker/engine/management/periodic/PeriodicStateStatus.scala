@@ -37,9 +37,14 @@ object PeriodicStateStatus {
 
   val statusActionsPF: PartialFunction[ProcessStatus, List[ScenarioActionName]] = {
     case ProcessStatus(SimpleStateStatus.Running, _, _, _) =>
-      List(ScenarioActionName.Cancel) // periodic processes cannot be redeployed from GUI
-    case ProcessStatus(_: ScheduledStatus, _, deployedVersionId, currentlyPresentedVersionId)
-        if currentlyPresentedVersionId == deployedVersionId =>
+      // periodic processes cannot be redeployed from GUI
+      List(ScenarioActionName.Cancel)
+    case ProcessStatus(_: ScheduledStatus, _, deployedVersionId, Some(currentlyPresentedVersionId))
+        if deployedVersionId.contains(currentlyPresentedVersionId) =>
+      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.PerformSingleExecution)
+    case ProcessStatus(_: ScheduledStatus, _, _, None) =>
+      // At the moment of deployment or validation, we may not have the information about the currently displayed version
+      // In that case we assume, that it was validated before the deployment was initiated.
       List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.PerformSingleExecution)
     case ProcessStatus(_: ScheduledStatus, _, _, _) =>
       List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
