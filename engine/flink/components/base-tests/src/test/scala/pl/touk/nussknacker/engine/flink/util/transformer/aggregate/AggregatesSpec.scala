@@ -17,15 +17,6 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
   private val justAnyObject = new JustAnyClass
 
-  private val statisticalAggregators = Table(
-    "aggregator",
-    AverageAggregator,
-    SampleStandardDeviationAggregator,
-    PopulationStandardDeviationAggregator,
-    SampleVarianceAggregator,
-    PopulationVarianceAggregator
-  )
-
   private val aggregators = Table(
     ("aggregate", "input", "obj", "stored", "output"),
     (HyperLogLogPlusAggregator(), Typed[String], "", Typed[HyperLogLogPlusWrapper], Typed[Long]),
@@ -124,16 +115,20 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     ) shouldEqual new java.math.BigDecimal("7.5")
   }
 
-  test("average aggregator should ignore nulls") {
-    val agg = AverageAggregator
-    addElementsAndComputeResult(
-      List(null, new BigInteger("7"), null, new BigInteger("8")),
-      agg
-    ) shouldEqual new java.math.BigDecimal("7.5")
-  }
-
-  test("should produce null on single null input") {
-    forAll (statisticalAggregators) { agg =>
+  test("some aggregators should produce null on single null input") {
+    forAll (Table(
+      "aggregator",
+      AverageAggregator,
+      SampleStandardDeviationAggregator,
+      PopulationStandardDeviationAggregator,
+      SampleVarianceAggregator,
+      PopulationVarianceAggregator,
+      MaxAggregator,
+      MinAggregator,
+      FirstAggregator,
+      LastAggregator,
+      SumAggregator
+    )) { agg =>
       addElementsAndComputeResult(List(null), agg) shouldEqual null
     }
   }
@@ -225,13 +220,17 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     }
   }
 
-  test("should ignore nulls for standard deviation and variance") {
+  test("some aggregators should ignore nulls ") {
     val table = Table(
       ("aggregator", "value"),
       ( SampleStandardDeviationAggregator, Math.sqrt(2.5) ),
       ( PopulationStandardDeviationAggregator, Math.sqrt(2) ),
       ( SampleVarianceAggregator, 2.5 ),
-      ( PopulationVarianceAggregator, 2.0 )
+      ( PopulationVarianceAggregator, 2.0 ),
+      ( SumAggregator, 15.0),
+      ( MaxAggregator, 5.0),
+      ( MinAggregator, 1.0),
+      ( AverageAggregator, 3.0)
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -240,11 +239,21 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     }
   }
 
-  test("should produce null on empty set") {
-
-    forAll (statisticalAggregators) {agg =>
+  test("some aggregators should produce null on empty set") {
+    forAll (Table(
+      "aggregator",
+      AverageAggregator,
+      SampleStandardDeviationAggregator,
+      PopulationStandardDeviationAggregator,
+      SampleVarianceAggregator,
+      PopulationVarianceAggregator,
+      MaxAggregator,
+      MinAggregator,
+      FirstAggregator,
+      LastAggregator,
+      SumAggregator
+    )) { agg =>
       val result = addElementsAndComputeResult(List(), agg)
-      // null is returned because method alignToExpectedType did not run
       result shouldBe null
     }
   }

@@ -25,6 +25,7 @@ object aggregates {
 
     override type Element = Number
 
+    // TODO maybe it should return 0 on empty set?
     override def zero: Number = null
 
     override def isNeutralForAccumulator(element: Element, currentAggregate: Aggregate): Boolean =
