@@ -1664,8 +1664,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should convert list of map entries into map") {
-    // this is a special case
-    // list on which we run .toMap contains elements of type java.util.Map.Entry
     val result = evaluate[Any]("""
         |{
         |a: "A",
@@ -1676,8 +1674,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should be able to convert list of map entries into map") {
-    // this is a special case
-    // list on which we run .canBeMap contains elements of type java.util.Map.Entry
     val result = evaluate[Any]("""
                                  |{
                                  |a: "A",
@@ -1688,8 +1684,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should be able to convert list of map entries into map or null") {
-    // this is a special case
-    // list on which we run .toMapOrNull contains elements of type java.util.Map.Entry
     val result = evaluate[Any]("""
                                  |{
                                  |a: "A",
