@@ -27,7 +27,7 @@ case class PeriodicProcessDeployment[DeploymentData <: DeploymentWithJarData](
     }
 
   def display: String =
-    s"${periodicProcess.deploymentData.processVersion} with scheduleName=${scheduleName.display} and deploymentId=$id"
+    s"${periodicProcess.processVersion} with scheduleName=${scheduleName.display} and deploymentId=$id"
 
 }
 

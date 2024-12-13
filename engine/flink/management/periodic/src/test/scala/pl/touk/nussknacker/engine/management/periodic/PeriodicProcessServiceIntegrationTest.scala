@@ -202,7 +202,7 @@ class PeriodicProcessServiceIntegrationTest
     stateAfterSchedule should have size 1
     val afterSchedule = stateAfterSchedule.firstScheduleData
 
-    afterSchedule.process.deploymentData.processVersion.processName shouldBe processName
+    afterSchedule.process.processVersion.processName shouldBe processName
     afterSchedule.latestDeployments.head.state shouldBe PeriodicProcessDeploymentState(
       None,
       None,
@@ -215,9 +215,9 @@ class PeriodicProcessServiceIntegrationTest
 
     val allToDeploy = service.findToBeDeployed.futureValue
     allToDeploy.map(
-      _.periodicProcess.deploymentData.processVersion.processName
+      _.periodicProcess.processVersion.processName
     ) should contain only (processName, every30MinutesProcessName)
-    val toDeploy = allToDeploy.find(_.periodicProcess.deploymentData.processVersion.processName == processName).value
+    val toDeploy = allToDeploy.find(_.periodicProcess.processVersion.processName == processName).value
     service.deploy(toDeploy).futureValue
     otherProcessingTypeService.deploy(otherProcessingTypeService.findToBeDeployed.futureValue.loneElement).futureValue
 
@@ -239,7 +239,7 @@ class PeriodicProcessServiceIntegrationTest
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
     toDeployAfterFinish.map(
-      _.periodicProcess.deploymentData.processVersion.processName
+      _.periodicProcess.processVersion.processName
     ) should contain only every30MinutesProcessName
     service.deactivate(processName).futureValue
     service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
@@ -375,7 +375,7 @@ class PeriodicProcessServiceIntegrationTest
 
     val allToDeploy = service.findToBeDeployed.futureValue
     allToDeploy should have length 4
-    val toDeploy = allToDeploy.filter(_.periodicProcess.deploymentData.processVersion.processName == processName)
+    val toDeploy = allToDeploy.filter(_.periodicProcess.processVersion.processName == processName)
     toDeploy should have length 2
     toDeploy.head.runAt shouldBe localTime(expectedScheduleTime.plus(5, ChronoUnit.MINUTES))
     toDeploy.head.scheduleName.value shouldBe Some(scheduleMinute5)

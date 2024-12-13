@@ -16,4 +16,6 @@ case class PeriodicProcess[DeploymentData <: DeploymentWithJarData](
     active: Boolean,
     createdAt: LocalDateTime,
     processActionId: Option[ProcessActionId]
-)
+) {
+  val processVersion: ProcessVersion = deploymentData.processVersion
+}

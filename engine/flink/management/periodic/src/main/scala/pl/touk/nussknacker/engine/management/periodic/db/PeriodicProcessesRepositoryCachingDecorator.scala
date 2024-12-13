@@ -4,7 +4,6 @@ import cats.Monad
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -12,7 +11,7 @@ import pl.touk.nussknacker.engine.management.periodic.model._
 
 import java.time.LocalDateTime
 import scala.compat.java8.FutureConverters.{CompletionStageOps, FutureOps}
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class PeriodicProcessesRepositoryCachingDecorator(
@@ -30,7 +29,7 @@ class PeriodicProcessesRepositoryCachingDecorator(
   private val inactiveSchedulesCache: AsyncCache[(Int, Int), Map[ProcessName, SchedulesState]] =
     Caffeine
       .newBuilder()
-      .expireAfterWrite(java.time.Duration.ofMillis((10 seconds).toMillis))
+      .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
       .buildAsync[(Int, Int), Map[ProcessName, SchedulesState]]
 
   type Action[T] = underlying.Action[T]
@@ -71,47 +70,48 @@ class PeriodicProcessesRepositoryCachingDecorator(
 
   private def fetchActiveSchedules(deploymentsPerScheduleMaxCount: Int)(
       implicit freshnessPolicy: DataFreshnessPolicy
-  ) = {
-    def fetchAndUpdateCache(): Future[Map[ProcessName, SchedulesState]] = {
-      val resultFuture = underlying.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount)
-      activeSchedulesCache.put(deploymentsPerScheduleMaxCount, resultFuture.toJava.toCompletableFuture)
-      resultFuture
-    }
-    freshnessPolicy match {
-      case DataFreshnessPolicy.Fresh =>
-        fetchAndUpdateCache()
-      case DataFreshnessPolicy.CanBeCached =>
-        Option(activeSchedulesCache.getIfPresent(deploymentsPerScheduleMaxCount))
-          .map(_.toScala)
-          .getOrElse(fetchAndUpdateCache())
-    }
-  }
+  ): Future[Map[ProcessName, SchedulesState]] =
+    fetchUsingCache[Int](
+      cache = activeSchedulesCache,
+      key = deploymentsPerScheduleMaxCount,
+      fetch = deploymentsPerScheduleMaxCount =>
+        underlying.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount)
+    )
 
   private def fetchInactiveSchedules(
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]] =
+    fetchUsingCache[(Int, Int)](
+      cache = inactiveSchedulesCache,
+      key = (inactiveProcessesMaxCount, deploymentsPerScheduleMaxCount),
+      fetch = key =>
+        underlying.getLatestDeploymentsForLatestInactiveSchedules(
+          inactiveProcessesMaxCount = key._1,
+          deploymentsPerScheduleMaxCount = key._2
+        )
+    )
+
+  private def fetchUsingCache[KEY](
+      cache: AsyncCache[KEY, Map[ProcessName, SchedulesState]],
+      key: KEY,
+      fetch: KEY => Future[Map[ProcessName, SchedulesState]],
   )(implicit freshnessPolicy: DataFreshnessPolicy) = {
     def fetchAndUpdateCache(): Future[Map[ProcessName, SchedulesState]] = {
-      val resultFuture = underlying.getLatestDeploymentsForLatestInactiveSchedules(
-        inactiveProcessesMaxCount,
-        deploymentsPerScheduleMaxCount
-      )
-      inactiveSchedulesCache.put(
-        (inactiveProcessesMaxCount, deploymentsPerScheduleMaxCount),
-        resultFuture.toJava.toCompletableFuture
-      )
+      val resultFuture = fetch(key)
+      cache.put(key, resultFuture.toJava.toCompletableFuture)
       resultFuture
     }
     freshnessPolicy match {
       case DataFreshnessPolicy.Fresh =>
         fetchAndUpdateCache()
       case DataFreshnessPolicy.CanBeCached =>
-        Option(inactiveSchedulesCache.getIfPresent(inactiveProcessesMaxCount, deploymentsPerScheduleMaxCount))
+        Option(cache.getIfPresent(key))
           .map(_.toScala)
           .getOrElse(fetchAndUpdateCache())
     }
 
-    Option(inactiveSchedulesCache.getIfPresent(inactiveProcessesMaxCount, deploymentsPerScheduleMaxCount))
+    Option(cache.getIfPresent(key))
       .map(_.toScala)
       .getOrElse(fetchAndUpdateCache())
   }
