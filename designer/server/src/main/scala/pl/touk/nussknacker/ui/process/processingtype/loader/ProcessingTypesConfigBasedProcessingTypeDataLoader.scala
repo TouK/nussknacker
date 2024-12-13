@@ -24,14 +24,14 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     for {
-      managersDir           <- config.managersDir()
+      managersDirs          <- config.managersDirs()
       processingTypesConfig <- config.loadProcessingTypeConfigs()
     } yield {
       // This step with splitting DeploymentManagerProvider loading for all processing types
       // and after that creating ProcessingTypeData is done because of the deduplication of deployments
       // See DeploymentManagerProvider.engineSetupIdentity
       val providerWithNameInputData = processingTypesConfig.mapValuesNow { processingTypeConfig =>
-        val provider = createDeploymentManagerProvider(processingTypeConfig, managersDir)
+        val provider = createDeploymentManagerProvider(processingTypeConfig, managersDirs)
         val nameInputData = EngineNameInputData(
           provider.defaultEngineSetupName,
           provider.engineSetupIdentity(processingTypeConfig.deploymentConfig),
@@ -73,10 +73,10 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
 
   private def createDeploymentManagerProvider(
       typeConfig: ProcessingTypeConfig,
-      managersDir: Path,
+      managersDirs: List[Path],
   ): DeploymentManagerProvider = {
     val managersClassLoader =
-      new URLClassLoader(managersDir.toUri.toURL.expandFiles(".jar"), this.getClass.getClassLoader)
+      new URLClassLoader(managersDirs.flatMap(_.toUri.toURL.expandFiles(".jar")), this.getClass.getClassLoader)
     ScalaServiceLoader.loadNamed[DeploymentManagerProvider](
       typeConfig.deploymentManagerType,
       managersClassLoader

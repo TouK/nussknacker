@@ -23,16 +23,23 @@ trait NussknackerConfig {
       }
   }
 
-  final def managersDir(): IO[Path] = {
+  final def managersDirs(): IO[List[Path]] = {
     loadApplicationConfig()
       .map { config =>
-        config.readSafeString("managersDir") match {
-          case Some(managersDirStr) =>
-            val managersDir = Paths.get(managersDirStr.convertToURL().toURI)
-            if (Files.isDirectory(managersDir)) managersDir
-            else throw ConfigurationMalformedException(s"No '$managersDirStr' directory found")
+        config.readStringList("managersDirs") match {
+          case Some(managersDirs) =>
+            val paths = managersDirs.map(_.convertToURL().toURI).map(Paths.get)
+            val invalidPaths = paths
+              .map(p => (p, !Files.isDirectory(p)))
+              .collect { case (p, true) => p }
+
+            if (invalidPaths.isEmpty) paths
+            else
+              throw ConfigurationMalformedException(
+                s"Cannot find the following directories: ${invalidPaths.mkString(", ")}"
+              )
           case None =>
-            throw ConfigurationMalformedException(s"No 'managersDir' configuration path found")
+            throw ConfigurationMalformedException(s"No 'managersDirs' configuration path found")
         }
       }
   }

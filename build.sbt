@@ -628,15 +628,15 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / parallelExecution             := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel"          %% "cats-core"                  % catsV          % Provided,
-        "org.apache.flink"        % "flink-streaming-java"       % flinkV excludeAll (
-            ExclusionRule("log4j", "log4j"),
-            ExclusionRule("org.slf4j", "slf4j-log4j12"),
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
-        "com.softwaremill.retry" %% "retry"                      % retryV,
-        "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
-        "org.scalatestplus"      %% "mockito-5-10"               % scalaTestPlusV % Test,
+        "org.typelevel"          %% "cats-core"            % catsV          % Provided,
+        "org.apache.flink"        % "flink-streaming-java" % flinkV excludeAll (
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12"),
+          ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+        ),
+        "com.softwaremill.retry" %% "retry"                % retryV,
+        "org.wiremock"            % "wiremock"             % wireMockV      % Test,
+        "org.scalatestplus"      %% "mockito-5-10"         % scalaTestPlusV % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
@@ -1947,6 +1947,8 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
   )
   .dependsOn(extensionsApi, testUtils % Test)
 
+lazy val prepareDesignerTests = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")
+
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
   .enablePlugins(GenerateDesignerOpenApiPlugin)
@@ -1977,22 +1979,20 @@ lazy val designer = (project in file("designer/server"))
         CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false)
       )
     },
+    prepareDesignerTests             := {
+      (flinkDeploymentManager / assembly).value
+      (liteEmbeddedDeploymentManager / assembly).value
+      (liteK8sDeploymentManager / assembly).value
+      (defaultModel / assembly).value
+      (flinkTableApiComponents / assembly).value
+      (flinkDevModel / assembly).value
+      (flinkExecutor / assembly).value
+      (flinkExecutor / prepareItLibs).value
+    },
     ThisBuild / parallelExecution    := false,
-    SlowTests / test                 := (SlowTests / test)
-      .dependsOn(
-        flinkDevModel / Compile / assembly,
-        flinkExecutor / Compile / assembly
-      )
-      .value,
-    Test / test                      := (Test / test)
-      .dependsOn(
-        defaultModel / Compile / assembly,
-        flinkTableApiComponents / Compile / assembly,
-        flinkDevModel / Compile / assembly,
-        flinkExecutor / Compile / assembly,
-        flinkExecutor / prepareItLibs
-      )
-      .value,
+    SlowTests / test                 := (SlowTests / test).dependsOn(prepareDesignerTests).value,
+    Test / test                      := (Test / test).dependsOn(prepareDesignerTests).value,
+    Test / testOptions += Tests.Setup(() => prepareDesignerTests.value),
     // todo:
     /*
       We depend on copyClientDist in packageBin and assembly to be make sure FE files will be included in jar and fajar
