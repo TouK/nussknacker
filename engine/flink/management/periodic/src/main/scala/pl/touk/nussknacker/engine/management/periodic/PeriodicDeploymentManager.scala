@@ -43,7 +43,7 @@ object PeriodicDeploymentManager {
       listenerFactory: PeriodicProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
       dependencies: DeploymentManagerDependencies,
-      scenarioStateCacheTTL: Option[FiniteDuration],
+      scenarioStateCacheTTL: Option[FiniteDuration]
   ): PeriodicDeploymentManager = {
     import dependencies._
 

@@ -238,9 +238,7 @@ class PeriodicProcessServiceIntegrationTest
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
-    toDeployAfterFinish.map(
-      _.periodicProcess.processVersion.processName
-    ) should contain only every30MinutesProcessName
+    toDeployAfterFinish.map(_.periodicProcess.processVersion.processName) should contain only every30MinutesProcessName
     service.deactivate(processName).futureValue
     service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
     val inactiveStates = service

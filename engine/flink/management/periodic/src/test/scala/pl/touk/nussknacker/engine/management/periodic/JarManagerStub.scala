@@ -19,9 +19,9 @@ class JarManagerStub extends JarManager {
     Future.successful(
       model.DeploymentWithJarData.WithCanonicalProcess(
         processVersion = processVersion,
-        jarFileName = "",
         process = canonicalProcess,
         inputConfigDuringExecutionJson = "",
+        jarFileName = ""
       )
     )
   }
