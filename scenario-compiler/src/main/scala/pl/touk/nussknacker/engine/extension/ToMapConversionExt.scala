@@ -79,9 +79,13 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
     value match {
       case m: JMap[_, _]                           => Right(m)
       case a: Array[_]                             => convertEither(ConversionHandler.convertArrayToList(a))
-      case c: JCollection[_] if canConvertToMap(c) => Right(convertToMap(c))
-      case x                                       => Left(new IllegalArgumentException(s"Cannot convert: $x to a Map"))
+      case c: JCollection[_] if canConvertToMap(c) => convertToMap(c).map(e => Right(e)).getOrElse(cannotConvertMessage(c))
+      case x                                       => cannotConvertMessage(x)
     }
+
+  private def cannotConvertMessage(c: Any): Left[IllegalArgumentException, Nothing] = {
+    Left(new IllegalArgumentException(s"Cannot convert: $c to a Map"))
+  }
 
   // We could leave underlying method using convertEither as well but this implementation is faster
   override def canConvert(value: Any): JBoolean = value match {
@@ -99,13 +103,20 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
       case _                            => false
     }
 
-  private def convertToMap(c: JCollection[_]): JMap[_, _] = {
+  private def convertToMap(c: JCollection[_]): Option[JMap[_, _]] = {
     val map = new JHashMap[Any, Any]()
+    var foundError = false
     c.forEach {
       case e: JMap[_, _]                => map.put(e.get(keyName), e.get(valueName))
       case e: JMap.Entry[_, _] => map.put(e.getKey, e.getValue)
+      case _ => foundError = true
     }
-    map
+    if (foundError) {
+      // internal error of this class, should not have been called with such value
+      None
+    } else {
+      Some(map)
+    }
   }
 
   override def appliesToConversion(clazz: Class[_]): Boolean =
