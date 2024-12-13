@@ -63,14 +63,11 @@ object ModelClassLoader extends LazyLogging {
 
   // workingDirectoryOpt is for the purpose of easier testing. We can't easily change the working directory otherwise - see https://stackoverflow.com/a/840229
   def apply(
-      managersDir: Path,
       urls: List[String],
       workingDirectoryOpt: Option[Path],
       jarExtension: String = defaultJarExtension
   ): ModelClassLoader = {
-    val postProcessedURLs = expandFiles(urls.map(convertToURL(_, workingDirectoryOpt)), jarExtension).toList :::
-      managersDir.toUri.toURL.expandFiles(".jar")
-
+    val postProcessedURLs = expandFiles(urls.map(convertToURL(_, workingDirectoryOpt)), jarExtension).toList
     ModelClassLoader(
       new URLClassLoader(postProcessedURLs.toArray, this.getClass.getClassLoader),
       postProcessedURLs.toList

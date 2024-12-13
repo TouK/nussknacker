@@ -38,10 +38,6 @@ lazy val silencerV_2_12 = "1.6.0"
 def propOrEnv(name: String, default: String): String = propOrEnv(name).getOrElse(default)
 def propOrEnv(name: String): Option[String]          = Option(System.getProperty(name)).orElse(sys.env.get(name))
 
-//by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
-val includeFlinkAndScala = propOrEnv("includeFlinkAndScala", "true").toBoolean
-
-val flinkScope         = if (includeFlinkAndScala) "compile" else "provided"
 val nexusUrlFromProps  = propOrEnv("nexusUrl")
 //TODO: this is pretty clunky, but works so far for our case...
 val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
@@ -633,13 +629,15 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     libraryDependencies ++= {
       Seq(
         "org.typelevel"          %% "cats-core"                  % catsV          % Provided,
-        "org.apache.flink"        % "flink-streaming-java"       % flinkV         % Provided,
-        "org.apache.flink"        % "flink-core"                 % flinkV         % Provided,
-        "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
+        "org.apache.flink"        % "flink-streaming-java"       % flinkV excludeAll (
+            ExclusionRule("log4j", "log4j"),
+            ExclusionRule("org.slf4j", "slf4j-log4j12"),
+            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+          ),
         "com.softwaremill.retry" %% "retry"                      % retryV,
         "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
         "org.scalatestplus"      %% "mockito-5-10"               % scalaTestPlusV % Test,
-      ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
+      ) ++ flinkLibScalaDeps(scalaVersion.value)
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
     dependencyOverrides += "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
@@ -1834,9 +1832,8 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
     name := "nussknacker-flink-base-unbounded-components",
     libraryDependencies ++= Seq(
       "org.apache.flink"          % "flink-streaming-java" % flinkV % Provided,
-      "com.clearspring.analytics" % "stream"               % "2.9.8"
       // It is used only in QDigest which we don't use, while it's >20MB in size...
-        exclude ("it.unimi.dsi", "fastutil")
+      "com.clearspring.analytics" % "stream"               % "2.9.8" exclude ("it.unimi.dsi", "fastutil")
     )
   )
   .dependsOn(
@@ -1958,7 +1955,7 @@ lazy val designer = (project in file("designer/server"))
   .settings(
     assemblySettings(
       "nussknacker-designer-assembly.jar",
-      includeScala = includeFlinkAndScala,
+      includeScala = true,
       filterProvidedDeps = false
     ): _*
   )
@@ -2060,7 +2057,8 @@ lazy val designer = (project in file("designer/server"))
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
         "com.github.scopt"              %% "scopt"                           % "4.1.0"              % Test,
         "org.questdb"                    % "questdb"                         % "7.4.2",
-        "org.apache.flink"               % "flink-streaming-java"            % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
+        "org.apache.kafka"               % "kafka-clients"                   % kafkaV,
+        "org.apache.flink"               % "flink-streaming-java"            % flinkV,
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>
           Seq(
@@ -2086,6 +2084,7 @@ lazy val designer = (project in file("designer/server"))
     testUtils                         % Test,
     flinkTestUtils                    % Test,
     developmentTestsDeploymentManager % Test,
+    kafkaComponentsUtils              % Test,
     componentsApi                     % "test->test",
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
     // dev-application.conf. Currently, we don't have a separate classpath for DMs like we have for components.

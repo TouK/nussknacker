@@ -271,8 +271,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
         workingDirectoryOpt = None,
         _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
-      ),
-      ???
+      )
     )
     val definition = modelData.modelDefinition
     definition.components.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))

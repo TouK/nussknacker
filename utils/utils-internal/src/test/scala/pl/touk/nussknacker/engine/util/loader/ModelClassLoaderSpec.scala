@@ -14,7 +14,7 @@ class ModelClassLoaderSpec extends AnyFunSuite with Matchers {
 
     val urls = List(resource(""), nonFileUrl)
 
-    val loader = ModelClassLoader(???, urls.map(_.toURI.toString), workingDirectoryOpt = None, jarExtension = ".jara")
+    val loader = ModelClassLoader(urls.map(_.toURI.toString), workingDirectoryOpt = None, jarExtension = ".jara")
 
     // we're not using .jar to avoid messing with .gitignore
     val expected = Set(
@@ -31,7 +31,6 @@ class ModelClassLoaderSpec extends AnyFunSuite with Matchers {
 
   test("should resolve classpath using working directory when defined") {
     val loader = ModelClassLoader(
-      ???,
       List("relative/path", "/absolute/path"),
       workingDirectoryOpt = Some(Path.of("/some/working/directory"))
     )
