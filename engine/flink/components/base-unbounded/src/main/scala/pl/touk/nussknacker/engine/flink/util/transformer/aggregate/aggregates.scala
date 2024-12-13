@@ -292,9 +292,14 @@ object aggregates {
     class TypeInfoFactory extends CaseClassTypeInfoFactory[StandardDeviationState]
   }
 
+  private sealed trait StandardDeviationOrVarianceAggregationType
+  private case object SampleStandardDeviation extends StandardDeviationOrVarianceAggregationType
+  private case object PopulationStandardDeviation extends StandardDeviationOrVarianceAggregationType
+  private case object SampleVariance extends StandardDeviationOrVarianceAggregationType
+  private case object PopulationVariance extends StandardDeviationOrVarianceAggregationType
+
   class GeneralStandardDeviationAndVarianceAggregator(
-      val isForSampleInsteadOfBeingForPopulation: Boolean,
-      val isForStandardDeviationInsteadOfBeingForVariance: Boolean,
+    val standardDeviationVarianceType: StandardDeviationOrVarianceAggregationType
   ) extends Aggregator
       with LargeFloatingNumberAggregate {
 
@@ -332,16 +337,34 @@ object aggregates {
         val average            = MathUtils.divideWithDefaultBigDecimalScale(finalAggregate.sum.asNumber, count)
         val averageSquare      = MathUtils.divideWithDefaultBigDecimalScale(finalAggregate.squaresSum.asNumber, count)
         val populationVariance = MathUtils.minus(averageSquare, MathUtils.largeFloatSquare(average))
-        val variance = if (isForSampleInsteadOfBeingForPopulation) {
+        val variance = if (isForSampleInsteadOfBeingForPopulation()) {
           MathUtils.multiply(count.toDouble / (count - 1), populationVariance)
         } else {
           populationVariance
         }
-        if (isForStandardDeviationInsteadOfBeingForVariance) {
+        if (isForStandardDeviationInsteadOfBeingForVariance()) {
           MathUtils.largeFloatSqrt(variance)
         } else {
           variance
         }
+      }
+    }
+
+    private def isForStandardDeviationInsteadOfBeingForVariance(): Boolean = {
+      standardDeviationVarianceType match {
+        case SampleStandardDeviation => true
+        case PopulationStandardDeviation => true
+        case SampleVariance => false
+        case PopulationVariance => false
+      }
+    }
+
+    private def isForSampleInsteadOfBeingForPopulation(): Boolean = {
+      standardDeviationVarianceType match {
+        case SampleStandardDeviation => true
+        case PopulationStandardDeviation => false
+        case SampleVariance => true
+        case PopulationVariance => false
       }
     }
 
@@ -352,26 +375,22 @@ object aggregates {
 
   object SampleStandardDeviationAggregator
       extends GeneralStandardDeviationAndVarianceAggregator(
-        isForSampleInsteadOfBeingForPopulation = true,
-        isForStandardDeviationInsteadOfBeingForVariance = true
+        SampleStandardDeviation
       )
 
   object PopulationStandardDeviationAggregator
       extends GeneralStandardDeviationAndVarianceAggregator(
-        isForSampleInsteadOfBeingForPopulation = false,
-        isForStandardDeviationInsteadOfBeingForVariance = true
+        PopulationStandardDeviation
       )
 
   object SampleVarianceAggregator
       extends GeneralStandardDeviationAndVarianceAggregator(
-        isForSampleInsteadOfBeingForPopulation = true,
-        isForStandardDeviationInsteadOfBeingForVariance = false
+        SampleVariance
       )
 
   object PopulationVarianceAggregator
       extends GeneralStandardDeviationAndVarianceAggregator(
-        isForSampleInsteadOfBeingForPopulation = false,
-        isForStandardDeviationInsteadOfBeingForVariance = false
+        PopulationVariance
       )
 
   /*
