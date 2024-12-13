@@ -19,7 +19,8 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
 
   private def modelData: ModelData = ModelData(
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
-    TestFactory.modelDependencies
+    TestFactory.modelDependencies,
+    ???
   )
 
   private lazy val modelDataConfig = modelData.modelConfig

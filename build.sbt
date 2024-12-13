@@ -118,7 +118,28 @@ def designerMergeStrategy: String => MergeStrategy = {
   // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
   case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
     MergeStrategy.singleOrError
-  case x                                                                            => defaultMergeStrategy(x)
+  case PathList(
+        "META-INF",
+        "native-image",
+        "io.netty",
+        "netty-codec",
+        "generated",
+        "handlers",
+        "reflect-config.json"
+      ) =>
+    MergeStrategy.concat
+  case PathList(
+        "META-INF",
+        "native-image",
+        "io.netty",
+        "netty-handler",
+        "generated",
+        "handlers",
+        "reflect-config.json"
+      ) =>
+    MergeStrategy.concat
+  case x                                                                            =>
+    defaultMergeStrategy(x)
 }
 
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
@@ -612,12 +633,8 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     libraryDependencies ++= {
       Seq(
         "org.typelevel"          %% "cats-core"                  % catsV          % Provided,
-        "org.apache.flink"        % "flink-streaming-java"       % flinkV         % flinkScope
-          excludeAll (
-            ExclusionRule("log4j", "log4j"),
-            ExclusionRule("org.slf4j", "slf4j-log4j12"),
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
+        "org.apache.flink"        % "flink-streaming-java"       % flinkV         % Provided,
+        "org.apache.flink"        % "flink-core"                 % flinkV         % Provided,
         "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
         "com.softwaremill.retry" %% "retry"                      % retryV,
         "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
@@ -645,6 +662,7 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
       Seq(
+        "org.apache.flink"     % "flink-core"                      % flinkV               % Provided,
         "org.typelevel"       %% "cats-core"                       % catsV                % Provided,
         "com.typesafe.slick"  %% "slick"                           % slickV               % Provided,
         "com.typesafe.slick"  %% "slick-hikaricp"                  % slickV               % "provided, test",
@@ -1502,9 +1520,10 @@ lazy val developmentTestsDeployManagerArtifacts =
   taskKey[List[(File, String)]]("development tests deployment manager artifacts")
 
 developmentTestsDeployManagerArtifacts := List(
-  (liteEmbeddedDeploymentManager / assembly).value     -> "managers/lite-embedded-manager.jar",
   (developmentTestsDeploymentManager / assembly).value -> "managers/developmentTestsManager.jar",
-  (liteK8sDeploymentManager / assembly).value          -> "managers/lite-k8s-manager.jar"
+  (flinkDeploymentManager / assembly).value            -> "managers/nussknacker-flink-manager.jar",
+  (liteEmbeddedDeploymentManager / assembly).value     -> "managers/lite-embedded-manager.jar",
+  (liteK8sDeploymentManager / assembly).value          -> "managers/lite-k8s-manager.jar",
 )
 
 lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")
@@ -1970,9 +1989,6 @@ lazy val designer = (project in file("designer/server"))
       .value,
     Test / test                      := (Test / test)
       .dependsOn(
-//        flinkDeploymentManager / Compile / assembly,
-//        liteK8sDeploymentManager / Compile / assembly,
-//        liteEmbeddedDeploymentManager / Compile / assembly,
         defaultModel / Compile / assembly,
         flinkTableApiComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
@@ -1980,13 +1996,7 @@ lazy val designer = (project in file("designer/server"))
         flinkExecutor / prepareItLibs
       )
       .value,
-    (Test / managedClasspath) += baseDirectory.value / "engine" / "lite" / "embeddedDeploymentManager" / "target" / "scala-2.13",
-//      unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"engine/lite/embeddedDeploymentManager/target/scala-2.13" ),
-//    Test / testOptions += Tests.Setup(() => {
-//      val classpath = (Test / unmanagedClasspath).value
-//      println(s"Test classpath: $classpath")
-//    }),
-//    Test / unmanagedClasspath += baseDirectory.value / "engine" / "lite" / "embeddedDeploymentManager" / "target" / "scala-2.13" / "classes",
+    // todo:
     /*
       We depend on copyClientDist in packageBin and assembly to be make sure FE files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
@@ -2050,6 +2060,7 @@ lazy val designer = (project in file("designer/server"))
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
         "com.github.scopt"              %% "scopt"                           % "4.1.0"              % Test,
         "org.questdb"                    % "questdb"                         % "7.4.2",
+        "org.apache.flink"               % "flink-streaming-java"            % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>
           Seq(
@@ -2065,6 +2076,10 @@ lazy val designer = (project in file("designer/server"))
     processReports,
     security,
     deploymentManagerApi,
+    componentsApi,
+    requestResponseComponentsApi,
+    liteComponentsApi,
+    flinkComponentsApi,
     restmodel,
     listenerApi,
     defaultHelpers                    % Test,
@@ -2073,7 +2088,7 @@ lazy val designer = (project in file("designer/server"))
     developmentTestsDeploymentManager % Test,
     componentsApi                     % "test->test",
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
-    // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
+    // dev-application.conf. Currently, we don't have a separate classpath for DMs like we have for components.
     // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes
     // that are also load added their test dependencies on the classpath by the Idea. It causes that
     // UniversalKafkaSourceFactory is loaded from app classloader and GenericRecord which is defined in typesToExtract
@@ -2083,8 +2098,7 @@ lazy val designer = (project in file("designer/server"))
 //    liteK8sDeploymentManager          % Provided,
 //    developmentTestsDeploymentManager % Provided,
 //    flinkPeriodicDeploymentManager    % Provided,
-    requestResponseRuntime            % Test,
-    schemedKafkaComponentsUtils       % Provided,
+//    schemedKafkaComponentsUtils       % Provided,
   )
 
 lazy val e2eTests = (project in file("e2e-tests"))

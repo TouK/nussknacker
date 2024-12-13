@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.kafka.KafkaFactory
+//import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -32,6 +32,7 @@ import pl.touk.nussknacker.test.mock.{
   StubModelDataWithModelDefinition,
   TestAdditionalUIConfigProvider
 }
+
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
@@ -42,7 +43,7 @@ import pl.touk.nussknacker.ui.validation.{ScenarioLabelsValidator, UIProcessVali
 
 object ProcessTestData {
 
-  import KafkaFactory._
+//  import KafkaFactory._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   val existingSourceFactory      = "barSource"
@@ -81,8 +82,10 @@ object ProcessTestData {
       .withSink(existingSinkFactory)
       .withSink(
         existingSinkFactoryKafkaString,
-        Parameter[String](TopicParamName),
-        Parameter[Any](SinkValueParamName).copy(isLazyParameter = true)
+        ???,
+        ???, // todo:
+//        Parameter[String](TopicParamName),
+//        Parameter[Any](SinkValueParamName).copy(isLazyParameter = true)
       )
       .withService(existingServiceId)
       .withService(otherExistingServiceId)
@@ -207,8 +210,10 @@ object ProcessTestData {
         .emptySink(
           "end" + idSuffix,
           "kafka-string",
-          TopicParamName.value     -> "'end.topic'".spel,
-          SinkValueParamName.value -> "#output".spel
+          ???,
+          ???, // todo:
+//          TopicParamName.value     -> "'end.topic'".spel,
+//          SinkValueParamName.value -> "#output".spel
         )
     }
     ScenarioBuilder
@@ -476,8 +481,10 @@ object ProcessTestData {
       .emptySink(
         "end" + idSuffix,
         "kafka-string",
-        TopicParamName.value     -> spelTemplate("end.topic"),
-        SinkValueParamName.value -> spelTemplate("#output")
+        ???,
+        ???, // todo:
+//        TopicParamName.value     -> spelTemplate("end.topic"),
+//        SinkValueParamName.value -> spelTemplate("#output")
       )
   }
 

@@ -35,7 +35,8 @@ object FlinkStreamingDeploymentManagerProviderHelper {
         workingDirectoryOpt = None,
         _ => true,
         ComponentDefinitionExtractionMode.FinalDefinition
-      )
+      ),
+      ???
     )
     val actorSystem = ActorSystem("FlinkStreamingDeploymentManagerProviderHelper")
     val backend     = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())

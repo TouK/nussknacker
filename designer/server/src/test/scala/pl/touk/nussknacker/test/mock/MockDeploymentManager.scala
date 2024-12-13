@@ -47,7 +47,8 @@ class MockDeploymentManager(
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
-        TestFactory.modelDependencies
+        TestFactory.modelDependencies,
+        ???
       ),
       DeploymentManagerDependencies(
         deployedScenariosProvider,
