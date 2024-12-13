@@ -259,7 +259,6 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     )
     forAll(table) { agg =>
       val result = addElementsAndComputeResult(List(1.0d), agg)
-      // null is returned because method alignToExpectedType did not run
       result.asInstanceOf[Double] shouldBe 0
     }
   }
@@ -267,21 +266,18 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for population standard deviation on single element float set") {
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(1.0f), agg)
-    // null is returned because method alignToExpectedType did not run
     result.asInstanceOf[Double] shouldBe 0
   }
 
   test("should calculate correct results for population standard deviation on single element BigDecimal set") {
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(new java.math.BigDecimal("1.0")), agg)
-    // null is returned because method alignToExpectedType did not run
     BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0) +- EPS_BIG_DECIMAL
   }
 
   test("should calculate correct results for population standard deviation on single element BigInteger set") {
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(new java.math.BigInteger("1")), agg)
-    // null is returned because method alignToExpectedType did not run
     BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0) +- EPS_BIG_DECIMAL
   }
 
