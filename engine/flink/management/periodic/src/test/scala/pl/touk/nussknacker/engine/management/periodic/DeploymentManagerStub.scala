@@ -33,12 +33,14 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] =
     Future.successful(
       processStateDefinitionManager.processState(
         statusDetails.headOption.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None)),
         latestVersionId,
-        deployedVersionId
+        deployedVersionId,
+        currentlyPresentedVersionId,
       )
     )
 

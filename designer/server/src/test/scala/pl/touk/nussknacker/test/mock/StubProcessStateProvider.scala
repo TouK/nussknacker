@@ -2,7 +2,7 @@ package pl.touk.nussknacker.test.mock
 
 import cats.Traverse
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessStateProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
@@ -19,7 +19,8 @@ class StubProcessStateProvider(states: Map[ProcessName, ProcessState]) extends P
     Future.successful(states(processDetails.name))
 
   override def getProcessState(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      currentlyPresentedVersionId: Option[VersionId],
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     Future.successful(states(processIdWithName.name))
 

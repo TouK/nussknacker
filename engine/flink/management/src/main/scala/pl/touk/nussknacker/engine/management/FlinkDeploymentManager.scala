@@ -45,6 +45,7 @@ abstract class FlinkDeploymentManager(
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     for {
       actionAfterPostprocessOpt <- postprocess(idWithName, statusDetails)
@@ -55,7 +56,8 @@ abstract class FlinkDeploymentManager(
     } yield processStateDefinitionManager.processState(
       engineStateResolvedWithLastAction,
       latestVersionId,
-      deployedVersionId
+      deployedVersionId,
+      currentlyPresentedVersionId,
     )
   }
 

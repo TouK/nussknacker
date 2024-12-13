@@ -16,6 +16,7 @@ class FlinkProcessStateSpec extends AnyFunSpec with Matchers with Inside {
       StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty)),
       VersionId(1),
       None,
+      None,
     )
 
   it("scenario state should be during deploy") {
