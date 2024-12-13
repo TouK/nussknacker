@@ -23,12 +23,14 @@ class PeriodicProcessesRepositoryCachingDecorator(
   private val activeSchedulesCache: AsyncCache[Int, Map[ProcessName, SchedulesState]] =
     Caffeine
       .newBuilder()
+      .asInstanceOf[Caffeine[Int, Map[ProcessName, SchedulesState]]]
       .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
       .buildAsync[Int, Map[ProcessName, SchedulesState]]
 
   private val inactiveSchedulesCache: AsyncCache[(Int, Int), Map[ProcessName, SchedulesState]] =
     Caffeine
       .newBuilder()
+      .asInstanceOf[Caffeine[(Int, Int), Map[ProcessName, SchedulesState]]]
       .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
       .buildAsync[(Int, Int), Map[ProcessName, SchedulesState]]
 
