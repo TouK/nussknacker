@@ -43,7 +43,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Wit
     designerConfig
       .withValue("db", testDbConfig.getConfig("db").root())
       .withValue("http.port", fromAnyRef(port))
-      .withValue("managersDir", fromAnyRef("designer/server/work/managers"))
+      .withValue("managersDir", fromAnyRef("designer/server/work"))
   }
 
 }
