@@ -90,7 +90,8 @@ class PeriodicProcessService(
         scenarioActivityId = ScenarioActivityId(DeterministicUUIDFromLong.longUUID(deployment.id.value)),
         user = ScenarioUser.internalNuUser,
         date = metadata.dateDeployed.getOrElse(metadata.dateFinished),
-        scenarioVersionId = Some(ScenarioVersionId.from(deployment.periodicProcess.processVersion.versionId)),
+        scenarioVersionId =
+          Some(ScenarioVersionId.from(deployment.periodicProcess.deploymentData.processVersion.versionId)),
         scheduledExecutionStatus = metadata.status,
         dateFinished = metadata.dateFinished,
         scheduleName = deployment.scheduleName.display,
@@ -203,7 +204,7 @@ class PeriodicProcessService(
       toDeploy: PeriodicProcessDeployment[WithCanonicalProcess]
   ): Future[Option[PeriodicProcessDeployment[WithCanonicalProcess]]] = {
     delegateDeploymentManager
-      .getProcessStates(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh)
+      .getProcessStates(toDeploy.periodicProcess.deploymentData.processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(
         _.value
           .map(_.status)

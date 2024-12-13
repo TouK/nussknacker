@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAc
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic._
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
 
@@ -118,15 +119,16 @@ class PeriodicProcessesRepositoryCachingDecorator(
   // Methods below are not using caching mechanism
 
   override def getSchedulesState(
-      scenarioName: ProcessName
+      scenarioName: ProcessName,
+      after: Option[LocalDateTime]
   ): Action[SchedulesState] =
-    underlying.getSchedulesState(scenarioName)
+    underlying.getSchedulesState(scenarioName, after)
 
   override def create(
-      deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
+      deploymentWithJarData: WithCanonicalProcess,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId
-  ): Action[PeriodicProcess[CanonicalProcess]] =
+  ): Action[PeriodicProcess[WithCanonicalProcess]] =
     underlying.create(deploymentWithJarData, scheduleProperty, processActionId)
 
   override def schedule(
@@ -134,21 +136,21 @@ class PeriodicProcessesRepositoryCachingDecorator(
       scheduleName: ScheduleName,
       runAt: LocalDateTime,
       deployMaxRetries: Int
-  ): Action[PeriodicProcessDeploymentWithFullProcess] =
+  ): Action[PeriodicProcessDeployment[WithCanonicalProcess]] =
     underlying.schedule(id, scheduleName, runAt, deployMaxRetries)
 
-  override def findToBeDeployed: Action[Seq[PeriodicProcessDeploymentWithFullProcess]] =
+  override def findToBeDeployed: Action[Seq[PeriodicProcessDeployment[WithCanonicalProcess]]] =
     underlying.findToBeDeployed
 
-  override def findToBeRetried: Action[Seq[PeriodicProcessDeploymentWithFullProcess]] =
+  override def findToBeRetried: Action[Seq[PeriodicProcessDeployment[WithCanonicalProcess]]] =
     underlying.findToBeRetried
 
   override def findProcessData(
       id: PeriodicProcessDeploymentId
-  ): Action[PeriodicProcessDeploymentWithFullProcess] =
+  ): Action[PeriodicProcessDeployment[WithCanonicalProcess]] =
     underlying.findProcessData(id)
 
-  override def findProcessData(processName: ProcessName): Action[Seq[PeriodicProcess[CanonicalProcess]]] =
+  override def findProcessData(processName: ProcessName): Action[Seq[PeriodicProcess[WithCanonicalProcess]]] =
     underlying.findProcessData(processName)
 
   override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(

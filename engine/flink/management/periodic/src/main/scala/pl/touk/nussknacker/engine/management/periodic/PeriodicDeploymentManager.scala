@@ -27,6 +27,7 @@ import slick.jdbc
 import slick.jdbc.JdbcProfile
 
 import java.time.{Clock, Instant}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {

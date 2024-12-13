@@ -20,7 +20,7 @@ case class SchedulesState(schedules: Map[ScheduleId, ScheduleData]) {
   def isEmpty: Boolean = schedules.isEmpty
 
   def groupByProcessName: Map[ProcessName, SchedulesState] =
-    schedules.groupBy(_._2.process.processVersion.processName).mapValuesNow(SchedulesState)
+    schedules.groupBy(_._2.process.deploymentData.processVersion.processName).mapValuesNow(SchedulesState)
 
   lazy val groupedByPeriodicProcess: List[PeriodicProcessScheduleData] =
     schedules.toList.groupBy(_._2.process).toList.map { case (periodicProcess, groupedSchedules) =>
@@ -92,7 +92,7 @@ case class PeriodicProcessScheduleData(
 
   def display: String = {
     val deploymentsForSchedules = deployments.map(_.display)
-    s"processName=${process.processVersion.processName}, deploymentsForSchedules=$deploymentsForSchedules"
+    s"processName=${process.deploymentData.processVersion.processName}, deploymentsForSchedules=$deploymentsForSchedules"
   }
 
 }

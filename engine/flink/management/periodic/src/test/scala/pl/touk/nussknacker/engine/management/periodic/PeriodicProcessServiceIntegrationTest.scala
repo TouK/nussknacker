@@ -202,7 +202,7 @@ class PeriodicProcessServiceIntegrationTest
     stateAfterSchedule should have size 1
     val afterSchedule = stateAfterSchedule.firstScheduleData
 
-    afterSchedule.periodicProcessMetadata.processName shouldBe processName
+    afterSchedule.process.deploymentData.processVersion.processName shouldBe processName
     afterSchedule.latestDeployments.head.state shouldBe PeriodicProcessDeploymentState(
       None,
       None,
@@ -215,9 +215,9 @@ class PeriodicProcessServiceIntegrationTest
 
     val allToDeploy = service.findToBeDeployed.futureValue
     allToDeploy.map(
-      _.deployment.periodicProcessMetadata.processName
+      _.periodicProcess.deploymentData.processVersion.processName
     ) should contain only (processName, every30MinutesProcessName)
-    val toDeploy = allToDeploy.find(_.deployment.periodicProcessMetadata.processName == processName).value
+    val toDeploy = allToDeploy.find(_.periodicProcess.deploymentData.processVersion.processName == processName).value
     service.deploy(toDeploy).futureValue
     otherProcessingTypeService.deploy(otherProcessingTypeService.findToBeDeployed.futureValue.loneElement).futureValue
 
@@ -239,7 +239,7 @@ class PeriodicProcessServiceIntegrationTest
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
     toDeployAfterFinish.map(
-      _.deployment.periodicProcessMetadata.processName
+      _.periodicProcess.deploymentData.processVersion.processName
     ) should contain only every30MinutesProcessName
     service.deactivate(processName).futureValue
     service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
@@ -297,9 +297,9 @@ class PeriodicProcessServiceIntegrationTest
     service.deploy(toDeploy).futureValue
 
     val toBeRetried :: Nil = service.findToBeDeployed.futureValue.toList
-    toBeRetried.deployment.state.status shouldBe PeriodicProcessDeploymentStatus.RetryingDeploy
-    toBeRetried.deployment.retriesLeft shouldBe 1
-    toBeRetried.deployment.nextRetryAt.isDefined shouldBe true
+    toBeRetried.state.status shouldBe PeriodicProcessDeploymentStatus.RetryingDeploy
+    toBeRetried.retriesLeft shouldBe 1
+    toBeRetried.nextRetryAt.isDefined shouldBe true
 
     service.deploy(toBeRetried).futureValue
     service.findToBeDeployed.futureValue.toList shouldBe Nil
@@ -375,12 +375,12 @@ class PeriodicProcessServiceIntegrationTest
 
     val allToDeploy = service.findToBeDeployed.futureValue
     allToDeploy should have length 4
-    val toDeploy = allToDeploy.filter(_.deployment.periodicProcessMetadata.processName == processName)
+    val toDeploy = allToDeploy.filter(_.periodicProcess.deploymentData.processVersion.processName == processName)
     toDeploy should have length 2
-    toDeploy.head.deployment.runAt shouldBe localTime(expectedScheduleTime.plus(5, ChronoUnit.MINUTES))
-    toDeploy.head.deployment.scheduleName.value shouldBe Some(scheduleMinute5)
-    toDeploy.last.deployment.runAt shouldBe localTime(expectedScheduleTime.plus(10, ChronoUnit.MINUTES))
-    toDeploy.last.deployment.scheduleName.value shouldBe Some(scheduleMinute10)
+    toDeploy.head.runAt shouldBe localTime(expectedScheduleTime.plus(5, ChronoUnit.MINUTES))
+    toDeploy.head.scheduleName.value shouldBe Some(scheduleMinute5)
+    toDeploy.last.runAt shouldBe localTime(expectedScheduleTime.plus(10, ChronoUnit.MINUTES))
+    toDeploy.last.scheduleName.value shouldBe Some(scheduleMinute10)
 
     service.deactivate(processName).futureValue
     service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
@@ -417,19 +417,19 @@ class PeriodicProcessServiceIntegrationTest
     val toDeploy = service.findToBeDeployed.futureValue
     toDeploy should have length 2
 
-    val deployment = toDeploy.find(_.deployment.scheduleName.value.contains(firstSchedule)).value
+    val deployment = toDeploy.find(_.scheduleName.value.contains(firstSchedule)).value
     service.deploy(deployment)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deployment.deployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deployment.id))
 
     val toDeployAfterDeploy = service.findToBeDeployed.futureValue
     toDeployAfterDeploy should have length 0
 
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deployment.deployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deployment.id))
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
     toDeployAfterFinish should have length 1
-    toDeployAfterFinish.head.deployment.scheduleName.value.value shouldBe secondSchedule
+    toDeployAfterFinish.head.scheduleName.value.value shouldBe secondSchedule
 
     val firstActivity = eventually {
       val result = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
@@ -492,7 +492,7 @@ class PeriodicProcessServiceIntegrationTest
 
     currentTime = timeToTriggerSchedule1
     val toDeployOnSchedule1 = service.findToBeDeployed.futureValue.loneElement
-    toDeployOnSchedule1.deployment.scheduleName.value.value shouldBe schedule1
+    toDeployOnSchedule1.scheduleName.value.value shouldBe schedule1
     service.deploy(toDeployOnSchedule1).futureValue
 
     val stateAfterSchedule1Deploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
@@ -525,7 +525,7 @@ class PeriodicProcessServiceIntegrationTest
 
     currentTime = timeToTriggerSchedule2
     val toDeployOnSchedule2 = service.findToBeDeployed.futureValue.loneElement
-    toDeployOnSchedule2.deployment.scheduleName.value.value shouldBe schedule2
+    toDeployOnSchedule2.scheduleName.value.value shouldBe schedule2
     service.deploy(toDeployOnSchedule2).futureValue
 
     val stateAfterSchedule2Deploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
@@ -612,7 +612,7 @@ class PeriodicProcessServiceIntegrationTest
     toDeploy should have length 1
     val deployment = toDeploy.head
     service.deploy(deployment).futureValue
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deployment.deployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deployment.id))
 
     tryWithFailedListener { () =>
       service.deactivate(processName)
@@ -642,7 +642,7 @@ class PeriodicProcessServiceIntegrationTest
     val deployment = toDeploy.head
     service.deploy(deployment).futureValue
 
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deployment.deployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deployment.id))
 
     // this one is cyclically called by RescheduleActor
     service.handleFinished.futureValue
