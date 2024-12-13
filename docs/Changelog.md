@@ -26,7 +26,7 @@
     * Improved scenario state management to include information about current and deployed versions and allow more customization
 * [#7184](https://github.com/TouK/nussknacker/pull/7184) Improve Nu Designer API notifications endpoint, to include events related to currently displayed scenario
 * [#7323](https://github.com/TouK/nussknacker/pull/7323) Improve Periodic DeploymentManager db queries
-* [#7307](https://github.com/TouK/nussknacker/pull/7307) Added StddevPop, StddevSamp, VarPop and VarSamp aggregations
+* [#7307](https://github.com/TouK/nussknacker/pull/7307) Added StddevPop, StddevSamp, VarPop and VarSamp aggregators
 
 ## 1.18
 
