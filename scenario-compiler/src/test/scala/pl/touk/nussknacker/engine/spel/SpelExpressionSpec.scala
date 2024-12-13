@@ -1663,6 +1663,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("should convert list of map entries into map") {
+    // this is a special case
+    // list on which we run .toMap contains elements of type java.util.Map.Entry
+    val result = evaluate[Any]("""
+        |{
+        |a: "A",
+        |b: "B"
+        |}.![#this].toMap
+        |""".stripMargin)
+    result shouldBe java.util.Map.of("a", "A", "b", "B")
+  }
+
   test("should return error msg if record in map project does not contain required fields") {
     parse[Any]("#mapValue.![{invalid_key: #this.key}].toMap()", ctx).invalidValue.toList should matchPattern {
       case GenericFunctionError("List element must contain 'key' and 'value' fields") :: Nil =>

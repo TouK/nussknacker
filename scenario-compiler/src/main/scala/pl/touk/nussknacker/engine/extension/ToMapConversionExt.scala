@@ -83,6 +83,10 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
         val map = new JHashMap[Any, Any]()
         c.forEach(e => map.put(e.get(keyName), e.get(valueName)))
         Right(map)
+      case c: JCollection[java.util.Map.Entry[_, _] @unchecked] =>
+        val map = new JHashMap[Any, Any]()
+        c.forEach(e => map.put(e.getKey, e.getValue))
+        Right(map)
       case x => Left(new IllegalArgumentException(s"Cannot convert: $x to a Map"))
     }
 
