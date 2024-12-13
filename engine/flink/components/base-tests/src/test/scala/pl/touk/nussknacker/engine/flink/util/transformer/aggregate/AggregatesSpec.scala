@@ -5,23 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregatesSpec.{EPS_BIG_DECIMAL, EPS_DOUBLE}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{
-  AverageAggregator,
-  CountWhenAggregator,
-  FirstAggregator,
-  LastAggregator,
-  ListAggregator,
-  MapAggregator,
-  MaxAggregator,
-  MinAggregator,
-  OptionAggregator,
-  PopulationStandardDeviationAggregator,
-  PopulationVarianceAggregator,
-  SampleStandardDeviationAggregator,
-  SampleVarianceAggregator,
-  SetAggregator,
-  SumAggregator
-}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{AverageAggregator, CountWhenAggregator, FirstAggregator, LastAggregator, ListAggregator, MapAggregator, MaxAggregator, MinAggregator, OptionAggregator, PopulationStandardDeviationAggregator, PopulationVarianceAggregator, SampleStandardDeviationAggregator, SampleVarianceAggregator, SetAggregator, SumAggregator}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.lang.{Integer => JInt, Long => JLong}
@@ -187,10 +171,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for standard deviation and variance on BigInt") {
     val table = Table(
       ("aggregator", "value"),
-      ( SampleStandardDeviationAggregator, new java.math.BigDecimal(Math.sqrt(2.5)) ),
-      ( PopulationStandardDeviationAggregator, new java.math.BigDecimal(Math.sqrt(2)) ),
-      ( SampleVarianceAggregator, new java.math.BigDecimal(2.5) ),
-      ( PopulationVarianceAggregator, new java.math.BigDecimal(2.0) )
+      ( SampleStandardDeviationAggregator, BigDecimal(Math.sqrt(2.5)) ),
+      ( PopulationStandardDeviationAggregator, BigDecimal(Math.sqrt(2)) ),
+      ( SampleVarianceAggregator, BigDecimal(2.5) ),
+      ( PopulationVarianceAggregator, BigDecimal(2.0) )
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -198,11 +182,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
         List(new BigInteger("5"), new BigInteger("4"), new BigInteger("3"), new BigInteger("2"), new BigInteger("1")),
         agg
       )
-      result
-        .asInstanceOf[java.math.BigDecimal]
-        .subtract(expectedResult)
-        .abs()
-        .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+      BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe expectedResult +- EPS_BIG_DECIMAL
     }
   }
 
@@ -224,10 +204,10 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
   test("should calculate correct results for standard deviation and variance on BigDecimals") {
     val table = Table(
       ("aggregator", "value"),
-      ( SampleStandardDeviationAggregator, new java.math.BigDecimal(Math.sqrt(2.5)) ),
-      ( PopulationStandardDeviationAggregator, new java.math.BigDecimal(Math.sqrt(2)) ),
-      ( SampleVarianceAggregator, new java.math.BigDecimal(2.5) ),
-      ( PopulationVarianceAggregator, new java.math.BigDecimal(2.0) )
+      ( SampleStandardDeviationAggregator, BigDecimal(Math.sqrt(2.5)) ),
+      ( PopulationStandardDeviationAggregator, BigDecimal(Math.sqrt(2)) ),
+      ( SampleVarianceAggregator, BigDecimal(2.5) ),
+      ( PopulationVarianceAggregator, BigDecimal(2.0) )
     )
 
     forAll(table) { (agg, expectedResult) =>
@@ -241,11 +221,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
         ),
         agg
       )
-      result
-        .asInstanceOf[java.math.BigDecimal]
-        .subtract(expectedResult)
-        .abs()
-        .compareTo(EPS_BIG_DECIMAL) shouldBe -1
+      BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe expectedResult +- EPS_BIG_DECIMAL
     }
   }
 
@@ -299,14 +275,14 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(new java.math.BigDecimal("1.0")), agg)
     // null is returned because method alignToExpectedType did not run
-    result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) shouldBe -1
+    BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0) +- EPS_BIG_DECIMAL
   }
 
   test("should calculate correct results for population standard deviation on single element BigInteger set") {
     val agg    = PopulationStandardDeviationAggregator
     val result = addElementsAndComputeResult(List(new java.math.BigInteger("1")), agg)
     // null is returned because method alignToExpectedType did not run
-    result.asInstanceOf[java.math.BigDecimal].abs().compareTo(EPS_BIG_DECIMAL) shouldBe -1
+    BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0) +- EPS_BIG_DECIMAL
   }
 
   test("should calculate correct results for last aggregator") {
@@ -519,5 +495,5 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
 object AggregatesSpec {
   val EPS_DOUBLE      = 0.000001;
-  val EPS_BIG_DECIMAL = new java.math.BigDecimal("0.000001")
+  val EPS_BIG_DECIMAL = BigDecimal(new java.math.BigDecimal("0.000001"))
 }
