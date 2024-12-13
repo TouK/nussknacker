@@ -9,7 +9,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  CannotCreateObjectError,
+  ExpressionParserCompilationError
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -170,10 +173,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   test("standard deviation and average aggregates") {
     val table = Table(
       ("aggregate", "secondValue"),
-        ("#AGG.stddevPop", Math.sqrt(0.25)),
+      ("#AGG.stddevPop", Math.sqrt(0.25)),
       ("#AGG.stddevSamp", Math.sqrt(0.5)),
-        ("#AGG.varPop", 0.25),
-          ("#AGG.varSamp", 0.5)
+      ("#AGG.varPop", 0.25),
+      ("#AGG.varSamp", 0.5)
     )
 
     forAll(table) { (aggregationName, secondValue) =>
@@ -457,7 +460,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   ) {
     val table = Table(
       "aggregatorExpression",
-      "#AGG.stddevPop", "#AGG.stddevSamp", "#AGG.varPop", "#AGG.varSamp"
+      "#AGG.stddevPop",
+      "#AGG.stddevSamp",
+      "#AGG.varPop",
+      "#AGG.varSamp"
     )
 
     forAll(table) { aggregatorName =>
@@ -491,7 +497,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   ) {
     val table = Table(
       "aggregatorExpression",
-      "#AGG.stddevPop", "#AGG.stddevSamp", "#AGG.varPop", "#AGG.varSamp"
+      "#AGG.stddevPop",
+      "#AGG.stddevSamp",
+      "#AGG.varPop",
+      "#AGG.varSamp"
     )
 
     forAll(table) { aggregatorName =>
