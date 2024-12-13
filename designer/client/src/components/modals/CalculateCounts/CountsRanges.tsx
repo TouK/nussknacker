@@ -7,6 +7,7 @@ import { CountsRangesButtons } from "./CountsRangesButtons";
 import { useDeployHistory } from "./useDeployHistory";
 import { predefinedRanges } from "./utils";
 import { StyledRangesWrapper } from "./CountsStyled";
+import { useActivityHistory } from "./useActivityHistory";
 
 interface RangesProps {
     label: string;
@@ -16,6 +17,7 @@ interface RangesProps {
 export function CountsRanges({ label, onChange }: RangesProps): JSX.Element {
     const { t } = useTranslation<string>();
     const processName = useSelector(getProcessName);
+    const activities = useActivityHistory(processName);
     const deploys = useDeployHistory(processName);
     const dates = useMemo(() => predefinedRanges(t), [t]);
 
@@ -24,7 +26,7 @@ export function CountsRanges({ label, onChange }: RangesProps): JSX.Element {
             <p>{label}</p>
             <StyledRangesWrapper>
                 <CountsRangesButtons ranges={dates} onChange={onChange} />
-                <CountsRangesButtons ranges={deploys} onChange={onChange} limit={1}>
+                <CountsRangesButtons ranges={activities} onChange={onChange} limit={1}>
                     {t("calculateCounts.deployments", "Previous deployments...")}
                 </CountsRangesButtons>
             </StyledRangesWrapper>
