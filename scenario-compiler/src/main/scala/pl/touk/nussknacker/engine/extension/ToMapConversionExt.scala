@@ -95,7 +95,7 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
     .stream()
     .allMatch {
       case m: JMap[_, _]                => m.keySet().containsAll(keyAndValueNames)
-      case _: java.util.Map.Entry[_, _] => true
+      case _: JMap.Entry[_, _] => true
       case _                            => false
     }
 
@@ -103,7 +103,7 @@ object ToMapConversion extends Conversion[JMap[_, _]] {
     val map = new JHashMap[Any, Any]()
     c.forEach {
       case e: JMap[_, _]                => map.put(e.get(keyName), e.get(valueName))
-      case e: java.util.Map.Entry[_, _] => map.put(e.getKey, e.getValue)
+      case e: JMap.Entry[_, _] => map.put(e.getKey, e.getValue)
     }
     map
   }
