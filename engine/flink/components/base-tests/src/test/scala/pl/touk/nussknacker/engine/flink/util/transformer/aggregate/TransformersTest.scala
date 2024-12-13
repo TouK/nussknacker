@@ -455,7 +455,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   test(
     "emit aggregate for extra window when no data come for standard deviation and variance aggregator for return type double"
   ) {
-    for (aggregatorName <- List("#AGG.stddevPop", "#AGG.stddevSamp", "#AGG.varPop", "#AGG.varSamp")) {
+    val table = Table(
+      "aggregatorExpression",
+      "#AGG.stddevPop", "#AGG.stddevSamp", "#AGG.varPop", "#AGG.varSamp"
+    )
+
+    forAll(table) { aggregatorName =>
       val id = "1"
 
       val model =
