@@ -22,7 +22,12 @@ import {
     Scenario,
     StatusDefinitionType,
 } from "../components/Process/types";
-import { ActivitiesResponse, ActivityMetadataResponse } from "../components/toolbars/activities/types";
+import {
+    ActivitiesResponse,
+    ActivityMetadataResponse,
+    ActivityType,
+    PredefinedActivityType,
+} from "../components/toolbars/activities/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking";
 import { BackendNotification } from "../containers/Notifications";
@@ -319,6 +324,23 @@ class HttpService {
         const promise = api.get(`/processes/${encodeURIComponent(processName)}/status?currentlyPresentedVersionId=${processVersionId}`);
         promise.catch((error) => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error));
         return promise;
+    }
+
+    fetchProcessesActivities(processName: string) {
+        return api
+            .get<{ activities: { date: string; type: ActivityType }[] }>(
+                `/processes/${encodeURIComponent(processName)}/activity/activities`,
+            )
+            .then((res) => {
+                return res.data.activities.filter(
+                    ({ date, type }) =>
+                        type === PredefinedActivityType.ScenarioDeployed ||
+                        type === PredefinedActivityType.ScenarioCanceled ||
+                        type === PredefinedActivityType.PerformedSingleExecution ||
+                        type === PredefinedActivityType.PerformedScheduledExecution,
+                );
+            })
+            .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as PredefinedActivityType })));
     }
 
     fetchProcessesDeployments(processName: string) {
