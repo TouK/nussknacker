@@ -75,6 +75,9 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(config: NussknackerConf
       typeConfig: ProcessingTypeConfig,
       managersDirs: List[Path],
   ): DeploymentManagerProvider = {
+    logger.debug(
+      s"Loading deployment managers from the following locations: ${managersDirs.map(_.toString).mkString(", ")}"
+    )
     val managersClassLoader =
       new URLClassLoader(managersDirs.flatMap(_.toUri.toURL.expandFiles(".jar")), this.getClass.getClassLoader)
     ScalaServiceLoader.loadNamed[DeploymentManagerProvider](
