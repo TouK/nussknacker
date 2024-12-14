@@ -231,12 +231,12 @@ class PeriodicDeploymentManager private[periodic] (
 
   override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
 
-  // TODO We don't handle deployment synchronization on periodic DM because it currently uses it's own deployments and
+  // TODO: We don't handle deployment synchronization on periodic DM because it currently uses it's own deployments and
   //      its statuses synchronization mechanism (see PeriodicProcessService.synchronizeDeploymentsStates)
   //      We should move periodic mechanism to the core and reuse new synchronization mechanism also in this case.
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
-  // todo NU-1772
+  // TODO: NU-1772
   //  In the current implementation:
   //    - PeriodicDeploymentManager is a kind of plugin, and it has its own data source (separate db)
   //    - PeriodicDeploymentManager returns (by implementing ManagerSpecificScenarioActivitiesStoredByManager) custom ScenarioActivities, that are associated with operations performed internally by the manager

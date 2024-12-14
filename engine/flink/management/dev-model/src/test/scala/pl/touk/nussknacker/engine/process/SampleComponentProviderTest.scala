@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.{ClassLoaderModelData, ConfigWithUnresolvedVer
 
 class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matchers {
 
-  override protected lazy val config = ConfigFactory.empty()
+  override protected lazy val config: Config = ConfigFactory.empty()
 
   test("detects component service") {
     val process =

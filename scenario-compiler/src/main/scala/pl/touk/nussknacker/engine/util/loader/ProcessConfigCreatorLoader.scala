@@ -13,7 +13,6 @@ class ProcessConfigCreatorLoader(shouldIncludeConfigCreator: ProcessConfigCreato
   override val prettyClassName: String = "ProcessConfigCreator"
 
   override def loadAll(classLoader: ClassLoader): List[SPCC] = {
-    // todo:
     ScalaServiceLoader.load[SPCC](classLoader).filter(shouldIncludeConfigCreator) ++
       ScalaServiceLoader
         .load[JPCC](classLoader)

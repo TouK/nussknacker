@@ -1993,7 +1993,6 @@ lazy val designer = (project in file("designer/server"))
     SlowTests / test                 := (SlowTests / test).dependsOn(prepareDesignerTests).value,
     Test / test                      := (Test / test).dependsOn(prepareDesignerTests).value,
     Test / testOptions += Tests.Setup(() => prepareDesignerTests.value),
-    // todo:
     /*
       We depend on copyClientDist in packageBin and assembly to be make sure FE files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
@@ -2085,19 +2084,7 @@ lazy val designer = (project in file("designer/server"))
     flinkTestUtils                    % Test,
     developmentTestsDeploymentManager % Test,
     kafkaComponentsUtils              % Test,
-    componentsApi                     % "test->test",
-    // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
-    // dev-application.conf. Currently, we don't have a separate classpath for DMs like we have for components.
-    // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes
-    // that are also load added their test dependencies on the classpath by the Idea. It causes that
-    // UniversalKafkaSourceFactory is loaded from app classloader and GenericRecord which is defined in typesToExtract
-    // is missing from this classloader
-//    flinkDeploymentManager            % Provided, // todo: remove
-//    liteEmbeddedDeploymentManager     % Test,
-//    liteK8sDeploymentManager          % Provided,
-//    developmentTestsDeploymentManager % Provided,
-//    flinkPeriodicDeploymentManager    % Provided,
-//    schemedKafkaComponentsUtils       % Provided,
+    componentsApi                     % "test->test"
   )
 
 lazy val e2eTests = (project in file("e2e-tests"))

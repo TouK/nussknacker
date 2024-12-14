@@ -128,8 +128,6 @@ case class ClassLoaderModelData private (
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     // This property is for easier testing when for some reason, some jars with ComponentProvider are
     // on the test classpath and CPs collide with other once with the same name.
-    // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
-    // add liteKafkaComponents (which are in test scope), see comment next to designer module
     shouldIncludeConfigCreator: ProcessConfigCreator => Boolean,
     shouldIncludeComponentProvider: ComponentProvider => Boolean,
     componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
