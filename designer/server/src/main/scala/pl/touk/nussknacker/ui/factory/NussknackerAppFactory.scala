@@ -16,18 +16,26 @@ import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHtt
 
 import java.time.Clock
 
-object NussknackerAppFactory
+object NussknackerAppFactory {
+
+  def create(nussknackerConfig: NussknackerConfig): Resource[IO, NussknackerAppFactory] = {
+    for {
+      managersDirs                 <- Resource.eval(nussknackerConfig.managersDirs())
+      deploymentManagerClassLoader <- DeploymentManagersClassLoader.create(managersDirs)
+    } yield new NussknackerAppFactory(
+      nussknackerConfig,
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(nussknackerConfig, deploymentManagerClassLoader)
+    )
+  }
+
+  def create(classLoader: ClassLoader): Resource[IO, NussknackerAppFactory] = {
+    create(new LoadableDesignerConfigBasedNussknackerConfig(classLoader))
+  }
+
+}
 
 class NussknackerAppFactory(nussknackerConfig: NussknackerConfig, processingTypeDataLoader: ProcessingTypeDataLoader)
     extends LazyLogging {
-
-  def this(nussknackerConfig: NussknackerConfig) = {
-    this(nussknackerConfig, new ProcessingTypesConfigBasedProcessingTypeDataLoader(nussknackerConfig))
-  }
-
-  def this(classLoader: ClassLoader) = {
-    this(new LoadableDesignerConfigBasedNussknackerConfig(classLoader))
-  }
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
