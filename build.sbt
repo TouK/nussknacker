@@ -2069,6 +2069,7 @@ lazy val designer = (project in file("designer/server"))
     developmentTestsDeploymentManager % Provided,
     flinkPeriodicDeploymentManager    % Provided,
     schemedKafkaComponentsUtils       % Provided,
+    schemedKafkaComponentsUtils       % Provided,
   )
 
 lazy val e2eTests = (project in file("e2e-tests"))

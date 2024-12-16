@@ -41,11 +41,11 @@ object PeriodicStateStatus {
       List(ScenarioActionName.Cancel)
     case ProcessStatus(_: ScheduledStatus, _, deployedVersionId, Some(currentlyPresentedVersionId))
         if deployedVersionId.contains(currentlyPresentedVersionId) =>
-      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.PerformSingleExecution)
+      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.RunNow)
     case ProcessStatus(_: ScheduledStatus, _, _, None) =>
       // At the moment of deployment or validation, we may not have the information about the currently displayed version
       // In that case we assume, that it was validated before the deployment was initiated.
-      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.PerformSingleExecution)
+      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy, ScenarioActionName.RunNow)
     case ProcessStatus(_: ScheduledStatus, _, _, _) =>
       List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
     case ProcessStatus(WaitingForScheduleStatus, _, _, _) =>
@@ -88,10 +88,10 @@ object PeriodicStateStatus {
           case None            => "[unknown]"
         }
         Map(
-          ScenarioActionName.PerformSingleExecution -> s"Version ${print(deployedVersionIdOpt)} is deployed, but different version ${print(currentlyPresentedVersionId)} is displayed"
+          ScenarioActionName.RunNow -> s"Version ${print(deployedVersionIdOpt)} is deployed, but different version ${print(currentlyPresentedVersionId)} is displayed"
         )
       case ProcessStatus(other, _, _, _) =>
-        Map(ScenarioActionName.PerformSingleExecution -> s"Disabled for ${other.name} status.")
+        Map(ScenarioActionName.RunNow -> s"Disabled for ${other.name} status.")
     }
   }
 

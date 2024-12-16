@@ -313,7 +313,7 @@ class DeploymentService(
     val fixedActionDefinitions = List(
       CustomActionDefinition(ScenarioActionName.Deploy, Nil, Nil, None),
       CustomActionDefinition(ScenarioActionName.Cancel, Nil, Nil, None),
-      CustomActionDefinition(ScenarioActionName.PerformSingleExecution, Nil, Nil, None)
+      CustomActionDefinition(ScenarioActionName.RunNow, Nil, Nil, None)
     )
     val actionsDefinedInCustomActions = dispatcher
       .deploymentManagerUnsafe(processingType)
@@ -734,7 +734,7 @@ class DeploymentService(
   private def processSingleExecution(command: PerformSingleExecutionCommand): Future[SingleExecutionResult] = {
     processAction(
       command = command,
-      actionName = ScenarioActionName.PerformSingleExecution,
+      actionName = ScenarioActionName.RunNow,
       actionParams = Map.empty,
       dmCommandCreator = ctx =>
         DMPerformSingleExecutionCommand(

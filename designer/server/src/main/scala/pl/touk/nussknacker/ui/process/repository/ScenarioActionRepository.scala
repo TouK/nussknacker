@@ -290,7 +290,7 @@ class DbScenarioActionRepository private (
         ScenarioActivityType.ScenarioPaused
       case ScenarioActionName.Rename =>
         ScenarioActivityType.ScenarioNameChanged
-      case ScenarioActionName.PerformSingleExecution =>
+      case ScenarioActionName.RunNow =>
         ScenarioActivityType.PerformedSingleExecution
       case otherCustomName =>
         ScenarioActivityType.CustomAction(otherCustomName.value)
@@ -518,7 +518,7 @@ class DbScenarioActionRepository private (
       case ScenarioActivityType.OutgoingMigration =>
         None
       case ScenarioActivityType.PerformedSingleExecution =>
-        Some(ScenarioActionName.PerformSingleExecution)
+        Some(ScenarioActionName.RunNow)
       case ScenarioActivityType.PerformedScheduledExecution =>
         None
       case ScenarioActivityType.AutomaticUpdate =>
