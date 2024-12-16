@@ -21,7 +21,8 @@ case class PeriodicBatchConfig(
     deployInterval: FiniteDuration = 17 seconds,
     deploymentRetry: DeploymentRetryConfig,
     executionConfig: PeriodicExecutionConfig,
-    jarsDir: String
+    jarsDir: String,
+    maxFetchedPeriodicScenarioActivities: Option[Int] = None,
 )
 
 /**

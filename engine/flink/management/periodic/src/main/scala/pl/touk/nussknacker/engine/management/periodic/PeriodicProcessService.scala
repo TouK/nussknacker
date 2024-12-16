@@ -48,6 +48,7 @@ class PeriodicProcessService(
     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
     deploymentRetryConfig: DeploymentRetryConfig,
     executionConfig: PeriodicExecutionConfig,
+    maxFetchedPeriodicScenarioActivities: Option[Int],
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock,
     actionService: ProcessingTypeActionService,
@@ -99,7 +100,12 @@ class PeriodicProcessService(
         retriesLeft = deployment.nextRetryAt.map(_ => deployment.retriesLeft),
       )
     }
-  } yield activities
+    limitedActivities = maxFetchedPeriodicScenarioActivities match {
+      case Some(limit) => activities.sortBy(_.date).takeRight(limit)
+      case None        => activities
+    }
+    _ = limitedActivities.foreach(println)
+  } yield limitedActivities
 
   def schedule(
       schedule: ScheduleProperty,

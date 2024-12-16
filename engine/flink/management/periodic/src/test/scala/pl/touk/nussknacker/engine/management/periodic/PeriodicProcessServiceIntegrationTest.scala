@@ -13,21 +13,10 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.testcontainers.utility.DockerImageName
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessActionId,
-  ProcessingTypeActionServiceStub,
-  ScenarioActivity,
-  ScenarioId,
-  ScenarioUser,
-  ScenarioVersionId,
-  ScheduledExecutionStatus,
-  UserName
-}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -82,7 +71,8 @@ class PeriodicProcessServiceIntegrationTest
 
   def withFixture(
       deploymentRetryConfig: DeploymentRetryConfig = DeploymentRetryConfig(),
-      executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()
+      executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig(),
+      maxFetchedPeriodicScenarioActivities: Option[Int] = None,
   )(testCode: Fixture => Any): Unit = {
     val postgresConfig = ConfigFactory.parseMap(
       Map(
@@ -105,7 +95,9 @@ class PeriodicProcessServiceIntegrationTest
     def runTestCodeWithDbConfig(config: Config) = {
       val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(config)
       try {
-        testCode(new Fixture(db, dbProfile, deploymentRetryConfig, executionConfig))
+        testCode(
+          new Fixture(db, dbProfile, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
+        )
       } finally {
         db.close()
       }
@@ -120,7 +112,8 @@ class PeriodicProcessServiceIntegrationTest
       db: JdbcBackend.DatabaseDef,
       dbProfile: JdbcProfile,
       deploymentRetryConfig: DeploymentRetryConfig,
-      executionConfig: PeriodicExecutionConfig
+      executionConfig: PeriodicExecutionConfig,
+      maxFetchedPeriodicScenarioActivities: Option[Int],
   ) {
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub                = new JarManagerStub
@@ -144,6 +137,7 @@ class PeriodicProcessServiceIntegrationTest
         additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
         deploymentRetryConfig = deploymentRetryConfig,
         executionConfig = executionConfig,
+        maxFetchedPeriodicScenarioActivities = maxFetchedPeriodicScenarioActivities,
         processConfigEnricher = ProcessConfigEnricher.identity,
         clock = fixedClock(currentTime),
         new ProcessingTypeActionServiceStub,
@@ -576,6 +570,126 @@ class PeriodicProcessServiceIntegrationTest
         scheduleName = "schedule2",
         scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
         createdAt = secondActivity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+    )
+  }
+
+  it should "handle multiple one time schedules and return only latest activities" in withFixture(
+    maxFetchedPeriodicScenarioActivities = Some(1)
+  ) { f =>
+    var currentTime            = startTime
+    def service                = f.periodicProcessService(currentTime)
+    val timeToTriggerSchedule1 = startTime.plus(1, ChronoUnit.HOURS)
+    val timeToTriggerSchedule2 = startTime.plus(2, ChronoUnit.HOURS)
+
+    def mostImportantActiveDeployment = service
+      .getStatusDetails(processName)
+      .futureValue
+      .value
+      .status
+      .asInstanceOf[PeriodicProcessStatus]
+      .pickMostImportantActiveDeployment
+      .value
+
+    val schedule1 = "schedule1"
+    val schedule2 = "schedule2"
+    service
+      .schedule(
+        MultipleScheduleProperty(
+          Map(
+            schedule1 -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule1))),
+            schedule2 -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule2)))
+          )
+        ),
+        ProcessVersion.empty.copy(processName = processName),
+        sampleProcess,
+        randomProcessActionId
+      )
+      .futureValue
+
+    val stateAfterSchedule = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
+    stateAfterSchedule should have size 2
+
+    val latestDeploymentSchedule1 = mostImportantActiveDeployment
+    latestDeploymentSchedule1.scheduleName.value.value shouldBe schedule1
+    latestDeploymentSchedule1.runAt shouldBe localTime(timeToTriggerSchedule1)
+
+    currentTime = timeToTriggerSchedule1
+    val toDeployOnSchedule1 = service.findToBeDeployed.futureValue.loneElement
+    toDeployOnSchedule1.scheduleName.value.value shouldBe schedule1
+    service.deploy(toDeployOnSchedule1).futureValue
+
+    val stateAfterSchedule1Deploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
+    stateAfterSchedule1Deploy
+      .latestDeploymentForSchedule(schedule1)
+      .state
+      .status shouldBe PeriodicProcessDeploymentStatus.Deployed
+    stateAfterSchedule1Deploy
+      .latestDeploymentForSchedule(schedule2)
+      .state
+      .status shouldBe PeriodicProcessDeploymentStatus.Scheduled
+    mostImportantActiveDeployment.scheduleName.value.value shouldBe schedule1
+
+    service.handleFinished.futureValue
+    val toDeployAfterFinishSchedule1 = service.findToBeDeployed.futureValue
+    toDeployAfterFinishSchedule1 should have length 0
+
+    val stateAfterSchedule1Finished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
+    stateAfterSchedule1Finished
+      .latestDeploymentForSchedule(schedule1)
+      .state
+      .status shouldBe PeriodicProcessDeploymentStatus.Finished
+    stateAfterSchedule1Finished
+      .latestDeploymentForSchedule(schedule2)
+      .state
+      .status shouldBe PeriodicProcessDeploymentStatus.Scheduled
+    val latestDeploymentSchedule2 = mostImportantActiveDeployment
+    latestDeploymentSchedule2.scheduleName.value.value shouldBe schedule2
+    latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule2)
+
+    currentTime = timeToTriggerSchedule2
+    val toDeployOnSchedule2 = service.findToBeDeployed.futureValue.loneElement
+    toDeployOnSchedule2.scheduleName.value.value shouldBe schedule2
+    service.deploy(toDeployOnSchedule2).futureValue
+
+    val stateAfterSchedule2Deploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
+    stateAfterSchedule2Deploy
+      .latestDeploymentForSchedule(schedule1)
+      .state
+      .status shouldBe PeriodicProcessDeploymentStatus.Finished
+    stateAfterSchedule2Deploy
+      .latestDeploymentForSchedule(schedule2)
+      .state
+      .status shouldBe PeriodicProcessDeploymentStatus.Deployed
+    mostImportantActiveDeployment.scheduleName.value.value shouldBe schedule2
+
+    service.handleFinished.futureValue
+    service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
+    val inactiveStates = service
+      .getLatestDeploymentsForLatestInactiveSchedules(
+        processName,
+        inactiveProcessesMaxCount = 1,
+        deploymentsPerScheduleMaxCount = 1
+      )
+      .futureValue
+    inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
+    inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
+
+    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    activities shouldBe List(
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(1),
+        scenarioActivityId = firstActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = firstActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = firstActivity.dateFinished,
+        scheduleName = "schedule2",
+        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
+        createdAt = firstActivity.createdAt,
         retriesLeft = None,
         nextRetryAt = None
       ),

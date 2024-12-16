@@ -31,3 +31,4 @@ Use `deploymentManager` with the following properties:
   - `deployMaxRetries` - maximum amount of retries for failed deployment.
   - `deployRetryPenalize` - an amount of time by which the next retry should be delayed.
 - `jarsDir` -  directory for jars storage.
+- `maxFetchedPeriodicScenarioActivities` -  optional, maximum number of latest ScenarioActivities specific to DM, that will be fetched, by default unlimited
