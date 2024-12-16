@@ -1519,10 +1519,7 @@ lazy val developmentTestsDeployManagerArtifacts =
   taskKey[List[(File, String)]]("development tests deployment manager artifacts")
 
 developmentTestsDeployManagerArtifacts := List(
-  (developmentTestsDeploymentManager / assembly).value -> "managers/developmentTestsManager.jar",
-  (flinkDeploymentManager / assembly).value            -> "managers/nussknacker-flink-manager.jar",
-  (liteEmbeddedDeploymentManager / assembly).value     -> "managers/lite-embedded-manager.jar",
-  (liteK8sDeploymentManager / assembly).value          -> "managers/lite-k8s-manager.jar",
+  (developmentTestsDeploymentManager / assembly).value -> "managers/developmentTestsManager.jar"
 )
 
 lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")
@@ -1948,7 +1945,9 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
   )
   .dependsOn(extensionsApi, testUtils % Test)
 
-lazy val prepareDesignerTests = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")
+lazy val prepareDesignerTests     = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")
+lazy val prepareDesignerSlowTests =
+  taskKey[Unit]("Prepare all necessary artifacts before running designer module slow tests")
 
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
@@ -1980,6 +1979,19 @@ lazy val designer = (project in file("designer/server"))
         CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false)
       )
     },
+    SlowTests / test                 := (SlowTests / test)
+      .dependsOn(
+        flinkDevModel / Compile / assembly,
+        flinkExecutor / Compile / assembly
+      )
+      .value,
+    prepareDesignerSlowTests         := {
+      (flinkDeploymentManager / assembly).value
+      (liteEmbeddedDeploymentManager / assembly).value
+      (liteK8sDeploymentManager / assembly).value
+      (flinkDevModel / assembly).value
+      (flinkExecutor / assembly).value
+    },
     prepareDesignerTests             := {
       (flinkDeploymentManager / assembly).value
       (liteEmbeddedDeploymentManager / assembly).value
@@ -1991,7 +2003,8 @@ lazy val designer = (project in file("designer/server"))
       (flinkExecutor / prepareItLibs).value
     },
     ThisBuild / parallelExecution    := false,
-    SlowTests / test                 := (SlowTests / test).dependsOn(prepareDesignerTests).value,
+    SlowTests / test                 := (SlowTests / test).dependsOn(prepareDesignerSlowTests).value,
+    SlowTests / testOptions += Tests.Setup(() => prepareDesignerSlowTests.value),
     Test / test                      := (Test / test).dependsOn(prepareDesignerTests).value,
     Test / testOptions += Tests.Setup(() => prepareDesignerTests.value),
     /*
