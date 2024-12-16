@@ -27,6 +27,7 @@
 * [#7184](https://github.com/TouK/nussknacker/pull/7184) Improve Nu Designer API notifications endpoint, to include events related to currently displayed scenario
 * [#7323](https://github.com/TouK/nussknacker/pull/7323) Improve Periodic DeploymentManager db queries
 * [#7332](https://github.com/TouK/nussknacker/pull/7332) Handle scenario names with spaces when performing migration tests, they were ignored
+* [#7341](https://github.com/TouK/nussknacker/pull/7341) Added possibility to choose presets and define lists for Integer typed parameter inputs in fragments.
 
 ## 1.18
 
