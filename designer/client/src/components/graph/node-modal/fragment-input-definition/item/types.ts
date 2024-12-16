@@ -86,6 +86,7 @@ export function isPermittedTypeVariant(item: FragmentInputParameter): item is Pe
         resolveRefClazzName(item.typ.refClazzName) === "String",
         resolveRefClazzName(item.typ.refClazzName) === "Boolean",
         resolveRefClazzName(item.typ.refClazzName) === "Long",
+        resolveRefClazzName(item.typ.refClazzName) === "Integer",
     ].includes(true);
 }
 
