@@ -104,7 +104,6 @@ class PeriodicProcessService(
       case Some(limit) => activities.sortBy(_.date).takeRight(limit)
       case None        => activities
     }
-    _ = limitedActivities.foreach(println)
   } yield limitedActivities
 
   def schedule(
