@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../../../actions/nk";
-import Icon from "../../../../assets/img/toolbarButtons/run-out-of-schedule.svg";
+import Icon from "../../../../assets/img/toolbarButtons/run-off-schedule.svg";
 import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
@@ -37,13 +37,13 @@ export default function RunOutOfScheduleButton(props: ToolbarButtonProps) {
     const action = (p, c) => HttpService.runOutOfSchedule(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
-    const defaultTooltip = t("panels.actions.run-out-of-schedule.tooltip", "run now");
+    const defaultTooltip = t("panels.actions.run-off-schedule.tooltip", "run now");
     const tooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.RunOutOfSchedule) ?? defaultTooltip;
 
     if (isVisible) {
         return (
             <ToolbarButton
-                name={t("panels.actions.run-out-of-schedule.button", "run now")}
+                name={t("panels.actions.run-off-schedule.button", "run now")}
                 title={tooltip}
                 disabled={!available}
                 icon={<Icon />}

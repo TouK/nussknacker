@@ -229,7 +229,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
     }
     "migrate custom action 'run now' with comment to scenario_activities table" in {
       testMigratingActionWithComment(
-        scenarioActionName = ScenarioActionName.RunOutOfSchedule,
+        scenarioActionName = ScenarioActionName.RunOffSchedule,
         actionComment = Some("Run now: Deployed at the request of business"),
         expectedActivity = (sid, sad, user, date, sv) =>
           ScenarioActivity.PerformedSingleExecution(

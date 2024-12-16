@@ -72,21 +72,21 @@ object ScenarioActionName {
   val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
   // TODO: We kept the old name of "run now" CustomAction for compatibility reasons.
   //       In the future it can be changed to better name, according to convention, but that would require database migration
-  //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OUT_OF_SCHEDULE instead.
-  val RunOutOfSchedule: ScenarioActionName = ScenarioActionName("run now")
+  //       In the meantime, there are methods serialize and deserialize, which operate on name RUN_OFF_SCHEDULE instead.
+  val RunOffSchedule: ScenarioActionName = ScenarioActionName("run now")
 
   val DefaultActions: List[ScenarioActionName] = Nil
 
   val StateActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Pause)
 
   def serialize(name: ScenarioActionName): String = name match {
-    case ScenarioActionName.RunOutOfSchedule => "RUN_OUT_OF_SCHEDULE"
-    case other                               => other.value
+    case ScenarioActionName.RunOffSchedule => "RUN_OFF_SCHEDULE"
+    case other                             => other.value
   }
 
   def deserialize(str: String): ScenarioActionName = str match {
-    case "RUN_OUT_OF_SCHEDULE" => ScenarioActionName.RunOutOfSchedule
-    case other                 => ScenarioActionName(other)
+    case "RUN_OFF_SCHEDULE" => ScenarioActionName.RunOffSchedule
+    case other              => ScenarioActionName(other)
   }
 
 }

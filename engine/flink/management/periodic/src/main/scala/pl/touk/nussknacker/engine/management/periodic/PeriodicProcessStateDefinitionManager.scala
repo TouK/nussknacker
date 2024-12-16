@@ -15,7 +15,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       statusTooltipsPF = PeriodicStateStatus.statusTooltipsPF,
       statusDescriptionsPF = PeriodicStateStatus.statusDescriptionsPF,
       customStateDefinitions = PeriodicStateStatus.customStateDefinitions,
-      customVisibleActions = Some(defaultVisibleActions ::: ScenarioActionName.RunOutOfSchedule :: Nil),
+      customVisibleActions = Some(defaultVisibleActions ::: ScenarioActionName.RunOffSchedule :: Nil),
       customActionTooltips = Some(PeriodicStateStatus.customActionTooltips),
       delegate = delegate
     ) {

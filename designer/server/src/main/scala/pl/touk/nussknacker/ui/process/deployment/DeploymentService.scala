@@ -313,7 +313,7 @@ class DeploymentService(
     val fixedActionDefinitions = List(
       CustomActionDefinition(ScenarioActionName.Deploy, Nil, Nil, None),
       CustomActionDefinition(ScenarioActionName.Cancel, Nil, Nil, None),
-      CustomActionDefinition(ScenarioActionName.RunOutOfSchedule, Nil, Nil, None)
+      CustomActionDefinition(ScenarioActionName.RunOffSchedule, Nil, Nil, None)
     )
     val actionsDefinedInCustomActions = dispatcher
       .deploymentManagerUnsafe(processingType)
@@ -734,7 +734,7 @@ class DeploymentService(
   private def runOutOfSchedule(command: RunOutOfScheduleCommand): Future[RunOutOfScheduleResult] = {
     processAction(
       command = command,
-      actionName = ScenarioActionName.RunOutOfSchedule,
+      actionName = ScenarioActionName.RunOffSchedule,
       actionParams = Map.empty,
       dmCommandCreator = ctx =>
         DMRunOutOfScheduleCommand(
