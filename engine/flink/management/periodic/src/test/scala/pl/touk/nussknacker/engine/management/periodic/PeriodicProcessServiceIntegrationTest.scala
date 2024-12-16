@@ -445,104 +445,8 @@ class PeriodicProcessServiceIntegrationTest
   }
 
   it should "handle multiple one time schedules" in withFixture() { f =>
-    var currentTime            = startTime
-    def service                = f.periodicProcessService(currentTime)
-    val timeToTriggerSchedule1 = startTime.plus(1, ChronoUnit.HOURS)
-    val timeToTriggerSchedule2 = startTime.plus(2, ChronoUnit.HOURS)
-
-    def mostImportantActiveDeployment = service
-      .getStatusDetails(processName)
-      .futureValue
-      .value
-      .status
-      .asInstanceOf[PeriodicProcessStatus]
-      .pickMostImportantActiveDeployment
-      .value
-
-    val schedule1 = "schedule1"
-    val schedule2 = "schedule2"
-    service
-      .schedule(
-        MultipleScheduleProperty(
-          Map(
-            schedule1 -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule1))),
-            schedule2 -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule2)))
-          )
-        ),
-        ProcessVersion.empty.copy(processName = processName),
-        sampleProcess,
-        randomProcessActionId
-      )
-      .futureValue
-
-    val stateAfterSchedule = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
-    stateAfterSchedule should have size 2
-
-    val latestDeploymentSchedule1 = mostImportantActiveDeployment
-    latestDeploymentSchedule1.scheduleName.value.value shouldBe schedule1
-    latestDeploymentSchedule1.runAt shouldBe localTime(timeToTriggerSchedule1)
-
-    currentTime = timeToTriggerSchedule1
-    val toDeployOnSchedule1 = service.findToBeDeployed.futureValue.loneElement
-    toDeployOnSchedule1.scheduleName.value.value shouldBe schedule1
-    service.deploy(toDeployOnSchedule1).futureValue
-
-    val stateAfterSchedule1Deploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
-    stateAfterSchedule1Deploy
-      .latestDeploymentForSchedule(schedule1)
-      .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Deployed
-    stateAfterSchedule1Deploy
-      .latestDeploymentForSchedule(schedule2)
-      .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Scheduled
-    mostImportantActiveDeployment.scheduleName.value.value shouldBe schedule1
-
-    service.handleFinished.futureValue
-    val toDeployAfterFinishSchedule1 = service.findToBeDeployed.futureValue
-    toDeployAfterFinishSchedule1 should have length 0
-
-    val stateAfterSchedule1Finished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
-    stateAfterSchedule1Finished
-      .latestDeploymentForSchedule(schedule1)
-      .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Finished
-    stateAfterSchedule1Finished
-      .latestDeploymentForSchedule(schedule2)
-      .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Scheduled
-    val latestDeploymentSchedule2 = mostImportantActiveDeployment
-    latestDeploymentSchedule2.scheduleName.value.value shouldBe schedule2
-    latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule2)
-
-    currentTime = timeToTriggerSchedule2
-    val toDeployOnSchedule2 = service.findToBeDeployed.futureValue.loneElement
-    toDeployOnSchedule2.scheduleName.value.value shouldBe schedule2
-    service.deploy(toDeployOnSchedule2).futureValue
-
-    val stateAfterSchedule2Deploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
-    stateAfterSchedule2Deploy
-      .latestDeploymentForSchedule(schedule1)
-      .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Finished
-    stateAfterSchedule2Deploy
-      .latestDeploymentForSchedule(schedule2)
-      .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Deployed
-    mostImportantActiveDeployment.scheduleName.value.value shouldBe schedule2
-
-    service.handleFinished.futureValue
-    service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
-    val inactiveStates = service
-      .getLatestDeploymentsForLatestInactiveSchedules(
-        processName,
-        inactiveProcessesMaxCount = 1,
-        deploymentsPerScheduleMaxCount = 1
-      )
-      .futureValue
-    inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
-    inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
-
+    handleMultipleOneTimeSchedules(f)
+    def service        = f.periodicProcessService(startTime)
     val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
@@ -579,6 +483,28 @@ class PeriodicProcessServiceIntegrationTest
   it should "handle multiple one time schedules and return only latest activities" in withFixture(
     maxFetchedPeriodicScenarioActivities = Some(1)
   ) { f =>
+    handleMultipleOneTimeSchedules(f)
+    def service       = f.periodicProcessService(startTime)
+    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
+    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
+    activities shouldBe List(
+      ScenarioActivity.PerformedScheduledExecution(
+        scenarioId = ScenarioId(1),
+        scenarioActivityId = firstActivity.scenarioActivityId,
+        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
+        date = firstActivity.date,
+        scenarioVersionId = Some(ScenarioVersionId(1)),
+        dateFinished = firstActivity.dateFinished,
+        scheduleName = "schedule2",
+        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
+        createdAt = firstActivity.createdAt,
+        retriesLeft = None,
+        nextRetryAt = None
+      ),
+    )
+  }
+
+  private def handleMultipleOneTimeSchedules(f: Fixture) = {
     var currentTime            = startTime
     def service                = f.periodicProcessService(currentTime)
     val timeToTriggerSchedule1 = startTime.plus(1, ChronoUnit.HOURS)
@@ -677,23 +603,6 @@ class PeriodicProcessServiceIntegrationTest
     inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
 
-    val activities    = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
-    val firstActivity = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
-    activities shouldBe List(
-      ScenarioActivity.PerformedScheduledExecution(
-        scenarioId = ScenarioId(1),
-        scenarioActivityId = firstActivity.scenarioActivityId,
-        user = ScenarioUser(None, UserName("Nussknacker"), None, None),
-        date = firstActivity.date,
-        scenarioVersionId = Some(ScenarioVersionId(1)),
-        dateFinished = firstActivity.dateFinished,
-        scheduleName = "schedule2",
-        scheduledExecutionStatus = ScheduledExecutionStatus.Finished,
-        createdAt = firstActivity.createdAt,
-        retriesLeft = None,
-        nextRetryAt = None
-      ),
-    )
   }
 
   it should "handle failed event handler" in withFixture() { f =>
