@@ -102,8 +102,7 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
       Option(operation.getSecurity).orElse(Option(openapi.getSecurity)).map(_.asScala.toList).getOrElse(Nil)
     val securitySchemes =
       Option(openapi.getComponents).flatMap(c => Option(c.getSecuritySchemes)).map(_.asScala.toMap)
-    val securities = openAPIsConfig.security.getOrElse(Map.empty)
-    SecuritiesParser.parseSwaggerSecurities(securityRequirements, securitySchemes, securities)
+    SecuritiesParser.parseOperationSecurities(securityRequirements, securitySchemes, openAPIsConfig.securityConfig)
   }
 
   private def prepareParameters(operation: Operation): ValidationResult[List[SwaggerParameter]] = {
