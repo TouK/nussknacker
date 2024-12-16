@@ -5,7 +5,6 @@ import { StickyNote } from "../../../common/StickyNote";
 import { marked } from "marked";
 import { StickyNoteElement } from "../StickyNoteElement";
 import MarkupNodeJSON = dia.MarkupNodeJSON;
-import xss from "xss";
 
 export const STICKY_NOTE_CONSTRAINTS = {
     MIN_WIDTH: 100,
@@ -64,7 +63,7 @@ renderer.image = function (href, title, text) {
 const foreignObject = (stickyNote: StickyNote): MarkupNodeJSON => {
     let parsed;
     try {
-        parsed = xss(marked.parse(stickyNote.content, { renderer }), { whiteList: { a: ["href", "title", "target", "class"] } });
+        parsed = marked.parse(stickyNote.content, { renderer });
     } catch (error) {
         console.error("Failed to parse markdown:", error);
         parsed = "Error: Could not parse content. See error logs in console";
