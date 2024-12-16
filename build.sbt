@@ -99,7 +99,7 @@ lazy val publishSettings = Seq(
 )
 
 def defaultMergeStrategy: String => MergeStrategy = {
-  // remove JPMS module descriptors (a proper soultion would be to merge them)
+  // remove JPMS module descriptors (a proper solution would be to merge them)
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
@@ -114,27 +114,6 @@ def designerMergeStrategy: String => MergeStrategy = {
   // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
   case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
     MergeStrategy.singleOrError
-  // related to flink netty shaded libs
-  case PathList(
-        "META-INF",
-        "native-image",
-        "io.netty",
-        "netty-codec",
-        "generated",
-        "handlers",
-        "reflect-config.json"
-      ) =>
-    MergeStrategy.concat
-  case PathList(
-        "META-INF",
-        "native-image",
-        "io.netty",
-        "netty-handler",
-        "generated",
-        "handlers",
-        "reflect-config.json"
-      ) =>
-    MergeStrategy.concat
   case x                                                                            =>
     defaultMergeStrategy(x)
 }
@@ -2058,7 +2037,9 @@ lazy val designer = (project in file("designer/server"))
         "com.github.scopt"              %% "scopt"                           % "4.1.0"              % Test,
         "org.questdb"                    % "questdb"                         % "7.4.2",
         "org.apache.kafka"               % "kafka-clients"                   % kafkaV,
-        "org.apache.flink"               % "flink-streaming-java"            % flinkV,
+        "org.apache.flink"               % "flink-streaming-java"            % flinkV excludeAll (
+          ExclusionRule("org.apache.flink", "flink-runtime")
+        ),
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>
           Seq(
