@@ -57,10 +57,10 @@ export const isDeployedVersion = createSelector(
     (visibleVersion, deployedVersion) => visibleVersion === deployedVersion,
 );
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
-export const isRunOutOfScheduleVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRunOutOfSchedule(state));
-export const isRunOutOfSchedulePossible = createSelector(
+export const isRunOffScheduleVisible = createSelector([getProcessState], (state) => ProcessStateUtils.canSeeRunOffSchedule(state));
+export const isRunOffSchedulePossible = createSelector(
     [hasError, getProcessState, isFragment],
-    (error, state, fragment) => !fragment && !error && ProcessStateUtils.canRunOutOfSchedule(state),
+    (error, state, fragment) => !fragment && !error && ProcessStateUtils.canRunOffSchedule(state),
 );
 export const isMigrationPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState, isFragment],

@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{
   CustomActionRequest,
   CustomActionResponse,
-  RunOutOfScheduleRequest,
-  RunOutOfScheduleResponse
+  RunOffScheduleRequest,
+  RunOffScheduleResponse
 }
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
@@ -275,20 +275,20 @@ class ManagementResources(
                 )
             }
           }
-        } ~ path(("runOutOfSchedule" | "performSingleExecution") / ProcessNameSegment) {
+        } ~ path(("runOffSchedule" | "performSingleExecution") / ProcessNameSegment) {
           processName => // backward compatibility purpose
-            (post & processId(processName) & entity(as[RunOutOfScheduleRequest])) { (processIdWithName, req) =>
+            (post & processId(processName) & entity(as[RunOffScheduleRequest])) { (processIdWithName, req) =>
               canDeploy(processIdWithName) {
                 complete {
                   measureTime("singleExecution", metricRegistry) {
                     deploymentService
                       .processCommand(
-                        RunOutOfScheduleCommand(
+                        RunOffScheduleCommand(
                           commonData = CommonCommandData(processIdWithName, req.comment.flatMap(Comment.from), user),
                         )
                       )
                       .flatMap(actionResult =>
-                        toHttpResponse(RunOutOfScheduleResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
+                        toHttpResponse(RunOffScheduleResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
                       )
                   }
                 }

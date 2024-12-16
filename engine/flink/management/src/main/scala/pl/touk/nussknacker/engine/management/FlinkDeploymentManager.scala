@@ -122,7 +122,7 @@ abstract class FlinkDeploymentManager(
       case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
         testRunner.test(canonicalProcess, scenarioTestData)
       case command: DMCustomActionCommand => processCustomAction(command)
-      case _: DMRunOutOfScheduleCommand   => notImplemented
+      case _: DMRunOffScheduleCommand     => notImplemented
     }
 
   private def validate(command: DMValidateScenarioCommand): Future[Unit] = {

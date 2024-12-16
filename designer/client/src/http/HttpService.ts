@@ -360,12 +360,12 @@ class HttpService {
             });
     }
 
-    runOutOfSchedule(processName: string, comment?: string) {
+    runOffSchedule(processName: string, comment?: string) {
         const data = {
             comment: comment,
         };
         return api
-            .post(`/processManagement/runOutOfSchedule/${encodeURIComponent(processName)}`, data)
+            .post(`/processManagement/runOffSchedule/${encodeURIComponent(processName)}`, data)
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);

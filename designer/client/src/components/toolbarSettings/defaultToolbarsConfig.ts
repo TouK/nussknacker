@@ -29,7 +29,7 @@ export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean):
                     { type: BuiltinButtonTypes.processSave },
                     { type: BuiltinButtonTypes.processDeploy },
                     { type: BuiltinButtonTypes.processCancel },
-                    { type: BuiltinButtonTypes.processRunOutOfSchedule },
+                    { type: BuiltinButtonTypes.processRunOffSchedule },
                 ],
             },
             {

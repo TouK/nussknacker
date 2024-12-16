@@ -75,10 +75,10 @@ class DeploymentService(
 
   def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
     command match {
-      case command: RunDeploymentCommand    => runDeployment(command)
-      case command: CancelScenarioCommand   => cancelScenario(command)
-      case command: RunOutOfScheduleCommand => runOutOfSchedule(command)
-      case command: CustomActionCommand     => processCustomAction(command)
+      case command: RunDeploymentCommand  => runDeployment(command)
+      case command: CancelScenarioCommand => cancelScenario(command)
+      case command: RunOffScheduleCommand => runOffSchedule(command)
+      case command: CustomActionCommand   => processCustomAction(command)
     }
   }
 
@@ -731,13 +731,13 @@ class DeploymentService(
     Await.result(dbioRunner.run(actionRepository.deleteInProgressActions()), 10 seconds)
   }
 
-  private def runOutOfSchedule(command: RunOutOfScheduleCommand): Future[RunOutOfScheduleResult] = {
+  private def runOffSchedule(command: RunOffScheduleCommand): Future[RunOffScheduleResult] = {
     processAction(
       command = command,
       actionName = ScenarioActionName.RunOffSchedule,
       actionParams = Map.empty,
       dmCommandCreator = ctx =>
-        DMRunOutOfScheduleCommand(
+        DMRunOffScheduleCommand(
           ctx.latestScenarioDetails.toEngineProcessVersion,
           ctx.latestScenarioDetails.json,
           command.commonData.user.toManagerUser,

@@ -18,11 +18,9 @@ class ProcessStateUtils {
 
     public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Archive);
 
-    public canSeeRunOutOfSchedule = (state: ProcessStateType): boolean =>
-        state?.visibleActions.includes(PredefinedActionName.RunOutOfSchedule);
+    public canSeeRunOffSchedule = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.RunOffSchedule);
 
-    public canRunOutOfSchedule = (state: ProcessStateType): boolean =>
-        state?.allowedActions.includes(PredefinedActionName.RunOutOfSchedule);
+    public canRunOffSchedule = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.RunOffSchedule);
 
     getStateDescription({ isArchived, isFragment }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {

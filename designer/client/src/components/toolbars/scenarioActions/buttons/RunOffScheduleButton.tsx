@@ -7,8 +7,8 @@ import HttpService from "../../../../http/HttpService";
 import {
     getProcessName,
     getProcessVersionId,
-    isRunOutOfSchedulePossible,
-    isRunOutOfScheduleVisible,
+    isRunOffSchedulePossible,
+    isRunOffScheduleVisible,
 } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows, WindowKind } from "../../../../windowManager";
@@ -21,24 +21,24 @@ import { RootState } from "../../../../reducers";
 import { getProcessState } from "../../../../reducers/selectors/scenarioState";
 import { PredefinedActionName } from "../../../Process/types";
 
-export default function RunOutOfScheduleButton(props: ToolbarButtonProps) {
+export default function RunOffScheduleButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const { disabled, type } = props;
     const scenarioState = useSelector((state: RootState) => getProcessState(state));
-    const isVisible = useSelector(isRunOutOfScheduleVisible);
-    const isPossible = useSelector(isRunOutOfSchedulePossible);
+    const isVisible = useSelector(isRunOffScheduleVisible);
+    const isPossible = useSelector(isRunOffSchedulePossible);
     const processName = useSelector(getProcessName);
     const processVersionId = useSelector(getProcessVersionId);
     const capabilities = useSelector(getCapabilities);
     const available = !disabled && isPossible && capabilities.deploy;
 
     const { open } = useWindows();
-    const action = (p, c) => HttpService.runOutOfSchedule(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
+    const action = (p, c) => HttpService.runOffSchedule(p, c).finally(() => dispatch(loadProcessState(processName, processVersionId)));
     const message = t("panels.actions.run-of-out-schedule.dialog", "Perform single execution", { name: processName });
 
     const defaultTooltip = t("panels.actions.run-off-schedule.tooltip", "run now");
-    const tooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.RunOutOfSchedule) ?? defaultTooltip;
+    const tooltip = ProcessStateUtils.getActionCustomTooltip(scenarioState, PredefinedActionName.RunOffSchedule) ?? defaultTooltip;
 
     if (isVisible) {
         return (
