@@ -9,20 +9,29 @@ import pl.touk.nussknacker.engine.testing.StubbingCommands
 
 import scala.concurrent.Future
 
-class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands {
+class DeploymentManagerStub
+    extends BaseDeploymentManager
+    with StateQueryForAllScenariosSupported
+    with StubbingCommands {
 
-  var jobStatus: Option[StatusDetails] = None
+  var jobStatus: Map[ProcessName, List[StatusDetails]] = Map.empty
 
-  def setStateStatus(status: StateStatus, deploymentIdOpt: Option[PeriodicProcessDeploymentId]): Unit = {
-    jobStatus = Some(
-      StatusDetails(
-        deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
-        externalDeploymentId = Some(ExternalDeploymentId("1")),
-        status = status,
-        version = None,
-        startTime = None,
-        attributes = None,
-        errors = Nil
+  def setStateStatus(
+      processName: ProcessName,
+      status: StateStatus,
+      deploymentIdOpt: Option[PeriodicProcessDeploymentId]
+  ): Unit = {
+    jobStatus = Map(
+      processName -> List(
+        StatusDetails(
+          deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
+          externalDeploymentId = Some(ExternalDeploymentId("1")),
+          status = status,
+          version = None,
+          startTime = None,
+          attributes = None,
+          errors = Nil
+        )
       )
     )
   }
@@ -47,7 +56,13 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toList))
+    Future.successful(WithDataFreshnessStatus.fresh(jobStatus.get(name).toList.flatten))
+  }
+
+  override def getProcessesStates()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(jobStatus))
   }
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport

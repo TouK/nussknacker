@@ -74,7 +74,7 @@ class PeriodicProcessesCachingRepositoryTest
 
     for (i <- 1 to n) {
       val deploymentId = f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
-      f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deploymentId))
+      f.delegateDeploymentManagerStub.setStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
     }
 
     getLatestDeploymentQueryCount.set(0)
@@ -94,7 +94,7 @@ class PeriodicProcessesCachingRepositoryTest
 
     for (i <- 1 to n) {
       val deploymentId = f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
-      f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deploymentId))
+      f.delegateDeploymentManagerStub.setStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
     }
 
     getLatestDeploymentQueryCount.set(0)

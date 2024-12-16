@@ -234,7 +234,11 @@ class PeriodicProcessServiceIntegrationTest
     )
     afterDeployDeployment.runAt shouldBe localTime(expectedScheduleTime)
 
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(afterDeployDeployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(
+      processName,
+      SimpleStateStatus.Finished,
+      Some(afterDeployDeployment.id)
+    )
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
@@ -417,12 +421,12 @@ class PeriodicProcessServiceIntegrationTest
 
     val deployment = toDeploy.find(_.scheduleName.value.contains(firstSchedule)).value
     service.deploy(deployment)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Running, Some(deployment.id))
 
     val toDeployAfterDeploy = service.findToBeDeployed.futureValue
     toDeployAfterDeploy should have length 0
 
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deployment.id))
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
@@ -610,7 +614,7 @@ class PeriodicProcessServiceIntegrationTest
     toDeploy should have length 1
     val deployment = toDeploy.head
     service.deploy(deployment).futureValue
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deployment.id))
 
     tryWithFailedListener { () =>
       service.deactivate(processName)
@@ -640,7 +644,7 @@ class PeriodicProcessServiceIntegrationTest
     val deployment = toDeploy.head
     service.deploy(deployment).futureValue
 
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deployment.id))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deployment.id))
 
     // this one is cyclically called by RescheduleActor
     service.handleFinished.futureValue

@@ -6,12 +6,14 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
-import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, EngineSetupName}
 import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
@@ -27,13 +29,63 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
+    createDeploymentManagerWithCapabilities(modelData, dependencies, deploymentConfig, scenarioStateCacheTTL)
+  }
+
+  def createDeploymentManagerWithCapabilities(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      deploymentConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): ValidatedNel[String, DeploymentManager with StateQueryForAllScenariosSupported] = {
     import dependencies._
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
     FlinkClient.create(flinkConfig, scenarioStateCacheTTL).map { client =>
-      CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
-        new FlinkStreamingRestManager(client, flinkConfig, modelData, dependencies),
-        scenarioStateCacheTTL
-      )
+      val underlying  = new FlinkStreamingRestManager(client, flinkConfig, modelData, dependencies)
+      val withCaching = CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
+      new DeploymentManager with StateQueryForAllScenariosSupported {
+
+        override def getProcessesStates()(
+            implicit freshnessPolicy: DataFreshnessPolicy
+        ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] =
+          underlying.getProcessesStates()
+
+        override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
+          withCaching.deploymentSynchronisationSupport
+
+        override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
+          withCaching.processCommand(command)
+
+        override def getProcessStates(name: ProcessName)(
+            implicit freshnessPolicy: DataFreshnessPolicy
+        ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
+          withCaching.getProcessStates(name)
+
+        override def resolve(
+            idWithName: ProcessIdWithName,
+            statusDetails: List[StatusDetails],
+            lastStateAction: Option[ProcessAction],
+            latestVersionId: VersionId,
+            deployedVersionId: Option[VersionId],
+            currentlyPresentedVersionId: Option[VersionId]
+        ): Future[ProcessState] = withCaching.resolve(
+          idWithName,
+          statusDetails,
+          lastStateAction,
+          latestVersionId,
+          deployedVersionId,
+          currentlyPresentedVersionId
+        )
+
+        override def processStateDefinitionManager: ProcessStateDefinitionManager =
+          withCaching.processStateDefinitionManager
+
+        override def customActionsDefinitions: List[CustomActionDefinition] =
+          withCaching.customActionsDefinitions
+
+        override def close(): Unit =
+          withCaching.close()
+      }
     }
   }
 

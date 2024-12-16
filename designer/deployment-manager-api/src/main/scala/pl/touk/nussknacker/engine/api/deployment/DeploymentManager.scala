@@ -109,6 +109,14 @@ trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager
 
 }
 
+trait StateQueryForAllScenariosSupported { self: DeploymentManager =>
+
+  def getProcessesStates()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]
+
+}
+
 sealed trait DeploymentSynchronisationSupport
 
 trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSupport {
