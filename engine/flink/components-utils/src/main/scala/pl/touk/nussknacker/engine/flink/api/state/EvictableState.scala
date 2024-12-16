@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.state
 
-import org.apache.flink.api.common.functions.RichFunction
+import org.apache.flink.api.common.functions.{OpenContext, RichFunction}
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
@@ -18,8 +17,8 @@ abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFu
 
   protected def stateDescriptor: ValueStateDescriptor[StateType]
 
-  override def open(parameters: Configuration): Unit = {
-    super.open(parameters)
+  override def open(openContext: OpenContext): Unit = {
+    super.open(openContext)
     lastEventTimeForKey = getRuntimeContext.getState[java.lang.Long](
       new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long])
     )
@@ -91,7 +90,7 @@ trait LatelyEvictableStateFunctionMixin[StateType] extends RichFunction with Sta
   @transient
   protected var state: ValueState[StateType] = _
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     latestEvictionTimeForKey = getRuntimeContext.getState[java.lang.Long](
       new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long])
     )

@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import org.apache.flink.api.common.functions.RichFlatMapFunction
+import org.apache.flink.api.common.functions.{OpenContext, RichFlatMapFunction}
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -46,8 +45,8 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
 
     private[this] var state: ValueState[Value] = _
 
-    override def open(c: Configuration): Unit = {
-      super.open(c)
+    override def open(openContext: OpenContext): Unit = {
+      super.open(openContext)
       val info = new ValueStateDescriptor[Value]("state", typeInformation)
       state = getRuntimeContext.getState(info)
     }

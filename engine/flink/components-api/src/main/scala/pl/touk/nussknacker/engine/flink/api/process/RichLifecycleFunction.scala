@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
-import org.apache.flink.api.common.functions.{AbstractRichFunction, MapFunction, RuntimeContext}
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.{AbstractRichFunction, MapFunction, OpenContext, RuntimeContext}
 import pl.touk.nussknacker.engine.api.Lifecycle
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 
@@ -11,7 +10,7 @@ abstract class RichLifecycleFunction extends AbstractRichFunction {
 
   protected val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     lifecycle.open(convertToEngineRuntimeContext(getRuntimeContext))
   }
 
