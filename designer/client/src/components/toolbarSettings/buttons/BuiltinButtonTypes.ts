@@ -2,7 +2,7 @@ export enum BuiltinButtonTypes {
     processSave = "process-save",
     processDeploy = "process-deploy",
     processCancel = "process-cancel",
-    processPerformSingleExecution = "process-perform-single-execution",
+    processRunOutOfSchedule = "process-run-out-of-schedule",
     editUndo = "edit-undo",
     editRedo = "edit-redo",
     editCopy = "edit-copy",

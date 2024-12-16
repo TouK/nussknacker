@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId, SingleExecutionResult}
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId, RunOutOfScheduleResult}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.Utils.{createActorWithRetry, runSafely}
@@ -113,11 +113,11 @@ class PeriodicDeploymentManager private[periodic] (
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
-      case command: DMValidateScenarioCommand       => validate(command)
-      case command: DMRunDeploymentCommand          => runDeployment(command)
-      case command: DMCancelScenarioCommand         => cancelScenario(command)
-      case command: DMStopScenarioCommand           => stopScenario(command)
-      case command: DMPerformSingleExecutionCommand => actionInstantBatch(command)
+      case command: DMValidateScenarioCommand => validate(command)
+      case command: DMRunDeploymentCommand    => runDeployment(command)
+      case command: DMCancelScenarioCommand   => cancelScenario(command)
+      case command: DMStopScenarioCommand     => stopScenario(command)
+      case command: DMRunOutOfScheduleCommand => actionInstantBatch(command)
       case _: DMTestScenarioCommand | _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand |
           _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand =>
         delegate.processCommand(command)
@@ -257,12 +257,12 @@ class PeriodicDeploymentManager private[periodic] (
   ): Future[List[ScenarioActivity]] =
     service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, after)
 
-  private def actionInstantBatch(command: DMPerformSingleExecutionCommand): Future[SingleExecutionResult] = {
+  private def actionInstantBatch(command: DMRunOutOfScheduleCommand): Future[RunOutOfScheduleResult] = {
     val processName           = command.processVersion.processName
     val instantScheduleResult = instantSchedule(processName)
     instantScheduleResult
-      .map(_ => SingleExecutionResult(s"Scenario ${processName.value} scheduled for immediate start"))
-      .getOrElse(SingleExecutionResult(s"Failed to schedule $processName to run as instant batch"))
+      .map(_ => RunOutOfScheduleResult(s"Scenario ${processName.value} scheduled for immediate start"))
+      .getOrElse(RunOutOfScheduleResult(s"Failed to schedule $processName to run as instant batch"))
   }
 
   // TODO: Why we don't allow running not scheduled scenario? Maybe we can try to schedule it?

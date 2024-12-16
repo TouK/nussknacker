@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.restmodel.{
   CustomActionRequest,
   CustomActionResponse,
-  PerformSingleExecutionRequest,
-  PerformSingleExecutionResponse
+  RunOutOfScheduleRequest,
+  RunOutOfScheduleResponse
 }
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.AdhocTestParametersRequest
@@ -275,24 +275,25 @@ class ManagementResources(
                 )
             }
           }
-        } ~ path("performSingleExecution" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[PerformSingleExecutionRequest])) { (processIdWithName, req) =>
-            canDeploy(processIdWithName) {
-              complete {
-                measureTime("singleExecution", metricRegistry) {
-                  deploymentService
-                    .processCommand(
-                      PerformSingleExecutionCommand(
-                        commonData = CommonCommandData(processIdWithName, req.comment.flatMap(Comment.from), user),
+        } ~ path(("runOutOfSchedule" | "performSingleExecution") / ProcessNameSegment) {
+          processName => // backward compatibility purpose
+            (post & processId(processName) & entity(as[RunOutOfScheduleRequest])) { (processIdWithName, req) =>
+              canDeploy(processIdWithName) {
+                complete {
+                  measureTime("singleExecution", metricRegistry) {
+                    deploymentService
+                      .processCommand(
+                        RunOutOfScheduleCommand(
+                          commonData = CommonCommandData(processIdWithName, req.comment.flatMap(Comment.from), user),
+                        )
                       )
-                    )
-                    .flatMap(actionResult =>
-                      toHttpResponse(PerformSingleExecutionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
-                    )
+                      .flatMap(actionResult =>
+                        toHttpResponse(RunOutOfScheduleResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
+                      )
+                  }
                 }
               }
             }
-          }
         }
     }
 

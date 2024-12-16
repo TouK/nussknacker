@@ -360,12 +360,12 @@ class HttpService {
             });
     }
 
-    performSingleExecution(processName: string, comment?: string) {
+    runOutOfSchedule(processName: string, comment?: string) {
         const data = {
             comment: comment,
         };
         return api
-            .post(`/processManagement/performSingleExecution/${encodeURIComponent(processName)}`, data)
+            .post(`/processManagement/runOutOfSchedule/${encodeURIComponent(processName)}`, data)
             .then((res) => {
                 const msg = res.data.msg;
                 this.#addInfo(msg);

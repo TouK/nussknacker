@@ -43,10 +43,10 @@ object ToolbarButtonConfigType extends Enumeration {
     CustomLink
   )
 
-  val ProcessSave: Value                   = Value("process-save")
-  val ProcessCancel: Value                 = Value("process-cancel")
-  val ProcessDeploy: Value                 = Value("process-deploy")
-  val ProcessPerformSingleExecution: Value = Value("process-perform-single-execution")
+  val ProcessSave: Value             = Value("process-save")
+  val ProcessCancel: Value           = Value("process-cancel")
+  val ProcessDeploy: Value           = Value("process-deploy")
+  val ProcessRunOutOfSchedule: Value = Value("process-run-out-of-schedule")
 
   val EditUndo: Value   = Value("edit-undo")
   val EditRedo: Value   = Value("edit-redo")
