@@ -114,6 +114,7 @@ def designerMergeStrategy: String => MergeStrategy = {
   // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
   case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
     MergeStrategy.singleOrError
+  // related to flink netty shaded libs
   case PathList(
         "META-INF",
         "native-image",
