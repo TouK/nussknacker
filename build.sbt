@@ -2038,7 +2038,8 @@ lazy val designer = (project in file("designer/server"))
         "org.questdb"                    % "questdb"                         % "7.4.2",
         "org.apache.kafka"               % "kafka-clients"                   % kafkaV,
         "org.apache.flink"               % "flink-streaming-java"            % flinkV excludeAll (
-          ExclusionRule("org.apache.flink", "flink-runtime")
+          ExclusionRule("org.apache.flink", "flink-shaded-netty"),
+          ExclusionRule("org.apache.flink", "flink-shaded-zookeeper-3")
         ),
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>
