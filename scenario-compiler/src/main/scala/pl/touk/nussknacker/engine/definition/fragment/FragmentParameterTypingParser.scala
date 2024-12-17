@@ -28,10 +28,12 @@ class FragmentParameterTypingParser(classLoader: ClassLoader, classDefinitions: 
     val setPattern  = "Set\\[(.+)\\]".r
 
     Try(className match {
-      case mapPattern(x, y) =>
+      case mapPattern(x, y) if x == "String" =>
         val resolvedFirstTypeParam  = resolveInnerClass(x)
         val resolvedSecondTypeParam = resolveInnerClass(y)
         Typed.genericTypeClass[java.util.Map[_, _]](List(resolvedFirstTypeParam, resolvedSecondTypeParam))
+      case mapPattern(_, _) =>
+        throw new IllegalArgumentException("Obtained map with non string key")
       case listPattern(x) =>
         val resolvedTypeParam = resolveInnerClass(x)
         Typed.genericTypeClass[java.util.List[_]](List(resolvedTypeParam))
