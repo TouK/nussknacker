@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from "react";
+import React from "react";
 import { FormControl } from "@mui/material";
 import { nodeInput } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 

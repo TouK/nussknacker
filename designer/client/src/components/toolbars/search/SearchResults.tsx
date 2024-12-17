@@ -14,11 +14,10 @@ export type SearchQuery = {
     name?: string[];
     description?: string[];
     type?: string[];
-    componentGroup?: string[];
-    paramName?: string[];
-    paramValue?: string[];
-    outputValue?: string[];
-    edgeExpression?: string[];
+    label?: string[];
+    value?: string[];
+    output?: string[];
+    edge?: string[];
     plainQuery?: string;
 };
 
