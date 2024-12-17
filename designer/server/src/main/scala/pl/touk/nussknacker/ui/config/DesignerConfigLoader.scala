@@ -5,7 +5,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
-import pl.touk.nussknacker.ui.configloader.DesignerConfig
 
 trait DesignerConfigLoader {
 

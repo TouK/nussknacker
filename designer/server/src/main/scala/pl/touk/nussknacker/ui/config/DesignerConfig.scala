@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.configloader
+package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap

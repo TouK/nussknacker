@@ -3,14 +3,10 @@ package pl.touk.nussknacker.ui
 import cats.effect.{IO, Resource}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
-import pl.touk.nussknacker.ui.configloader.{
-  DesignerConfig,
-  ProcessingTypeConfigsLoader,
-  ProcessingTypeConfigsLoaderFactory
-}
+import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
 import sttp.client3.SttpBackend
 
@@ -58,7 +54,7 @@ object LocalNussknackerWithSingleModel {
     )
     val designerConfigLoader = DesignerConfigLoader.fromConfig(appConfig)
     val processingTypeConfigsLoaderFactory = new ProcessingTypeConfigsLoaderFactory {
-      override def create(designerConfigLoadedAtStart: DesignerConfig, sttpBackend: SttpBackend[Future, Any])(
+      override def create(configLoaderConfig: Config, sttpBackend: SttpBackend[IO, Any])(
           implicit ec: ExecutionContext
       ): ProcessingTypeConfigsLoader = { () =>
         IO.pure(Map.empty)

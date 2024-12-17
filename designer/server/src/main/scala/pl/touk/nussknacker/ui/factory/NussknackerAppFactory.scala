@@ -3,18 +3,15 @@ package pl.touk.nussknacker.ui.factory
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import cats.effect.{IO, Resource}
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
-import pl.touk.nussknacker.ui.config.DesignerConfigLoader
-import pl.touk.nussknacker.ui.configloader.{
-  DesignerConfig,
-  ProcessingTypeConfigsLoader,
-  ProcessingTypeConfigsLoaderFactory
-}
+import pl.touk.nussknacker.ui.config.{DesignerConfig, DesignerConfigLoader}
+import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigsLoader, ProcessingTypeConfigsLoaderFactory}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
 import pl.touk.nussknacker.ui.process.processingtype.loader.{
@@ -22,12 +19,11 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.{
   ProcessingTypesConfigBasedProcessingTypeDataLoader
 }
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
-import pl.touk.nussknacker.ui.util.ActorSystemBasedExecutionContextWithIORuntime
+import pl.touk.nussknacker.ui.util.{ActorSystemBasedExecutionContextWithIORuntime, IOToFutureSttpBackendConverter}
 import sttp.client3.SttpBackend
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
 import java.time.Clock
-import scala.concurrent.Future
 
 class NussknackerAppFactory(
     designerConfigLoader: DesignerConfigLoader,
@@ -35,16 +31,18 @@ class NussknackerAppFactory(
     createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader
 ) extends LazyLogging {
 
+  import net.ceedubs.ficus.Ficus._
+
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
       designerConfig <- Resource.eval(designerConfigLoader.loadDesignerConfig())
       system         <- createActorSystem(designerConfig.rawConfig)
       executionContextWithIORuntime = ActorSystemBasedExecutionContextWithIORuntime.createFrom(system)
-      sttpBackend <- createSttpBackend
+      ioSttpBackend <- AsyncHttpClientCatsBackend.resource[IO]()
       processingTypeConfigsLoader = createProcessingTypeConfigsLoader(
         designerConfig,
         executionContextWithIORuntime,
-        sttpBackend
+        ioSttpBackend
       )
       processingTypeDataLoader = createProcessingTypeDataLoader(processingTypeConfigsLoader)
       materializer             = Materializer(system)
@@ -57,7 +55,7 @@ class NussknackerAppFactory(
         new AkkaHttpBasedRouteProvider(
           db,
           metricsRegistry,
-          sttpBackend,
+          IOToFutureSttpBackendConverter.convert(ioSttpBackend)(executionContextWithIORuntime),
           processingTypeDataLoader,
           feStatisticsRepository,
           clock
@@ -77,7 +75,7 @@ class NussknackerAppFactory(
   private def createProcessingTypeConfigsLoader(
       designerConfig: DesignerConfig,
       executionContextWithIORuntime: ActorSystemBasedExecutionContextWithIORuntime,
-      sttpBackend: SttpBackend[Future, Any]
+      sttpBackend: SttpBackend[IO, Any]
   ): ProcessingTypeConfigsLoader = {
     processingTypeConfigsLoaderFactoryOpt
       .map { factory =>
@@ -85,7 +83,7 @@ class NussknackerAppFactory(
           s"Found custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName}: ${factory.getClass.getName}. Using it for configuration loading"
         )
         factory.create(
-          designerConfig,
+          designerConfig.rawConfig.resolved.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty()),
           sttpBackend,
         )(executionContextWithIORuntime)
       }
@@ -95,15 +93,6 @@ class NussknackerAppFactory(
         )
         () => designerConfigLoader.loadDesignerConfig().map(_.processingTypeConfigs)
       }
-  }
-
-  private def createSttpBackend = {
-    Resource
-      .make(
-        acquire = IO(AsyncHttpClientFutureBackend.usingConfigBuilder(identity))
-      )(
-        release = backend => IO.fromFuture(IO(backend.close()))
-      )
   }
 
   private def createActorSystem(config: ConfigWithUnresolvedVersion) = {
