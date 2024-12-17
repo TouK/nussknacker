@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.configloader.ProcessingTypeConfigsLoader
+import pl.touk.nussknacker.ui.configloader.{ProcessingTypeConfigs, ProcessingTypeConfigsLoader}
 import pl.touk.nussknacker.ui.process.processingtype._
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader.toValueWithRestriction
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
@@ -25,14 +25,14 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
   }
 
   private def createProcessingTypeData(
-      processingTypesConfig: Map[String, ProcessingTypeConfig],
+      processingTypesConfig: ProcessingTypeConfigs,
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     // This step with splitting DeploymentManagerProvider loading for all processing types
     // and after that creating ProcessingTypeData is done because of the deduplication of deployments
     // See DeploymentManagerProvider.engineSetupIdentity
-    val providerWithNameInputData = processingTypesConfig.mapValuesNow { processingTypeConfig =>
+    val providerWithNameInputData = processingTypesConfig.configByProcessingType.mapValuesNow { processingTypeConfig =>
       val provider = createDeploymentManagerProvider(processingTypeConfig)
       val nameInputData = EngineNameInputData(
         provider.defaultEngineSetupName,

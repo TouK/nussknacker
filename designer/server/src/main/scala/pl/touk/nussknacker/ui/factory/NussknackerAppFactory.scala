@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.factory
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
@@ -27,11 +27,8 @@ import java.time.Clock
 
 class NussknackerAppFactory(
     designerConfigLoader: DesignerConfigLoader,
-    processingTypeConfigsLoaderFactoryOpt: Option[ProcessingTypeConfigsLoaderFactory],
     createProcessingTypeDataLoader: ProcessingTypeConfigsLoader => ProcessingTypeDataLoader
 ) extends LazyLogging {
-
-  import net.ceedubs.ficus.Ficus._
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {
@@ -41,9 +38,8 @@ class NussknackerAppFactory(
       ioSttpBackend <- AsyncHttpClientCatsBackend.resource[IO]()
       processingTypeConfigsLoader = createProcessingTypeConfigsLoader(
         designerConfig,
-        executionContextWithIORuntime,
         ioSttpBackend
-      )
+      )(executionContextWithIORuntime.ioRuntime)
       processingTypeDataLoader = createProcessingTypeDataLoader(processingTypeConfigsLoader)
       materializer             = Materializer(system)
       _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))
@@ -74,18 +70,15 @@ class NussknackerAppFactory(
 
   private def createProcessingTypeConfigsLoader(
       designerConfig: DesignerConfig,
-      executionContextWithIORuntime: ActorSystemBasedExecutionContextWithIORuntime,
       sttpBackend: SttpBackend[IO, Any]
-  ): ProcessingTypeConfigsLoader = {
-    processingTypeConfigsLoaderFactoryOpt
+  )(implicit ioRuntime: IORuntime): ProcessingTypeConfigsLoader = {
+    ScalaServiceLoader
+      .loadOne[ProcessingTypeConfigsLoaderFactory](getClass.getClassLoader)
       .map { factory =>
         logger.debug(
           s"Found custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName}: ${factory.getClass.getName}. Using it for configuration loading"
         )
-        factory.create(
-          designerConfig.rawConfig.resolved.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty()),
-          sttpBackend,
-        )(executionContextWithIORuntime)
+        factory.create(designerConfig.configLoaderConfig, sttpBackend)
       }
       .getOrElse {
         logger.debug(
@@ -128,11 +121,8 @@ class NussknackerAppFactory(
 object NussknackerAppFactory {
 
   def apply(designerConfigLoader: DesignerConfigLoader): NussknackerAppFactory = {
-    val processingTypeConfigsLoaderFactoryOpt =
-      ScalaServiceLoader.loadOne[ProcessingTypeConfigsLoaderFactory](getClass.getClassLoader)
     new NussknackerAppFactory(
       designerConfigLoader,
-      processingTypeConfigsLoaderFactoryOpt,
       new ProcessingTypesConfigBasedProcessingTypeDataLoader(_)
     )
   }

@@ -50,9 +50,6 @@ class SimpleConfigLoadingDesignerConfigLoader(loadConfig: => Config) extends Des
 
 object DesignerConfigLoader {
 
-  def apply(classLoader: ClassLoader): AlwaysLoadingFileBasedDesignerConfigLoader =
-    new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
-
   def fromConfig(loadConfig: => Config): SimpleConfigLoadingDesignerConfigLoader =
     new SimpleConfigLoadingDesignerConfigLoader(loadConfig)
 

@@ -5,6 +5,8 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 
 trait ProcessingTypeConfigsLoader {
 
-  def loadProcessingTypeConfigs(): IO[Map[String, ProcessingTypeConfig]]
+  def loadProcessingTypeConfigs(): IO[ProcessingTypeConfigs]
 
 }
+
+case class ProcessingTypeConfigs(configByProcessingType: Map[String, ProcessingTypeConfig])

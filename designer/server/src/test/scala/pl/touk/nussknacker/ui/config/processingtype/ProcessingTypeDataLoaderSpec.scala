@@ -108,13 +108,13 @@ class ProcessingTypeDataLoaderSpec extends AnyFunSuite {
       .loadProcessingTypeConfigs()
       .unsafeRunSync()
 
-    processingTypes1.keys.toSet shouldBe Set("streaming")
+    processingTypes1.configByProcessingType.keys.toSet shouldBe Set("streaming")
 
     val processingTypes2 = processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
       .unsafeRunSync()
 
-    processingTypes2.keys.toSet shouldBe Set("streaming", "streaming2")
+    processingTypes2.configByProcessingType.keys.toSet shouldBe Set("streaming", "streaming2")
   }
 
   private def staticConfigBasedProcessingTypeConfigsLoader(config: Config): ProcessingTypeConfigsLoader = { () =>
