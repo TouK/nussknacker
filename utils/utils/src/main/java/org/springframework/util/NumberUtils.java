@@ -38,6 +38,8 @@ import java.util.Set;
  */
 public abstract class NumberUtils {
 
+    public static int DEFAULT_BIG_DECIMAL_SCALE = 18;
+
 	private static int DOUBLE_SCALE = new BigDecimal((Double.MIN_VALUE)).scale();
 
 	private static int FLOAT_SCALE = new BigDecimal((Float.MIN_VALUE)).scale();
@@ -142,8 +144,8 @@ public abstract class NumberUtils {
 			} else if (number instanceof Float) {
 				return (T) bigDecimal.setScale(FLOAT_SCALE, RoundingMode.UNNECESSARY);
 			} else {
-                if (bigDecimal.scale() < 18) {
-                    return (T) bigDecimal.setScale(18, RoundingMode.UNNECESSARY);
+                if (bigDecimal.scale() < DEFAULT_BIG_DECIMAL_SCALE) {
+                    return (T) bigDecimal.setScale(DEFAULT_BIG_DECIMAL_SCALE, RoundingMode.UNNECESSARY);
                 }
 				return (T) bigDecimal;
 			}
