@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
+  SkipAdditionalFields,
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -81,7 +82,7 @@ class ProcessesResources(
             complete {
               processService.getLatestProcessesWithDetails(
                 query,
-                GetScenarioWithDetailsOptions.detailsOnly.withFetchState
+                GetScenarioWithDetailsOptions.withoutAdditionalFields.withFetchState
               )
             }
           }
