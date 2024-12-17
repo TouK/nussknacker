@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import cats.data.{EitherT, Validated}
 import cats.syntax.all._
@@ -9,9 +9,13 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError
-import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{NoActionDefinition, NoScenario}
-import pl.touk.nussknacker.ui.api.{BaseHttpService, CustomActionValidationDto, ManagementApiEndpoints}
+import pl.touk.nussknacker.ui.api.description.ManagementApiEndpoints
+import pl.touk.nussknacker.ui.api.description.ManagementApiEndpoints.Dtos.{
+  CustomActionValidationDto,
+  ManagementApiError,
+  NoActionDefinition,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}

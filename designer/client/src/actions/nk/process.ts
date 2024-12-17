@@ -36,6 +36,16 @@ export function loadProcessState(processName: ProcessName, processVersionId: num
         );
 }
 
+export function fetchActivityParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
+    return (dispatch) =>
+        HttpService.getActivityParameters(processName, scenarioGraph).then(({ data }) => {
+            dispatch({
+                type: "UPDATE_ACTIVITY_PARAMETERS",
+                activityParameters: data,
+            });
+        });
+}
+
 export function fetchTestFormParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
     return (dispatch) =>
         HttpService.getTestFormParameters(processName, scenarioGraph).then(({ data }) => {

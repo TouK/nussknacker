@@ -7,7 +7,7 @@ import { loadProcessState } from "../../actions/nk";
 import HttpService, { CustomActionValidationRequest } from "../../http/HttpService";
 import { CustomAction, NodeValidationError } from "../../types";
 import { UnknownRecord } from "../../types/common";
-import { WindowContent, WindowKind } from "../../windowManager";
+import { PromptContent, WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
@@ -18,8 +18,9 @@ import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import CommentInput from "../comment/CommentInput";
 import { getProcessVersionId } from "../../reducers/selectors/graph";
+import { ActivityCommentTextField } from "./ActivityCommentTextField";
+import { ActivityHeader } from "./ActivityHeader";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -125,32 +126,25 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.confirm", "Ok"), action: () => confirmAction() },
+            { title: t("dialog.button.confirm", "Apply"), action: () => confirmAction() },
         ],
         [confirmAction, props, t],
     );
 
     return (
-        <WindowContent {...props} buttons={buttons}>
+        <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ padding: "1em", minWidth: 600 }))}>
-                <CommentInput
+                <ActivityHeader title={props.data.title} />
+                <ActivityCommentTextField
+                    placeholder={deploymentCommentSettings?.exampleComment}
+                    error={!!validationError}
+                    helperText={validationError}
                     onChange={(e) => setComment(e.target.value)}
-                    value={comment}
-                    defaultValue={deploymentCommentSettings?.exampleComment}
-                    className={cx(
-                        css({
-                            minWidth: 600,
-                            minHeight: 80,
-                        }),
-                    )}
                     autoFocus
                 />
-                <FormHelperText title={validationError} error>
-                    {validationError}
-                </FormHelperText>
                 <CustomActionForm action={action} value={value} onChange={setValue} />
             </div>
-        </WindowContent>
+        </PromptContent>
     );
 }
 
