@@ -101,10 +101,10 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     case DMCancelDeploymentCommand(name, _, user) =>
       // TODO: cancelling specific deployment
       cancelScenario(DMCancelScenarioCommand(name, user))
-    case command: DMCancelScenarioCommand         => cancelScenario(command)
-    case command: DMCustomActionCommand           => invokeCustomAction(command)
-    case command: DMPerformSingleExecutionCommand => performSingleExecution(command)
-    case _: DMMakeScenarioSavepointCommand        => Future.successful(SavepointResult(""))
+    case command: DMCancelScenarioCommand  => cancelScenario(command)
+    case command: DMCustomActionCommand    => invokeCustomAction(command)
+    case command: DMRunOffScheduleCommand  => runOffSchedule(command)
+    case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
     case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
       flinkTestRunner.test(canonicalProcess, scenarioTestData) // it's just for streaming e2e tests from file purposes
   }
@@ -183,7 +183,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     }
   }
 
-  private def performSingleExecution(command: DMPerformSingleExecutionCommand): Future[SingleExecutionResult] = {
+  private def runOffSchedule(command: DMRunOffScheduleCommand): Future[RunOffScheduleResult] = {
     notImplemented
   }
 

@@ -78,7 +78,7 @@ trait StubbingCommands { self: DeploymentManager =>
     case _: DMCancelDeploymentCommand      => Future.successful(())
     case _: DMCancelScenarioCommand        => Future.successful(())
     case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
-    case _: DMPerformSingleExecutionCommand | _: DMCustomActionCommand | _: DMTestScenarioCommand => notImplemented
+    case _: DMRunOffScheduleCommand | _: DMCustomActionCommand | _: DMTestScenarioCommand => notImplemented
   }
 
 }
