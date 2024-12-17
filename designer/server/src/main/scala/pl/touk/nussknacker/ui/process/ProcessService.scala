@@ -73,7 +73,7 @@ object ProcessService {
     val detailsOnly: GetScenarioWithDetailsOptions =
       new GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = false)
 
-    val withsScenarioGraph: GetScenarioWithDetailsOptions =
+    val withScenarioGraph: GetScenarioWithDetailsOptions =
       new GetScenarioWithDetailsOptions(FetchScenarioGraph(), fetchState = false)
 
     val withoutAdditionalFields: GetScenarioWithDetailsOptions =
