@@ -299,7 +299,7 @@ object aggregates {
   private case object PopulationVariance          extends StandardDeviationOrVarianceAggregationType
 
   class GeneralStandardDeviationAndVarianceAggregator(
-      val standardDeviationVarianceType: StandardDeviationOrVarianceAggregationType
+      private val standardDeviationVarianceType: StandardDeviationOrVarianceAggregationType
   ) extends Aggregator
       with LargeFloatingNumberAggregate {
 
