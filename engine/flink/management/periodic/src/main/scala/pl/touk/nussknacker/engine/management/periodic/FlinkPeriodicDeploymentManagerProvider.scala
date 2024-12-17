@@ -58,8 +58,7 @@ class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider w
           modelData = modelData,
           EmptyPeriodicProcessListenerFactory,
           DefaultAdditionalDeploymentDataProvider,
-          dependencies,
-          scenarioStateCacheTTL,
+          dependencies
         )
     }
 

@@ -26,7 +26,7 @@ import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ProcessStateProvider
-import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions.Ops
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
@@ -34,6 +34,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
+import pl.touk.nussknacker.ui.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
 import pl.touk.nussknacker.ui.validation.{CustomActionValidator, UIProcessValidator}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
@@ -169,9 +170,9 @@ class DeploymentService(
   }
 
   /**
-    * Common validations and operations for a command execution.
-    * @return gathered data for further command execution
-    */
+   * Common validations and operations for a command execution.
+   * @return gathered data for further command execution
+   */
   private def prepareCommandContextWithAction[PS: ScenarioShapeFetchStrategy](
       processId: ProcessIdWithName,
       actionName: ScenarioActionName,
@@ -203,7 +204,7 @@ class DeploymentService(
         _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
         // 1.7. check if action is allowed for current state
         inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-        processState          <- getProcessState(processDetails, inProgressActionNames, None)
+        processState          <- getProcessState(processDetails, inProgressActionNames, None, None)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         // 1.8. create new action, action is started with "in progress" state, the whole command execution can take some time
         actionId <- actionRepository.addInProgressAction(
@@ -437,7 +438,7 @@ class DeploymentService(
       processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails        <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      result                <- getProcessState(processDetails, inProgressActionNames, currentlyPresentedVersionId)
+      result                <- getProcessState(processDetails, inProgressActionNames, currentlyPresentedVersionId, None)
     } yield result)
   }
 
@@ -446,7 +447,7 @@ class DeploymentService(
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-      result                <- getProcessState(processDetails, inProgressActionNames, None)
+      result                <- getProcessState(processDetails, inProgressActionNames, None, None)
     } yield result)
   }
 
@@ -454,17 +455,24 @@ class DeploymentService(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
   ): Future[F[ScenarioWithDetails]] = {
+    val scenarios = processTraverse.toList
     dbioRunner.run(
       for {
-        actionsInProgress <- getInProgressActionTypesForProcessTraverse(processTraverse)
+        actionsInProgress <- getInProgressActionTypesForScenarios(scenarios)
+        prefetchedStates  <- DBIO.from(getPrefetchedStatesForDeploymentManagers(scenarios))
         processesWithState <- processTraverse
           .map {
             case process if process.isFragment => DBIO.successful(process)
             case process =>
+              val prefetched =
+                prefetchedStates
+                  .get(process.processingType)
+                  .flatMap(_.get(process.name))
               getProcessState(
                 process.toEntity,
                 actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
                 None,
+                prefetched,
               ).map(state => process.copy(state = Some(state)))
           }
           .sequence[DB, ScenarioWithDetails]
@@ -472,12 +480,36 @@ class DeploymentService(
     )
   }
 
+  private def getPrefetchedStatesForDeploymentManagers(
+      scenarios: List[ScenarioWithDetails],
+  )(
+      implicit user: LoggedUser,
+      freshnessPolicy: DataFreshnessPolicy
+  ): Future[Map[ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]] = {
+    val allProcessingTypes = scenarios.map(_.processingType).toSet
+    val deploymentManagersByProcessingTypes =
+      allProcessingTypes.flatMap(pt => dispatcher.deploymentManager(pt).map(dm => (pt, dm)))
+    val prefetchedStatesByProcessingTypes = Future
+      .sequence(
+        deploymentManagersByProcessingTypes.flatMap { case (processingType, manager) =>
+          manager match {
+            case dm: StateQueryForAllScenariosSupported =>
+              Some(dm.getProcessesStates().map(states => (processingType, states)))
+            case _ =>
+              None
+          }
+        }
+      )
+      .map(_.toMap)
+    prefetchedStatesByProcessingTypes
+  }
+
   // This is optimisation tweak. We want to reduce number of calls for in progress action types. So for >1 scenarios
   // we do one call for all in progress action types for all scenarios
-  private def getInProgressActionTypesForProcessTraverse[F[_]: Traverse](
-      processTraverse: F[ScenarioWithDetails]
+  private def getInProgressActionTypesForScenarios(
+      scenarios: List[ScenarioWithDetails]
   ): DB[Map[ProcessId, Set[ScenarioActionName]]] = {
-    processTraverse.toList match {
+    scenarios match {
       case Nil => DBIO.successful(Map.empty)
       case head :: Nil =>
         actionRepository
@@ -493,6 +525,7 @@ class DeploymentService(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName],
       currentlyPresentedVersionId: Option[VersionId],
+      prefetchedStatusDetailsWithFreshness: Option[WithDataFreshnessStatus[List[StatusDetails]]],
   )(implicit freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
     val processVersionId  = processDetails.processVersionId
     val deployedVersionId = processDetails.lastDeployedAction.map(_.processVersionId)
@@ -535,6 +568,7 @@ class DeploymentService(
                     processVersionId,
                     deployedVersionId,
                     currentlyPresentedVersionId,
+                    prefetchedStatusDetailsWithFreshness,
                   )
                 )
                 .map { statusWithFreshness =>
@@ -627,18 +661,32 @@ class DeploymentService(
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
       currentlyPresentedVersionId: Option[VersionId],
+      prefetchedStatusDetailsWithFreshness: Option[WithDataFreshnessStatus[List[StatusDetails]]],
   )(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
 
-    val state = deploymentManager
-      .getProcessState(
-        processIdWithName,
-        lastStateAction,
-        latestVersionId,
-        deployedVersionId,
-        currentlyPresentedVersionId
-      )
+    val state = (prefetchedStatusDetailsWithFreshness match {
+      case Some(statusDetailsWithFreshness) =>
+        deploymentManager
+          .getProcessState(
+            processIdWithName,
+            lastStateAction,
+            latestVersionId,
+            deployedVersionId,
+            currentlyPresentedVersionId,
+            statusDetailsWithFreshness,
+          )
+      case None =>
+        deploymentManager
+          .getProcessState(
+            processIdWithName,
+            lastStateAction,
+            latestVersionId,
+            deployedVersionId,
+            currentlyPresentedVersionId,
+          )
+    })
       .recover { case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetProcessState(latestVersionId)

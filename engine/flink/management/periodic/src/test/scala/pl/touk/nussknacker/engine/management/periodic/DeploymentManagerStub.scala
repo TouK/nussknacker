@@ -16,6 +16,30 @@ class DeploymentManagerStub
 
   var jobStatus: Map[ProcessName, List[StatusDetails]] = Map.empty
 
+  def setEmptyStateStatus(): Unit = {
+    jobStatus = Map.empty
+  }
+
+  def addStateStatus(
+      processName: ProcessName,
+      status: StateStatus,
+      deploymentIdOpt: Option[PeriodicProcessDeploymentId]
+  ): Unit = {
+    jobStatus = jobStatus ++ Map(
+      processName -> List(
+        StatusDetails(
+          deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
+          externalDeploymentId = Some(ExternalDeploymentId("1")),
+          status = status,
+          version = None,
+          startTime = None,
+          attributes = None,
+          errors = Nil
+        )
+      )
+    )
+  }
+
   def setStateStatus(
       processName: ProcessName,
       status: StateStatus,

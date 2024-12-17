@@ -10,20 +10,14 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
-import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepositoryCachingDecorator
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.service.{
-  DefaultAdditionalDeploymentDataProvider,
-  EmptyListener,
-  ProcessConfigEnricher
-}
+import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.Clock
 import java.util.UUID
-import scala.concurrent.duration.DurationInt
 
-class PeriodicProcessesCachingRepositoryTest
+class PeriodicProcessesFetchingTest
     extends AnyFunSuite
     with Matchers
     with ScalaFutures
@@ -47,7 +41,7 @@ class PeriodicProcessesCachingRepositoryTest
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
       jarManager = jarManagerStub,
-      scheduledProcessesRepository = new PeriodicProcessesRepositoryCachingDecorator(repository, 10 seconds),
+      scheduledProcessesRepository = repository,
       periodicProcessListener = EmptyListener,
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
       deploymentRetryConfig = DeploymentRetryConfig(),
@@ -68,13 +62,17 @@ class PeriodicProcessesCachingRepositoryTest
 
   }
 
-  test("getStatusDetails - should perform 2 db queries for N periodic processes when using cache") {
+  test(
+    "getStatusDetails - should perform 2*N db queries for N periodic processes when fetching statuses individually"
+  ) {
     val f = new Fixture
     val n = 10
 
+    f.delegateDeploymentManagerStub.setEmptyStateStatus()
+
     for (i <- 1 to n) {
       val deploymentId = f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
-      f.delegateDeploymentManagerStub.setStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
+      f.delegateDeploymentManagerStub.addStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
     }
 
     getLatestDeploymentQueryCount.set(0)
@@ -85,27 +83,29 @@ class PeriodicProcessesCachingRepositoryTest
       f.periodicProcessService.getStatusDetails(processName(i)).futureValue
     }
 
-    getLatestDeploymentQueryCount.get() shouldEqual 2
+    getLatestDeploymentQueryCount.get() shouldEqual 2 * n
   }
 
-  test("getStatusDetails - should perform 2*N db queries for N periodic processes when not using cache") {
+  test("getStatusDetails - should perform 2 db queries for N periodic processes when fetching all at once") {
     val f = new Fixture
     val n = 10
 
+    f.delegateDeploymentManagerStub.setEmptyStateStatus()
+
     for (i <- 1 to n) {
       val deploymentId = f.repository.addActiveProcess(processName(i), PeriodicProcessDeploymentStatus.Deployed)
-      f.delegateDeploymentManagerStub.setStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
+      f.delegateDeploymentManagerStub.addStateStatus(processName(i), SimpleStateStatus.Running, Some(deploymentId))
     }
 
     getLatestDeploymentQueryCount.set(0)
 
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
-    for (i <- 1 to n) {
-      f.periodicProcessService.getStatusDetails(processName(i)).futureValue
-    }
+    val statuses = f.periodicProcessService.getStatusDetails().futureValue.value
 
-    getLatestDeploymentQueryCount.get() shouldEqual 2 * n
+    statuses.size shouldEqual n
+
+    getLatestDeploymentQueryCount.get() shouldEqual 2
   }
 
 }

@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.management.periodic.Utils.{createActorWithRetr
 import pl.touk.nussknacker.engine.management.periodic.db.{
   DbInitializer,
   PeriodicProcessesRepository,
-  PeriodicProcessesRepositoryCachingDecorator,
   SlickPeriodicProcessesRepository
 }
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
@@ -42,8 +41,7 @@ object PeriodicDeploymentManager {
       modelData: BaseModelData,
       listenerFactory: PeriodicProcessListenerFactory,
       additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
-      dependencies: DeploymentManagerDependencies,
-      scenarioStateCacheTTL: Option[FiniteDuration]
+      dependencies: DeploymentManagerDependencies
   ): PeriodicDeploymentManager = {
     import dependencies._
 
@@ -52,17 +50,13 @@ object PeriodicDeploymentManager {
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
     val scheduledProcessesRepository =
       new SlickPeriodicProcessesRepository(db, dbProfile, clock, periodicBatchConfig.processingType)
-    val repositoryWithCaching = scenarioStateCacheTTL match {
-      case Some(ttl) => new PeriodicProcessesRepositoryCachingDecorator(scheduledProcessesRepository, ttl)
-      case None      => scheduledProcessesRepository
-    }
     val jarManager            = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData)
     val listener              = listenerFactory.create(originalConfig)
     val processConfigEnricher = processConfigEnricherFactory(originalConfig)
     val service = new PeriodicProcessService(
       delegate,
       jarManager,
-      repositoryWithCaching,
+      scheduledProcessesRepository,
       listener,
       additionalDeploymentDataProvider,
       periodicBatchConfig.deploymentRetry,
