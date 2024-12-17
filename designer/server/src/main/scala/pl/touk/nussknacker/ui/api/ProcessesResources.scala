@@ -233,12 +233,12 @@ class ProcessesResources(
                 thisVersion <- processService.getProcessWithDetails(
                   processId,
                   thisVersion,
-                  GetScenarioWithDetailsOptions.withsScenarioGraph
+                  GetScenarioWithDetailsOptions.withScenarioGraph
                 )
                 otherVersion <- processService.getProcessWithDetails(
                   processId,
                   otherVersion,
-                  GetScenarioWithDetailsOptions.withsScenarioGraph
+                  GetScenarioWithDetailsOptions.withScenarioGraph
                 )
               } yield ScenarioGraphComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
