@@ -75,10 +75,10 @@ class DeploymentService(
 
   def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
     command match {
-      case command: RunDeploymentCommand          => runDeployment(command)
-      case command: CancelScenarioCommand         => cancelScenario(command)
-      case command: PerformSingleExecutionCommand => processSingleExecution(command)
-      case command: CustomActionCommand           => processCustomAction(command)
+      case command: RunDeploymentCommand  => runDeployment(command)
+      case command: CancelScenarioCommand => cancelScenario(command)
+      case command: RunOffScheduleCommand => runOffSchedule(command)
+      case command: CustomActionCommand   => processCustomAction(command)
     }
   }
 
@@ -313,7 +313,7 @@ class DeploymentService(
     val fixedActionDefinitions = List(
       CustomActionDefinition(ScenarioActionName.Deploy, Nil, Nil, None),
       CustomActionDefinition(ScenarioActionName.Cancel, Nil, Nil, None),
-      CustomActionDefinition(ScenarioActionName.PerformSingleExecution, Nil, Nil, None)
+      CustomActionDefinition(ScenarioActionName.RunOffSchedule, Nil, Nil, None)
     )
     val actionsDefinedInCustomActions = dispatcher
       .deploymentManagerUnsafe(processingType)
@@ -731,13 +731,13 @@ class DeploymentService(
     Await.result(dbioRunner.run(actionRepository.deleteInProgressActions()), 10 seconds)
   }
 
-  private def processSingleExecution(command: PerformSingleExecutionCommand): Future[SingleExecutionResult] = {
+  private def runOffSchedule(command: RunOffScheduleCommand): Future[RunOffScheduleResult] = {
     processAction(
       command = command,
-      actionName = ScenarioActionName.PerformSingleExecution,
+      actionName = ScenarioActionName.RunOffSchedule,
       actionParams = Map.empty,
       dmCommandCreator = ctx =>
-        DMPerformSingleExecutionCommand(
+        DMRunOffScheduleCommand(
           ctx.latestScenarioDetails.toEngineProcessVersion,
           ctx.latestScenarioDetails.json,
           command.commonData.user.toManagerUser,

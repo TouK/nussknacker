@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.OpenContext
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -12,7 +12,7 @@ private[registrar] class SourceMetricsFunction[T](sourceId: String, componentUse
 
   @transient private var metrics: OneSourceMetrics = _
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     metrics = new OneSourceMetrics(sourceId)
     val metricsProvider = createMetricsProvider(componentUseCase, getRuntimeContext)
     metrics.registerOwnMetrics(metricsProvider)

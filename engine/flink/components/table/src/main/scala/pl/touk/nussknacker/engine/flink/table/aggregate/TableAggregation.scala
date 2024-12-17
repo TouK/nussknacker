@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
-import org.apache.flink.api.common.functions.{FlatMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{FlatMapFunction, OpenContext, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.table.api.Expressions.{$, call}
@@ -116,7 +115,7 @@ class TableAggregation(
     @transient
     private var contextIdGenerator: ContextIdGenerator = _
 
-    override def open(configuration: Configuration): Unit = {
+    override def open(openContext: OpenContext): Unit = {
       contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.toString)
     }
 

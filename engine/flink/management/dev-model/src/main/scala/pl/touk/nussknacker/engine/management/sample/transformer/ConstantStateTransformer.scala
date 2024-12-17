@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
-import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction}
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
@@ -22,8 +22,8 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
 
           var constantState: ValueState[T] = _
 
-          override def open(parameters: Configuration): Unit = {
-            super.open(parameters)
+          override def open(openContext: OpenContext): Unit = {
+            super.open(openContext)
             val descriptor = new ValueStateDescriptor[T]("constantState", implicitly[TypeInformation[T]])
             constantState = getRuntimeContext.getState(descriptor)
           }
