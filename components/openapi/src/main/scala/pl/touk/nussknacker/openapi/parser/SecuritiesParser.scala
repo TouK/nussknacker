@@ -7,11 +7,13 @@ import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.openapi.parser.ParseToSwaggerService.ValidationResult
 import pl.touk.nussknacker.openapi.{
-  ApiKeyConfig,
   ApiKeyInCookie,
   ApiKeyInHeader,
   ApiKeyInQuery,
-  OpenAPISecurityConfig,
+  ApiKeySecret,
+  Secret,
+  SecurityConfig,
+  SecuritySchemeName,
   SwaggerSecurity
 }
 
@@ -21,24 +23,24 @@ private[parser] object SecuritiesParser extends LazyLogging {
 
   import cats.syntax.apply._
 
-  def parseSwaggerSecurities(
-      securityRequirements: List[SecurityRequirement],
-      securitySchemes: Option[Map[String, SecurityScheme]],
-      securitiesConfigs: Map[String, OpenAPISecurityConfig]
+  def parseOperationSecurities(
+      securityRequirementsDefinition: List[SecurityRequirement],
+      securitySchemesDefinition: Option[Map[String, SecurityScheme]],
+      securityConfig: SecurityConfig
   ): ValidationResult[List[SwaggerSecurity]] =
-    securityRequirements match {
+    securityRequirementsDefinition match {
       case Nil => Nil.validNel
       case _ =>
-        securitySchemes match {
+        securitySchemesDefinition match {
           case None => "There is no security scheme definition in the openAPI definition".invalidNel
           case Some(securitySchemes) => {
             // finds the first security requirement that can be met by the config
-            securityRequirements.view
+            securityRequirementsDefinition.view
               .map { securityRequirement =>
                 matchSecuritiesForRequiredSchemes(
                   securityRequirement.asScala.keys.toList,
                   securitySchemes,
-                  securitiesConfigs
+                  securityConfig
                 )
               }
               .foldLeft("No security requirement can be met because:".invalidNel[List[SwaggerSecurity]])(_.findValid(_))
@@ -48,55 +50,59 @@ private[parser] object SecuritiesParser extends LazyLogging {
         }
     }
 
-  def matchSecuritiesForRequiredSchemes(
+  private def matchSecuritiesForRequiredSchemes(
       requiredSchemesNames: List[String],
       securitySchemes: Map[String, SecurityScheme],
-      securitiesConfigs: Map[String, OpenAPISecurityConfig]
+      securitiesConfig: SecurityConfig
   ): ValidationResult[List[SwaggerSecurity]] =
-    requiredSchemesNames
-      .map { implicit schemeName: String =>
-        {
-          val securityScheme: ValidationResult[SecurityScheme] = Validated.fromOption(
-            securitySchemes.get(schemeName),
-            NonEmptyList.of(s"""there is no security scheme definition for scheme name "$schemeName"""")
-          )
-          val securityConfig: ValidationResult[OpenAPISecurityConfig] = Validated.fromOption(
-            securitiesConfigs.get(schemeName),
-            NonEmptyList.of(s"""there is no security config for scheme name "$schemeName"""")
-          )
+    requiredSchemesNames.map { schemeName =>
+      {
+        val validatedSecurityScheme: ValidationResult[SecurityScheme] = Validated.fromOption(
+          securitySchemes.get(schemeName),
+          NonEmptyList.of(s"""there is no security scheme definition for scheme name "$schemeName"""")
+        )
+        val validatedSecuritySecretConfigured: ValidationResult[Secret] = Validated.fromOption(
+          securitiesConfig.secret(SecuritySchemeName(schemeName)),
+          NonEmptyList.of(s"""there is no security secret configured for scheme name "$schemeName"""")
+        )
 
-          (securityScheme, securityConfig).tupled.andThen(t => getSecurityFromSchemeAndConfig(t._1, t._2))
-        }
+        (validatedSecurityScheme, validatedSecuritySecretConfigured)
+          .mapN { case (securityScheme, configuredSecret) =>
+            getSecurityFromSchemeAndSecret(securityScheme, configuredSecret)
+          }
+          .andThen(identity)
       }
-      .foldLeft[ValidationResult[List[SwaggerSecurity]]](Nil.validNel)(_.combine(_))
+    }.sequence
 
-  def getSecurityFromSchemeAndConfig(securityScheme: SecurityScheme, securityConfig: OpenAPISecurityConfig)(
-      implicit schemeName: String
-  ): ValidationResult[List[SwaggerSecurity]] = {
+  private def getSecurityFromSchemeAndSecret(
+      securityScheme: SecurityScheme,
+      secret: Secret
+  ): ValidationResult[SwaggerSecurity] = {
     import SecurityScheme.Type._
-    (securityScheme.getType, securityConfig) match {
-      case (APIKEY, apiKeyConfig: ApiKeyConfig) =>
-        getApiKeySecurity(securityScheme, apiKeyConfig)
+    (securityScheme.getType, secret) match {
+      case (APIKEY, apiKeySecret: ApiKeySecret) =>
+        getApiKeySecurity(securityScheme, apiKeySecret).validNel
       case (otherType: SecurityScheme.Type, _) => {
-        val securityConfigClassName = ReflectUtils.simpleNameWithoutSuffix(securityConfig.getClass)
-        s"Security type $otherType is not supported yet or ($otherType, $securityConfigClassName) is a mismatch security scheme type and security config pair".invalidNel
+        val secretClassName = ReflectUtils.simpleNameWithoutSuffix(secret.getClass)
+        s"Security type $otherType is not supported yet or ($otherType, $secretClassName) is a mismatch security scheme type and security config pair".invalidNel
       }
     }
   }
 
-  def getApiKeySecurity(securityScheme: SecurityScheme, apiKeyConfig: ApiKeyConfig)(
-      implicit schemeName: String
-  ): ValidationResult[List[SwaggerSecurity]] = {
+  private def getApiKeySecurity(
+      securityScheme: SecurityScheme,
+      apiKeySecret: ApiKeySecret
+  ): SwaggerSecurity = {
     val name = securityScheme.getName
-    val key  = apiKeyConfig.apiKeyValue
+    val key  = apiKeySecret.apiKeyValue
     import SecurityScheme.In._
     securityScheme.getIn match {
       case QUERY =>
-        (ApiKeyInQuery(name, key) :: Nil).validNel
+        ApiKeyInQuery(name, key)
       case HEADER =>
-        (ApiKeyInHeader(name, key) :: Nil).validNel
+        ApiKeyInHeader(name, key)
       case COOKIE =>
-        (ApiKeyInCookie(name, key) :: Nil).validNel
+        ApiKeyInCookie(name, key)
     }
   }
 

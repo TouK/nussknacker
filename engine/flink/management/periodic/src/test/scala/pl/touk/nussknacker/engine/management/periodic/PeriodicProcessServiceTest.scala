@@ -93,6 +93,7 @@ class PeriodicProcessServiceTest
       },
       DeploymentRetryConfig(),
       PeriodicExecutionConfig(),
+      maxFetchedPeriodicScenarioActivities = None,
       new ProcessConfigEnricher {
 
         override def onInitialSchedule(

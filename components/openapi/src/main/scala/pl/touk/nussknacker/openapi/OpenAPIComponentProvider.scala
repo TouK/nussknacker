@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
-import pl.touk.nussknacker.openapi.OpenAPIsConfig._
+import pl.touk.nussknacker.openapi.OpenAPIServicesConfig._
 import pl.touk.nussknacker.openapi.discovery.SwaggerOpenApiDefinitionDiscovery
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.ServiceParseError

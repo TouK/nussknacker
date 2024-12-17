@@ -41,20 +41,18 @@ class NkGlobalParametersEncoderTest extends AnyFunSuite with Matchers {
     )
 
     List(globalParamsWithAllOptionalValues, globalParamsWithNoOptionalValues).foreach { params =>
-      val ec = new ExecutionConfig()
-      ec.setGlobalJobParameters(params)
-      val globalParamsFromEc = NkGlobalParameters.readFromContext(ec).get
+      val decodedParams = NkGlobalParameters.fromMap(params.toMap).get
 
-      params.buildInfo shouldBe globalParamsFromEc.buildInfo
-      params.processVersion shouldBe globalParamsFromEc.processVersion
-      params.configParameters shouldBe globalParamsFromEc.configParameters
-      params.namespaceParameters shouldBe globalParamsFromEc.namespaceParameters
-      params.additionalInformation shouldBe globalParamsFromEc.additionalInformation
+      decodedParams.buildInfo shouldBe params.buildInfo
+      decodedParams.processVersion shouldBe params.processVersion
+      decodedParams.configParameters shouldBe params.configParameters
+      decodedParams.namespaceParameters shouldBe params.namespaceParameters
+      decodedParams.additionalInformation shouldBe params.additionalInformation
     }
   }
 
   test("returns None when context doesnt have required parameters") {
-    NkGlobalParameters.readFromContext(new ExecutionConfig()) shouldBe None
+    NkGlobalParameters.fromMap(new ExecutionConfig.GlobalJobParameters().toMap) shouldBe None
   }
 
 }

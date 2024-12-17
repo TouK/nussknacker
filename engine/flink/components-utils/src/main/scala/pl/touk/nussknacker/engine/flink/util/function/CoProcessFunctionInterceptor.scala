@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.function
 
-import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.util.Collector
 
@@ -12,8 +11,8 @@ import org.apache.flink.util.Collector
 abstract class CoProcessFunctionInterceptor[IN1, IN2, OUT](underlying: CoProcessFunction[IN1, IN2, OUT])
     extends CoProcessFunction[IN1, IN2, OUT] {
 
-  override def open(parameters: Configuration): Unit = {
-    underlying.open(parameters)
+  override def open(openContext: OpenContext): Unit = {
+    underlying.open(openContext)
   }
 
   override def setRuntimeContext(ctx: RuntimeContext): Unit = {

@@ -5,33 +5,11 @@ info:
 servers:
   - url: http://dummy.io
 paths:
-  /headerPath:
+  /:
     get:
       security:
         - headerConfig: []
-      responses:
-        '200':
-          description: "-"
-          content:
-            application/json:
-              schema:
-                type: object
-      operationId: headerOperationId
-  /queryPath:
-    get:
-      security:
         - queryConfig: []
-      responses:
-        '200':
-          description: "-"
-          content:
-            application/json:
-              schema:
-                type: object
-      operationId: queryOperationId
-  /cookiePath:
-    get:
-      security:
         - cookieConfig: []
       responses:
         '200':
@@ -40,7 +18,7 @@ paths:
             application/json:
               schema:
                 type: object
-      operationId: cookieOperationId
+      operationId: root
 components:
   schemas: {}
   securitySchemes:
