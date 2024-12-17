@@ -39,8 +39,11 @@ object SpelExpressionParseError {
     }
 
     case object MapWithExpressionKeysError extends UnsupportedOperationError {
-      override def message: String =
-        "Currently inline maps with not literal stringy keys (e.g. expressions as keys, numerals) are not supported"
+
+      override def message: String = {
+        "Currently only string keys for inline maps are supported"
+      }
+
     }
 
     case object ArrayConstructorError extends UnsupportedOperationError {
