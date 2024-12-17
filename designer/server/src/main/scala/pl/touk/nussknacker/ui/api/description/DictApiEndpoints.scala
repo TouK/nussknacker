@@ -15,8 +15,8 @@ import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.DictError.{
 }
 import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.Dtos._
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.tapir.{Schema, _}
 import sttp.tapir.json.circe._
+import sttp.tapir._
 
 import scala.language.implicitConversions
 

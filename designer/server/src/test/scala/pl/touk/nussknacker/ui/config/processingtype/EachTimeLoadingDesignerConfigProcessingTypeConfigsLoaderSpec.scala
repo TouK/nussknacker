@@ -6,10 +6,10 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
-import pl.touk.nussknacker.ui.config.root.DesignerRootConfigLoader
-import pl.touk.nussknacker.ui.configloader.{DesignerRootConfig, ProcessingTypeConfigsLoader}
+import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.configloader.{DesignerConfig, ProcessingTypeConfigsLoader}
 
-class EachTimeLoadingRootConfigProcessingTypeConfigsLoaderSpec extends AnyFunSuite {
+class EachTimeLoadingDesignerConfigProcessingTypeConfigsLoaderSpec extends AnyFunSuite {
 
   test("should throw when required configuration is missing") {
     val config = ConfigFactory
@@ -118,8 +118,8 @@ class EachTimeLoadingRootConfigProcessingTypeConfigsLoaderSpec extends AnyFunSui
   }
 
   private def staticConfigBasedProcessingTypeConfigsLoader(config: Config): ProcessingTypeConfigsLoader = {
-    new EachTimeLoadingRootConfigProcessingTypeConfigsLoader(
-      DesignerRootConfigLoader.fromConfig(config)
+    new EachTimeLoadingDesignerConfigProcessingTypeConfigsLoader(
+      DesignerConfigLoader.fromConfig(config)
     )
   }
 
@@ -132,11 +132,11 @@ class EachTimeLoadingRootConfigProcessingTypeConfigsLoaderSpec extends AnyFunSui
     val allConfigs = config1 :: config2 :: configs.toList
     val loadConfig = ref.getAndUpdate(_ + 1).flatMap { idx =>
       allConfigs.lift(idx) match {
-        case Some(config) => IO.pure(DesignerRootConfig.from(config))
+        case Some(config) => IO.pure(DesignerConfig.from(config))
         case None         => IO.raiseError(throw new IllegalStateException(s"Cannot load the config more than [$idx]"))
       }
     }
-    new EachTimeLoadingRootConfigProcessingTypeConfigsLoader(() => loadConfig)
+    new EachTimeLoadingDesignerConfigProcessingTypeConfigsLoader(() => loadConfig)
   }
 
 }

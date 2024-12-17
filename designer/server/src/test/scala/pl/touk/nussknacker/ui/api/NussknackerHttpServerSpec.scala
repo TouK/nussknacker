@@ -11,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.scalas.CatsTestExtensions._
 import pl.touk.nussknacker.test.{DefaultUniquePortProvider, WithTestHttpClientCreator}
-import pl.touk.nussknacker.ui.configloader.DesignerRootConfig
+import pl.touk.nussknacker.ui.configloader.DesignerConfig
 import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory.prepareSSLContext
 import pl.touk.nussknacker.ui.security.ssl.KeyStoreConfig
 import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, RouteProvider}
@@ -32,7 +32,7 @@ class NussknackerHttpServerSpec
         server <- createHttpServer()
         client <- createHttpClient(Some(prepareSSLContext(keyStoreConfig)))
         _ <- server.start(
-          DesignerRootConfig.from(
+          DesignerConfig.from(
             ConfigFactory
               .empty()
               .withValue("http.interface", fromAnyRef("0.0.0.0"))
@@ -64,7 +64,7 @@ class NussknackerHttpServerSpec
 
   private object DummyRouteProvider extends RouteProvider[Route] with Directives {
 
-    override def createRoute(config: DesignerRootConfig): Resource[IO, Route] = Resource.pure[IO, Route] {
+    override def createRoute(config: DesignerConfig): Resource[IO, Route] = Resource.pure[IO, Route] {
       path("test") {
         get {
           complete {

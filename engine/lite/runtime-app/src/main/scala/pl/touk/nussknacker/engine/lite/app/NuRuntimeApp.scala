@@ -9,7 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
-import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, ResourceLoader, SLF4JBridgeHandlerRegistrar}
+import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, ResourceLoader, SLF4JBridgeHandlerRegistrar, UriUtils}
 
 import java.nio.file.Path
 import scala.concurrent.duration._
@@ -27,7 +27,13 @@ object NuRuntimeApp extends App with LazyLogging {
   val (scenarioFileLocation, deploymentConfigLocation) = parseArgs
   val scenario                                         = parseScenario(scenarioFileLocation)
   val deploymentConfig                                 = parseDeploymentConfig(deploymentConfigLocation)
-  val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
+
+  val runtimeConfig = {
+    val configLocationsProperty: String = "nussknacker.config.locations"
+    val locationsPropertyValueOpt       = Option(System.getProperty(configLocationsProperty))
+    val locations = locationsPropertyValueOpt.map(UriUtils.extractListOfLocations).getOrElse(List.empty)
+    ConfigFactory.load(new ConfigFactoryExt(getClass.getClassLoader).parseUnresolved(locations))
+  }
 
   val httpConfig = runtimeConfig.as[HttpBindingConfig]("http")
 

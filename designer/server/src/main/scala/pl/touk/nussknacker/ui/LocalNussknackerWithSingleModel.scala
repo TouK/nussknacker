@@ -3,14 +3,21 @@ package pl.touk.nussknacker.ui
 import cats.effect.{IO, Resource}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.config.root.DesignerRootConfigLoader
+import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.configloader.{
+  DesignerConfig,
+  ProcessingTypeConfigsLoader,
+  ProcessingTypeConfigsLoaderFactory
+}
 import pl.touk.nussknacker.ui.process.processingtype.loader.LocalProcessingTypeDataLoader
+import sttp.client3.SttpBackend
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
 //This is helper, which allows for starting UI with given model without having to build jar etc.
@@ -49,10 +56,17 @@ object LocalNussknackerWithSingleModel {
       modelData = Map(typeName -> (category, modelData)),
       deploymentManagerProvider = deploymentManagerProvider
     )
-    val designerConfigLoader = DesignerRootConfigLoader.fromConfig(appConfig)
+    val designerConfigLoader = DesignerConfigLoader.fromConfig(appConfig)
+    val processingTypeConfigsLoaderFactory = new ProcessingTypeConfigsLoaderFactory {
+      override def create(designerConfigLoadedAtStart: DesignerConfig, sttpBackend: SttpBackend[Future, Any])(
+          implicit ec: ExecutionContext
+      ): ProcessingTypeConfigsLoader = { () =>
+        IO.pure(Map.empty)
+      }
+    }
     val appFactory = new NussknackerAppFactory(
       designerConfigLoader,
-      (_, _, _) => () => IO.pure(Map.empty),
+      Some(processingTypeConfigsLoaderFactory),
       _ => local
     )
     appFactory.createApp()

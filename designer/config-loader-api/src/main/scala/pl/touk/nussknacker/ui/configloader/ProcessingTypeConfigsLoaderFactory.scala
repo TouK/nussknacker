@@ -7,9 +7,8 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ProcessingTypeConfigsLoaderFactory {
 
   def create(
-      designerRootConfigLoadedAtStart: DesignerRootConfig,
+      designerConfigLoadedAtStart: DesignerConfig,
       sttpBackend: SttpBackend[Future, Any],
-      ec: ExecutionContext
-  ): ProcessingTypeConfigsLoader
+  )(implicit ec: ExecutionContext): ProcessingTypeConfigsLoader
 
 }

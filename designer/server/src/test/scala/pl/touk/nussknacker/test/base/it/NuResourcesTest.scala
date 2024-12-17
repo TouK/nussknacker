@@ -39,7 +39,7 @@ import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.configloader.{DesignerRootConfig, ProcessingTypeConfigsLoader}
+import pl.touk.nussknacker.ui.configloader.{DesignerConfig, ProcessingTypeConfigsLoader}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -145,11 +145,14 @@ trait NuResourcesTest
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val rootConfig            = DesignerRootConfig.from(testConfig)
-    val processingTypeConfigs = ProcessingTypeConfigsLoader.extractProcessingTypeConfigs(rootConfig)
+    val designerConfig = DesignerConfig.from(testConfig)
     ProcessingTypeDataProvider(
       ProcessingTypesConfigBasedProcessingTypeDataLoader
-        .loadProcessingTypeData(processingTypeConfigs, _ => modelDependencies, _ => deploymentManagerDependencies)
+        .loadProcessingTypeData(
+          designerConfig.processingTypeConfigs,
+          _ => modelDependencies,
+          _ => deploymentManagerDependencies
+        )
     )
   }
 

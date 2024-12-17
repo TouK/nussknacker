@@ -1,9 +1,8 @@
-package pl.touk.nussknacker.ui.config.root
+package pl.touk.nussknacker.ui.config
 
 import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
@@ -12,6 +11,7 @@ import java.net.URI
 import java.nio.file.Files
 import java.util.UUID
 
+// TODO: We should spit DesignerConfigLoader tests and model ProcessingTypeConfig tests
 class ConfigurationTest extends AnyFunSuite with Matchers {
 
   // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
@@ -29,21 +29,23 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   }
 
   test("defaultConfig works") {
-    new DesignerRootConfigLoaderImpl(classLoader)
-      .load(globalConfig)
+    new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
+      .loadDesignerConfig()
       .unsafeRunSync()
+      .rawConfig
       .resolved
       .getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
   }
 
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultDesignerConfig.conf
+    withNussknackerLocationsProperty(configUri.toString) {
+      val loadedConfig = new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
+        .loadDesignerConfig()
+        .unsafeRunSync()
 
-    val loadedConfig = new DesignerRootConfigLoaderImpl(classLoader)
-      .load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader))
-      .unsafeRunSync()
-
-    loadedConfig.resolved.getString("foo") shouldEqual "./storage"
+      loadedConfig.rawConfig.resolved.getString("foo") shouldEqual "./storage"
+    }
   }
 
   test("defaultConfig is not accessible from model") {
@@ -78,17 +80,32 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
          |""".stripMargin
     val conf1 = writeToTemp(content)
 
-    val result =
-      try {
-        System.setProperty(randomPropertyName, "I win!")
-        new DesignerRootConfigLoaderImpl(classLoader)
-          .load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader))
-          .unsafeRunSync()
-      } finally {
-        System.getProperties.remove(randomPropertyName)
-      }
+    withNussknackerLocationsProperty(conf1.toString) {
+      val result =
+        try {
+          System.setProperty(randomPropertyName, "I win!")
+          new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
+            .loadDesignerConfig()
+            .unsafeRunSync()
+        } finally {
+          System.getProperties.remove(randomPropertyName)
+        }
 
-    result.resolved.getString(randomPropertyName) shouldBe "I win!"
+      result.rawConfig.resolved.getString(randomPropertyName) shouldBe "I win!"
+    }
+  }
+
+  private def withNussknackerLocationsProperty(propertyValue: String)(f: => Unit): Unit = {
+    val locationsProperty = "nussknacker.config.locations"
+    val valueBeforeChange = Option(System.getProperty(locationsProperty))
+    System.setProperty(locationsProperty, propertyValue)
+    try {
+      f
+    } finally {
+      valueBeforeChange
+        .map(System.setProperty(locationsProperty, _))
+        .getOrElse(System.getProperties.remove(locationsProperty))
+    }
   }
 
   // to be able to run this test:
