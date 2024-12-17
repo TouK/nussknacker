@@ -464,15 +464,12 @@ class DeploymentService(
           .map {
             case process if process.isFragment => DBIO.successful(process)
             case process =>
-              val prefetched =
-                prefetchedStates
-                  .get(process.processingType)
-                  .flatMap(_.get(process.name))
+              val prefetchedStatesForProcess = prefetchedStates.get(process.processingType).flatMap(_.get(process.name))
               getProcessState(
                 process.toEntity,
                 actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
                 None,
-                prefetched,
+                prefetchedStatesForProcess,
               ).map(state => process.copy(state = Some(state)))
           }
           .sequence[DB, ScenarioWithDetails]
@@ -490,17 +487,27 @@ class DeploymentService(
     val deploymentManagersByProcessingTypes =
       allProcessingTypes.flatMap(pt => dispatcher.deploymentManager(pt).map(dm => (pt, dm)))
     val prefetchedStatesByProcessingTypes = Future
-      .sequence(
-        deploymentManagersByProcessingTypes.flatMap { case (processingType, manager) =>
+      .sequence {
+        deploymentManagersByProcessingTypes.map { case (processingType, manager) =>
           manager match {
             case dm: StateQueryForAllScenariosSupported =>
-              Some(dm.getProcessesStates().map(states => (processingType, states)))
+              dm
+                .getProcessesStates()
+                .map(states => Some((processingType, states)))
+                .recover { case NonFatal(e) =>
+                  logger.warn(
+                    s"Failed to get statuses of all scenarios in deployment manager for $processingType: ${e.getMessage}",
+                    e
+                  )
+                  None
+                }
             case _ =>
-              None
+              Future.successful(None)
           }
         }
-      )
-      .map(_.toMap)
+      }
+      .map(_.flatten.toMap)
+
     prefetchedStatesByProcessingTypes
   }
 
