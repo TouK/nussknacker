@@ -10,11 +10,6 @@ import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
-import pl.touk.nussknacker.ui.config.processingtype.ProcessingTypeConfigsLoaderFactoryServiceLoader.{getClass, logger}
-import pl.touk.nussknacker.ui.config.processingtype.{
-  EachTimeLoadingDesignerConfigProcessingTypeConfigsLoader,
-  ProcessingTypeConfigsLoaderFactoryServiceLoader
-}
 import pl.touk.nussknacker.ui.configloader.{
   DesignerConfig,
   ProcessingTypeConfigsLoader,
@@ -83,7 +78,7 @@ class NussknackerAppFactory(
       designerConfig: DesignerConfig,
       executionContextWithIORuntime: ActorSystemBasedExecutionContextWithIORuntime,
       sttpBackend: SttpBackend[Future, Any]
-  ) = {
+  ): ProcessingTypeConfigsLoader = {
     processingTypeConfigsLoaderFactoryOpt
       .map { factory =>
         logger.debug(
@@ -98,7 +93,7 @@ class NussknackerAppFactory(
         logger.debug(
           s"No custom ${classOf[ProcessingTypeConfigsLoaderFactory].getSimpleName} found. Using the default implementation of loader"
         )
-        new EachTimeLoadingDesignerConfigProcessingTypeConfigsLoader(designerConfigLoader)
+        () => designerConfigLoader.loadDesignerConfig().map(_.processingTypeConfigs)
       }
   }
 

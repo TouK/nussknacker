@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, includ
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.configloader.{DesignerConfig, ProcessingTypeConfigsLoader}
 
-class EachTimeLoadingDesignerConfigProcessingTypeConfigsLoaderSpec extends AnyFunSuite {
+class ProcessingTypeDataLoaderSpec extends AnyFunSuite {
 
   test("should throw when required configuration is missing") {
     val config = ConfigFactory
@@ -118,9 +118,7 @@ class EachTimeLoadingDesignerConfigProcessingTypeConfigsLoaderSpec extends AnyFu
   }
 
   private def staticConfigBasedProcessingTypeConfigsLoader(config: Config): ProcessingTypeConfigsLoader = {
-    new EachTimeLoadingDesignerConfigProcessingTypeConfigsLoader(
-      DesignerConfigLoader.fromConfig(config)
-    )
+    () => DesignerConfigLoader.fromConfig(config).loadDesignerConfig().map(_.processingTypeConfigs)
   }
 
   private def loadDifferentConfigPerInvocationProcessingTypeConfigsLoader(
@@ -130,13 +128,13 @@ class EachTimeLoadingDesignerConfigProcessingTypeConfigsLoaderSpec extends AnyFu
   ): ProcessingTypeConfigsLoader = {
     val ref        = Ref.unsafe[IO, Int](0)
     val allConfigs = config1 :: config2 :: configs.toList
-    val loadConfig = ref.getAndUpdate(_ + 1).flatMap { idx =>
+    val loadDesignerConfig = ref.getAndUpdate(_ + 1).flatMap { idx =>
       allConfigs.lift(idx) match {
         case Some(config) => IO.pure(DesignerConfig.from(config))
         case None         => IO.raiseError(throw new IllegalStateException(s"Cannot load the config more than [$idx]"))
       }
     }
-    new EachTimeLoadingDesignerConfigProcessingTypeConfigsLoader(() => loadConfig)
+    () => loadDesignerConfig.map(_.processingTypeConfigs)
   }
 
 }

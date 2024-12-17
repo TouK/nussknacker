@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import cats.data.Validated.Invalid
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelDependencies
+import pl.touk.nussknacker.engine.{ModelDependencies, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.component.{ComponentProvider, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
@@ -282,19 +284,20 @@ class ScenarioParametersServiceTest
 
     val designerConfig =
       DesignerConfig.from(ConfigFactory.parseFile(devApplicationConfFile).withFallback(fallbackConfig))
-    val processingTypeData = ProcessingTypesConfigBasedProcessingTypeDataLoader
-      .loadProcessingTypeData(
-        designerConfig.processingTypeConfigs,
-        processingType =>
-          ModelDependencies(
-            Map.empty,
-            componentId => DesignerWideComponentId(componentId.toString),
-            Some(workPath),
-            shouldIncludeComponentProvider(processingType, _),
-            ComponentDefinitionExtractionMode.FinalDefinition
-          ),
-        _ => TestFactory.deploymentManagerDependencies,
-      )
+    val processingTypeData =
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+        .loadProcessingTypeData(
+          processingType =>
+            ModelDependencies(
+              Map.empty,
+              componentId => DesignerWideComponentId(componentId.toString),
+              Some(workPath),
+              shouldIncludeComponentProvider(processingType, _),
+              ComponentDefinitionExtractionMode.FinalDefinition
+            ),
+          _ => TestFactory.deploymentManagerDependencies,
+        )
+        .unsafeRunSync()
     val parametersService = processingTypeData.getCombined().parametersService
 
     parametersService.scenarioParametersCombinationsWithWritePermission(TestFactory.adminUser()) shouldEqual List(

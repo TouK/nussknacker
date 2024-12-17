@@ -12,7 +12,8 @@ import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLo
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataState
 
 class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLoader: ProcessingTypeConfigsLoader)
-    extends ProcessingTypeDataLoader {
+    extends ProcessingTypeDataLoader
+    with LazyLogging {
 
   override def loadProcessingTypeData(
       getModelDependencies: ProcessingType => ModelDependencies,
@@ -20,17 +21,10 @@ class ProcessingTypesConfigBasedProcessingTypeDataLoader(processingTypeConfigsLo
   ): IO[ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]] = {
     processingTypeConfigsLoader
       .loadProcessingTypeConfigs()
-      .map(
-        ProcessingTypesConfigBasedProcessingTypeDataLoader
-          .loadProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies)
-      )
+      .map(createProcessingTypeData(_, getModelDependencies, getDeploymentManagerDependencies))
   }
 
-}
-
-object ProcessingTypesConfigBasedProcessingTypeDataLoader extends LazyLogging {
-
-  def loadProcessingTypeData(
+  private def createProcessingTypeData(
       processingTypesConfig: Map[String, ProcessingTypeConfig],
       getModelDependencies: ProcessingType => ModelDependencies,
       getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies
