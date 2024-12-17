@@ -52,6 +52,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.springframework.util.NumberUtilsConsts
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.lang.{
@@ -365,7 +366,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should set scale at least 18 when creating big double") {
     val result = evaluate[Any]("""(1).toBigDecimal""".stripMargin)
-    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe 18
+    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE
   }
 
   test("indexer access on unknown - array like case") {
