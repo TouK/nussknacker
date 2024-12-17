@@ -29,7 +29,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   }
 
   test("defaultConfig works") {
-    new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
+    DesignerConfigLoader(classLoader)
       .loadDesignerConfig()
       .unsafeRunSync()
       .rawConfig
@@ -40,7 +40,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultDesignerConfig.conf
     withNussknackerLocationsProperty(configUri.toString) {
-      val loadedConfig = new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
+      val loadedConfig = DesignerConfigLoader(classLoader)
         .loadDesignerConfig()
         .unsafeRunSync()
 
@@ -84,7 +84,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
       val result =
         try {
           System.setProperty(randomPropertyName, "I win!")
-          new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
+          DesignerConfigLoader(classLoader)
             .loadDesignerConfig()
             .unsafeRunSync()
         } finally {
