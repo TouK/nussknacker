@@ -364,9 +364,24 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0.5) +- BigDecimal(0.001)
   }
 
-  test("should set scale at least 18 when creating big double") {
+  test("should set scale at least default when creating big decimal from int") {
     val result = evaluate[Any]("""(1).toBigDecimal""".stripMargin)
     result.asInstanceOf[java.math.BigDecimal].scale() shouldBe NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE
+  }
+
+  test("should set scale at least default when creating big decimal from big int") {
+    val result = evaluate[Any]("""#a.toBigDecimal""".stripMargin, Context("asd", Map("a" -> JBigInteger.ONE)))
+    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE
+  }
+
+  test("should set scale at least default when creating big decimal from string with low scale") {
+    val result = evaluate[Any]("""("1.23").toBigDecimal""".stripMargin)
+    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE
+  }
+
+  test("should set high scale when creating big decimal from string with high scale") {
+    val result = evaluate[Any]("""("1.345345345345345345345345345345").toBigDecimal""".stripMargin)
+    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe 30
   }
 
   test("indexer access on unknown - array like case") {

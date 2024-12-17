@@ -69,7 +69,7 @@ object ToBigDecimalConversion extends ToNumericConversion[JBigDecimal] {
 
   override def convertEither(value: Any): Either[Throwable, JBigDecimal] =
     value match {
-      case v: JBigDecimal => Right(v)
+      case v: JBigDecimal => Right(v.setScale(Math.max(v.scale(), NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE)))
       case v: JBigInteger => Right(new JBigDecimal(v).setScale(NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE))
       case v: Number      => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
       case v: String =>
