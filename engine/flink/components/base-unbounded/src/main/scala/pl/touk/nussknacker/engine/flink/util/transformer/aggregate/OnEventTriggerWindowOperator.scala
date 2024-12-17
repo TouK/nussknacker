@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.functions.{AggregateFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{AggregateFunction, OpenContext, RuntimeContext}
 import org.apache.flink.api.common.state.AggregatingStateDescriptor
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.{KeyedStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
@@ -102,7 +101,7 @@ private class ValueEmittingWindowFunction(
   @transient
   private var contextIdGenerator: ContextIdGenerator = _
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
   }
 

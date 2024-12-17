@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.api.common.state.ValueState
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
@@ -47,7 +46,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K, V]](
   @transient
   private var contextIdGenerator: ContextIdGenerator = _
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     state = getRuntimeContext.getState(stateDescriptor)
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
   }

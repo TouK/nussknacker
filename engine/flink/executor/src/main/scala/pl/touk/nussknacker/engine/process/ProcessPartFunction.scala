@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process
 
-import org.apache.flink.api.common.functions.RichFunction
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.{OpenContext, RichFunction}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
@@ -22,8 +21,8 @@ trait ProcessPartFunction extends ExceptionHandlerFunction {
     }
   }
 
-  override def open(parameters: Configuration): Unit = {
-    super.open(parameters)
+  override def open(openContext: OpenContext): Unit = {
+    super.open(openContext)
     compilerData.open(getRuntimeContext, nodesUsed)
   }
 
@@ -46,7 +45,7 @@ trait ExceptionHandlerFunction extends RichFunction {
     }
   }
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     exceptionHandler = compilerData.prepareExceptionHandler(getRuntimeContext)
   }
 
