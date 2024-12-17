@@ -199,18 +199,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
     );
 }
 
-export function resolveSearchQuery(filterRawText: string): SearchQuery {
-    return parseRawTextToSearchQuery(filterRawText);
-}
-
-function splitString(input: string): string[] {
-    //split string by comma respecting quoted elements
-    //"a,b,c" -> ["a", "b", "c"]
-    //"a,\"b,c\",d" -> ["a", "b,c", "d"]
-    return input.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-}
-
-function parseRawTextToSearchQuery(text: string): SearchQuery {
+export function resolveSearchQuery(text: string): SearchQuery {
     const result: SearchQuery = {};
     const regex = /(\w+):\(([^)]*)\)/g;
     let match: RegExpExecArray | null;
@@ -226,4 +215,26 @@ function parseRawTextToSearchQuery(text: string): SearchQuery {
     result.plainQuery = text.slice(lastIndex).trim();
 
     return result;
+}
+
+export function searchQueryToString(query: SearchQuery): string {
+    const plainQuery = query.plainQuery;
+
+    const formattedParts = Object.entries(query)
+        .filter(([key]) => key !== "plainQuery")
+        .map(([key, value]) => {
+            if (Array.isArray(value)) {
+                return `${key}:(${value})`;
+            } else if (typeof value === "string" && value.length > 0) {
+                return `${key}:(${[value]})`;
+            }
+            return []; // Skip undefined or invalid values
+        })
+        .filter(Boolean) // Remove null values
+        .join(" "); // Join the formatted parts with a space
+
+    // Append plainQuery at the end without a key if it exists
+    return plainQuery
+        ? `${formattedParts} ${plainQuery}`.trim() // Ensure no trailing space
+        : formattedParts;
 }

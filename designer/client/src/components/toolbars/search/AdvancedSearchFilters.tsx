@@ -3,40 +3,24 @@ import { Button, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
 import { SearchLabel } from "../../sidePanels/SearchLabel";
-import { useNodeTypes, resolveSearchQuery } from "./utils";
+import { resolveSearchQuery, searchQueryToString, useNodeTypes } from "./utils";
+import { SearchQuery } from "./SearchResults";
 import { SearchLabeledAutocomplete } from "../../sidePanels/SearchLabeledAutocomplete";
 
-const transformInput = (input: string, fieldName: string) => {
-    return input === "" ? "" : `${fieldName}:(${input})`;
-};
-
-function extractSimpleSearchQuery(text: string): string {
-    const regex = /(\w+):\(([^)]*)\)/g;
-    let match: RegExpExecArray | null;
-    let lastIndex = 0;
-
-    while ((match = regex.exec(text)) !== null) {
-        lastIndex = regex.lastIndex;
-    }
-
-    const rest = text.slice(lastIndex).trim();
-
-    return rest;
-}
-
 export function AdvancedSearchFilters({
+    filterFields,
+    setFilterFields,
     filter,
     setFilter,
     setCollapsedHandler,
-    refForm,
 }: {
+    filterFields: SearchQuery;
+    setFilterFields: React.Dispatch<React.SetStateAction<SearchQuery>>;
     filter: string;
     setFilter: React.Dispatch<React.SetStateAction<string>>;
     setCollapsedHandler: React.Dispatch<React.SetStateAction<boolean>>;
-    refForm: MutableRefObject<HTMLFormElement>;
 }) {
     const { t } = useTranslation();
-    //const refForm = useRef<HTMLFormElement>(null);
 
     const displayNames = useMemo(
         () => ({
@@ -51,49 +35,24 @@ export function AdvancedSearchFilters({
         [t],
     );
 
-    //Here be dragons: direct DOM manipulation
     useEffect(() => {
-        if (refForm.current) {
-            const searchQuery = resolveSearchQuery(filter);
-            const formElements = refForm.current.elements;
-
-            Array.from(formElements).forEach((element: HTMLInputElement) => {
-                if (element.name in searchQuery) {
-                    element.value = (searchQuery[element.name] || []).join(",");
-                } else {
-                    element.value = "";
-                }
-            });
-        }
+        const searchQuery = resolveSearchQuery(filter);
+        setFilterFields(searchQuery);
     }, [filter]);
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const formData = new FormData(event.currentTarget);
-
-        const transformedInputs = Array.from(formData.entries())
-            .map(([fieldName, fieldValue]) => {
-                const input = (fieldValue as string) || "";
-                return transformInput(input, fieldName);
-            })
-            .filter((input) => input !== "");
-
-        const finalText = transformedInputs.join(" ").trim() + " " + extractSimpleSearchQuery(filter);
-
-        setFilter(finalText);
+        setFilter(searchQueryToString(filterFields));
         setCollapsedHandler(false);
     };
 
     const handleClear = () => {
-        setFilter(extractSimpleSearchQuery(filter));
-
-        refForm.current.reset();
+        setFilter(filterFields?.plainQuery);
     };
 
     return (
         <Box
-            ref={refForm}
             component="form"
             onSubmit={handleSubmit}
             sx={{
@@ -105,25 +64,30 @@ export function AdvancedSearchFilters({
             }}
         >
             <Typography fontWeight="bold">{t("search.panel.advancedFilters.label", "Advanced Search")}</Typography>
-            <SearchLabeledInput name="name">
+            <SearchLabeledInput name="name" value={filterFields?.name || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["name"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="paramValue">
+            <SearchLabeledInput name="paramValue" value={filterFields?.paramValue || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["paramValue"]} />
             </SearchLabeledInput>
-            <SearchLabeledAutocomplete name="type" values={useNodeTypes()}>
+            <SearchLabeledAutocomplete
+                name="type"
+                options={useNodeTypes()}
+                value={filterFields?.type || []}
+                setFilterFields={setFilterFields}
+            >
                 <SearchLabel label={displayNames["type"]} />
             </SearchLabeledAutocomplete>
-            <SearchLabeledInput name="paramName">
+            <SearchLabeledInput name="paramName" value={filterFields?.paramName || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["paramName"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="description">
+            <SearchLabeledInput name="description" value={filterFields?.description || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["description"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="outputValue">
+            <SearchLabeledInput name="outputValue" value={filterFields?.outputValue || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["outputValue"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="edgeExpression">
+            <SearchLabeledInput name="edgeExpression" value={filterFields?.edgeExpression || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["edgeExpression"]} />
             </SearchLabeledInput>
             <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "100%", mt: 2, mb: 1 }}>
