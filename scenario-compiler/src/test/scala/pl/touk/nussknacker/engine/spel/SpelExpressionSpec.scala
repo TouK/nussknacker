@@ -358,11 +358,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should set default scale when converting to big decimal") {
-    val result = evaluate[Any]("""
-                                 |(1).toBigDecimal / 2
-                                 |""".stripMargin)
+  test("should set large enough scale when converting to big decimal so that division by 2 works as expected") {
+    val result = evaluate[Any]("""(1).toBigDecimal / 2""".stripMargin)
     BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0.5) +- BigDecimal(0.001)
+  }
+
+  test("should set scale at least 18 when creating big double") {
+    val result = evaluate[Any]("""(1).toBigDecimal""".stripMargin)
+    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe 18
   }
 
   test("indexer access on unknown - array like case") {

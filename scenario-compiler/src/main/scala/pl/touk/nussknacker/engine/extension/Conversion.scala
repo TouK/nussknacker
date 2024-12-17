@@ -66,14 +66,16 @@ abstract class ToNumericConversion[T >: Null <: AnyRef: ClassTag] extends Conver
 
 object ToBigDecimalConversion extends ToNumericConversion[JBigDecimal] {
 
-  override def convertEither(value: Any): Either[Throwable, JBigDecimal] =
-    value match {
+  override def convertEither(value: Any): Either[Throwable, JBigDecimal] = {
+    val converted = value match {
       case v: JBigDecimal => Right(v)
       case v: JBigInteger => Right(new JBigDecimal(v))
       case v: Number      => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
       case v: String      => Try(new JBigDecimal(v)).toEither
       case _              => Left(new IllegalArgumentException(s"Cannot convert: $value to BigDecimal"))
     }
+    converted.map(e => e.setScale(Math.max(18, e.scale())))
+  }
 
 }
 
