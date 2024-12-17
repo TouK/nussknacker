@@ -21,7 +21,7 @@ trait DesignerConfigLoader {
   * Result of config loading still keep version with unresolved env variables for purpose of config loading on model side - see
   * InputConfigDuringExecution and ModelConfigLoader
   */
-class AlwaysLoadingFileBasedDesignerConfigLoader(classLoader: ClassLoader) extends DesignerConfigLoader {
+class AlwaysLoadingFileBasedDesignerConfigLoader private (classLoader: ClassLoader) extends DesignerConfigLoader {
 
   private val configLocationsProperty: String = "nussknacker.config.locations"
 
@@ -36,6 +36,13 @@ class AlwaysLoadingFileBasedDesignerConfigLoader(classLoader: ClassLoader) exten
       unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
     } yield DesignerConfig(ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults))
   }
+
+}
+
+object AlwaysLoadingFileBasedDesignerConfigLoader {
+
+  def apply(classLoader: ClassLoader): AlwaysLoadingFileBasedDesignerConfigLoader =
+    new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
 
 }
 
