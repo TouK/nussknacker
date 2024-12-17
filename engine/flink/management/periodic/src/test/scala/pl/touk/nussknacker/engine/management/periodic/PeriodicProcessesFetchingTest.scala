@@ -11,7 +11,11 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
+import pl.touk.nussknacker.engine.management.periodic.service.{
+  DefaultAdditionalDeploymentDataProvider,
+  EmptyListener,
+  ProcessConfigEnricher
+}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.Clock
@@ -46,6 +50,7 @@ class PeriodicProcessesFetchingTest
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
       deploymentRetryConfig = DeploymentRetryConfig(),
       executionConfig = executionConfig,
+      maxFetchedPeriodicScenarioActivities = Some(200),
       processConfigEnricher = ProcessConfigEnricher.identity,
       clock = Clock.systemDefaultZone(),
       new ProcessingTypeActionServiceStub,
