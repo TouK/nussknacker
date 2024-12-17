@@ -3,7 +3,14 @@ package pl.touk.nussknacker.ui.config
 import cats.effect.IO
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
+
+trait DesignerConfigLoader {
+
+  def loadDesignerConfig(): IO[DesignerConfig]
+
+}
 
 /**
   * This class handles two parts of ui config loading:
@@ -14,27 +21,43 @@ import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
   * Result of config loading still keep version with unresolved env variables for purpose of config loading on model side - see
   * InputConfigDuringExecution and ModelConfigLoader
   */
-object DesignerConfigLoader {
+class AlwaysLoadingFileBasedDesignerConfigLoader private (classLoader: ClassLoader) extends DesignerConfigLoader {
+
+  private val configLocationsProperty: String = "nussknacker.config.locations"
 
   private val defaultConfigResource = "defaultDesignerConfig.conf"
 
-  def load(classLoader: ClassLoader): IO[ConfigWithUnresolvedVersion] = {
+  override def loadDesignerConfig(): IO[DesignerConfig] = {
+    val locationsPropertyValueOpt = Option(System.getProperty(configLocationsProperty))
+    val locations                 = locationsPropertyValueOpt.map(UriUtils.extractListOfLocations).getOrElse(List.empty)
     for {
-      baseConfig   <- IO.blocking(ConfigFactoryExt.parseUnresolved(classLoader = classLoader))
-      loadedConfig <- load(baseConfig, classLoader)
-    } yield loadedConfig
+      baseUnresolvedConfig  <- IO.blocking(new ConfigFactoryExt(classLoader).parseUnresolved(locations))
+      parsedDefaultUiConfig <- IO.blocking(ConfigFactory.parseResources(classLoader, defaultConfigResource))
+      unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
+    } yield DesignerConfig(ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults))
   }
 
-  def load(baseUnresolvedConfig: Config, classLoader: ClassLoader): IO[ConfigWithUnresolvedVersion] = {
-    IO.blocking {
-      val parsedDefaultUiConfig                  = ConfigFactory.parseResources(classLoader, defaultConfigResource)
-      val unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
-      ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults)
-    }
-  }
+}
 
-  def from(config: Config): ConfigWithUnresolvedVersion = {
-    ConfigWithUnresolvedVersion(this.getClass.getClassLoader, config)
-  }
+object AlwaysLoadingFileBasedDesignerConfigLoader {
+
+  def apply(classLoader: ClassLoader): AlwaysLoadingFileBasedDesignerConfigLoader =
+    new AlwaysLoadingFileBasedDesignerConfigLoader(classLoader)
+
+}
+
+/**
+ * This implementation is more straightforward - it only parse config without any property checking and fallbacks
+ */
+class SimpleConfigLoadingDesignerConfigLoader(loadConfig: => Config) extends DesignerConfigLoader {
+
+  override def loadDesignerConfig(): IO[DesignerConfig] = IO.delay(DesignerConfig.from(loadConfig))
+
+}
+
+object DesignerConfigLoader {
+
+  def fromConfig(loadConfig: => Config): SimpleConfigLoadingDesignerConfigLoader =
+    new SimpleConfigLoadingDesignerConfigLoader(loadConfig)
 
 }

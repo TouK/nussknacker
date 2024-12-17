@@ -38,10 +38,10 @@ import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
-import pl.touk.nussknacker.ui.LoadableConfigBasedNussknackerConfig
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
+import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -147,12 +147,13 @@ trait NuResourcesTest
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val processingTypeDataReader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(
-      new LoadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(testConfig)))
-    )
+    val designerConfig = DesignerConfig.from(testConfig)
     ProcessingTypeDataProvider(
-      processingTypeDataReader
-        .loadProcessingTypeData(_ => modelDependencies, _ => deploymentManagerDependencies)
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(() => IO.pure(designerConfig.processingTypeConfigs))
+        .loadProcessingTypeData(
+          _ => modelDependencies,
+          _ => deploymentManagerDependencies
+        )
         .unsafeRunSync()
     )
   }
