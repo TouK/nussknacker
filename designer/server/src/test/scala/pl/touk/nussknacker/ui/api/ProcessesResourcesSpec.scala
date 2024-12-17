@@ -129,6 +129,30 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("/api/processes should return lighter details without ProcessAction's additional fields") {
+    createDeployedWithCustomActionScenario(processName, category = Category1)
+    Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[List[ScenarioWithDetails]]
+
+      loadedProcess.head.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+      loadedProcess.head.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+      loadedProcess.head.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, _, _, None, None, None, buildInfo)
+            ) if buildInfo.isEmpty =>
+      }
+    }
+  }
+
   test("return single process") {
     createDeployedExampleScenario(processName, category = Category1)
     MockableDeploymentManager.configureScenarioStatuses(
