@@ -61,6 +61,7 @@ object PeriodicDeploymentManager {
       additionalDeploymentDataProvider,
       periodicBatchConfig.deploymentRetry,
       periodicBatchConfig.executionConfig,
+      periodicBatchConfig.maxFetchedPeriodicScenarioActivities,
       processConfigEnricher,
       clock,
       dependencies.actionService,

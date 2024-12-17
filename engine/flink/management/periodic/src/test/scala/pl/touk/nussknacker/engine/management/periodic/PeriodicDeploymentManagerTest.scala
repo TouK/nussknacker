@@ -72,6 +72,7 @@ class PeriodicDeploymentManagerTest
       additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
       deploymentRetryConfig = DeploymentRetryConfig(),
       executionConfig = executionConfig,
+      maxFetchedPeriodicScenarioActivities = None,
       processConfigEnricher = ProcessConfigEnricher.identity,
       clock = Clock.systemDefaultZone(),
       new ProcessingTypeActionServiceStub,

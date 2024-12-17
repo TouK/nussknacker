@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.flink.api
 
 import com.typesafe.config.Config
-import io.circe.{Decoder, Encoder}
+import io.circe.Encoder
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
@@ -73,12 +72,8 @@ object NkGlobalParameters {
     NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namespaceTags, additionalInformation)
   }
 
-  def setInContext(ec: ExecutionConfig, globalParameters: NkGlobalParameters): Unit = {
-    ec.setGlobalJobParameters(globalParameters)
-  }
-
-  def readFromContext(ec: ExecutionConfig): Option[NkGlobalParameters] =
-    NkGlobalParametersToMapEncoder.decode(ec.getGlobalJobParameters.toMap.asScala.toMap)
+  def fromMap(jobParameters: java.util.Map[String, String]): Option[NkGlobalParameters] =
+    NkGlobalParametersToMapEncoder.decode(jobParameters.asScala.toMap)
 
   private object NkGlobalParametersToMapEncoder {
 

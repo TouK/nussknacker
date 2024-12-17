@@ -128,7 +128,7 @@ class FlinkProcessRegistrar(
       resultCollector: ResultCollector,
       deploymentData: DeploymentData
   ): Unit = {
-    val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
+    val globalParameters = NkGlobalParameters.fromMap(env.getConfig.getGlobalJobParameters.toMap)
 
     def nodeContext(
         nodeComponentId: NodeComponentInfo,

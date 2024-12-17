@@ -53,8 +53,7 @@ object ExecutionConfigPreparer extends LazyLogging {
     override def prepareExecutionConfig(
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
-      NkGlobalParameters.setInContext(
-        config,
+      config.setGlobalJobParameters(
         NkGlobalParameters.create(
           buildInfo,
           jobData.processVersion,
