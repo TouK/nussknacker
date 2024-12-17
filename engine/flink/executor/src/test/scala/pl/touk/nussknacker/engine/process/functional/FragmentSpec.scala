@@ -10,9 +10,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 
@@ -21,6 +23,29 @@ import java.util.Date
 class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
+
+  test("should properly convert big decimal input") {
+
+    // the idea is to perform "1 / 2" but "1" should be first converted to BigDecimal via implicit conversion performed
+    // when integer is passed to fragment
+    val process = resolve(
+      ScenarioBuilder
+        .streaming("proc1")
+        .source("id", "input")
+        .fragmentOneOut("sub", "fragmentWithBigDecimalInput", "output", "fragmentResult", "param" -> "1".spel)
+        .processorEnd("end1", "logService", "all" -> "#fragmentResult.a / 2".spel)
+    )
+
+    val data = List(
+      SimpleRecord("1", 12, "a", new Date(0))
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+    val results = ProcessTestHelpers.logServiceResultsHolder.results
+
+    results.size shouldBe 1
+    BigDecimal(results(0).asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0.5) +- BigDecimal(0.0001)
+  }
 
   test("should accept same id in fragment and main process ") {
 
@@ -101,6 +126,20 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   }
 
   private def resolve(scenario: CanonicalProcess) = {
+    val fragmentWithBigDecimalInput = CanonicalProcess(
+      MetaData("fragmentWithBigDecimalInput", FragmentSpecificData()),
+      List(
+        canonicalnode.FlatNode(
+          FragmentInputDefinition(
+            "start",
+            List(FragmentParameter(ParameterName("param"), FragmentClazzRef[java.math.BigDecimal]))
+          )
+        ),
+        canonicalnode.FlatNode(FragmentOutputDefinition("outB1", "output", List(Field("a", Expression.spel("#param")))))
+      ),
+      List.empty
+    )
+
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
@@ -182,7 +221,9 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     )
 
     val resolved =
-      FragmentResolver(List(fragmentWithSplit, fragment, fragmentWithGlobalVar, diamondFragment)).resolve(scenario)
+      FragmentResolver(
+        List(fragmentWithBigDecimalInput, fragmentWithSplit, fragment, fragmentWithGlobalVar, diamondFragment)
+      ).resolve(scenario)
 
     resolved shouldBe Symbol("valid")
     resolved.toOption.get
