@@ -28,27 +28,27 @@ const fieldsSelectors: FilterSelector = [
         selector: (node) => [node.nodeType, node.ref?.typ, node.ref?.id, node.type, node.service?.id],
     },
     {
-        name: "paramValue",
+        name: "value",
         selector: (node) => node.ref?.outputVariableNames && Object.values(node.ref?.outputVariableNames),
     },
     {
-        name: "paramName",
+        name: "label",
         selector: (node) => node.ref?.outputVariableNames && Object.keys(node.ref?.outputVariableNames),
     },
     {
-        name: "paramValue",
+        name: "value",
         selector: (node) => [node.expression, node.exprVal, node.value],
     },
     {
-        name: "outputValue",
+        name: "output",
         selector: (node) => [node.outputName, node.output, node.outputVar, node.varName],
     },
     {
-        name: "paramValue",
+        name: "value",
         selector: (node) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.expression),
     },
     {
-        name: "paramName",
+        name: "label",
         selector: (node) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.name),
     },
 ];
@@ -123,10 +123,10 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
         () => ({
             name: t("panels.search.field.id", "Name"),
             description: t("panels.search.field.description", "Description"),
-            paramName: t("panels.search.field.paramName", "Label"),
-            paramValue: t("panels.search.field.paramValue", "Value"),
-            outputValue: t("panels.search.field.outputValue", "Output"),
-            edgeExpression: t("panels.search.field.edgeExpression", "Edge"),
+            label: t("panels.search.field.label", "Label"),
+            value: t("panels.search.field.value", "Value"),
+            output: t("panels.search.field.output", "Output"),
+            edge: t("panels.search.field.edge", "Edge"),
             type: t("panels.search.field.type", "Type"),
         }),
         [t],
@@ -145,7 +145,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                             .filter((e) => matchFilters(e.edgeType?.condition, [searchQuery.plainQuery]));
 
                         groups = findFields([searchQuery.plainQuery], node)
-                            .concat(edges.length ? "edgeExpression" : null)
+                            .concat(edges.length ? "edge" : null)
                             .map((name) => displayNames[name])
                             .filter(Boolean);
 
@@ -156,15 +156,15 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                             .filter((e) => matchFilters(e.edgeType?.condition, [searchQuery.plainQuery]));
 
                         const groupsAux: string[] = findFields([searchQuery.plainQuery], node)
-                            .concat(edgesAux.length ? "edgeExpression" : null)
+                            .concat(edgesAux.length ? "edge" : null)
                             .map((name) => displayNames[name])
                             .filter(Boolean);
 
                         edges =
-                            "edgeExpression" in searchQuery
+                            "edge" in searchQuery
                                 ? allEdges
                                       .filter((e) => e.from === node.id)
-                                      .filter((e) => matchFilters(e.edgeType?.condition, searchQuery.edgeExpression))
+                                      .filter((e) => matchFilters(e.edgeType?.condition, searchQuery.edge))
                                 : [];
 
                         const keyNamesRelevantForFiltering = Object.keys(searchQuery).filter(
@@ -178,7 +178,7 @@ export function useFilteredNodes(searchQuery: SearchQuery): {
                         groups = keyNamesRelevantForFiltering
                             .map((key) => findFieldsUsingSelectorWithName(key, searchQuery[key], node))
                             .flat()
-                            .concat(edges.length ? "edgeExpression" : null)
+                            .concat(edges.length ? "edge" : null)
                             .map((name) => displayNames[name])
                             .filter(Boolean);
 
@@ -223,7 +223,7 @@ export function searchQueryToString(query: SearchQuery): string {
     const formattedParts = Object.entries(query)
         .filter(([key]) => key !== "plainQuery")
         .map(([key, value]) => {
-            if (Array.isArray(value)) {
+            if (Array.isArray(value) && !(value.length === 1 && value[0] === "")) {
                 return `${key}:(${value})`;
             } else if (typeof value === "string" && value.length > 0) {
                 return `${key}:(${[value]})`;

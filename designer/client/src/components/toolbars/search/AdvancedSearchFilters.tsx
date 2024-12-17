@@ -1,4 +1,4 @@
-import React, { MutableRefObject, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Button, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SearchLabeledInput } from "../../sidePanels/SearchLabeledInput";
@@ -27,10 +27,10 @@ export function AdvancedSearchFilters({
             name: t("panels.search.field.id", "Name"),
             description: t("panels.search.field.description", "Description"),
             type: t("panels.search.field.type", "Type"),
-            paramName: t("panels.search.field.paramName", "Label"),
-            paramValue: t("panels.search.field.paramValue", "Value"),
-            outputValue: t("panels.search.field.outputValue", "Output"),
-            edgeExpression: t("panels.search.field.edgeExpression", "Edge"),
+            label: t("panels.search.field.paramName", "Label"),
+            value: t("panels.search.field.paramValue", "Value"),
+            output: t("panels.search.field.outputValue", "Output"),
+            edge: t("panels.search.field.edgeExpression", "Edge"),
         }),
         [t],
     );
@@ -67,8 +67,8 @@ export function AdvancedSearchFilters({
             <SearchLabeledInput name="name" value={filterFields?.name || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["name"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="paramValue" value={filterFields?.paramValue || []} setFilterFields={setFilterFields}>
-                <SearchLabel label={displayNames["paramValue"]} />
+            <SearchLabeledInput name="value" value={filterFields?.value || []} setFilterFields={setFilterFields}>
+                <SearchLabel label={displayNames["value"]} />
             </SearchLabeledInput>
             <SearchLabeledAutocomplete
                 name="type"
@@ -78,17 +78,17 @@ export function AdvancedSearchFilters({
             >
                 <SearchLabel label={displayNames["type"]} />
             </SearchLabeledAutocomplete>
-            <SearchLabeledInput name="paramName" value={filterFields?.paramName || []} setFilterFields={setFilterFields}>
-                <SearchLabel label={displayNames["paramName"]} />
+            <SearchLabeledInput name="label" value={filterFields?.label || []} setFilterFields={setFilterFields}>
+                <SearchLabel label={displayNames["label"]} />
             </SearchLabeledInput>
             <SearchLabeledInput name="description" value={filterFields?.description || []} setFilterFields={setFilterFields}>
                 <SearchLabel label={displayNames["description"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="outputValue" value={filterFields?.outputValue || []} setFilterFields={setFilterFields}>
-                <SearchLabel label={displayNames["outputValue"]} />
+            <SearchLabeledInput name="output" value={filterFields?.output || []} setFilterFields={setFilterFields}>
+                <SearchLabel label={displayNames["output"]} />
             </SearchLabeledInput>
-            <SearchLabeledInput name="edgeExpression" value={filterFields?.edgeExpression || []} setFilterFields={setFilterFields}>
-                <SearchLabel label={displayNames["edgeExpression"]} />
+            <SearchLabeledInput name="edge" value={filterFields?.edge || []} setFilterFields={setFilterFields}>
+                <SearchLabel label={displayNames["edge"]} />
             </SearchLabeledInput>
             <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "100%", mt: 2, mb: 1 }}>
                 <Button sx={{ width: "45%" }} size="small" variant="outlined" onClick={handleClear}>
