@@ -142,7 +142,9 @@ public abstract class NumberUtils {
 			} else if (number instanceof Float) {
 				return (T) bigDecimal.setScale(FLOAT_SCALE, RoundingMode.UNNECESSARY);
 			} else {
-                // TODO_PAWEL a moze tutaj tez jest zle?
+                if (bigDecimal.scale() < 18) {
+                    return (T) bigDecimal.setScale(18, RoundingMode.UNNECESSARY);
+                }
 				return (T) bigDecimal;
 			}
 		}
