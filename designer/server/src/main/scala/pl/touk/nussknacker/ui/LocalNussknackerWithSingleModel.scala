@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui
 
 import cats.effect.{IO, Resource}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
@@ -49,7 +49,10 @@ object LocalNussknackerWithSingleModel {
       modelData = Map(typeName -> (category, modelData)),
       deploymentManagerProvider = deploymentManagerProvider
     )
-    val designerConfigLoader = DesignerConfigLoader.fromConfig(appConfig)
+    val designerConfigLoader = DesignerConfigLoader.fromConfig(
+      // This map is ignored but must exist
+      appConfig.withValue("scenarioTypes", ConfigValueFactory.fromMap(Map.empty[String, ConfigValue].asJava))
+    )
     val appFactory = new NussknackerAppFactory(
       designerConfigLoader,
       _ => local
