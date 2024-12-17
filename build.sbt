@@ -321,7 +321,7 @@ val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.12.0"
 val testContainersScalaV    = "0.41.4"
 val testContainersJavaV     = "1.20.1"
-val nettyV                  = "4.1.113.Final"
+val nettyV                  = "4.1.115.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
 val akkaV                     = "2.6.20"
@@ -330,8 +330,8 @@ val akkaManagementV           = "1.1.4"
 val akkaHttpCirceV            = "1.39.2"
 val slickV                    = "3.4.1"  // 3.5 drops Scala 2.12
 val slickPgV                  = "0.21.1" // 0.22.2 uses Slick 3.5
-val hikariCpV                 = "5.1.0"
-val hsqldbV                   = "2.7.3"
+val hikariCpV                 = "6.2.1"
+val hsqldbV                   = "2.7.4"
 val postgresV                 = "42.7.4"
 // Flway 10 requires Java 17
 val flywayV                   = "9.22.3"

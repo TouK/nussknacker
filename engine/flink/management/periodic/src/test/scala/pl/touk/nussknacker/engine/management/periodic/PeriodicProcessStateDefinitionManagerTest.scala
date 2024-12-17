@@ -91,7 +91,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
         currentlyPresentedVersionId = Some(VersionId(5)),
       )
     ) shouldEqual Map(
-      ScenarioActionName.PerformSingleExecution -> "Version 4 is deployed, but different version 5 is displayed"
+      ScenarioActionName.RunOffSchedule -> "Version 4 is deployed, but different version 5 is displayed"
     )
   }
 
@@ -104,7 +104,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
         currentlyPresentedVersionId = Some(VersionId(5)),
       )
     ) shouldEqual Map(
-      ScenarioActionName.PerformSingleExecution -> "Disabled for CANCELED status."
+      ScenarioActionName.RunOffSchedule -> "Disabled for CANCELED status."
     )
   }
 

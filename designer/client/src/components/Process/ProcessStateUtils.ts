@@ -18,11 +18,9 @@ class ProcessStateUtils {
 
     public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.Archive);
 
-    public canSeePerformSingleExecution = (state: ProcessStateType): boolean =>
-        state?.visibleActions.includes(PredefinedActionName.PerformSingleExecution);
+    public canSeeRunOffSchedule = (state: ProcessStateType): boolean => state?.visibleActions.includes(PredefinedActionName.RunOffSchedule);
 
-    public canPerformSingleExecution = (state: ProcessStateType): boolean =>
-        state?.allowedActions.includes(PredefinedActionName.PerformSingleExecution);
+    public canRunOffSchedule = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionName.RunOffSchedule);
 
     getStateDescription({ isArchived, isFragment }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {
