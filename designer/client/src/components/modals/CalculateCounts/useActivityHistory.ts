@@ -36,7 +36,7 @@ export function useActivityHistory(processName: string): Range[] {
                         from: () => from,
                         to: () => (to ? moment(to) : moment().add(1, "day").startOf("day")),
                         name: i
-                            ? t("calculateCounts.range.prevAction", "Previous {{activity}} #{{i}} {{date}}", {
+                            ? t("calculateCounts.range.prevAction", "{{activity}} #{{i}} {{date}}", {
                                   activity: displayableNameOfPredefinedActivityType(current.type),
                                   i: all.length - i,
                                   date: from.format(DATE_FORMAT),
