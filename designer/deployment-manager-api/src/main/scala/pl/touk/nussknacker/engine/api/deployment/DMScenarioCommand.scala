@@ -81,8 +81,8 @@ case class DMCancelScenarioCommand(scenarioName: ProcessName, user: User) extend
 case class DMStopScenarioCommand(scenarioName: ProcessName, savepointDir: Option[String], user: User)
     extends DMScenarioCommand[SavepointResult]
 
-case class DMPerformSingleExecutionCommand(
+case class DMRunOffScheduleCommand(
     processVersion: ProcessVersion,
     canonicalProcess: CanonicalProcess,
     user: User,
-) extends DMScenarioCommand[SingleExecutionResult]
+) extends DMScenarioCommand[RunOffScheduleResult]

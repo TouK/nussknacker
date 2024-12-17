@@ -2,9 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -81,8 +80,8 @@ class FlinkKafkaUniversalSink(
 
     @transient private var encodeRecord: Any => AnyRef = _
 
-    override def open(parameters: Configuration): Unit = {
-      super.open(parameters)
+    override def open(openContext: OpenContext): Unit = {
+      super.open(openContext)
       encodeRecord = schemaSupportDispatcher
         .forSchemaType(schema.getParsedSchema.schemaType())
         .formValueEncoder(schema.getParsedSchema, validationMode)

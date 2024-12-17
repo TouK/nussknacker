@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersA
 import pl.touk.nussknacker.http.backend.FixedAsyncHttpClientBackendProvider
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
-import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
+import pl.touk.nussknacker.openapi.{ApiKeySecret, OpenAPIServicesConfig, SecurityConfig, SecuritySchemeName}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.net.URL
@@ -44,10 +44,10 @@ class OpenAPIServiceSpec
     val client = new DefaultAsyncHttpClient()
     try {
       new StubService().withCustomerService { port =>
-        val securities = Map("apikey" -> ApiKeyConfig("TODO"))
+        val secretBySchemeName = Map(SecuritySchemeName("apikey") -> ApiKeySecret("TODO"))
         val config = OpenAPIServicesConfig(
           new URL("http://foo"),
-          security = Some(securities),
+          security = secretBySchemeName,
           rootUrl = Some(new URL(s"http://localhost:$port"))
         )
         val services = SwaggerParser.parse(definition, config).collect { case Valid(service) =>

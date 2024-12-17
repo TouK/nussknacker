@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
-import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction, RuntimeContext}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ContextInitializingFunction}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -14,7 +13,7 @@ class FlinkContextInitializingFunction[Raw](
 
   private var initializingStrategy: ContextInitializingFunction[Raw] = _
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     val contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
     initializingStrategy = contextInitializer.initContext(contextIdGenerator)
   }
