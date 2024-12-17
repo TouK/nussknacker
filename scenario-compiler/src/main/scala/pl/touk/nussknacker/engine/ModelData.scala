@@ -24,7 +24,12 @@ import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
+import pl.touk.nussknacker.engine.util.loader.{
+  DeploymentManagersClassLoader,
+  ModelClassLoader,
+  ProcessConfigCreatorLoader,
+  ScalaServiceLoader
+}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 import java.net.URL
@@ -42,9 +47,11 @@ object ModelData extends LazyLogging {
 
   def apply(
       processingTypeConfig: ProcessingTypeConfig,
-      dependencies: ModelDependencies
+      dependencies: ModelDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader
   ): ModelData = {
-    val modelClassLoader = ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt)
+    val modelClassLoader =
+      ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt, deploymentManagersClassLoader)
     ClassLoaderModelData(
       _.resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader.classLoader),
       modelClassLoader,

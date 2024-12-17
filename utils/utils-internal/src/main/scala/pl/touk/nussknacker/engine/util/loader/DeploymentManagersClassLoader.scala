@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.processingtype.loader
+package pl.touk.nussknacker.engine.util.loader
 
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
@@ -29,3 +29,4 @@ object DeploymentManagersClassLoader extends LazyLogging {
 }
 
 class DeploymentManagersClassLoader private (urls: Seq[URL], parent: ClassLoader) extends URLClassLoader(urls, parent)
+

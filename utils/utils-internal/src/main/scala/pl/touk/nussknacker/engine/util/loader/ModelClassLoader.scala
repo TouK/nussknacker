@@ -28,11 +28,12 @@ object ModelClassLoader extends LazyLogging {
   def apply(
       urls: List[String],
       workingDirectoryOpt: Option[Path],
+      deploymentManagersClassLoader: DeploymentManagersClassLoader,
       jarExtension: String = defaultJarExtension
   ): ModelClassLoader = {
     val postProcessedURLs = urls.map(_.convertToURL(workingDirectoryOpt)).flatMap(_.expandFiles(jarExtension))
     ModelClassLoader(
-      new URLClassLoader(postProcessedURLs.toArray, this.getClass.getClassLoader),
+      new URLClassLoader(postProcessedURLs.toArray, deploymentManagersClassLoader),
       postProcessedURLs
     )
   }

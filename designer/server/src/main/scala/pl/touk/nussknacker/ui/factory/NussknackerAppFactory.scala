@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.{LoadableDesignerConfigBasedNussknackerConfig, NussknackerConfig}
 import pl.touk.nussknacker.ui.db.DbRef
