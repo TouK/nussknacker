@@ -10,10 +10,11 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{
 import java.lang
 import java.math.MathContext
 import java.math.RoundingMode
+import javax.annotation.Nullable
 
 trait MathUtils {
 
-  def min(n1: Number, n2: Number): Number = {
+  def min(@Nullable n1: Number, @Nullable n2: Number): Number = {
     implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
     withNotNullValues(n1, n2) {
       withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerReturningNumber {
@@ -37,7 +38,7 @@ trait MathUtils {
     }
   }
 
-  def max(n1: Number, n2: Number): Number = {
+  def max(@Nullable n1: Number, @Nullable n2: Number): Number = {
     implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
     withNotNullValues(n1, n2) {
       withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerReturningNumber {
@@ -205,7 +206,7 @@ trait MathUtils {
   def equal(n1: Number, n2: Number): Boolean          = compare(n1, n2) == 0
   def notEqual(n1: Number, n2: Number): Boolean       = compare(n1, n2) != 0
 
-  private def promoteThenSum(n1: Number, n2: Number)(
+  private def promoteThenSum(@Nullable n1: Number, @Nullable n2: Number)(
       implicit promotionStrategy: ReturningSingleClassPromotionStrategy
   ) = {
     withNotNullValues(n1, n2) {
@@ -222,7 +223,7 @@ trait MathUtils {
     }
   }
 
-  protected def withNotNullValues(n1: Number, n2: Number)(
+  protected def withNotNullValues(@Nullable n1: Number, @Nullable n2: Number)(
       f: => Number
   )(implicit promotionStrategy: ReturningSingleClassPromotionStrategy): Number = {
     if (n1 == null) {
