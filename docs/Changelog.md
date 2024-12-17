@@ -39,6 +39,7 @@
   * [#7376](https://github.com/TouK/nussknacker/pull/7376) Previously, when count was > 1, the value was evaluated once
     and emitted times count. For example: if the value was evaluated to be a random UUID and count was 5, one UUID was
     generated and emitted 5 times. Now in one count batch each value is evaluated separately.
+* [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields and `null` attributes.
 
 ## 1.18
 
