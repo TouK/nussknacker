@@ -32,6 +32,7 @@
 * [#7341](https://github.com/TouK/nussknacker/pull/7341) Added possibility to choose presets and define lists for Integer typed parameter inputs in fragments.
 * [#7356](https://github.com/TouK/nussknacker/pull/7356) Integers converted to BigDecimals have scale 18,
   this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
+* [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields.
 
 ## 1.18
 
