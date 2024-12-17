@@ -136,7 +136,7 @@ class DelayedFlinkKafkaConsumer[T](
       runtimeContext.getProcessingTimeService,
       runtimeContext.getExecutionConfig.getAutoWatermarkInterval,
       runtimeContext.getUserCodeClassLoader,
-      runtimeContext.getTaskNameWithSubtasks,
+      runtimeContext.getTaskInfo.getTaskNameWithSubtasks,
       runtimeContext.getMetricGroup,
       consumerMetricGroup,
       deserializer,

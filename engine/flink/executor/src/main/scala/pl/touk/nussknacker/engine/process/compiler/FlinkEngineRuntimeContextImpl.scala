@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -15,9 +14,10 @@ case class FlinkEngineRuntimeContextImpl(
     metricsProvider: MetricsProviderForScenario
 ) extends FlinkEngineRuntimeContext {
 
-  @silent("deprecated")
   override def contextIdGenerator(nodeId: String): ContextIdGenerator =
-    new IncContextIdGenerator(jobData.metaData.name.value + "-" + nodeId + "-" + runtimeContext.getIndexOfThisSubtask)
+    new IncContextIdGenerator(
+      jobData.metaData.name.value + "-" + nodeId + "-" + runtimeContext.getTaskInfo.getIndexOfThisSubtask
+    )
 
 }
 
