@@ -9,7 +9,7 @@ export enum PredefinedActionName {
     Archive = "ARCHIVE",
     UnArchive = "UNARCHIVE",
     Pause = "PAUSE",
-    PerformSingleExecution = "PERFORM_SINGLE_EXECUTION",
+    RunOffSchedule = "RUN_OFF_SCHEDULE",
 }
 
 export type ActionName = string;
