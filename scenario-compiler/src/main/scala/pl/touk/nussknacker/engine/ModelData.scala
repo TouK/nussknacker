@@ -247,8 +247,9 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition =
+  final def modelDefinition: ModelDefinition = withThisAsContextClassLoader {
     modelDefinitionWithClasses.modelDefinition
+  }
 
   private lazy val dictServicesFactory: DictServicesFactory =
     DictServicesFactoryLoader.justOne(modelClassLoader.classLoader)
