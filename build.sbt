@@ -38,10 +38,6 @@ lazy val silencerV_2_12 = "1.6.0"
 def propOrEnv(name: String, default: String): String = propOrEnv(name).getOrElse(default)
 def propOrEnv(name: String): Option[String]          = Option(System.getProperty(name)).orElse(sys.env.get(name))
 
-//by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
-val includeFlinkAndScala = propOrEnv("includeFlinkAndScala", "true").toBoolean
-
-val flinkScope         = if (includeFlinkAndScala) "compile" else "provided"
 val nexusUrlFromProps  = propOrEnv("nexusUrl")
 //TODO: this is pretty clunky, but works so far for our case...
 val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
@@ -103,7 +99,7 @@ lazy val publishSettings = Seq(
 )
 
 def defaultMergeStrategy: String => MergeStrategy = {
-  // remove JPMS module descriptors (a proper soultion would be to merge them)
+  // remove JPMS module descriptors (a proper solution would be to merge them)
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
@@ -118,7 +114,29 @@ def designerMergeStrategy: String => MergeStrategy = {
   // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
   case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
     MergeStrategy.singleOrError
-  case x                                                                            => defaultMergeStrategy(x)
+  // related to flink netty shaded libs
+  case PathList(
+        "META-INF",
+        "native-image",
+        "io.netty",
+        "netty-codec",
+        "generated",
+        "handlers",
+        "reflect-config.json"
+      ) =>
+    MergeStrategy.first
+  case PathList(
+        "META-INF",
+        "native-image",
+        "io.netty",
+        "netty-handler",
+        "generated",
+        "handlers",
+        "reflect-config.json"
+      ) =>
+    MergeStrategy.first
+  case x                                                                            =>
+    defaultMergeStrategy(x)
 }
 
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
@@ -438,7 +456,8 @@ def assemblySettings(
     includeScala: Boolean,
     filterProvidedDeps: Boolean = true
 ): List[Def.SettingsDefinition] = {
-  // This work around need to be optional because for designer module it causes excluding of scala lib (because we has there other work around for Idea classpath and provided deps)
+  // This work around need to be optional because for designer module it causes excluding of scala lib
+  // (because we have there other work around for Idea classpath and provided deps)
   val filterProvidedDepsSettingOpt = if (filterProvidedDeps) {
     Some(
       // For some reason problem described in https://github.com/sbt/sbt-assembly/issues/295 appears, workaround also works...
@@ -470,7 +489,7 @@ lazy val modelArtifacts = taskKey[List[(File, String)]]("model artifacts")
 
 lazy val devArtifacts = taskKey[List[(File, String)]]("dev artifacts")
 
-lazy val managerArtifacts = taskKey[List[(File, String)]]("manager artifacts")
+lazy val deploymentManagerArtifacts = taskKey[List[(File, String)]]("deployment manager artifacts")
 
 def filterDevConfigArtifacts(files: Seq[(File, String)]) = {
   val devConfigFiles = Set("dev-tables-definition.sql", "dev-application.conf", "dev-oauth2-users.conf")
@@ -482,7 +501,7 @@ lazy val distribution: Project = sbt
   .settings(commonSettings)
   .enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging)
   .settings(
-    managerArtifacts                         := {
+    deploymentManagerArtifacts               := {
       List(
         (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
         (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
@@ -521,7 +540,7 @@ lazy val distribution: Project = sbt
         else filterDevConfigArtifacts((Universal / mappings).value)
 
       universalMappingsWithDevConfigFilter ++
-        (managerArtifacts).value ++
+        (deploymentManagerArtifacts).value ++
         (componentArtifacts).value ++
         (if (addDevArtifacts)
            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
@@ -610,18 +629,16 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / parallelExecution             := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel"          %% "cats-core"                  % catsV          % Provided,
-        "org.apache.flink"        % "flink-streaming-java"       % flinkV         % flinkScope
-          excludeAll (
-            ExclusionRule("log4j", "log4j"),
-            ExclusionRule("org.slf4j", "slf4j-log4j12"),
-            ExclusionRule("com.esotericsoftware", "kryo-shaded"),
-          ),
-        "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
-        "com.softwaremill.retry" %% "retry"                      % retryV,
-        "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
-        "org.scalatestplus"      %% "mockito-5-10"               % scalaTestPlusV % Test,
-      ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
+        "org.typelevel"          %% "cats-core"            % catsV          % Provided,
+        "org.apache.flink"        % "flink-streaming-java" % flinkV excludeAll (
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12"),
+          ExclusionRule("com.esotericsoftware", "kryo-shaded"),
+        ),
+        "com.softwaremill.retry" %% "retry"                % retryV,
+        "org.wiremock"            % "wiremock"             % wireMockV      % Test,
+        "org.scalatestplus"      %% "mockito-5-10"         % scalaTestPlusV % Test,
+      ) ++ flinkLibScalaDeps(scalaVersion.value)
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
     dependencyOverrides += "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
@@ -644,6 +661,7 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
       Seq(
+        "org.apache.flink"     % "flink-core"                      % flinkV               % Provided,
         "org.typelevel"       %% "cats-core"                       % catsV                % Provided,
         "com.typesafe.slick"  %% "slick"                           % slickV               % Provided,
         "com.typesafe.slick"  %% "slick-hikaricp"                  % slickV               % "provided, test",
@@ -1812,9 +1830,8 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
     name := "nussknacker-flink-base-unbounded-components",
     libraryDependencies ++= Seq(
       "org.apache.flink"          % "flink-streaming-java" % flinkV % Provided,
-      "com.clearspring.analytics" % "stream"               % "2.9.8"
       // It is used only in QDigest which we don't use, while it's >20MB in size...
-        exclude ("it.unimi.dsi", "fastutil")
+      "com.clearspring.analytics" % "stream"               % "2.9.8" exclude ("it.unimi.dsi", "fastutil")
     )
   )
   .dependsOn(
@@ -1928,6 +1945,10 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
   )
   .dependsOn(extensionsApi, testUtils % Test)
 
+lazy val prepareDesignerTests     = taskKey[Unit]("Prepare all necessary artifacts before running designer module tests")
+lazy val prepareDesignerSlowTests =
+  taskKey[Unit]("Prepare all necessary artifacts before running designer module slow tests")
+
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
   .enablePlugins(GenerateDesignerOpenApiPlugin)
@@ -1936,7 +1957,7 @@ lazy val designer = (project in file("designer/server"))
   .settings(
     assemblySettings(
       "nussknacker-designer-assembly.jar",
-      includeScala = includeFlinkAndScala,
+      includeScala = true,
       filterProvidedDeps = false
     ): _*
   )
@@ -1958,24 +1979,36 @@ lazy val designer = (project in file("designer/server"))
         CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false)
       )
     },
-    ThisBuild / parallelExecution    := false,
     SlowTests / test                 := (SlowTests / test)
       .dependsOn(
         flinkDevModel / Compile / assembly,
         flinkExecutor / Compile / assembly
       )
       .value,
-    Test / test                      := (Test / test)
-      .dependsOn(
-        defaultModel / Compile / assembly,
-        flinkTableApiComponents / Compile / assembly,
-        flinkDevModel / Compile / assembly,
-        flinkExecutor / Compile / assembly,
-        flinkExecutor / prepareItLibs
-      )
-      .value,
+    prepareDesignerSlowTests         := {
+      (flinkDeploymentManager / assembly).value
+      (liteEmbeddedDeploymentManager / assembly).value
+      (liteK8sDeploymentManager / assembly).value
+      (flinkDevModel / assembly).value
+      (flinkExecutor / assembly).value
+    },
+    prepareDesignerTests             := {
+      (flinkDeploymentManager / assembly).value
+      (liteEmbeddedDeploymentManager / assembly).value
+      (liteK8sDeploymentManager / assembly).value
+      (defaultModel / assembly).value
+      (flinkTableApiComponents / assembly).value
+      (flinkDevModel / assembly).value
+      (flinkExecutor / assembly).value
+      (flinkExecutor / prepareItLibs).value
+    },
+    ThisBuild / parallelExecution    := false,
+    SlowTests / test                 := (SlowTests / test).dependsOn(prepareDesignerSlowTests).value,
+    SlowTests / testOptions += Tests.Setup(() => prepareDesignerSlowTests.value),
+    Test / test                      := (Test / test).dependsOn(prepareDesignerTests).value,
+    Test / testOptions += Tests.Setup(() => prepareDesignerTests.value),
     /*
-      We depend on copyClientDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We depend on copyClientDist in packageBin and assembly to be make sure FE files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
       make compilation v. long. This is not too nice, but so far only alternative is to put designer dists copyClientDist outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
@@ -2013,6 +2046,7 @@ lazy val designer = (project in file("designer/server"))
         "org.apache.xmlgraphics"         % "fop"                             % "2.9" exclude ("commons-logging", "commons-logging"),
         "com.beachape"                  %% "enumeratum-circe"                % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
+        "com.softwaremill.retry"        %% "retry"                           % retryV,
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % openapiCirceYamlV,
         "com.softwaremill.sttp.tapir"   %% "tapir-akka-http-server"          % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-core"                      % tapirV,
@@ -2036,6 +2070,8 @@ lazy val designer = (project in file("designer/server"))
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
         "com.github.scopt"              %% "scopt"                           % "4.1.0"              % Test,
         "org.questdb"                    % "questdb"                         % "7.4.2",
+//        "org.apache.kafka"               % "kafka-clients"                   % kafkaV,
+//        "org.apache.flink"               % "flink-streaming-java"            % flinkV,
       ) ++ forScalaVersion(scalaVersion.value) {
         case (2, 13) =>
           Seq(
@@ -2051,24 +2087,18 @@ lazy val designer = (project in file("designer/server"))
     processReports,
     security,
     deploymentManagerApi,
+    componentsApi,
+    requestResponseComponentsApi,
+    liteComponentsApi,
+    flinkComponentsApi,
     restmodel,
     listenerApi,
     defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
-    componentsApi                     % "test->test",
-    // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
-    // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
-    // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes
-    // that are also load added their test dependencies on the classpath by the Idea. It causes that
-    // UniversalKafkaSourceFactory is loaded from app classloader and GenericRecord which is defined in typesToExtract
-    // is missing from this classloader
-    flinkDeploymentManager            % Provided,
-    liteEmbeddedDeploymentManager     % Provided,
-    liteK8sDeploymentManager          % Provided,
-    developmentTestsDeploymentManager % Provided,
-    flinkPeriodicDeploymentManager    % Provided,
-    schemedKafkaComponentsUtils       % Provided,
+    developmentTestsDeploymentManager % Test,
+    kafkaComponentsUtils              % Test,
+    componentsApi                     % "test->test"
   )
 
 lazy val e2eTests = (project in file("e2e-tests"))
@@ -2272,9 +2302,13 @@ prepareDev := {
   (flinkExecutor / prepareItLibs).value
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts  =
-    (distribution / componentArtifacts).value ++ (distribution / devArtifacts).value ++ developmentTestsDeployManagerArtifacts.value ++
+    (distribution / componentArtifacts).value ++
+      (distribution / devArtifacts).value ++
+      developmentTestsDeployManagerArtifacts.value ++
       Def
-        .taskDyn(if (addManagerArtifacts) distribution / managerArtifacts else Def.task[List[(File, String)]](Nil))
+        .taskDyn(
+          if (addManagerArtifacts) distribution / deploymentManagerArtifacts else Def.task[List[(File, String)]](Nil)
+        )
         .value ++
       (flinkExecutor / additionalBundledArtifacts).value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })

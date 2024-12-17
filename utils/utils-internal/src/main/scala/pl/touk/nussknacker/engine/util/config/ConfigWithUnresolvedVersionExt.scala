@@ -24,6 +24,14 @@ class ConfigWithUnresolvedVersionExt(val config: ConfigWithUnresolvedVersion) {
     }
   }
 
+  def readStringList(path: String): Option[List[String]] = {
+    if (config.resolved.hasPath(path)) {
+      Some(config.resolved.getStringList(path).asScala.toList)
+    } else {
+      None
+    }
+  }
+
 }
 
 object ConfigWithUnresolvedVersionExt {

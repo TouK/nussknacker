@@ -24,7 +24,12 @@ import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
+import pl.touk.nussknacker.engine.util.loader.{
+  DeploymentManagersClassLoader,
+  ModelClassLoader,
+  ProcessConfigCreatorLoader,
+  ScalaServiceLoader
+}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 import java.net.URL
@@ -40,8 +45,13 @@ object ModelData extends LazyLogging {
         Map[DesignerWideComponentId, ComponentAdditionalConfig]
     ) => ModelDefinition
 
-  def apply(processingTypeConfig: ProcessingTypeConfig, dependencies: ModelDependencies): ModelData = {
-    val modelClassLoader = ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt)
+  def apply(
+      processingTypeConfig: ProcessingTypeConfig,
+      dependencies: ModelDependencies,
+      deploymentManagersClassLoader: DeploymentManagersClassLoader
+  ): ModelData = {
+    val modelClassLoader =
+      ModelClassLoader(processingTypeConfig.classPath, dependencies.workingDirectoryOpt, deploymentManagersClassLoader)
     ClassLoaderModelData(
       _.resolveInputConfigDuringExecution(processingTypeConfig.modelConfig, modelClassLoader.classLoader),
       modelClassLoader,
@@ -125,8 +135,6 @@ case class ClassLoaderModelData private (
     override val additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig],
     // This property is for easier testing when for some reason, some jars with ComponentProvider are
     // on the test classpath and CPs collide with other once with the same name.
-    // E.g. we add liteEmbeddedDeploymentManager as a designer provided dependency which also
-    // add liteKafkaComponents (which are in test scope), see comment next to designer module
     shouldIncludeConfigCreator: ProcessConfigCreator => Boolean,
     shouldIncludeComponentProvider: ComponentProvider => Boolean,
     componentDefinitionExtractionMode: ComponentDefinitionExtractionMode,
@@ -239,8 +247,9 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // See parameters of implementing functions
   def extractModelDefinitionFun: ExtractDefinitionFun
 
-  final def modelDefinition: ModelDefinition =
+  final def modelDefinition: ModelDefinition = withThisAsContextClassLoader {
     modelDefinitionWithClasses.modelDefinition
+  }
 
   private lazy val dictServicesFactory: DictServicesFactory =
     DictServicesFactoryLoader.justOne(modelClassLoader.classLoader)

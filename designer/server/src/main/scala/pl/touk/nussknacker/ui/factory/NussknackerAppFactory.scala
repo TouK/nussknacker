@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
+import pl.touk.nussknacker.engine.util.loader.DeploymentManagersClassLoader
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.{LoadableDesignerConfigBasedNussknackerConfig, NussknackerConfig}
 import pl.touk.nussknacker.ui.db.DbRef
@@ -16,18 +17,26 @@ import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHtt
 
 import java.time.Clock
 
-object NussknackerAppFactory
+object NussknackerAppFactory {
+
+  def create(nussknackerConfig: NussknackerConfig): Resource[IO, NussknackerAppFactory] = {
+    for {
+      managersDirs                 <- Resource.eval(nussknackerConfig.managersDirs())
+      deploymentManagerClassLoader <- DeploymentManagersClassLoader.create(managersDirs)
+    } yield new NussknackerAppFactory(
+      nussknackerConfig,
+      new ProcessingTypesConfigBasedProcessingTypeDataLoader(nussknackerConfig, deploymentManagerClassLoader)
+    )
+  }
+
+  def create(classLoader: ClassLoader): Resource[IO, NussknackerAppFactory] = {
+    create(new LoadableDesignerConfigBasedNussknackerConfig(classLoader))
+  }
+
+}
 
 class NussknackerAppFactory(nussknackerConfig: NussknackerConfig, processingTypeDataLoader: ProcessingTypeDataLoader)
     extends LazyLogging {
-
-  def this(nussknackerConfig: NussknackerConfig) = {
-    this(nussknackerConfig, new ProcessingTypesConfigBasedProcessingTypeDataLoader(nussknackerConfig))
-  }
-
-  def this(classLoader: ClassLoader) = {
-    this(new LoadableDesignerConfigBasedNussknackerConfig(classLoader))
-  }
 
   def createApp(clock: Clock = Clock.systemUTC()): Resource[IO, Unit] = {
     for {

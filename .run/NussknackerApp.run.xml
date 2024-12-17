@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="NussknackerApp" type="Application" factoryName="Application">
-    <option name="ALTERNATIVE_JRE_PATH" value="corretto-11" />
+    <option name="ALTERNATIVE_JRE_PATH" value="11" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <envs>
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
@@ -9,15 +9,16 @@
       <env name="FLINK_SHOULD_VERIFY_BEFORE_DEPLOY" value="false" />
       <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
       <env name="INFLUXDB_URL" value="http://localhost:3086" />
+      <env name="INPUT_CONFIG_RESOLVE_ENV_VARIABLES" value="false" />
       <env name="KAFKA_ADDRESS" value="localhost:3032" />
+      <env name="MANAGERS_DIR" value="managers" />
       <env name="NUSSKNACKER_LOG_LEVEL" value="DEBUG" />
       <env name="OPENAPI_SERVICE_URL" value="http://localhost:5000" />
       <env name="SCHEMA_REGISTRY_URL" value="http://localhost:3082" />
       <env name="SQL_ENRICHER_URL" value="localhost:5432" />
+      <env name="TABLES_DEFINITION_FILE" value="../../../nussknacker-dist/src/universal/conf/dev-tables-definition.sql" />
       <env name="USAGE_REPORTS_FINGERPRINT" value="development" />
       <env name="USAGE_REPORTS_SOURCE" value="sources" />
-      <env name="INPUT_CONFIG_RESOLVE_ENV_VARIABLES" value="false" />
-      <env name="TABLES_DEFINITION_FILE" value="../../../nussknacker-dist/src/universal/conf/dev-tables-definition.sql" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />

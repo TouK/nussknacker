@@ -11,6 +11,7 @@ services:
       KAFKA_AUTO_OFFSET_RESET: "earliest"
       SCHEMA_REGISTRY_URL: http://redpanda:8081
       CONFIG_FILE: /opt/nussknacker/conf/dev-application.conf
+      MANAGERS_DIR: /opt/nussknacker/managers
       CONFIG_FORCE_usageStatisticsReports_enabled: "false"
       CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type: stub
     ports:

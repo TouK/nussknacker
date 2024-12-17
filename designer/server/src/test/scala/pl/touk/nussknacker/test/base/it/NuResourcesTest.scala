@@ -48,7 +48,10 @@ import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.DefaultFragmentRepository
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype._
-import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypesConfigBasedProcessingTypeDataLoader
+import pl.touk.nussknacker.ui.process.processingtype.loader.{
+  DeploymentManagersClassLoader,
+  ProcessingTypesConfigBasedProcessingTypeDataLoader
+}
 import pl.touk.nussknacker.ui.process.processingtype.provider.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
@@ -148,7 +151,8 @@ trait NuResourcesTest
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypeDataReader = new ProcessingTypesConfigBasedProcessingTypeDataLoader(
-      new LoadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(testConfig)))
+      new LoadableConfigBasedNussknackerConfig(IO.pure(ConfigWithUnresolvedVersion(testConfig))),
+      DeploymentManagersClassLoader.create(List.empty).allocated.map(_._1).unsafeRunSync()
     )
     ProcessingTypeDataProvider(
       processingTypeDataReader

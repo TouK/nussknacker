@@ -49,7 +49,7 @@ We provide following scripts:
 | $NUSSKNACKER_DIR/model/flinkExecutor.jar |                                                         | JAR with Flink executor, used by scenarios running on Flink                                                                                  |
 | $NUSSKNACKER_DIR/components              |                                                         | Directory with Nussknacker Component Provider JARS                                                                                           |
 | $NUSSKNACKER_DIR/lib                     |                                                         | Directory with Nussknacker base libraries                                                                                                    |
-| $NUSSKNACKER_DIR/managers                |                                                         | Directory with Nussknacker Deployment Managers                                                                                               |
+| $NUSSKNACKER_DIR/managers                | Configured by MANAGERS_DIR property                     | Directory with Nussknacker Deployment Managers                                                                                               |
 
 
 ## Logging

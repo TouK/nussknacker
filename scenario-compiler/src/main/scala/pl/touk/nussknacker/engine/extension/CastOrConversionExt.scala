@@ -25,7 +25,7 @@ import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 import java.util.{Currency, UUID}
 import scala.util.Try
 
-// todo: lbg - add casting methods to UTIL
+// TODO: lbg - add casting methods to UTIL
 class CastOrConversionExt(classesBySimpleName: Map[String, Class[_]]) {
   private val castException = new ClassCastException(s"Cannot cast value to given class")
 

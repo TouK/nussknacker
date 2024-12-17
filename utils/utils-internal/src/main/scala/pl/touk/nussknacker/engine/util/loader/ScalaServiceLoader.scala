@@ -12,7 +12,7 @@ import scala.reflect.{ClassTag, classTag}
 object ScalaServiceLoader extends LazyLogging {
   import scala.jdk.CollectionConverters._
 
-  def loadClass[T](classLoader: ClassLoader)(createDefault: => T)(implicit classTag: ClassTag[T]): T =
+  def loadClass[T: ClassTag](classLoader: ClassLoader)(createDefault: => T): T =
     chooseClass[T](createDefault, load[T](classLoader))
 
   def chooseClass[T](createDefault: => T, loaded: List[T]): T = {

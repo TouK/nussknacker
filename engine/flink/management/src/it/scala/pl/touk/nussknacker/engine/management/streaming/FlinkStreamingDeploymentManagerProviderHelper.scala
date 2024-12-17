@@ -7,8 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub,
-  ScenarioActivityManager
+  ProcessingTypeDeployedScenariosProviderStub
 }
 import pl.touk.nussknacker.engine.definition.component.Components.ComponentDefinitionExtractionMode
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider

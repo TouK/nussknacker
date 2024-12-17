@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import java.time.Instant
 import java.util.UUID
 
-// todo NU-1772
+// TODO: NU-1772
 //  - should be eventually replaced with pl.touk.nussknacker.engine.api.deployment.ScenarioActivity
 //  - this class is currently a compatibility layer for older fragments of code, new code should use ScenarioActivity
 @JsonCodec case class ProcessAction(

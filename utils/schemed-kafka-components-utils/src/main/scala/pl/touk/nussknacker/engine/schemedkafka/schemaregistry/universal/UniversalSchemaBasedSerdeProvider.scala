@@ -43,7 +43,7 @@ object UniversalSchemaBasedSerdeProvider {
     createSchemaIdFromMessageExtractor(isConfluent, isAzure)
   }
 
-  // SchemaId can be obtain in several ways. Precedent:
+  // SchemaId can be obtained in several ways. Precedent:
   // * from nu kafka headers - it is our own, Nussknacker headers standard format: key.schemaId and value.schemaId headers
   // * from azure header - content-type: avro/binary+schemaId (only value schema ids are supported)
   // * from payload serialized in 'Confluent way' ([magicbyte][schemaid][payload])
