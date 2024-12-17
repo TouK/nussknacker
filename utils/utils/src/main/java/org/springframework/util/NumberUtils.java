@@ -16,6 +16,8 @@
 
 package org.springframework.util;
 
+import pl.touk.nussknacker.springframework.util.NumberUtilsConsts;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -37,8 +39,6 @@ import java.util.Set;
  * @since 1.1.2
  */
 public abstract class NumberUtils {
-
-    public static int DEFAULT_BIG_DECIMAL_SCALE = 18;
 
 	private static int DOUBLE_SCALE = new BigDecimal((Double.MIN_VALUE)).scale();
 
@@ -144,8 +144,8 @@ public abstract class NumberUtils {
 			} else if (number instanceof Float) {
 				return (T) bigDecimal.setScale(FLOAT_SCALE, RoundingMode.UNNECESSARY);
 			} else {
-                if (bigDecimal.scale() < DEFAULT_BIG_DECIMAL_SCALE) {
-                    return (T) bigDecimal.setScale(DEFAULT_BIG_DECIMAL_SCALE, RoundingMode.UNNECESSARY);
+                if (bigDecimal.scale() < NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE) {
+                    return (T) bigDecimal.setScale(NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE, RoundingMode.UNNECESSARY);
                 }
 				return (T) bigDecimal;
 			}

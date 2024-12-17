@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.springframework.util.NumberUtilsConsts
 
 class MathUtilsSpec extends AnyFunSuite with Matchers {
 
@@ -54,6 +55,11 @@ class MathUtilsSpec extends AnyFunSuite with Matchers {
     val sumForBytes = MathUtils.sum(1.byteValue(), 2.byteValue())
     sumForBytes.getClass shouldEqual classOf[java.lang.Integer]
     sumForBytes shouldEqual 3
+  }
+
+  test("max should use big decimal conversion which sets default scale") {
+    val result = MathUtils.max(1, new java.math.BigDecimal(0))
+    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE
   }
 
 }
