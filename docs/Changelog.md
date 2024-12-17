@@ -30,6 +30,7 @@
 * [#7346](https://github.com/TouK/nussknacker/pull/7346) OpenAPI enricher: ability to configure common secret for any security scheme
 * [#7307](https://github.com/TouK/nussknacker/pull/7307) Added StddevPop, StddevSamp, VarPop and VarSamp aggregators
 * [#7341](https://github.com/TouK/nussknacker/pull/7341) Added possibility to choose presets and define lists for Integer typed parameter inputs in fragments.
+* [#7354](https://github.com/TouK/nussknacker/pull/7354) Reduce response payload size when fetching scenarios for scenarios tab by removing unused fields.
 
 ## 1.18
 
