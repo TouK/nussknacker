@@ -358,6 +358,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("should set default scale when converting to big decimal") {
+    val result = evaluate[Any]("""
+                                 |(1).toBigDecimal / 2
+                                 |""".stripMargin)
+    BigDecimal(result.asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0.5) +- BigDecimal(0.001)
+  }
+
   test("indexer access on unknown - array like case") {
     parse[Any](
       "#containerWithUnknownArray.value[0]"
