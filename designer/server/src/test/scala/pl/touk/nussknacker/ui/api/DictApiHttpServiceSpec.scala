@@ -31,8 +31,14 @@ class DictApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts")
         .Then()
         .statusCode(200)
-        .equalsJsonBody("[]")
-
+        .equalsJsonBody(
+          s"""[
+             |  {
+             |    "id" : "integer_dict",
+             |    "label" : "integer_dict"
+             |  }
+             |]""".stripMargin
+        )
     }
 
     "return proper list for expected type String" in {
@@ -84,6 +90,10 @@ class DictApiHttpServiceSpec
         .equalsJsonBody(
           s"""[
              |  {
+             |    "id": "integer_dict",
+             |    "label": "integer_dict"
+             |  },
+             |  {
              |    "id" : "long_dict",
              |    "label" : "long_dict"
              |  }
@@ -91,7 +101,7 @@ class DictApiHttpServiceSpec
         )
     }
 
-    "return proper list for expected type BigDecimal" in {
+    "return proper list for expected type BigInteger" in {
       given()
         .when()
         .basicAuthAllPermUser()
@@ -107,6 +117,11 @@ class DictApiHttpServiceSpec
         .statusCode(200)
         .equalsJsonBody(
           s"""[
+             |
+             |  {
+             |    "id": "integer_dict",
+             |    "label": "integer_dict"
+             |  },
              |  {
              |    "id" : "long_dict",
              |    "label" : "long_dict"
