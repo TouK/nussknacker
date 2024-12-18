@@ -21,19 +21,12 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
-import pl.touk.nussknacker.ui.migrations.{
-  MigrateScenarioData,
-  MigrateScenarioDataV1,
-  MigrateScenarioDataV2,
-  MigrationApiAdapterService
-}
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV2, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -156,7 +149,7 @@ class HttpRemoteEnvironment(
     )
   }
 
-  override def close(): Unit = Await.ready(http.shutdownAllConnectionPools(), closeTimeout)
+  override def close(): Unit = Await.ready(closeAsync(), closeTimeout)
 
   def closeAsync(): Future[Unit] = http.shutdownAllConnectionPools()
 }
@@ -355,7 +348,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       HttpMethods.GET,
       "processesDetails" :: Nil,
       Query(
-        ("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8)).mkString(",")),
+        ("names", names.map(_.value).mkString(",")),
         ("isArchived", "false"),
         ("skipNodeResults", "true"),
       )

@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.util
 
-import java.net.{URLDecoder, URLEncoder}
+import java.io.File
+import java.net.{URI, URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
+import scala.util.Try
 
 /**
   * Utility class for JavaScript compatible UTF-8 encoding and decoding.
@@ -9,6 +11,13 @@ import java.nio.charset.StandardCharsets
   * @see http://stackoverflow.com/questions/607176/java-equivalent-to-javascripts-encodeuricomponent-that-produces-identical-output
   */
 object UriUtils {
+
+  def extractListOfLocations(commaSeparatedListOfLocations: String): List[URI] = {
+    for {
+      singleElement <- commaSeparatedListOfLocations.split(",").toList
+      trimmed = singleElement.trim
+    } yield Try(URI.create(trimmed)).filter(_.getScheme.nonEmpty).getOrElse(new File(trimmed).toURI)
+  }
 
   /**
     * Decodes the passed UTF-8 String using an algorithm that's compatible with

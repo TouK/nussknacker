@@ -16,9 +16,8 @@ class ConfigFactoryExtSpec extends AnyFunSuite with Matchers {
       writeToTemp(Map("f1" -> "default", "f2" -> "not so default", "akka.http.server.request-timeout" -> "300s"))
     val conf2 = writeToTemp(Map("f1" -> "I win!"))
 
-    val result = ConfigFactoryExt.parseConfigFallbackChain(
+    val result = new ConfigFactoryExt(getClass.getClassLoader).parseUnresolved(
       List(conf1, conf2, URI.create("classpath:someConfig.conf")),
-      getClass.getClassLoader
     )
 
     result.getString("f1") shouldBe "I win!"

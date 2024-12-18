@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
+import org.apache.flink.api.common.functions.OpenContext
 import org.apache.flink.api.common.state.{MapState, MapStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ListTypeInfo
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
@@ -75,7 +75,7 @@ class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration)
 
   @transient private var state: MapState[Long, java.util.List[api.Context]] = _
 
-  override def open(config: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     state = getRuntimeContext.getMapState(descriptor)
   }
 

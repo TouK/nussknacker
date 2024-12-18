@@ -31,7 +31,7 @@ import { ZoomOutButton } from "../../toolbars/view/buttons/ZoomOutButton";
 import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
 import { CustomButtonTypes } from "./CustomButtonTypes";
 import { ToolbarButton, ToolbarButtonTypes } from "./types";
-import PerformSingleExecutionButton from "../../toolbars/scenarioActions/buttons/PerformSingleExecutionButton";
+import RunOffScheduleButton from "../../toolbars/scenarioActions/buttons/RunOffScheduleButton";
 
 export type PropsOfButton<T> = ToolbarButton & {
     type: T;
@@ -45,7 +45,7 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.processSave]: SaveButton,
     [BuiltinButtonTypes.processDeploy]: DeployButton,
     [BuiltinButtonTypes.processCancel]: CancelDeployButton,
-    [BuiltinButtonTypes.processPerformSingleExecution]: PerformSingleExecutionButton,
+    [BuiltinButtonTypes.processRunOffSchedule]: RunOffScheduleButton,
     [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,
     [BuiltinButtonTypes.viewZoomOut]: ZoomOutButton,
     [BuiltinButtonTypes.viewReset]: ResetViewButton,

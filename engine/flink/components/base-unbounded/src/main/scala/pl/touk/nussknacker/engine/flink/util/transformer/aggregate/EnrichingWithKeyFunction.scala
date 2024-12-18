@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
@@ -18,7 +17,7 @@ class EnrichingWithKeyFunction(convertToEngineRuntimeContext: RuntimeContext => 
   @transient
   private var contextIdGenerator: ContextIdGenerator = _
 
-  override def open(parameters: Configuration): Unit = {
+  override def open(openContext: OpenContext): Unit = {
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
   }
 

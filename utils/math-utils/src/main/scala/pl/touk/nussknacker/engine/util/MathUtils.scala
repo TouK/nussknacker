@@ -8,11 +8,13 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{
 }
 
 import java.lang
+import java.math.MathContext
 import java.math.RoundingMode
+import javax.annotation.Nullable
 
 trait MathUtils {
 
-  def min(n1: Number, n2: Number): Number = {
+  def min(@Nullable n1: Number, @Nullable n2: Number): Number = {
     implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
     withNotNullValues(n1, n2) {
       withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerReturningNumber {
@@ -36,7 +38,7 @@ trait MathUtils {
     }
   }
 
-  def max(n1: Number, n2: Number): Number = {
+  def max(@Nullable n1: Number, @Nullable n2: Number): Number = {
     implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
     withNotNullValues(n1, n2) {
       withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerReturningNumber {
@@ -79,6 +81,27 @@ trait MathUtils {
     promoteThenSum(n1, n2)
   }
 
+  @Hidden
+  def largeFloatSquare(number: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
+    val converted = convertToPromotedType(number)
+    multiply(converted, converted)
+  }
+
+  @Hidden
+  def largeFloatSqrt(number: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy =
+      NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
+
+    val converted = convertToPromotedType(number)
+
+    converted match {
+      case converted: java.lang.Double     => Math.sqrt(converted)
+      case converted: java.math.BigDecimal => converted.sqrt(MathContext.DECIMAL128)
+    }
+  }
+
   def plus(n1: Number, n2: Number): Number = sum(n1, n2)
 
   def minus(n1: Number, n2: Number): Number = {
@@ -107,6 +130,18 @@ trait MathUtils {
     })(NumberTypesPromotionStrategy.ForMathOperation)
   }
 
+  // divide method has peculiar behaviour when it comes to BigDecimals (see its implementation), hence this method is sometimes needed
+  @Hidden
+  def divideWithDefaultBigDecimalScale(n1: Number, n2: Number): Number = {
+    if (n1.isInstanceOf[java.math.BigDecimal] || n2.isInstanceOf[java.math.BigDecimal]) {
+      (BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.math.BigDecimal]))
+        /
+          BigDecimal(SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.math.BigDecimal]))).bigDecimal
+    } else {
+      divide(n1, n2)
+    }
+  }
+
   def divide(n1: Number, n2: Number): Number = {
     withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForPromotingMathOp {
       override def onInts(n1: java.lang.Integer, n2: java.lang.Integer): java.lang.Integer = n1 / n2
@@ -118,6 +153,8 @@ trait MathUtils {
       override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = {
         n1.divide(
           n2,
+          // This is copied behaviour of divide operation in spel (class OpDivide) but it can lead to issues when both big decimals have small scales.
+          // Small scales happen when integer is converted to BigDecimal using SpringNumberUtils.convertNumberToTargetClass
           Math.max(n1.scale(), n2.scale),
           RoundingMode.HALF_EVEN
         ) // same scale and rounding as used by OpDivide in SpelExpression.java
@@ -149,7 +186,8 @@ trait MathUtils {
     case n1: java.math.BigDecimal => n1.negate()
   }
 
-  private def compare(n1: Number, n2: Number): Int = {
+  @Hidden
+  def compare(n1: Number, n2: Number): Int = {
     withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler[Int] {
       override def onBytes(n1: java.lang.Byte, n2: java.lang.Byte): Int                   = n1.compareTo(n2)
       override def onShorts(n1: java.lang.Short, n2: java.lang.Short): Int                = n1.compareTo(n2)
@@ -169,7 +207,7 @@ trait MathUtils {
   def equal(n1: Number, n2: Number): Boolean          = compare(n1, n2) == 0
   def notEqual(n1: Number, n2: Number): Boolean       = compare(n1, n2) != 0
 
-  private def promoteThenSum(n1: Number, n2: Number)(
+  private def promoteThenSum(@Nullable n1: Number, @Nullable n2: Number)(
       implicit promotionStrategy: ReturningSingleClassPromotionStrategy
   ) = {
     withNotNullValues(n1, n2) {
@@ -186,7 +224,7 @@ trait MathUtils {
     }
   }
 
-  protected def withNotNullValues(n1: Number, n2: Number)(
+  protected def withNotNullValues(@Nullable n1: Number, @Nullable n2: Number)(
       f: => Number
   )(implicit promotionStrategy: ReturningSingleClassPromotionStrategy): Number = {
     if (n1 == null) {
@@ -249,7 +287,8 @@ trait MathUtils {
     }
   }
 
-  private def convertToPromotedType(
+  @Hidden
+  def convertToPromotedType(
       n: Number
   )(implicit promotionStrategy: ReturningSingleClassPromotionStrategy): Number = {
     // In some cases type can be promoted to other class e.g. Byte is promoted to Int for sum

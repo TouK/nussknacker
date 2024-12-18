@@ -8,10 +8,10 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.test.{DefaultUniquePortProvider, WithTestHttpClientCreator}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.scalas.CatsTestExtensions._
+import pl.touk.nussknacker.test.{DefaultUniquePortProvider, WithTestHttpClientCreator}
+import pl.touk.nussknacker.ui.config.DesignerConfig
 import pl.touk.nussknacker.ui.security.ssl.HttpsConnectionContextFactory.prepareSSLContext
 import pl.touk.nussknacker.ui.security.ssl.KeyStoreConfig
 import pl.touk.nussknacker.ui.server.{NussknackerHttpServer, RouteProvider}
@@ -32,7 +32,7 @@ class NussknackerHttpServerSpec
         server <- createHttpServer()
         client <- createHttpClient(Some(prepareSSLContext(keyStoreConfig)))
         _ <- server.start(
-          ConfigWithUnresolvedVersion(
+          DesignerConfig.from(
             ConfigFactory
               .empty()
               .withValue("http.interface", fromAnyRef("0.0.0.0"))
@@ -64,7 +64,7 @@ class NussknackerHttpServerSpec
 
   private object DummyRouteProvider extends RouteProvider[Route] with Directives {
 
-    override def createRoute(config: ConfigWithUnresolvedVersion): Resource[IO, Route] = Resource.pure[IO, Route] {
+    override def createRoute(config: DesignerConfig): Resource[IO, Route] = Resource.pure[IO, Route] {
       path("test") {
         get {
           complete {
