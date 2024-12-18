@@ -52,6 +52,7 @@ class CollectTransformerTest
       |}
       |""".stripMargin
 
+  // TODO_PAWEL this test supposedly fails
   test("should collect elements after for-each") {
     val scenario = scenarioBuilderWithSchemas
       .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input".spel)

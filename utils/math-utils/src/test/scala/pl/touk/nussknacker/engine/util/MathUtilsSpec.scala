@@ -24,7 +24,9 @@ class MathUtilsSpec extends AnyFunSuite with Matchers {
 
     val minForIntAndBigDecimal = MathUtils.min(1, java.math.BigDecimal.valueOf(2))
     minForIntAndBigDecimal.getClass shouldEqual classOf[java.math.BigDecimal]
-    minForIntAndBigDecimal shouldEqual java.math.BigDecimal.valueOf(1)
+    BigDecimal(minForIntAndBigDecimal.asInstanceOf[java.math.BigDecimal]) shouldEqual BigDecimal(
+      java.math.BigDecimal.valueOf(1)
+    ) +- BigDecimal("0.000001")
   }
 
   test("max") {
@@ -50,7 +52,9 @@ class MathUtilsSpec extends AnyFunSuite with Matchers {
 
     val sumForIntAndBigDecimal = MathUtils.sum(1, java.math.BigDecimal.valueOf(2))
     sumForIntAndBigDecimal.getClass shouldEqual classOf[java.math.BigDecimal]
-    sumForIntAndBigDecimal shouldEqual java.math.BigDecimal.valueOf(3)
+    BigDecimal(sumForIntAndBigDecimal.asInstanceOf[java.math.BigDecimal]) shouldEqual BigDecimal(
+      java.math.BigDecimal.valueOf(3)
+    ) +- BigDecimal("0.00001")
 
     val sumForBytes = MathUtils.sum(1.byteValue(), 2.byteValue())
     sumForBytes.getClass shouldEqual classOf[java.lang.Integer]

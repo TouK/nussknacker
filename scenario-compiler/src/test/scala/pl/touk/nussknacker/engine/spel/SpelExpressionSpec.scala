@@ -1815,17 +1815,45 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownDouble.value.to('Double')", doubleTyping, 1.1),
         ("#unknownDoubleString.value.to('Double')", doubleTyping, 1.1),
         ("#unknownBoolean.value.toOrNull('Double')", doubleTyping, null),
-        ("1.to('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        (
+          "1.to('BigDecimal')",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1).bigDecimal)
+        ),
         ("1.1.to('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
-        ("'1'.to('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
-        ("1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        (
+          "'1'.to('BigDecimal')",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1).bigDecimal)
+        ),
+        (
+          "1.toBigDecimalOrNull()",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1).bigDecimal)
+        ),
         ("1.1.toOrNull('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
-        ("'1'.toOrNull('BigDecimal')", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        (
+          "'1'.toOrNull('BigDecimal')",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1).bigDecimal)
+        ),
         ("'a'.toOrNull('BigDecimal')", bigDecimalTyping, null),
-        ("#unknownLong.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(11).bigDecimal),
-        ("#unknownLongString.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(11).bigDecimal),
+        (
+          "#unknownLong.value.to('BigDecimal')",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(11).bigDecimal)
+        ),
+        (
+          "#unknownLongString.value.to('BigDecimal')",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(11).bigDecimal)
+        ),
         ("#unknownDouble.value.to('BigDecimal')", bigDecimalTyping, convertedDoubleToBigDecimal),
-        ("#unknownDoubleString.value.to('BigDecimal')", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        (
+          "#unknownDoubleString.value.to('BigDecimal')",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1.1).bigDecimal)
+        ),
         ("#unknownBoolean.value.toOrNull('BigDecimal')", bigDecimalTyping, null),
         ("'true'.to('Boolean')", booleanTyping, true),
         ("#unknownInteger.value.toOrNull('Boolean')", booleanTyping, null),
@@ -1900,17 +1928,41 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         ("#unknownDouble.value.toDouble()", doubleTyping, 1.1),
         ("#unknownDoubleString.value.toDouble()", doubleTyping, 1.1),
         ("#unknownBoolean.value.toDoubleOrNull()", doubleTyping, null),
-        ("1.toBigDecimal()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        ("1.toBigDecimal()", bigDecimalTyping, BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1).bigDecimal)),
         ("1.1.toBigDecimal()", bigDecimalTyping, convertedDoubleToBigDecimal),
-        ("'1'.toBigDecimal()", bigDecimalTyping, BigDecimal(1).bigDecimal),
-        ("1.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        (
+          "'1'.toBigDecimal()",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1).bigDecimal)
+        ),
+        (
+          "1.toBigDecimalOrNull()",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1).bigDecimal)
+        ),
         ("1.1.toBigDecimalOrNull()", bigDecimalTyping, convertedDoubleToBigDecimal),
-        ("'1'.toBigDecimalOrNull()", bigDecimalTyping, BigDecimal(1).bigDecimal),
+        (
+          "'1'.toBigDecimalOrNull()",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1).bigDecimal)
+        ),
         ("'a'.toBigDecimalOrNull()", bigDecimalTyping, null),
-        ("#unknownLong.value.toBigDecimal()", bigDecimalTyping, BigDecimal(11).bigDecimal),
-        ("#unknownLongString.value.toBigDecimal()", bigDecimalTyping, BigDecimal(11).bigDecimal),
+        (
+          "#unknownLong.value.toBigDecimal()",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(11).bigDecimal)
+        ),
+        (
+          "#unknownLongString.value.toBigDecimal()",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(11).bigDecimal)
+        ),
         ("#unknownDouble.value.toBigDecimal()", bigDecimalTyping, convertedDoubleToBigDecimal),
-        ("#unknownDoubleString.value.toBigDecimal()", bigDecimalTyping, BigDecimal(1.1).bigDecimal),
+        (
+          "#unknownDoubleString.value.toBigDecimal()",
+          bigDecimalTyping,
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(BigDecimal(1.1).bigDecimal)
+        ),
         ("#unknownBoolean.value.toBigDecimalOrNull()", bigDecimalTyping, null),
         ("'true'.toBoolean()", booleanTyping, true),
         ("#unknownInteger.value.toBooleanOrNull()", booleanTyping, null),
