@@ -26,7 +26,6 @@ import slick.jdbc
 import slick.jdbc.JdbcProfile
 
 import java.time.{Clock, Instant}
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
@@ -275,20 +274,17 @@ class PeriodicDeploymentManager private[periodic] (
   }
 
   // TODO: Why we don't allow running not scheduled scenario? Maybe we can try to schedule it?
-  private def instantSchedule(processName: ProcessName): OptionT[Future, Unit] = {
-    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    for {
-      // schedule for immediate run
-      processDeployment <- OptionT(
-        service
-          .getLatestDeploymentsForActiveSchedules(processName)
-          .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
-      )
-      processDeploymentWithProcessJson <- OptionT.liftF(
-        repository.findProcessData(processDeployment.id).run
-      )
-      _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
-    } yield ()
-  }
+  private def instantSchedule(processName: ProcessName): OptionT[Future, Unit] = for {
+    // schedule for immediate run
+    processDeployment <- OptionT(
+      service
+        .getLatestDeploymentsForActiveSchedules(processName)
+        .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
+    )
+    processDeploymentWithProcessJson <- OptionT.liftF(
+      repository.findProcessData(processDeployment.id).run
+    )
+    _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
+  } yield ()
 
 }
