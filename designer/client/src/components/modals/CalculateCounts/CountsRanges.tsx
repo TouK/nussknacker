@@ -2,7 +2,7 @@ import { Moment } from "moment";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getProcessName } from "../../../reducers/selectors/graph";
+import { getProcessCategory, getProcessingType, getProcessName } from "../../../reducers/selectors/graph";
 import { CountsRangesButtons } from "./CountsRangesButtons";
 import { predefinedRanges } from "./utils";
 import { StyledRangesWrapper } from "./CountsStyled";
@@ -16,7 +16,8 @@ interface RangesProps {
 export function CountsRanges({ label, onChange }: RangesProps): JSX.Element {
     const { t } = useTranslation<string>();
     const processName = useSelector(getProcessName);
-    const activities = useActivityHistory(processName);
+    const processCategory = useSelector(getProcessCategory);
+    const activities = useActivityHistory(processName, processCategory);
     const dates = useMemo(() => predefinedRanges(t), [t]);
 
     return (
