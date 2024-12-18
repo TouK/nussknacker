@@ -1689,6 +1689,36 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
+  test("should convert list of map entries into map") {
+    val result = evaluate[Any]("""
+        |{
+        |a: "A",
+        |b: "B"
+        |}.![#this].toMap
+        |""".stripMargin)
+    result shouldBe java.util.Map.of("a", "A", "b", "B")
+  }
+
+  test("should be able to convert list of map entries into map") {
+    val result = evaluate[Any]("""
+                                 |{
+                                 |a: "A",
+                                 |b: "B"
+                                 |}.![#this].canBeMap
+                                 |""".stripMargin)
+    result shouldBe true
+  }
+
+  test("should be able to convert list of map entries into map or null") {
+    val result = evaluate[Any]("""
+                                 |{
+                                 |a: "A",
+                                 |b: "B"
+                                 |}.![#this].toMapOrNull
+                                 |""".stripMargin)
+    result shouldBe java.util.Map.of("a", "A", "b", "B")
+  }
+
   test("should return error msg if record in map project does not contain required fields") {
     parse[Any]("#mapValue.![{invalid_key: #this.key}].toMap()", ctx).invalidValue.toList should matchPattern {
       case GenericFunctionError("List element must contain 'key' and 'value' fields") :: Nil =>
