@@ -21,12 +21,17 @@ function displayableNameOfPredefinedActivityType(predefinedActivityType: Predefi
     }
 }
 
-export function useActivityHistory(processName: string): Range[] {
+export function useActivityHistory(processName: string, processCategory: string): Range[] {
     const { t } = useTranslation();
     const [activities, setActivities] = useState<Range[]>([]);
 
     useEffect(() => {
         HttpService.fetchProcessesActivities(processName)
+            .then((activities) =>
+                processCategory === "BatchPeriodic"
+                    ? activities.filter((activity) => activity.type !== PredefinedActivityType.ScenarioDeployed)
+                    : activities,
+            )
             .then((activities) =>
                 activities.map((current, i, all) => {
                     const from = moment(current.date);
