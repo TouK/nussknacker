@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.springframework.util.NumberUtilsConsts
+import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer
 
 class MathUtilsSpec extends AnyFunSuite with Matchers {
 
@@ -59,7 +59,7 @@ class MathUtilsSpec extends AnyFunSuite with Matchers {
 
   test("max should use big decimal conversion which sets default scale") {
     val result = MathUtils.max(1, new java.math.BigDecimal(0))
-    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE
+    result.asInstanceOf[java.math.BigDecimal].scale() shouldBe BigDecimalScaleEnsurer.DEFAULT_BIG_DECIMAL_SCALE
   }
 
 }

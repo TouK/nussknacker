@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer
 
 import java.util.Date
 
@@ -24,16 +25,14 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  test("should properly convert big decimal input") {
+  test("should properly convert fragment input to BigDecimal") {
 
-    // the idea is to perform "1 / 2" but "1" should be first converted to BigDecimal via implicit conversion performed
-    // when integer is passed to fragment
     val process = resolve(
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "input")
         .fragmentOneOut("sub", "fragmentWithBigDecimalInput", "output", "fragmentResult", "param" -> "1".spel)
-        .processorEnd("end1", "logService", "all" -> "#fragmentResult.a / 2".spel)
+        .processorEnd("end1", "logService", "all" -> "#fragmentResult.a".spel)
     )
 
     val data = List(
@@ -44,7 +43,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val results = ProcessTestHelpers.logServiceResultsHolder.results
 
     results.size shouldBe 1
-    BigDecimal(results(0).asInstanceOf[java.math.BigDecimal]) shouldBe BigDecimal(0.5) +- BigDecimal(0.0001)
+    results(0).asInstanceOf[java.math.BigDecimal].scale() shouldBe BigDecimalScaleEnsurer.DEFAULT_BIG_DECIMAL_SCALE
   }
 
   test("should accept same id in fragment and main process ") {
