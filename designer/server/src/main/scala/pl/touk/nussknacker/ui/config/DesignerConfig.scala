@@ -12,14 +12,14 @@ final case class DesignerConfig private (rawConfig: ConfigWithUnresolvedVersion)
   import net.ceedubs.ficus.Ficus._
 
   def processingTypeConfigs: ProcessingTypeConfigs =
-    ProcessingTypeConfigs(
-      rawConfig
-        .readMap("scenarioTypes")
-        .getOrElse {
-          throw new RuntimeException("No scenario types configuration provided")
-        }
-        .mapValuesNow(ProcessingTypeConfig.read)
-    )
+    ProcessingTypeConfigs(processingTypeConfigsRaw.asMap.mapValuesNow(ProcessingTypeConfig.read))
+
+  def processingTypeConfigsRaw: ConfigWithUnresolvedVersion =
+    rawConfig
+      .getConfigOpt("scenarioTypes")
+      .getOrElse {
+        throw new RuntimeException("No scenario types configuration provided")
+      }
 
   def configLoaderConfig: Config = rawConfig.resolved.getAs[Config]("configLoader").getOrElse(ConfigFactory.empty())
 
