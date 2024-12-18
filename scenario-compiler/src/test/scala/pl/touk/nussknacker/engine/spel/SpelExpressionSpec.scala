@@ -868,6 +868,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[java.math.BigDecimal]("-1.1", ctx) shouldBe Symbol("valid")
   }
 
+  // TODO_PAWEL
+  test("sth") {
+    val a = parse[Any]("""{a: 5}.![{key: #this.key, value: #this.value}].toMap[0]""")
+    val b = parse[Any]("""{a: 5}[0]""")
+    val c = "adsf"
+  }
+
   test("validate ternary operator") {
     parse[Long]("'d'? 3 : 4", ctx) should not be Symbol("valid")
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be Symbol("valid")
