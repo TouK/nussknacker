@@ -16,7 +16,7 @@ paths:
             application/json:
               schema:
                 type: object
-      operationId: header
+      operationId: headerOperationId
   /queryPath:
     get:
       security:
@@ -28,7 +28,7 @@ paths:
             application/json:
               schema:
                 type: object
-      operationId: query
+      operationId: queryOperationId
   /cookiePath:
     get:
       security:
@@ -40,7 +40,7 @@ paths:
             application/json:
               schema:
                 type: object
-      operationId: cookie
+      operationId: cookieOperationId
 components:
   schemas: {}
   securitySchemes:

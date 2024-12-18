@@ -21,4 +21,6 @@ export enum WindowKind {
     addComment,
     modifyActivityComment,
     addAttachment,
+    editProperties,
+    remote,
 }

@@ -1,15 +1,15 @@
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
-import pl.project13.scala.sbt.JmhPlugin._
-import sbt.Keys._
-import sbt._
+import pl.project13.scala.sbt.JmhPlugin.*
+import sbt.*
+import sbt.Keys.*
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
-import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations.*
 
 import scala.language.postfixOps
-import scala.sys.process._
+import scala.sys.process.*
 import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
@@ -288,7 +288,7 @@ val flinkCommonsTextV     = "1.10.0"
 val flinkCommonsIOV       = "2.15.1"
 val avroV                 = "1.11.4"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV                = "3.6.2"
+val kafkaV                = "3.8.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV               = "5.2.23.RELEASE"
 val scalaTestV            = "3.2.18"
@@ -321,7 +321,7 @@ val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.12.0"
 val testContainersScalaV    = "0.41.4"
 val testContainersJavaV     = "1.20.1"
-val nettyV                  = "4.1.113.Final"
+val nettyV                  = "4.1.115.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
 val akkaV                     = "2.6.20"
@@ -330,8 +330,8 @@ val akkaManagementV           = "1.1.4"
 val akkaHttpCirceV            = "1.39.2"
 val slickV                    = "3.4.1"  // 3.5 drops Scala 2.12
 val slickPgV                  = "0.21.1" // 0.22.2 uses Slick 3.5
-val hikariCpV                 = "5.1.0"
-val hsqldbV                   = "2.7.3"
+val hikariCpV                 = "6.2.1"
+val hsqldbV                   = "2.7.4"
 val postgresV                 = "42.7.4"
 // Flway 10 requires Java 17
 val flywayV                   = "9.22.3"
@@ -354,6 +354,7 @@ val findBugsV                 = "3.0.2"
 val enumeratumV               = "1.7.4"
 val ujsonV                    = "4.0.1"
 val igniteV                   = "2.10.0"
+val retryV                    = "0.3.6"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion) {
@@ -617,7 +618,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
         "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
-        "com.softwaremill.retry" %% "retry"                      % "0.3.6",
+        "com.softwaremill.retry" %% "retry"                      % retryV,
         "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
         "org.scalatestplus"      %% "mockito-5-10"               % scalaTestPlusV % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
@@ -810,7 +811,16 @@ lazy val flinkExecutor = (project in flink("executor"))
         )
     }.toList,
   )
-  .dependsOn(flinkComponentsUtils, scenarioCompiler, flinkExtensionsApi, flinkTestUtils % Test)
+  .dependsOn(
+    flinkComponentsUtils,
+    flinkExtensionsApi,
+    scenarioCompiler,
+    // Various components uses one of library in stack: sttp -> async-http-client -> netty
+    // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
+    // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
+    httpUtils,
+    flinkTestUtils % Test
+  )
 
 lazy val scenarioCompiler = (project in file("scenario-compiler"))
   .settings(commonSettings)
@@ -1019,11 +1029,12 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
     name := "nussknacker-kafka-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" %% "kafka"            % kafkaV excludeAll (
+        "org.apache.kafka"       %% "kafka"            % kafkaV excludeAll (
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "org.slf4j"         % "log4j-over-slf4j" % slf4jV
+        "org.slf4j"               % "log4j-over-slf4j" % slf4jV,
+        "com.softwaremill.retry" %% "retry"            % retryV
       )
     }
   )
@@ -1351,7 +1362,15 @@ lazy val liteEngineRuntime = (project in lite("runtime"))
       )
     },
   )
-  .dependsOn(liteComponentsApi, scenarioCompiler, testUtils % Test)
+  .dependsOn(
+    liteComponentsApi,
+    scenarioCompiler,
+    // Various components uses one of library in stack: sttp -> async-http-client -> netty
+    // Different versions of netty which is on the bottom of this stack causes NoClassDefFoundError.
+    // To overcome this problem and reduce size of model jar bundle, we add http utils as a compile time dependency.
+    httpUtils,
+    testUtils % Test
+  )
 
 lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration-test"))
   .configs(IntegrationTest)
@@ -1499,11 +1518,12 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
     libraryDependencies ++= {
       Seq(
         // From version 4.0.0 onwards, skuber uses pekko instead of akka, so we need to migrate to pekko first
-        "io.github.hagay3"           %% "skuber"        % "3.2" exclude ("commons-logging", "commons-logging"),
-        "com.github.julien-truffaut" %% "monocle-core"  % monocleV,
-        "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
-        "com.typesafe.akka"          %% "akka-slf4j"    % akkaV     % Test,
-        "org.wiremock"                % "wiremock"      % wireMockV % Test,
+        "io.github.hagay3"              %% "skuber"                           % "3.2" exclude ("commons-logging", "commons-logging"),
+        "com.github.julien-truffaut"    %% "monocle-core"                     % monocleV,
+        "com.github.julien-truffaut"    %% "monocle-macro"                    % monocleV,
+        "com.typesafe.akka"             %% "akka-slf4j"                       % akkaV     % Test,
+        "org.wiremock"                   % "wiremock"                         % wireMockV % Test,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV     % Test,
       )
     },
     buildAndImportRuntimeImageToK3d := {
@@ -1537,20 +1557,20 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.commons"             % "commons-text"                     % flinkCommonsTextV,
-        "org.typelevel"                 %% "cats-core"                        % catsV,
-        "com.beachape"                  %% "enumeratum"                       % enumeratumV,
-        "com.typesafe.scala-logging"    %% "scala-logging"                    % scalaLoggingV,
-        "com.typesafe"                   % "config"                           % configV,
-        "org.semver4j"                   % "semver4j"                         % "5.4.0",
-        "javax.validation"               % "validation-api"                   % javaxValidationApiV,
-        "org.scala-lang.modules"        %% "scala-collection-compat"          % scalaCollectionsCompatV,
-        "com.iheart"                    %% "ficus"                            % ficusV,
-        "org.springframework"            % "spring-core"                      % springV,
-        "org.springframework"            % "spring-expression"                % springV        % Test,
-        "com.google.code.findbugs"       % "jsr305"                           % findBugsV,
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
-        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort"    % scalaTestPlusV % Test
+        "org.apache.commons"             % "commons-text"                  % flinkCommonsTextV,
+        "org.typelevel"                 %% "cats-core"                     % catsV,
+        "com.beachape"                  %% "enumeratum"                    % enumeratumV,
+        "com.typesafe.scala-logging"    %% "scala-logging"                 % scalaLoggingV,
+        "com.typesafe"                   % "config"                        % configV,
+        "org.semver4j"                   % "semver4j"                      % "5.4.0",
+        "javax.validation"               % "validation-api"                % javaxValidationApiV,
+        "org.scala-lang.modules"        %% "scala-collection-compat"       % scalaCollectionsCompatV,
+        "com.iheart"                    %% "ficus"                         % ficusV,
+        "org.springframework"            % "spring-core"                   % springV,
+        "org.springframework"            % "spring-expression"             % springV        % Test,
+        "com.google.code.findbugs"       % "jsr305"                        % findBugsV,
+        "com.softwaremill.sttp.client3" %% "core"                          % sttpV,
+        "org.scalatestplus"             %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
       )
     }
   )
@@ -1676,15 +1696,20 @@ lazy val processReports = (project in file("designer/processReports"))
   )
   .dependsOn(httpUtils, commonUtils, testUtils % "it,test")
 
+// This dependency is delivered by flink-executor and lite-runtime to ensure the same version of libraries in stack:
+// sttp -> async-http-client -> netty. Different versions of netty in model classpath causes NoClassDefFoundError.
+// Also, thanks to this approach we reduce size of model jar bundle.
 lazy val httpUtils = (project in utils("http-utils"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
-        "com.softwaremill.sttp.client3" %% "json-common" % sttpV,
-        "com.softwaremill.sttp.client3" %% "circe"       % sttpV,
+        "com.softwaremill.sttp.client3" %% "core"                             % sttpV,
+        "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
+        "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV,
+        "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
       )
     }
   )
@@ -1702,19 +1727,18 @@ lazy val openapiComponents = (project in component("openapi"))
   .settings(
     name := "nussknacker-openapi",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-integration"          % swaggerIntegrationV excludeAll (
+      "io.swagger.core.v3" % "swagger-integration"  % swaggerIntegrationV excludeAll (
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
       ),
-      "io.netty"           % "netty-transport-native-epoll" % nettyV,
-      "org.apache.flink"   % "flink-streaming-java"         % flinkV     % Provided,
-      "org.scalatest"     %% "scalatest"                    % scalaTestV % "it,test"
+      "org.apache.flink"   % "flink-streaming-java" % flinkV     % Provided,
+      "org.scalatest"     %% "scalatest"            % scalaTestV % "it,test"
     ),
   )
   .dependsOn(
     componentsUtils                % Provided,
     jsonUtils                      % Provided,
-    httpUtils,
+    httpUtils                      % Provided,
     requestResponseComponentsUtils % "it,test",
     flinkComponentsTestkit         % "it,test"
   )
@@ -1889,6 +1913,18 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   )
   .dependsOn(extensionsApi)
 
+lazy val configLoaderApi = (project in file("designer/config-loader-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-config-loader-api",
+    libraryDependencies ++= {
+      Seq(
+        "org.typelevel" %% "cats-effect" % catsEffectV
+      )
+    }
+  )
+  .dependsOn(extensionsApi)
+
 lazy val deploymentManagerApi = (project in file("designer/deployment-manager-api"))
   .settings(commonSettings)
   .settings(
@@ -1961,21 +1997,21 @@ lazy val designer = (project in file("designer/server"))
     assembly / assemblyMergeStrategy := designerMergeStrategy,
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka"             %% "akka-http"            % akkaHttpV,
-        "com.typesafe.akka"             %% "akka-slf4j"           % akkaV,
-        "com.typesafe.akka"             %% "akka-stream"          % akkaV,
-        "com.typesafe.akka"             %% "akka-http-testkit"    % akkaHttpV % Test,
-        "com.typesafe.akka"             %% "akka-testkit"         % akkaV     % Test,
-        "de.heikoseeberger"             %% "akka-http-circe"      % akkaHttpCirceV,
-        "com.softwaremill.sttp.client3" %% "akka-http-backend"    % sttpV,
-        "ch.qos.logback"                 % "logback-core"         % logbackV,
-        "ch.qos.logback"                 % "logback-classic"      % logbackV,
-        "ch.qos.logback.contrib"         % "logback-json-classic" % logbackJsonV,
-        "ch.qos.logback.contrib"         % "logback-jackson"      % logbackJsonV,
-        "com.fasterxml.jackson.core"     % "jackson-databind"     % jacksonV,
-        "org.slf4j"                      % "log4j-over-slf4j"     % slf4jV,
-        "com.carrotsearch"               % "java-sizeof"          % "0.0.5",
-        "org.typelevel"                 %% "case-insensitive"     % "1.4.0",
+        "com.typesafe.akka"             %% "akka-http"                      % akkaHttpV,
+        "com.typesafe.akka"             %% "akka-slf4j"                     % akkaV,
+        "com.typesafe.akka"             %% "akka-stream"                    % akkaV,
+        "com.typesafe.akka"             %% "akka-http-testkit"              % akkaHttpV % Test,
+        "com.typesafe.akka"             %% "akka-testkit"                   % akkaV     % Test,
+        "de.heikoseeberger"             %% "akka-http-circe"                % akkaHttpCirceV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % sttpV,
+        "ch.qos.logback"                 % "logback-core"                   % logbackV,
+        "ch.qos.logback"                 % "logback-classic"                % logbackV,
+        "ch.qos.logback.contrib"         % "logback-json-classic"           % logbackJsonV,
+        "ch.qos.logback.contrib"         % "logback-jackson"                % logbackJsonV,
+        "com.fasterxml.jackson.core"     % "jackson-databind"               % jacksonV,
+        "org.slf4j"                      % "log4j-over-slf4j"               % slf4jV,
+        "com.carrotsearch"               % "java-sizeof"                    % "0.0.5",
+        "org.typelevel"                 %% "case-insensitive"               % "1.4.0",
 
         // It's needed by flinkDeploymentManager which has disabled includingScala
         "org.scala-lang"                 % "scala-compiler"                  % scalaVersion.value,
@@ -2029,6 +2065,7 @@ lazy val designer = (project in file("designer/server"))
     deploymentManagerApi,
     restmodel,
     listenerApi,
+    configLoaderApi,
     defaultHelpers                    % Test,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
@@ -2169,6 +2206,7 @@ lazy val modules = List[ProjectReference](
   httpUtils,
   restmodel,
   listenerApi,
+  configLoaderApi,
   deploymentManagerApi,
   designer,
   sqlComponents,

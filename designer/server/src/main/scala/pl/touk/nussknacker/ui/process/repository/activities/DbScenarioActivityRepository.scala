@@ -45,8 +45,9 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   def findActivities(
       scenarioId: ProcessId,
+      after: Option[Instant],
   ): DB[Seq[ScenarioActivity]] = {
-    doFindActivities(scenarioId).map(_.map(_._2))
+    doFindActivities(scenarioId, after).map(_.map(_._2))
   }
 
   def addActivity(
@@ -199,7 +200,7 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
     for {
       attachmentEntities <- findAttachments(processId)
       attachments = attachmentEntities.map(toDto)
-      activities <- doFindActivities(processId)
+      activities <- doFindActivities(processId, after = None)
       comments = activities.flatMap { case (id, activity) => toComment(id, activity) }
     } yield Legacy.ProcessActivity(
       comments = comments.toList,
@@ -221,9 +222,11 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
 
   private def doFindActivities(
       scenarioId: ProcessId,
+      after: Option[Instant],
   ): DB[Seq[(Long, ScenarioActivity)]] = {
     scenarioActivityTable
       .filter(_.scenarioId === scenarioId)
+      .filterOpt(after)((table, after) => table.createdAt > Timestamp.from(after))
       // ScenarioActivity in domain represents a single, immutable event, so we interpret only finished operations as ScenarioActivities
       .filter { entity =>
         entity.state.isEmpty ||
@@ -434,11 +437,13 @@ class DbScenarioActivityRepository private (override protected val dbRef: DbRef,
   private def doEditComment(comment: String)(
       entity: ScenarioActivityEntityData
   )(implicit user: LoggedUser): ScenarioActivityEntityData = {
+    val now = clock.instant()
     entity.copy(
       comment = Some(comment),
       lastModifiedByUserName = Some(user.username),
+      lastModifiedAt = Some(Timestamp.from(now)),
       additionalProperties = entity.additionalProperties.withProperty(
-        key = s"comment_replaced_by_${user.username}_at_${clock.instant()}",
+        key = s"comment_replaced_by_${user.username}_at_$now",
         value = entity.comment.getOrElse(""),
       )
     )

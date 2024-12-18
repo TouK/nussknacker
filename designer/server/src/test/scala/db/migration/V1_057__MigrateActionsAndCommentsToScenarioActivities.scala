@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.base.it.NuItTest
@@ -230,7 +229,7 @@ class V1_057__MigrateActionsAndCommentsToScenarioActivities
     }
     "migrate custom action 'run now' with comment to scenario_activities table" in {
       testMigratingActionWithComment(
-        scenarioActionName = InstantBatchCustomAction.name,
+        scenarioActionName = ScenarioActionName.RunOffSchedule,
         actionComment = Some("Run now: Deployed at the request of business"),
         expectedActivity = (sid, sad, user, date, sv) =>
           ScenarioActivity.PerformedSingleExecution(

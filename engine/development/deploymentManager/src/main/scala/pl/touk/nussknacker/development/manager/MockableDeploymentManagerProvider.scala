@@ -11,13 +11,14 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -63,9 +64,19 @@ object MockableDeploymentManagerProvider {
     override def resolve(
         idWithName: ProcessIdWithName,
         statusDetails: List[StatusDetails],
-        lastStateAction: Option[ProcessAction]
+        lastStateAction: Option[ProcessAction],
+        latestVersionId: VersionId,
+        deployedVersionId: Option[VersionId],
+        currentlyPresentedVersionId: Option[VersionId],
     ): Future[ProcessState] = {
-      Future.successful(processStateDefinitionManager.processState(statusDetails.head))
+      Future.successful(
+        processStateDefinitionManager.processState(
+          statusDetails.head,
+          latestVersionId,
+          deployedVersionId,
+          currentlyPresentedVersionId
+        )
+      )
     }
 
     override def processStateDefinitionManager: ProcessStateDefinitionManager =
@@ -134,7 +145,8 @@ object MockableDeploymentManagerProvider {
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
     override def managerSpecificScenarioActivities(
-        processIdWithName: ProcessIdWithName
+        processIdWithName: ProcessIdWithName,
+        after: Option[Instant],
     ): Future[List[ScenarioActivity]] =
       Future.successful(MockableDeploymentManager.managerSpecificScenarioActivities.get())
 

@@ -11,7 +11,7 @@ import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
 import { loadProcessState } from "../actions/nk";
-import { getProcessName } from "../reducers/selectors/graph";
+import { getProcessName, getProcessVersionId } from "../reducers/selectors/graph";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import i18next from "i18next";
 import { ThunkAction } from "../actions/reduxTypes";
@@ -44,25 +44,23 @@ const prepareNotification =
     };
 
 const handleRefresh =
-    ({ scenarioName, toRefresh }: BackendNotification, currentScenarioName: string): ThunkAction =>
+    ({ scenarioName, toRefresh }: BackendNotification, currentScenarioName: string, processVersionId: number): ThunkAction =>
     (dispatch) => {
         if (!scenarioName || scenarioName !== currentScenarioName) {
             return;
         }
         toRefresh.forEach((data) => {
             switch (data) {
-                case "versions":
-                    return dispatch(getScenarioActivities(scenarioName));
                 case "activity":
                     return dispatch(getScenarioActivities(scenarioName));
                 case "state":
-                    return dispatch(loadProcessState(scenarioName));
+                    return dispatch(loadProcessState(scenarioName, processVersionId));
             }
         });
     };
 
 const prepareNotifications =
-    (notifications: BackendNotification[], scenarioName: string): ThunkAction =>
+    (notifications: BackendNotification[], scenarioName: string, processVersionId: number): ThunkAction =>
     (dispatch, getState) => {
         const state = getState();
         const { processedNotificationIds } = getBackendNotifications(state);
@@ -76,7 +74,7 @@ const prepareNotifications =
 
         notifications.filter(onlyUnreadPredicate).forEach((notification) => {
             dispatch(prepareNotification(notification));
-            dispatch(handleRefresh(notification, scenarioName));
+            dispatch(handleRefresh(notification, scenarioName, processVersionId));
         });
     };
 
@@ -88,13 +86,14 @@ export function Notifications(): JSX.Element {
     useEffect(() => HttpService.setNotificationActions(bindActionCreators(NotificationActions, dispatch)));
 
     const currentScenarioName = useSelector(getProcessName);
+    const processVersionId = useSelector(getProcessVersionId);
 
     const refresh = useCallback(() => {
-        HttpService.loadBackendNotifications()
+        HttpService.loadBackendNotifications(currentScenarioName)
             .then((notifications) => {
                 handleChangeConnectionError(null);
                 dispatch(updateBackendNotifications(notifications.map(({ id }) => id)));
-                dispatch(prepareNotifications(notifications, currentScenarioName));
+                dispatch(prepareNotifications(notifications, currentScenarioName, processVersionId));
             })
             .catch((error) => {
                 const isNetworkAccess = navigator.onLine;
@@ -124,7 +123,7 @@ export function Notifications(): JSX.Element {
 
 type NotificationType = "info" | "error" | "success";
 
-type DataToRefresh = "versions" | "activity" | "state";
+type DataToRefresh = "activity" | "state";
 
 export type BackendNotification = {
     id: string;

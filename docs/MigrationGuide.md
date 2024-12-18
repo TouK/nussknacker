@@ -2,6 +2,33 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.19.0 (Not released yet)
+
+### Other changes
+
+* [#7116](https://github.com/TouK/nussknacker/pull/7116) Improve missing Flink Kafka Source / Sink TypeInformation
+  * We lost support for old ConsumerRecord constructor supported by Flink 1.14 / 1.15 
+  * If you used Kafka source/sink components in your scenarios then state of these scenarios won't be restored
+* [#7257](https://github.com/TouK/nussknacker/pull/7257) [#7259](https://github.com/TouK/nussknacker/pull/7259) `components-api` module 
+  doesn't depend on `async-http-client-backend-future`, `http-utils` module is delivered by `flink-executor` and `lite-runtime` modules.
+  If your component had compile-time dependency to `http-utils`, it should be replaced by provided scope
+  If your component relied on the fact that `components-api` depends on `async-http-client-backend-future`, 
+  `async-http-client-backend-future` should be added as a provided dependency
+* [#7165](https://github.com/TouK/nussknacker/pull/7165)
+    * `pl.touk.nussknacker.engine.api.deployment.DeploymentManager`:
+        * new command `DMPerformSingleExecutionCommand`, which must be handled in `DeploymentManager.processCommand` method
+          (handle it the same as `DMCustomActionCommand` with actionName=`run now`)
+        * added new arguments to `def resolve` and `getProcessState` methods (`latestVersionId: VersionId`, `deployedVersionId: Option[VersionId]`), which will be provided by Nu when invoking this method
+    * `pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager`:
+        * added new arguments to `def processState` method (`latestVersionId: VersionId`, `deployedVersionId: Option[VersionId]`)
+        * added new methods with default implementations:
+            * `def visibleActions: List[ScenarioActionName]` - allows to specify, which actions are applicable to scenario (and consequently should be visible in Designer), by default all previously available actions
+            * `def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String]` - allows to define custom tooltips for actions, if not defined the default is still used
+        * modified method:
+            * `def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]` - changed argument, to include information about latest and deployed versions
+* [#7347](https://github.com/TouK/nussknacker/pull/7347) All calls to `org.apache.flink.api.common.functions.RichFunction.open(Configuration)`,
+  which is deprecated, were replaced with calls to `org.apache.flink.api.common.functions.RichFunction.open(OpenContext)`
+
 ## In version 1.18.0
 
 ### Configuration changes
@@ -46,6 +73,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6988](https://github.com/TouK/nussknacker/pull/6988) Removed unused API classes: `MultiMap`, `TimestampedEvictableStateFunction`.
   `MultiMap` was incorrectly handled by Flink's default Kryo serializer, so if you want to copy it to your code
   you should write and register a proper serializer.
+* [#7162](https://github.com/TouK/nussknacker/pull/7162) When component declares that requires parameter with either `SpelTemplateParameterEditor` 
+  or `SqlParameterEditor` editor, in the runtime, for the expression evaluation result, will be used the new `TemplateEvaluationResult` 
+  class instead of `String` class. To access the previous `String` use `TemplateEvaluationResult.renderedTemplate` method.
+* [#7246](https://github.com/TouK/nussknacker/pull/7246) 
+  * Typing api changes:
+    * CanBeSubclassDeterminer.canBeSubclassOf changed to
+      AssignabilityDeterminer.isAssignableLoose.
+    * TypingResult.canBeSubclassOf changed to TypingResult.canBeConvertedTo
 
 ### REST API changes
 
@@ -61,6 +96,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       * GET `/api/processDefinitionData/*}` 
         * added optional query param `enrichedWithUiConfig`
         * added `requiredParam` property to the response for parameter config at `components['component-id'].parameters[*]`
+* [#7246](https://github.com/TouK/nussknacker/pull/7246) Changes in DictApiEndpoints:
+    *  `DictListRequestDto` `expectedType`: TypingResultInJson -> Json
 
 ### Configuration changes
 

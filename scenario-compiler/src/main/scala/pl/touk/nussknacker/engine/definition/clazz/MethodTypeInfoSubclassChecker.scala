@@ -12,7 +12,7 @@ object MethodTypeInfoSubclassChecker {
     val MethodTypeInfo(superclassNoVarArg, superclassVarArgOption, superclassResult) = superclassInfo
 
     val validatedVarArgs = (subclassVarArgOption, superclassVarArgOption) match {
-      case (Some(sub), Some(sup)) if sub.refClazz.canBeSubclassOf(sup.refClazz) => ().validNel
+      case (Some(sub), Some(sup)) if sub.refClazz.canBeConvertedTo(sup.refClazz) => ().validNel
       case (Some(sub), Some(sup)) => NotSubclassVarArgument(sub.refClazz, sup.refClazz).invalidNel
       case (Some(_), None)        => BadVarArg.invalidNel
       case (None, Some(_))        => ().validNel
@@ -38,7 +38,7 @@ object MethodTypeInfoSubclassChecker {
     )
     val validatedNoVarArgs = zippedParameters.zipWithIndex
       .map {
-        case ((sub, sup), _) if sub.refClazz.canBeSubclassOf(sup.refClazz) => ().validNel
+        case ((sub, sup), _) if sub.refClazz.canBeConvertedTo(sup.refClazz) => ().validNel
         case ((sub, sup), i) => NotSubclassArgument(i + 1, sub.refClazz, sup.refClazz).invalidNel
       }
       .sequence
@@ -46,7 +46,7 @@ object MethodTypeInfoSubclassChecker {
 
     val validatedResult =
       Validated.condNel(
-        subclassResult.canBeSubclassOf(superclassResult),
+        subclassResult.canBeConvertedTo(superclassResult),
         (),
         NotSubclassResult(subclassResult, superclassResult)
       )

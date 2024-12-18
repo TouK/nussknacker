@@ -1,18 +1,19 @@
 import { css } from "@emotion/css";
 import { Edit } from "@mui/icons-material";
 import { DefaultComponents, WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import { get } from "lodash";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
 import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import { Scenario } from "../../../Process/types";
 import { DescriptionOnlyContent } from "../DescriptionOnlyContent";
-import { useNodeDetailsButtons, useNodeState } from "./NodeDetails";
 import { getReadOnly } from "./selectors";
 import { StyledHeader } from "./StyledHeader";
+import { editProperties } from "../../../../actions/nk";
+import { getScenario } from "../../../../reducers/selectors/graph";
+import { usePropertiesState } from "../../../modals/PropertiesDialog";
 
 interface DescriptionDialogProps extends WindowContentProps<WindowKind, { node: NodeType; scenario: Scenario }> {
     editMode?: boolean;
@@ -20,32 +21,40 @@ interface DescriptionDialogProps extends WindowContentProps<WindowKind, { node: 
 
 function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
     const { t } = useTranslation();
-    const { editMode, close, data } = props;
+    const { editMode, close } = props;
     const readOnly = useSelector(getReadOnly);
+    const dispatch = useDispatch();
+    const scenario = useSelector(getScenario);
+    const { currentProperties, editedProperties, handleSetEditedProperties, isTouched } = usePropertiesState();
 
     const [previewMode, setPreviewMode] = useState(!editMode || readOnly);
-
-    const { node, editedNode, onChange, isTouched, performNodeEdit } = useNodeState(data.meta);
-    const { cancel: _cancel, apply: _apply } = useNodeDetailsButtons({ editedNode, performNodeEdit, close, readOnly });
 
     const fieldPath = "additionalFields.description";
 
     const apply = useMemo<WindowButtonProps | false>(() => {
+        if (readOnly) return false;
         if (previewMode && !isTouched) return false;
-        return _apply;
-    }, [_apply, previewMode, isTouched]);
+        return {
+            title: t("dialog.button.apply", "apply"),
+            action: async () => {
+                await dispatch(editProperties(scenario, editedProperties));
+                close();
+            },
+            disabled: !editedProperties.name?.length,
+        };
+    }, [readOnly, previewMode, isTouched, t, editedProperties, dispatch, scenario, close]);
 
     const cancel = useMemo<WindowButtonProps | false>(() => {
         if (previewMode && !isTouched) return false;
-        if (!_cancel || !get(node, fieldPath)) return _cancel;
         return {
-            ..._cancel,
+            title: t("dialog.button.cancel", "cancel"),
+            className: LoadingButtonTypes.secondaryButton,
             action: () => {
-                onChange(node);
+                handleSetEditedProperties(fieldPath, currentProperties.additionalFields.description);
                 setPreviewMode(true);
             },
         };
-    }, [previewMode, isTouched, _cancel, onChange, node]);
+    }, [previewMode, isTouched, currentProperties, t, handleSetEditedProperties]);
 
     const preview = useMemo<WindowButtonProps | false>(() => {
         if (!isTouched) return false;
@@ -75,22 +84,24 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
         );
         const HeaderButtonZoom = (props) => (
             <>
-                <DefaultComponents.HeaderButton action={() => setPreviewMode(false)} name="edit">
-                    <Edit
-                        sx={{
-                            fontSize: "inherit",
-                            width: "unset",
-                            height: "unset",
-                            padding: ".25em",
-                        }}
-                    />
-                </DefaultComponents.HeaderButton>
+                {readOnly ? null : (
+                    <DefaultComponents.HeaderButton action={() => setPreviewMode(false)} name="edit">
+                        <Edit
+                            sx={{
+                                fontSize: "inherit",
+                                width: "unset",
+                                height: "unset",
+                                padding: ".25em",
+                            }}
+                        />
+                    </DefaultComponents.HeaderButton>
+                )}
                 <DefaultComponents.HeaderButtonZoom {...props} />
             </>
         );
 
         return { Header, HeaderTitle, HeaderButtonZoom };
-    }, [isTouched, previewMode]);
+    }, [isTouched, previewMode, readOnly]);
 
     return (
         <WindowContent
@@ -102,7 +113,12 @@ function DescriptionDialog(props: DescriptionDialogProps): JSX.Element {
             }}
             components={componentsOverride}
         >
-            <DescriptionOnlyContent fieldPath={fieldPath} node={editedNode} onChange={!readOnly && onChange} preview={previewMode} />
+            <DescriptionOnlyContent
+                fieldPath={fieldPath}
+                properties={editedProperties}
+                onChange={readOnly ? undefined : handleSetEditedProperties}
+                preview={previewMode}
+            />
         </WindowContent>
     );
 }

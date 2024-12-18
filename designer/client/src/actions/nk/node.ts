@@ -7,7 +7,7 @@ import { getScenarioGraph } from "../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
-import { EditNodeAction, EditScenarioLabels, RenameProcessAction } from "./editNode";
+import { EditNodeAction, EditScenarioLabels } from "./editNode";
 import { layoutChanged, NodePosition, Position } from "./ui/layout";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
@@ -171,5 +171,4 @@ export type NodeActions =
     | NodesWithEdgesAddedAction
     | ValidationResultAction
     | EditNodeAction
-    | RenameProcessAction
     | EditScenarioLabels;

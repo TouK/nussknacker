@@ -12,10 +12,10 @@ private[periodic] trait JarManager {
   def prepareDeploymentWithJar(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess
-  ): Future[DeploymentWithJarData[CanonicalProcess]]
+  ): Future[DeploymentWithJarData.WithCanonicalProcess]
 
   def deployWithJar(
-      deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
+      deploymentWithJarData: DeploymentWithJarData.WithCanonicalProcess,
       deploymentData: DeploymentData,
   ): Future[Option[ExternalDeploymentId]]
 

@@ -14894,6 +14894,42 @@
           }
         }
       ],
+      "stddevPop": [
+        {
+          "name": "stddevPop",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
+      "stddevSamp": [
+        {
+          "name": "stddevSamp",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
+      "varPop": [
+        {
+          "name": "varPop",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
+      "varSamp": [
+        {
+          "name": "varSamp",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
+          }
+        }
+      ],
       "first": [
         {
           "name": "first",

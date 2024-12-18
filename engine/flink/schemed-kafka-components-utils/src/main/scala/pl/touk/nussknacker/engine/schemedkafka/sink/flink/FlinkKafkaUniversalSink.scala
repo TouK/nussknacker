@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.functions.{OpenContext, RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
+import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
@@ -40,12 +41,21 @@ class FlinkKafkaUniversalSink(
   override def registerSink(
       dataStream: DataStream[ValueWithContext[Value]],
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSink[_] =
-    // FIXME: Missing map TypeInformation
+  ): DataStreamSink[_] = {
+
+    // TODO: Creating TypeInformation for Avro / Json Schema is difficult because of schema evolution, therefore we rely on Kryo, e.g. serializer for GenericRecordWithSchemaId
+    val typeInfo = KeyedValueType
+      .info(
+        Types.STRING, // KafkaSink for key supports only String
+        Types.GENERIC(classOf[AnyRef])
+      )
+      .asInstanceOf[TypeInformation[KeyedValue[AnyRef, AnyRef]]]
+
     dataStream
-      .map(new EncodeAvroRecordFunction(flinkNodeContext))
+      .map(new EncodeAvroRecordFunction(flinkNodeContext), typeInfo)
       .filter(_.value != null)
       .addSink(toFlinkFunction)
+  }
 
   def prepareValue(
       ds: DataStream[Context],
@@ -70,8 +80,8 @@ class FlinkKafkaUniversalSink(
 
     @transient private var encodeRecord: Any => AnyRef = _
 
-    override def open(parameters: Configuration): Unit = {
-      super.open(parameters)
+    override def open(openContext: OpenContext): Unit = {
+      super.open(openContext)
       encodeRecord = schemaSupportDispatcher
         .forSchemaType(schema.getParsedSchema.schemaType())
         .formValueEncoder(schema.getParsedSchema, validationMode)

@@ -74,14 +74,16 @@ const custom = {
 
 const extendWithHelpers = (custom: CustomPalette) => ({
     ...custom,
-    getNodeStyles: function (this: CustomPalette, node: NodeType) {
-        return this.nodes[NodeUtils.nodeType(node)];
+    getNodeStyles: function (this: CustomPalette, nodeType: NodeType["type"]) {
+        return this.nodes[nodeType];
     },
     getWindowStyles: function (this: CustomPalette, type = WindowKind.default) {
         switch (type) {
             case WindowKind.compareVersions:
             case WindowKind.calculateCounts:
                 return this.windows.compareVersions;
+            case WindowKind.editProperties:
+                return this.windows.editProperties;
             case WindowKind.customAction:
                 return this.windows.customAction;
             default:
@@ -176,27 +178,36 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                     styleOverrides: (theme) => globalStyles(theme),
                 },
                 MuiFormControl: {
+                    defaultProps: {
+                        variant: "standard",
+                    },
                     styleOverrides: {
-                        root: {
-                            display: "flex",
-                            flexDirection: "row",
-                            margin: "16px 0",
+                        root: ({ ownerState }) => {
+                            if (ownerState.variant === "standard") {
+                                return {
+                                    display: "flex",
+                                    flexDirection: "row",
+                                    margin: "16px 0",
+                                    ".MuiFormLabel-root": {
+                                        display: "flex",
+                                        flexBasis: formLabelWidth,
+                                        maxWidth: "20em",
+                                        overflowWrap: "anywhere",
+                                        marginTop: "9px",
+                                    },
+                                };
+                            }
                         },
                     },
                 },
                 MuiFormLabel: {
+                    defaultProps: {
+                        focused: false,
+                    },
                     styleOverrides: {
                         root: ({ theme }) => ({
                             ...theme.typography.body2,
-                            display: "flex",
-                            marginTop: "9px",
-                            flexBasis: formLabelWidth,
-                            maxWidth: "20em",
-                            overflowWrap: "anywhere",
                         }),
-                    },
-                    defaultProps: {
-                        focused: false,
                     },
                 },
                 MuiFormHelperText: {

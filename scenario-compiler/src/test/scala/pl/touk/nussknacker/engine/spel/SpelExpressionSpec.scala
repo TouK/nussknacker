@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{Context, Hidden, NodeId, SpelExpressionExcludeList, TemplateEvaluationResult}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, ClassDefinitionTestUtils, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
@@ -86,10 +86,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private implicit class EvaluateSyncTyped(expression: TypedExpression) {
 
-    def evaluateSync[T](ctx: Context = ctx): T = {
+    def evaluateSync[T](ctx: Context = ctx, skipReturnTypeCheck: Boolean = false): T = {
       val evaluationResult = expression.expression.evaluate[T](ctx, Map.empty)
       expression.typingInfo.typingResult match {
-        case result: SingleTypingResult if evaluationResult != null =>
+        case result: SingleTypingResult if evaluationResult != null && !skipReturnTypeCheck =>
           result.runtimeObjType.klass isAssignableFrom evaluationResult.getClass shouldBe true
         case _ =>
       }
@@ -1118,16 +1118,21 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("evaluates expression with template context") {
     parse[String]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template).validExpression
-      .evaluateSync[String]() shouldBe "alamakota 444"
+      .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
+      .renderedTemplate shouldBe "alamakota 444"
     parse[String](
       "alamakota #{444 + #obj.value} #{#mapValue.foo}",
       ctx,
       flavour = SpelExpressionParser.Template
-    ).validExpression.evaluateSync[String]() shouldBe "alamakota 446 bar"
+    ).validExpression
+      .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
+      .renderedTemplate shouldBe "alamakota 446 bar"
   }
 
   test("evaluates empty template as empty string") {
-    parse[String]("", ctx, flavour = SpelExpressionParser.Template).validExpression.evaluateSync[String]() shouldBe ""
+    parse[String]("", ctx, flavour = SpelExpressionParser.Template).validExpression
+      .evaluateSync[TemplateEvaluationResult](skipReturnTypeCheck = true)
+      .renderedTemplate shouldBe ""
   }
 
   test("variables with TypeMap type") {
@@ -2069,7 +2074,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       val parsedRoundTripExpression = parse[Any](mapExpression + ".toList.toMap", customCtx).validValue
       parsedRoundTripExpression.evaluateSync[Any](customCtx) shouldBe givenMap
       val roundTripTypeIsAGeneralizationOfGivenType =
-        givenMapExpression.returnType canBeSubclassOf parsedRoundTripExpression.returnType
+        givenMapExpression.returnType canBeConvertedTo parsedRoundTripExpression.returnType
       roundTripTypeIsAGeneralizationOfGivenType shouldBe true
     }
 

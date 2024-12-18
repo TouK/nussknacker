@@ -19,7 +19,7 @@ trait AuthenticationConfiguration {
 
   def isAdminImpersonationPossible: Boolean
 
-  private lazy val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
+  private lazy val userConfig: Config = new ConfigFactoryExt(getClass.getClassLoader).parseUri(usersFile)
 
   protected lazy val usersOpt: Option[List[ConfigUser]] =
     userConfig.as[Option[List[ConfigUser]]](usersConfigurationPath)
@@ -44,7 +44,7 @@ object AuthenticationConfiguration {
   val rulesConfigurationPath   = "rules"
 
   private[security] def getRules(usersFile: URI): List[ConfigRule] =
-    ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader).as[List[ConfigRule]](rulesConfigurationPath)
+    new ConfigFactoryExt(getClass.getClassLoader).parseUri(usersFile).as[List[ConfigRule]](rulesConfigurationPath)
 
   final case class ConfigUser(
       identity: String,

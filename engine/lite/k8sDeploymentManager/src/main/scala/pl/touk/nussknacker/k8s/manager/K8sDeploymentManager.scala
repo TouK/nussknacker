@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
@@ -114,7 +114,7 @@ class K8sDeploymentManager(
       case command: DMCancelScenarioCommand   => cancelScenario(command)
       case command: DMTestScenarioCommand     => testScenario(command)
       case _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand | _: DMStopScenarioCommand |
-          _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand =>
+          _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand | _: DMRunOffScheduleCommand =>
         notImplemented
     }
 

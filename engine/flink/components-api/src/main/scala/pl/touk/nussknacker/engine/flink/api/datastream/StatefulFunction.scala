@@ -18,10 +18,9 @@
 package pl.touk.nussknacker.engine.flink.api.datastream
 
 import org.apache.flink.annotation.Public
-import org.apache.flink.api.common.functions.RichFunction
+import org.apache.flink.api.common.functions.{OpenContext, RichFunction}
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.configuration.Configuration
 
 /**
  * Trait implementing the functionality necessary to apply stateful functions in RichFunctions
@@ -44,7 +43,7 @@ trait StatefulFunction[I, O, S] extends RichFunction {
     o
   }
 
-  override def open(c: Configuration) = {
+  override def open(openContext: OpenContext): Unit = {
     val info = new ValueStateDescriptor[S]("state", stateSerializer)
     state = getRuntimeContext().getState(info)
   }

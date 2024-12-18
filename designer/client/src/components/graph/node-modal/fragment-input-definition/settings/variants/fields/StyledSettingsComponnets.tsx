@@ -16,7 +16,9 @@ export const SettingLabelStyled = styled(FormLabel)(({ theme }) => ({
     color: theme.palette.text.secondary,
     fontSize: "12px",
     fontWeight: "400",
-    flexBasis: "30%",
+    ".MuiFormControl-root &": {
+        flexBasis: "30%",
+    },
 }));
 
 export const ListItemContainer = styled("div")`

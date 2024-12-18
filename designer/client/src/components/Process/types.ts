@@ -9,6 +9,7 @@ export enum PredefinedActionName {
     Archive = "ARCHIVE",
     UnArchive = "UNARCHIVE",
     Pause = "PAUSE",
+    RunOffSchedule = "RUN_OFF_SCHEDULE",
 }
 
 export type ActionName = string;
@@ -69,7 +70,9 @@ export type ProcessName = Scenario["name"];
 export type ProcessStateType = {
     status: StatusType;
     externalDeploymentId?: string;
+    visibleActions: Array<ActionName>;
     allowedActions: Array<ActionName>;
+    actionTooltips: Record<ActionName, string>;
     icon: string;
     tooltip: string;
     description: string;

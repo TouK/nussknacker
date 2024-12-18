@@ -180,8 +180,9 @@ class HttpService {
         this.#notificationActions = na;
     }
 
-    loadBackendNotifications(): Promise<BackendNotification[]> {
-        return api.get<BackendNotification[]>("/notifications").then((d) => {
+    loadBackendNotifications(scenarioName: string | undefined): Promise<BackendNotification[]> {
+        const path = scenarioName !== undefined ? `/notifications?scenarioName=${scenarioName}` : `/notifications`;
+        return api.get<BackendNotification[]>(path).then((d) => {
             return d.data;
         });
     }
@@ -314,8 +315,8 @@ class HttpService {
         return promise;
     }
 
-    fetchProcessState(processName: ProcessName) {
-        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status`);
+    fetchProcessState(processName: ProcessName, processVersionId: number) {
+        const promise = api.get(`/processes/${encodeURIComponent(processName)}/status?currentlyPresentedVersionId=${processVersionId}`);
         promise.catch((error) => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error));
         return promise;
     }
@@ -356,6 +357,31 @@ class HttpService {
                 } else {
                     throw error;
                 }
+            });
+    }
+
+    runOffSchedule(processName: string, comment?: string) {
+        const data = {
+            comment: comment,
+        };
+        return api
+            .post(`/processManagement/runOffSchedule/${encodeURIComponent(processName)}`, data)
+            .then((res) => {
+                const msg = res.data.msg;
+                this.#addInfo(msg);
+                return {
+                    isSuccess: res.data.isSuccess,
+                    msg: msg,
+                };
+            })
+            .catch((error) => {
+                const msg = error.response.data.msg || error.response.data;
+                const result = {
+                    isSuccess: false,
+                    msg: msg,
+                };
+                if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
+                return result;
             });
     }
 
@@ -859,13 +885,7 @@ class HttpService {
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
-                expectedType: {
-                    value: {
-                        type: type,
-                        refClazzName,
-                        params: [],
-                    },
-                },
+                expectedType: { type: type, refClazzName, params: [] },
             })
             .catch((error) =>
                 Promise.reject(

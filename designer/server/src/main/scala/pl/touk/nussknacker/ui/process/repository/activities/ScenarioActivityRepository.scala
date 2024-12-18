@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository.activities
 
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.Comment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.description.scenarioActivity.Dtos.Legacy
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.ui.process.repository.activities.ScenarioActivityRepo
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.LoggedUserUtils.Ops
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 
 trait ScenarioActivityRepository {
 
@@ -23,6 +22,7 @@ trait ScenarioActivityRepository {
 
   def findActivities(
       scenarioId: ProcessId,
+      after: Option[Instant] = None,
   ): DB[Seq[ScenarioActivity]]
 
   def addActivity(

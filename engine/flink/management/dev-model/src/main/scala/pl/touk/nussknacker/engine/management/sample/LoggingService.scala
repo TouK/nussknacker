@@ -18,7 +18,9 @@ object LoggingService extends EagerService {
   def prepare(
       @ParamName("logger") @Nullable loggerName: String,
       @ParamName("level") @DefaultValue("T(org.slf4j.event.Level).DEBUG") level: Level,
-      @ParamName("message") @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
+      @ParamName("message") @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[
+        TemplateEvaluationResult
+      ]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker {
 
@@ -31,7 +33,7 @@ object LoggingService extends EagerService {
           collector: ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
-        val msg = message.evaluate(context)
+        val msg = message.evaluate(context).renderedTemplate
         level match {
           case Level.TRACE => logger.trace(msg)
           case Level.DEBUG => logger.debug(msg)

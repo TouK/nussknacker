@@ -22,7 +22,7 @@ export const state: GraphState = {
         labels: [],
         scenarioGraph: {
             properties: {
-                type: "Properties",
+                name: "Properties",
                 additionalFields: {
                     description: null,
                     properties: {
@@ -167,7 +167,9 @@ export const state: GraphState = {
                 name: "NOT_DEPLOYED",
             },
             version: null,
+            visibleActions: ["DEPLOY", "ARCHIVE", "RENAME"],
             allowedActions: ["DEPLOY", "ARCHIVE", "RENAME"],
+            actionTooltips: {},
             icon: "/assets/states/not-deployed.svg",
             tooltip: "The scenario is not deployed.",
             description: "The scenario is not deployed.",

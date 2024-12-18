@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.NonEmptyList
 import com.codahale.metrics
 import com.codahale.metrics.SlidingTimeWindowReservoir
-import com.github.ghik.silencer.silent
 import org.apache.flink
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
@@ -53,9 +52,8 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
     ??? // Shouldn't be needed because Flink jobs are recreated "from scratch" and no cleanup of metrics during cancel is needed
   }
 
-  @silent("deprecated")
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
-    val namespaceTags = extractTags(NkGlobalParameters.readFromContext(runtimeContext.getExecutionConfig))
+    val namespaceTags = extractTags(NkGlobalParameters.fromMap(runtimeContext.getGlobalJobParameters))
     tagMode(nameParts, tags ++ namespaceTags)
   }
 

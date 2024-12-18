@@ -15,9 +15,9 @@ object NumberTypeUtils {
     else if (typ == Typed[java.lang.Double]) java.lang.Double.valueOf(0)
     else if (typ == Typed[java.math.BigDecimal]) java.math.BigDecimal.ZERO
     // in case of some unions
-    else if (typ.canBeSubclassOf(Typed[java.lang.Integer])) java.lang.Integer.valueOf(0)
+    else if (typ.canBeConvertedTo(Typed[java.lang.Integer])) java.lang.Integer.valueOf(0)
     // double is quite safe - it can be converted to any Number
-    else if (typ.canBeSubclassOf(Typed[Number])) java.lang.Double.valueOf(0)
+    else if (typ.canBeConvertedTo(Typed[Number])) java.lang.Double.valueOf(0)
     else throw new IllegalArgumentException(s"Not expected type: ${typ.display}, should be Number")
   }
 

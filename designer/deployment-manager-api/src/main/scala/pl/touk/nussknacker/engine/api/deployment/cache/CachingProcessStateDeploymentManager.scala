@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 
 import scala.compat.java8.FutureConverters._
@@ -26,9 +26,19 @@ class CachingProcessStateDeploymentManager(
   override def resolve(
       idWithName: ProcessIdWithName,
       statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] =
-    delegate.resolve(idWithName, statusDetails, lastStateAction)
+    delegate.resolve(
+      idWithName,
+      statusDetails,
+      lastStateAction,
+      latestVersionId,
+      deployedVersionId,
+      currentlyPresentedVersionId
+    )
 
   override def getProcessStates(
       name: ProcessName

@@ -103,6 +103,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
       cancelScenario(DMCancelScenarioCommand(name, user))
     case command: DMCancelScenarioCommand  => cancelScenario(command)
     case command: DMCustomActionCommand    => invokeCustomAction(command)
+    case command: DMRunOffScheduleCommand  => runOffSchedule(command)
     case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
     case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
       flinkTestRunner.test(canonicalProcess, scenarioTestData) // it's just for streaming e2e tests from file purposes
@@ -180,6 +181,10 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
       case _ =>
         Future.failed(new NotImplementedError())
     }
+  }
+
+  private def runOffSchedule(command: DMRunOffScheduleCommand): Future[RunOffScheduleResult] = {
+    notImplemented
   }
 
   override def close(): Unit = {}

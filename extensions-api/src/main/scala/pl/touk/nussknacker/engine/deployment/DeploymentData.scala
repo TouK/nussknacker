@@ -7,7 +7,8 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
     deploymentId: DeploymentId,
     user: User,
     additionalDeploymentData: Map[String, String],
-    nodesData: NodesDeploymentData
+    nodesData: NodesDeploymentData,
+    additionalModelConfigs: AdditionalModelConfigs
 )
 
 object DeploymentData {
@@ -15,14 +16,21 @@ object DeploymentData {
   val systemUser: User = User("system", "system")
 
   val empty: DeploymentData =
-    DeploymentData(DeploymentId(""), systemUser, Map.empty, NodesDeploymentData.empty)
+    DeploymentData(
+      DeploymentId(""),
+      systemUser,
+      Map.empty,
+      NodesDeploymentData.empty,
+      AdditionalModelConfigs.empty
+    )
 
   def withDeploymentId(deploymentIdString: String) =
     DeploymentData(
       DeploymentId(deploymentIdString),
       systemUser,
       Map.empty,
-      NodesDeploymentData.empty
+      NodesDeploymentData.empty,
+      AdditionalModelConfigs.empty
     )
 
 }

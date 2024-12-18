@@ -1,5 +1,5 @@
 import { Edge, NodeType } from "../../../types";
-import { concat, keys, uniq } from "lodash";
+import { uniq } from "lodash";
 import { useSelector } from "react-redux";
 import { isEqual } from "lodash";
 import { getScenario } from "../../../reducers/selectors/graph";

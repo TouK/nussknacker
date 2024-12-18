@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateR
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionDefinition,
@@ -42,7 +42,10 @@ abstract class FlinkDeploymentManager(
   override def resolve(
       idWithName: ProcessIdWithName,
       statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     for {
       actionAfterPostprocessOpt <- postprocess(idWithName, statusDetails)
@@ -50,7 +53,12 @@ abstract class FlinkDeploymentManager(
         statusDetails,
         actionAfterPostprocessOpt.orElse(lastStateAction)
       )
-    } yield processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
+    } yield processStateDefinitionManager.processState(
+      engineStateResolvedWithLastAction,
+      latestVersionId,
+      deployedVersionId,
+      currentlyPresentedVersionId,
+    )
   }
 
   // Flink has a retention for job overviews so we can't rely on this to distinguish between statuses:
@@ -114,6 +122,7 @@ abstract class FlinkDeploymentManager(
       case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
         testRunner.test(canonicalProcess, scenarioTestData)
       case command: DMCustomActionCommand => processCustomAction(command)
+      case _: DMRunOffScheduleCommand     => notImplemented
     }
 
   private def validate(command: DMValidateScenarioCommand): Future[Unit] = {

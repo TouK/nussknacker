@@ -119,7 +119,7 @@ abstract class FlinkWithKafkaSuite
     .empty()
     .withValue(
       KafkaConfigProperties.bootstrapServersProperty("config"),
-      fromAnyRef(kafkaServer.kafkaAddress)
+      fromAnyRef(kafkaServerWithDependencies.kafkaAddress)
     )
     .withValue(
       KafkaConfigProperties.property("config", "schema.registry.url"),

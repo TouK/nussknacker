@@ -39,15 +39,16 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
       fixture.deployScenario(scenario)
     }
 
-    kafkaServer.kafkaServer.shutdown()
-    kafkaServer.kafkaServer.awaitShutdown()
+    kafkaServerWithDependencies.shutdownKafkaServer()
 
     eventually {
       val jobStatuses = manager.getProcessStates(name).futureValue.value
       jobStatuses.map(_.status) shouldBe List(SimpleStateStatus.Restarting)
     }
 
-    kafkaServer.kafkaServer.startup()
+    // We have to recreate kafka server because after shutdown it is unusable anymore
+    kafkaServerWithDependencies.recreateKafkaServer()
+    kafkaServerWithDependencies.startupKafkaServer()
 
     eventually {
       manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)

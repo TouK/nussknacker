@@ -143,6 +143,16 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 },
             };
         }
+        case "EDIT_PROPERTIES": {
+            return {
+                ...state,
+                scenario: {
+                    ...state.scenario,
+                    scenarioGraph: { ...action.scenarioGraphAfterChange },
+                    validationResult: updateValidationResult(state, action),
+                },
+            };
+        }
         case "PROCESS_RENAME": {
             return {
                 ...state,

@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator.validateParameterNames
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
   ComponentExecutorFactory,
@@ -100,6 +99,8 @@ class NodeCompiler(
     new DynamicNodeValidator(expressionCompiler, globalVariablesPreparer, parametersEvaluator)
   private val builtInNodeCompiler = new BuiltInNodeCompiler(expressionCompiler)
 
+  private val fragmentParameterValidator = FragmentParameterValidator(fragmentDefinitionExtractor.classDefinitions)
+
   def compileSource(
       nodeData: SourceNodeData
   )(implicit jobData: JobData, nodeId: NodeId): NodeCompilationResult[Source] = nodeData match {
@@ -165,7 +166,7 @@ class NodeCompiler(
           )
       }
 
-      val parameterNameValidation = validateParameterNames(parameterDefinitions.value)
+      val parameterNameValidation = fragmentParameterValidator.validateParameterNames(parameterDefinitions.value)
 
       // by relying on name for the field names used on FE, we display the same errors under all fields with the
       // duplicated name
@@ -195,7 +196,7 @@ class NodeCompiler(
 
     val fixedValuesErrors = fragmentInputDefinition.parameters
       .map { param =>
-        FragmentParameterValidator.validateFixedExpressionValues(
+        fragmentParameterValidator.validateFixedExpressionValues(
           param,
           validationContext,
           expressionCompiler
@@ -206,7 +207,7 @@ class NodeCompiler(
 
     val dictValueEditorErrors = fragmentInputDefinition.parameters
       .map { param =>
-        FragmentParameterValidator.validateValueInputWithDictEditor(param, expressionConfig.dictionaries, classLoader)
+        fragmentParameterValidator.validateValueInputWithDictEditor(param, expressionConfig.dictionaries, classLoader)
       }
       .sequence
       .map(_ => ())

@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.newdeployment
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
@@ -14,10 +15,20 @@ trait DeploymentManagerInconsistentStateHandlerMixIn {
   final override def resolve(
       idWithName: ProcessIdWithName,
       statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState] = {
     val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
-    Future.successful(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+    Future.successful(
+      processStateDefinitionManager.processState(
+        engineStateResolvedWithLastAction,
+        latestVersionId,
+        deployedVersionId,
+        currentlyPresentedVersionId
+      )
+    )
   }
 
   // This method is protected to make possible to override it with own logic handling different edge cases like
@@ -37,14 +48,25 @@ trait DeploymentManager extends AutoCloseable {
 
   def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result]
 
-  final def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
+  final def getProcessState(
+      idWithName: ProcessIdWithName,
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
+  )(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
       statusDetailsWithFreshness <- getProcessStates(idWithName.name)
-      stateWithFreshness <- resolve(idWithName, statusDetailsWithFreshness.value, lastStateAction).map(state =>
-        statusDetailsWithFreshness.map(_ => state)
-      )
+      stateWithFreshness <- resolve(
+        idWithName,
+        statusDetailsWithFreshness.value,
+        lastStateAction,
+        latestVersionId,
+        deployedVersionId,
+        currentlyPresentedVersionId,
+      ).map(state => statusDetailsWithFreshness.map(_ => state))
     } yield stateWithFreshness
   }
 
@@ -63,7 +85,10 @@ trait DeploymentManager extends AutoCloseable {
   def resolve(
       idWithName: ProcessIdWithName,
       statusDetails: List[StatusDetails],
-      lastStateAction: Option[ProcessAction]
+      lastStateAction: Option[ProcessAction],
+      latestVersionId: VersionId,
+      deployedVersionId: Option[VersionId],
+      currentlyPresentedVersionId: Option[VersionId],
   ): Future[ProcessState]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
@@ -78,7 +103,8 @@ trait DeploymentManager extends AutoCloseable {
 trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager =>
 
   def managerSpecificScenarioActivities(
-      processIdWithName: ProcessIdWithName
+      processIdWithName: ProcessIdWithName,
+      after: Option[Instant],
   ): Future[List[ScenarioActivity]]
 
 }

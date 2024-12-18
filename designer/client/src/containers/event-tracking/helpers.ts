@@ -92,6 +92,9 @@ export const mapToolbarButtonToStatisticsEvent = (
         case BuiltinButtonTypes.processCancel: {
             return EventTrackingSelector.ScenarioCancel;
         }
+        case BuiltinButtonTypes.processRunOffSchedule: {
+            return EventTrackingSelector.ScenarioRunOffSchedule;
+        }
         case BuiltinButtonTypes.processArchiveToggle: {
             return EventTrackingSelector.ScenarioArchiveToggle;
         }
