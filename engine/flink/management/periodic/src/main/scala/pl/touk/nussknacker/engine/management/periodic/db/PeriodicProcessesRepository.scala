@@ -503,17 +503,17 @@ class SlickPeriodicProcessesRepository(
   ): SchedulesState = {
     SchedulesState(
       list
-        .map { case (periodicProcessMetadata, deployment) =>
-          val scheduleId         = ScheduleId(periodicProcessMetadata.id, ScheduleName(deployment.scheduleName))
-          val scheduleData       = (scheduleId, periodicProcessMetadata)
+        .map { case (process, deployment) =>
+          val scheduleId         = ScheduleId(process.id, ScheduleName(deployment.scheduleName))
+          val scheduleData       = (scheduleId, process)
           val scheduleDeployment = ScheduleDeploymentData(deployment)
           (scheduleData, scheduleDeployment)
         }
         .toList
         .toGroupedMap
         .toList
-        .map { case ((scheduleId, processEntity), deployments) =>
-          scheduleId -> ScheduleData(createPeriodicProcessWithoutJson(processEntity), deployments)
+        .map { case ((scheduleId, process), deployments) =>
+          scheduleId -> ScheduleData(createPeriodicProcessWithoutJson(process), deployments)
         }
         .toMap
     )

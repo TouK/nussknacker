@@ -466,12 +466,13 @@ class DeploymentService(
           .map {
             case process if process.isFragment => DBIO.successful(process)
             case process =>
-              val prefetchedStateForProcess = prefetchedStates.get(process.processingType).flatMap(_.get(process.name))
+              val prefetchedStateForProcessOpt =
+                prefetchedStates.get(process.processingType).flatMap(_.get(process.name))
               getProcessState(
                 process.toEntity,
                 actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
                 None,
-                prefetchedStateForProcess,
+                prefetchedStateForProcessOpt,
               ).map(state => process.copy(state = Some(state)))
           }
           .sequence[DB, ScenarioWithDetails]
