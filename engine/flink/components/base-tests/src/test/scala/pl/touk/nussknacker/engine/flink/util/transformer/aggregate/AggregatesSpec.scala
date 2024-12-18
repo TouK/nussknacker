@@ -5,24 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregatesSpec.{EPS_BIG_DECIMAL, EPS_DOUBLE}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{
-  AverageAggregator,
-  CountWhenAggregator,
-  FirstAggregator,
-  LastAggregator,
-  ListAggregator,
-  MapAggregator,
-  MaxAggregator,
-  MedianAggregator,
-  MinAggregator,
-  OptionAggregator,
-  PopulationStandardDeviationAggregator,
-  PopulationVarianceAggregator,
-  SampleStandardDeviationAggregator,
-  SampleVarianceAggregator,
-  SetAggregator,
-  SumAggregator
-}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{AverageAggregator, CountWhenAggregator, FirstAggregator, LastAggregator, ListAggregator, MapAggregator, MaxAggregator, MinAggregator, OptionAggregator, PopulationStandardDeviationAggregator, PopulationVarianceAggregator, SampleStandardDeviationAggregator, SampleVarianceAggregator, SetAggregator, SumAggregator}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.lang.{Integer => JInt, Long => JLong}
@@ -144,8 +127,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
       MinAggregator,
       FirstAggregator,
       LastAggregator,
-      SumAggregator,
-      MedianAggregator
+      SumAggregator
     )) { agg =>
       addElementsAndComputeResult(List(null), agg) shouldEqual null
     }
@@ -164,62 +146,6 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
       val result = addElementsAndComputeResult(List(5.0, 4.0, 3.0, 2.0, 1.0), agg)
       result.asInstanceOf[Double] shouldBe expectedResult +- EPS_DOUBLE
     }
-  }
-
-  test("should calculate correct results for median aggregator on integers") {
-    val agg    = MedianAggregator
-    val result = addElementsAndComputeResult(List(7, 8), agg)
-    result shouldBe a[Double]
-    result shouldEqual 7.5
-  }
-
-  test("should calculate correct results for median aggregator on integers on single value") {
-    val agg    = MedianAggregator
-    val result = addElementsAndComputeResult(List(7), agg)
-    result shouldBe a[Double]
-    result shouldEqual 7
-  }
-
-  test("should calculate correct results for median aggregator on BigInt") {
-    val agg = MedianAggregator
-    addElementsAndComputeResult(List(new BigInteger("7"), new BigInteger("8")), agg) shouldEqual new java.math.BigDecimal("7.5")
-  }
-
-  test("should calculate correct results for median aggregator on floats") {
-    val agg    = MedianAggregator
-    val result = addElementsAndComputeResult(List(7.0f, 8.0f), agg)
-    result shouldBe a[Double]
-    result shouldEqual 7.5
-  }
-
-  test("should calculate correct results for median aggregator on BigDecimals") {
-    val agg = MedianAggregator
-    addElementsAndComputeResult(
-      List(new java.math.BigDecimal("7"), new java.math.BigDecimal("8")),
-      agg
-    ) shouldEqual new java.math.BigDecimal("7.5")
-  }
-
-  test("should ignore nulls for median aggregator") {
-    val agg = MedianAggregator
-    addElementsAndComputeResult(
-      List(null, new java.math.BigDecimal("7"), null, new java.math.BigDecimal("8")),
-      agg
-    ) shouldEqual new java.math.BigDecimal("7.5")
-  }
-
-  test("MedianAggregator test on odd length list") {
-    val agg    = MedianAggregator
-    val result = addElementsAndComputeResult(List(80, 70, 3, 1, 4, 60, 2, 5, 90), agg)
-
-    result shouldEqual 5
-  }
-
-  test("MedianAggregator test on even length list") {
-    val agg    = MedianAggregator
-    val result = addElementsAndComputeResult(List(80, 70, 3, 1, 4, 60, 2, 5), agg)
-
-    result shouldEqual 4.5
   }
 
   test("should calculate correct results for standard deviation and variance on integers") {
@@ -304,8 +230,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
       ( SumAggregator, 15.0),
       ( MaxAggregator, 5.0),
       ( MinAggregator, 1.0),
-      ( AverageAggregator, 3.0),
-      ( MedianAggregator, 3.0)
+      ( AverageAggregator, 3.0)
     )
 
     forAll(table) { (agg, expectedResult) =>

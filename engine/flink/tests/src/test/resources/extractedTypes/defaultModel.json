@@ -14930,15 +14930,6 @@
           }
         }
       ],
-      "median": [
-        {
-          "name": "median",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.Aggregator"}
-          }
-        }
-      ],
       "first": [
         {
           "name": "first",
