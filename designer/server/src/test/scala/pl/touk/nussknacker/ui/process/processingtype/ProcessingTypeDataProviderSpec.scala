@@ -55,7 +55,10 @@ class ProcessingTypeDataProviderSpec extends AnyFunSuite with Matchers {
       deploymentManagerProvider = new DeploymentManagerProviderStub
     )
     loader
-      .loadProcessingTypeData(_ => modelDependencies, _ => TestFactory.deploymentManagerDependencies)
+      .loadProcessingTypeData(
+        _ => modelDependencies,
+        _ => TestFactory.deploymentManagerDependencies
+      )
       .unsafeRunSync()
   }
 
