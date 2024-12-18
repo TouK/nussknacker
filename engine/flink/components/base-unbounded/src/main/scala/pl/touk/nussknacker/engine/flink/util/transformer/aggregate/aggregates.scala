@@ -75,20 +75,30 @@ object aggregates {
 
   object MedianAggregator extends Aggregator with LargeFloatingNumberAggregate {
 
-    override type Aggregate = ListBuffer[Number]
+    override type Aggregate = java.util.ArrayList[Number]
 
     override type Element = Number
 
-    override def zero: Aggregate = ListBuffer.empty
+    override def zero: Aggregate = new java.util.ArrayList[Number]()
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg else agg.addOne(el)
+    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg else {
+      agg.add(el)
+      agg
+    }
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
+    override def isNeutralForAccumulator(element: Element, currentAggregate: Aggregate): Boolean = element == null
 
-    override def result(finalAggregate: Aggregate): AnyRef = MedianHelper.calculateMedian(finalAggregate.toList).orNull
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = {
+      val result = new java.util.ArrayList[Number]()
+      result.addAll(agg1)
+      result.addAll(agg2)
+      result
+    }
+
+    override def result(finalAggregate: Aggregate): AnyRef = MedianHelper.calculateMedian(finalAggregate.asScala.toList).orNull
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
-      Typed.genericTypeClass[ListBuffer[_]](List(input))
+      Typed.genericTypeClass[java.util.ArrayList[_]](List(input))
     )
 
   }
