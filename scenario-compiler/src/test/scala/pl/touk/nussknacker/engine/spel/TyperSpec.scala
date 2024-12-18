@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated.Valid
-import cats.data.ValidatedNel
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.DynamicPropertyAccessError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.NoPropertyError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.MapWithExpressionKeysError
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.TyperSpecTestData.TestRecord._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -28,6 +29,12 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   private val dynamicAccessTyper: Typer    = buildTyper(dynamicPropertyAccessAllowed = true)
   private val parser: standard.SpelExpressionParser =
     new org.springframework.expression.spel.standard.SpelExpressionParser()
+
+  test("not allow maps with keys other than strings") {
+    typeExpression("{1L: 'foo'}") shouldBe Invalid(
+      NonEmptyList(MapWithExpressionKeysError, List())
+    )
+  }
 
   test("simple expression") {
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(
