@@ -51,7 +51,7 @@ enum ClickEventsSelector {
     ScenarioSave = "SCENARIO_SAVE",
     TestCounts = "TEST_COUNTS",
     ScenarioCancel = "SCENARIO_CANCEL",
-    ScenarioPerformSingleExecution = "SCENARIO_PERFORM_SINGLE_EXECUTION",
+    ScenarioRunOffSchedule = "SCENARIO_RUN_OFF_SCHEDULE",
     ScenarioArchiveToggle = "SCENARIO_ARCHIVE_TOGGLE",
     ScenarioUnarchive = "SCENARIO_UNARCHIVE",
     ScenarioCustomAction = "SCENARIO_CUSTOM_ACTION",

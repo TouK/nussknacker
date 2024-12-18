@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.functions.{OpenContext, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
@@ -42,8 +41,8 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K, V]](
   type FlinkOnTimerCtx =
     KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
 
-  override def open(parameters: Configuration): Unit = {
-    super.open(parameters)
+  override def open(openContext: OpenContext): Unit = {
+    super.open(openContext)
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
   }
 

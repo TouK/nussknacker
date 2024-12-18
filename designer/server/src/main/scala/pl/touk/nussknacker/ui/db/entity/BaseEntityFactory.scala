@@ -9,8 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 }
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
-import slick.ast.BaseTypedType
-import slick.jdbc.{JdbcProfile, JdbcType}
+import slick.jdbc.JdbcProfile
 
 import java.util.UUID
 

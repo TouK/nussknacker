@@ -26,6 +26,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
             * `def actionTooltips(processStatus: ProcessStatus): Map[ScenarioActionName, String]` - allows to define custom tooltips for actions, if not defined the default is still used
         * modified method:
             * `def statusActions(processStatus: ProcessStatus): List[ScenarioActionName]` - changed argument, to include information about latest and deployed versions
+* [#7347](https://github.com/TouK/nussknacker/pull/7347) All calls to `org.apache.flink.api.common.functions.RichFunction.open(Configuration)`,
+  which is deprecated, were replaced with calls to `org.apache.flink.api.common.functions.RichFunction.open(OpenContext)`
 
 ## In version 1.18.0
 
