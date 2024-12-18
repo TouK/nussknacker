@@ -6,7 +6,7 @@ import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.util.classes.Extensions.ClassExtensions
-import pl.touk.nussknacker.springframework.util.NumberUtilsConsts
+import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer
 
 import java.lang.{
   Boolean => JBoolean,
@@ -69,13 +69,12 @@ object ToBigDecimalConversion extends ToNumericConversion[JBigDecimal] {
 
   override def convertEither(value: Any): Either[Throwable, JBigDecimal] =
     value match {
-      case v: JBigDecimal => Right(v.setScale(Math.max(v.scale(), NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE)))
-      case v: JBigInteger => Right(new JBigDecimal(v).setScale(NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE))
+      case v: JBigDecimal => Right(BigDecimalScaleEnsurer.ensureBigDecimalScale(v))
+      case v: JBigInteger => Right(BigDecimalScaleEnsurer.ensureBigDecimalScale(new JBigDecimal(v)))
       case v: Number      => Try(NumberUtils.convertNumberToTargetClass(v, resultTypeClass)).toEither
       case v: String =>
         Try({
-          val a = new JBigDecimal(v)
-          a.setScale(Math.max(a.scale(), NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE))
+          BigDecimalScaleEnsurer.ensureBigDecimalScale(new JBigDecimal(v))
         }).toEither
       case _ => Left(new IllegalArgumentException(s"Cannot convert: $value to BigDecimal"))
     }

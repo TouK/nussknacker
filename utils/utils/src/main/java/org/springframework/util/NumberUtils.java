@@ -16,11 +16,10 @@
 
 package org.springframework.util;
 
-import pl.touk.nussknacker.springframework.util.NumberUtilsConsts;
+import pl.touk.nussknacker.springframework.util.BigDecimalScaleEnsurer;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -144,10 +143,7 @@ public abstract class NumberUtils {
 			} else if (number instanceof Float) {
 				return (T) bigDecimal.setScale(FLOAT_SCALE, RoundingMode.UNNECESSARY);
 			} else {
-                if (bigDecimal.scale() < NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE) {
-                    return (T) bigDecimal.setScale(NumberUtilsConsts.DEFAULT_BIG_DECIMAL_SCALE, RoundingMode.UNNECESSARY);
-                }
-				return (T) bigDecimal;
+				return (T) BigDecimalScaleEnsurer.ensureBigDecimalScale(bigDecimal);
 			}
 		}
 		else {
