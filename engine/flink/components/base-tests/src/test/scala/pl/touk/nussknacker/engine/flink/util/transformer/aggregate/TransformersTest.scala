@@ -96,13 +96,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateOk("#AGG.varPop", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
     validateOk("#AGG.varSamp", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
 
-    validateOk("#AGG.median", """#input.eId""", Typed[Double])
-    validateOk("#AGG.median", """1""", Typed[Double])
-    validateOk("#AGG.median", """1.5""", Typed[Double])
-
-    validateOk("#AGG.median", """T(java.math.BigInteger).ONE""", Typed[java.math.BigDecimal])
-    validateOk("#AGG.median", """T(java.math.BigDecimal).ONE""", Typed[java.math.BigDecimal])
-
     validateOk("#AGG.set", "#input.str", Typed.fromDetailedType[java.util.Set[String]])
     validateOk(
       "#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
@@ -113,7 +106,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateError("#AGG.sum", "#input.str", "Invalid aggregate type: String, should be: Number")
     validateError("#AGG.countWhen", "#input.str", "Invalid aggregate type: String, should be: Boolean")
     validateError("#AGG.average", "#input.str", "Invalid aggregate type: String, should be: Number")
-    validateError("#AGG.median", "#input.str", "Invalid aggregate type: String, should be: Number")
 
     validateError("#AGG.stddevPop", "#input.str", "Invalid aggregate type: String, should be: Number")
     validateError("#AGG.stddevSamp", "#input.str", "Invalid aggregate type: String, should be: Number")
@@ -173,17 +165,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val model =
       modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
     val testProcess = sliding("#AGG.average", "#input.eId", emitWhenEventLeft = false)
-
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
-  }
-
-  test("median aggregate") {
-    val id = "1"
-
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
-    val testProcess = sliding("#AGG.median", "#input.eId", emitWhenEventLeft = false)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(1.0d, 1.5, 3.5)
@@ -474,19 +455,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
   }
 
-  test("emit aggregate for extra window when no data come for median aggregator for return type double") {
-    val id = "1"
-
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a")))
-    val testProcess = tumbling("#AGG.median", "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
-
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables.length shouldEqual (2)
-    aggregateVariables(0) shouldEqual 1.0
-    aggregateVariables(1).asInstanceOf[Double].isNaN shouldBe true
-  }
-
   test(
     "emit aggregate for extra window when no data come for standard deviation and variance aggregator for return type double"
   ) {
@@ -519,18 +487,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       modelData(List(TestRecordHours(id, 0, 1, "a")))
     val testProcess =
       tumbling("#AGG.average", """T(java.math.BigDecimal).ONE""", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
-
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldEqual List(new java.math.BigDecimal("1"), null)
-  }
-
-  test("emit aggregate for extra window when no data come for median aggregator for return type BigDecimal") {
-    val id = "1"
-
-    val model =
-      modelData(List(TestRecordHours(id, 0, 1, "a")))
-    val testProcess =
-      tumbling("#AGG.median", """T(java.math.BigDecimal).ONE""", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldEqual List(new java.math.BigDecimal("1"), null)

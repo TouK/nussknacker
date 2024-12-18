@@ -5,19 +5,15 @@ import cats.data.{NonEmptyList, Validated}
 import cats.instances.list._
 import org.apache.flink.api.common.typeinfo.TypeInfo
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.{
-  ForLargeFloatingNumbersOperation,
-}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeFloatingNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfoFactory
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.median.MedianHelper
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import java.util
-import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
 /*
@@ -70,26 +66,6 @@ object aggregates {
     override def addElement(n1: Number, n2: Number): Number = MathUtils.min(n1, n2)
 
     override protected val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
-
-  }
-
-  object MedianAggregator extends Aggregator with LargeFloatingNumberAggregate {
-
-    override type Aggregate = ListBuffer[Number]
-
-    override type Element = Number
-
-    override def zero: Aggregate = ListBuffer.empty
-
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (el == null) agg else agg.addOne(el)
-
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
-
-    override def result(finalAggregate: Aggregate): AnyRef = MedianHelper.calculateMedian(finalAggregate.toList).orNull
-
-    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
-      Typed.genericTypeClass[ListBuffer[_]](List(input))
-    )
 
   }
 

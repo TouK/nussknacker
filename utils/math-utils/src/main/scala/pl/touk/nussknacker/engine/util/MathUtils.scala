@@ -186,8 +186,7 @@ trait MathUtils {
     case n1: java.math.BigDecimal => n1.negate()
   }
 
-  @Hidden
-  def compare(n1: Number, n2: Number): Int = {
+  private def compare(n1: Number, n2: Number): Int = {
     withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler[Int] {
       override def onBytes(n1: java.lang.Byte, n2: java.lang.Byte): Int                   = n1.compareTo(n2)
       override def onShorts(n1: java.lang.Short, n2: java.lang.Short): Int                = n1.compareTo(n2)
@@ -287,8 +286,7 @@ trait MathUtils {
     }
   }
 
-  @Hidden
-  def convertToPromotedType(
+  private def convertToPromotedType(
       n: Number
   )(implicit promotionStrategy: ReturningSingleClassPromotionStrategy): Number = {
     // In some cases type can be promoted to other class e.g. Byte is promoted to Int for sum
