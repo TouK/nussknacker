@@ -13,6 +13,10 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.periodic.{
+  NoOpPeriodicProcessesManagerProvider,
+  PeriodicProcessesManagerProvider
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
@@ -44,6 +48,7 @@ class MockDeploymentManager(
       new ProcessingTypeDeployedScenariosProviderStub(List.empty),
     actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub,
     scenarioActivityManager: ScenarioActivityManager = NoOpScenarioActivityManager,
+    periodicProcessesManagerProvider: PeriodicProcessesManagerProvider = NoOpPeriodicProcessesManagerProvider,
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
@@ -53,6 +58,7 @@ class MockDeploymentManager(
         deployedScenariosProvider,
         actionService,
         scenarioActivityManager,
+        periodicProcessesManagerProvider,
         ExecutionContext.global,
         ActorSystem("MockDeploymentManager"),
         SttpBackendStub.asynchronousFuture
