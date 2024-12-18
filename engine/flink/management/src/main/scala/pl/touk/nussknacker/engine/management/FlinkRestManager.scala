@@ -44,8 +44,9 @@ class FlinkRestManager(
     client
       .getJobsOverviews()
       .flatMap { result =>
-        statusDetailsFrom(result.value)
-          .map(WithDataFreshnessStatus(_, cached = result.cached)) // TODO: How to do it nicer?
+        statusDetailsFrom(result.value).map(
+          WithDataFreshnessStatus(_, cached = result.cached)
+        ) // TODO: How to do it nicer?
       }
   }
 

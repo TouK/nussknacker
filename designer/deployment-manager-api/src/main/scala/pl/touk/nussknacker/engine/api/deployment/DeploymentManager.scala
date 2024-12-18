@@ -59,7 +59,7 @@ trait DeploymentManager extends AutoCloseable {
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
       statusDetailsWithFreshness <- getProcessStates(idWithName.name)
-      stateWithFreshness <- getProcessState(
+      stateWithFreshness <- resolvePrefetchedProcessState(
         idWithName,
         lastStateAction,
         latestVersionId,
@@ -70,7 +70,7 @@ trait DeploymentManager extends AutoCloseable {
     } yield stateWithFreshness
   }
 
-  final def getProcessState(
+  final def resolvePrefetchedProcessState(
       idWithName: ProcessIdWithName,
       lastStateAction: Option[ProcessAction],
       latestVersionId: VersionId,
@@ -78,16 +78,14 @@ trait DeploymentManager extends AutoCloseable {
       currentlyPresentedVersionId: Option[VersionId],
       statusDetailsWithFreshness: WithDataFreshnessStatus[List[StatusDetails]],
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
-    for {
-      stateWithFreshness <- resolve(
-        idWithName,
-        statusDetailsWithFreshness.value,
-        lastStateAction,
-        latestVersionId,
-        deployedVersionId,
-        currentlyPresentedVersionId,
-      ).map(state => statusDetailsWithFreshness.map(_ => state))
-    } yield stateWithFreshness
+    resolve(
+      idWithName,
+      statusDetailsWithFreshness.value,
+      lastStateAction,
+      latestVersionId,
+      deployedVersionId,
+      currentlyPresentedVersionId,
+    ).map(state => statusDetailsWithFreshness.map(_ => state))
   }
 
   /**

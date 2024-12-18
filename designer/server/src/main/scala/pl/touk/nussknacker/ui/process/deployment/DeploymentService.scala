@@ -459,17 +459,19 @@ class DeploymentService(
     dbioRunner.run(
       for {
         actionsInProgress <- getInProgressActionTypesForScenarios(scenarios)
-        prefetchedStates  <- DBIO.from(getPrefetchedStatesForDeploymentManagers(scenarios))
+        // DeploymentManager's may support fetching state of all scenarios at once (StateQueryForAllScenariosSupported capability)
+        // For those DM's we prefetch the state and then use it for resolving individual scenarios.
+        prefetchedStates <- DBIO.from(getPrefetchedStatesForSupportedManagers(scenarios))
         processesWithState <- processTraverse
           .map {
             case process if process.isFragment => DBIO.successful(process)
             case process =>
-              val prefetchedStatesForProcess = prefetchedStates.get(process.processingType).flatMap(_.get(process.name))
+              val prefetchedStateForProcess = prefetchedStates.get(process.processingType).flatMap(_.get(process.name))
               getProcessState(
                 process.toEntity,
                 actionsInProgress.getOrElse(process.processIdUnsafe, Set.empty),
                 None,
-                prefetchedStatesForProcess,
+                prefetchedStateForProcess,
               ).map(state => process.copy(state = Some(state)))
           }
           .sequence[DB, ScenarioWithDetails]
@@ -477,7 +479,7 @@ class DeploymentService(
     )
   }
 
-  private def getPrefetchedStatesForDeploymentManagers(
+  private def getPrefetchedStatesForSupportedManagers(
       scenarios: List[ScenarioWithDetails],
   )(
       implicit user: LoggedUser,
@@ -490,25 +492,29 @@ class DeploymentService(
       .sequence {
         deploymentManagersByProcessingTypes.map { case (processingType, manager) =>
           manager match {
-            case dm: StateQueryForAllScenariosSupported =>
-              dm
-                .getProcessesStates()
-                .map(states => Some((processingType, states)))
-                .recover { case NonFatal(e) =>
-                  logger.warn(
-                    s"Failed to get statuses of all scenarios in deployment manager for $processingType: ${e.getMessage}",
-                    e
-                  )
-                  None
-                }
-            case _ =>
-              Future.successful(None)
+            case dm: StateQueryForAllScenariosSupported => getProcessesStates(processingType, dm)
+            case _                                      => Future.successful(None)
           }
         }
       }
       .map(_.flatten.toMap)
 
     prefetchedStatesByProcessingTypes
+  }
+
+  private def getProcessesStates(processingType: ProcessingType, manager: StateQueryForAllScenariosSupported)(
+      implicit freshnessPolicy: DataFreshnessPolicy,
+  ): Future[Option[(ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]])]] = {
+    manager
+      .getProcessesStates()
+      .map(states => Some((processingType, states)))
+      .recover { case NonFatal(e) =>
+        logger.warn(
+          s"Failed to get statuses of all scenarios in deployment manager for $processingType: ${e.getMessage}",
+          e
+        )
+        None
+      }
   }
 
   // This is optimisation tweak. We want to reduce number of calls for in progress action types. So for >1 scenarios
@@ -668,36 +674,33 @@ class DeploymentService(
       latestVersionId: VersionId,
       deployedVersionId: Option[VersionId],
       currentlyPresentedVersionId: Option[VersionId],
-      prefetchedStatusDetailsWithFreshness: Option[WithDataFreshnessStatus[List[StatusDetails]]],
+      prefetchedStateOpt: Option[WithDataFreshnessStatus[List[StatusDetails]]],
   )(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
 
-    val state = (prefetchedStatusDetailsWithFreshness match {
-      case Some(statusDetailsWithFreshness) =>
-        deploymentManager
-          .getProcessState(
-            processIdWithName,
-            lastStateAction,
-            latestVersionId,
-            deployedVersionId,
-            currentlyPresentedVersionId,
-            statusDetailsWithFreshness,
-          )
+    val state = (prefetchedStateOpt match {
+      case Some(prefetchedState) =>
+        deploymentManager.resolvePrefetchedProcessState(
+          processIdWithName,
+          lastStateAction,
+          latestVersionId,
+          deployedVersionId,
+          currentlyPresentedVersionId,
+          prefetchedState,
+        )
       case None =>
-        deploymentManager
-          .getProcessState(
-            processIdWithName,
-            lastStateAction,
-            latestVersionId,
-            deployedVersionId,
-            currentlyPresentedVersionId,
-          )
-    })
-      .recover { case NonFatal(e) =>
-        logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
-        failedToGetProcessState(latestVersionId)
-      }
+        deploymentManager.getProcessState(
+          processIdWithName,
+          lastStateAction,
+          latestVersionId,
+          deployedVersionId,
+          currentlyPresentedVersionId,
+        )
+    }).recover { case NonFatal(e) =>
+      logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
+      failedToGetProcessState(latestVersionId)
+    }
 
     scenarioStateTimeout
       .map { timeout =>

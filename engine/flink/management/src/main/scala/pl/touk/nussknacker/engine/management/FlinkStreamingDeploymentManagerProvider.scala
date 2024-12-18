@@ -43,49 +43,56 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
     FlinkClient.create(flinkConfig, scenarioStateCacheTTL).map { client =>
       val underlying  = new FlinkStreamingRestManager(client, flinkConfig, modelData, dependencies)
       val withCaching = CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
-      new DeploymentManager with StateQueryForAllScenariosSupported {
+      deploymentManagerWithStateQueryForAllScenariosSupported(withCaching, underlying)
+    }
+  }
 
-        override def getProcessesStates()(
-            implicit freshnessPolicy: DataFreshnessPolicy
-        ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] =
-          underlying.getProcessesStates()
+  private def deploymentManagerWithStateQueryForAllScenariosSupported(
+      underlying: DeploymentManager,
+      withStateQueryForAllScenariosSupported: StateQueryForAllScenariosSupported
+  ): DeploymentManager with StateQueryForAllScenariosSupported = {
+    new DeploymentManager with StateQueryForAllScenariosSupported {
 
-        override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
-          withCaching.deploymentSynchronisationSupport
+      override def getProcessesStates()(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] =
+        withStateQueryForAllScenariosSupported.getProcessesStates()
 
-        override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
-          withCaching.processCommand(command)
+      override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
+        underlying.deploymentSynchronisationSupport
 
-        override def getProcessStates(name: ProcessName)(
-            implicit freshnessPolicy: DataFreshnessPolicy
-        ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
-          withCaching.getProcessStates(name)
+      override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
+        underlying.processCommand(command)
 
-        override def resolve(
-            idWithName: ProcessIdWithName,
-            statusDetails: List[StatusDetails],
-            lastStateAction: Option[ProcessAction],
-            latestVersionId: VersionId,
-            deployedVersionId: Option[VersionId],
-            currentlyPresentedVersionId: Option[VersionId]
-        ): Future[ProcessState] = withCaching.resolve(
-          idWithName,
-          statusDetails,
-          lastStateAction,
-          latestVersionId,
-          deployedVersionId,
-          currentlyPresentedVersionId
-        )
+      override def getProcessStates(name: ProcessName)(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
+        underlying.getProcessStates(name)
 
-        override def processStateDefinitionManager: ProcessStateDefinitionManager =
-          withCaching.processStateDefinitionManager
+      override def resolve(
+          idWithName: ProcessIdWithName,
+          statusDetails: List[StatusDetails],
+          lastStateAction: Option[ProcessAction],
+          latestVersionId: VersionId,
+          deployedVersionId: Option[VersionId],
+          currentlyPresentedVersionId: Option[VersionId]
+      ): Future[ProcessState] = underlying.resolve(
+        idWithName,
+        statusDetails,
+        lastStateAction,
+        latestVersionId,
+        deployedVersionId,
+        currentlyPresentedVersionId
+      )
 
-        override def customActionsDefinitions: List[CustomActionDefinition] =
-          withCaching.customActionsDefinitions
+      override def processStateDefinitionManager: ProcessStateDefinitionManager =
+        underlying.processStateDefinitionManager
 
-        override def close(): Unit =
-          withCaching.close()
-      }
+      override def customActionsDefinitions: List[CustomActionDefinition] =
+        underlying.customActionsDefinitions
+
+      override def close(): Unit =
+        underlying.close()
     }
   }
 

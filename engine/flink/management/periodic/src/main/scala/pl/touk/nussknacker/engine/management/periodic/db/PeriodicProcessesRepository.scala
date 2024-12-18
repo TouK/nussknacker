@@ -5,7 +5,7 @@ import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessWithoutJson
@@ -130,22 +130,22 @@ trait PeriodicProcessesRepository {
   def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState]
+  ): Action[SchedulesState]
 
   def getLatestDeploymentsForActiveSchedules(
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]]
+  ): Action[Map[ProcessName, SchedulesState]]
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState]
+  ): Action[SchedulesState]
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]]
+  ): Action[Map[ProcessName, SchedulesState]]
 
   def findToBeDeployed: Action[Seq[PeriodicProcessDeployment[WithCanonicalProcess]]]
 
@@ -331,43 +331,41 @@ class SlickPeriodicProcessesRepository(
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] = {
+  ): Action[SchedulesState] = {
     val activeProcessesQuery = PeriodicProcessesWithoutJson.filter(p => p.processName === processName && p.active)
     getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount)
       .map(_.getOrElse(processName, SchedulesState(Map.empty)))
-      .run
   }
 
   override def getLatestDeploymentsForActiveSchedules(
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]] = {
+  ): Action[Map[ProcessName, SchedulesState]] = {
     val activeProcessesQuery = PeriodicProcessesWithoutJson.filter(_.active)
-    getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount).run
+    getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount)
   }
 
   override def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] = {
+  ): Action[SchedulesState] = {
     val filteredProcessesQuery = PeriodicProcessesWithoutJson
       .filter(p => p.processName === processName && !p.active)
       .sortBy(_.createdAt.desc)
       .take(inactiveProcessesMaxCount)
     getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount)
       .map(_.getOrElse(processName, SchedulesState(Map.empty)))
-      .run
   }
 
   override def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]] = {
+  ): Action[Map[ProcessName, SchedulesState]] = {
     val filteredProcessesQuery = PeriodicProcessesWithoutJson
       .filter(!_.active)
       .sortBy(_.createdAt.desc)
       .take(inactiveProcessesMaxCount)
-    getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount).run
+    getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount)
   }
 
   private def getLatestDeploymentsForEachSchedule(

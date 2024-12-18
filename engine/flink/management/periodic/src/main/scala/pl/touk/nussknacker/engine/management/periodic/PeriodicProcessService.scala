@@ -398,14 +398,12 @@ class PeriodicProcessService(
     } yield handleEvent(FailedOnRunEvent(currentState, state))
   }
 
-  def deactivate(processName: ProcessName): Future[Iterable[DeploymentId]] = {
-    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+  def deactivate(processName: ProcessName): Future[Iterable[DeploymentId]] =
     for {
       activeSchedules                     <- getLatestDeploymentsForActiveSchedules(processName)
       (runningDeploymentsForSchedules, _) <- synchronizeDeploymentsStates(processName, activeSchedules)
       _ <- activeSchedules.groupedByPeriodicProcess.map(p => deactivateAction(p.process)).sequence.runWithCallbacks
     } yield runningDeploymentsForSchedules.map(deployment => DeploymentId(deployment.toString))
-  }
 
   private def deactivateAction(process: PeriodicProcess[WithoutCanonicalProcess]): RepositoryAction[Callback] = {
     logger.info(s"Deactivate periodic process id: ${process.id.value}")
@@ -512,7 +510,7 @@ class PeriodicProcessService(
   private def mergeStatusWithDeployments(
       name: ProcessName,
       runtimeStatuses: List[StatusDetails]
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[StatusDetails] = {
+  ): Future[StatusDetails] = {
     def toDeploymentStatuses(schedulesState: SchedulesState) = schedulesState.schedules.toList
       .flatMap { case (scheduleId, scheduleData) =>
         scheduleData.latestDeployments.map { deployment =>
@@ -544,7 +542,7 @@ class PeriodicProcessService(
 
   private def mergeStatusWithDeployments(
       runtimeStatuses: Map[ProcessName, List[StatusDetails]]
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, StatusDetails]] = {
+  ): Future[Map[ProcessName, StatusDetails]] = {
     def toDeploymentStatuses(processName: ProcessName, schedulesState: SchedulesState) =
       schedulesState.schedules.toList
         .flatMap { case (scheduleId, scheduleData) =>
@@ -583,35 +581,37 @@ class PeriodicProcessService(
   def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int = 1
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] =
-    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount)
+  ): Future[SchedulesState] =
+    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount).run
 
   def getLatestDeploymentsForActiveSchedules(
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]] =
-    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount)
+  ): Future[Map[ProcessName, SchedulesState]] =
+    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount).run
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[SchedulesState] =
+  ): Future[SchedulesState] =
     scheduledProcessesRepository
       .getLatestDeploymentsForLatestInactiveSchedules(
         processName,
         inactiveProcessesMaxCount,
         deploymentsPerScheduleMaxCount
       )
+      .run
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[Map[ProcessName, SchedulesState]] =
+  ): Future[Map[ProcessName, SchedulesState]] =
     scheduledProcessesRepository
       .getLatestDeploymentsForLatestInactiveSchedules(
         inactiveProcessesMaxCount,
         deploymentsPerScheduleMaxCount
       )
+      .run
 
   implicit class RuntimeStatusesExt(runtimeStatuses: List[StatusDetails]) {
 
