@@ -16,7 +16,7 @@ interface RangesProps {
 export function CountsRanges({ label, onChange }: RangesProps): JSX.Element {
     const { t } = useTranslation<string>();
     const processName = useSelector(getProcessName);
-    const processCategory = useSelector(getProcessCategory);
+    const processCategory = useSelector(getProcessingType);
     const activities = useActivityHistory(processName, processCategory);
     const dates = useMemo(() => predefinedRanges(t), [t]);
 
