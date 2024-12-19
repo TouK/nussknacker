@@ -230,7 +230,7 @@ class PeriodicProcessServiceTest
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
       )
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -247,7 +247,7 @@ class PeriodicProcessServiceTest
     val finished :: scheduled :: Nil =
       f.manager.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
     f.events.toList shouldBe List(
-      FinishedEvent(finished, f.delegateDeploymentManagerStub.jobStatus),
+      FinishedEvent(finished, f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)),
       ScheduledEvent(scheduled, firstSchedule = false)
     )
   }
@@ -261,7 +261,7 @@ class PeriodicProcessServiceTest
         PeriodicProcessDeploymentStatus.Deployed,
         processActionId = Some(processActionId)
       )
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.DuringDeploy, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.DuringDeploy, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -278,7 +278,7 @@ class PeriodicProcessServiceTest
       scheduleProperty = cronInPast,
       processActionId = Some(processActionId)
     )
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -293,7 +293,10 @@ class PeriodicProcessServiceTest
         processEntity.copy(active = true),
         f.manager.deploymentEntities.loneElement,
       )
-    f.events.loneElement shouldBe FinishedEvent(event, f.delegateDeploymentManagerStub.jobStatus)
+    f.events.loneElement shouldBe FinishedEvent(
+      event,
+      f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+    )
   }
 
   test("handleFinished - should not deactivate process if there is future schedule") {
@@ -361,7 +364,7 @@ class PeriodicProcessServiceTest
   test("handleFinished - should mark as failed for failed Flink job") {
     val f            = new Fixture
     val deploymentId = f.manager.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
+    f.delegateDeploymentManagerStub.setStateStatus(processName, ProblemStateStatus.Failed, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -372,7 +375,12 @@ class PeriodicProcessServiceTest
 
     val expectedDetails =
       createPeriodicProcessDeployment(processEntity, f.manager.deploymentEntities.head)
-    f.events.toList shouldBe List(FailedOnRunEvent(expectedDetails, f.delegateDeploymentManagerStub.jobStatus))
+    f.events.toList shouldBe List(
+      FailedOnRunEvent(
+        expectedDetails,
+        f.delegateDeploymentManagerStub.jobStatus.get(processName).flatMap(_.headOption)
+      )
+    )
   }
 
   test("deploy - should deploy and mark as so") {

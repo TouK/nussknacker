@@ -228,6 +228,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
 }
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {

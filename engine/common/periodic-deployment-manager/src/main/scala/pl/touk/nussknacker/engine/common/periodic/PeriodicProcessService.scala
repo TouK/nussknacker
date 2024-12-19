@@ -515,6 +515,29 @@ class PeriodicProcessService(
     }
   }
 
+  def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
+    delegateDeploymentManager.stateQueryForAllScenariosSupport match {
+      case supported: StateQueryForAllScenariosSupported =>
+        new StateQueryForAllScenariosSupported {
+
+          override def getAllProcessesStates()(
+              implicit freshnessPolicy: DataFreshnessPolicy
+          ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
+            supported.getAllProcessesStates().flatMap { statusesWithFreshness =>
+              mergeStatusWithDeployments(statusesWithFreshness.value).map { statusDetails =>
+                statusesWithFreshness.map(_.flatMap { case (name, _) =>
+                  statusDetails.get(name).map(statusDetails => (name, List(statusDetails)))
+                })
+              }
+            }
+          }
+
+        }
+
+      case NoStateQueryForAllScenariosSupport =>
+        NoStateQueryForAllScenariosSupport
+    }
+
   private def mergeStatusWithDeployments(
       name: ProcessName,
       runtimeStatuses: List[StatusDetails]
@@ -548,6 +571,44 @@ class PeriodicProcessService(
     }
   }
 
+  private def mergeStatusWithDeployments(
+      runtimeStatuses: Map[ProcessName, List[StatusDetails]]
+  ): Future[Map[ProcessName, StatusDetails]] = {
+    def toDeploymentStatuses(processName: ProcessName, schedulesState: SchedulesState) =
+      schedulesState.schedules.toList
+        .flatMap { case (scheduleId, scheduleData) =>
+          scheduleData.latestDeployments.map { deployment =>
+            DeploymentStatus(
+              deployment.id,
+              scheduleId,
+              deployment.createdAt,
+              deployment.runAt,
+              deployment.state.status,
+              scheduleData.process.active,
+              runtimeStatuses.getOrElse(processName, List.empty).getStatus(deployment.id)
+            )
+          }
+        }
+        .sorted(DeploymentStatus.ordering.reverse)
+
+    for {
+      activeSchedules   <- getLatestDeploymentsForActiveSchedules(MaxDeploymentsStatus)
+      inactiveSchedules <- getLatestDeploymentsForLatestInactiveSchedules(MaxDeploymentsStatus, MaxDeploymentsStatus)
+    } yield {
+      val allProcessNames = activeSchedules.keySet ++ inactiveSchedules.keySet
+      allProcessNames.map { processName =>
+        val activeSchedulesForProcess   = activeSchedules.getOrElse(processName, SchedulesState(Map.empty))
+        val inactiveSchedulesForProcess = inactiveSchedules.getOrElse(processName, SchedulesState(Map.empty))
+        val status = PeriodicProcessStatus(
+          toDeploymentStatuses(processName, activeSchedulesForProcess),
+          toDeploymentStatuses(processName, inactiveSchedulesForProcess)
+        )
+        val mergedStatus = status.mergedStatusDetails.copy(status = status)
+        (processName, mergedStatus)
+      }.toMap
+    }
+  }
+
   def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int = 1
@@ -556,6 +617,11 @@ class PeriodicProcessService(
       processName,
       deploymentsPerScheduleMaxCount,
     )
+
+  def getLatestDeploymentsForActiveSchedules(
+      deploymentsPerScheduleMaxCount: Int
+  ): Future[Map[ProcessName, SchedulesState]] =
+    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount).run
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
@@ -568,6 +634,17 @@ class PeriodicProcessService(
         inactiveProcessesMaxCount,
         deploymentsPerScheduleMaxCount,
       )
+
+  def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int
+  ): Future[Map[ProcessName, SchedulesState]] =
+    scheduledProcessesRepository
+      .getLatestDeploymentsForLatestInactiveSchedules(
+        inactiveProcessesMaxCount,
+        deploymentsPerScheduleMaxCount
+      )
+      .run
 
   implicit class RuntimeStatusesExt(runtimeStatuses: List[StatusDetails]) {
 

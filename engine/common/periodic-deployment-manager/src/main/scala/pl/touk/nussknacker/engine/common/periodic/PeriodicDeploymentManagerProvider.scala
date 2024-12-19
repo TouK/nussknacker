@@ -42,10 +42,10 @@ abstract class PeriodicDeploymentManagerProvider(
       modelData: BaseModelData,
       dependencies: DeploymentManagerDependencies,
       config: Config,
-      scenarioStateCacheTTL: Option[FiniteDuration]
+      scenarioStateCacheTTL: Option[FiniteDuration],
   ): ValidatedNel[String, DeploymentManager] = {
     logger.info("Creating periodic scenario manager")
-    delegate.createDeploymentManager(modelData, dependencies, config, scenarioStateCacheTTL).map {
+    delegate.createDeploymentManagerWithCapabilities(modelData, dependencies, config, scenarioStateCacheTTL).map {
       delegateDeploymentManager =>
         import net.ceedubs.ficus.Ficus._
         import net.ceedubs.ficus.readers.ArbitraryTypeReader._
