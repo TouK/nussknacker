@@ -66,6 +66,8 @@ class PeriodicProcessServiceIntegrationTest
 
   private val processName = ProcessName("test")
 
+  private val processIdWithName = ProcessIdWithName(ProcessId(1), processName)
+
   private val startTime = Instant.parse("2021-04-06T13:18:00Z")
 
   // we truncate to millis, as HSQL stores with that precision...
@@ -83,8 +85,8 @@ class PeriodicProcessServiceIntegrationTest
   )(testCode: Fixture => Any): Unit = {
     def runTestCodeWithDbConfig = {
       testCode(
-          new Fixture(testDbRef, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
-        )
+        new Fixture(testDbRef, deploymentRetryConfig, executionConfig, maxFetchedPeriodicScenarioActivities)
+      )
     }
     logger.debug("Running test with database")
     runTestCodeWithDbConfig
@@ -612,7 +614,7 @@ class PeriodicProcessServiceIntegrationTest
     inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
 
-    val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName).futureValue
+    val activities     = service.getScenarioActivitiesSpecificToPeriodicProcess(processIdWithName, None).futureValue
     val firstActivity  = activities.head.asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     val secondActivity = activities(1).asInstanceOf[ScenarioActivity.PerformedScheduledExecution]
     activities shouldBe List(

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.common.periodic.service.{
   PeriodicProcessListenerFactory,
   ProcessConfigEnricherFactory
 }
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId, RunOffScheduleResult}
 
 import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
@@ -67,12 +67,6 @@ object PeriodicDeploymentManager {
       dependencies.actorSystem
     )
 
-    val customActionsProvider = customActionsProviderFactory.create(
-      periodicProcessesManager,
-      service,
-      periodicBatchConfig.processingType
-    )
-
     val toClose = () => {
       runSafely(listener.close())
       // deploymentActor and rescheduleFinishedActor just call methods from PeriodicProcessService on interval,
@@ -83,9 +77,8 @@ object PeriodicDeploymentManager {
     new PeriodicDeploymentManager(
       delegate,
       service,
-      scheduledProcessesRepository,
+      periodicProcessesManager,
       schedulePropertyExtractorFactory(originalConfig),
-      customActionsProvider,
       periodicBatchConfig.processingType,
       toClose
     )
@@ -96,17 +89,14 @@ object PeriodicDeploymentManager {
 class PeriodicDeploymentManager private[engine] (
     val delegate: DeploymentManager,
     service: PeriodicProcessService,
-    repository: PeriodicProcessesRepository,
+    periodicProcessesManager: PeriodicProcessesManager,
     schedulePropertyExtractor: SchedulePropertyExtractor,
-    customActionsProvider: PeriodicCustomActionsProvider,
     processingType: String,
     toClose: () => Unit
 )(implicit val ec: ExecutionContext)
     extends DeploymentManager
     with ManagerSpecificScenarioActivitiesStoredByManager
     with LazyLogging {
-
-  import repository._
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
@@ -270,7 +260,7 @@ class PeriodicDeploymentManager private[engine] (
         .map(_.groupedByPeriodicProcess.headOption.flatMap(_.deployments.headOption))
     )
     processDeploymentWithProcessJson <- OptionT.liftF(
-      repository.findProcessData(processDeployment.id).run
+      periodicProcessesManager.findProcessData(processDeployment.id)
     )
     _ <- OptionT.liftF(service.deploy(processDeploymentWithProcessJson))
   } yield ()

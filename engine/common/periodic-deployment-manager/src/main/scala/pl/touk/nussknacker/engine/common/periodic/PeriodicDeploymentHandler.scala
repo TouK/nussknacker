@@ -11,10 +11,10 @@ trait PeriodicDeploymentHandler {
 
   def prepareDeploymentWithRuntimeParams(
       processVersion: ProcessVersion,
-  ): Future[DeploymentWithRuntimeParams]
+  ): Future[DeploymentWithRuntimeParams.WithConfig]
 
   def deployWithRuntimeParams(
-      deploymentWithJarData: DeploymentWithRuntimeParams,
+      deploymentWithJarData: DeploymentWithRuntimeParams.WithConfig,
       deploymentData: DeploymentData,
       canonicalProcess: CanonicalProcess,
   ): Future[Option[ExternalDeploymentId]]

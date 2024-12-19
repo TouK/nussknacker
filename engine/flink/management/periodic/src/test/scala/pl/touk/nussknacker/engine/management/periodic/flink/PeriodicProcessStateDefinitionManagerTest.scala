@@ -2,9 +2,15 @@ package pl.touk.nussknacker.engine.management.periodic.flink
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.ProcessStateDefinitionManager.ProcessStatus
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.{DeploymentStatus, PeriodicProcessStatus}
 import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessStateDefinitionManager.statusTooltip
+import pl.touk.nussknacker.engine.common.periodic.PeriodicStateStatus
+import pl.touk.nussknacker.engine.common.periodic.PeriodicStateStatus.ScheduledStatus
 
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicLong

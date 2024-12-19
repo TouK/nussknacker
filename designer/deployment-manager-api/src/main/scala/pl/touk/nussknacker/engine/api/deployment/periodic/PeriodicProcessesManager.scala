@@ -13,10 +13,10 @@ import scala.concurrent.Future
 trait PeriodicProcessesManager {
 
   def create(
-      deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
+      deploymentWithRuntimeParams: DeploymentWithRuntimeParams.WithConfig,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
-  ): Future[PeriodicProcess]
+  ): Future[PeriodicProcess[DeploymentWithRuntimeParams.WithConfig]]
 
   def markInactive(processId: PeriodicProcessId): Future[Unit]
 
@@ -25,13 +25,15 @@ trait PeriodicProcessesManager {
       scheduleName: ScheduleName,
       runAt: LocalDateTime,
       deployMaxRetries: Int,
-  ): Future[PeriodicProcessDeployment]
+  ): Future[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]
 
-  def findProcessData(id: PeriodicProcessDeploymentId): Future[PeriodicProcessDeployment]
+  def findProcessData(
+      id: PeriodicProcessDeploymentId
+  ): Future[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]
 
-  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]]
+  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]]
 
-  def findToBeRetried: Future[Seq[PeriodicProcessDeployment]]
+  def findToBeRetried: Future[Seq[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]]
 
   def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit]
 
@@ -47,7 +49,8 @@ trait PeriodicProcessesManager {
   ): Future[Unit]
 
   def getSchedulesState(
-      scenarioName: ProcessName
+      scenarioName: ProcessName,
+      after: Option[LocalDateTime],
   ): Future[SchedulesState]
 
   def getLatestDeploymentsForActiveSchedules(
@@ -87,10 +90,10 @@ object PeriodicProcessesManager {
 object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
 
   override def create(
-      deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
+      deploymentWithRuntimeParams: DeploymentWithRuntimeParams.WithConfig,
       scheduleProperty: ScheduleProperty,
       processActionId: ProcessActionId,
-  ): Future[PeriodicProcess] = notImplemented
+  ): Future[PeriodicProcess[DeploymentWithRuntimeParams.WithConfig]] = notImplemented
 
   override def markInactive(processId: PeriodicProcessId): Future[Unit] = notImplemented
 
@@ -99,15 +102,17 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
       scheduleName: ScheduleName,
       runAt: LocalDateTime,
       deployMaxRetries: Int
-  ): Future[PeriodicProcessDeployment] = notImplemented
+  ): Future[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]] = notImplemented
 
   override def findProcessData(
       id: PeriodicProcessDeploymentId,
-  ): Future[PeriodicProcessDeployment] = notImplemented
+  ): Future[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]] = notImplemented
 
-  override def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = notImplemented
+  override def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]] =
+    notImplemented
 
-  override def findToBeRetried: Future[Seq[PeriodicProcessDeployment]] = notImplemented
+  override def findToBeRetried: Future[Seq[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]] =
+    notImplemented
 
   override def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit] = notImplemented
 
@@ -122,7 +127,8 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
       retryAt: Option[LocalDateTime]
   ): Future[Unit] = notImplemented
 
-  override def getSchedulesState(scenarioName: ProcessName): Future[SchedulesState] = notImplemented
+  override def getSchedulesState(scenarioName: ProcessName, after: Option[LocalDateTime]): Future[SchedulesState] =
+    notImplemented
 
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,

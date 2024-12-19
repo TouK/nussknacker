@@ -53,10 +53,10 @@ class FlinkPeriodicDeploymentHandler(
 
   override def prepareDeploymentWithRuntimeParams(
       processVersion: ProcessVersion,
-  ): Future[DeploymentWithRuntimeParams] = {
+  ): Future[DeploymentWithRuntimeParams.WithConfig] = {
     logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).map { jarFileName =>
-      DeploymentWithRuntimeParams(
+      DeploymentWithRuntimeParams.WithConfig(
         processVersion = processVersion,
         inputConfigDuringExecutionJson = inputConfigDuringExecution.serialized,
         runtimeParams = RuntimeParams(Map(jarFileNameRuntimeParam -> jarFileName))
@@ -75,7 +75,7 @@ class FlinkPeriodicDeploymentHandler(
   }
 
   override def deployWithRuntimeParams(
-      deployment: DeploymentWithRuntimeParams,
+      deployment: DeploymentWithRuntimeParams.WithConfig,
       deploymentData: DeploymentData,
       canonicalProcess: CanonicalProcess,
   ): Future[Option[ExternalDeploymentId]] = {

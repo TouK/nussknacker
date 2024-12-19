@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management.periodic.util
+package pl.touk.nussknacker.engine.common.periodic.utils
 
 import java.util.UUID
 

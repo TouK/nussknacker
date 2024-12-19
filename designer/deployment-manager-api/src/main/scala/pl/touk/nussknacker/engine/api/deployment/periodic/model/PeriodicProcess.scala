@@ -8,9 +8,9 @@ import java.time.LocalDateTime
 
 case class PeriodicProcessId(value: Long)
 
-case class PeriodicProcess(
+case class PeriodicProcess[DeploymentData <: DeploymentWithRuntimeParams](
     id: PeriodicProcessId,
-    deploymentData: DeploymentWithRuntimeParams,
+    deploymentData: DeploymentData,
     scheduleProperty: ScheduleProperty,
     active: Boolean,
     createdAt: LocalDateTime,

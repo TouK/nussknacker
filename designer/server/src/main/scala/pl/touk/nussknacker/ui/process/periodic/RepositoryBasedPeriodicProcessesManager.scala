@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.WithConfig
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -20,10 +21,10 @@ class RepositoryBasedPeriodicProcessesManager(
   import periodicProcessesRepository._
 
   override def create(
-      deploymentWithRuntimeParams: DeploymentWithRuntimeParams,
+      deploymentWithRuntimeParams: DeploymentWithRuntimeParams.WithConfig,
       scheduleProperty: PeriodicProcessesManager.ScheduleProperty,
       processActionId: ProcessActionId,
-  ): Future[PeriodicProcess] =
+  ): Future[PeriodicProcess[DeploymentWithRuntimeParams.WithConfig]] =
     periodicProcessesRepository
       .create(deploymentWithRuntimeParams, scheduleProperty, processActionId, processingType)
       .run
@@ -36,18 +37,18 @@ class RepositoryBasedPeriodicProcessesManager(
       scheduleName: ScheduleName,
       runAt: LocalDateTime,
       deployMaxRetries: Int
-  ): Future[PeriodicProcessDeployment] =
+  ): Future[PeriodicProcessDeployment[WithConfig]] =
     periodicProcessesRepository.schedule(id, scheduleName, runAt, deployMaxRetries).run
 
   override def findProcessData(
       id: PeriodicProcessDeploymentId,
-  ): Future[PeriodicProcessDeployment] =
+  ): Future[PeriodicProcessDeployment[WithConfig]] =
     periodicProcessesRepository.findProcessData(id).run
 
-  override def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] =
+  override def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[WithConfig]]] =
     periodicProcessesRepository.findToBeDeployed(processingType).run
 
-  override def findToBeRetried: Future[Seq[PeriodicProcessDeployment]] =
+  override def findToBeRetried: Future[Seq[PeriodicProcessDeployment[WithConfig]]] =
     periodicProcessesRepository.findToBeRetried(processingType).run
 
   override def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit] =
@@ -66,8 +67,8 @@ class RepositoryBasedPeriodicProcessesManager(
       retryAt: Option[LocalDateTime]
   ): Future[Unit] = periodicProcessesRepository.markFailedOnDeployWithStatus(id, status, deployRetries, retryAt).run
 
-  override def getSchedulesState(scenarioName: ProcessName): Future[SchedulesState] =
-    periodicProcessesRepository.getSchedulesState(scenarioName).run
+  override def getSchedulesState(scenarioName: ProcessName, after: Option[LocalDateTime]): Future[SchedulesState] =
+    periodicProcessesRepository.getSchedulesState(scenarioName, after).run
 
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,

@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.component.{
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
+import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.{WithConfig, WithoutConfig}
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -26,6 +27,7 @@ import pl.touk.nussknacker.engine.common.periodic.PeriodicProcessService.{
 import pl.touk.nussknacker.engine.common.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.common.periodic.ScheduleProperty.{fromApi, toApi}
 import pl.touk.nussknacker.engine.common.periodic.service._
+import pl.touk.nussknacker.engine.common.periodic.utils.DeterministicUUIDFromLong
 import pl.touk.nussknacker.engine.deployment.{AdditionalModelConfigs, DeploymentData, DeploymentId}
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
 
@@ -69,7 +71,10 @@ class PeriodicProcessService(
       processIdWithName: ProcessIdWithName,
       after: Option[Instant],
   ): Future[List[ScenarioActivity]] = for {
-    schedulesState <- periodicProcessesManager.getSchedulesState(processIdWithName.name)
+    schedulesState <- periodicProcessesManager.getSchedulesState(
+      processIdWithName.name,
+      after.map(localDateTimeAtSystemDefaultZone)
+    )
     groupedByProcess        = schedulesState.groupedByPeriodicProcess
     deployments             = groupedByProcess.flatMap(_.deployments)
     deploymentsWithStatuses = deployments.flatMap(d => scheduledExecutionStatusAndDateFinished(d).map((d, _)))
@@ -163,7 +168,7 @@ class PeriodicProcessService(
   private def initialSchedule(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
-      deploymentWithJarData: DeploymentWithRuntimeParams,
+      deploymentWithJarData: DeploymentWithRuntimeParams.WithConfig,
       processActionId: ProcessActionId,
   ): Future[Unit] = {
     periodicProcessesManager
@@ -184,7 +189,7 @@ class PeriodicProcessService(
       .map(_ => ())
   }
 
-  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
+  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]]] = {
     for {
       toBeDeployed <- periodicProcessesManager.findToBeDeployed.flatMap { toDeployList =>
         Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
@@ -198,8 +203,8 @@ class PeriodicProcessService(
   // Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   // TODO: we show allow to deploy scenarios with different scheduleName to be deployed simultaneous
   private def checkIfNotRunning(
-      toDeploy: PeriodicProcessDeployment
-  ): Future[Option[PeriodicProcessDeployment]] = {
+      toDeploy: PeriodicProcessDeployment[WithConfig]
+  ): Future[Option[PeriodicProcessDeployment[WithConfig]]] = {
     delegateDeploymentManager
       .getProcessStates(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(
@@ -344,7 +349,10 @@ class PeriodicProcessService(
       scheduleActions.flatten.sequence.as(emptyCallback)
   }
 
-  private def nextRunAt(deployment: PeriodicProcessDeployment, clock: Clock): Either[String, Option[LocalDateTime]] =
+  private def nextRunAt(
+      deployment: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithoutConfig],
+      clock: Clock
+  ): Either[String, Option[LocalDateTime]] =
     (fromApi(deployment.periodicProcess.scheduleProperty), deployment.scheduleName.value) match {
       case (MultipleScheduleProperty(schedules), Some(name)) =>
         schedules.get(name).toRight(s"Failed to find schedule: $deployment.scheduleName").flatMap(_.nextRunAt(clock))
@@ -361,7 +369,7 @@ class PeriodicProcessService(
   }
 
   private def handleFailedDeployment(
-      deployment: PeriodicProcessDeployment,
+      deployment: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig],
       state: Option[StatusDetails]
   ): Future[Unit] = {
     def calculateNextRetryAt = now().plus(deploymentRetryConfig.deployRetryPenalize.toMillis, ChronoUnit.MILLIS)
@@ -405,7 +413,9 @@ class PeriodicProcessService(
       _ <- activeSchedules.groupedByPeriodicProcess.map(p => deactivateAction(p.process)).sequence.runWithCallbacks
     } yield runningDeploymentsForSchedules.map(deployment => DeploymentId(deployment.toString))
 
-  private def deactivateAction(process: PeriodicProcess): Future[Callback] = {
+  private def deactivateAction(
+      process: PeriodicProcess[DeploymentWithRuntimeParams.WithoutConfig]
+  ): Future[Callback] = {
     logger.info(s"Deactivate periodic process id: ${process.id.value}")
     for {
       _ <- periodicProcessesManager.markInactive(process.id)
@@ -424,7 +434,7 @@ class PeriodicProcessService(
         .map(_ => ())
     }
 
-  def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
+  def deploy(deployment: PeriodicProcessDeployment[DeploymentWithRuntimeParams.WithConfig]): Future[Unit] = {
     // TODO: set status before deployment?
     val id = deployment.id
     val deploymentData = DeploymentData(
@@ -568,7 +578,7 @@ class PeriodicProcessService(
   }
 
   private def scheduledExecutionStatusAndDateFinished(
-      entity: PeriodicProcessDeployment,
+      entity: PeriodicProcessDeployment[WithoutConfig],
   ): Option[FinishedScheduledExecutionMetadata] = {
     for {
       status <- entity.state.status match {

@@ -10,14 +10,14 @@ import scala.concurrent.Future
 
 class PeriodicDeploymentHandlerStub extends PeriodicDeploymentHandler {
 
-  var deployWithJarFuture: Future[Option[ExternalDeploymentId]]            = Future.successful(None)
-  var lastDeploymentWithRuntimeParams: Option[DeploymentWithRuntimeParams] = None
+  var deployWithJarFuture: Future[Option[ExternalDeploymentId]]                       = Future.successful(None)
+  var lastDeploymentWithRuntimeParams: Option[DeploymentWithRuntimeParams.WithConfig] = None
 
   override def prepareDeploymentWithRuntimeParams(
       processVersion: ProcessVersion,
-  ): Future[DeploymentWithRuntimeParams] = {
+  ): Future[DeploymentWithRuntimeParams.WithConfig] = {
     Future.successful(
-      DeploymentWithRuntimeParams(
+      DeploymentWithRuntimeParams.WithConfig(
         processVersion = processVersion,
         inputConfigDuringExecutionJson = "",
         runtimeParams = RuntimeParams(Map("jarFileName" -> ""))
@@ -26,7 +26,7 @@ class PeriodicDeploymentHandlerStub extends PeriodicDeploymentHandler {
   }
 
   override def deployWithRuntimeParams(
-      deploymentWithJarData: DeploymentWithRuntimeParams,
+      deploymentWithJarData: DeploymentWithRuntimeParams.WithConfig,
       deploymentData: DeploymentData,
       canonicalProcess: CanonicalProcess,
   ): Future[Option[ExternalDeploymentId]] = {

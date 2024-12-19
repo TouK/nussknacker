@@ -5,9 +5,9 @@ import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessD
 import java.time.LocalDateTime
 
 // TODO: We should separate schedules concept from deployments - fully switch to ScheduleData and ScheduleDeploymentData
-case class PeriodicProcessDeployment(
+case class PeriodicProcessDeployment[DeploymentData <: DeploymentWithRuntimeParams](
     id: PeriodicProcessDeploymentId,
-    periodicProcess: PeriodicProcess,
+    periodicProcess: PeriodicProcess[DeploymentData],
     createdAt: LocalDateTime,
     runAt: LocalDateTime,
     scheduleName: ScheduleName,
