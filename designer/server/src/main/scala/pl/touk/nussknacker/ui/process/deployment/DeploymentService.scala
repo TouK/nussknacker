@@ -523,14 +523,14 @@ class DeploymentService(
               case supported: StateQueryForAllScenariosSupported => Some(supported)
               case NoStateQueryForAllScenariosSupport            => None
             }
-          } yield getProcessesStates(processingType, managerWithCapability))
+          } yield getAllProcessesStates(processingType, managerWithCapability))
             .getOrElse(Future.successful(None))
         }
       }
       .map(_.flatten.toMap)
   }
 
-  private def getProcessesStates(processingType: ProcessingType, manager: StateQueryForAllScenariosSupported)(
+  private def getAllProcessesStates(processingType: ProcessingType, manager: StateQueryForAllScenariosSupported)(
       implicit freshnessPolicy: DataFreshnessPolicy,
   ): Future[Option[(ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]])]] = {
     manager
