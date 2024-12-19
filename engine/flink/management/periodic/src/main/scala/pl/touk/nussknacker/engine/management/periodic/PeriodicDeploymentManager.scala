@@ -193,6 +193,9 @@ class PeriodicDeploymentManager private[periodic] (
     }
   }
 
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
+    service.stateQueryForAllScenariosSupport
+
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
