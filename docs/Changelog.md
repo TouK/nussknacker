@@ -30,6 +30,8 @@
 * [#7346](https://github.com/TouK/nussknacker/pull/7346) OpenAPI enricher: ability to configure common secret for any security scheme
 * [#7307](https://github.com/TouK/nussknacker/pull/7307) Added StddevPop, StddevSamp, VarPop and VarSamp aggregators
 * [#7341](https://github.com/TouK/nussknacker/pull/7341) Added possibility to choose presets and define lists for Integer typed parameter inputs in fragments.
+* [#7356](https://github.com/TouK/nussknacker/pull/7356) Integers converted to BigDecimals have scale 18,
+  this fixes issue with unexpected low scale when performing division on BigDecimals which were created in such conversion.
 
 ## 1.18
 

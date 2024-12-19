@@ -1130,7 +1130,7 @@ lazy val mathUtils = (project in utils("math-utils"))
       "org.springframework" % "spring-expression" % springV,
     )
   )
-  .dependsOn(componentsApi, testUtils % Test)
+  .dependsOn(commonUtils, componentsApi, testUtils % Test)
 
 lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(commonSettings)
