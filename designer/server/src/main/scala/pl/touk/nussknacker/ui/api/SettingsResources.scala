@@ -7,6 +7,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
+import pl.touk.nussknacker.ui.api.description.stickynotes.Dtos.StickyNotesSettings
 import pl.touk.nussknacker.ui.statistics.{Fingerprint, FingerprintService}
 
 import java.net.URL
@@ -42,7 +43,8 @@ class SettingsResources(
                 testDataSettings = config.testDataSettings,
                 redirectAfterArchive = config.redirectAfterArchive,
                 usageStatisticsReports =
-                  UsageStatisticsReportsSettings(usageStatisticsReportsConfig, fingerprint.toOption)
+                  UsageStatisticsReportsSettings(usageStatisticsReportsConfig, fingerprint.toOption),
+                stickyNotesSettings = config.stickyNotesSettings
               )
               val authenticationSettings = AuthenticationSettings(
                 authenticationMethod
@@ -134,6 +136,7 @@ object TopTabType extends Enumeration {
     tabs: Option[List[TopTab]],
     intervalTimeSettings: IntervalTimeSettings,
     testDataSettings: TestDataSettings,
+    stickyNotesSettings: StickyNotesSettings,
     redirectAfterArchive: Boolean,
     usageStatisticsReports: UsageStatisticsReportsSettings,
 )
