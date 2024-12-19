@@ -2,7 +2,7 @@ import { Moment } from "moment";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getProcessCategory, getProcessingType, getProcessName } from "../../../reducers/selectors/graph";
+import { getProcessingType, getProcessName } from "../../../reducers/selectors/graph";
 import { CountsRangesButtons } from "./CountsRangesButtons";
 import { predefinedRanges } from "./utils";
 import { StyledRangesWrapper } from "./CountsStyled";
