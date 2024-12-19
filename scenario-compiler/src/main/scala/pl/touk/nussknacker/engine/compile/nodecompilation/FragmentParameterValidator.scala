@@ -38,12 +38,14 @@ import scala.util.Try
 object FragmentParameterValidator {
 
   val permittedTypesForEditors: List[FragmentClazzRef] = List(
-    FragmentClazzRef[java.lang.Boolean],
     FragmentClazzRef[String],
+    FragmentClazzRef[java.lang.Boolean],
+    FragmentClazzRef[java.lang.Integer],
     FragmentClazzRef[java.lang.Long],
     FragmentClazzRef("String"),
     FragmentClazzRef("Boolean"),
-    FragmentClazzRef("Long")
+    FragmentClazzRef("Integer"),
+    FragmentClazzRef("Long"),
   )
 
 }
