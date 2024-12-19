@@ -65,6 +65,10 @@ import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
   DeploymentsStatusesSynchronizer
 }
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
+import pl.touk.nussknacker.ui.process.periodic.{
+  RepositoryBasedPeriodicProcessesManager,
+  RepositoryBasedPeriodicProcessesManagerProvider
+}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeData
 import pl.touk.nussknacker.ui.process.processingtype.loader.ProcessingTypeDataLoader
 import pl.touk.nussknacker.ui.process.processingtype.provider.ReloadableProcessingTypeDataProvider
@@ -125,15 +129,17 @@ class AkkaHttpBasedRouteProvider(
     logger.info(s"Designer config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
     for {
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
-      actionServiceSupplier      = new DelayedInitActionServiceSupplier
-      additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedDesignerConfig, sttpBackend)
-      deploymentRepository       = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
-      scenarioActivityRepository = DbScenarioActivityRepository.create(dbRef, designerClock)
-      dbioRunner                 = DBIOActionRunner(dbRef)
+      actionServiceSupplier       = new DelayedInitActionServiceSupplier
+      additionalUIConfigProvider  = createAdditionalUIConfigProvider(resolvedDesignerConfig, sttpBackend)
+      deploymentRepository        = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
+      scenarioActivityRepository  = DbScenarioActivityRepository.create(dbRef, designerClock)
+      periodicProcessesRepository = new SlickPeriodicProcessesRepository(dbRef.db, dbRef.profile, designerClock)
+      dbioRunner                  = DBIOActionRunner(dbRef)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         additionalUIConfigProvider,
         actionServiceSupplier,
         scenarioActivityRepository,
+        periodicProcessesRepository,
         dbioRunner,
         sttpBackend,
         featureTogglesConfig,
@@ -704,6 +710,7 @@ class AkkaHttpBasedRouteProvider(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
       scenarioActivityRepository: ScenarioActivityRepository,
+      periodicProcessesRepository: PeriodicProcessesRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       featureTogglesConfig: FeatureTogglesConfig
@@ -721,10 +728,12 @@ class AkkaHttpBasedRouteProvider(
               additionalUIConfigProvider,
               actionServiceProvider,
               scenarioActivityRepository,
-              dbioActionRunner,
-              sttpBackend,
-              _
-            ),
+              periodicProcessesRepository,
+                dbioActionRunner,
+                sttpBackend,
+                _
+              ),
+
           )
           new ReloadableProcessingTypeDataProvider(laodProcessingTypeDataIO)
         }
@@ -737,6 +746,7 @@ class AkkaHttpBasedRouteProvider(
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       actionServiceProvider: Supplier[ActionService],
       scenarioActivityRepository: ScenarioActivityRepository,
+      periodicProcessesRepository: PeriodicProcessesRepository,
       dbioActionRunner: DBIOActionRunner,
       sttpBackend: SttpBackend[Future, Any],
       processingType: ProcessingType
@@ -752,6 +762,7 @@ class AkkaHttpBasedRouteProvider(
         scenarioActivityRepository,
         dbioActionRunner,
       ),
+      new RepositoryBasedPeriodicProcessesManagerProvider(periodicProcessesRepository),
       system.dispatcher,
       system,
       sttpBackend,

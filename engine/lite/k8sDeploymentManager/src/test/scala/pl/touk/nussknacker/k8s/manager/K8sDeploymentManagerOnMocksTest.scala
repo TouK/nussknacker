@@ -9,13 +9,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.api.deployment.periodic.NoOpPeriodicProcessesManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   NoOpScenarioActivityManager,
   ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProvider,
-  ProcessingTypeDeployedScenariosProviderStub,
-  ScenarioActivityManager
+  ProcessingTypeDeployedScenariosProviderStub
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -75,6 +74,7 @@ class K8sDeploymentManagerOnMocksTest
         new ProcessingTypeDeployedScenariosProviderStub(List.empty),
         new ProcessingTypeActionServiceStub,
         NoOpScenarioActivityManager,
+        NoOpPeriodicProcessesManagerProvider,
         system.dispatcher,
         system,
         SttpBackendStub.asynchronousFuture
