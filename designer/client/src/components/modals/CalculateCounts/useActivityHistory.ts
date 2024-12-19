@@ -20,7 +20,11 @@ function displayableNameOfPredefinedActivityType(predefinedActivityType: Activit
             return "Unknown activity type";
     }
 }
-
+/*
+  Since information about deployment does not convey much information (such a process will not run immediately after deployment action)
+   in the context of count ranges we need to exclude them before we start computing count's ranges. The `Cancel` activity type is important
+   while resolving these ranges but is not important for the end user so it is also filtered at the end (thanks to `isOmitted` variable)
+ */
 export function useActivityHistory(processName: string, processingMode: string): Range[] {
     const { t } = useTranslation();
     const [activities, setActivities] = useState<Range[]>([]);
