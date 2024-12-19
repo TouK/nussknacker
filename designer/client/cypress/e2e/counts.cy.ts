@@ -49,7 +49,7 @@ describe("Counts", () => {
             .click();
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold });
         cy.get("[data-testid=window]").contains("no refresh").should("be.visible");
-        cy.get("[data-testid=window]").contains("Latest run").click();
+        cy.get("[data-testid=window]").contains("Latest Run").click();
         cy.get("[data-testid=window]").contains("10 seconds").should("be.visible");
     });
 
