@@ -118,4 +118,8 @@ case class LocalModelData(
   override val extractModelDefinitionFun =
     new ExtractDefinitionFunImpl(configCreator, category, components, componentDefinitionExtractionMode)
 
+  // For LocalModelData we can't close classloader because it is used not a dedicated classloader in this case
+  // but AppClassLoader
+  override protected def shouldCloseClassLoader: Boolean = false
+
 }

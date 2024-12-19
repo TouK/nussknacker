@@ -25,15 +25,17 @@ import scala.util.{Failure, Success, Try, Using}
 object FlinkMiniClusterTableOperations extends LazyLogging {
 
   def parseTestRecords(records: List[TestRecord], schema: Schema): List[Row] = {
-    implicit val env: StreamTableEnvironment = MiniClusterEnvBuilder.buildStreamTableEnv
-    val (inputTablePath, inputTableName)     = createTempFileTable(schema)
-    val parsedRecords = Try {
-      writeRecordsToFile(inputTablePath, records)
-      val inputTable = env.from(s"`$inputTableName`")
-      env.toDataStream(inputTable).executeAndCollect().asScala.toList
+    Using.resource(MiniClusterEnvBuilder.createLocalStreamEnv) { streamEnv =>
+      implicit val tableEvn: StreamTableEnvironment = MiniClusterEnvBuilder.createTableStreamEnv(streamEnv)
+      val (inputTablePath, inputTableName)          = createTempFileTable(schema)
+      try {
+        writeRecordsToFile(inputTablePath, records)
+        val inputTable = tableEvn.from(s"`$inputTableName`")
+        tableEvn.toDataStream(inputTable).executeAndCollect().asScala.toList
+      } finally {
+        cleanup(inputTablePath)
+      }
     }
-    cleanup(inputTablePath)
-    parsedRecords.get
   }
 
   def generateLiveTestData(
@@ -61,7 +63,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
       schema: Schema,
       buildSourceTable: TableEnvironment => Table
   ): TestData = {
-    implicit val env: TableEnvironment    = MiniClusterEnvBuilder.buildTableEnv
+    implicit val env: TableEnvironment    = MiniClusterEnvBuilder.createTableEnv
     val sourceTable                       = buildSourceTable(env)
     val (outputFilePath, outputTableName) = createTempFileTable(schema)
     val generatedRows = Try {
@@ -184,12 +186,13 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
 
     private lazy val tableEnvConfig = EnvironmentSettings.newInstance().withConfiguration(streamEnvConfig).build()
 
-    def buildTableEnv: TableEnvironment = TableEnvironment.create(tableEnvConfig)
+    def createTableEnv: TableEnvironment = TableEnvironment.create(tableEnvConfig)
 
-    def buildStreamTableEnv: StreamTableEnvironment = StreamTableEnvironment.create(
-      StreamExecutionEnvironment.createLocalEnvironment(streamEnvConfig),
-      tableEnvConfig
-    )
+    def createLocalStreamEnv: StreamExecutionEnvironment =
+      StreamExecutionEnvironment.createLocalEnvironment(streamEnvConfig)
+
+    def createTableStreamEnv(streamEnv: StreamExecutionEnvironment): StreamTableEnvironment =
+      StreamTableEnvironment.create(streamEnv, tableEnvConfig)
 
   }
 

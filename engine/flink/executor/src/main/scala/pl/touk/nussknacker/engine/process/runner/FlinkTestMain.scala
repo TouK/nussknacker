@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
@@ -53,7 +54,8 @@ class FlinkTestMain(
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
     val configuration: Configuration
-) extends FlinkStubbedRunner {
+) extends FlinkStubbedRunner
+    with LazyLogging {
 
   def runTest: TestResults[Json] = {
     val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
@@ -62,9 +64,14 @@ class FlinkTestMain(
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
       val env             = createEnv
 
-      registrar.register(env, process, processVersion, deploymentData, resultCollector)
-      execute(env, SavepointRestoreSettings.none())
-      collectingListener.results
+      try {
+        registrar.register(env, process, processVersion, deploymentData, resultCollector)
+        execute(env, SavepointRestoreSettings.none())
+        collectingListener.results
+      } finally {
+        logger.debug(s"Closing LocalEnvironment for model with classpath: ${modelData.modelClassLoader}")
+        env.close()
+      }
     } finally {
       collectingListener.clean()
     }
