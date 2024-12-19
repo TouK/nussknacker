@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManager
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.{WithConfig, WithoutConfig}
-import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessWithoutJson
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -18,6 +17,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.common.periodic.ScheduleProperty.{fromApi, toApi}
 import pl.touk.nussknacker.engine.common.periodic._
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository.createPeriodicProcessWithoutJson
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
@@ -137,7 +137,8 @@ trait PeriodicProcessesRepository {
   ): Action[SchedulesState]
 
   def getLatestDeploymentsForActiveSchedules(
-      deploymentsPerScheduleMaxCount: Int
+      deploymentsPerScheduleMaxCount: Int,
+      processingType: String,
   ): Action[Map[ProcessName, SchedulesState]]
 
   def getLatestDeploymentsForLatestInactiveSchedules(
@@ -149,7 +150,8 @@ trait PeriodicProcessesRepository {
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
-      deploymentsPerScheduleMaxCount: Int
+      deploymentsPerScheduleMaxCount: Int,
+      processingType: String,
   ): Action[Map[ProcessName, SchedulesState]]
 
   def findToBeDeployed(processingType: String): Action[Seq[PeriodicProcessDeployment[WithConfig]]]
@@ -355,10 +357,11 @@ class SlickPeriodicProcessesRepository(
   }
 
   override def getLatestDeploymentsForActiveSchedules(
-      deploymentsPerScheduleMaxCount: Int
+      deploymentsPerScheduleMaxCount: Int,
+      processingType: String,
   ): Action[Map[ProcessName, SchedulesState]] = {
     val activeProcessesQuery = PeriodicProcessesWithoutJson.filter(_.active)
-    getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount)
+    getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount, processingType)
   }
 
   override def getLatestDeploymentsForLatestInactiveSchedules(
@@ -377,13 +380,14 @@ class SlickPeriodicProcessesRepository(
 
   override def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
-      deploymentsPerScheduleMaxCount: Int
+      deploymentsPerScheduleMaxCount: Int,
+      processingType: String,
   ): Action[Map[ProcessName, SchedulesState]] = {
     val filteredProcessesQuery = PeriodicProcessesWithoutJson
       .filter(!_.active)
       .sortBy(_.createdAt.desc)
       .take(inactiveProcessesMaxCount)
-    getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount)
+    getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount, processingType)
   }
 
   private def getLatestDeploymentsForEachSchedule(

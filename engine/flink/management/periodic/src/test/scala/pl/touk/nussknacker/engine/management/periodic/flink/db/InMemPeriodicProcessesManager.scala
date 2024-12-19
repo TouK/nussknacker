@@ -9,16 +9,11 @@ import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessD
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.management.periodic._
-import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{
-  DeploymentIdSequence,
-  ProcessIdSequence,
-  getLatestDeploymentQueryCount
-}
-import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
-import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.model._
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.common.periodic.ScheduleProperty.{fromApi, toApi}
+import pl.touk.nussknacker.engine.common.periodic.{CronScheduleProperty, ScheduleProperty, SingleScheduleProperty}
+import pl.touk.nussknacker.engine.management.periodic.flink.db.InMemPeriodicProcessesManager._
+import pl.touk.nussknacker.engine.management.periodic.flink.db.InMemPeriodicProcessesRepository.getLatestDeploymentQueryCount
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{LocalDateTime, ZoneId}
@@ -29,11 +24,10 @@ import scala.concurrent.Future
 import scala.util.Random
 
 object InMemPeriodicProcessesRepository {
-  private val ProcessIdSequence    = new AtomicLong(0)
-  private val DeploymentIdSequence = new AtomicLong(0)
-
   val getLatestDeploymentQueryCount = new AtomicLong(0)
 }
+
+class InMemPeriodicProcessesManager(processingType: String) extends PeriodicProcessesManager {
 
   var processEntities: mutable.ListBuffer[PeriodicProcessEntity]              = ListBuffer.empty
   var deploymentEntities: mutable.ListBuffer[PeriodicProcessDeploymentEntity] = ListBuffer.empty
@@ -167,8 +161,8 @@ object InMemPeriodicProcessesRepository {
 
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
-      deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState] = {
+      deploymentsPerScheduleMaxCount: Int,
+  ): Future[SchedulesState] = Future.successful {
     getLatestDeploymentQueryCount.incrementAndGet()
     getLatestDeploymentsForPeriodicProcesses(
       processEntities(processName).filter(_.active),
@@ -178,7 +172,7 @@ object InMemPeriodicProcessesRepository {
 
   override def getLatestDeploymentsForActiveSchedules(
       deploymentsPerScheduleMaxCount: Int
-  ): Action[Map[ProcessName, SchedulesState]] = {
+  ): Future[Map[ProcessName, SchedulesState]] = Future.successful {
     getLatestDeploymentQueryCount.incrementAndGet()
     allProcessEntities.map { case (processName, list) =>
       processName -> getLatestDeploymentsForPeriodicProcesses(
@@ -202,7 +196,7 @@ object InMemPeriodicProcessesRepository {
   override def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
-  ): Action[Map[ProcessName, SchedulesState]] = {
+  ): Future[Map[ProcessName, SchedulesState]] = Future.successful {
     getLatestDeploymentQueryCount.incrementAndGet()
     allProcessEntities.map { case (processName, list) =>
       processName -> getLatestDeploymentsForPeriodicProcesses(
@@ -215,7 +209,7 @@ object InMemPeriodicProcessesRepository {
   private def getLatestDeploymentsForPeriodicProcesses(
       processes: Seq[PeriodicProcessEntity],
       deploymentsPerScheduleMaxCount: Int
-  ): SchedulesState =
+  ): SchedulesState = {
     SchedulesState((for {
       process <- processes
       deploymentGroupedByScheduleName <- deploymentEntities
@@ -231,6 +225,7 @@ object InMemPeriodicProcessesRepository {
           scheduleId -> ScheduleData(createPeriodicProcessWithoutJson(process), ds)
         }
     } yield deploymentGroupedByScheduleName).toMap)
+  }
 
   override def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[WithConfig]]] = {
     val scheduled = findActive(PeriodicProcessDeploymentStatus.Scheduled)
@@ -251,16 +246,16 @@ object InMemPeriodicProcessesRepository {
     } yield createPeriodicProcessDeployment(p, d)).head
   }
 
+  private def processEntities(processName: ProcessName): Seq[PeriodicProcessEntity] =
+    processEntities
+      .filter(process => process.processName == processName && process.processingType == processingType)
+      .toSeq
+
   private def allProcessEntities: Map[ProcessName, Seq[PeriodicProcessEntity]] =
     processEntities
       .filter(process => process.processingType == processingType)
       .toSeq
       .groupBy(_.processName)
-
-  private def processEntities(processName: ProcessName): Seq[PeriodicProcessEntity] =
-    processEntities
-      .filter(process => process.processName == processName && process.processingType == processingType)
-      .toSeq
 
   override def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit] = Future.successful {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Deployed, deployedAt = Some(LocalDateTime.now())))

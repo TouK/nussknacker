@@ -621,30 +621,27 @@ class PeriodicProcessService(
   def getLatestDeploymentsForActiveSchedules(
       deploymentsPerScheduleMaxCount: Int
   ): Future[Map[ProcessName, SchedulesState]] =
-    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount).run
+    periodicProcessesManager.getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount)
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
   ): Future[SchedulesState] =
-    periodicProcessesManager
-      .getLatestDeploymentsForLatestInactiveSchedules(
-        processName,
-        inactiveProcessesMaxCount,
-        deploymentsPerScheduleMaxCount,
-      )
+    periodicProcessesManager.getLatestDeploymentsForLatestInactiveSchedules(
+      processName,
+      inactiveProcessesMaxCount,
+      deploymentsPerScheduleMaxCount,
+    )
 
   def getLatestDeploymentsForLatestInactiveSchedules(
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
   ): Future[Map[ProcessName, SchedulesState]] =
-    scheduledProcessesRepository
-      .getLatestDeploymentsForLatestInactiveSchedules(
-        inactiveProcessesMaxCount,
-        deploymentsPerScheduleMaxCount
-      )
-      .run
+    periodicProcessesManager.getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount,
+      deploymentsPerScheduleMaxCount
+    )
 
   implicit class RuntimeStatusesExt(runtimeStatuses: List[StatusDetails]) {
 

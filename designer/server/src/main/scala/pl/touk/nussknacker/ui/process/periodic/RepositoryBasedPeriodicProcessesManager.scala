@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.periodic.PeriodicProcessesManag
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.DeploymentWithRuntimeParams.WithConfig
 import pl.touk.nussknacker.engine.api.deployment.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.api.deployment.periodic.model._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.repository.PeriodicProcessesRepository
 
@@ -78,6 +78,13 @@ class RepositoryBasedPeriodicProcessesManager(
       .getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount, processingType)
       .run
 
+  override def getLatestDeploymentsForActiveSchedules(
+      deploymentsPerScheduleMaxCount: Int,
+  ): Future[Map[ProcessName, SchedulesState]] =
+    periodicProcessesRepository
+      .getLatestDeploymentsForActiveSchedules(deploymentsPerScheduleMaxCount, processingType)
+      .run
+
   override def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
@@ -86,6 +93,18 @@ class RepositoryBasedPeriodicProcessesManager(
     periodicProcessesRepository
       .getLatestDeploymentsForLatestInactiveSchedules(
         processName,
+        inactiveProcessesMaxCount,
+        deploymentsPerScheduleMaxCount,
+        processingType,
+      )
+      .run
+
+  override def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int,
+  ): Future[Map[ProcessName, SchedulesState]] =
+    periodicProcessesRepository
+      .getLatestDeploymentsForLatestInactiveSchedules(
         inactiveProcessesMaxCount,
         deploymentsPerScheduleMaxCount,
         processingType,

@@ -58,11 +58,20 @@ trait PeriodicProcessesManager {
       deploymentsPerScheduleMaxCount: Int,
   ): Future[SchedulesState]
 
+  def getLatestDeploymentsForActiveSchedules(
+      deploymentsPerScheduleMaxCount: Int,
+  ): Future[Map[ProcessName, SchedulesState]]
+
   def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
   ): Future[SchedulesState]
+
+  def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int,
+  ): Future[Map[ProcessName, SchedulesState]]
 
   def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
@@ -135,11 +144,20 @@ object NoOpPeriodicProcessesManager extends PeriodicProcessesManager {
       deploymentsPerScheduleMaxCount: Int,
   ): Future[SchedulesState] = notImplemented
 
+  override def getLatestDeploymentsForActiveSchedules(
+      deploymentsPerScheduleMaxCount: Int
+  ): Future[Map[ProcessName, SchedulesState]] = notImplemented
+
   override def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int,
   ): Future[SchedulesState] = notImplemented
+
+  override def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int
+  ): Future[Map[ProcessName, SchedulesState]] = notImplemented
 
   override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
       expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus],
