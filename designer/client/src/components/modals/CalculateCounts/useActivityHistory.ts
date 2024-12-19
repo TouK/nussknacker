@@ -40,7 +40,6 @@ export function useActivityHistory(processName: string, processingMode: string):
                     return {
                         from: () => from,
                         to: () => (to ? moment(to) : moment().add(1, "day").startOf("day")),
-                        displayableNameOfPredefinedActivityType: displayableNameOfPredefinedActivityType(current.type),
                         name: t("calculateCounts.range.prevAction", "{{activity}} {{date}}", {
                             activity: displayableNameOfPredefinedActivityType(current.type),
                             date: from.format(DATE_FORMAT),
@@ -51,7 +50,7 @@ export function useActivityHistory(processName: string, processingMode: string):
             )
             .then((res) => res.filter((activity) => !activity.isOmitted))
             .then((res) => {
-                res[0].name = t("calculateCounts.range.lastAction", `Latest ${res[0].displayableNameOfPredefinedActivityType}`);
+                res[0].name = t("calculateCounts.range.lastAction", "Latest Run");
                 return res;
             })
             .then(setActivities);
