@@ -17,6 +17,13 @@ export type ActivityType =
     | "AUTOMATIC_UPDATE"
     | "CUSTOM_ACTION";
 
+export enum ActivityTypesRelatedToExecutions {
+    ScenarioDeployed = "SCENARIO_DEPLOYED",
+    ScenarioCanceled = "SCENARIO_CANCELED",
+    PerformedSingleExecution = "PERFORMED_SINGLE_EXECUTION",
+    PerformedScheduledExecution = "PERFORMED_SCHEDULED_EXECUTION",
+}
+
 export interface ActivityMetadata {
     type: ActivityType;
     displayableName: string;

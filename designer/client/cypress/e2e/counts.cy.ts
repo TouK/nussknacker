@@ -44,7 +44,7 @@ describe("Counts", () => {
 
         cy.get("@button").click();
         cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
-        cy.contains(/^previous deployments...$/i)
+        cy.contains(/^previous activities...$/i)
             .should("be.visible")
             .click();
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold });
