@@ -339,19 +339,6 @@ class HttpService {
             .then((res) => res.reverse().map((item) => ({ ...item, type: item.type as ActivityTypesRelatedToExecutions })));
     }
 
-    fetchProcessesDeployments(processName: string) {
-        return api
-            .get<
-                {
-                    performedAt: string;
-                    actionName: ActionName;
-                }[]
-            >(`/processes/${encodeURIComponent(processName)}/deployments`)
-            .then((res) =>
-                res.data.filter(({ actionName }) => actionName === PredefinedActionName.Deploy).map(({ performedAt }) => performedAt),
-            );
-    }
-
     deploy(
         processName: string,
         comment?: string,
