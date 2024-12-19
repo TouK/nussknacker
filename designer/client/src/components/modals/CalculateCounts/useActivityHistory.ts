@@ -21,14 +21,14 @@ function displayableNameOfPredefinedActivityType(predefinedActivityType: Predefi
     }
 }
 
-export function useActivityHistory(processName: string, processCategory: string): Range[] {
+export function useActivityHistory(processName: string, processingMode: string): Range[] {
     const { t } = useTranslation();
     const [activities, setActivities] = useState<Range[]>([]);
 
     useEffect(() => {
         HttpService.fetchProcessesActivities(processName)
             .then((activities) =>
-                processCategory === "BatchPeriodic"
+                processingMode.includes("batch")
                     ? activities.filter((activity) => activity.type !== PredefinedActivityType.ScenarioDeployed)
                     : activities,
             )
@@ -40,18 +40,20 @@ export function useActivityHistory(processName: string, processCategory: string)
                     return {
                         from: () => from,
                         to: () => (to ? moment(to) : moment().add(1, "day").startOf("day")),
-                        name: i
-                            ? t("calculateCounts.range.prevAction", "{{activity}} #{{i}} {{date}}", {
-                                  activity: displayableNameOfPredefinedActivityType(current.type),
-                                  i: all.length - i,
-                                  date: from.format(DATE_FORMAT),
-                              })
-                            : t("calculateCounts.range.lastDeploy", "Latest deploy"),
+                        displayableNameOfPredefinedActivityType: displayableNameOfPredefinedActivityType(current.type),
+                        name: t("calculateCounts.range.prevAction", "{{activity}} {{date}}", {
+                            activity: displayableNameOfPredefinedActivityType(current.type),
+                            date: from.format(DATE_FORMAT),
+                        }),
                         isOmitted,
                     };
                 }),
             )
             .then((res) => res.filter((activity) => !activity.isOmitted))
+            .then((res) => {
+                res[0].name = t("calculateCounts.range.lastAction", `Latest ${res[0].displayableNameOfPredefinedActivityType}`);
+                return res;
+            })
             .then(setActivities);
     }, [t, processName]);
 
