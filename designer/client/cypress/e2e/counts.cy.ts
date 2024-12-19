@@ -22,7 +22,7 @@ describe("Counts", () => {
         cy.get("@button").click();
 
         cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
-        cy.contains(/^latest deploy$/i).should("not.exist");
+        cy.contains(/^latest run$/i).should("not.exist");
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold });
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
@@ -31,7 +31,7 @@ describe("Counts", () => {
         cy.deployScenario();
         cy.get("@button").click();
         cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
-        cy.contains(/^latest deploy$/i).should("be.visible");
+        cy.contains(/^latest run$/i).should("be.visible");
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold });
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
