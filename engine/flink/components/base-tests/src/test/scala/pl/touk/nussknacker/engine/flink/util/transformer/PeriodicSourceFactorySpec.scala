@@ -29,8 +29,8 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientS
     val scenario = ScenarioBuilder
       .streaming("test")
       .source(
-        "periodic",
-        "periodic",
+        "sample-generator",
+        "sample-generator",
         "period" -> "T(java.time.Duration).ofSeconds(1)".spel,
         "count"  -> "1".spel,
         "value"  -> s"'$input'".spel

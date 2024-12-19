@@ -39,7 +39,7 @@ object FlinkBaseUnboundedComponentProvider {
 
     // When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
     val statelessComponents = List(
-      ComponentDefinition("periodic", PeriodicSourceFactory).withRelativeDocs("DataSourcesAndSinks#periodic"),
+      ComponentDefinition("sample-generator", PeriodicSourceFactory).withRelativeDocs("DataSourcesAndSinks#periodic"),
     )
 
     val statefulComponents = List(
