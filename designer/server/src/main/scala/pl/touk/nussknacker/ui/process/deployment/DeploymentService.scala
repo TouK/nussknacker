@@ -21,6 +21,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.util.AdditionalComponentConfigsForRuntimeExtractor
+import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.{
+  WithDataFreshnessStatusMapOps,
+  WithDataFreshnessStatusOps
+}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
@@ -34,7 +38,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
-import pl.touk.nussknacker.ui.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
 import pl.touk.nussknacker.ui.validation.{CustomActionValidator, UIProcessValidator}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
@@ -459,9 +462,7 @@ class DeploymentService(
     dbioRunner.run(
       for {
         actionsInProgress <- getInProgressActionTypesForScenarios(scenarios)
-        // DeploymentManager's may support fetching state of all scenarios at once (StateQueryForAllScenariosSupported capability)
-        // For those DM's we prefetch the state and then use it for resolving individual scenarios.
-        prefetchedStates <- DBIO.from(getPrefetchedStatesForSupportedManagers(scenarios))
+        prefetchedStates  <- DBIO.from(getPrefetchedStatesForSupportedManagers(scenarios))
         processesWithState <- processTraverse
           .map {
             case process if process.isFragment => DBIO.successful(process)
@@ -480,6 +481,10 @@ class DeploymentService(
     )
   }
 
+  // DeploymentManager's may support fetching state of all scenarios at once
+  // State is prefetched only when:
+  //  - DM has capability StateQueryForAllScenariosSupported
+  //  - the query is about more than one scenario handled by that DM
   private def getPrefetchedStatesForSupportedManagers(
       scenarios: List[ScenarioWithDetails],
   )(
@@ -487,27 +492,33 @@ class DeploymentService(
       freshnessPolicy: DataFreshnessPolicy
   ): Future[Map[ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]] = {
     val allProcessingTypes = scenarios.map(_.processingType).toSet
-    val deploymentManagersByProcessingTypes =
-      allProcessingTypes.flatMap(pt => dispatcher.deploymentManager(pt).map(dm => (pt, dm)))
-    val prefetchedStatesByProcessingTypes = Future
+    val numberOfScenariosByProcessingType =
+      allProcessingTypes
+        .map(processingType => (processingType, scenarios.count(_.processingType == processingType)))
+        .toMap
+    val processingTypesWithMoreThanOneScenario = numberOfScenariosByProcessingType.filter(_._2 > 1).keys
+
+    Future
       .sequence {
-        deploymentManagersByProcessingTypes.map { case (processingType, manager) =>
-          manager match {
-            case dm: StateQueryForAllScenariosSupported => getProcessesStates(processingType, dm)
-            case _                                      => Future.successful(None)
-          }
+        processingTypesWithMoreThanOneScenario.map { processingType =>
+          (for {
+            manager <- dispatcher.deploymentManager(processingType)
+            managerWithCapability <- manager.stateQueryForAllScenariosSupport match {
+              case supported: StateQueryForAllScenariosSupported => Some(supported)
+              case NoStateQueryForAllScenariosSupport            => None
+            }
+          } yield getProcessesStates(processingType, managerWithCapability))
+            .getOrElse(Future.successful(None))
         }
       }
       .map(_.flatten.toMap)
-
-    prefetchedStatesByProcessingTypes
   }
 
   private def getProcessesStates(processingType: ProcessingType, manager: StateQueryForAllScenariosSupported)(
       implicit freshnessPolicy: DataFreshnessPolicy,
   ): Future[Option[(ProcessingType, WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]])]] = {
     manager
-      .getProcessesStates()
+      .getAllProcessesStates()
       .map(states => Some((processingType, states)))
       .recover { case NonFatal(e) =>
         logger.warn(
@@ -682,14 +693,16 @@ class DeploymentService(
 
     val state = (prefetchedStateOpt match {
       case Some(prefetchedState) =>
-        deploymentManager.resolvePrefetchedProcessState(
-          processIdWithName,
-          lastStateAction,
-          latestVersionId,
-          deployedVersionId,
-          currentlyPresentedVersionId,
-          prefetchedState,
-        )
+        deploymentManager
+          .resolve(
+            processIdWithName,
+            prefetchedState.value,
+            lastStateAction,
+            latestVersionId,
+            deployedVersionId,
+            currentlyPresentedVersionId,
+          )
+          .map(prefetchedState.withValue)
       case None =>
         deploymentManager.getProcessState(
           processIdWithName,

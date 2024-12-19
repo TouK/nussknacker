@@ -106,7 +106,11 @@ class PeriodicProcessesFetchingTest
 
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
-    val statuses = f.periodicProcessService.getStatusDetails().futureValue.value
+    val statuses = f.periodicProcessService.stateQueryForAllScenariosSupport
+      .asInstanceOf[StateQueryForAllScenariosSupported]
+      .getAllProcessesStates()
+      .futureValue
+      .value
 
     statuses.size shouldEqual n
 

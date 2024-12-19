@@ -255,6 +255,8 @@ class EmbeddedDeploymentManager(
 
     }
 
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 
   override def close(): Unit = {

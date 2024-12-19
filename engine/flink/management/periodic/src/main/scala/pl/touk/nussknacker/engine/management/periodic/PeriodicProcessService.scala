@@ -41,7 +41,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class PeriodicProcessService(
-    delegateDeploymentManager: DeploymentManager with StateQueryForAllScenariosSupported,
+    delegateDeploymentManager: DeploymentManager,
     jarManager: JarManager,
     scheduledProcessesRepository: PeriodicProcessesRepository,
     periodicProcessListener: PeriodicProcessListener,
@@ -495,17 +495,28 @@ class PeriodicProcessService(
     }
   }
 
-  def getStatusDetails()(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[Map[ProcessName, StatusDetails]]] = {
-    delegateDeploymentManager.getProcessesStates().flatMap { statusesWithFreshness =>
-      mergeStatusWithDeployments(statusesWithFreshness.value).map { statusDetails =>
-        statusesWithFreshness.map(_.flatMap { case (name, _) =>
-          statusDetails.get(name).map((name, _))
-        })
-      }
+  def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
+    delegateDeploymentManager.stateQueryForAllScenariosSupport match {
+      case supported: StateQueryForAllScenariosSupported =>
+        new StateQueryForAllScenariosSupported {
+
+          override def getAllProcessesStates()(
+              implicit freshnessPolicy: DataFreshnessPolicy
+          ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
+            supported.getAllProcessesStates().flatMap { statusesWithFreshness =>
+              mergeStatusWithDeployments(statusesWithFreshness.value).map { statusDetails =>
+                statusesWithFreshness.map(_.flatMap { case (name, _) =>
+                  statusDetails.get(name).map(statusDetails => (name, List(statusDetails)))
+                })
+              }
+            }
+          }
+
+        }
+
+      case NoStateQueryForAllScenariosSupport =>
+        NoStateQueryForAllScenariosSupport
     }
-  }
 
   private def mergeStatusWithDeployments(
       name: ProcessName,

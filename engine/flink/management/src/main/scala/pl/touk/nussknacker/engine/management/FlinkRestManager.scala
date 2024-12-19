@@ -11,6 +11,10 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkRestManager.ParsedJobConfig
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{BaseJobStatusCounts, JobOverview}
+import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.{
+  WithDataFreshnessStatusMapOps,
+  WithDataFreshnessStatusOps
+}
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
@@ -22,7 +26,6 @@ class FlinkRestManager(
     dependencies: DeploymentManagerDependencies,
     mainClassName: String
 ) extends FlinkDeploymentManager(modelData, dependencies, config.shouldVerifyBeforeDeploy, mainClassName)
-    with StateQueryForAllScenariosSupported
     with LazyLogging {
 
   import dependencies._
@@ -34,23 +37,53 @@ class FlinkRestManager(
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    getProcessesStates()
-      .map(_.map(_.getOrElse(name, List.empty)))
+    getAllProcessesStatesFromFlink().map(_.getOrElse(name, List.empty))
   }
 
-  override def getProcessesStates()(
+  override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
+    new DeploymentSynchronisationSupported {
+
+      override def getDeploymentStatusesToUpdate(
+          deploymentIdsToCheck: Set[newdeployment.DeploymentId]
+      ): Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
+        Future
+          .sequence(
+            deploymentIdsToCheck.toSeq
+              .map { deploymentId =>
+                client
+                  .getJobDetails(toJobId(deploymentId))
+                  .map(_.map { jobDetails =>
+                    deploymentId -> toDeploymentStatus(jobDetails.state, jobDetails.`status-counts`)
+                  })
+              }
+          )
+          .map(_.flatten.toMap)
+      }
+
+    }
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
+    new StateQueryForAllScenariosSupported {
+
+      override def getAllProcessesStates()(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = getAllProcessesStatesFromFlink()
+
+    }
+
+  private def getAllProcessesStatesFromFlink()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
     client
       .getJobsOverviews()
       .flatMap { result =>
-        statusDetailsFrom(result.value).map(
+        statusDetailsFromJobOverviews(result.value).map(
           WithDataFreshnessStatus(_, cached = result.cached)
         ) // TODO: How to do it nicer?
       }
   }
 
-  private def statusDetailsFrom(
+  private def statusDetailsFromJobOverviews(
       jobOverviews: List[JobOverview]
   ): Future[Map[ProcessName, List[StatusDetails]]] = Future
     .sequence {
@@ -84,28 +117,6 @@ class FlinkRestManager(
 
     }
     .map(_.toMap)
-
-  override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
-    new DeploymentSynchronisationSupported {
-
-      override def getDeploymentStatusesToUpdate(
-          deploymentIdsToCheck: Set[newdeployment.DeploymentId]
-      ): Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
-        Future
-          .sequence(
-            deploymentIdsToCheck.toSeq
-              .map { deploymentId =>
-                client
-                  .getJobDetails(toJobId(deploymentId))
-                  .map(_.map { jobDetails =>
-                    deploymentId -> toDeploymentStatus(jobDetails.state, jobDetails.`status-counts`)
-                  })
-              }
-          )
-          .map(_.flatten.toMap)
-      }
-
-    }
 
   // NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def toDeploymentStatus(jobState: String, jobStatusCounts: BaseJobStatusCounts): DeploymentStatus = {

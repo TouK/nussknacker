@@ -9,10 +9,7 @@ import pl.touk.nussknacker.engine.testing.StubbingCommands
 
 import scala.concurrent.Future
 
-class DeploymentManagerStub
-    extends BaseDeploymentManager
-    with StateQueryForAllScenariosSupported
-    with StubbingCommands {
+class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands {
 
   var jobStatus: Map[ProcessName, List[StatusDetails]] = Map.empty
 
@@ -83,12 +80,16 @@ class DeploymentManagerStub
     Future.successful(WithDataFreshnessStatus.fresh(jobStatus.get(name).toList.flatten))
   }
 
-  override def getProcessesStates()(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
-    Future.successful(WithDataFreshnessStatus.fresh(jobStatus))
-  }
-
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
+    new StateQueryForAllScenariosSupported {
+
+      override def getAllProcessesStates()(
+          implicit freshnessPolicy: DataFreshnessPolicy
+      ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] =
+        Future.successful(WithDataFreshnessStatus.fresh(jobStatus))
+
+    }
 
 }

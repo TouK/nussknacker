@@ -31,7 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 object PeriodicDeploymentManager {
 
   def apply(
-      delegate: DeploymentManager with StateQueryForAllScenariosSupported,
+      delegate: DeploymentManager,
       schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
       processConfigEnricherFactory: ProcessConfigEnricherFactory,
       periodicBatchConfig: PeriodicBatchConfig,
@@ -107,7 +107,6 @@ class PeriodicDeploymentManager private[periodic] (
     toClose: () => Unit
 )(implicit val ec: ExecutionContext)
     extends DeploymentManager
-    with StateQueryForAllScenariosSupported
     with ManagerSpecificScenarioActivitiesStoredByManager
     with LazyLogging {
 
@@ -194,16 +193,13 @@ class PeriodicDeploymentManager private[periodic] (
     }
   }
 
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport =
+    service.stateQueryForAllScenariosSupport
+
   override def getProcessStates(
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     service.getStatusDetails(name).map(_.map(List(_)))
-  }
-
-  override def getProcessesStates()(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]] = {
-    service.getStatusDetails().map(_.map(_.map { case (k, v) => (k, List(v)) }))
   }
 
   override def resolve(
