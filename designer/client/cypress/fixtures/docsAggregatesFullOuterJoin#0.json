@@ -18,7 +18,7 @@
         {
             "id": "subscriber alerts",
             "ref": {
-                "typ": "periodic",
+                "typ": "sample-generator",
                 "parameters": [
                     {
                         "name": "period",
@@ -65,7 +65,7 @@
             {
                 "id": "audit - all events",
                 "ref": {
-                    "typ": "periodic",
+                    "typ": "sample-generator",
                     "parameters": [
                         {
                             "name": "period",

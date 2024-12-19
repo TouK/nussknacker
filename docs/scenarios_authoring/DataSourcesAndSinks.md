@@ -184,11 +184,11 @@ Holds event in the node until
 The `key` parameter will be removed in the future release of Nussknacker, for the time being, configure it to `#inputMeta.key`.
 
 &nbsp;
-### Periodic
+### Sample generator
 
 **(Flink engine only)**
 
-![periodic_window](img/periodic.png)
+![sample_generator_window](img/sample-generator.png)
 
 This source provides functionality of sending a number of given events in a periodic way. It's mainly used for testing.
 

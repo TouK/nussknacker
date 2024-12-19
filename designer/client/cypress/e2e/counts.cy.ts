@@ -82,7 +82,7 @@ describe("Counts", () => {
             .click();
         cy.get("[data-testid=window]").contains(/^ok$/i).click();
 
-        cy.getNode("periodic")
+        cy.getNode("sample-generator")
             .parent()
             .matchImage({ screenshotConfig: { padding: 16 } });
     });

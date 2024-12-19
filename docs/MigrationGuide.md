@@ -29,6 +29,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#7347](https://github.com/TouK/nussknacker/pull/7347) All calls to `org.apache.flink.api.common.functions.RichFunction.open(Configuration)`,
   which is deprecated, were replaced with calls to `org.apache.flink.api.common.functions.RichFunction.open(OpenContext)`
 
+### Code API changes
+* [#7368](https://github.com/TouK/nussknacker/pull/7368) Renamed `PeriodicSourceFactory` to `SampleGeneratorSourceFactory`
+
 ## In version 1.18.0
 
 ### Configuration changes
