@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentState
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.newdeployment
+import pl.touk.nussknacker.engine.util.WithDataFreshnessStatusUtils.WithDataFreshnessStatusOps
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits._
@@ -46,6 +47,8 @@ trait DeploymentManager extends AutoCloseable {
 
   def deploymentSynchronisationSupport: DeploymentSynchronisationSupport
 
+  def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport
+
   def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result]
 
   final def getProcessState(
@@ -66,7 +69,7 @@ trait DeploymentManager extends AutoCloseable {
         latestVersionId,
         deployedVersionId,
         currentlyPresentedVersionId,
-      ).map(state => statusDetailsWithFreshness.map(_ => state))
+      ).map(statusDetailsWithFreshness.withValue)
     } yield stateWithFreshness
   }
 
@@ -108,6 +111,18 @@ trait ManagerSpecificScenarioActivitiesStoredByManager { self: DeploymentManager
   ): Future[List[ScenarioActivity]]
 
 }
+
+sealed trait StateQueryForAllScenariosSupport
+
+trait StateQueryForAllScenariosSupported extends StateQueryForAllScenariosSupport {
+
+  def getAllProcessesStates()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[Map[ProcessName, List[StatusDetails]]]]
+
+}
+
+case object NoStateQueryForAllScenariosSupport extends StateQueryForAllScenariosSupport
 
 sealed trait DeploymentSynchronisationSupport
 

@@ -144,6 +144,8 @@ object MockableDeploymentManagerProvider {
 
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
+    override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+
     override def managerSpecificScenarioActivities(
         processIdWithName: ProcessIdWithName,
         after: Option[Instant],

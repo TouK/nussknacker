@@ -298,6 +298,8 @@ class MockDeploymentManager(
 
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+
 }
 
 class MockManagerProvider(deploymentManager: DeploymentManager = new MockDeploymentManager())

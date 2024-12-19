@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
@@ -27,13 +27,20 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
       deploymentConfig: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
+    createDeploymentManagerWithCapabilities(modelData, dependencies, deploymentConfig, scenarioStateCacheTTL)
+  }
+
+  def createDeploymentManagerWithCapabilities(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      deploymentConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): ValidatedNel[String, DeploymentManager] = {
     import dependencies._
     val flinkConfig = deploymentConfig.rootAs[FlinkConfig]
     FlinkClient.create(flinkConfig, scenarioStateCacheTTL).map { client =>
-      CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
-        new FlinkStreamingRestManager(client, flinkConfig, modelData, dependencies),
-        scenarioStateCacheTTL
-      )
+      val underlying = new FlinkStreamingRestManager(client, flinkConfig, modelData, dependencies)
+      CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(underlying, scenarioStateCacheTTL)
     }
   }
 

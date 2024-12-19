@@ -5,11 +5,11 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{
   DeploymentIdSequence,
-  ProcessIdSequence
+  ProcessIdSequence,
+  getLatestDeploymentQueryCount
 }
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData.WithCanonicalProcess
@@ -27,6 +27,8 @@ import scala.util.Random
 object InMemPeriodicProcessesRepository {
   private val ProcessIdSequence    = new AtomicLong(0)
   private val DeploymentIdSequence = new AtomicLong(0)
+
+  val getLatestDeploymentQueryCount = new AtomicLong(0)
 }
 
 class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicProcessesRepository {
@@ -167,20 +169,48 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   override def getLatestDeploymentsForActiveSchedules(
       processName: ProcessName,
       deploymentsPerScheduleMaxCount: Int
-  ): Action[SchedulesState] =
+  ): Action[SchedulesState] = {
+    getLatestDeploymentQueryCount.incrementAndGet()
     getLatestDeploymentsForPeriodicProcesses(
       processEntities(processName).filter(_.active),
       deploymentsPerScheduleMaxCount
     )
+  }
+
+  override def getLatestDeploymentsForActiveSchedules(
+      deploymentsPerScheduleMaxCount: Int
+  ): Action[Map[ProcessName, SchedulesState]] = {
+    getLatestDeploymentQueryCount.incrementAndGet()
+    allProcessEntities.map { case (processName, list) =>
+      processName -> getLatestDeploymentsForPeriodicProcesses(
+        list.filter(_.active),
+        deploymentsPerScheduleMaxCount
+      )
+    }
+  }
 
   override def getLatestDeploymentsForLatestInactiveSchedules(
       processName: ProcessName,
       inactiveProcessesMaxCount: Int,
       deploymentsPerScheduleMaxCount: Int
   ): Action[SchedulesState] = {
+    getLatestDeploymentQueryCount.incrementAndGet()
     val filteredProcesses =
       processEntities(processName).filterNot(_.active).sortBy(_.createdAt).takeRight(inactiveProcessesMaxCount)
     getLatestDeploymentsForPeriodicProcesses(filteredProcesses, deploymentsPerScheduleMaxCount)
+  }
+
+  override def getLatestDeploymentsForLatestInactiveSchedules(
+      inactiveProcessesMaxCount: Int,
+      deploymentsPerScheduleMaxCount: Int
+  ): Action[Map[ProcessName, SchedulesState]] = {
+    getLatestDeploymentQueryCount.incrementAndGet()
+    allProcessEntities.map { case (processName, list) =>
+      processName -> getLatestDeploymentsForPeriodicProcesses(
+        list.filterNot(_.active).sortBy(_.createdAt).takeRight(inactiveProcessesMaxCount),
+        deploymentsPerScheduleMaxCount
+      )
+    }
   }
 
   private def getLatestDeploymentsForPeriodicProcesses(
@@ -223,6 +253,12 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     processEntities(processName)
       .filter(_.active)
       .map(PeriodicProcessesRepository.createPeriodicProcessWithJson)
+
+  private def allProcessEntities: Map[ProcessName, Seq[PeriodicProcessEntity]] =
+    processEntities
+      .filter(process => process.processingType == processingType)
+      .toSeq
+      .groupBy(_.processName)
 
   private def processEntities(processName: ProcessName): Seq[PeriodicProcessEntityWithJson] =
     processEntities
