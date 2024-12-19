@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.springframework.util
 
 import java.math.RoundingMode;
-// TODO_PAWEL jaki package?
 
 /*
 In spel division of two big decimals uses divide operator org.springframework.expression.spel.ast.OpDivide.
