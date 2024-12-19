@@ -52,11 +52,10 @@ class CollectTransformerTest
       |}
       |""".stripMargin
 
-  // TODO_PAWEL this test supposedly fails
   test("should collect elements after for-each") {
     val scenario = scenarioBuilderWithSchemas
       .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input".spel)
-      .buildSimpleVariable("someVar", "ourVar", "'x = ' + (#outForEach * 2)".spel)
+      .buildSimpleVariable("someVar", "ourVar", "'x = ' + (#outForEach.intValue() * 2)".spel)
       .customNode("collect", "outCollector", "collect", "Input expression" -> "#ourVar".spel)
       .emptySink("response", "response", SinkRawEditorParamName.value -> "true".spel, "Value" -> "#outCollector".spel)
     val requestElements = (0 to 3).toList
