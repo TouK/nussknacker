@@ -387,6 +387,8 @@ class K8sDeploymentManager(
   //      for each scenario in this case and where store the deploymentId
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
+  override def stateQueryForAllScenariosSupport: StateQueryForAllScenariosSupport = NoStateQueryForAllScenariosSupport
+
 }
 
 object K8sDeploymentManager {
